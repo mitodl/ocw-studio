@@ -314,7 +314,7 @@ export interface ContentDetailParams {
 
 export interface CollaboratorDetailParams {
   name: string
-  user_id: number
+  userId: number
 }
 
 export enum LinkType {

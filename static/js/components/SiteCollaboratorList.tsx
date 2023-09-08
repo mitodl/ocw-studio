@@ -58,6 +58,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const listing: WebsiteCollaboratorListingResponse = useSelector(
     getWebsiteCollaboratorListingCursor
   )(listingParams)
+  
 
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)

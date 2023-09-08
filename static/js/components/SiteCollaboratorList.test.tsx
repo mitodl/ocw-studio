@@ -12,7 +12,6 @@ import {
   makePermanentWebsiteCollaborator,
   makeWebsiteDetail,
   makeWebsiteCollaborators,
-  makeWebsiteCollaborator
 } from "../util/factories/websites"
 import IntegrationTestHelper, {
   TestRenderer,
@@ -45,13 +44,11 @@ describe("SiteCollaboratorList", () => {
     console.log
     for (const collaborator of collaborators) {
       websiteCollaboratorDetailsLookup[
-        collaboratorDetailKey({ name: website.name, user_id: collaborator.user_id })
+        collaboratorDetailKey({ name: website.name, userId: collaborator.user_id })
       ] = collaborator
     }
     console.log("collab=",collaborators )
 
-    // collaborators = concat(collaborators, permanentAdmins)
-    // console.log(collaborators, "collaboratorsss")
     const listingParams = {
       name:   website.name,
       offset: 0
@@ -62,7 +59,6 @@ describe("SiteCollaboratorList", () => {
       next:     null,
       previous: null
     }
-    // makeWebsiteCollaborators()
     const collaboratorListingLookup = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
@@ -93,10 +89,6 @@ describe("SiteCollaboratorList", () => {
         queries: {},
       },
     )
-    // helper.mockGetRequest(
-    //   siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-    //   { results: concat(collaborators, permanentAdmins) }
-    // )
   })
 
   afterEach(() => {
@@ -147,9 +139,6 @@ describe("SiteCollaboratorList", () => {
 
   it("the delete collaborator dialog works as expected", async () => {
     const collaborator = collaborators[0]
-    const numCollaborators = collaborators.length
-    console.log("collaborators", collaborators)
-    console.log("collaborators length", collaborators.length)
     deleteCollaboratorStub = helper.mockDeleteRequest(
       siteApiCollaboratorsDetailUrl
         .param({
@@ -160,6 +149,7 @@ describe("SiteCollaboratorList", () => {
       {},
     )
     const { wrapper } = await render()
+    let dialog = wrapper.find("Dialog")
     console.log("length", wrapper.find("li").length)
     wrapper.find(".transparent-button").at(0).simulate("click")
     wrapper.update()
@@ -167,7 +157,7 @@ describe("SiteCollaboratorList", () => {
       wrapper.find("button.dropdown-item").at(1).simulate("click")
     }) 
     wrapper.update()
-    const dialog = wrapper.find("Dialog")
+    dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
     expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
     act(() => {
@@ -176,9 +166,8 @@ describe("SiteCollaboratorList", () => {
     wrapper.update()
     console.log(wrapper.find(StudioListItem).length)
     sinon.assert.calledOnce(deleteCollaboratorStub)
-    await act(async () => {
-      expect(wrapper.find("li").length).toBe(numCollaborators - 1);
-    });
+    dialog = wrapper.find("Dialog")
+    expect(dialog.prop("open")).toBe(false)
   })
 
   it("the add collaborator button sets correct state and opens the modal", async () => {

@@ -134,7 +134,7 @@ export default class IntegrationTestHelper {
   /**
    * Convenience method for mocking out a DELETE request
    */
-  mockDeleteRequest(url: string, body: unknown, code = 210): sinon.SinonStub {
+  mockDeleteRequest(url: string, body: unknown, code = 204): sinon.SinonStub {
     return this.mockRequest(url, "DELETE", body, code)
   }
 

@@ -249,24 +249,13 @@ export const deleteWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-    // optimisticUpdate: {
-    //   // evict the item
-    //   websiteCollaboratorDetails: evolve({
-    //     [websiteName]: compose(
-    //       evictCollaborator,
-    //       (value: WebsiteCollaborator[]) => value || []
-    //     )
-    //   })
-    // },
-    // },
-
     optimisticUpdate: {
       websiteCollaboratorDetails: (
         prev: WebsiteCollaboratorDetails
       ) => {
         console.log(typeof collaborator.user_id)
         const collaboratorKey = collaboratorDetailKey({
-          user_id: collaborator.user_id,
+          userId: collaborator.user_id,
           name: websiteName
         })
         console.log(prev)
@@ -275,18 +264,6 @@ export const deleteWebsiteCollaboratorMutation = (
         return prev
       },
     },
-
-    // update: {
-    //   // evict the item
-    //   collaborators: evolve({
-    //     [websiteName]: compose(
-    //       evictCollaborator,
-    //       (value: WebsiteCollaborator[]) => {
-    //         return value ?? []
-    //       }
-    //     )
-    //   })
-    // },
     options: {
       method: "DELETE",
       ...DEFAULT_POST_OPTIONS,
@@ -294,44 +271,11 @@ export const deleteWebsiteCollaboratorMutation = (
   }
 }
 
-// export const editWebsiteContentMutation = (
-//   params: ContentDetailParams,
-//   payload: EditWebsiteContentPayload | FormData
-// ): QueryConfig => ({
-//   url: siteApiContentDetailUrl
-//     .param({ name: params.name, textId: params.textId })
-//     .toString(),
-//   options: {
-//     method:  "PATCH",
-//     headers: {
-//       "X-CSRFTOKEN": getCookie("csrftoken") || ""
-//     }
-//   },
-//   body:      payload,
-//   transform: (response: WebsiteContent) => ({
-//     websiteContentDetails: {
-//       [contentDetailKey(params)]: response
-//     }
-//   }),
-//   update: {
-//     websiteContentDetails: (
-//       prev: WebsiteContentDetails,
-//       next: WebsiteContentDetails
-//     ) => ({
-//       ...prev,
-//       ...next
-//     })
-//   }
-// })
-
 export const editWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
   role: string,
 ): QueryConfig => {
-  const alterRole = map(
-    when(propEq("user_id", collaborator.user_id), assoc("role", role)),
-  )
   return {
     queryKey: "editWebsiteCollaboratorMutation",
     body: { role },
@@ -343,12 +287,9 @@ export const editWebsiteCollaboratorMutation = (
       .toString(),
       transform: (response: WebsiteCollaborator) => {
         console.log("Response:", response);
-        // console.log({
-        //   [collaboratorDetailKey({ user_id: collaborator.user_id.toString(), name: websiteName })]: response
-        // }) // Add this line to print the response
         return {
           websiteCollaboratorDetails: {
-            [collaboratorDetailKey({ user_id: collaborator.user_id, name: websiteName })]: response
+            [collaboratorDetailKey({ userId: collaborator.user_id, name: websiteName })]: response
           }
         };
       },
@@ -361,14 +302,6 @@ export const editWebsiteCollaboratorMutation = (
         ...next
       })
     },
-    // update: {
-    //   websiteCollaboratorDetails: evolve({
-    //     [websiteName]: compose(
-    //       alterRole,
-    //       (value: WebsiteCollaborator[]) => value || []
-    //     )
-    //   })
-    // },
     options: {
       method: "PATCH",
       ...DEFAULT_POST_OPTIONS,
@@ -388,7 +321,7 @@ export const createWebsiteCollaboratorMutation = (
     url: siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
     transform: (body: WebsiteCollaborator) => ({
       websiteCollaboratorDetails: {
-        [collaboratorDetailKey({ user_id: body.user_id, name: websiteName })]: body
+        [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]: body
       }
     }),
     update: {
@@ -417,7 +350,7 @@ export type WebsiteCollaboratorListingResponse =
 
 export const collaboratorDetailKey = (
   params: CollaboratorDetailParams
-): string => JSON.stringify([params.name, params.user_id])
+): string => JSON.stringify([params.name, params.userId])
 
 export type WebsiteContentListing = Record<
   string,
@@ -547,7 +480,7 @@ export const websiteCollaboratorListingRequest = (
       if (body && Array.isArray(body.results)){
       for (const item of body.results) {
         details[
-          collaboratorDetailKey({ user_id: item.user_id, name })
+          collaboratorDetailKey({ userId: item.user_id, name })
         ] = item
       }
       return {

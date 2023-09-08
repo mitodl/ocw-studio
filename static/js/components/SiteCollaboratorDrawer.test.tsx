@@ -21,6 +21,7 @@ import {
   WebsiteCollaborator,
   WebsiteCollaboratorFormData,
 } from "../types/websites"
+import { WebsiteCollaboratorListingResponse, collaboratorListingKey } from "../query-configs/websites"
 
 const simulateClickSubmit = (
   wrapper: ReactWrapper,
@@ -46,6 +47,7 @@ describe("SiteCollaboratorDrawerTest", () => {
     editCollaboratorStub: SinonStub,
     addCollaboratorStub: SinonStub,
     toggleVisibilityStub: SinonStub,
+    apiResponse: WebsiteCollaboratorListingResponse,
     collaborator: WebsiteCollaborator
 
   const errorMsg = "Error"
@@ -60,6 +62,38 @@ describe("SiteCollaboratorDrawerTest", () => {
       setSubmitting: sinon.stub(),
       setStatus: sinon.stub(),
     }
+    const listingParams = {
+      name:   website.name,
+      offset: 0
+    }
+    apiResponse = {
+      results:  [collaborator],
+      count:    1,
+      next:     null,
+      previous: null
+    }
+    const collaboratorListingLookup = {
+      [collaboratorListingKey(listingParams)]: {
+        ...apiResponse,
+        results: apiResponse.results.map(item => item.user_id)
+      }
+    }
+    const listingParams = {
+      name:   website.name,
+      offset: 0
+    }
+    apiResponse = {
+      results:  [collaborator],
+      count:    1,
+      next:     null,
+      previous: null
+    }
+    const collaboratorListingLookup = {
+      [collaboratorListingKey(listingParams)]: {
+        ...apiResponse,
+        results: apiResponse.results.map(item => item.user_id)
+      }
+    }
     render = helper.configureRenderer(
       SiteCollaboratorDrawer,
       {
@@ -70,9 +104,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       },
       {
         entities: {
-          collaborators: {
-            [website.name]: [collaborator],
-          },
+          collaborators: collaboratorListingLookup
         },
         queries: {},
       },
