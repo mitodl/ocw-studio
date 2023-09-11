@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.101.1
+Version 0.101.1 (Released September 11, 2023)
 ---------------
 
 - use new site pipeline definition (#1931)
