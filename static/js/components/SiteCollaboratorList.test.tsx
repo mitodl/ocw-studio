@@ -65,7 +65,9 @@ describe("SiteCollaboratorList", () => {
     const collaboratorListingLookup = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
-        results: apiResponse.results.map((collaborator) => collaborator.user_id),
+        results: apiResponse.results.map(
+          (collaborator) => collaborator.user_id,
+        ),
       },
     }
     helper.mockGetRequest(

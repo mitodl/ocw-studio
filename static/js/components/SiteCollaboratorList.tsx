@@ -143,8 +143,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
-          selectedCollaborator
-            ? selectedCollaborator.name : "this user"
+          selectedCollaborator ? selectedCollaborator.name : "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {

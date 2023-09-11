@@ -431,7 +431,9 @@ export const websiteCollaboratorListingRequest = (
       const details = {}
       if (body && Array.isArray(body.results)) {
         for (const collaborator of body.results) {
-          details[collaboratorDetailKey({ userId: collaborator.user_id, name })] = collaborator
+          details[
+            collaboratorDetailKey({ userId: collaborator.user_id, name })
+          ] = collaborator
         }
         return {
           collaborators: {
