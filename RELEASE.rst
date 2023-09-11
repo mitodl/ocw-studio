@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.0
+Version 0.102.0 (Released September 11, 2023)
 ---------------
 
 - set check_every: never on SiteContentGitResource (#1951)
