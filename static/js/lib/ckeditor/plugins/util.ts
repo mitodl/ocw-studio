@@ -104,16 +104,23 @@ export class Shortcode {
 
   isClosing: boolean
 
+  isSelfClosing: boolean
+
   constructor(
     name: string,
     params: ShortcodeParam[],
     isPercentDelimited = false,
     isClosing = false,
+    isSelfClosing = false,
   ) {
     this.name = name
     this.params = params
     this.isPercentDelimited = isPercentDelimited
+    if (isClosing && isSelfClosing) {
+      throw new Error("Shortcode can't be both closing and self-closing")
+    }
     this.isClosing = isClosing
+    this.isSelfClosing = isSelfClosing
 
     const hasPositionalParams = params.some((p) => p.name === undefined)
     const hasNamedParams = params.some((p) => p.name !== undefined)
