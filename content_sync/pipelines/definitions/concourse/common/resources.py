@@ -208,4 +208,10 @@ class SiteContentGitResource(GitResource):
         else:
             uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}/{short_id}.git"
             private_key = None
-        super().__init__(uri=uri, branch=branch, private_key=private_key, **kwargs)
+        super().__init__(
+            uri=uri,
+            branch=branch,
+            check_every="never",
+            private_key=private_key,
+            **kwargs,
+        )
