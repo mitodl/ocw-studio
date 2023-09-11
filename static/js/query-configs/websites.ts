@@ -206,13 +206,13 @@ export const deleteWebsiteCollaboratorMutation = (
       })
       .toString(),
     optimisticUpdate: {
-      websiteCollaboratorDetails: (prev: WebsiteCollaboratorDetails) => {
+      websiteCollaboratorDetails: (collaborators: WebsiteCollaboratorDetails) => {
         const collaboratorKey = collaboratorDetailKey({
           userId: collaborator.user_id,
           name: websiteName,
         })
-        delete prev[collaboratorKey]
-        return prev
+        delete collaborators[collaboratorKey]
+        return collaborators
       },
     },
     options: {
