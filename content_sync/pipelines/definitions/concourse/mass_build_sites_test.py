@@ -31,7 +31,6 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
-from websites.models import Website, WebsiteStarter
 
 pytestmark = pytest.mark.django_db
 total_sites = 6
@@ -49,11 +48,14 @@ def websites(django_db_setup, django_db_blocker):
         starter = WebsiteStarterFactory.create(
             source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
         )
-        WebsiteFactory.create(starter=root_starter)
-        WebsiteFactory.create_batch(total_sites, starter=starter)
-        yield Website.objects.all()
-        Website.objects.all().delete()
-        WebsiteStarter.objects.all().delete()
+        root_website = WebsiteFactory.create(starter=root_starter)
+        batch_sites = WebsiteFactory.create_batch(total_sites, starter=starter)
+        batch_sites.append(root_website)
+        yield batch_sites
+        for site in batch_sites:
+            site.delete()
+        starter.delete()
+        root_starter.delete()
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
