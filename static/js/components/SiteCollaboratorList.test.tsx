@@ -150,14 +150,13 @@ describe("SiteCollaboratorList", () => {
       {},
     )
     const { wrapper } = await render()
-    let dialog = wrapper.find("Dialog")
     wrapper.find(".transparent-button").at(0).simulate("click")
     wrapper.update()
     act(() => {
       wrapper.find("button.dropdown-item").at(1).simulate("click")
     })
     wrapper.update()
-    dialog = wrapper.find("Dialog")
+    let dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
     expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
     act(() => {
