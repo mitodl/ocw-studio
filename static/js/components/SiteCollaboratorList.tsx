@@ -98,7 +98,9 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     if (!response) {
       return
     } else {
-      fetchWebsiteCollaboratorListing()
+      if (fetchWebsiteCollaboratorListing) {
+        fetchWebsiteCollaboratorListing()
+      }
     }
   }
 
@@ -121,9 +123,9 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         </button>
       </div>
       <StudioList>
-        {listing.results.map((collaborator: WebsiteCollaborator) => (
+        {listing.results.map((collaborator: WebsiteCollaborator, i: number) => (
           <StudioListItem
-            key={collaborator.user_id}
+            key={i}
             title={collaborator.name || collaborator.email}
             subtitle={ROLE_LABELS[collaborator.role]}
             menuOptions={
