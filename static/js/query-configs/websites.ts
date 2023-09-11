@@ -430,14 +430,14 @@ export const websiteCollaboratorListingRequest = (
     transform: (body: WebsiteCollaboratorListingResponse) => {
       const details = {}
       if (body && Array.isArray(body.results)) {
-        for (const item of body.results) {
-          details[collaboratorDetailKey({ userId: item.user_id, name })] = item
+        for (const collaborator of body.results) {
+          details[collaboratorDetailKey({ userId: collaborator.user_id, name })] = collaborator
         }
         return {
           collaborators: {
             [collaboratorListingKey(listingParams)]: {
               ...body,
-              results: body.results.map((item) => item.user_id),
+              results: body.results.map((collaborator) => collaborator.user_id),
             },
           },
           websiteCollaboratorDetails: details,

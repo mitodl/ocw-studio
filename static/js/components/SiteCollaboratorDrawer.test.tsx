@@ -78,7 +78,7 @@ describe("SiteCollaboratorDrawerTest", () => {
     const collaboratorListingLookup = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
-        results: apiResponse.results.map((item) => item.user_id),
+        results: apiResponse.results.map((collaborator) => collaborator.user_id),
       },
     }
     render = helper.configureRenderer(

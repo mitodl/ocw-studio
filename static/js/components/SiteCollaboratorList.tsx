@@ -144,8 +144,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
           selectedCollaborator
-            ? selectedCollaborator.name || selectedCollaborator.email
-            : "this user"
+            ? selectedCollaborator.name : "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {
