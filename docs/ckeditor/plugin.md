@@ -548,10 +548,10 @@ them into the configuration.
 ### Writing a MarkdownSyntaxPlugin
 
 To get these rules added to the plugin we need to write a simple CKEditor plugin that extends
-a custom class we wrote called `MarkdownSyntaxPlugin`. You can check out it's implementation [here](https://github.com/mitodl/ocw-studio/blob/master/static/js/lib/ckeditor/plugins/MarkdownSyntaxPlugin.ts).
+a custom class we wrote called `MarkdownSyntaxPlugin`. You can check out its implementation [here](https://github.com/mitodl/ocw-studio/blob/master/static/js/lib/ckeditor/plugins/MarkdownSyntaxPlugin.ts).
 
 Basically, it just provides a means for adding Showdown and Turndown rules in a predefined spot where our Markdown plugin
-can come along and grab them later. Using it is simple, here's how a plugin to add the rules we wrote above will look:
+can come along and grab them later. Using it is simple; here's how a plugin to add the rules we wrote above will look:
 
 {% raw %}
 
