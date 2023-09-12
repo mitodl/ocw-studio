@@ -386,8 +386,8 @@ class StaticResourcesTaskStep(TaskStep):
     A TaskStep to fetch the static resources for a site from S3
 
     Args:
-        config(SitePipelineDefinitonConfig): The site pipeline configuration for the site we are fetching static resources for
-    """  # noqa: E501
+        pipeline_vars(dict): A dictionary of site pipeline variables
+    """
 
     def __init__(self, pipeline_vars: dict):
         super().__init__(
@@ -425,8 +425,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     The tasks used in the online site job
 
     Args:
-        config(SitePipelineDefinitionConfig): The site pipeline configuration object
-    """
+        pipeline_vars(dict): A dictionary of site pipeline variables
+        fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+    """  # noqa: E501
 
     def __init__(self, pipeline_vars: dict, fastly_var: str):
         static_resources_task_step = StaticResourcesTaskStep(
@@ -567,8 +568,9 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
     The tasks used in the offline site job
 
     Args:
-        config(SitePipelineDefinitionConfig): The site pipeline configuration object
-    """
+        pipeline_vars(dict): A dictionary of site pipeline variables
+        fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+    """  # noqa: E501
 
     def __init__(self, pipeline_vars: dict, fastly_var: str):
         static_resources_task_step = StaticResourcesTaskStep(
