@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.102.1
+---------------
+
+- optimize site_pipeline_test and mass_build_sites_test (#1953)
+- [pre-commit.ci] pre-commit autoupdate (#1955)
+- add prettier-django to the ci:skip list in pre-commit (#1956)
+
 Version 0.102.0 (Released September 11, 2023)
 ---------------
 
