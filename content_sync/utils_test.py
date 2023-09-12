@@ -7,6 +7,7 @@ from moto import mock_s3
 
 from content_sync.constants import (
     DEV_END,
+    DEV_ENDPOINT_URL,
     DEV_START,
     NON_DEV_END,
     NON_DEV_START,
@@ -25,10 +26,12 @@ from content_sync.test_constants import (
 )
 from content_sync.utils import (
     check_matching_tags,
+    get_cli_endpoint_url,
     get_common_pipeline_vars,
     get_destination_filepath,
     get_destination_url,
     get_hugo_arg_string,
+    get_ocw_studio_api_url,
     move_s3_object,
     strip_lines_between,
 )
@@ -202,11 +205,31 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
         assert (
             pipeline_vars["resource_base_url_live"] == settings.RESOURCE_BASE_URL_LIVE
         )
-        assert pipeline_vars["ocw_studio_url"] == "http://10.1.0.102:8043"
     else:
         assert pipeline_vars["resource_base_url_draft"] == ""
         assert pipeline_vars["resource_base_url_live"] == ""
-        assert pipeline_vars["ocw_studio_url"] == settings.SITE_BASE_URL
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+def test_get_cli_endpoint_url(settings, mocker, is_dev):
+    """get_cli_endpoint_url should return the correct value based on environment"""
+    mock_is_dev = mocker.patch("content_sync.utils.is_dev")
+    mock_is_dev.return_value = is_dev
+    cli_endpoint_url = get_cli_endpoint_url()
+    expected_cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
+    assert cli_endpoint_url == expected_cli_endpoint_url
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+def test_get_ocw_studio_api_url(settings, mocker, is_dev):
+    """get_cli_endpoint_url should return the correct value based on environment"""
+    mock_is_dev = mocker.patch("content_sync.utils.is_dev")
+    mock_is_dev.return_value = is_dev
+    ocw_studio_api_url = get_ocw_studio_api_url()
+    expected_ocw_studio_api_url = (
+        "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
+    )
+    assert ocw_studio_api_url == expected_ocw_studio_api_url
 
 
 @pytest.mark.parametrize("build_target", [TARGET_OFFLINE, TARGET_ONLINE])
