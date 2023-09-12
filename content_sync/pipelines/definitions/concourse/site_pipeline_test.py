@@ -145,6 +145,8 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
     # Assert that the expected resources exist and have the expected properties
     resources = rendered_definition["resources"]
+    for resource in resources:
+        assert resource["check_every"] == "never"
     webpack_manifest_s3_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=WEBPACK_MANIFEST_S3_IDENTIFIER
     )

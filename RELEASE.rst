@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.102.0 (Released September 11, 2023)
+---------------
+
+- set check_every: never on SiteContentGitResource (#1951)
+
+Version 0.101.1 (Released September 11, 2023)
+---------------
+
+- use new site pipeline definition (#1931)
+- update poetry lock file (#1946)
+- fix,config: Fix ignore revs file with full commit hash
+- config: Add file to ignore pre-commit refactoring in git blame
+- config,refactor: Add more extensive pre-commit config and lint rules (#1930)
+- fix common pipeline vars (#1937)
+
 Version 0.101.0 (Released September 07, 2023)
 ---------------
 
