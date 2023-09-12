@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.1
+Version 0.102.1 (Released September 12, 2023)
 ---------------
 
 - optimize site_pipeline_test and mass_build_sites_test (#1953)
