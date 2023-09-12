@@ -139,7 +139,9 @@ export class Shortcode {
   toHugo() {
     const stringifiedArgs = this.params.map((p) => p.toHugo())
     const name = this.isClosing ? `/${this.name}` : this.name
-    const interior = [name, ...stringifiedArgs].join(" ")
+    const interior = this.isSelfClosing
+      ? [name, ...stringifiedArgs].join(" ")
+      : [name, ...stringifiedArgs, "\\"].join(" ")
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
     }
