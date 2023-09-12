@@ -140,7 +140,7 @@ export class Shortcode {
     const stringifiedArgs = this.params.map((p) => p.toHugo())
     const name = this.isClosing ? `/${this.name}` : this.name
     const interior = this.isSelfClosing
-      ? [name, ...stringifiedArgs, "\\"].join(" ")
+      ? [name, " ", ...stringifiedArgs, "/"].join()
       : [name, ...stringifiedArgs].join(" ")
     if (this.isPercentDelimited) {
       return `{{% ${interior} %}}`
@@ -172,8 +172,11 @@ export class Shortcode {
   static fromString(s: string): Shortcode {
     Shortcode.heuristicValidation(s)
     const isPercentDelmited = s.startsWith("{{%") && s.endsWith("%}}")
-    const interior = s.slice(3, -3)
+    let interior = s.slice(3, -3)
     const isSelfClosing = interior.slice(-1) === "/"
+    if (isSelfClosing) {
+      interior = interior.slice(0, -1)
+    }
     const isClosingMatch = interior.match(Shortcode.IS_CLOSING_REGEXP)
     // IS_CLOSING_REGEXP will always match, hence the non-null assertion !
     const isClosing = isClosingMatch?.groups?.isClosing === "/"
