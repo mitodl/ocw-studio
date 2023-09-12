@@ -104,20 +104,21 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     settings.ROOT_WEBSITE_NAME = "root-website"
     settings.ENV_NAME = env_name
-    mock_is_dev = mocker.patch(
+    mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
+    mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
-    mock_is_dev.return_value = is_dev
+    mock_utils_is_dev.return_value = is_dev
+    mock_pipeline_is_dev.return_value = is_dev
     cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
-    other_vars = {
-        "resource_base_url": "http://localhost:8044/"
-        if branch_vars["pipeline_name"] == VERSION_DRAFT
-        else "http://localhost:8045/",
-        "ocw_studio_url": "http://10.1.0.102:8043/"
-        if branch_vars["pipeline_name"] == VERSION_DRAFT
-        else "https://ocw.mit.edu/",
-    }
-    branch_vars.update(other_vars)
+    branch_vars.update(
+        {
+            "resource_base_url": "http://localhost:8044/"
+            if branch_vars["pipeline_name"] == VERSION_DRAFT
+            else "http://localhost:8045/"
+        }
+    )
+    ocw_studio_url = "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
     storage_bucket = "ol-ocw-studio-app"
     artifacts_bucket = "ol-eng-artifacts"
     instance_vars = f"?vars={quote(json.dumps({'site': website.name}))}"
@@ -132,7 +133,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         web_bucket=branch_vars["web_bucket"],
         offline_bucket=branch_vars["offline_bucket"],
         resource_base_url=branch_vars["resource_base_url"],
-        ocw_studio_url=branch_vars["ocw_studio_url"],
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
         hugo_override_args=hugo_override_args,
@@ -232,7 +232,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     expected_api_path = os.path.join(  # noqa: PTH118
         "api", "websites", config.vars["site_name"], "pipeline_status"
     )
-    expected_api_url = urljoin(branch_vars["ocw_studio_url"], expected_api_path)
+    expected_api_url = urljoin(ocw_studio_url, expected_api_path)
     assert ocw_studio_webhook_resource["source"]["url"] == f"{expected_api_url}/"
     assert (
         ocw_studio_webhook_resource["source"]["headers"]["Authorization"]
@@ -342,7 +342,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     build_online_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-        "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"],
+        "OCW_STUDIO_BASE_URL": ocw_studio_url,
         "STATIC_API_BASE_URL": branch_vars["static_api_url"],
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -507,7 +507,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     build_offline_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-        "OCW_STUDIO_BASE_URL": branch_vars["ocw_studio_url"],
+        "OCW_STUDIO_BASE_URL": ocw_studio_url,
         "STATIC_API_BASE_URL": branch_vars["static_api_url"],
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -603,7 +603,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["web_bucket"] == branch_vars["web_bucket"]
     assert dummy_vars["offline_bucket"] == branch_vars["offline_bucket"]
     assert dummy_vars["resource_base_url"] == branch_vars["resource_base_url"]
-    assert dummy_vars["ocw_studio_url"] == branch_vars["ocw_studio_url"]
     assert dummy_vars["site_content_branch"] == branch_vars["branch"]
     assert dummy_vars["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert dummy_vars["ocw_hugo_projects_url"] == website.starter.ocw_hugo_projects_url

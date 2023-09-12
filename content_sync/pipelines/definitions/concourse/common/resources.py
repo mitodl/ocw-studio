@@ -16,6 +16,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
 )
+from content_sync.utils import get_ocw_studio_api_url
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 
@@ -90,18 +91,17 @@ class OcwStudioWebhookResource(Resource):
     A Resource for making API calls ocw-studio to set a Website's status
 
     args:
-        ocw_studio_url(str): The URL to the instance of ocw-studio to POST to
         site_name(str): The name of the site the status is in reference to
         api_token(str): The ocw-studio API token
     """
 
     def __init__(
         self,
-        ocw_studio_url: str,
         site_name: str,
         api_token: str,
         **kwargs,
     ):
+        ocw_studio_url = get_ocw_studio_api_url()
         api_path = os.path.join(  # noqa: PTH118
             "api", "websites", site_name, "pipeline_status"
         )  # noqa: PTH118, RUF100
