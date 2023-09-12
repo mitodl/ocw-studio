@@ -171,6 +171,7 @@ export class Shortcode {
     Shortcode.heuristicValidation(s)
     const isPercentDelmited = s.startsWith("{{%") && s.endsWith("%}}")
     const interior = s.slice(3, -3)
+    const isSelfClosing = interior.slice(-1) === "/"
     const isClosingMatch = interior.match(Shortcode.IS_CLOSING_REGEXP)
     // IS_CLOSING_REGEXP will always match, hence the non-null assertion !
     const isClosing = isClosingMatch?.groups?.isClosing === "/"
@@ -187,7 +188,13 @@ export class Shortcode {
       )
     })
 
-    return new Shortcode(name, params, isPercentDelmited, isClosing)
+    return new Shortcode(
+      name,
+      params,
+      isPercentDelmited,
+      isClosing,
+      isSelfClosing,
+    )
   }
 
   /**
@@ -195,7 +202,7 @@ export class Shortcode {
    * guarantee that `s` is a valid shortcode, but will at least reject known
    * tricky cases that could arise from ocw data.
    *
-   * Most of our shortcode recognition is done via regex, caputring conent
+   * Most of our shortcode recognition is done via regex, capturing content
    * between "{{<" and ">}}" (or the percent-delimited variant). Such regexes
    * generally work very well, except in a few circumstances where we
    * inadvertently have shortcodes inside shortcodes. For example:
@@ -266,7 +273,7 @@ export class Shortcode {
          *
          * The "quotation marks come in pairs" strategy means that things like
          * `'{{% resource_link uuid "fake %}} closer" %}}' will be fully
-         * caputured.
+         * captured.
          */
         "(",
         /[^"]*?/.source, // non-greedily capture anything except quotation
@@ -348,7 +355,7 @@ export const makeHtmlString = (
  *
  * By escaping `<` or `{` in the shortcode delimiter, we prevent the text from
  * triggering shortcode-related code, e.g., Showdown extensions. Markdown allows
- * optionally escaping these characters, so there is no affect on the rendered
+ * optionally escaping these characters, so there is no effect on the rendered
  * HTML.
  */
 export const escapeShortcodes = (text: string) => {
