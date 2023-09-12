@@ -389,7 +389,8 @@ class StaticResourcesTaskStep(TaskStep):
         pipeline_vars(dict): A dictionary of site pipeline variables
     """
 
-    def __init__(self, pipeline_vars: dict):
+    def __init__(self, pipeline_vars: dict, *, filter_videos: bool = False):
+        video_filter = " --exclude *.mp4" if filter_videos else ""
         super().__init__(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
             timeout="40m",
@@ -403,7 +404,7 @@ class StaticResourcesTaskStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}",  # noqa: E501
+                        f"aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}{video_filter}",  # noqa: E501
                     ],
                 ),
             ),
@@ -429,9 +430,17 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
     """  # noqa: E501
 
-    def __init__(self, pipeline_vars: dict, fastly_var: str):
+    def __init__(
+        self,
+        pipeline_vars: dict,
+        fastly_var: str,
+        *,
+        destructive_sync: bool = True,
+        filter_videos: bool = False,
+    ):
+        delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
-            pipeline_vars=pipeline_vars
+            pipeline_vars=pipeline_vars, filter_videos=filter_videos
         )
         build_online_site_step = add_error_handling(
             step=TaskStep(
@@ -498,7 +507,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
