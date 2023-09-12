@@ -133,19 +133,24 @@ export class Shortcode {
 
   /**
    * Convert this shortcode to Hugo markdown.
+   * If shortcode is self-closing, adds a / before
+   * the closing delimiter.
    *
    * Re-escapes double quotes in parameter values
    */
   toHugo() {
     const stringifiedArgs = this.params.map((p) => p.toHugo())
     const name = this.isClosing ? `/${this.name}` : this.name
-    const interior = this.isSelfClosing
-      ? [name, " ", ...stringifiedArgs, " ", "/"].join()
-      : [name, ...stringifiedArgs].join(" ")
-    if (this.isPercentDelimited) {
-      return `{{% ${interior} %}}`
-    }
-    return `{{< ${interior} >}}`
+    const opener = this.isPercentDelimited ? "{{%" : "{{<"
+    const closer = this.isPercentDelimited ? "%}}" : ">}}"
+    const selfCloser = this.isSelfClosing ? "/" : ""
+    const hugoParts = [
+      opener,
+      name,
+      ...stringifiedArgs,
+      `${selfCloser}${closer}`,
+    ]
+    return hugoParts.join(" ")
   }
 
   private static IS_CLOSING_REGEXP = /\s*(?<isClosing>\/)?\s*/
