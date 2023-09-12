@@ -10,6 +10,7 @@ import { Shortcode } from "./util"
 const shortcodeClass = (shortcode: string) => `legacy-shortcode-${shortcode}`
 
 const DATA_ISCLOSING = "data-isclosing"
+const DATA_ISSELFCLOSING = "data-isselfclosing"
 const DATA_ARGUMENTS = "data-arguments"
 
 class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
@@ -39,8 +40,9 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
           replace: (stringMatch: string) => {
             const shortcode = Shortcode.fromString(stringMatch)
             const { isClosing } = shortcode
+            const { isSelfClosing } = shortcode
             const params = shortcode.params.map((p) => p.toHugo()).join(" ")
-            const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${
+            const tag = `<span ${DATA_ISCLOSING}="${isClosing}" ${DATA_ISSELFCLOSING}="${isSelfClosing}" ${
               params ? `${DATA_ARGUMENTS}="${encodeURIComponent(params)}"` : ""
             } class="${shortcodeClass(shortcode.name)}"></span>`
 
@@ -63,13 +65,16 @@ class LegacyShortcodeSyntax extends MarkdownSyntaxPlugin {
         },
         replacement: (_content: string, node: any): string => {
           const isClosingTag = JSON.parse(node.getAttribute(DATA_ISCLOSING))
+          const isSelfClosingTag = JSON.parse(
+            node.getAttribute(DATA_ISSELFCLOSING),
+          )
           const rawShortcodeArgs = node.getAttribute(DATA_ARGUMENTS)
 
           return `{{< ${isClosingTag ? "/" : ""}${shortcode} ${
             rawShortcodeArgs !== undefined && rawShortcodeArgs !== null
               ? `${decodeURIComponent(rawShortcodeArgs)} `
               : ""
-          }>}}`
+          }${isSelfClosingTag ? "/" : ""}>}}`
         },
       },
     }))
@@ -101,7 +106,7 @@ class LegacyShortcodeEditing extends CKPlugin {
         isInline: true,
         allowWhere: "$text",
         isObject: true,
-        allowAttributes: ["isClosing", "arguments"],
+        allowAttributes: ["isClosing", "isSelfClosing", "arguments"],
       })
     })
   }
@@ -122,6 +127,7 @@ class LegacyShortcodeEditing extends CKPlugin {
         model: (viewElement: any, { writer: modelWriter }: any) => {
           const attrs: any = {
             isClosing: viewElement.getAttribute(DATA_ISCLOSING),
+            isSelfClosing: viewElement.getAttribute(DATA_ISSELFCLOSING),
           }
 
           const dataArguments = viewElement.getAttribute(DATA_ARGUMENTS)
@@ -141,6 +147,7 @@ class LegacyShortcodeEditing extends CKPlugin {
         view: (modelElement: any, { writer: viewWriter }: any) => {
           const attrs: any = {
             [DATA_ISCLOSING]: modelElement.getAttribute("isClosing"),
+            [DATA_ISSELFCLOSING]: modelElement.getAttribute("isSelfClosing"),
             class: shortcodeClass(shortcode),
           }
 
@@ -168,6 +175,7 @@ class LegacyShortcodeEditing extends CKPlugin {
 
         view: (modelElement: any, { writer: viewWriter }: any) => {
           const isClosing = modelElement.getAttribute("isClosing")
+          const isSelfClosing = modelElement.getAttribute("isSelfClosing")
 
           const el = viewWriter.createRawElement(
             "span",
@@ -177,6 +185,10 @@ class LegacyShortcodeEditing extends CKPlugin {
             function (el: HTMLElement) {
               el.innerHTML =
                 isClosing.trim() === "true" ? `/${shortcode}` : `${shortcode}`
+              el.innerHTML =
+                isSelfClosing.trim() === "true"
+                  ? `${shortcode} [self-closing tag]`
+                  : `${shortcode}`
             },
           )
 
