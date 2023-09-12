@@ -1,6 +1,5 @@
 import json
 import os
-from itertools import chain
 from urllib.parse import quote, urljoin
 
 import pytest
@@ -34,6 +33,29 @@ from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
 
 pytestmark = pytest.mark.django_db
+total_sites = 6
+ocw_hugo_projects_path = "https://github.com/org/repo"
+
+
+@pytest.fixture(scope="module")
+def websites(django_db_setup, django_db_blocker):
+    with django_db_blocker.unblock():
+        root_starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB,
+            path=ocw_hugo_projects_path,
+            slug="root-website",
+        )
+        starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
+        )
+        root_website = WebsiteFactory.create(starter=root_starter)
+        batch_sites = WebsiteFactory.create_batch(total_sites, starter=starter)
+        batch_sites.append(root_website)
+        yield batch_sites
+        for site in batch_sites:
+            site.delete()
+        starter.delete()
+        root_starter.delete()
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
@@ -44,6 +66,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize("offline", [True, False])
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
+    websites,
     settings,
     mocker,
     version,
@@ -65,7 +88,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
     settings.OCW_MASS_BUILD_BATCH_SIZE = 2
     settings.OCW_MASS_BUILD_MAX_IN_FLIGHT = 2
     settings.ENV_NAME = env_name
-    total_sites = 6
     batch_count = total_sites / settings.OCW_MASS_BUILD_BATCH_SIZE
     mock_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -88,25 +110,10 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
         else settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
     )
     instance_vars = f"?vars={quote(json.dumps({'offline': False, 'prefix': '', 'projects_branch': 'main', 'themes_branch': 'main', 'starter': '', 'version': 'draft'}))}"
-    ocw_hugo_projects_path = "https://github.com/org/repo"
     ocw_hugo_projects_url = f"{ocw_hugo_projects_path}.git"
     ocw_studio_url = settings.SITE_BASE_URL
-    root_starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB,
-        path=ocw_hugo_projects_path,
-        slug=settings.ROOT_WEBSITE_NAME,
-    )
-    starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
-    )
-    sites = list(
-        chain(
-            WebsiteFactory.create_batch(1, starter=root_starter),
-            WebsiteFactory.create_batch(total_sites, starter=starter),
-        )
-    )
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
-        sites=sites,
+        sites=websites,
         version=version,
         ocw_studio_url=ocw_studio_url,
         artifacts_bucket=artifacts_bucket,
@@ -239,7 +246,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
                 across_vars = step["across"][0]
                 assert across_vars["var"] == "site"
                 for across_values in across_vars["values"]:
-                    site = sites.get(short_id=across_values["short_id"])
+                    site = websites.get(short_id=across_values["short_id"])
                     site_config = SitePipelineDefinitionConfig(
                         site=site,
                         pipeline_name="test",

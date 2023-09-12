@@ -40,7 +40,22 @@ from websites.factories import WebsiteFactory, WebsiteStarterFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.parametrize("site_name", ["test-site", "root-website"])
+@pytest.fixture(scope="module", params=["test-site", "root-website"])
+def website(request, django_db_setup, django_db_blocker):
+    hugo_projects_path = "https://github.com/org/repo"
+    with django_db_blocker.unblock():
+        starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+        )
+        site = WebsiteFactory.create(
+            starter=starter,
+            name=request.param,
+        )
+        yield site
+        site.delete()
+        starter.delete()
+
+
 @pytest.mark.parametrize(
     "branch_vars",
     [
@@ -69,9 +84,9 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize("hugo_override_args", ["", "--verbose"])
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0913, PLR0915
+    website,
     settings,
     mocker,
-    site_name,
     branch_vars,
     concourse_is_private_repo,
     ocw_hugo_themes_branch,
@@ -94,14 +109,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     mock_is_dev.return_value = is_dev
     cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
-    hugo_projects_path = "https://github.com/org/repo"
-    starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
-    )
-    site = WebsiteFactory.create(
-        starter=starter,
-        name=site_name,
-    )
     other_vars = {
         "resource_base_url": "http://localhost:8044/"
         if branch_vars["pipeline_name"] == VERSION_DRAFT
@@ -113,9 +120,9 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     branch_vars.update(other_vars)
     storage_bucket = "ol-ocw-studio-app"
     artifacts_bucket = "ol-eng-artifacts"
-    instance_vars = f"?vars={quote(json.dumps({'site': site_name}))}"
+    instance_vars = f"?vars={quote(json.dumps({'site': website.name}))}"
     config = SitePipelineDefinitionConfig(
-        site=site,
+        site=website,
         pipeline_name=branch_vars["pipeline_name"],
         instance_vars=instance_vars,
         site_content_branch=branch_vars["branch"],
@@ -274,7 +281,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             )
             is not None
         )
-        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{site.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"  # noqa: PLW0129
+        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{website.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"  # noqa: PLW0129
         if is_dev:
             assert cli_endpoint_url in static_resources_command
             assert set(
@@ -577,10 +584,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         rendered_definition["var_sources"], "name", "site"
     )
     dummy_vars = site_dummy_var_source["config"]["vars"]
-    assert dummy_vars["short_id"] == site.short_id
-    assert dummy_vars["site_name"] == site.name
-    assert dummy_vars["s3_path"] == site.s3_path
-    assert dummy_vars["url_path"] == site.get_url_path()
+    assert dummy_vars["short_id"] == website.short_id
+    assert dummy_vars["site_name"] == website.name
+    assert dummy_vars["s3_path"] == website.s3_path
+    assert dummy_vars["url_path"] == website.get_url_path()
     assert dummy_vars["base_url"] == config.base_url
     assert (
         dummy_vars["static_resources_subdirectory"]
@@ -599,7 +606,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["ocw_studio_url"] == branch_vars["ocw_studio_url"]
     assert dummy_vars["site_content_branch"] == branch_vars["branch"]
     assert dummy_vars["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
-    assert dummy_vars["ocw_hugo_projects_url"] == site.starter.ocw_hugo_projects_url
+    assert dummy_vars["ocw_hugo_projects_url"] == website.starter.ocw_hugo_projects_url
     assert dummy_vars["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     assert dummy_vars["hugo_args_online"] == config.hugo_args_online
     assert dummy_vars["hugo_args_offline"] == config.hugo_args_offline

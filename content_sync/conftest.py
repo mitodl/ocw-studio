@@ -4,6 +4,15 @@ from types import SimpleNamespace
 
 import pytest
 
+from websites.models import Website, WebsiteStarter
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_keyboard_interrupt(excinfo):  # noqa: ARG001
+    """If tests are aborted locally with SIGINT, clean up models"""
+    Website.objects.all().delete()
+    WebsiteStarter.objects.all().delete()
+
 
 @pytest.fixture(params=["dev", "not_dev"])
 def mock_environments(settings, request):  # noqa: PT004
