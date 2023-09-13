@@ -28,6 +28,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     SitePipelineDefinitionConfig,
 )
+from content_sync.utils import get_ocw_studio_api_url
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -111,11 +112,10 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
     )
     instance_vars = f"?vars={quote(json.dumps({'offline': False, 'prefix': '', 'projects_branch': 'main', 'themes_branch': 'main', 'starter': '', 'version': 'draft'}))}"
     ocw_hugo_projects_url = f"{ocw_hugo_projects_path}.git"
-    ocw_studio_url = settings.SITE_BASE_URL
+    ocw_studio_url = get_ocw_studio_api_url()
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
         sites=websites,
         version=version,
-        ocw_studio_url=ocw_studio_url,
         artifacts_bucket=artifacts_bucket,
         site_content_branch=site_content_branch,
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
@@ -258,7 +258,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
                         web_bucket=web_bucket,
                         offline_bucket=offline_bucket,
                         resource_base_url="",
-                        ocw_studio_url=ocw_studio_url,
                         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                         hugo_override_args="",

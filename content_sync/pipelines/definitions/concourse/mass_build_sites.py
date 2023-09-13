@@ -17,7 +17,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
@@ -62,7 +62,6 @@ class MassBuildSitesPipelineDefinitionConfig:
     Args:
         sites(WebsiteQuerySet): The sites to build the pipeline for
         version(str): The version of the sites to build in the pipeline (draft / live)
-        ocw_studio_url(str): The URL to the instance of ocw-studio the pipeline should call home to
         artifacts_bucket(str): The versioned bucket where the webpack manifest is stored (ol-eng-artifacts)
         site_content_branch(str): The branch to use in the site content repo (preview / release)
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
@@ -78,7 +77,6 @@ class MassBuildSitesPipelineDefinitionConfig:
         self,
         sites: WebsiteQuerySet,
         version: str,
-        ocw_studio_url: str,
         artifacts_bucket: str,
         site_content_branch: str,
         ocw_hugo_themes_branch: str,
@@ -93,7 +91,6 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.sites = sites
         self.version = version
         self.prefix = prefix
-        self.ocw_studio_url = ocw_studio_url
         self.artifacts_bucket = artifacts_bucket
         self.site_content_branch = site_content_branch
         self.ocw_hugo_themes_branch = ocw_hugo_themes_branch
@@ -102,9 +99,6 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.offline = offline
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
-        self.cli_endpoint_url = (
-            f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
-        )
         self.web_bucket = (
             vars["preview_bucket_name"]
             if version == VERSION_DRAFT
@@ -155,7 +149,6 @@ class MassBuildSitesResources(list[Resource]):
         self.append(ocw_hugo_projects_resource)
         self.append(
             OcwStudioWebhookResource(
-                ocw_studio_url=config.ocw_studio_url,
                 site_name=MASS_BULID_SITES_PIPELINE_IDENTIFIER,
                 api_token=settings.API_BEARER_TOKEN or "",
             )
@@ -218,7 +211,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         resources = MassBuildSitesResources(config=config)
         base_tasks = MassBuildSitesPipelineBaseTasks()
         filter_webpack_artifacts_step = FilterWebpackArtifactsStep(
-            cli_endpoint_url=config.cli_endpoint_url, web_bucket=config.web_bucket
+            web_bucket=config.web_bucket
         )
         jobs = []
         batch_gate_resources = []
@@ -242,7 +235,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if config.offline:
                 tasks.append(filter_webpack_artifacts_step)
             across_var_values = []
-            site_pipeline_definition_vars = get_site_pipeline_definition_vars(namespace)
+            site_pipeline_vars = get_site_pipeline_definition_vars(namespace)
             if config.version == VERSION_DRAFT:
                 static_api_url = pipeline_vars["static_api_base_url_draft"]
                 web_bucket = pipeline_vars["preview_bucket_name"]
@@ -265,7 +258,6 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     web_bucket=web_bucket,
                     offline_bucket=offline_bucket,
                     resource_base_url=resource_base_url,
-                    ocw_studio_url=pipeline_vars["ocw_studio_url"],
                     ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,
@@ -274,14 +266,22 @@ class MassBuildSitesPipelineDefinition(Pipeline):
 
             site_build_tasks = [
                 SiteContentGitTaskStep(
-                    branch=site_pipeline_definition_vars["site_content_branch"],
-                    short_id=site_pipeline_definition_vars["short_id"],
+                    branch=site_pipeline_vars["site_content_branch"],
+                    short_id=site_pipeline_vars["short_id"],
                 )
             ]
             if not config.offline:
-                site_build_tasks.extend(SitePipelineOnlineTasks(config=site_config))
+                site_build_tasks.extend(
+                    SitePipelineOnlineTasks(
+                        pipeline_vars=site_pipeline_vars, fastly_var=config.version
+                    )
+                )
             else:
-                site_build_tasks.extend(SitePipelineOfflineTasks(config=site_config))
+                site_build_tasks.extend(
+                    SitePipelineOfflineTasks(
+                        pipeline_vars=site_pipeline_vars, fastly_var=config.version
+                    )
+                )
             if batch_number > 1:
                 tasks.append(
                     GetStep(

@@ -45,6 +45,7 @@ from content_sync.utils import (
     check_mandatory_settings,
     get_common_pipeline_vars,
     get_hugo_arg_string,
+    get_ocw_studio_api_url,
     get_theme_branch,
     strip_dev_lines,
     strip_non_dev_lines,
@@ -479,7 +480,6 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 web_bucket=web_bucket,
                 offline_bucket=offline_bucket,
                 resource_base_url=resource_base_url,
-                ocw_studio_url=pipeline_vars["ocw_studio_url"],
                 ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                 ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                 hugo_override_args=self.HUGO_ARGS,
@@ -654,7 +654,7 @@ class MassBuildSitesPipeline(
             .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
             .replace("((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
             .replace("((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
-            .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
+            .replace("((ocw-studio-url))", get_ocw_studio_api_url() or "")
             .replace("((static-api-base-url))", template_vars["static_api_url"] or "")
             .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or "")
             .replace("((ocw-site-repo-branch))", template_vars["branch"] or "")
@@ -722,7 +722,7 @@ class UnpublishedSiteRemovalPipeline(
             )
             .replace("((web-bucket))", web_bucket)
             .replace("((offline-bucket))", offline_bucket)
-            .replace("((ocw-studio-url))", template_vars["ocw_studio_url"] or "")
+            .replace("((ocw-studio-url))", get_ocw_studio_api_url() or "")
             .replace("((version))", VERSION_LIVE)
             .replace("((api-token))", settings.API_BEARER_TOKEN or "")
             .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)

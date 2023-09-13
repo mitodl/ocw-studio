@@ -8,6 +8,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 from content_sync.constants import (
     DEV_END,
+    DEV_ENDPOINT_URL,
     DEV_START,
     END_TAG_PREFIX,
     NON_DEV_END,
@@ -114,17 +115,23 @@ def get_common_pipeline_vars():
         "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
-        "ocw_studio_url": settings.SITE_BASE_URL,
     }
     if is_dev():
         pipeline_vars.update(
             {
                 "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,
                 "resource_base_url_live": settings.RESOURCE_BASE_URL_LIVE,
-                "ocw_studio_url": "http://10.1.0.102:8043",
             }
         )
     return pipeline_vars
+
+
+def get_cli_endpoint_url():
+    return f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+
+
+def get_ocw_studio_api_url():
+    return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
 
 
 def get_theme_branch():

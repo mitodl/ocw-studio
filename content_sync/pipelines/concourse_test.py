@@ -31,6 +31,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.utils import (
     get_common_pipeline_vars,
     get_hugo_arg_string,
+    get_ocw_studio_api_url,
     get_theme_branch,
 )
 from main.constants import PRODUCTION_NAMES
@@ -344,7 +345,6 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
-    expected_ocw_studio_url = expected_template_vars["ocw_studio_url"]
     if version == VERSION_DRAFT:
         _, kwargs = mock_put_headers.call_args_list[0]
         expected_site_content_branch = settings.GIT_BRANCH_PREVIEW
@@ -419,7 +419,6 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert settings.OCW_IMPORT_STARTER_SLUG in config_str
     assert settings.OCW_COURSE_STARTER_SLUG in config_str
-    assert expected_ocw_studio_url in config_str
     assert f"aws s3 {expected_endpoint_prefix}sync" in config_str
     assert f'\\"is_root_website\\": {expected_is_root_website}' in config_str
     assert f'\\"short_id\\": \\"{website.short_id}\\"' in config_str
@@ -447,7 +446,6 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     assert f'\\"web_bucket\\": \\"{expected_web_bucket}\\"' in config_str
     assert f'\\"offline_bucket\\": \\"{expected_offline_bucket}\\"' in config_str
     assert f'\\"resource_base_url\\": \\"{expected_resource_base_url}\\"' in config_str
-    assert f'\\"ocw_studio_url\\": \\"{expected_ocw_studio_url}\\"' in config_str
     assert (
         f'\\"site_content_branch\\": \\"{expected_site_content_branch}\\"' in config_str
     )
@@ -808,7 +806,7 @@ def test_unpublished_site_removal_pipeline(  # noqa: PLR0913
     )
     _, kwargs = mock_put_headers.call_args_list[0]
     config_str = json.dumps(kwargs)
-    assert template_vars["ocw_studio_url"] in config_str
+    assert get_ocw_studio_api_url() in config_str
     assert template_vars["publish_bucket_name"] in config_str
     assert VERSION_LIVE in config_str
 
