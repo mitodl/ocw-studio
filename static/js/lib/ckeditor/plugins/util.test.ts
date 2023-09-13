@@ -187,6 +187,41 @@ describe("Shortcode", () => {
     expect(result).toStrictEqual(expected)
   })
 
+  it.each([
+    {
+      text: "{{< some_shortcode />}}", //valid self-closing
+      expected: new Shortcode("some_shortcode", [], false, false, true),
+    },
+    {
+      text: "{{% some_shortcode /%}}", //valid self-closing
+      expected: new Shortcode("some_shortcode", [], true, false, true),
+    },
+    {
+      text: "{{< some_shortcode / >}}", //not valid self-closing
+      expected: new Shortcode(
+        "some_shortcode",
+        [new ShortcodeParam("/")],
+        false,
+        false,
+        false,
+      ),
+    },
+  ])("parses self-closing shortcodes", ({ text, expected }) => {
+    const result = Shortcode.fromString(text)
+    expect(result).toStrictEqual(expected)
+  })
+
+  it.each([
+    "{{< /some_shortcode />}}",
+    "{{< / some_shortcode />}}",
+    "{{% /some_shortcode /%}}",
+    "{{% / some_shortcode /%}}",
+  ])("throws error if shortcode is both closing and self-closing", (text) => {
+    expect(() => Shortcode.fromString(text)).toThrow(
+      "Shortcode can't be both closing and self-closing",
+    )
+  })
+
   it("does not allow mixing named and positional params", () => {
     const text = '{{< resource uuid123 href_uuid="uuid456" >}}'
     expect(() => Shortcode.fromString(text)).toThrow(
