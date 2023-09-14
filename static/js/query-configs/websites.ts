@@ -339,11 +339,7 @@ export const contentListingKey = (
 
 export const collaboratorListingKey = (
   listingParams: CollaboratorListingParams,
-): string =>
-  JSON.stringify([
-    listingParams.name,
-    listingParams.offset,
-  ])
+): string => JSON.stringify([listingParams.name, listingParams.offset])
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
 
@@ -415,11 +411,7 @@ export const websiteCollaboratorListingRequest = (
   const { name, offset } = listingParams
   const url = siteApiCollaboratorsUrl
     .param({ name })
-    .query(
-      Object.assign(
-        { offset }
-      ),
-    )
+    .query(Object.assign({ offset }))
     .toString()
   return {
     url,

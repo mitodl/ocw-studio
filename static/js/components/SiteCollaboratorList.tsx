@@ -98,8 +98,8 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     if (!response) {
       return
     } else if (fetchWebsiteCollaboratorListing) {
-        fetchWebsiteCollaboratorListing()
-      }
+      fetchWebsiteCollaboratorListing()
+    }
   }
 
   const pages = usePagination(listing.count ?? 0)
