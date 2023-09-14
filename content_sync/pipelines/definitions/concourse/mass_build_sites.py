@@ -22,7 +22,6 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
-    MASS_BULID_SITES_PIPELINE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
@@ -131,6 +130,7 @@ class MassBuildSitesResources(list[Resource]):
     """
 
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig):
+        site_pipeline_vars = get_site_pipeline_definition_vars("site")
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             bucket=config.artifacts_bucket,
@@ -149,7 +149,7 @@ class MassBuildSitesResources(list[Resource]):
         self.append(ocw_hugo_projects_resource)
         self.append(
             OcwStudioWebhookResource(
-                site_name=MASS_BULID_SITES_PIPELINE_IDENTIFIER,
+                site_name=site_pipeline_vars["site_name"],
                 api_token=settings.API_BEARER_TOKEN or "",
             )
         )
