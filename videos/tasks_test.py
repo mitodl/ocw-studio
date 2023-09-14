@@ -232,21 +232,21 @@ def test_start_transcript_job(
     if wrong_caption_type:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_captions",
+            filename=f"{video_content.filename}_captions_srt",
             file=f"{base_path}_captions.srt",
         )
 
     if caption_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_captions",
+            filename=f"{video_content.filename}_captions_vtt",
             file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_transcript",
+            filename=f"{video_content.filename}_transcript_pdf",
             file=f"{base_path}_transcript.pdf",
         )
 
@@ -693,14 +693,14 @@ def test_update_transcripts_for_video_no_3play(
     if caption_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{resource.filename}_captions",
+            filename=f"{resource.filename}_captions_vtt",
             file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{resource.filename}_transcript",
+            filename=f"{resource.filename}_transcript_pdf",
             file=f"{base_path}_transcript.pdf",
         )
 
