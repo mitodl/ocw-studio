@@ -115,7 +115,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     instance_vars = f"?vars={quote(json.dumps({'offline': False, 'prefix': '', 'projects_branch': 'main', 'themes_branch': 'main', 'starter': '', 'version': 'draft'}))}"
     ocw_hugo_projects_url = f"{ocw_hugo_projects_path}.git"
     ocw_studio_url = get_ocw_studio_api_url()
-    site_pipeline_vars = get_site_pipeline_definition_vars("site")
+    site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
         sites=websites,
         version=version,
@@ -264,7 +264,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                         hugo_override_args="",
-                        namespace="site",
                     )
                     assert across_values["site_name"] == site.name
                     assert across_values["s3_path"] == site.s3_path

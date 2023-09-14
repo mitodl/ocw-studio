@@ -130,7 +130,7 @@ class MassBuildSitesResources(list[Resource]):
     """
 
     def __init__(self, config: MassBuildSitesPipelineDefinitionConfig):
-        site_pipeline_vars = get_site_pipeline_definition_vars("site")
+        site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             bucket=config.artifacts_bucket,
@@ -207,6 +207,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         base = super()
         pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
+        site_pipeline_vars = get_site_pipeline_definition_vars(namespace)
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
         base_tasks = MassBuildSitesPipelineBaseTasks()
@@ -235,7 +236,6 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if config.offline:
                 tasks.append(filter_webpack_artifacts_step)
             across_var_values = []
-            site_pipeline_vars = get_site_pipeline_definition_vars(namespace)
             if config.version == VERSION_DRAFT:
                 static_api_url = pipeline_vars["static_api_base_url_draft"]
                 web_bucket = pipeline_vars["preview_bucket_name"]
