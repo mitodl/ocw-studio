@@ -188,7 +188,7 @@ class LegacyShortcodeEditing extends CKPlugin {
               el.innerHTML =
                 isSelfClosing.trim() === "true"
                   ? `${shortcode} [self-closing tag]`
-                  : `${shortcode}`
+                  : el.innerHTML
             },
           )
 
