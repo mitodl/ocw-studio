@@ -5,7 +5,7 @@ import LegacyShortcodes from "./LegacyShortcodes"
 import { LEGACY_SHORTCODES } from "./constants"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
-const quizTestMD = `{{< quiz_multiple_choice questionId="Q1_div" >}}{{< quiz_choices >}}{{< quiz_choice isCorrect="false" >}}sound, satisfiable{{< /quiz_choice >}}{{< quiz_choice isCorrect="false" >}}valid, satisfiable{{< /quiz_choice >}}{{< quiz_choice isCorrect="true" >}}sound, valid{{< /quiz_choice >}}{{< quiz_choice isCorrect="false" >}}valid, true{{< /quiz_choice >}}{{< /quiz_choices >}}{{< quiz_solution >}}{{< /quiz_multiple_choice >}}`
+const quizTestMD = `{{< quiz_multiple_choice questionId="Q1_div" >}}{{< quiz_choices >}}{{< quiz_choice isCorrect="false" >}}sound, satisfiable{{< /quiz_choice >}}{{< quiz_choice isCorrect="false" >}}valid, satisfiable{{< /quiz_choice >}}{{< quiz_choice isCorrect="true" >}}sound, valid{{< /quiz_choice >}}{{< quiz_choice isCorrect="false" >}}valid, true{{< /quiz_choice >}}{{< /quiz_choices >}}{{< quiz_solution />}}{{< /quiz_multiple_choice >}}`
 
 const getEditor = createTestEditor([Paragraph, LegacyShortcodes, Markdown])
 
