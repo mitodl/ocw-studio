@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.102.2
+---------------
+
+- Fix legacy closing shortcodes in CKEditor (#1968)
+- Enable Self-Closing Shortcodes (#1961)
+- consolidate arguments in new pipeline definitions (#1960)
+- ignore the s3 directory when running pytest and black (#1959)
+
 Version 0.102.1 (Released September 12, 2023)
 ---------------
 
