@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.102.3
+---------------
+
+- Strip extensions before matching videos and captions (#1970)
+
 Version 0.102.2 (Released September 14, 2023)
 ---------------
 
