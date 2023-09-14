@@ -5,7 +5,7 @@ from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
 from main import settings
-from main.utils import get_file_extension
+from main.utils import get_base_filename
 from videos.constants import (
     DESTINATION_YOUTUBE,
     VideoFileStatus,
@@ -53,20 +53,14 @@ class Video(TimestampedModel):
             .first()
         )
         if video_resource:
-            video_filename = video_resource.filename
+            video_filename = get_base_filename(video_resource.filename)
             captions = WebsiteContent.objects.filter(
                 models.Q(website=self.website)
-                & models.Q(filename=f"{video_filename}_captions")
-            )
-            captions = [
-                caption
-                for caption in captions
-                if get_file_extension(str(caption.file)) in {"vtt", "webvtt"}
-            ]
-            captions = captions[0] if captions else None
+                & models.Q(filename=f"{video_filename}_captions_vtt")
+            ).first()
             transcript = WebsiteContent.objects.filter(
                 models.Q(website=self.website)
-                & models.Q(filename=f"{video_filename}_transcript")
+                & models.Q(filename=f"{video_filename}_transcript_pdf")
             ).first()
             return captions, transcript
         return None, None
@@ -84,6 +78,7 @@ class Video(TimestampedModel):
     )
 
     def __str__(self):
+        """Represent Video as string"""
         return f"'{self.source_key}' ({self.status})"
 
 
@@ -104,6 +99,7 @@ class VideoFile(TimestampedModel):
     )
 
     def __str__(self):
+        """Represent VideoFile as string"""
         return f"'{self.s3_key}' ({self.destination} {self.destination_id})"
 
 
@@ -120,4 +116,5 @@ class VideoJob(TimestampedModel):
     job_output = models.JSONField(null=True, blank=True)
 
     def __str__(self):
+        """Represent VideoJob as string"""
         return f"'{self.job_id}' ({self.status})"
