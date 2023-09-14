@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.2
+Version 0.102.2 (Released September 14, 2023)
 ---------------
 
 - Fix legacy closing shortcodes in CKEditor (#1968)
