@@ -46,8 +46,3 @@ def get_content_dirpath(slug, collection_type):
             continue
         return collection["folder"]
     return None
-
-
-def get_base_filename(filename):
-    """Return base filename without appended extension"""
-    return filename.rsplit("_", 1)[0]

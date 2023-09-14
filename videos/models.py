@@ -5,13 +5,13 @@ from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel
 
 from main import settings
+from main.utils import get_base_filename
 from videos.constants import (
     DESTINATION_YOUTUBE,
     VideoFileStatus,
     VideoJobStatus,
     VideoStatus,
 )
-from videos.utils import get_base_filename
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_dict_query_field
