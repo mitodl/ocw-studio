@@ -97,11 +97,9 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     const response = await deleteCollaborator()
     if (!response) {
       return
-    } else {
-      if (fetchWebsiteCollaboratorListing) {
+    } else if (fetchWebsiteCollaboratorListing) {
         fetchWebsiteCollaboratorListing()
       }
-    }
   }
 
   const pages = usePagination(listing.count ?? 0)

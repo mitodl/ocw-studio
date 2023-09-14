@@ -303,7 +303,6 @@ export interface ContentListingParams {
 
 export interface CollaboratorListingParams {
   name: string
-  pageContent?: boolean
   offset: number
 }
 
