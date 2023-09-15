@@ -49,7 +49,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   const { listingParams } = useURLParamFilter(getListingParams)
 
   const [, fetchWebsiteCollaboratorListing] = useRequest(
-    websiteCollaboratorListingRequest(listingParams, false, false),
+    websiteCollaboratorListingRequest(listingParams),
   )
 
   const listing: WebsiteCollaboratorListingResponse = useSelector(
