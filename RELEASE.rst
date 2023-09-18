@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.102.4
+---------------
+
+- fix static api base url dev override (#1975)
+
 Version 0.102.3 (Released September 18, 2023)
 ---------------
 
