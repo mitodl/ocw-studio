@@ -369,8 +369,6 @@ export const websiteCollaboratorListingRequest = (
   return {
     url,
     transform: (body: WebsiteCollaboratorListingResponse) => {
-      console.log(body.results)
-      console.log(body.results.map((collaborator) => collaborator.user_id))
       const details = {}
       if (body && Array.isArray(body.results)) {
         for (const collaborator of body.results) {

@@ -103,7 +103,6 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   }
 
   const pages = usePagination(listing.count ?? 0)
-  console.log("listing", listing)
 
   return (
     <>
