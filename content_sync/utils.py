@@ -117,6 +117,12 @@ def get_common_pipeline_vars():
         "resource_base_url_live": "",
     }
     if is_dev():
+        pipeline_vars["static_api_base_url_draft"] = (
+            settings.STATIC_API_BASE_URL_DRAFT or settings.OCW_STUDIO_DRAFT_URL
+        )
+        pipeline_vars["static_api_base_url_live"] = (
+            settings.STATIC_API_BASE_URL_LIVE or settings.OCW_STUDIO_LIVE_URL
+        )
         pipeline_vars.update(
             {
                 "resource_base_url_draft": settings.RESOURCE_BASE_URL_DRAFT,

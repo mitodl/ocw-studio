@@ -181,8 +181,14 @@ def test_move_s3_object(settings):
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_get_common_pipeline_vars(settings, mocker, is_dev):
     """get_common_pipeline_vars should return the correct values based on environment"""
-    mock_is_dev = mocker.patch("content_sync.utils.is_dev")
-    mock_is_dev.return_value = is_dev
+    if is_dev:
+        settings.ENVIRONMENT = "dev"
+        settings.OCW_STUDIO_DRAFT_URL = "http://localhost:8044/"
+        settings.OCW_STUDIO_LIVE_URL = "http://localhost:8045/"
+        settings.STATIC_API_BASE_URL_DRAFT = "http://draft.ocw.mit.edu"
+        settings.STATIC_API_BASE_URL_LIVE = "http://ocw.mit.edu"
+    else:
+        settings.ENVIRONMENT = "not_dev"
     pipeline_vars = get_common_pipeline_vars()
     assert pipeline_vars["preview_bucket_name"] == settings.AWS_PREVIEW_BUCKET_NAME
     assert pipeline_vars["publish_bucket_name"] == settings.AWS_PUBLISH_BUCKET_NAME
@@ -196,9 +202,15 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
     )
     assert pipeline_vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
     assert pipeline_vars["artifacts_bucket_name"] == "ol-eng-artifacts"
-    assert pipeline_vars["static_api_base_url_draft"] == settings.OCW_STUDIO_DRAFT_URL
-    assert pipeline_vars["static_api_base_url_live"] == settings.OCW_STUDIO_LIVE_URL
     if is_dev:
+        assert (
+            pipeline_vars["static_api_base_url_draft"]
+            == settings.STATIC_API_BASE_URL_DRAFT
+        )
+        assert (
+            pipeline_vars["static_api_base_url_live"]
+            == settings.STATIC_API_BASE_URL_LIVE
+        )
         assert (
             pipeline_vars["resource_base_url_draft"] == settings.RESOURCE_BASE_URL_DRAFT
         )
@@ -206,6 +218,10 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
             pipeline_vars["resource_base_url_live"] == settings.RESOURCE_BASE_URL_LIVE
         )
     else:
+        assert (
+            pipeline_vars["static_api_base_url_draft"] == settings.OCW_STUDIO_DRAFT_URL
+        )
+        assert pipeline_vars["static_api_base_url_live"] == settings.OCW_STUDIO_LIVE_URL
         assert pipeline_vars["resource_base_url_draft"] == ""
         assert pipeline_vars["resource_base_url_live"] == ""
 
