@@ -22,7 +22,6 @@ import { Website, WebsiteCollaborator } from "../types/websites"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 import {
   WebsiteCollaboratorListingResponse,
-  collaboratorDetailKey,
   collaboratorListingKey,
 } from "../query-configs/websites"
 
