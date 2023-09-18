@@ -142,6 +142,10 @@ def pipeline_settings(settings, request):  # noqa: PT004
         settings.AWS_ARTIFACTS_BUCKET_NAME = "artifact_buckets_dev"
         settings.OCW_HUGO_THEMES_BRANCH = "themes_dev"
         settings.OCW_HUGO_PROJECTS_BRANCH = "projects_dev"
+        settings.OCW_STUDIO_DRAFT_URL = "http://localhost:8044"
+        settings.OCW_STUDIO_LIVE_URL = "http://localhost:8045"
+        settings.STATIC_API_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
+        settings.STATIC_API_BASE_URL_LIVE = "https://live.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_DRAFT = "https://draft.ocw.mit.edu"
         settings.RESOURCE_BASE_URL_LIVE = "https://live.ocw.mit.edu"
 
@@ -351,22 +355,18 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
         expected_web_bucket = expected_template_vars["preview_bucket_name"]
         expected_offline_bucket = expected_template_vars["offline_preview_bucket_name"]
         expected_resource_base_url = expected_template_vars["resource_base_url_draft"]
-        expected_static_api_url = (
-            settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_DRAFT_URL
-            if is_dev()
-            else settings.OCW_STUDIO_DRAFT_URL
-        )
+        expected_static_api_base_url = expected_template_vars[
+            "static_api_base_url_draft"
+        ]
     else:
         _, kwargs = mock_put_headers.call_args_list[1]
         expected_site_content_branch = settings.GIT_BRANCH_RELEASE
         expected_web_bucket = expected_template_vars["publish_bucket_name"]
         expected_offline_bucket = expected_template_vars["offline_publish_bucket_name"]
         expected_resource_base_url = expected_template_vars["resource_base_url_live"]
-        expected_static_api_url = (
-            settings.STATIC_API_BASE_URL or settings.OCW_STUDIO_LIVE_URL
-            if is_dev()
-            else settings.OCW_STUDIO_LIVE_URL
-        )
+        expected_static_api_base_url = expected_template_vars[
+            "static_api_base_url_live"
+        ]
 
     expected_is_root_website = 1 if home_page else 0
     expected_base_url = "" if home_page else website.get_url_path()
@@ -434,7 +434,7 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     assert f'\\"noindex\\": \\"{expected_noindex}\\"' in config_str
     assert f'\\"pipeline_name\\": \\"{version}\\"' in config_str
     assert f'\\"instance_vars\\": \\"{expected_instance_vars}\\"' in config_str
-    assert f'\\"static_api_url\\": \\"{expected_static_api_url}\\"' in config_str
+    assert f'\\"static_api_url\\": \\"{expected_static_api_base_url}\\"' in config_str
     assert (
         f'\\"storage_bucket\\": \\"{expected_template_vars["storage_bucket_name"]}\\"'
         in config_str
@@ -705,11 +705,11 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     if version == VERSION_DRAFT:
         bucket = expected_template_vars["preview_bucket_name"]
         offline_bucket = expected_template_vars["offline_preview_bucket_name"]
-        static_api_url = settings.OCW_STUDIO_DRAFT_URL
+        static_api_base_url = expected_template_vars["static_api_base_url_draft"]
     elif version == VERSION_LIVE:
         bucket = expected_template_vars["publish_bucket_name"]
         offline_bucket = expected_template_vars["offline_publish_bucket_name"]
-        static_api_url = settings.OCW_STUDIO_LIVE_URL
+        static_api_base_url = expected_template_vars["static_api_base_url_live"]
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert bucket in config_str
@@ -721,7 +721,7 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     assert f'\\"branch\\": \\"{themes_branch}\\"' in config_str
     assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
     assert f"{hugo_projects_path}.git" in config_str
-    assert static_api_url in config_str
+    assert static_api_base_url in config_str
     if (
         version == VERSION_DRAFT in config_str
         or settings.ENV_NAME not in PRODUCTION_NAMES

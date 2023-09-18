@@ -1102,9 +1102,16 @@ SEARCH_API_URL = get_string(
     default=None,
     description="The URL to open discussions search to inject into the theme assets build",  # noqa: E501
 )
-STATIC_API_BASE_URL = get_string(
-    name="STATIC_API_BASE_URL",
-    description="The static api base url to use when building and deploying sites locally to minio",  # noqa: E501
+STATIC_API_BASE_URL_DRAFT = get_string(
+    name="STATIC_API_BASE_URL_DRAFT",
+    description="The static api base url to use when building and deploying draft sites locally to minio",  # noqa: E501
+    default="",
+    required=False,
+    dev_only=True,
+)
+STATIC_API_BASE_URL_LIVE = get_string(
+    name="STATIC_API_BASE_URL_LIVE",
+    description="The static api base url to use when building and deploying live sites locally to minio",  # noqa: E501
     default="",
     required=False,
     dev_only=True,
