@@ -436,45 +436,38 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             # Invalid github url, so skip
             return
 
+        pipeline_vars = get_common_pipeline_vars()
         for branch_vars in [
             {
                 "branch": settings.GIT_BRANCH_PREVIEW,
                 "pipeline_name": VERSION_DRAFT,
-                "static_api_url": settings.STATIC_API_BASE_URL
-                or settings.OCW_STUDIO_DRAFT_URL
-                if is_dev()
-                else settings.OCW_STUDIO_DRAFT_URL,
             },
             {
                 "branch": settings.GIT_BRANCH_RELEASE,
                 "pipeline_name": VERSION_LIVE,
-                "static_api_url": settings.STATIC_API_BASE_URL
-                or settings.OCW_STUDIO_LIVE_URL
-                if is_dev()
-                else settings.OCW_STUDIO_LIVE_URL,
             },
         ]:
-            pipeline_vars = get_common_pipeline_vars()
             pipeline_vars.update(branch_vars)
             branch = pipeline_vars["branch"]
             pipeline_name = pipeline_vars["pipeline_name"]
-            static_api_url = pipeline_vars["static_api_url"]
             storage_bucket = pipeline_vars["storage_bucket_name"]
             artifacts_bucket = pipeline_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
                 web_bucket = pipeline_vars["preview_bucket_name"]
                 offline_bucket = pipeline_vars["offline_preview_bucket_name"]
+                static_api_base_url = pipeline_vars["static_api_base_url_draft"]
                 resource_base_url = pipeline_vars["resource_base_url_draft"]
             elif branch == settings.GIT_BRANCH_RELEASE:
                 web_bucket = pipeline_vars["publish_bucket_name"]
                 offline_bucket = pipeline_vars["offline_publish_bucket_name"]
+                static_api_base_url = pipeline_vars["static_api_base_url_live"]
                 resource_base_url = pipeline_vars["resource_base_url_live"]
             pipeline_config = SitePipelineDefinitionConfig(
                 site=self.WEBSITE,
                 pipeline_name=pipeline_name,
                 instance_vars=self.instance_vars,
                 site_content_branch=branch,
-                static_api_url=static_api_url,
+                static_api_url=static_api_base_url,
                 storage_bucket=storage_bucket,
                 artifacts_bucket=artifacts_bucket,
                 web_bucket=web_bucket,
