@@ -183,8 +183,8 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
     """get_common_pipeline_vars should return the correct values based on environment"""
     if is_dev:
         settings.ENVIRONMENT = "dev"
-        settings.OCW_STUDIO_DRAFT_URL = "http://localhost:8044/"
-        settings.OCW_STUDIO_LIVE_URL = "http://localhost:8045/"
+        settings.OCW_STUDIO_DRAFT_URL = "http://localhost:8044"
+        settings.OCW_STUDIO_LIVE_URL = "http://localhost:8045"
         settings.STATIC_API_BASE_URL_DRAFT = "http://draft.ocw.mit.edu"
         settings.STATIC_API_BASE_URL_LIVE = "http://ocw.mit.edu"
     else:
