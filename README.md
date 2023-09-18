@@ -244,13 +244,14 @@ can run pipelines and have them push their output to your Minio S3 buckets. The 
 control the branch of each of these repos that are pulled down in pipelines that build sites. If you are debugging an issue with a specific branch,
 This is where you want to change them before you run a command that pushes up a pipeline like `docker-compose exec web ./manage.py backpopulate_pipelines --filter etc...`
 
-Note that you may also want to set `OCW_STUDIO_LIVE_URL=https://localhost:8045/`and `OCW_STUDIO_DRAFT_URL=http://localhost:8045/` in your `.env` file so that the URLs
-in the publish drawer will point to your Minio published content. If you do this, you will likely need to also set `STATIC_API_BASE_URL` to https://ocw.mit.edu like above.
-Usually the best way to get started getting content into your local instance of `ocw-studio` is to dump and restore the production database to your local instance.
-One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked to it via various course lists. When building `ocw-www`,
-Hugo will attempt to fetch static JSON data related to these linked courses and will encounter errors if it cannot fetch them. To avoid this, make sure `STATIC_API_BASE_URL`
-is set as detailed above. If `STATIC_API_BASE_URL` is not set, it will fall back to `OCW_STUDIO_DRAFT_URL` or `OCW_STUDIO_LIVE_URL` depending on the context of the pipeline.
-So, if you have this set to a URL where the courses referenced in your `ocw-www` site's course lists haven't been published, you will have issues.
+Note that you may also want to set `OCW_STUDIO_DRAFT_URL=https://localhost:8044`and `OCW_STUDIO_LIVE_URL=http://localhost:8045` in your `.env` file
+so that the URLs in the publish drawer will point to your Minio published content. If you do this, you will likely need to also set `STATIC_API_BASE_URL_DRAFT=https://draft.ocw.mit.edu`
+and `STATIC_API_BASE_URL_LIVE=https://ocw.mit.edu`. Usually the best way to get started getting content into your local instance of `ocw-studio` is to dump
+and restore the production database to your local instance. One side effect of doing this is that the `ocw-www` site in production has a bunch of different sites linked
+to it via various course lists. When building `ocw-www`, Hugo will attempt to fetch static JSON data related to these linked courses and will encounter errors if it cannot
+fetch them. To avoid this, make sure `STATIC_API_BASE_URL_DRAFT` and `STATIC_API_BASE_URL_LIVE` are set as detailed above. If `STATIC_API_BASE_URL` is not set,
+it will fall back to `OCW_STUDIO_DRAFT_URL` or `OCW_STUDIO_LIVE_URL` depending on the context of the pipeline. So, if you have this set to a URL where the courses
+referenced in your `ocw-www` site's course lists haven't been published, you will have issues.
 
 # Enabling Concourse-CI integration
 
