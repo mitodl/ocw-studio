@@ -103,6 +103,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
   }
 
   const pages = usePagination(listing.count ?? 0)
+  console.log("listing", listing)
 
   return (
     <>
@@ -120,23 +121,28 @@ export default function SiteCollaboratorList(): JSX.Element | null {
           Add collaborator
         </button>
       </div>
-      <StudioList>
-        {listing.results.map((collaborator: WebsiteCollaborator, i: number) => (
-          <StudioListItem
-            key={i}
-            title={collaborator.name || collaborator.email}
-            subtitle={ROLE_LABELS[collaborator.role]}
-            menuOptions={
-              EDITABLE_ROLES.includes(collaborator.role)
-                ? [
-                    ["Settings", startEdit(collaborator)],
-                    ["Delete", startDelete(collaborator)],
-                  ]
-                : []
-            }
-          />
-        ))}
-      </StudioList>
+      {listing.results && (
+        <StudioList>
+          {listing.results.map(
+            (collaborator: WebsiteCollaborator, i: number) => (
+              <StudioListItem
+                key={i}
+                title={collaborator.name || collaborator.email}
+                subtitle={ROLE_LABELS[collaborator.role]}
+                menuOptions={
+                  EDITABLE_ROLES.includes(collaborator.role)
+                    ? [
+                        ["Settings", startEdit(collaborator)],
+                        ["Delete", startDelete(collaborator)],
+                      ]
+                    : []
+                }
+              />
+            ),
+          )}
+        </StudioList>
+      )}
+
       <PaginationControls previous={pages.previous} next={pages.next} />
       <Dialog
         open={deleteModal}

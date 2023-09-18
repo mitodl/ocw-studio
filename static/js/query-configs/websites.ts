@@ -205,18 +205,65 @@ export const deleteWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-    optimisticUpdate: {
-      websiteCollaboratorDetails: (
-        collaborators: WebsiteCollaboratorDetails,
-      ) => {
-        const collaboratorKey = collaboratorDetailKey({
-          userId: collaborator.user_id,
-          name: websiteName,
-        })
-        delete collaborators[collaboratorKey]
-        return collaborators
-      },
-    },
+    //     optimisticUpdate: {
+    //       collaborators: (
+    // ,
+    //       ) => {
+    //         const collaboratorKey = collaboratorDetailKey({
+    //           userId: collaborator.user_id,
+    //           name: websiteName,
+    //         })
+    // transform: (body: WebsiteContentListingResponse) => {
+    //   const details = {}
+    //   for (const item of body.results) {
+    //     details[contentDetailKey({ textId: item.text_id, name })] = item
+    //   }
+    //   return {
+    //     websiteContentListing: {
+    //       [contentListingKey(listingParams)]: {
+    //         ...body,
+    //         results: body.results.map((item) => item.text_id),
+    //       },
+    //     },
+    //     websiteContentDetails: details,
+    //   }
+    // },
+    // console.log("collaborators before deleting:", collaborators)
+    // console.log("collaborators before deleting:", collaboratorKey)
+    // Function to remove a collaborator from results based on user_id
+    // Retrieve the results array
+    // Retrieve the "results" array from the value
+    // const resultsArray = Object.values(collaborators)[0].results
+
+    // console.log("resultsArray",resultsArray);
+
+    // Filter out the collaborator with the specified user_id
+    // const updatedResults = resultsArray.filter(
+    //   (c: { user_id: number }) => c.user_id !== collaborator.user_id
+    // );
+
+    // // console.log("updatedResults", updatedResults)
+    // const updatedCollaborators = Object.values(collaborators)[0]
+    // updatedCollaborators.results = updatedResults;
+    // updatedCollaborators.count
+    // console.log("updatedCollaborators", updatedCollaborators)
+
+    // Create a new collaborators object with the updated results
+    // const updatedCollaborators = {
+    //   ...collaborators,
+    //   [collaboratorKey]: {
+    //     ...collaborators[collaboratorKey],
+    //     results: updatedResults,
+    //   },
+    // };
+
+    // console.log("collaborators after deleting:", updatedCollaborators);
+
+    // return Object.create(Object.keys(collaborators) : updatedCollaborators );
+    // delete collaborators[collaboratorKey]
+    // return collaborators
+    // },
+    // },
     options: {
       method: "DELETE",
       ...DEFAULT_POST_OPTIONS,
@@ -238,25 +285,25 @@ export const editWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-    transform: (response: WebsiteCollaborator) => {
-      return {
-        websiteCollaboratorDetails: {
-          [collaboratorDetailKey({
-            userId: collaborator.user_id,
-            name: websiteName,
-          })]: response,
-        },
-      }
-    },
-    update: {
-      websiteCollaboratorDetails: (
-        prev: WebsiteCollaboratorDetails,
-        next: WebsiteCollaboratorDetails,
-      ) => ({
-        ...prev,
-        ...next,
-      }),
-    },
+    // transform: (response: WebsiteCollaborator) => {
+    //   return {
+    //     collaborators: {
+    //       [collaboratorDetailKey({
+    //         userId: collaborator.user_id,
+    //         name: websiteName,
+    //       })]: response,
+    //     },
+    //   }
+    // },
+    // update: {
+    //   websiteCollaboratorDetails: (
+    //     prev: WebsiteCollaboratorDetails,
+    //     next: WebsiteCollaboratorDetails,
+    //   ) => ({
+    //     ...prev,
+    //     ...next,
+    //   }),
+    // },
     options: {
       method: "PATCH",
       ...DEFAULT_POST_OPTIONS,
@@ -264,7 +311,7 @@ export const editWebsiteCollaboratorMutation = (
   }
 }
 
-type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator[]>
+// type WebsiteCollaboratorDetails = Record<string, WebsiteCollaborator[]>
 export const createWebsiteCollaboratorMutation = (
   websiteName: string,
   item: WebsiteCollaboratorFormData,
@@ -273,21 +320,21 @@ export const createWebsiteCollaboratorMutation = (
     queryKey: "editWebsiteCollaboratorMutation",
     body: { ...item },
     url: siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
-    transform: (body: WebsiteCollaborator) => ({
-      websiteCollaboratorDetails: {
-        [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]:
-          body,
-      },
-    }),
-    update: {
-      websiteCollaboratorDetails: (
-        prev: WebsiteCollaboratorDetails,
-        next: WebsiteCollaboratorDetails,
-      ) => ({
-        ...prev,
-        ...next,
-      }),
-    },
+    // transform: (body: WebsiteCollaborator) => ({
+    //   collaborators: {
+    //     [collaboratorDetailKey({ userId: body.user_id, name: websiteName })]:
+    //       body,
+    //   },
+    // }),
+    // update: {
+    //   websiteCollaboratorDetails: (
+    //     prev: WebsiteCollaboratorDetails,
+    //     next: WebsiteCollaboratorDetails,
+    //   ) => ({
+    //     ...prev,
+    //     ...next,
+    //   }),
+    // },
     options: {
       method: "POST",
       ...DEFAULT_POST_OPTIONS,
@@ -416,6 +463,8 @@ export const websiteCollaboratorListingRequest = (
   return {
     url,
     transform: (body: WebsiteCollaboratorListingResponse) => {
+      console.log(body.results)
+      console.log(body.results.map((collaborator) => collaborator.user_id))
       const details = {}
       if (body && Array.isArray(body.results)) {
         for (const collaborator of body.results) {
@@ -427,10 +476,10 @@ export const websiteCollaboratorListingRequest = (
           collaborators: {
             [collaboratorListingKey(listingParams)]: {
               ...body,
-              results: body.results.map((collaborator) => collaborator.user_id),
+              results: body.results,
             },
           },
-          websiteCollaboratorDetails: details,
+          // websiteCollaboratorDetails: details,
         }
       } else {
         return []
@@ -444,7 +493,7 @@ export const websiteCollaboratorListingRequest = (
         ...prev,
         ...next,
       }),
-      websiteCollaboratorDetails: mergeDeepRight,
+      // websiteCollaboratorDetails: mergeDeepRight,
     },
     force: true, // try to prevent stale information
   }

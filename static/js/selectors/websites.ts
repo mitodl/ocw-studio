@@ -54,34 +54,34 @@ export interface WebsiteCollaboratorListSelection extends WCSelection {
   results: WebsiteCollaborator[]
 }
 
-export const getWebsiteCollaboratorDetailCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteCollaboratorDetails ?? {},
-  (collaborator: Record<string, WebsiteCollaborator>) =>
-    memoize(
-      (params: CollaboratorDetailParams): WebsiteCollaborator | null =>
-        collaborator[collaboratorDetailKey(params)] ?? null,
-    ),
-)
+// export const getWebsiteCollaboratorDetailCursor = createSelector(
+//   (state: ReduxState) => state.entities?.websiteCollaboratorDetails ?? {},
+//   (collaborator: Record<string, WebsiteCollaborator>) =>
+//     memoize(
+//       (params: CollaboratorDetailParams): WebsiteCollaborator | null =>
+//         collaborator[collaboratorDetailKey(params)] ?? null,
+//     ),
+// )
 
 export const getWebsiteCollaboratorListingCursor = createSelector(
   (state: ReduxState) => state.entities?.collaborators ?? {},
-  getWebsiteCollaboratorDetailCursor,
-  (listing, websiteCollaboratorDetailCursor) =>
+  (listing) =>
     memoize(
       (
         listingParams: CollaboratorListingParams,
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
-        const userIds: number[] = response?.results ?? []
-        const collaborators = userIds.map((userId) =>
-          websiteCollaboratorDetailCursor({
-            name: listingParams.name,
-            userId: userId,
-          }),
-        )
+        console.log("response", response)
+        // const userIds: number[] = response?.results ?? []
+        // const collaborators = userIds.map((userId) =>
+        //   websiteCollaboratorDetailCursor({
+        //     name: listingParams.name,
+        //     userId: userId,
+        //   }),
+        // )
         return {
           ...response,
-          results: collaborators,
+          results: response.results,
         }
       },
 
