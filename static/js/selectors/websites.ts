@@ -2,7 +2,6 @@ import { createSelector } from "reselect"
 import { memoize } from "lodash"
 
 import {
-  collaboratorDetailKey,
   collaboratorListingKey,
   contentDetailKey,
   contentListingKey,
@@ -18,7 +17,6 @@ import {
   Website,
   WebsiteContent,
   ContentDetailParams,
-  CollaboratorDetailParams,
   CollaboratorListingParams,
   WebsiteCollaborator,
 } from "../types/websites"
