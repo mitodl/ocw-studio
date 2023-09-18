@@ -705,11 +705,11 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     if version == VERSION_DRAFT:
         bucket = expected_template_vars["preview_bucket_name"]
         offline_bucket = expected_template_vars["offline_preview_bucket_name"]
-        static_api_url = settings.OCW_STUDIO_DRAFT_URL
+        static_api_base_url = expected_template_vars["static_api_base_url_draft"]
     elif version == VERSION_LIVE:
         bucket = expected_template_vars["publish_bucket_name"]
         offline_bucket = expected_template_vars["offline_publish_bucket_name"]
-        static_api_url = settings.OCW_STUDIO_LIVE_URL
+        static_api_base_url = expected_template_vars["static_api_base_url_live"]
     config_str = json.dumps(kwargs)
     assert settings.OCW_GTM_ACCOUNT_ID in config_str
     assert bucket in config_str
@@ -721,7 +721,7 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     assert f'\\"branch\\": \\"{themes_branch}\\"' in config_str
     assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
     assert f"{hugo_projects_path}.git" in config_str
-    assert static_api_url in config_str
+    assert static_api_base_url in config_str
     if (
         version == VERSION_DRAFT in config_str
         or settings.ENV_NAME not in PRODUCTION_NAMES

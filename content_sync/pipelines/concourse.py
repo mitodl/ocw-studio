@@ -563,10 +563,7 @@ class MassBuildSitesPipeline(
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_PREVIEW,
-                    "static_api_url": settings.STATIC_API_BASE_URL
-                    or settings.OCW_STUDIO_DRAFT_URL
-                    if is_dev()
-                    else settings.OCW_STUDIO_DRAFT_URL,
+                    "static_api_url": template_vars["static_api_base_url_draft"],
                     "web_bucket": template_vars["preview_bucket_name"],
                     "offline_bucket": template_vars["offline_preview_bucket_name"],
                     "build_drafts": "--buildDrafts",
@@ -578,10 +575,7 @@ class MassBuildSitesPipeline(
             template_vars.update(
                 {
                     "branch": settings.GIT_BRANCH_RELEASE,
-                    "static_api_url": settings.STATIC_API_BASE_URL
-                    or settings.OCW_STUDIO_LIVE_URL
-                    if is_dev()
-                    else settings.OCW_STUDIO_LIVE_URL,
+                    "static_api_url": template_vars["static_api_base_url_live"],
                     "web_bucket": template_vars["publish_bucket_name"],
                     "offline_bucket": template_vars["offline_publish_bucket_name"],
                     "build_drafts": "",
