@@ -33,8 +33,7 @@ describe("SiteCollaboratorList", () => {
     collaborators: WebsiteCollaborator[],
     permanentAdmin: WebsiteCollaborator[],
     deleteCollaboratorStub: SinonStub,
-    apiResponse: WebsiteCollaboratorListingResponse,
-    websiteCollaboratorDetailsLookup: Record<string, WebsiteCollaborator>
+    apiResponse: WebsiteCollaboratorListingResponse
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -42,15 +41,6 @@ describe("SiteCollaboratorList", () => {
     collaborators = makeWebsiteCollaborators()
     permanentAdmin = [makePermanentWebsiteCollaborator()]
     collaborators = concat(collaborators, permanentAdmin)
-    websiteCollaboratorDetailsLookup = {}
-    for (const collaborator of collaborators) {
-      websiteCollaboratorDetailsLookup[
-        collaboratorDetailKey({
-          name: website.name,
-          userId: collaborator.user_id,
-        })
-      ] = collaborator
-    }
 
     const listingParams = {
       name: website.name,
@@ -62,7 +52,7 @@ describe("SiteCollaboratorList", () => {
       next: null,
       previous: null,
     }
-    const collaboratorListingLookup = {
+    const collaboratorListingState = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
         results: apiResponse.results.map(
@@ -88,8 +78,7 @@ describe("SiteCollaboratorList", () => {
       {},
       {
         entities: {
-          collaborators: collaboratorListingLookup,
-          websiteCollaboratorDetails: websiteCollaboratorDetailsLookup,
+          collaborators: collaboratorListingState,
         },
         queries: {},
       },

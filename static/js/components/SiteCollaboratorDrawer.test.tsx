@@ -75,7 +75,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       next: null,
       previous: null,
     }
-    const collaboratorListingLookup = {
+    const collaboratorListingState = {
       [collaboratorListingKey(listingParams)]: {
         ...apiResponse,
         results: apiResponse.results.map(
@@ -93,7 +93,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       },
       {
         entities: {
-          collaborators: collaboratorListingLookup,
+          collaborators: collaboratorListingState,
         },
         queries: {},
       },
