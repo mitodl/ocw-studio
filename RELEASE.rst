@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.102.4
+---------------
+
+- explicitly check value of IS_ROOT_WEBSITE as an integer and add tests to make sure that is being done (#1979)
+- fix static api base url dev override (#1975)
+
 Version 0.102.3 (Released September 18, 2023)
 ---------------
 
