@@ -273,7 +273,10 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if not config.offline:
                 site_build_tasks.extend(
                     SitePipelineOnlineTasks(
-                        pipeline_vars=site_pipeline_vars, fastly_var=config.version
+                        pipeline_vars=site_pipeline_vars,
+                        fastly_var=config.version,
+                        destructive_sync=False,
+                        filter_videos=True,
                     )
                 )
             else:

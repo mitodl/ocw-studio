@@ -18,6 +18,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
+    STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
@@ -26,6 +27,7 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
+    UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinitionConfig,
 )
 from content_sync.utils import get_ocw_studio_api_url
@@ -66,7 +68,7 @@ def websites(django_db_setup, django_db_blocker):
 @pytest.mark.parametrize("concourse_is_private_repo", [True, False])
 @pytest.mark.parametrize("offline", [True, False])
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
+def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 PLR0915
     websites,
     settings,
     mocker,
@@ -315,6 +317,27 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0915
                         f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}/{site_config.vars['short_id']}.git"
                         in site_content_git_command
                     )
+                static_resources_s3_step = get_dict_list_item_by_field(
+                    items=build_steps,
+                    field="task",
+                    value=STATIC_RESOURCES_S3_IDENTIFIER,
+                )
+                static_resources_s3_command = static_resources_s3_step["config"]["run"][
+                    "args"
+                ].join("\n")
+                if offline:
+                    assert "--exclude *.mp4" not in static_resources_s3_command
+                else:
+                    assert "--exclude *.mp4" in static_resources_s3_command
+                upload_online_build_task = get_dict_list_item_by_field(
+                    items=build_steps,
+                    field="task",
+                    value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
+                )
+                upload_online_build_command = upload_online_build_task["config"]["run"][
+                    "args"
+                ].join("\n")
+                assert "--delete" not in upload_online_build_command
         if batch_number < batch_count:
             assert (
                 get_dict_list_item_by_field(
