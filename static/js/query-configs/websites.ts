@@ -369,7 +369,6 @@ export const websiteCollaboratorListingRequest = (
   return {
     url,
     transform: (body: WebsiteCollaboratorListingResponse) => {
-      if (body && Array.isArray(body.results)) {
         return {
           collaborators: {
             [collaboratorListingKey(listingParams)]: {
@@ -378,9 +377,6 @@ export const websiteCollaboratorListingRequest = (
             },
           },
         }
-      } else {
-        return []
-      }
     },
     update: {
       collaborators: (
