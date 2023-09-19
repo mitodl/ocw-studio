@@ -372,7 +372,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["config"]["run"]["args"]
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_online_build_command
     )
     assert (
@@ -500,6 +500,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
     assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
     assert (
+        "if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            cd output-offline"
+        in build_offline_site_command
+    )
+    assert (
         build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
         == 2
     )
@@ -541,7 +545,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         in upload_offline_build_command
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
         in upload_offline_build_command
     )
     upload_offline_build_expected_inputs = [

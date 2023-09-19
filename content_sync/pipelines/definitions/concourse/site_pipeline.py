@@ -495,7 +495,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ] = settings.AWS_SECRET_ACCESS_KEY
 
         online_sync_command = f"""
-        if [ $IS_ROOT_WEBSITE ] ; then
+        if [ $IS_ROOT_WEBSITE = 1 ] ; then
             aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
         else
             aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
@@ -596,7 +596,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
         hugo {pipeline_vars['hugo_args_offline']}
-        if [ $IS_ROOT_WEBSITE ] ; then
+        if [ $IS_ROOT_WEBSITE = 0 ] ; then
             cd output-offline
             zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars['short_id']}.zip ./
             rm -rf ./*
@@ -670,7 +670,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             )
         offline_sync_command = f"""
         aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
-        if ! [ $IS_ROOT_WEBSITE ] ; then
+        if [ $IS_ROOT_WEBSITE = 0 ] ; then
             aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='*' --include='{pipeline_vars['short_id']}.zip' --include='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}
         fi
         """  # noqa: E501
