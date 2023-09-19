@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.4
+Version 0.102.4 (Released September 19, 2023)
 ---------------
 
 - explicitly check value of IS_ROOT_WEBSITE as an integer and add tests to make sure that is being done (#1979)
