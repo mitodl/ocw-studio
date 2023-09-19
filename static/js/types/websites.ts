@@ -311,11 +311,6 @@ export interface ContentDetailParams {
   textId: string
 }
 
-export interface CollaboratorDetailParams {
-  name: string
-  userId: number
-}
-
 export enum LinkType {
   Internal = "internal",
   External = "external",

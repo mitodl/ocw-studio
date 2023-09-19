@@ -20,7 +20,6 @@ import {
 } from "../lib/urls"
 
 import {
-  CollaboratorDetailParams,
   CollaboratorListingParams,
   ContentDetailParams,
   ContentListingParams,
@@ -254,10 +253,6 @@ export type WebsiteContentListingResponse = PaginatedResponse<
 
 export type WebsiteCollaboratorListingResponse =
   PaginatedResponse<WebsiteCollaborator>
-
-export const collaboratorDetailKey = (
-  params: CollaboratorDetailParams,
-): string => JSON.stringify([params.name, params.userId])
 
 export type WebsiteContentListing = Record<
   string,
