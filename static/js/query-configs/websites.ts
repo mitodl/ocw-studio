@@ -369,14 +369,14 @@ export const websiteCollaboratorListingRequest = (
   return {
     url,
     transform: (body: WebsiteCollaboratorListingResponse) => {
-        return {
-          collaborators: {
-            [collaboratorListingKey(listingParams)]: {
-              ...body,
-              results: body.results,
-            },
+      return {
+        collaborators: {
+          [collaboratorListingKey(listingParams)]: {
+            ...body,
+            results: body.results,
           },
-        }
+        },
+      }
     },
     update: {
       collaborators: (
