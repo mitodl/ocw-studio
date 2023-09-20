@@ -11,7 +11,6 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
-    MASS_BULID_SITES_PIPELINE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
@@ -29,6 +28,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinitionConfig,
+    get_site_pipeline_definition_vars,
 )
 from content_sync.utils import get_ocw_studio_api_url
 from main.utils import get_dict_list_item_by_field
@@ -115,6 +115,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     instance_vars = f"?vars={quote(json.dumps({'offline': False, 'prefix': '', 'projects_branch': 'main', 'themes_branch': 'main', 'starter': '', 'version': 'draft'}))}"
     ocw_hugo_projects_url = f"{ocw_hugo_projects_path}.git"
     ocw_studio_url = get_ocw_studio_api_url()
+    site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
         sites=websites,
         version=version,
@@ -178,7 +179,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
         items=resources, field="name", value=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
     expected_api_path = os.path.join(  # noqa: PTH118
-        "api", "websites", MASS_BULID_SITES_PIPELINE_IDENTIFIER, "pipeline_status"
+        "api", "websites", site_pipeline_vars["site_name"], "pipeline_status"
     )
     expected_api_url = urljoin(ocw_studio_url, expected_api_path)
     assert ocw_studio_webhook_resource["source"]["url"] == f"{expected_api_url}/"
@@ -263,7 +264,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                         hugo_override_args="",
-                        namespace="site",
                     )
                     assert across_values["site_name"] == site.name
                     assert across_values["s3_path"] == site.s3_path
