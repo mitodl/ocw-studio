@@ -52,12 +52,7 @@ describe("SiteCollaboratorList", () => {
       previous: null,
     }
     const collaboratorListingState = {
-      [collaboratorListingKey(listingParams)]: {
-        ...apiResponse,
-        results: apiResponse.results.map(
-          (collaborator) => collaborator.user_id,
-        ),
-      },
+      [collaboratorListingKey(listingParams)]: { ...apiResponse },
     }
     helper.mockGetRequest(
       siteApiCollaboratorsUrl

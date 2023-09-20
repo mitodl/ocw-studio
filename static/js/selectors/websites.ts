@@ -60,7 +60,7 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
         listingParams: CollaboratorListingParams,
       ): WebsiteCollaboratorListSelection => {
         const response = listing[collaboratorListingKey(listingParams)] ?? {}
-        return { ...response }
+        return response
       },
 
       (listingParams: CollaboratorListingParams): string =>

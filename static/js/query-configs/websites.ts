@@ -366,10 +366,7 @@ export const websiteCollaboratorListingRequest = (
     transform: (body: WebsiteCollaboratorListingResponse) => {
       return {
         collaborators: {
-          [collaboratorListingKey(listingParams)]: {
-            ...body,
-            results: body.results,
-          },
+          [collaboratorListingKey(listingParams)]: { ...body },
         },
       }
     },

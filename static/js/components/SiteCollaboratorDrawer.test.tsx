@@ -76,12 +76,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       previous: null,
     }
     const collaboratorListingState = {
-      [collaboratorListingKey(listingParams)]: {
-        ...apiResponse,
-        results: apiResponse.results.map(
-          (collaborator) => collaborator.user_id,
-        ),
-      },
+      [collaboratorListingKey(listingParams)]: { ...apiResponse },
     }
     render = helper.configureRenderer(
       SiteCollaboratorDrawer,
