@@ -20,20 +20,49 @@ import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
+import {
+  WebsiteCollaboratorListingResponse,
+  collaboratorListingKey,
+} from "../query-configs/websites"
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
     website: Website,
     collaborators: WebsiteCollaborator[],
-    permanentAdmins: WebsiteCollaborator[],
-    deleteCollaboratorStub: SinonStub
+    permanentAdmin: WebsiteCollaborator[],
+    deleteCollaboratorStub: SinonStub,
+    apiResponse: WebsiteCollaboratorListingResponse
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     collaborators = makeWebsiteCollaborators()
-    permanentAdmins = [makePermanentWebsiteCollaborator()]
+    permanentAdmin = [makePermanentWebsiteCollaborator()]
+    collaborators = concat(collaborators, permanentAdmin)
+
+    const listingParams = {
+      name: website.name,
+      offset: 0,
+    }
+    apiResponse = {
+      results: collaborators,
+      count: 6,
+      next: null,
+      previous: null,
+    }
+    const collaboratorListingState = {
+      [collaboratorListingKey(listingParams)]: { ...apiResponse },
+    }
+    helper.mockGetRequest(
+      siteApiCollaboratorsUrl
+        .param({
+          name: website.name,
+        })
+        .query({ offset: 0 })
+        .toString(),
+      apiResponse,
+    )
     render = helper.configureRenderer(
       (props) => (
         <WebsiteContext.Provider value={website}>
@@ -43,16 +72,10 @@ describe("SiteCollaboratorList", () => {
       {},
       {
         entities: {
-          collaborators: {
-            [website.name]: concat(collaborators, permanentAdmins),
-          },
+          collaborators: collaboratorListingState,
         },
         queries: {},
       },
-    )
-    helper.mockGetRequest(
-      siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
-      { results: concat(collaborators, permanentAdmins) },
     )
   })
 
@@ -69,7 +92,7 @@ describe("SiteCollaboratorList", () => {
 
   it("renders the collaborators list with expected number of items", async () => {
     const { wrapper } = await render()
-    const numCollaborators = concat(collaborators, permanentAdmins).length
+    const numCollaborators = collaborators.length
     const items = wrapper.find("StudioListItem")
     expect(items.length).toBe(numCollaborators)
     // First collaborator in list should be editable
@@ -78,9 +101,7 @@ describe("SiteCollaboratorList", () => {
     expect(items.at(numCollaborators - 1).prop("menuOptions")).toHaveLength(0)
     // Should be 6 StudioListItems but only 5 menu buttons (none for the permanent admin)
     expect(items.length).toBe(6)
-    expect(wrapper.find(".transparent-button").length).toBe(
-      collaborators.length,
-    )
+    expect(wrapper.find(".transparent-button").length).toBe(5)
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
@@ -92,7 +113,7 @@ describe("SiteCollaboratorList", () => {
     })
     wrapper.update()
     const component = wrapper.find(SiteCollaboratorDrawer)
-    expect(component.prop("collaborator")).toBe(collaborators[0])
+    expect(component.prop("collaborator")).toStrictEqual(collaborators[0])
     expect(component.prop("visibility")).toBe(true)
 
     act(() => {
@@ -104,7 +125,6 @@ describe("SiteCollaboratorList", () => {
 
   it("the delete collaborator dialog works as expected", async () => {
     const collaborator = collaborators[0]
-    const numCollaborators = concat(collaborators, permanentAdmins).length
     deleteCollaboratorStub = helper.mockDeleteRequest(
       siteApiCollaboratorsDetailUrl
         .param({
@@ -121,7 +141,7 @@ describe("SiteCollaboratorList", () => {
       wrapper.find("button.dropdown-item").at(1).simulate("click")
     })
     wrapper.update()
-    const dialog = wrapper.find("Dialog")
+    let dialog = wrapper.find("Dialog")
     expect(dialog.prop("open")).toBe(true)
     expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
     act(() => {
@@ -129,7 +149,8 @@ describe("SiteCollaboratorList", () => {
     })
     wrapper.update()
     sinon.assert.calledOnce(deleteCollaboratorStub)
-    expect(wrapper.find("li").length).toBe(numCollaborators - 1)
+    dialog = wrapper.find("Dialog")
+    expect(dialog.prop("open")).toBe(false)
   })
 
   it("the add collaborator button sets correct state and opens the modal", async () => {

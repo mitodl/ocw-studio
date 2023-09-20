@@ -1,15 +1,5 @@
 import { ActionPromiseValue, QueryConfig } from "redux-query"
-import {
-  merge,
-  reject,
-  propEq,
-  compose,
-  evolve,
-  when,
-  assoc,
-  map,
-  mergeDeepRight,
-} from "ramda"
+import { mergeDeepRight } from "ramda"
 
 import { nextState, PaginatedResponse } from "./utils"
 import { getCookie } from "../lib/api/util"
@@ -30,6 +20,7 @@ import {
 } from "../lib/urls"
 
 import {
+  CollaboratorListingParams,
   ContentDetailParams,
   ContentListingParams,
   NewWebsitePayload,
@@ -201,23 +192,10 @@ export const websiteStartersRequest = (): QueryConfig => ({
   },
 })
 
-export const websiteCollaboratorsRequest = (name: string): QueryConfig => ({
-  url: siteApiCollaboratorsUrl.param({ name }).toString(),
-  transform: (body: { results: WebsiteCollaborator[] }) => ({
-    collaborators: {
-      [name]: body.results || [],
-    },
-  }),
-  update: {
-    collaborators: merge,
-  },
-})
-
 export const deleteWebsiteCollaboratorMutation = (
   websiteName: string,
   collaborator: WebsiteCollaborator,
 ): QueryConfig => {
-  const evictCollaborator = reject(propEq("user_id", collaborator.user_id))
   return {
     queryKey: "deleteWebsiteCollaboratorMutation",
     url: siteApiCollaboratorsDetailUrl
@@ -226,17 +204,6 @@ export const deleteWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-    optimisticUpdate: {
-      // evict the item
-      collaborators: evolve({
-        [websiteName]: compose(
-          evictCollaborator,
-          (value: WebsiteCollaborator[]) => {
-            return value ?? []
-          },
-        ),
-      }),
-    },
     options: {
       method: "DELETE",
       ...DEFAULT_POST_OPTIONS,
@@ -249,9 +216,6 @@ export const editWebsiteCollaboratorMutation = (
   collaborator: WebsiteCollaborator,
   role: string,
 ): QueryConfig => {
-  const alterRole = map(
-    when(propEq("user_id", collaborator.user_id), assoc("role", role)),
-  )
   return {
     queryKey: "editWebsiteCollaboratorMutation",
     body: { role },
@@ -261,14 +225,6 @@ export const editWebsiteCollaboratorMutation = (
         userId: collaborator.user_id,
       })
       .toString(),
-    optimisticUpdate: {
-      collaborators: evolve({
-        [websiteName]: compose(
-          alterRole,
-          (value: WebsiteCollaborator[]) => value || [],
-        ),
-      }),
-    },
     options: {
       method: "PATCH",
       ...DEFAULT_POST_OPTIONS,
@@ -284,20 +240,6 @@ export const createWebsiteCollaboratorMutation = (
     queryKey: "editWebsiteCollaboratorMutation",
     body: { ...item },
     url: siteApiCollaboratorsUrl.param({ name: websiteName }).toString(),
-    transform: (body: WebsiteCollaborator) => ({
-      collaborators: {
-        [websiteName]: [body],
-      },
-    }),
-    update: {
-      collaborators: (
-        prev: Record<string, WebsiteCollaborator[]>,
-        next: Record<string, WebsiteCollaborator[]>,
-      ) => {
-        next[websiteName] = next[websiteName].concat(prev[websiteName])
-        return { ...prev, ...next }
-      },
-    },
     options: {
       method: "POST",
       ...DEFAULT_POST_OPTIONS,
@@ -308,6 +250,10 @@ export const createWebsiteCollaboratorMutation = (
 export type WebsiteContentListingResponse = PaginatedResponse<
   WebsiteContentListItem | WebsiteContent
 >
+
+export type WebsiteCollaboratorListingResponse =
+  PaginatedResponse<WebsiteCollaborator>
+
 export type WebsiteContentListing = Record<
   string,
   {
@@ -317,7 +263,15 @@ export type WebsiteContentListing = Record<
     previous: string | null
   }
 >
-
+export type WebsiteCollaboratorListing = Record<
+  string,
+  {
+    results: string[]
+    count: number | null
+    next: string | null
+    previous: string | null
+  }
+>
 export const contentListingKey = (
   listingParams: ContentListingParams,
 ): string =>
@@ -331,6 +285,9 @@ export const contentListingKey = (
     listingParams.published,
   ])
 
+export const collaboratorListingKey = (
+  listingParams: CollaboratorListingParams,
+): string => JSON.stringify([listingParams.name, listingParams.offset])
 export const contentDetailKey = (params: ContentDetailParams): string =>
   JSON.stringify([params.name, params.textId])
 
@@ -391,6 +348,36 @@ export const websiteContentListingRequest = (
         ...next,
       }),
       websiteContentDetails: mergeDeepRight,
+    },
+    force: true, // try to prevent stale information
+  }
+}
+
+export const websiteCollaboratorListingRequest = (
+  listingParams: CollaboratorListingParams,
+): QueryConfig => {
+  const { name, offset } = listingParams
+  const url = siteApiCollaboratorsUrl
+    .param({ name })
+    .query(Object.assign({ offset }))
+    .toString()
+  return {
+    url,
+    transform: (body: WebsiteCollaboratorListingResponse) => {
+      return {
+        collaborators: {
+          [collaboratorListingKey(listingParams)]: { ...body },
+        },
+      }
+    },
+    update: {
+      collaborators: (
+        prev: WebsiteCollaboratorListing,
+        next: WebsiteCollaboratorListing,
+      ) => ({
+        ...prev,
+        ...next,
+      }),
     },
     force: true, // try to prevent stale information
   }

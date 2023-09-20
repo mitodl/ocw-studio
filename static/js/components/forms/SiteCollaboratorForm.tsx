@@ -45,7 +45,6 @@ export default function SiteCollaboratorForm({
         ? { ...roleValidation }
         : { ...roleValidation, ...emailValidation },
     )
-
   return (
     <Formik
       onSubmit={onSubmit}

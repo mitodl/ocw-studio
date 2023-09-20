@@ -12,21 +12,49 @@ import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
 
 import { EDITABLE_ROLES, ROLE_LABELS } from "../constants"
 import {
+  WebsiteCollaboratorListingResponse,
   deleteWebsiteCollaboratorMutation,
-  websiteCollaboratorsRequest,
+  websiteCollaboratorListingRequest,
 } from "../query-configs/websites"
 import { useWebsite } from "../context/Website"
-import { getWebsiteCollaboratorsCursor } from "../selectors/websites"
+import { getWebsiteCollaboratorListingCursor } from "../selectors/websites"
 
-import { WebsiteCollaborator } from "../types/websites"
+import {
+  CollaboratorListingParams,
+  WebsiteCollaborator,
+} from "../types/websites"
 import DocumentTitle, { formatTitle } from "./DocumentTitle"
 import { StudioList, StudioListItem } from "./StudioList"
+import { usePagination, useURLParamFilter } from "../hooks/search"
+import PaginationControls from "./PaginationControls"
 
 export default function SiteCollaboratorList(): JSX.Element | null {
-  const { name, title } = useWebsite()
+  const website = useWebsite()
+  const { name, title } = website
 
-  const [{ isPending }] = useRequest(websiteCollaboratorsRequest(name))
-  const collaborators = useSelector(getWebsiteCollaboratorsCursor)(name)
+  const getListingParams = useCallback(
+    (search: string): CollaboratorListingParams => {
+      const qsParams = new URLSearchParams(search)
+      const offset = Number(qsParams.get("offset") ?? 0)
+
+      const params: CollaboratorListingParams = {
+        name: website.name,
+        offset,
+      }
+      return params
+    },
+    [website],
+  )
+
+  const { listingParams } = useURLParamFilter(getListingParams)
+
+  const [, fetchWebsiteCollaboratorListing] = useRequest(
+    websiteCollaboratorListingRequest(listingParams),
+  )
+
+  const listing: WebsiteCollaboratorListingResponse = useSelector(
+    getWebsiteCollaboratorListingCursor,
+  )(listingParams)
 
   const [deleteModal, setDeleteModal] = useState(false)
   const [editVisibility, setEditVisibility] = useState<boolean>(false)
@@ -69,16 +97,12 @@ export default function SiteCollaboratorList(): JSX.Element | null {
     const response = await deleteCollaborator()
     if (!response) {
       return
+    } else if (fetchWebsiteCollaboratorListing) {
+      fetchWebsiteCollaboratorListing()
     }
   }
 
-  if (!collaborators) {
-    return null
-  }
-
-  if (isPending) {
-    return <div>Loading...</div>
-  }
+  const pages = usePagination(listing.count ?? 0)
 
   return (
     <>
@@ -88,6 +112,7 @@ export default function SiteCollaboratorList(): JSX.Element | null {
         collaborator={selectedCollaborator}
         visibility={editVisibility}
         toggleVisibility={toggleEditVisibility}
+        fetchWebsiteCollaboratorListing={fetchWebsiteCollaboratorListing}
       />
       <div className="d-flex justify-content-between align-items-center py-3">
         <h2 className="m-0 p-0">Collaborators</h2>
@@ -95,29 +120,37 @@ export default function SiteCollaboratorList(): JSX.Element | null {
           Add collaborator
         </button>
       </div>
-      <StudioList>
-        {collaborators.map((collaborator: WebsiteCollaborator, i: number) => (
-          <StudioListItem
-            key={i}
-            title={collaborator.name || collaborator.email}
-            subtitle={ROLE_LABELS[collaborator.role]}
-            menuOptions={
-              EDITABLE_ROLES.includes(collaborator.role)
-                ? [
-                    ["Settings", startEdit(collaborator)],
-                    ["Delete", startDelete(collaborator)],
-                  ]
-                : []
-            }
-          />
-        ))}
-      </StudioList>
+      {listing.results && (
+        <StudioList>
+          {listing.results.map(
+            (collaborator: WebsiteCollaborator, i: number) => (
+              <StudioListItem
+                key={i}
+                title={collaborator.name || collaborator.email}
+                subtitle={ROLE_LABELS[collaborator.role]}
+                menuOptions={
+                  EDITABLE_ROLES.includes(collaborator.role)
+                    ? [
+                        ["Settings", startEdit(collaborator)],
+                        ["Delete", startDelete(collaborator)],
+                      ]
+                    : []
+                }
+              />
+            ),
+          )}
+        </StudioList>
+      )}
+
+      <PaginationControls previous={pages.previous} next={pages.next} />
       <Dialog
         open={deleteModal}
         onCancel={closeDeleteModal}
         headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove ${
-          selectedCollaborator ? selectedCollaborator.name : "this user"
+          selectedCollaborator && selectedCollaborator.name
+            ? selectedCollaborator.name
+            : "this user"
         }?`}
         acceptText="Delete"
         onAccept={() => {

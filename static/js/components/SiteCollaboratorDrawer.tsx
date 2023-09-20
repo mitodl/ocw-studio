@@ -21,12 +21,19 @@ interface Props {
   visibility: boolean
   toggleVisibility: () => void
   siteName: string
+  fetchWebsiteCollaboratorListing: any
 }
 
 export default function SiteCollaboratorDrawer(
   props: Props,
 ): JSX.Element | null {
-  const { siteName, collaborator, visibility, toggleVisibility } = props
+  const {
+    siteName,
+    collaborator,
+    visibility,
+    toggleVisibility,
+    fetchWebsiteCollaboratorListing,
+  } = props
 
   const [collaboratorAddQueryState, addCollaborator] = useMutation(
     createWebsiteCollaboratorMutation,
@@ -50,7 +57,6 @@ export default function SiteCollaboratorDrawer(
     ) {
       return
     }
-
     const response = await (collaborator
       ? updateCollaboratorRole(siteName, collaborator, values.role)
       : addCollaborator(siteName, values))
@@ -77,12 +83,15 @@ export default function SiteCollaboratorDrawer(
     }
     setSubmitting(false)
     toggleVisibility()
+
+    if (fetchWebsiteCollaboratorListing) {
+      fetchWebsiteCollaboratorListing()
+    }
   }
 
   const onCancel = async () => {
     toggleVisibility()
   }
-
   return (
     <div>
       <Modal

@@ -301,6 +301,11 @@ export interface ContentListingParams {
   published?: boolean
 }
 
+export interface CollaboratorListingParams {
+  name: string
+  offset: number
+}
+
 export interface ContentDetailParams {
   name: string
   textId: string
