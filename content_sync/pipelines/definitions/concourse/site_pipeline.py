@@ -98,6 +98,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
+        "prefix": f"(({namespace}prefix))",
     }
 
 
@@ -119,6 +120,7 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
         ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
+        prefix(str): (Optional) A prefix to deploy the site at
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
 
@@ -137,6 +139,7 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_themes_branch: str,
         ocw_hugo_projects_branch: str,
         hugo_override_args: Optional[str] = "",
+        prefix: str = "",
         namespace: str = "site:",
     ):
         self.site = site
@@ -226,6 +229,7 @@ class SitePipelineDefinitionConfig:
             "ocw_hugo_projects_branch": ocw_hugo_projects_branch,
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
+            "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,
         }
 
 
@@ -505,9 +509,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
 
         online_sync_command = f"""
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -678,9 +682,9 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         offline_sync_command = f"""
-        aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+        aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars['web_bucket']}/{pipeline_vars['base_url']} --exclude='*' --include='{pipeline_vars['short_id']}.zip' --include='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}
+            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='*' --include='{pipeline_vars['short_id']}.zip' --include='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}
         fi
         """  # noqa: E501
         upload_offline_build_step = add_error_handling(
@@ -832,6 +836,7 @@ class SitePipelineDefinition(Pipeline):
                     ],
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
+                    "prefix": config.values["prefix"],
                 }
             ),
         )
