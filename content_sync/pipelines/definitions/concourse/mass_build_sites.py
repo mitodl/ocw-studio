@@ -51,7 +51,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 )
 from content_sync.utils import get_common_pipeline_vars
 from main.utils import is_dev
-from websites.models import WebsiteQuerySet, WebsiteStarter
+from websites.models import Website, WebsiteQuerySet, WebsiteStarter
 
 
 class MassBuildSitesPipelineDefinitionConfig:
@@ -83,7 +83,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         offline: bool,  # noqa: FBT001
         instance_vars: str,
         starter: Optional[WebsiteStarter] = None,
-        prefix: Optional[str] = None,
+        prefix: Optional[str] = "",
         hugo_arg_overrides: Optional[str] = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
@@ -139,7 +139,7 @@ class MassBuildSitesResources(list[Resource]):
         ocw_hugo_themes_resource = OcwHugoThemesGitResource(
             branch=config.ocw_hugo_themes_branch
         )
-        root_starter = WebsiteStarter.objects.get(slug=settings.ROOT_WEBSITE_NAME)
+        root_starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
         ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
             uri=root_starter.ocw_hugo_projects_url,
             branch=config.ocw_hugo_projects_branch,
@@ -261,6 +261,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,
+                    prefix=config.prefix,
                 )
                 across_var_values.append(site_config.values)
 
