@@ -385,7 +385,9 @@ def get_resource_type(drive_file: DriveFile) -> str:
 
 def is_gdrive_enabled():
     """Determine if Gdrive integration is enabled via required settings"""
-    return settings.DRIVE_SHARED_ID and settings.DRIVE_SERVICE_ACCOUNT_CREDS
+    return (
+        settings.DRIVE_SHARED_ID is not None and len(settings.DRIVE_SHARED_ID) > 0
+    ) and (settings.DRIVE_SERVICE_ACCOUNT_CREDS is not None)
 
 
 def gdrive_root_url():
