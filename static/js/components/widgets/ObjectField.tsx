@@ -45,9 +45,9 @@ export default function ObjectField(props: Props): JSX.Element {
         >
           {field.label}
         </label>
-        <i className="material-icons">
+        <span className="material-icons">
           {collapsed ? "expand_more" : "expand_less"}
-        </i>
+        </span>
       </div>
       {collapsed ? null : (
         <div className="object-sub-fields">
