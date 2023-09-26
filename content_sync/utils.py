@@ -5,6 +5,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db.models import Q
 
 from content_sync.constants import (
     DEV_END,
@@ -20,11 +21,12 @@ from content_sync.constants import (
     START_TAG_PREFIX,
     TARGET_OFFLINE,
     VERSION_DRAFT,
+    VERSION_LIVE,
 )
 from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
 from websites.constants import WEBSITE_CONTENT_FILETYPE
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 
 log = logging.getLogger()
@@ -138,6 +140,27 @@ def get_cli_endpoint_url():
 
 def get_ocw_studio_api_url():
     return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
+
+
+def get_publishable_sites(version: str):
+    publish_date_field = (
+        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+    )
+    # Get all sites, minus any sites that have never been successfully published
+    sites = Website.objects.exclude(
+        Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+    )
+    if version == VERSION_LIVE:
+        sites = sites.exclude(unpublish_status__isnull=False)
+    return sites.prefetch_related("starter")
+
+
+def get_site_content_branch(version: str):
+    return (
+        settings.GIT_BRANCH_PREVIEW
+        if version == VERSION_DRAFT
+        else settings.GIT_BRANCH_RELEASE
+    )
 
 
 def get_theme_branch():
