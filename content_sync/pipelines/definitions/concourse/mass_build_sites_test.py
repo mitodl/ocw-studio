@@ -30,7 +30,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinitionConfig,
     get_site_pipeline_definition_vars,
 )
-from content_sync.utils import get_ocw_studio_api_url
+from content_sync.utils import get_ocw_studio_api_url, get_site_content_branch
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -100,11 +100,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     mock_is_dev.return_value = is_dev
-    site_content_branch = (
-        settings.GIT_BRANCH_PREVIEW
-        if version == VERSION_DRAFT
-        else settings.GIT_BRANCH_RELEASE
-    )
+    site_content_branch = get_site_content_branch(version)
     artifacts_bucket = "ol-eng-artifacts"
     web_bucket = (
         settings.AWS_PREVIEW_BUCKET_NAME
@@ -121,7 +117,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     ocw_studio_url = get_ocw_studio_api_url()
     site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
-        sites=websites,
         version=version,
         artifacts_bucket=artifacts_bucket,
         site_content_branch=site_content_branch,

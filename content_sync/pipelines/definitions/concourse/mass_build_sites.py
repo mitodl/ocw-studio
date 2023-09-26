@@ -1,4 +1,5 @@
 import json
+from random import shuffle
 from typing import Optional
 from urllib.parse import quote
 
@@ -49,9 +50,9 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
 )
-from content_sync.utils import get_common_pipeline_vars
+from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
 from main.utils import is_dev
-from websites.models import Website, WebsiteQuerySet, WebsiteStarter
+from websites.models import Website, WebsiteStarter
 
 
 class MassBuildSitesPipelineDefinitionConfig:
@@ -59,7 +60,6 @@ class MassBuildSitesPipelineDefinitionConfig:
     A class with configuration properties for building a mass build pipeline
 
     Args:
-        sites(WebsiteQuerySet): The sites to build the pipeline for
         version(str): The version of the sites to build in the pipeline (draft / live)
         artifacts_bucket(str): The versioned bucket where the webpack manifest is stored (ol-eng-artifacts)
         site_content_branch(str): The branch to use in the site content repo (preview / release)
@@ -74,7 +74,6 @@ class MassBuildSitesPipelineDefinitionConfig:
 
     def __init__(  # noqa: PLR0913
         self,
-        sites: WebsiteQuerySet,
         version: str,
         artifacts_bucket: str,
         site_content_branch: str,
@@ -87,6 +86,8 @@ class MassBuildSitesPipelineDefinitionConfig:
         hugo_arg_overrides: Optional[str] = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
+        sites = list(get_publishable_sites(version))
+        shuffle(sites)
         self.sites = sites
         self.version = version
         self.prefix = prefix
