@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.6
+Version 0.102.6 (Released September 26, 2023)
 ---------------
 
 - Fix italics font size issue in CKEditor (#1984)
