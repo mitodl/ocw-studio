@@ -83,6 +83,9 @@ def website(request, django_db_setup, django_db_blocker):
 @pytest.mark.parametrize("env_name", ["dev", "prod"])
 @pytest.mark.parametrize("hugo_override_args", ["", "--verbose"])
 @pytest.mark.parametrize("is_dev", [True, False])
+@pytest.mark.parametrize(
+    "prefix", ["", "test_prefix", "/test_prefix", "/test_prefix/subfolder/"]
+)
 def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0913, PLR0915
     website,
     settings,
@@ -94,6 +97,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     env_name,
     hugo_override_args,
     is_dev,
+    prefix,
 ):
     """
     The site pipeline definition should contain the expected properties
@@ -136,6 +140,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
         hugo_override_args=hugo_override_args,
+        prefix=prefix,
     )
     pipeline_definition = SitePipelineDefinition(config=config)
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
@@ -372,11 +377,11 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["config"]["run"]["args"]
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_online_build_command
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
@@ -541,11 +546,11 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_offline_build_task["config"]["run"]["args"]
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_offline_build_command
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
         in upload_offline_build_command
     )
     upload_offline_build_expected_inputs = [
@@ -584,6 +589,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             open_discussions_webhook_step_offline_params["version"]
             == config.vars["pipeline_name"]
         )
+    expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
     )
@@ -613,3 +619,4 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     assert dummy_vars["hugo_args_online"] == config.hugo_args_online
     assert dummy_vars["hugo_args_offline"] == config.hugo_args_offline
+    assert dummy_vars["prefix"] == expected_prefix

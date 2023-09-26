@@ -46,12 +46,12 @@ def websites(django_db_setup, django_db_blocker):
         root_starter = WebsiteStarterFactory.create(
             source=STARTER_SOURCE_GITHUB,
             path=ocw_hugo_projects_path,
-            slug="root-website",
+            slug="root-website-starter",
         )
         starter = WebsiteStarterFactory.create(
             source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
         )
-        root_website = WebsiteFactory.create(starter=root_starter)
+        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
         batch_sites = WebsiteFactory.create_batch(total_sites, starter=starter)
         batch_sites.append(root_website)
         yield batch_sites
@@ -68,6 +68,9 @@ def websites(django_db_setup, django_db_blocker):
 @pytest.mark.parametrize("concourse_is_private_repo", [True, False])
 @pytest.mark.parametrize("offline", [True, False])
 @pytest.mark.parametrize("is_dev", [True, False])
+@pytest.mark.parametrize(
+    "prefix", ["", "test_prefix", "/test_prefix", "/test_prefix/subfolder/"]
+)
 def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 PLR0915
     websites,
     settings,
@@ -79,6 +82,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     concourse_is_private_repo,
     offline,
     is_dev,
+    prefix,
 ):
     """
     The site pipeline definition should contain the expected properties
@@ -125,6 +129,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
         offline=offline,
         instance_vars=instance_vars,
+        prefix=prefix,
     )
     pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
     rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
@@ -244,6 +249,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                 )
                 is not None
             )
+        expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
         for step in steps:
             if hasattr(step, "across"):
                 across_vars = step["across"][0]
@@ -303,6 +309,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         across_values["hugo_args_offline"]
                         == site_config.hugo_args_offline
                     )
+                    assert across_values["prefix"] == expected_prefix
                 build_steps = step["do"]
                 site_content_git_step = get_dict_list_item_by_field(
                     items=build_steps,
