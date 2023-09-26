@@ -1,5 +1,6 @@
 """concourse tests"""
 import json
+from datetime import datetime, timedelta, timezone
 from html import unescape
 from urllib.parse import quote, urljoin
 
@@ -32,6 +33,7 @@ from content_sync.utils import (
     get_common_pipeline_vars,
     get_hugo_arg_string,
     get_ocw_studio_api_url,
+    get_site_content_branch,
     get_theme_branch,
 )
 from main.constants import PRODUCTION_NAMES
@@ -122,7 +124,7 @@ def pipeline_settings(settings, request):  # noqa: PT004
     settings.GITHUB_WEBHOOK_BRANCH = "main"
     settings.GIT_BRANCH_PREVIEW = "preview"
     settings.GIT_BRANCH_RELEASE = "release"
-    settings.ROOT_WEBSITE_NAME = "ocw-www-course"
+    settings.ROOT_WEBSITE_NAME = "root-website"
     settings.OCW_HUGO_THEMES_BRANCH = "main"
     settings.OCW_HUGO_PROJECTS_BRANCH = "main"
     settings.OCW_STUDIO_DRAFT_URL = "https://draft.ocw.mit.edu"
@@ -621,6 +623,33 @@ def test_upsert_pipeline(
     )
 
 
+@pytest.fixture(scope="module")
+def mass_build_websites(django_db_setup, django_db_blocker):
+    """Generate websites for testing the mass build pipeline"""
+    with django_db_blocker.unblock():
+        now = datetime.now(tz=timezone.utc) - timedelta(hours=48)
+        total_sites = 6
+        ocw_hugo_projects_path = "https://github.com/org/repo"
+        root_starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB,
+            path=ocw_hugo_projects_path,
+            slug="root-website-starter",
+        )
+        starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
+        )
+        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
+        batch_sites = WebsiteFactory.create_batch(
+            total_sites, starter=starter, draft_publish_date=now, publish_date=now
+        )
+        batch_sites.append(root_website)
+        yield batch_sites
+        for site in batch_sites:
+            site.delete()
+        starter.delete()
+        root_starter.delete()
+
+
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("themes_branch", ["", "main", "test_themes_branch"])
@@ -628,11 +657,12 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
 @pytest.mark.parametrize("starter", ["", "ocw-course"])
 @pytest.mark.parametrize("offline", [True, False])
-def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
+def test_upsert_mass_build_pipeline(  # noqa: PLR0913
     settings,
     pipeline_settings,
     mocker,
     mock_auth,
+    mass_build_websites,
     pipeline_exists,
     version,
     themes_branch,
@@ -642,14 +672,7 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     offline,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements,too-many-branches
     """The mass build pipeline should have expected configuration"""
-    expected_template_vars = get_common_pipeline_vars()
-    hugo_projects_path = "https://github.com/org/repo"
-    WebsiteFactory.create(
-        starter=WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
-        ),
-        name=settings.ROOT_WEBSITE_NAME,
-    )
+    get_common_pipeline_vars()
     themes_branch = (
         themes_branch if themes_branch and not is_dev() else get_theme_branch()
     )
@@ -658,21 +681,11 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
         if projects_branch and not is_dev()
         else settings.OCW_HUGO_THEMES_BRANCH or settings.GITHUB_WEBHOOK_BRANCH
     )
-    if prefix:
-        stripped_prefix = prefix[1:] if prefix.startswith("/") else prefix
-    else:
-        stripped_prefix = ""
-    build_drafts = " --buildDrafts" if version == VERSION_DRAFT else ""
-    endpoint_url = (
-        " --endpoint-url http://10.1.0.100:9000"
-        if settings.ENVIRONMENT == "dev"
-        else ""
-    )
     instance_vars = {
         "version": version,
         "themes_branch": themes_branch,
         "projects_branch": projects_branch,
-        "prefix": stripped_prefix,
+        "prefix": prefix,
         "starter": starter,
         "offline": offline,
     }
@@ -692,85 +705,28 @@ def test_upsert_mass_build_pipeline(  # noqa: C901, PLR0912, PLR0913, PLR0915
     mock_put_headers = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
     )
+    mock_mass_build_sites_pipeline_definition_config = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
+    )
     pipeline = MassBuildSitesPipeline(**instance_vars)
     pipeline.upsert_pipeline()
 
+    mock_mass_build_sites_pipeline_definition_config.assert_any_call(
+        version=version,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(version),
+        ocw_hugo_themes_branch=themes_branch,
+        ocw_hugo_projects_branch=projects_branch,
+        offline=offline,
+        prefix=prefix,
+        instance_vars=instance_vars_str,
+    )
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
         url_path,
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
-    _, kwargs = mock_put_headers.call_args_list[0]
-    if version == VERSION_DRAFT:
-        bucket = expected_template_vars["preview_bucket_name"]
-        offline_bucket = expected_template_vars["offline_preview_bucket_name"]
-        static_api_base_url = expected_template_vars["static_api_base_url_draft"]
-    elif version == VERSION_LIVE:
-        bucket = expected_template_vars["publish_bucket_name"]
-        offline_bucket = expected_template_vars["offline_publish_bucket_name"]
-        static_api_base_url = expected_template_vars["static_api_base_url_live"]
-    config_str = json.dumps(kwargs)
-    assert settings.OCW_GTM_ACCOUNT_ID in config_str
-    assert bucket in config_str
-    assert version in config_str
-    if starter:
-        assert f"&starter={starter}" in config_str
-    if stripped_prefix:
-        assert f'\\"PREFIX\\": \\"{stripped_prefix}\\"' in config_str
-    assert f'\\"branch\\": \\"{themes_branch}\\"' in config_str
-    assert f'\\"branch\\": \\"{projects_branch}\\"' in config_str
-    assert f"{hugo_projects_path}.git" in config_str
-    assert static_api_base_url in config_str
-    if (
-        version == VERSION_DRAFT in config_str
-        or settings.ENV_NAME not in PRODUCTION_NAMES
-    ):
-        expected_noindex = '\\"NOINDEX\\": true'
-    else:
-        expected_noindex = '\\"NOINDEX\\": false'
-    assert expected_noindex in config_str
-    if offline:
-        assert "PULLING IN STATIC RESOURCES FOR $NAME" in config_str
-        assert "touch ./content/static_resources/_index.md" in config_str
-        assert f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL / --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"  # noqa: PLW0129
-        assert (
-            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{offline_bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors $DELETE) || PUBLISH_S3_RESULT=1"
-            in config_str
-        )
-        assert (
-            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync ./ s3://{bucket}$PREFIX/$BASE_URL"
-            in config_str
-        )
-        assert "$SHORT_ID.zip" in config_str
-        if settings.ENVIRONMENT == "dev":
-            assert (
-                f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH ./content/static_resources --exclude *.mp4 --only-show-errors) || STUDIO_S3_RESULT=1"
-                in config_str
-            )
-    else:
-        assert (
-            "cp ../webpack-json/webpack.json ../ocw-hugo-themes/base-theme/data"
-            in config_str
-        )
-        assert (
-            f"HUGO_RESULT=$(hugo --themesDir ../ocw-hugo-themes/ --quiet --baseURL $PREFIX/$BASE_URL --config ../ocw-hugo-projects/$STARTER_SLUG/config.yaml{build_drafts}) || HUGO_RESULT=1"
-            in config_str
-        )
-        assert (
-            f"STUDIO_S3_RESULT=$(aws s3{endpoint_url} sync s3://{settings.AWS_STORAGE_BUCKET_NAME}/$S3_PATH s3://{bucket}$PREFIX/$SITE_URL --metadata site-id=$NAME --only-show-errors) || STUDIO_S3_RESULT=1"
-            in config_str
-        )
-        assert (
-            f"PUBLISH_S3_RESULT=$(aws s3{endpoint_url} sync $SHORT_ID/public s3://{bucket}$PREFIX/$BASE_URL --metadata site-id=$NAME --only-show-errors) || PUBLISH_S3_RESULT=1"
-            in config_str
-        )
-        if settings.ENVIRONMENT != "dev":
-            assert settings.OCW_NEXT_SEARCH_WEBHOOK_KEY in config_str
-            assert (
-                f"{settings.OPEN_DISCUSSIONS_URL}/api/v0/ocw_next_webhook/"
-                in config_str
-            )
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
