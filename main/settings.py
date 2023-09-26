@@ -414,6 +414,11 @@ AWS_SECRET_ACCESS_KEY = get_string(
     default=None,
     description="AWS Secret Key for S3 storage.",
 )
+AWS_ARTIFACTS_BUCKET_NAME = get_string(
+    name="AWS_ARTIFACTS_BUCKET_NAME",
+    default=None,
+    description="S3 artifacts bucket name.",
+)
 AWS_STORAGE_BUCKET_NAME = get_string(
     name="AWS_STORAGE_BUCKET_NAME", default=None, description="S3 Bucket name."
 )
