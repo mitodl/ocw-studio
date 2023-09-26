@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.102.6
+---------------
+
+- Fix italics font size issue in CKEditor (#1984)
+- Make return type of is_gdrive_enabled Boolean (#1986)
+
 Version 0.102.5 (Released September 26, 2023)
 ---------------
 
