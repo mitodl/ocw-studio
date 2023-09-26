@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.102.5
+Version 0.102.5 (Released September 26, 2023)
 ---------------
 
 - fix ocw-studio-webhook URL in MassBuildSitesPipelineDefinition (#1973)
