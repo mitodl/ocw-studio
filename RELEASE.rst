@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.102.5 (Released September 26, 2023)
+---------------
+
+- fix ocw-studio-webhook URL in MassBuildSitesPipelineDefinition (#1973)
+- allow Pagination in Collaborator List (#1932)
+- filter out videos during online mass build (#1963)
+
 Version 0.102.4 (Released September 19, 2023)
 ---------------
 
