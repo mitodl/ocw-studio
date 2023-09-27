@@ -357,6 +357,9 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 
     MANDATORY_SETTINGS = [
         *MANDATORY_CONCOURSE_SETTINGS,
+        "AWS_ARTIFACTS_BUCKET_NAME",
+        "AWS_PREVIEW_BUCKET_NAME",
+        "AWS_PUBLISH_BUCKET_NAME",
         "GITHUB_WEBHOOK_BRANCH",
         "SEARCH_API_URL",
     ]
@@ -389,6 +392,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     BRANCH = settings.GITHUB_WEBHOOK_BRANCH
     MANDATORY_SETTINGS = [
         *MANDATORY_CONCOURSE_SETTINGS,
+        "AWS_ARTIFACTS_BUCKET_NAME",
         "AWS_PREVIEW_BUCKET_NAME",
         "AWS_PUBLISH_BUCKET_NAME",
         "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
@@ -504,6 +508,7 @@ class MassBuildSitesPipeline(
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
             *MANDATORY_CONCOURSE_SETTINGS,
+            "AWS_ARTIFACTS_BUCKET_NAME",
             "AWS_PREVIEW_BUCKET_NAME",
             "AWS_PUBLISH_BUCKET_NAME",
             "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
