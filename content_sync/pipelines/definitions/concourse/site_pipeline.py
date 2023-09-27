@@ -397,7 +397,7 @@ class StaticResourcesTaskStep(TaskStep):
         video_filter = " --exclude *.mp4" if filter_videos else ""
         super().__init__(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
-            timeout="40m",
+            timeout="120m",
             attempts=3,
             params={},
             config=TaskConfig(
@@ -626,7 +626,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         build_offline_site_step = add_error_handling(
             step=TaskStep(
                 task=BUILD_OFFLINE_SITE_IDENTIFIER,
-                timeout="20m",
+                timeout="120m",
                 attempts=3,
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
@@ -690,7 +690,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         upload_offline_build_step = add_error_handling(
             step=TaskStep(
                 task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
-                timeout="40m",
+                timeout="120m",
                 params={"IS_ROOT_WEBSITE": pipeline_vars["is_root_website"]},
                 config=TaskConfig(
                     platform="linux",
