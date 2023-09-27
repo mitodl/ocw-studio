@@ -1,5 +1,7 @@
 import json
 
+from django.conf import settings
+
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -14,9 +16,9 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
     """
     The theme assets pipeline definition should contain the expected properties
     """
-    artifacts_bucket = "ol-eng-artifacts"
-    preview_bucket = "ocw-content-preview"
-    publish_bucket = "ocw-content-publish"
+    artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
+    preview_bucket = settings.AWS_PREVIEW_BUCKET_NAME
+    publish_bucket = settings.AWS_PUBLISH_BUCKET_NAME
     ocw_hugo_themes_branch = "main"
     pipeline_definition = ThemeAssetsPipelineDefinition(
         artifacts_bucket=artifacts_bucket,

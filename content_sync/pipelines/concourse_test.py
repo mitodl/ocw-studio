@@ -115,6 +115,7 @@ def pipeline_settings(settings, request):  # noqa: PT004
     """Default settings for pipelines"""  # noqa: D401
     env = request.param
     settings.ENVIRONMENT = env
+    settings.AWS_ARTIFACTS_BUCKET_NAME = "artifacts_bucket_test"
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket_test"
     settings.AWS_PREVIEW_BUCKET_NAME = "draft_bucket_test"
     settings.AWS_PUBLISH_BUCKET_NAME = "live_bucket_test"

@@ -112,7 +112,7 @@ def get_common_pipeline_vars():
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
         "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
-        "artifacts_bucket_name": "ol-eng-artifacts",
+        "artifacts_bucket_name": settings.AWS_ARTIFACTS_BUCKET_NAME,
         "static_api_base_url_draft": settings.OCW_STUDIO_DRAFT_URL,
         "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
         "resource_base_url_draft": "",

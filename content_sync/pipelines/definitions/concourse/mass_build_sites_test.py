@@ -101,7 +101,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     )
     mock_is_dev.return_value = is_dev
     site_content_branch = get_site_content_branch(version)
-    artifacts_bucket = "ol-eng-artifacts"
+    artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
     web_bucket = (
         settings.AWS_PREVIEW_BUCKET_NAME
         if version == VERSION_DRAFT

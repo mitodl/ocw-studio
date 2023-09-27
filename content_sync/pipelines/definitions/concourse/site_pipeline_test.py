@@ -124,7 +124,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     ocw_studio_url = "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
     storage_bucket = "ol-ocw-studio-app"
-    artifacts_bucket = "ol-eng-artifacts"
+    artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
     instance_vars = f"?vars={quote(json.dumps({'site': website.name}))}"
     config = SitePipelineDefinitionConfig(
         site=website,

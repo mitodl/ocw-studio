@@ -203,7 +203,7 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
         == settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
     )
     assert pipeline_vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
-    assert pipeline_vars["artifacts_bucket_name"] == "ol-eng-artifacts"
+    assert pipeline_vars["artifacts_bucket_name"] == settings.AWS_ARTIFACTS_BUCKET_NAME
     if is_dev:
         assert (
             pipeline_vars["static_api_base_url_draft"]
