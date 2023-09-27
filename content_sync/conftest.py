@@ -66,6 +66,7 @@ def required_concourse_settings(settings):  # noqa: PT004
     settings.CONCOURSE_USERNAME = "test"
     settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret  # noqa: S105
     settings.CONCOURSE_TEAM = "ocwtest"
+    settings.AWS_ARTIFACTS_BUCKET_NAME = "artifacts_bucket"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
     settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "offline_preview_bucket"
