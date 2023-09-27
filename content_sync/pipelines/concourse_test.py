@@ -1,6 +1,5 @@
 """concourse tests"""
 import json
-from datetime import datetime, timedelta, timezone
 from html import unescape
 from urllib.parse import quote, urljoin
 
@@ -621,33 +620,6 @@ def test_upsert_pipeline(
     assert (
         f"s3://{artifacts_bucket_name}/ocw-hugo-themes/{expected_branch}" in config_str
     )
-
-
-@pytest.fixture(scope="module")
-def mass_build_websites(django_db_setup, django_db_blocker):
-    """Generate websites for testing the mass build pipeline"""
-    with django_db_blocker.unblock():
-        now = datetime.now(tz=timezone.utc) - timedelta(hours=48)
-        total_sites = 6
-        ocw_hugo_projects_path = "https://github.com/org/repo"
-        root_starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB,
-            path=ocw_hugo_projects_path,
-            slug="root-website-starter",
-        )
-        starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
-        )
-        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
-        batch_sites = WebsiteFactory.create_batch(
-            total_sites, starter=starter, draft_publish_date=now, publish_date=now
-        )
-        batch_sites.append(root_website)
-        yield batch_sites
-        for site in batch_sites:
-            site.delete()
-        starter.delete()
-        root_starter.delete()
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
