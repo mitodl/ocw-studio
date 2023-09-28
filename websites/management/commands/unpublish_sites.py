@@ -6,7 +6,10 @@ from django.db.models import Q
 
 from content_sync import api
 from content_sync.constants import VERSION_LIVE
-from content_sync.tasks import remove_website_in_root_website
+from content_sync.tasks import (
+    remove_website_in_root_website,
+    update_mass_build_pipelines,
+)
 from main.management.commands.filter import WebsiteFilterCommand
 from users.models import User
 from websites.constants import (
@@ -119,6 +122,7 @@ class Command(WebsiteFilterCommand):
                 site_pipeline = api.get_site_pipeline(website)
                 site_pipeline.pause_pipeline(VERSION_LIVE)
                 remove_website_in_root_website(website)
+                update_mass_build_pipelines(VERSION_LIVE)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()

@@ -225,6 +225,25 @@ def sync_website_content(website_name: str):
         backend.sync_all_content_to_backend()
 
 
+@app.task(acks_late=True)
+def update_mass_build_pipelines(website: Website, version: str):
+    """Update the mass-build-sites pipeline definitions"""
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        publish_date_field = (
+            "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+        )
+        publish_date = getattr(website, publish_date_field)
+        if not publish_date:
+            pipeline = api.get_mass_build_sites_pipeline(
+                version, offline=False, prefix="", starter=""
+            )
+            pipeline.upsert_pipeline()
+            offline_pipeline = api.get_mass_build_sites_pipeline(
+                version, offline=True, prefix="", starter=""
+            )
+            offline_pipeline.upsert_pipeline()
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def publish_website_backend_draft(website_name: str):

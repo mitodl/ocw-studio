@@ -2,7 +2,9 @@
 import os
 from datetime import timedelta
 
+import factory
 import pytest
+import pytz
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
@@ -108,6 +110,36 @@ def test_sync_website_content_not_exists(api_mock, log_mock):
         "fakesite",
     )
     api_mock.get_sync_backend.assert_not_called()
+
+
+def test_update_mass_build_pipelines(api_mock):
+    """Verify that mass_build_sites pipelines are upserted under the proper conditions"""
+    website = WebsiteFactory.create()
+    fake_date = factory.Faker("date_time", tzinfo=pytz.utc)
+    website.draft_publish_date = None
+    website.publish_date = None
+    tasks.update_mass_build_pipelines(website, VERSION_DRAFT)
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(
+        VERSION_DRAFT, offline=False, prefix="", starter=""
+    )
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(
+        VERSION_DRAFT, offline=True, prefix="", starter=""
+    )
+    assert api_mock.get_mass_build_sites_pipeline.call_count == 2
+    website.draft_publish_date = fake_date
+    tasks.update_mass_build_pipelines(website, VERSION_DRAFT)
+    assert api_mock.get_mass_build_sites_pipeline.call_count == 2
+    tasks.update_mass_build_pipelines(website, VERSION_LIVE)
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(
+        VERSION_LIVE, offline=False, prefix="", starter=""
+    )
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(
+        VERSION_LIVE, offline=True, prefix="", starter=""
+    )
+    assert api_mock.get_mass_build_sites_pipeline.call_count == 4
+    website.publish_date = fake_date
+    tasks.update_mass_build_pipelines(website, VERSION_LIVE)
+    assert api_mock.get_mass_build_sites_pipeline.call_count == 4
 
 
 @pytest.mark.parametrize("backend_exists", [True, False])
