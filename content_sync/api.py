@@ -65,13 +65,14 @@ def get_theme_assets_pipeline(
 @is_publish_pipeline_enabled
 def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     version: str,
+    *,
     api: Optional[object] = None,
-    prefix: Optional[str] = None,
-    themes_branch: Optional[str] = None,
-    projects_branch: Optional[str] = None,
-    starter: Optional[str] = None,
-    offline: Optional[bool] = None,
-    hugo_args: Optional[str] = None,
+    prefix: Optional[str] = "",
+    themes_branch: Optional[str] = "",
+    projects_branch: Optional[str] = "",
+    starter: Optional[str] = "",
+    offline: Optional[bool] = False,
+    hugo_args: Optional[str] = "",
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
     return import_string(
