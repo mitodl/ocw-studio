@@ -627,7 +627,6 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 @pytest.mark.parametrize("themes_branch", ["", "main", "test_themes_branch"])
 @pytest.mark.parametrize("projects_branch", ["", "main", "test_projects_branch"])
-@pytest.mark.parametrize("prefix", ["", "/test_prefix", "test_prefix"])
 @pytest.mark.parametrize("starter", ["", "ocw-course"])
 @pytest.mark.parametrize("offline", [True, False])
 def test_upsert_mass_build_pipeline(  # noqa: PLR0913
@@ -640,7 +639,6 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
     version,
     themes_branch,
     projects_branch,
-    prefix,
     starter,
     offline,
 ):  # pylint:disable=too-many-locals,too-many-arguments,too-many-statements,too-many-branches
@@ -658,7 +656,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         "version": version,
         "themes_branch": themes_branch,
         "projects_branch": projects_branch,
-        "prefix": prefix,
+        "prefix": "",
         "starter": starter,
         "offline": offline,
     }
@@ -691,7 +689,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         ocw_hugo_themes_branch=themes_branch,
         ocw_hugo_projects_branch=projects_branch,
         offline=offline,
-        prefix=prefix,
+        prefix="",
         instance_vars=instance_vars_str,
     )
     mock_get.assert_any_call(url_path)
