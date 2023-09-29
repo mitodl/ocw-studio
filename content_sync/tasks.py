@@ -234,13 +234,9 @@ def update_mass_build_pipelines(website: Website, version: str):
         )
         publish_date = getattr(website, publish_date_field)
         if not publish_date:
-            pipeline = api.get_mass_build_sites_pipeline(
-                version, offline=False, prefix="", starter=""
-            )
+            pipeline = api.get_mass_build_sites_pipeline(version)
             pipeline.upsert_pipeline()
-            offline_pipeline = api.get_mass_build_sites_pipeline(
-                version, offline=True, prefix="", starter=""
-            )
+            offline_pipeline = api.get_mass_build_sites_pipeline(version, offline=True)
             offline_pipeline.upsert_pipeline()
 
 

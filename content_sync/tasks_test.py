@@ -119,23 +119,15 @@ def test_update_mass_build_pipelines(api_mock):
     website.draft_publish_date = None
     website.publish_date = None
     tasks.update_mass_build_pipelines(website, VERSION_DRAFT)
-    api_mock.get_mass_build_sites_pipeline.assert_any_call(
-        VERSION_DRAFT, offline=False, prefix="", starter=""
-    )
-    api_mock.get_mass_build_sites_pipeline.assert_any_call(
-        VERSION_DRAFT, offline=True, prefix="", starter=""
-    )
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_DRAFT)
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_DRAFT, offline=True)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 2
     website.draft_publish_date = fake_date
     tasks.update_mass_build_pipelines(website, VERSION_DRAFT)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 2
     tasks.update_mass_build_pipelines(website, VERSION_LIVE)
-    api_mock.get_mass_build_sites_pipeline.assert_any_call(
-        VERSION_LIVE, offline=False, prefix="", starter=""
-    )
-    api_mock.get_mass_build_sites_pipeline.assert_any_call(
-        VERSION_LIVE, offline=True, prefix="", starter=""
-    )
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_LIVE)
+    api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_LIVE, offline=True)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 4
     website.publish_date = fake_date
     tasks.update_mass_build_pipelines(website, VERSION_LIVE)
