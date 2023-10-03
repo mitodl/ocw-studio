@@ -229,7 +229,7 @@ def sync_website_content(website_name: str):
 def update_mass_build_pipelines_on_publish(version: str, website: Website):
     """
     Update the mass-build-sites pipeline definitions upon publishing of a new website,
-    but only do so if the site has never been published before
+    but only do so if the site has never been published before or has been unpublished
 
     Args:
         version(str): The version (draft / live) to update
