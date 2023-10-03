@@ -240,7 +240,7 @@ def update_mass_build_pipelines_on_publish(version: str, website: Website):
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
         )
         publish_date = getattr(website, publish_date_field)
-        if not publish_date:
+        if not publish_date or website.unpublish_status:
             pipeline = api.get_mass_build_sites_pipeline(version)
             pipeline.upsert_pipeline()
             offline_pipeline = api.get_mass_build_sites_pipeline(version, offline=True)

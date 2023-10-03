@@ -132,6 +132,10 @@ def test_update_mass_build_pipelines(api_mock):
     website.publish_date = fake_date
     tasks.update_mass_build_pipelines_on_publish(version=VERSION_LIVE, website=website)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 4
+    website.unpublish_status = PUBLISH_STATUS_NOT_STARTED
+    tasks.update_mass_build_pipelines_on_publish(version=VERSION_DRAFT, website=website)
+    tasks.update_mass_build_pipelines_on_publish(version=VERSION_LIVE, website=website)
+    assert api_mock.get_mass_build_sites_pipeline.call_count == 8
 
 
 @pytest.mark.parametrize("backend_exists", [True, False])
