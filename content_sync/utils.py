@@ -157,8 +157,7 @@ def get_publishable_sites(version: str):
     # Get all sites, minus any sites that have never been successfully published
     sites = Website.objects.exclude(
         Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
-    )
-    sites = sites.exclude(unpublish_status__isnull=False)
+    ).exclude(unpublish_status__isnull=False)
     return sites.prefetch_related("starter")
 
 
