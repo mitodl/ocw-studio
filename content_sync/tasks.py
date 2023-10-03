@@ -226,8 +226,15 @@ def sync_website_content(website_name: str):
 
 
 @app.task(acks_late=True)
-def update_mass_build_pipelines(website: Website, version: str):
-    """Update the mass-build-sites pipeline definitions"""
+def update_mass_build_pipelines_on_publish(version: str, website: Website):
+    """
+    Update the mass-build-sites pipeline definitions upon publishing of a new website,
+    but only do so if the site has never been published before
+
+    Args:
+        version(str): The version (draft / live) to update
+        website(Website): The website being published to check publish_date against
+    """
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         publish_date_field = (
             "publish_date" if version == VERSION_LIVE else "draft_publish_date"
