@@ -1,4 +1,5 @@
 import json
+from random import shuffle
 from typing import Optional
 from urllib.parse import quote
 
@@ -7,6 +8,7 @@ from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     AcrossVar,
     DoStep,
+    Duration,
     GetStep,
     Job,
     Pipeline,
@@ -23,8 +25,10 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
@@ -32,6 +36,7 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
+    GitResource,
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
@@ -49,9 +54,9 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
 )
-from content_sync.utils import get_common_pipeline_vars
+from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
 from main.utils import is_dev
-from websites.models import Website, WebsiteQuerySet, WebsiteStarter
+from websites.models import Website, WebsiteStarter
 
 
 class MassBuildSitesPipelineDefinitionConfig:
@@ -59,7 +64,6 @@ class MassBuildSitesPipelineDefinitionConfig:
     A class with configuration properties for building a mass build pipeline
 
     Args:
-        sites(WebsiteQuerySet): The sites to build the pipeline for
         version(str): The version of the sites to build in the pipeline (draft / live)
         artifacts_bucket(str): The versioned bucket where the webpack manifest is stored (ol-eng-artifacts)
         site_content_branch(str): The branch to use in the site content repo (preview / release)
@@ -74,7 +78,6 @@ class MassBuildSitesPipelineDefinitionConfig:
 
     def __init__(  # noqa: PLR0913
         self,
-        sites: WebsiteQuerySet,
         version: str,
         artifacts_bucket: str,
         site_content_branch: str,
@@ -87,6 +90,8 @@ class MassBuildSitesPipelineDefinitionConfig:
         hugo_arg_overrides: Optional[str] = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
+        sites = list(get_publishable_sites(version))
+        shuffle(sites)
         self.sites = sites
         self.version = version
         self.prefix = prefix
@@ -136,6 +141,12 @@ class MassBuildSitesResources(list[Resource]):
             bucket=config.artifacts_bucket,
             branch=config.ocw_hugo_themes_branch,
         )
+        webpack_manifest_trigger_resource = WebpackManifestResource(
+            name=WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+            bucket=config.artifacts_bucket,
+            branch=config.ocw_hugo_themes_branch,
+        )
+        webpack_manifest_trigger_resource.check_every = Duration("1m")
         ocw_hugo_themes_resource = OcwHugoThemesGitResource(
             branch=config.ocw_hugo_themes_branch
         )
@@ -144,9 +155,17 @@ class MassBuildSitesResources(list[Resource]):
             uri=root_starter.ocw_hugo_projects_url,
             branch=config.ocw_hugo_projects_branch,
         )
+        ocw_hugo_projects_trigger_resource = GitResource(
+            name=OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
+            uri=root_starter.ocw_hugo_projects_url,
+            branch=config.ocw_hugo_projects_branch,
+        )
+        ocw_hugo_projects_trigger_resource.check_every = Duration("1m")
         self.append(webpack_manifest_resource)
+        self.append(webpack_manifest_trigger_resource)
         self.append(ocw_hugo_themes_resource)
         self.append(ocw_hugo_projects_resource)
+        self.append(ocw_hugo_projects_trigger_resource)
         self.append(
             OcwStudioWebhookResource(
                 site_name=site_pipeline_vars["site_name"],
@@ -222,6 +241,25 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         batch_count = len(batches)
         batch_number = 1
         for batch in batches:
+            tasks = []
+            if batch_number == 1:
+                trigger = not config.offline
+                tasks.extend(
+                    [
+                        GetStep(
+                            get=WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+                            trigger=trigger,
+                            timeout="5m",
+                            attempts=3,
+                        ),
+                        GetStep(
+                            get=OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
+                            trigger=trigger,
+                            timeout="5m",
+                            attempts=3,
+                        ),
+                    ]
+                )
             if batch_number < batch_count:
                 batch_gate_resources.append(
                     Resource(
@@ -231,7 +269,6 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         check_every="never",
                     )
                 )
-            tasks = []
             tasks.extend(base_tasks)
             if config.offline:
                 tasks.append(filter_webpack_artifacts_step)

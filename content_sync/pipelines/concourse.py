@@ -20,8 +20,6 @@ from requests import HTTPError
 
 from content_sync.constants import (
     DEV_ENDPOINT_URL,
-    TARGET_OFFLINE,
-    TARGET_ONLINE,
     VERSION_DRAFT,
     VERSION_LIVE,
 )
@@ -34,6 +32,10 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.mass_build_sites import (
+    MassBuildSitesPipelineDefinition,
+    MassBuildSitesPipelineDefinitionConfig,
+)
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
@@ -44,17 +46,16 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 from content_sync.utils import (
     check_mandatory_settings,
     get_common_pipeline_vars,
-    get_hugo_arg_string,
     get_ocw_studio_api_url,
+    get_site_content_branch,
     get_theme_branch,
     strip_dev_lines,
     strip_non_dev_lines,
     strip_offline_lines,
     strip_online_lines,
 )
-from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
-from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
+from websites.constants import STARTER_SOURCE_GITHUB
 from websites.models import Website
 
 log = logging.getLogger(__name__)
@@ -356,6 +357,9 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
 
     MANDATORY_SETTINGS = [
         *MANDATORY_CONCOURSE_SETTINGS,
+        "AWS_ARTIFACTS_BUCKET_NAME",
+        "AWS_PREVIEW_BUCKET_NAME",
+        "AWS_PUBLISH_BUCKET_NAME",
         "GITHUB_WEBHOOK_BRANCH",
         "SEARCH_API_URL",
     ]
@@ -388,6 +392,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     BRANCH = settings.GITHUB_WEBHOOK_BRANCH
     MANDATORY_SETTINGS = [
         *MANDATORY_CONCOURSE_SETTINGS,
+        "AWS_ARTIFACTS_BUCKET_NAME",
         "AWS_PREVIEW_BUCKET_NAME",
         "AWS_PUBLISH_BUCKET_NAME",
         "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
@@ -503,6 +508,7 @@ class MassBuildSitesPipeline(
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
             *MANDATORY_CONCOURSE_SETTINGS,
+            "AWS_ARTIFACTS_BUCKET_NAME",
             "AWS_PREVIEW_BUCKET_NAME",
             "AWS_PUBLISH_BUCKET_NAME",
             "AWS_OFFLINE_PREVIEW_BUCKET_NAME",
@@ -519,10 +525,7 @@ class MassBuildSitesPipeline(
         super().__init__(api=api)
         self.pipeline_name = "mass_build_sites"
         self.VERSION = version
-        if prefix:
-            self.PREFIX = prefix[1:] if prefix.startswith("/") else prefix
-        else:
-            self.PREFIX = ""
+        self.PREFIX = prefix if prefix else ""
         self.THEMES_BRANCH = themes_branch if themes_branch else get_theme_branch()
         self.PROJECTS_BRANCH = (
             projects_branch if projects_branch else self.THEMES_BRANCH
@@ -545,137 +548,19 @@ class MassBuildSitesPipeline(
         """
         Create or update the concourse pipeline
         """
-        template_vars = get_common_pipeline_vars()
-        starter = Website.objects.get(name=settings.ROOT_WEBSITE_NAME).starter
-        starter_path_url = urlparse(starter.path)
-        hugo_projects_url = urljoin(
-            f"{starter_path_url.scheme}://{starter_path_url.netloc}",
-            f"{'/'.join(starter_path_url.path.strip('/').split('/')[:2])}.git",  # /<org>/<repo>.git  # noqa: E501
+        site_content_branch = get_site_content_branch(self.VERSION)
+        pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+            version=self.VERSION,
+            artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+            site_content_branch=site_content_branch,
+            ocw_hugo_themes_branch=self.THEMES_BRANCH,
+            ocw_hugo_projects_branch=self.PROJECTS_BRANCH,
+            offline=self.OFFLINE,
+            prefix=self.PREFIX,
+            instance_vars=self.instance_vars,
         )
-        if settings.CONCOURSE_IS_PRIVATE_REPO:
-            markdown_uri = f"git@{settings.GIT_DOMAIN}:{settings.GIT_ORGANIZATION}"
-            private_key_var = "((git-private-key))"
-        else:
-            markdown_uri = f"https://{settings.GIT_DOMAIN}/{settings.GIT_ORGANIZATION}"
-            private_key_var = ""
-
-        if self.VERSION == VERSION_DRAFT:
-            template_vars.update(
-                {
-                    "branch": settings.GIT_BRANCH_PREVIEW,
-                    "static_api_url": template_vars["static_api_base_url_draft"],
-                    "web_bucket": template_vars["preview_bucket_name"],
-                    "offline_bucket": template_vars["offline_preview_bucket_name"],
-                    "build_drafts": "--buildDrafts",
-                    "resource_base_url": settings.RESOURCE_BASE_URL_DRAFT,
-                    "noindex": "true",
-                }
-            )
-        elif self.VERSION == VERSION_LIVE:
-            template_vars.update(
-                {
-                    "branch": settings.GIT_BRANCH_RELEASE,
-                    "static_api_url": template_vars["static_api_base_url_live"],
-                    "web_bucket": template_vars["publish_bucket_name"],
-                    "offline_bucket": template_vars["offline_publish_bucket_name"],
-                    "build_drafts": "",
-                    "resource_base_url": settings.RESOURCE_BASE_URL_LIVE,
-                    "noindex": "true"
-                    if settings.ENV_NAME not in PRODUCTION_NAMES
-                    else "false",
-                }
-            )
-        base_hugo_args = {
-            "--themesDir": "../ocw-hugo-themes/",
-            "--quiet": "",
-        }
-        base_online_args = base_hugo_args.copy()
-        base_online_args.update(
-            {
-                "--baseURL": "$PREFIX/$BASE_URL",
-                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config.yaml",
-            }
-        )
-        base_offline_args = base_hugo_args.copy()
-        base_offline_args.update(
-            {
-                "--baseURL": "/",
-                "--config": "../ocw-hugo-projects/$STARTER_SLUG/config-offline.yaml",
-            }
-        )
-        hugo_args_online = get_hugo_arg_string(
-            TARGET_ONLINE,
-            self.VERSION,
-            base_online_args,
-            self.HUGO_ARGS,
-        )
-        hugo_args_offline = get_hugo_arg_string(
-            TARGET_OFFLINE,
-            self.VERSION,
-            base_offline_args,
-            self.HUGO_ARGS,
-        )
-
-        config_str = (
-            self.get_pipeline_definition(
-                "definitions/concourse/mass-build-sites.yml", offline=self.OFFLINE
-            )
-            .replace("((hugo-args-online))", hugo_args_online)
-            .replace("((hugo-args-offline))", hugo_args_offline)
-            .replace("((markdown-uri))", markdown_uri)
-            .replace("((git-private-key-var))", private_key_var)
-            .replace("((gtm-account-id))", settings.OCW_GTM_ACCOUNT_ID)
-            .replace(
-                "((artifacts-bucket))", template_vars["artifacts_bucket_name"] or ""
-            )
-            .replace("((web-bucket))", template_vars["web_bucket"] or "")
-            .replace("((offline-bucket))", template_vars["offline_bucket"] or "")
-            .replace("((ocw-hugo-themes-branch))", self.THEMES_BRANCH)
-            .replace("((ocw-hugo-themes-uri))", OCW_HUGO_THEMES_GIT)
-            .replace(
-                "((ocw-hugo-projects-branch))",
-                (settings.OCW_HUGO_PROJECTS_BRANCH or self.PROJECTS_BRANCH)
-                if is_dev()
-                else self.PROJECTS_BRANCH,
-            )
-            .replace("((ocw-hugo-projects-uri))", hugo_projects_url)
-            .replace("((ocw-import-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
-            .replace("((ocw-course-starter-slug))", settings.OCW_COURSE_STARTER_SLUG)
-            .replace("((ocw-studio-url))", get_ocw_studio_api_url() or "")
-            .replace("((static-api-base-url))", template_vars["static_api_url"] or "")
-            .replace("((ocw-studio-bucket))", settings.AWS_STORAGE_BUCKET_NAME or "")
-            .replace("((ocw-site-repo-branch))", template_vars["branch"] or "")
-            .replace("((version))", self.VERSION)
-            .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-            .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-            .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-            .replace("((build-drafts))", template_vars["build_drafts"] or "")
-            .replace("((sitemap-domain))", settings.SITEMAP_DOMAIN)
-            .replace("((endpoint-url))", DEV_ENDPOINT_URL)
-            .replace(
-                "((cli-endpoint-url))",
-                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-            )
-            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
-            .replace("((resource-base-url))", template_vars["resource_base_url"])
-            .replace("((prefix))", self.PREFIX)
-            .replace("((search-api-url))", settings.SEARCH_API_URL)
-            .replace("((starter))", f"&starter={self.STARTER}" if self.STARTER else "")
-            .replace(
-                "((trigger))",
-                str(
-                    self.THEMES_BRANCH == settings.GITHUB_WEBHOOK_BRANCH
-                    and self.PROJECTS_BRANCH == settings.GITHUB_WEBHOOK_BRANCH
-                ),
-            )
-            .replace(
-                "((ocw-hugo-themes-sentry-dsn))",
-                settings.OCW_HUGO_THEMES_SENTRY_DSN or "",
-            )
-            .replace("((noindex))", template_vars["noindex"])
-        )
-        self.upsert_config(config_str, self.PIPELINE_NAME)
+        pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
+        self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
 
 
 class UnpublishedSiteRemovalPipeline(

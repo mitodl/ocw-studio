@@ -32,6 +32,8 @@ from content_sync.utils import (
     get_destination_url,
     get_hugo_arg_string,
     get_ocw_studio_api_url,
+    get_publishable_sites,
+    get_site_content_branch,
     move_s3_object,
     strip_lines_between,
 )
@@ -201,7 +203,7 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
         == settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME
     )
     assert pipeline_vars["storage_bucket_name"] == settings.AWS_STORAGE_BUCKET_NAME
-    assert pipeline_vars["artifacts_bucket_name"] == "ol-eng-artifacts"
+    assert pipeline_vars["artifacts_bucket_name"] == settings.AWS_ARTIFACTS_BUCKET_NAME
     if is_dev:
         assert (
             pipeline_vars["static_api_base_url_draft"]
@@ -246,6 +248,30 @@ def test_get_ocw_studio_api_url(settings, mocker, is_dev):
         "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
     )
     assert ocw_studio_api_url == expected_ocw_studio_api_url
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_get_publishable_sites(settings, mocker, mass_build_websites, version):
+    """get_publishable_sites should return a queryset of sites that have been published before"""
+    unpublished_site = mass_build_websites[0]
+    if version == VERSION_DRAFT:
+        unpublished_site.draft_publish_date = None
+    else:
+        unpublished_site.publish_date = None
+    unpublished_site.save()
+    assert len(mass_build_websites) == 7
+    publishable_sites = get_publishable_sites(version)
+    assert publishable_sites.count() == 6
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_get_site_content_branch(settings, mocker, mass_build_websites, version):
+    """get_publishable_sites should return the proper git branch based on version"""
+    site_content_branch = get_site_content_branch(version)
+    if version == VERSION_DRAFT:
+        assert site_content_branch == settings.GIT_BRANCH_PREVIEW
+    else:
+        assert site_content_branch == settings.GIT_BRANCH_RELEASE
 
 
 @pytest.mark.parametrize("build_target", [TARGET_OFFLINE, TARGET_ONLINE])

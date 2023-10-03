@@ -1,9 +1,12 @@
 """Test config for content_sync app"""
 from base64 import b64encode
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
 
+from websites.constants import STARTER_SOURCE_GITHUB
+from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.models import Website, WebsiteStarter
 
 
@@ -63,6 +66,7 @@ def required_concourse_settings(settings):  # noqa: PT004
     settings.CONCOURSE_USERNAME = "test"
     settings.CONCOURSE_PASSWORD = "pass"  # pragma: allowlist secret  # noqa: S105
     settings.CONCOURSE_TEAM = "ocwtest"
+    settings.AWS_ARTIFACTS_BUCKET_NAME = "artifacts_bucket"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
     settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "offline_preview_bucket"
@@ -77,3 +81,30 @@ def required_concourse_settings(settings):  # noqa: PT004
     settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret  # noqa: S105
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
+
+
+@pytest.fixture(scope="module")
+def mass_build_websites(django_db_setup, django_db_blocker):  # noqa: ARG001
+    """Generate websites for testing the mass build pipeline"""
+    with django_db_blocker.unblock():
+        now = datetime.now(tz=timezone.utc) - timedelta(hours=48)
+        total_sites = 6
+        ocw_hugo_projects_path = "https://github.com/org/repo"
+        root_starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB,
+            path=ocw_hugo_projects_path,
+            slug="root-website-starter",
+        )
+        starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
+        )
+        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
+        batch_sites = WebsiteFactory.create_batch(
+            total_sites, starter=starter, draft_publish_date=now, publish_date=now
+        )
+        batch_sites.append(root_website)
+        yield batch_sites
+        for site in batch_sites:
+            site.delete()
+        starter.delete()
+        root_starter.delete()

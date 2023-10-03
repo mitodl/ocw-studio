@@ -30,35 +30,13 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinitionConfig,
     get_site_pipeline_definition_vars,
 )
-from content_sync.utils import get_ocw_studio_api_url
+from content_sync.utils import get_ocw_studio_api_url, get_site_content_branch
 from main.utils import get_dict_list_item_by_field
-from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
-from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.constants import OCW_HUGO_THEMES_GIT
 
 pytestmark = pytest.mark.django_db
 total_sites = 6
 ocw_hugo_projects_path = "https://github.com/org/repo"
-
-
-@pytest.fixture(scope="module")
-def websites(django_db_setup, django_db_blocker):
-    with django_db_blocker.unblock():
-        root_starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB,
-            path=ocw_hugo_projects_path,
-            slug="root-website-starter",
-        )
-        starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
-        )
-        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
-        batch_sites = WebsiteFactory.create_batch(total_sites, starter=starter)
-        batch_sites.append(root_website)
-        yield batch_sites
-        for site in batch_sites:
-            site.delete()
-        starter.delete()
-        root_starter.delete()
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
@@ -72,7 +50,7 @@ def websites(django_db_setup, django_db_blocker):
     "prefix", ["", "test_prefix", "/test_prefix", "/test_prefix/subfolder/"]
 )
 def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 PLR0915
-    websites,
+    mass_build_websites,
     settings,
     mocker,
     version,
@@ -100,12 +78,8 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     mock_is_dev.return_value = is_dev
-    site_content_branch = (
-        settings.GIT_BRANCH_PREVIEW
-        if version == VERSION_DRAFT
-        else settings.GIT_BRANCH_RELEASE
-    )
-    artifacts_bucket = "ol-eng-artifacts"
+    site_content_branch = get_site_content_branch(version)
+    artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
     web_bucket = (
         settings.AWS_PREVIEW_BUCKET_NAME
         if version == VERSION_DRAFT
@@ -121,7 +95,6 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
     ocw_studio_url = get_ocw_studio_api_url()
     site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
     pipeline_config = MassBuildSitesPipelineDefinitionConfig(
-        sites=websites,
         version=version,
         artifacts_bucket=artifacts_bucket,
         site_content_branch=site_content_branch,
@@ -255,7 +228,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                 across_vars = step["across"][0]
                 assert across_vars["var"] == "site"
                 for across_values in across_vars["values"]:
-                    site = websites.get(short_id=across_values["short_id"])
+                    site = mass_build_websites.get(short_id=across_values["short_id"])
                     site_config = SitePipelineDefinitionConfig(
                         site=site,
                         pipeline_name="test",

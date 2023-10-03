@@ -34,6 +34,10 @@
       "description": "AWS Account ID",
       "required": false
     },
+    "AWS_ARTIFACTS_BUCKET_NAME": {
+      "description": "S3 artifacts bucket name.",
+      "required": false
+    },
     "AWS_OFFLINE_PREVIEW_BUCKET_NAME": {
       "description": "S3 offline preview bucket name.",
       "required": false

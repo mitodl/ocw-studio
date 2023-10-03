@@ -5,6 +5,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db.models import Q
 
 from content_sync.constants import (
     DEV_END,
@@ -20,11 +21,12 @@ from content_sync.constants import (
     START_TAG_PREFIX,
     TARGET_OFFLINE,
     VERSION_DRAFT,
+    VERSION_LIVE,
 )
 from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
 from websites.constants import WEBSITE_CONTENT_FILETYPE
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 
 log = logging.getLogger()
@@ -110,7 +112,7 @@ def get_common_pipeline_vars():
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
         "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
-        "artifacts_bucket_name": "ol-eng-artifacts",
+        "artifacts_bucket_name": settings.AWS_ARTIFACTS_BUCKET_NAME,
         "static_api_base_url_draft": settings.OCW_STUDIO_DRAFT_URL,
         "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
         "resource_base_url_draft": "",
@@ -133,11 +135,38 @@ def get_common_pipeline_vars():
 
 
 def get_cli_endpoint_url():
+    """Get the S3 endpoint-url, which points to Minio for local dev"""
     return f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 
 def get_ocw_studio_api_url():
+    """Get the ocw-studio URL, which points to Docker for local dev"""
     return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
+
+
+def get_publishable_sites(version: str):
+    """
+    Get a QuerySet of Website objects that are eligible for publishing
+
+    Args:
+        version(str): The version (draft/live) to check publish eligibility with
+    """
+    publish_date_field = (
+        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+    )
+    # Get all sites, minus any sites that have never been successfully published
+    sites = Website.objects.exclude(
+        Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+    ).exclude(unpublish_status__isnull=False)
+    return sites.prefetch_related("starter")
+
+
+def get_site_content_branch(version: str):
+    return (
+        settings.GIT_BRANCH_PREVIEW
+        if version == VERSION_DRAFT
+        else settings.GIT_BRANCH_RELEASE
+    )
 
 
 def get_theme_branch():

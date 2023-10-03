@@ -225,6 +225,28 @@ def sync_website_content(website_name: str):
         backend.sync_all_content_to_backend()
 
 
+@app.task(acks_late=True)
+def update_mass_build_pipelines_on_publish(version: str, website: Website):
+    """
+    Update the mass-build-sites pipeline definitions upon publishing of a new website,
+    but only do so if the site has never been published before or has been unpublished
+
+    Args:
+        version(str): The version (draft / live) to update
+        website(Website): The website being published to check publish_date against
+    """
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        publish_date_field = (
+            "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+        )
+        publish_date = getattr(website, publish_date_field)
+        if not publish_date or website.unpublish_status:
+            pipeline = api.get_mass_build_sites_pipeline(version)
+            pipeline.upsert_pipeline()
+            offline_pipeline = api.get_mass_build_sites_pipeline(version, offline=True)
+            offline_pipeline.upsert_pipeline()
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def publish_website_backend_draft(website_name: str):
