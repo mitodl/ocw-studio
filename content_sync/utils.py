@@ -135,14 +135,22 @@ def get_common_pipeline_vars():
 
 
 def get_cli_endpoint_url():
+    """Get the S3 endpoint-url, which points to Minio for local dev"""
     return f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 
 def get_ocw_studio_api_url():
+    """Get the ocw-studio URL, which points to Docker for local dev"""
     return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
 
 
 def get_publishable_sites(version: str):
+    """
+    Get a QuerySet of Website objects that are eligible for publishing
+
+    Args:
+        version(str): The version (draft/live) to check publish eligibility with
+    """
     publish_date_field = (
         "publish_date" if version == VERSION_LIVE else "draft_publish_date"
     )
