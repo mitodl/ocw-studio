@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.103.0
+---------------
+
+- Update dependency @types/lodash to v4.14.199 (#1909)
+- add support for specifying prefix to SitePipelineDefinition and MassBuildSitesPipelineDefinition (#1988)
+
 Version 0.102.6 (Released September 26, 2023)
 ---------------
 
