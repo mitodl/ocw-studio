@@ -150,8 +150,7 @@ def get_publishable_sites(version: str):
     sites = Website.objects.exclude(
         Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
     )
-    if version == VERSION_LIVE:
-        sites = sites.exclude(unpublish_status__isnull=False)
+    sites = sites.exclude(unpublish_status__isnull=False)
     return sites.prefetch_related("starter")
 
 
