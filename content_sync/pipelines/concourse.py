@@ -19,7 +19,6 @@ from django.conf import settings
 from requests import HTTPError
 
 from content_sync.constants import (
-    DEV_ENDPOINT_URL,
     VERSION_DRAFT,
     VERSION_LIVE,
 )
@@ -36,6 +35,9 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
     MassBuildSitesPipelineDefinitionConfig,
 )
+from content_sync.pipelines.definitions.concourse.remove_unpublished_sites import (
+    UnpublishedSiteRemovalPipelineDefinition,
+)
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
@@ -46,7 +48,6 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 from content_sync.utils import (
     check_mandatory_settings,
     get_common_pipeline_vars,
-    get_ocw_studio_api_url,
     get_site_content_branch,
     get_theme_branch,
     strip_dev_lines,
@@ -584,27 +585,7 @@ class UnpublishedSiteRemovalPipeline(
         """
         Create or update the concourse pipeline
         """
-        template_vars = get_common_pipeline_vars()
-        web_bucket = template_vars["publish_bucket_name"]
-        offline_bucket = template_vars["offline_publish_bucket_name"]
 
-        config_str = (
-            self.get_pipeline_definition(
-                "definitions/concourse/remove-unpublished-sites.yml"
-            )
-            .replace("((web-bucket))", web_bucket)
-            .replace("((offline-bucket))", offline_bucket)
-            .replace("((ocw-studio-url))", get_ocw_studio_api_url() or "")
-            .replace("((version))", VERSION_LIVE)
-            .replace("((api-token))", settings.API_BEARER_TOKEN or "")
-            .replace("((open-discussions-url))", settings.OPEN_DISCUSSIONS_URL)
-            .replace("((open-webhook-key))", settings.OCW_NEXT_SEARCH_WEBHOOK_KEY)
-            .replace(
-                "((cli-endpoint-url))",
-                f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else "",
-            )
-            .replace("((minio-root-user))", settings.AWS_ACCESS_KEY_ID or "")
-            .replace("((minio-root-password))", settings.AWS_SECRET_ACCESS_KEY or "")
+        self.upsert_config(
+            UnpublishedSiteRemovalPipelineDefinition().json(), self.PIPELINE_NAME
         )
-        log.debug(config_str)
-        self.upsert_config(config_str, self.PIPELINE_NAME)
