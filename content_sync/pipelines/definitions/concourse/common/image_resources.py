@@ -15,6 +15,10 @@ AWS_CLI_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE, source=RegistryImage(repository="amazon/aws-cli", tag="latest")
 )
 
+BASH_REGISTRY_IMAGE = AnonymousResource(
+    type=REGISTRY_IMAGE, source=RegistryImage(repository="bash", tag="latest")
+)
+
 CURL_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE, source=RegistryImage(repository="curlimages/curl")
 )
