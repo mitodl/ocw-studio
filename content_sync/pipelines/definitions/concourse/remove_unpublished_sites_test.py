@@ -46,29 +46,29 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
         get_unpublished_sites_task["config"]["run"]["args"]
     )
     assert (
-        pipeline_definition._unpublishable_sites_output_identifier  # noqa: SLF001
+        pipeline_definition._unpublished_sites_output_identifier  # noqa: SLF001
         in get_unpublished_sites_command
     )
     search_index_removal_tasks = [
         task
         for task in remove_unpublished_sites_job["plan"]
         if task.get("load_var")
-        == pipeline_definition._unpublishable_sites_var_identifier  # noqa: SLF001
+        == pipeline_definition._unpublished_sites_var_identifier  # noqa: SLF001
     ]
     assert len(search_index_removal_tasks) == 1
-    load_unpublishable_sites_task = search_index_removal_tasks[0]
+    load_unpublished_sites_task = search_index_removal_tasks[0]
     assert (
-        load_unpublishable_sites_task["file"]
-        == f"{pipeline_definition._unpublishable_sites_output_identifier}/sites.json"  # noqa: SLF001
+        load_unpublished_sites_task["file"]
+        == f"{pipeline_definition._unpublished_sites_output_identifier}/sites.json"  # noqa: SLF001
     )
-    assert load_unpublishable_sites_task["format"] == "json"
-    assert load_unpublishable_sites_task["reveal"] is True
+    assert load_unpublished_sites_task["format"] == "json"
+    assert load_unpublished_sites_task["reveal"] is True
     across_step = remove_unpublished_sites_job["plan"][-1]
     across_var = across_step["across"][0]
     assert across_var["var"] == "site"
     assert (
         across_var["values"]
-        == f"((.:{pipeline_definition._unpublishable_sites_var_identifier}.sites))"  # noqa: SLF001
+        == f"((.:{pipeline_definition._unpublished_sites_var_identifier}.sites))"  # noqa: SLF001
     )
     assert across_var["max_in_flight"] == 5
     across_tasks = across_step["do"]

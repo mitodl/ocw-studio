@@ -46,7 +46,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     """
     A Pipeline that does the following:
 
-     - Fetch a list of unpublishable sites from the ocw-studio API
+     - Fetch a list of unpublished sites from the ocw-studio API
      - For each site:
        - Remove from Open search index
        - Remove the site from S3
@@ -59,10 +59,8 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     _get_unpublished_sites_task_identifier = Identifier(
         "get-unpublished-sites-task"
     ).root
-    _unpublishable_sites_output_identifier = Identifier(
-        "unpublishable-sites-output"
-    ).root
-    _unpublishable_sites_var_identifier = Identifier("unpublishable-sites-var").root
+    _unpublished_sites_output_identifier = Identifier("unpublished-sites-output").root
+    _unpublished_sites_var_identifier = Identifier("unpublished-sites-var").root
     _search_index_removal_task_identifier = Identifier("search-index-removal-task").root
     _empty_s3_bucket_task_identifier = Identifier("empty-s3-bucket-task").root
     _clear_cdn_cache_task_identifier = Identifier("clear-cdn-cache-task").root
@@ -180,19 +178,19 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                 config=TaskConfig(
                     platform="linux",
                     image_resource=BASH_REGISTRY_IMAGE,
-                    outputs=[Output(name=self._unpublishable_sites_output_identifier)],
+                    outputs=[Output(name=self._unpublished_sites_output_identifier)],
                     run=Command(
                         path="sh",
                         args=[
                             "-exc",
-                            f'wget -O {self._unpublishable_sites_output_identifier}/sites.json --header="Authorization: Bearer {api_token}" "{ocw_studio_url}/api/unpublish/"',  # noqa: E501
+                            f'wget -O {self._unpublished_sites_output_identifier}/sites.json --header="Authorization: Bearer {api_token}" "{ocw_studio_url}/api/unpublish/"',  # noqa: E501
                         ],
                     ),
                 ),
             ),
             LoadVarStep(
-                load_var=self._unpublishable_sites_var_identifier,
-                file=f"{self._unpublishable_sites_output_identifier}/sites.json",
+                load_var=self._unpublished_sites_var_identifier,
+                file=f"{self._unpublished_sites_output_identifier}/sites.json",
                 format="json",
                 reveal=True,
             ),
@@ -201,7 +199,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                 across=[
                     AcrossVar(
                         var="site",
-                        values=f"((.:{self._unpublishable_sites_var_identifier}.sites))",
+                        values=f"((.:{self._unpublished_sites_var_identifier}.sites))",
                         max_in_flight=5,
                     )
                 ],
