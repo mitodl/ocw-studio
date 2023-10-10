@@ -18,6 +18,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
@@ -26,6 +27,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
+from content_sync.utils import get_ocw_studio_api_url
 
 
 def add_error_handling(
@@ -198,6 +200,45 @@ class OcwStudioWebhookStep(TryStep):
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
                 inputs=[],
+            ),
+            **kwargs,
+        )
+
+
+class OcwStudioWebhookCurlStep(TryStep):
+    """
+    A TaskStep to POST JSON data to the ocw-studio API for a given site using curl
+
+    Args:
+        site_name(str): The name of the site to set the status on
+        data(dict): A dict of data to be transformed to JSON and passed to the API
+    """
+
+    def __init__(self, site_name: str, data: dict, **kwargs):
+        super().__init__(
+            try_=TaskStep(
+                task=OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
+                timeout="1m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=CURL_REGISTRY_IMAGE,
+                    run=Command(
+                        path="curl",
+                        args=[
+                            "-f",
+                            "-X",
+                            "POST",
+                            "-H",
+                            "Content-Type: application/json",
+                            "-H",
+                            f"Authorization: Bearer {settings.API_BEARER_TOKEN}",
+                            "--data",
+                            json.dumps(data),
+                            f"{get_ocw_studio_api_url().rstrip('/')}/api/websites/{site_name}/pipeline_status/",
+                        ],
+                    ),
+                ),
             ),
             **kwargs,
         )

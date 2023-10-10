@@ -22,6 +22,7 @@ def mock_environments(settings, request):  # noqa: PT004
     """Fixture that tests with dev vs non-dev environment"""
     settings.OCW_STUDIO_ENVIRONMENT = request.param
     settings.ENV_NAME = request.param
+    settings.ENVIRONMENT = request.param
 
 
 @pytest.fixture(params=[True, False])
