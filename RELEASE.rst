@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.104.0
+---------------
+
+- overhaul unpublish sites pipeline (#1993)
+
 Version 0.103.0 (Released October 05, 2023)
 ---------------
 
