@@ -452,6 +452,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 timeout="20m",
                 attempts=3,
                 params={
+                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                    ),
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
                     "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
@@ -508,8 +511,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ] = settings.AWS_SECRET_ACCESS_KEY
 
         online_sync_command = f"""
+        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --recursive --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
         else
             aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
         fi
@@ -629,6 +633,9 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 timeout="120m",
                 attempts=3,
                 params={
+                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                    ),
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
                     "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
@@ -682,7 +689,12 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
         offline_sync_command = f"""
-        aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
+        if [ $IS_ROOT_WEBSITE = 1 ] ; then
+            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --recursive --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+        else
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+        fi
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
             aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='*' --include='{pipeline_vars['short_id']}.zip' --include='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}
         fi

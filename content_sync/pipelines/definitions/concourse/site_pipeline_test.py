@@ -377,7 +377,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["config"]["run"]["args"]
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_online_build_command
     )
     assert (
@@ -546,7 +546,11 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_offline_build_task["config"]["run"]["args"]
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_offline_build_command
+    )
+    assert (
+        f"else\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
         in upload_offline_build_command
     )
     assert (
