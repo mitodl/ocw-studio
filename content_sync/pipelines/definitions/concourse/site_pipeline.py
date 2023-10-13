@@ -452,9 +452,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 timeout="20m",
                 attempts=3,
                 params={
-                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
-                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
-                    ),
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
                     "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
@@ -523,6 +520,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 task=UPLOAD_ONLINE_BUILD_IDENTIFIER,
                 timeout="40m",
                 params={
+                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                    ),
                     "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
                 },
                 config=TaskConfig(
@@ -633,9 +633,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 timeout="120m",
                 attempts=3,
                 params={
-                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
-                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
-                    ),
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
                     "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
@@ -703,7 +700,12 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             step=TaskStep(
                 task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
                 timeout="120m",
-                params={"IS_ROOT_WEBSITE": pipeline_vars["is_root_website"]},
+                params={
+                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                    ),
+                    "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
+                },
                 config=TaskConfig(
                     platform="linux",
                     image_resource=AWS_CLI_REGISTRY_IMAGE,
