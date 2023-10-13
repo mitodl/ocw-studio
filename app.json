@@ -38,6 +38,10 @@
       "description": "S3 artifacts bucket name.",
       "required": false
     },
+    "AWS_MAX_CONCURRENT_CONNECTIONS": {
+      "description": "The max concurrent connections used by cp and sync AWS CLI commands",
+      "required": false
+    },
     "AWS_OFFLINE_PREVIEW_BUCKET_NAME": {
       "description": "S3 offline preview bucket name.",
       "required": false
