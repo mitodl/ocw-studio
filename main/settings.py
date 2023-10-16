@@ -406,6 +406,11 @@ MAX_S3_GET_ITERATIONS = get_int(
     default=3,
     description="Max retry attempts to get an S3 object",
 )
+AWS_MAX_CONCURRENT_CONNECTIONS = get_int(
+    name="AWS_MAX_CONCURRENT_CONNECTIONS",
+    default=10,
+    description="The max concurrent connections used by cp and sync AWS CLI commands",
+)
 AWS_ACCESS_KEY_ID = get_string(
     name="AWS_ACCESS_KEY_ID", default=None, description="AWS Access Key for S3 storage."
 )
