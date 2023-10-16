@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.105.0
+---------------
+
+- root website pipeline improvements (#1999)
+
 Version 0.104.0 (Released October 11, 2023)
 ---------------
 
