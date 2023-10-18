@@ -340,10 +340,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         f"cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.vars['static_resources_subdirectory']}"
         in build_online_site_command
     )
-    assert (
-        f"rm -rf ./output-online{config.vars['static_resources_subdirectory']}*.mp4"
-        in build_online_site_command
-    )
     build_online_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,

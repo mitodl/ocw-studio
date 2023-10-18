@@ -485,7 +485,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
                             hugo {pipeline_vars['hugo_args_online']}
                             cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{pipeline_vars['static_resources_subdirectory']}
-                            rm -rf ./output-online{pipeline_vars['static_resources_subdirectory']}*.mp4
                             """,  # noqa: E501
                         ],
                     ),
