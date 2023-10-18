@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.105.1
+---------------
+
+- don't remove videos from the single site online pipeline after the build completes (#2003)
+
 Version 0.105.0 (Released October 17, 2023)
 ---------------
 
