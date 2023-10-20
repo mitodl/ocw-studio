@@ -111,7 +111,7 @@ PUBLISH_STATUSES_FINAL = [
     PUBLISH_STATUS_ABORTED,
 ]
 
-OCW_HUGO_THEMES_GIT = "https://github.com/mitodl/ocw-hugo-themes.git"
+OCW_HUGO_THEMES_GIT = "https://github.com/Anas12091101/ocw-hugo-themes.git"
 
 
 class WebsiteStarterStatus:
