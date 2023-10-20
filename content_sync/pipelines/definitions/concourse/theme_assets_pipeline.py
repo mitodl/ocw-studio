@@ -14,6 +14,7 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
@@ -22,6 +23,7 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
     GitResource,
+    OcwHugoProjectsGitResource,
     OpenDiscussionsResource,
     SlackAlertResource,
 )
@@ -29,6 +31,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     SlackAlertStep,
 )
+from content_sync.utils import get_hugo_arg_string
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 
@@ -52,6 +55,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         instance_vars:(str): Instance vars for the pipeline in query string format
     """  # noqa: E501
 
+    _bare_minimum_course_git_identifier = Identifier("bare-minimum-course-git").root
     _build_theme_assets_job_identifier = Identifier("build-theme-assets-job").root
     _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task").root
     _upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task").root
@@ -78,19 +82,49 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             uri=OCW_HUGO_THEMES_GIT,
             branch=ocw_hugo_themes_branch,
         )
+        ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
+            uri="https://github.com/mitodl/ocw-hugo-projects.git",
+            branch="main",
+        )
+        bare_minimum_course_resource = GitResource(
+            name=self._bare_minimum_course_git_identifier,
+            uri="https://github.com/gumaerc-testorg/bare-minimum-course.git",
+            branch="main",
+        )
         resource_types = []
-        resources = [ocw_hugo_themes_resource]
+        resources = [
+            ocw_hugo_themes_resource,
+            ocw_hugo_projects_resource,
+            bare_minimum_course_resource,
+        ]
+        base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
+        base_online_args = base_hugo_args.copy()
+        base_online_args.update(
+            {
+                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",  # noqa: E501
+                "--destination": "output-online",
+            }
+        )
         tasks = [
             GetStep(
                 get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
                 trigger=(not is_dev()),
             ),
+            GetStep(
+                get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+                trigger=(not is_dev()),
+            ),
+            GetStep(get=self._bare_minimum_course_git_identifier, trigger=False),
             TaskStep(
                 task=self._build_ocw_hugo_themes_identifier,
                 config=TaskConfig(
                     platform="linux",
                     image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
+                    inputs=[
+                        Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
+                        Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
+                        Input(name=self._bare_minimum_course_git_identifier),
+                    ],
                     outputs=[Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
                     params={
                         "SEARCH_API_URL": settings.SEARCH_API_URL,
@@ -104,9 +138,13 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                             f"""
                             cd {OCW_HUGO_THEMES_GIT_IDENTIFIER}
                             yarn install --immutable
-                            npm run build:webpack
-                            npm run build:githash
-                            """,
+                            yarn build:webpack
+                            yarn build:githash
+                            cd ../{self._bare_minimum_course_git_identifier}
+                            hugo {get_hugo_arg_string(build_target='online', pipeline_name='live', default_args=base_online_args)}
+                            mkdir -p ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static/static_shared/
+                            cp -r output-online/static_shared/* ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static/static_shared/
+                            """,  # noqa: E501
                         ],
                     ),
                 ),
