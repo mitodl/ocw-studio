@@ -233,12 +233,21 @@ class WebsiteUrlSuggestionMixin(serializers.Serializer):
         return instance.get_url_path(with_prefix=False)
 
 
+class WebsiteHasMetadataMixin(serializers.Serializer):
+    has_site_metadata = serializers.SerializerMethodField(read_only=True)
+
+    def get_has_site_metadata(self, instance):
+        site_metadata = instance.websitecontent_set.filter(type="sitemetadata")
+        return bool(site_metadata and site_metadata[0].metadata)
+
+
 class WebsiteDetailSerializer(
     serializers.ModelSerializer,
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     RequestUserSerializerMixin,
     WebsiteUrlSuggestionMixin,
+    WebsiteHasMetadataMixin,
 ):
     """Serializer for websites with serialized config"""
 
@@ -291,6 +300,7 @@ class WebsiteDetailSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
+            "has_site_metadata",
         ]
         read_only_fields = [
             "uuid",
@@ -320,9 +330,8 @@ class WebsiteStatusSerializer(
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     WebsiteUrlSuggestionMixin,
+    WebsiteHasMetadataMixin,
 ):
-    """Serializer for website status fields"""
-
     class Meta:
         model = Website
         fields = [
@@ -343,6 +352,7 @@ class WebsiteStatusSerializer(
             "synced_on",
             "content_warnings",
             "url_suggestion",
+            "has_site_metadata",
         ]
         read_only_fields = fields
 
