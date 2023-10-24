@@ -21,7 +21,7 @@ from websites.utils import resource_reference_field_filter
 
 
 class DriveApiQueryTracker(TimestampedModel):
-    """Object for tracking the last google drive api call for a certain resource"""
+    """Object for tracking the last Google drive API call for a certain resource"""
 
     api_call = models.CharField(
         null=False,
@@ -70,7 +70,7 @@ class DriveFile(TimestampedModel):
         self.save()
 
     def is_video(self):
-        """Return True if is is in the video folder"""
+        """Return True if file is in the video folder"""
         return self.mime_type.lower().startswith(
             "video/"
         ) and DRIVE_FOLDER_VIDEOS_FINAL in self.drive_path.split("/")

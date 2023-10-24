@@ -27,7 +27,7 @@ The high-level description of the process is below, and each subsequent section 
 
 # Google Drive Sync and AWS Transcoding
 
-Users upload videos in `.mp4` format to the `videos_final` folder.
+Users upload videos in `.mp4` format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](https://github.com/mitodl/ocw-studio/blob/master/gdrive_sync/models.py).
 
 The `TranscodeJobView` endpoint (defined [here](https://github.com/mitodl/ocw-studio/blob/master/videos/views.py)) listens for the webhook that the transcoding job is complete.
 
