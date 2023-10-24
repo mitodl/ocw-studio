@@ -30,7 +30,7 @@ The high-level description of the process is below, and each subsequent section 
 
 Users upload videos in `.mp4` format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py).
 
-The `TranscodeJobView` endpoint (defined [here](/videos/views.py)) listens for the webhook that the transcoding job is complete.
+The `TranscodeJobView` endpoint (defined [here](/videos/views.py)) listens for the webhook that is sent when the transcoding job is complete.
 
 # YouTube Submission
 
