@@ -6,9 +6,14 @@ OCW Studio manages deployments for OCW courses.
 
 1. [Initial Setup](#initial-setup)
 1. [Testing and Formatting](#testing-and-formatting)
-1. [Importing OCW course sites](#importing-ocw-course-sites)
 1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
 1. [Enabling GitHub integration](#enabling-github-integration)
+1. [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
+1. [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
+1. [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
+1. [Video Workflow](#video-workflow)
+1. [Enabling YouTube integration](#enabling-youtube-integration)
+1. [Enabling Google Drive integration](#enabling-google-drive-integration)
 
 # Initial Setup
 
@@ -93,7 +98,7 @@ Below are some steps that may be particular to this project.
 The JS linting, testing, and formatting tools can be used either in the `watch`
 (node.js) container or on the host computer from the command line.
 
-To run these things in the docker container, preface the commands below with
+To run these things in the Docker container, preface the commands below with
 `docker-compose run --rm watch`.
 
 ### JS tests
@@ -131,7 +136,7 @@ npm run test:coverage
 
 We're using TypeScript for typechecking, eslint for linting, and prettier for
 opinionated code formatting. Just as with the tests above, these commands can
-all be run ether in the docker container or the host machine.
+all be run ether in the Docker container or the host machine.
 
 To run the typechecker:
 
@@ -210,7 +215,7 @@ If you wish to use a github app,
 
 Our `docker-compose` configuration includes an instance of [Minio](https://github.com/minio/minio) which emulates Amazon's S3 service locally.
 This works in conjunction with the `ENVIRONMENT` env variable being set to "dev." When this is set, usage of the `boto3` library will automatically
-set `endpoint_url` to the internal docker IP address of the Minio instance. You will need a few env variables:
+set `endpoint_url` to the internal Docker IP address of the Minio instance. You will need a few env variables:
 
 ```python
 MINIO_ROOT_USER=minio_user
@@ -239,7 +244,7 @@ You can log into this with whatever you set `MINIO_ROOT_USER` and `MINIO_ROOT_PA
 to the bucket. Videos are not currently supported locally beacuse of the transcoding service that is normally used with this. The preview and publish
 buckets are exposed via nginx locally at http://localhost:8044 and http://localhost:8045 respectively.
 
-In order to complete your local development setup, you will need to follow the instructions below to configure a Concourse docker container so you
+In order to complete your local development setup, you will need to follow the instructions below to configure a Concourse Docker container so you
 can run pipelines and have them push their output to your Minio S3 buckets. The `OCW_HUGO_THEMES_BRANCH` and `OCW_HUGO_PROJECTS_BRANCH` settings will
 control the branch of each of these repos that are pulled down in pipelines that build sites. If you are debugging an issue with a specific branch,
 This is where you want to change them before you run a command that pushes up a pipeline like `docker-compose exec web ./manage.py backpopulate_pipelines --filter etc...`
@@ -284,7 +289,7 @@ will need to follow some additional steps before it is fully functional.
 
 ### Running a Local Concourse Docker Container
 
-You will need to set the following .env variables for the concourse docker container:
+You will need to set the following .env variables for the concourse Docker container:
 
 ```python
 CONCOURSE_URL=http://concourse:8080
@@ -299,16 +304,16 @@ When you create a new website or run one of the various management commands that
 your local instance instead. The pipeline templates with the `-dev` suffix are used when `settings.ENVIRONMENT` is set to "dev."
 
 When you click publish on a site, the pipelines in your local instance of Concourse will be triggered. If you set up Minio as
-detailed above, the pipelines will publish their output to your locally running S3 buckets inside it. As also described above,
+detailed above, the pipelines will publish their output to your locally-running S3 buckets inside it. As also described above,
 you can view the output of your sites at http://localhost:8044 and http://localhost:8045 for draft and live respectively. You will
 need to also make sure you run `docker-compose exec web ./manage.py upsert_theme_assets_pipeline` to push up the theme assets
 pipeline to your local Concourse instance. You will then need to log into Concourse, unpause the pipeline and start a run of it.
 This will place theme assets into the bucket you have configured at `AWS_ARTIFACTS_BUCKET_NAME` that your site pipelines can
-reference. If you have already existing sites that don't have their pipelines pushed up into your local Concourse yet, you will
+reference. If you have already-existing sites that don't have their pipelines pushed up into your local Concourse yet, you will
 need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use the `--filter` or `--filter-json` arguments to
 specify the sites to push up pipelines for. The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
 Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
-as with only one dockerized worker publishing the entire OCW site will take a very long time.
+as using only one dockerized worker publishing the entire OCW site will take a very long time.
 
 # Running OCW Studio on Apple Silicon
 
@@ -318,12 +323,16 @@ Currently, the default Docker image for Concourse is not compatible with Apple S
 cp docker-compose-arm64.yml docker-compose.override.yml
 ```
 
+# Video Workflow
+
+The video workflow for OCW is [described here](/videos/README.md).
+
 # Enabling YouTube integration
 
 - Create a new project at https://console.cloud.google.com/apis/dashboard
   - Save the project ID in your `.env` file as `YT_PROJECT_ID`
 - Create an OAuth client ID for the project (type: `Web application`)
-  - Add an authorized Javascript origin (ie `https://<your_domain>/`)
+  - Add an authorized JavaScript origin (ie `https://<your_domain>/`)
   - Add an authorized redirect URI: `https://<your_domain>/api/youtube-tokens/`
   - You may need to create an oauth consent screen if prompted; make sure to publish it.
   - Save your client ID and client secret in your `.env` file (as `YT_CLIENT_ID` and `YT_CLIENT_SECRET`)
@@ -336,8 +345,8 @@ cp docker-compose-arm64.yml docker-compose.override.yml
 # Enabling Google Drive integration
 
 With Google Drive integration enabled, a folder on the specified Team Drive will be created for each new website.
-The folder will have the same name as the short_id of the website. Under this folder will be 3 subfolders:
-`files`, `files_final`, `videos_final`. Videos should be uploaded to `videos_final`, everything else should be uploaded
+The folder will have the same name as the `short_id` of the website. Under this folder will be 3 subfolders:
+`files`, `files_final`, `videos_final`. Videos should be uploaded to `videos_final`; everything else should be uploaded
 to `files_final`. The `files` folder is just for temporary storage.
 
 If this integration is enabled, manual resource creation and file uploads will no longer be possible. Files must
@@ -356,3 +365,5 @@ be uploaded to Google Drive first, and then the "Sync w/Google Drive" button wil
   ```
   RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
   ```
+
+Note that YouTube integration and Google Drive integration are required for the video workflow.
