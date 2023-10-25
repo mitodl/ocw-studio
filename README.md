@@ -14,6 +14,8 @@ OCW Studio manages deployments for OCW courses.
 1. [Video Workflow](#video-workflow)
 1. [Enabling YouTube integration](#enabling-youtube-integration)
 1. [Enabling Google Drive integration](#enabling-google-drive-integration)
+1. [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
+1. [Enabling 3Play integration](#enabling-3play-integration)
 
 # Initial Setup
 
@@ -325,7 +327,7 @@ cp docker-compose-arm64.yml docker-compose.override.yml
 
 # Video Workflow
 
-The video workflow for OCW is [described here](/videos/README.md).
+The video workflow for OCW is [described here](/videos/README.md). Note that YouTube integration, Google Drive integration, AWS transcoding, and 3Play integration all need to be set up for the video workflow to work properly. These are described next.
 
 # Enabling YouTube integration
 
@@ -366,4 +368,29 @@ be uploaded to Google Drive first, and then the "Sync w/Google Drive" button wil
   RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
   ```
 
-Note that YouTube integration and Google Drive integration are required for the video workflow.
+# Enabling AWS MediaConvert transcoding
+
+The following environment variables need to be defined in your .env file:
+
+```
+AWS_ACCOUNT_ID
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_STORAGE_BUCKET_NAME
+VIDEO_S3_TRANSCODE_ENDPOINT
+AWS_ROLE_NAME
+DRIVE_SHARED_ID
+DRIVE_SERVICE_ACCOUNT_CREDS
+API_BEARER_TOKEN
+```
+
+This will allow for videos to be submitted for transcoding to the AWS MediaConvert service. This is done automatically once a video has been synced to Studio from Google Drive.
+
+# Enabling 3Play integration
+
+The following environment variables need to be defined in your .env file (for a pre-configured 3Play account):
+
+```
+THREEPLAY_API_KEY
+THREEPLAY_CALLBACK_KEY
+```

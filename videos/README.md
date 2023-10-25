@@ -14,11 +14,11 @@ This document describes the components of the video workflow for OCW.
 
 # Overview
 
-This assumes that AWS Media Convert, [Google Drive sync](/README#enabling-google-drive-integration), [YouTube integration](/README#enabling-youtube-integration), and 3Play submission are all enabled, which is required for the video workflow.
+This assumes that [Google Drive sync](/README#enabling-google-drive-integration), [YouTube integration](/README#enabling-youtube-integration), [AWS MediaConvert](/README.md#enabling-aws-transcoding), and [3Play submission](/README.md#enabling-3play-integration) are all enabled, which is required for the video workflow.
 
 The high-level description of the process is below, and each subsequent section contains additional details, including links to the relevant code.
 
-- Upload a video with the name `<video_name>.mp4` to the `videos_final` folder on Google Drive. If there are pre-existing captions that should be uploaded with the video (as opposed to requesting captions/transcript from 3Play), then these should be named _exactly_ `<video_name>_captions.vtt` and `<video_name>_transcript.pdf`, and uploaded into the `files_final` folder on Google Drive.
+- Upload a video with the name `<video_name>.<video_extension>` to the `videos_final` folder on Google Drive, where `<video_extension>` is a valid video extension, such as `mp4`. If there are pre-existing captions that should be uploaded with the video (as opposed to requesting captions/transcript from 3Play), then these should be named _exactly_ `<video_name>_captions.vtt` and `<video_name>_transcript.pdf`, and uploaded into the `files_final` folder on Google Drive.
 - Sync using the Studio UI. This uploads the video to S3.
 - As soon as the upload to S3 is complete, Studio initiates a celery task to submit the video to the AWS Media Convert service.
 - Once trancoding is complete, the video is uploaded to YouTube (set as unlisted prior to the course being published).
@@ -28,7 +28,7 @@ The high-level description of the process is below, and each subsequent section 
 
 # Google Drive Sync and AWS Transcoding
 
-Users upload videos in `.mp4` format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py).
+Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py).
 
 The `TranscodeJobView` endpoint (defined [here](/videos/views.py)) listens for the webhook that is sent when the transcoding job is complete.
 
