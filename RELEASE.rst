@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.105.2
+---------------
+
+- Update dependency @types/node to v16.18.59 (#1911)
+
 Version 0.105.1 (Released October 18, 2023)
 ---------------
 
