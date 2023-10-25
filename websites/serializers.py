@@ -240,9 +240,12 @@ class WebsiteUrlSuggestionMixin(serializers.Serializer):
 
 
 class WebsiteHasMetadataMixin(serializers.Serializer):
+    """Adds has_site_metadata custom serializer field."""
+
     has_site_metadata = serializers.SerializerMethodField(read_only=True)
 
     def get_has_site_metadata(self, instance):
+        """Get whether or not the site has metadata."""
         site_metadata = instance.websitecontent_set.filter(type="sitemetadata")
         return bool(site_metadata and site_metadata[0].metadata)
 
