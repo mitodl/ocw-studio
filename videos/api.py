@@ -4,6 +4,7 @@ import logging
 import os
 
 import boto3
+import botocore
 from django.conf import settings
 
 from content_sync.utils import move_s3_object
@@ -50,7 +51,10 @@ def prepare_video_download_file(video: Video):
     # update file size metadata
     s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
-    content.metadata["file_size"] = fetch_content_file_size(content, bucket)
+    try:
+        content.metadata["file_size"] = fetch_content_file_size(content, bucket)
+    except botocore.exceptions.ClientError as ex:
+        log.exception("Could not read file size for video %s.", video, exc_info=ex)
 
     content.save()
 
