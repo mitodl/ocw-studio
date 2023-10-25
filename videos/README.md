@@ -9,7 +9,6 @@ This document describes the components of the video workflow for OCW.
 1. [YouTube Submission](#youtube-submission)
 1. [Captioning and 3Play Transcript Request](#captioning-and-3play-transcript-request)
 1. [Completing the Workflow](#completing-the-workflow)
-1. [Webhook Tests](#webhook-tests)
 1. [Management Commands](#management-commands)
 
 # Overview
@@ -28,7 +27,9 @@ The high-level description of the process is below, and each subsequent section 
 
 # Google Drive Sync and AWS Transcoding
 
-Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py).
+Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py). The file is processed using the `process_drive_file` function [here](/gdrive_sync/tasks.py), which triggers the `stream_to_s3` and `transcode_gdrive_video` functions [here](/gdrive_sync/api.py), which submit the AWS MediaConvert transcoding job.
+
+The parameters of the AWS transcode request are defined through the AWS interface, and the role is defined [here](https://github.com/mitodl/ol-infrastructure/blob/main/src/ol_infrastructure/applications/ocw_studio/__main__.py). Some example JSONs used for triggering MediaConver job are in [this folder](/test_videos_webhook/).
 
 The `TranscodeJobView` endpoint (defined [here](/videos/views.py)) listens for the webhook that is sent when the transcoding job is complete.
 
@@ -43,10 +44,6 @@ If there are no pre-existing captions, a 3Play transcript request is generated. 
 # Completing the Workflow
 
 Once the workflow is completed, the `Video` and `WebsiteContent` objects get saved. The only remaining steps are triggered on course publish: updating the video metadata via `update_transcripts_for_website`, defined [here](/videos/tasks.py) and updating the YouTube metadata via `update_youtube_metadata`, defined [here](/videos/youtube.py).
-
-# Webhook Tests
-
-The webhooks tests are in [this folder](/test_videos_webhook/).
 
 # Management Commands
 
