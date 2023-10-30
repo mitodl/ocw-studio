@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.106.0
+Version 0.106.0 (Released October 30, 2023)
 ---------------
 
 - fix: use transcoded video's size in content (#2009)
