@@ -341,6 +341,8 @@ class WebsiteStatusSerializer(
     WebsiteUrlSuggestionMixin,
     WebsiteHasMetadataMixin,
 ):
+    """Serializer for website status fields"""
+
     class Meta:
         model = Website
         fields = [
