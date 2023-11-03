@@ -375,7 +375,7 @@ class FilterWebpackArtifactsStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq 'recurse | select(type==\"string\")' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | tr -d '\"' | xargs -I {{}} aws s3{get_cli_endpoint_url()} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",  # noqa: E501
+                        f"jq -r 'values[]' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | xargs -I {{}} aws s3{get_cli_endpoint_url()} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",  # noqa: E501
                     ],
                 ),
             ),
