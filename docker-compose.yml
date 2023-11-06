@@ -51,10 +51,12 @@ services:
     environment:
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
+      AWS_TEST_BUCKET_NAME: $AWS_TEST_BUCKET_NAME
     ports:
     - "8043:8043"
     - "8044:8044"
     - "8045:8045"
+    - "8046:8046"
     links:
     - web
     - s3

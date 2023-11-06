@@ -96,6 +96,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "ocw_hugo_themes_branch": f"(({namespace}ocw_hugo_themes_branch))",
         "ocw_hugo_projects_url": f"(({namespace}ocw_hugo_projects_url))",
         "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
+        "ocw_studio_url": get_ocw_studio_api_url(),
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
@@ -454,7 +455,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
+                    "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -634,7 +635,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
+                    "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,

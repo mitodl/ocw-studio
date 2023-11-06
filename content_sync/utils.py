@@ -109,12 +109,15 @@ def get_common_pipeline_vars():
     pipeline_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+        "test_bucket_name": settings.AWS_TEST_BUCKET_NAME,
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
         "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+        "offline_test_bucket_name": settings.AWS_OFFLINE_TEST_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": settings.AWS_ARTIFACTS_BUCKET_NAME,
         "static_api_base_url_draft": settings.OCW_STUDIO_DRAFT_URL,
         "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
+        "static_api_base_url_test": settings.STATIC_API_BASE_URL_TEST,
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
     }

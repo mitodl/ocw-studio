@@ -433,6 +433,9 @@ AWS_PREVIEW_BUCKET_NAME = get_string(
 AWS_PUBLISH_BUCKET_NAME = get_string(
     name="AWS_PUBLISH_BUCKET_NAME", default=None, description="S3 publish bucket name."
 )
+AWS_TEST_BUCKET_NAME = get_string(
+    name="AWS_TEST_BUCKET_NAME", default=None, description="S3 test bucket name."
+)
 AWS_OFFLINE_PREVIEW_BUCKET_NAME = get_string(
     name="AWS_OFFLINE_PREVIEW_BUCKET_NAME",
     default=None,
@@ -442,6 +445,11 @@ AWS_OFFLINE_PUBLISH_BUCKET_NAME = get_string(
     name="AWS_OFFLINE_PUBLISH_BUCKET_NAME",
     default=None,
     description="S3 offline publish bucket name.",
+)
+AWS_OFFLINE_TEST_BUCKET_NAME = get_string(
+    name="AWS_OFFLINE_TEST_BUCKET_NAME",
+    default=None,
+    description="S3 offline test bucket name.",
 )
 AWS_QUERYSTRING_AUTH = get_bool(
     name="AWS_QUERYSTRING_AUTH",
@@ -1004,6 +1012,18 @@ OCW_COURSE_STARTER_SLUG = get_string(
     description="The slug of the WebsiteStarter currently used for OCW course sites",
     required=False,
 )
+OCW_WWW_TEST_SLUG = get_string(
+    name="OCW_WWW_TEST_SLUG",
+    default="ocw-ci-test-www",
+    description="The slug of the root Website used to run end to end tests",
+    required=False,
+)
+OCW_COURSE_TEST_SLUG = get_string(
+    name="OCW_COURSE_TEST_SLUG",
+    default="ocw-ci-test-course",
+    description="The slug of the course Website used to run end to end tests",
+    required=False,
+)
 OCW_GTM_ACCOUNT_ID = get_string(
     name="OCW_GTM_ACCOUNT_ID",
     default=None,
@@ -1125,6 +1145,12 @@ STATIC_API_BASE_URL_LIVE = get_string(
     default="",
     required=False,
     dev_only=True,
+)
+STATIC_API_BASE_URL_TEST = get_string(
+    name="STATIC_API_BASE_URL_TEST",
+    description="The static api base url to use when building and deploying live sites locally to minio",  # noqa: E501
+    default="",
+    required=False,
 )
 RESOURCE_BASE_URL_DRAFT = get_string(
     name="RESOURCE_BASE_URL_DRAFT",
