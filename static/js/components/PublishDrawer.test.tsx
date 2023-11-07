@@ -22,7 +22,6 @@ import userEvent from "@testing-library/user-event"
 import { waitFor, screen } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
 import _ from "lodash"
-import async from "react-select/async"
 
 const simulateClickRadio = (wrapper: ReactWrapper, idx: number) =>
   act(async () => {
