@@ -417,11 +417,9 @@ def get_content_warnings(website):
         messages.append(
             f"The following content is still set to Draft: {', '.join(draft_content_titles)}"  # noqa: E501
         )
-    
+
     if not bool(site_metadata and site_metadata[0].metadata):
-        messages.append(
-            "The course is missing metadata."
-        )
+        messages.append("The course is missing metadata.")
 
     return messages
 
