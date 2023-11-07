@@ -380,6 +380,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
             artifacts_bucket=template_vars["artifacts_bucket_name"],
             preview_bucket=template_vars["preview_bucket_name"],
             publish_bucket=template_vars["publish_bucket_name"],
+            test_bucket=template_vars["test_bucket_name"],
             ocw_hugo_themes_branch=self.BRANCH,
         )
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)

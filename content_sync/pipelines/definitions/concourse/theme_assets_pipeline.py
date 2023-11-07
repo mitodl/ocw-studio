@@ -48,6 +48,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         artifacts_bucket(str): An S3 bucket with versioning enabled for storing the Webpack manifest
         preview_bucket(str): The S3 bucket where preview sites are to be stored
         publish_bucket(str): The S3 bucket where published sites are to be stored
+        test_bucket(str): The S3 bucket where test sites are to be stored
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to clone
         instance_vars:(str): Instance vars for the pipeline in query string format
     """  # noqa: E501
@@ -63,11 +64,12 @@ class ThemeAssetsPipelineDefinition(Pipeline):
     _open_discussions_resource = OpenDiscussionsResource()
     _slack_resource = SlackAlertResource()
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         artifacts_bucket: str,
         preview_bucket: str,
         publish_bucket: str,
+        test_bucket: str,
         ocw_hugo_themes_branch: str,
         **kwargs,
     ):
@@ -135,8 +137,10 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                             f"""
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
                             aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
                             """,  # noqa: E501
                         ],
