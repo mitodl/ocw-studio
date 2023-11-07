@@ -2,7 +2,10 @@
 name: CI
 on:
   push:
-    branches: master release release-candidate
+    branches:
+    - master
+    - release
+    - release-candidate
   pull_request:
 jobs:
   python-tests:
