@@ -396,6 +396,8 @@ def get_content_warnings(website):
 
     draft_content_titles = [content.title for content in draft_content(website)]
 
+    site_metadata = website.websitecontent_set.filter(type="sitemetadata")
+
     messages = []
 
     if len(missing_youtube_ids_titles) > 0:
@@ -414,6 +416,11 @@ def get_content_warnings(website):
     if len(draft_content_titles) > 0:
         messages.append(
             f"The following content is still set to Draft: {', '.join(draft_content_titles)}"  # noqa: E501
+        )
+    
+    if not bool(site_metadata and site_metadata[0].metadata):
+        messages.append(
+            "The course is missing metadata."
         )
 
     return messages

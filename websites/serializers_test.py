@@ -175,6 +175,16 @@ def test_website_status_serializer(mocker, settings, drive_folder, warnings):
         assert serialized_data.get(key) == value
 
 
+EXAMPLE_METADATA = {"term": "", "year": "", "level": [], "topics": [], "legacy_uid": "", "instructors": {"content": [], "website": "jens-test-site-for-video-resource-icons"}}
+
+@pytest.mark.parametrize("metadata",[EXAMPLE_METADATA,{}])
+def test_website_content_has_metadata(mocker, metadata):
+    website = WebsiteFactory.create()
+    bool(metadata) and WebsiteContentFactory.create(type="sitemetadata",website=website, metadata=metadata)
+    serialized_data = WebsiteStatusSerializer(instance=website).data
+    assert serialized_data["has_site_metadata"]==bool(metadata)
+
+
 @pytest.mark.parametrize("has_starter", [True, False])
 @pytest.mark.parametrize("drive_folder", [None, "abc123"])
 @pytest.mark.parametrize("drive_credentials", [None, {"creds: True"}])
