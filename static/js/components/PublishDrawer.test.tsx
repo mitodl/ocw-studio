@@ -202,7 +202,7 @@ describe("PublishDrawer", () => {
         const { wrapper } = await render()
         await simulateClickPublish(wrapper, action)
         wrapper.update()
-        action == "production" &&
+        action === "production" &&
           expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
       })
 
