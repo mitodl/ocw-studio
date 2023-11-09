@@ -166,7 +166,7 @@ services:
     - concourse-keys:/concourse-keys
 
   concourse:
-    image: concourse/concourse:7.10
+    image: concourse/concourse:7.11
     command: web
     privileged: true
     depends_on:
@@ -215,7 +215,7 @@ services:
         ipv4_address: 10.1.0.101
 
   concourse-worker:
-    image: concourse/concourse:7.10
+    image: concourse/concourse:7.11
     command: worker
     privileged: true
     depends_on:
