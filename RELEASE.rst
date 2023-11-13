@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.106.0 (Released October 30, 2023)
+---------------
+
+- fix: use transcoded video's size in content (#2009)
+- Update dependency @types/node to v16.18.59 (#1911)
+
+Version 0.105.1 (Released October 18, 2023)
+---------------
+
+- don't remove videos from the single site online pipeline after the build completes (#2003)
+
 Version 0.105.0 (Released October 17, 2023)
 ---------------
 

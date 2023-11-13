@@ -95,6 +95,11 @@ def test_prepare_video_download_file(settings, mocker, files_exist):
     video = VideoFactory.create(website=content.website)
     DriveFileFactory.create(website=video.website, video=video, resource=content)
     mock_move_s3 = mocker.patch("videos.api.move_s3_object")
+
+    NEW_FILE_SIZE = 1234
+    mock_fetch_content_file_size = mocker.patch("videos.api.fetch_content_file_size")
+    mock_fetch_content_file_size.return_value = NEW_FILE_SIZE
+
     dl_video_name = "my_video__360p_16_9.mp4"
     if files_exist:
         for name in ("my_video_youtube.mp4", dl_video_name, "my_video_360p_4_3.mp4"):
@@ -111,6 +116,7 @@ def test_prepare_video_download_file(settings, mocker, files_exist):
             f"{video.website.s3_path}/{dl_video_name}",
         )
         assert content.file.name == f"{video.website.s3_path}/{dl_video_name}"
+        assert content.metadata["file_size"] == NEW_FILE_SIZE
     else:
         mock_move_s3.assert_not_called()
         assert content.file.name == ""

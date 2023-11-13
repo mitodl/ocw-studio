@@ -4,10 +4,13 @@ import logging
 import os
 
 import boto3
+import botocore
 from django.conf import settings
 
 from content_sync.utils import move_s3_object
 from gdrive_sync.models import DriveFile
+from gdrive_sync.utils import fetch_content_file_size
+from main.s3_utils import get_boto3_resource
 from videos.apps import VideoApp
 from videos.constants import (
     DESTINATION_ARCHIVE,
@@ -44,6 +47,15 @@ def prepare_video_download_file(video: Video):
         video_file.save()
     content = DriveFile.objects.get(video=video).resource
     content.file = new_s3_key
+
+    # update file size metadata
+    s3 = get_boto3_resource("s3")
+    bucket = s3.Bucket(settings.AWS_STORAGE_BUCKET_NAME)
+    try:
+        content.metadata["file_size"] = fetch_content_file_size(content, bucket)
+    except botocore.exceptions.ClientError as ex:
+        log.exception("Could not read file size for video %s.", video, exc_info=ex)
+
     content.save()
 
 
