@@ -331,6 +331,8 @@ The video workflow for OCW is [described here](/videos/README.md). Note that You
 
 # Enabling YouTube integration
 
+_Note: The steps below describe the process for setting up YouTube integration from scratch. MIT OL Engineers may use YouTube credentials from RC as an acceptable, easier alternative._
+
 - Create a new project at https://console.cloud.google.com/apis/dashboard
   - Save the project ID in your `.env` file as `YT_PROJECT_ID`
 - Create an OAuth client ID for the project (type: `Web application`)
@@ -393,4 +395,5 @@ The following environment variables need to be defined in your .env file (for a 
 ```
 THREEPLAY_API_KEY
 THREEPLAY_CALLBACK_KEY
+THREEPLAY_PROJECT_ID
 ```

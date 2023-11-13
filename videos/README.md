@@ -13,7 +13,7 @@ This document describes the components of the video workflow for OCW.
 
 # Overview
 
-This assumes that [Google Drive sync](/README#enabling-google-drive-integration), [YouTube integration](/README#enabling-youtube-integration), [AWS MediaConvert](/README.md#enabling-aws-transcoding), and [3Play submission](/README.md#enabling-3play-integration) are all enabled, which is required for the video workflow.
+This assumes that [Google Drive sync](/README.md#enabling-google-drive-integration), [YouTube integration](/README.md#enabling-youtube-integration), [AWS MediaConvert](/README.md#enabling-aws-transcoding), and [3Play submission](/README.md#enabling-3play-integration) are all enabled, which is required for the video workflow.
 
 The high-level description of the process is below, and each subsequent section contains additional details, including links to the relevant code.
 
@@ -27,23 +27,23 @@ The high-level description of the process is below, and each subsequent section 
 
 # Google Drive Sync and AWS Transcoding
 
-Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the `is_video` property defined [here](/gdrive_sync/models.py). The file is processed using the `process_drive_file` function [here](/gdrive_sync/tasks.py), which triggers the `stream_to_s3` and `transcode_gdrive_video` functions [here](/gdrive_sync/api.py), which submit the AWS MediaConvert transcoding job.
+Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the [is_video property](/gdrive_sync/models.py). The file is processed using the [process_drive_file function](/gdrive_sync/tasks.py), which triggers the [`stream_to_s3` and `transcode_gdrive_video` functions](/gdrive_sync/api.py), which submit the AWS MediaConvert transcoding job.
 
-The parameters of the AWS transcode request are defined through the AWS interface, and the role is defined [here](https://github.com/mitodl/ol-infrastructure/blob/main/src/ol_infrastructure/applications/ocw_studio/__main__.py). Some example JSONs used for triggering MediaConver job are in [this folder](/test_videos_webhook/).
+The parameters of the AWS transcode request are defined through the AWS interface, and the role is defined [here](https://github.com/mitodl/ol-infrastructure/blob/main/src/ol_infrastructure/applications/ocw_studio/__main__.py). Some example JSONs used for triggering MediaConvert job are in [this folder](/test_videos_webhook/).
 
-The `TranscodeJobView` endpoint (defined [here](/videos/views.py)) listens for the webhook that is sent when the transcoding job is complete.
+The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that is sent when the transcoding job is complete.
 
 # YouTube Submission
 
-Videos are uploaded to YouTube via the `resumable_upload` function, defined [here](/videos/youtube.py).
+Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/youtube.py). The [YouTube upload success notification](/videos/templates/mail/youtube_upload_success/body.html) is sent by email when the [`update_youtube_statuses`](/videos/tasks.py) task is complete; exceptions in this task trigger the [YouTube upload failure notification](/videos/templates/mail/youtube_upload_failure/body.html). When the course is published to draft/staging, the video is set to private. However, when it is published to live/production, the video is made public on YouTube, via the [`update_youtube_metadata` function](/videos/youtube.py).
 
 # Captioning and 3Play Transcript Request
 
-If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the `threeplay_transcript_api_request` function (defined [here](videos/threeplay_api.py)).
+If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](videos/threeplay_api.py).
 
 # Completing the Workflow
 
-Once the workflow is completed, the `Video` and `WebsiteContent` objects get saved. The only remaining steps are triggered on course publish: updating the video metadata via `update_transcripts_for_website`, defined [here](/videos/tasks.py) and updating the YouTube metadata via `update_youtube_metadata`, defined [here](/videos/youtube.py).
+Once the workflow is completed, the updates to the `Video` and `WebsiteContent` objects are nearly complete. The only remaining steps are triggered on course publish: updating the video metadata via [`update_transcripts_for_website`](/videos/tasks.py) and updating the YouTube metadata via [`update_youtube_metadata`](/videos/youtube.py).
 
 # Management Commands
 
