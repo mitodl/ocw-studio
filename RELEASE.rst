@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.0
+Version 0.107.0 (Released November 13, 2023)
 ---------------
 
 - update FilterWebpackArtifactsStep to support webpack-manifest-plugin (#2017)
