@@ -10,6 +10,7 @@ from ol_concourse.lib.models.pipeline import (
     Identifier,
     Input,
     Job,
+    Output,
     Pipeline,
     StepModifierMixin,
     TaskConfig,
@@ -25,6 +26,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    PLAYWRIGHT_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
@@ -58,8 +60,11 @@ common_pipeline_vars = get_common_pipeline_vars()
 www_slug = settings.OCW_WWW_TEST_SLUG
 course_slug = settings.OCW_COURSE_TEST_SLUG
 
+www_content_git_identifier = Identifier("www-content-git").root
+course_content_git_identifier = Identifier("course-content-git").root
 upload_fixtures_step_identifier = Identifier("upload-fixtures-step").root
 test_pipeline_job_identifier = Identifier("e2e-test-job").root
+playwright_task_identifier = Identifier("playwright-task").root
 
 
 class TestPipelineBaseTasks(list[StepModifierMixin]):
@@ -141,7 +146,9 @@ class TestPipelineDefinition(Pipeline):
         base.__init__(**kwargs)
         namespace = ".:site."
         site_pipeline_vars = get_site_pipeline_definition_vars(namespace=namespace)
-        site_pipeline_vars["ocw_studio_url"] = ""
+        site_pipeline_vars["sitemap_domain"] = "10.1.0.102:8046"
+        ocw_studio_url = "http://10.1.0.102:8046"
+        resource_base_url = "http://10.1.0.102:8046"
         version = VERSION_LIVE
 
         www_website = Website.objects.get(name=www_slug)
@@ -188,7 +195,7 @@ class TestPipelineDefinition(Pipeline):
             artifacts_bucket=common_pipeline_vars["artifacts_bucket_name"],
             web_bucket=common_pipeline_vars["test_bucket_name"],
             offline_bucket=common_pipeline_vars["offline_test_bucket_name"],
-            resource_base_url=common_pipeline_vars["resource_base_url_live"],
+            resource_base_url=resource_base_url,
             ocw_hugo_themes_branch=themes_branch,
             ocw_hugo_projects_branch=projects_branch,
             namespace=namespace,
@@ -198,6 +205,7 @@ class TestPipelineDefinition(Pipeline):
         www_config.values["delete_flag"] = ""
         www_config.values["url_path"] = ""
         www_config.values["base_url"] = ""
+        www_config.values["ocw_studio_url"] = ocw_studio_url
         course_config = SitePipelineDefinitionConfig(
             site=course_website,
             pipeline_name=version,
@@ -208,11 +216,12 @@ class TestPipelineDefinition(Pipeline):
             artifacts_bucket=common_pipeline_vars["artifacts_bucket_name"],
             web_bucket=common_pipeline_vars["test_bucket_name"],
             offline_bucket=common_pipeline_vars["offline_test_bucket_name"],
-            resource_base_url=common_pipeline_vars["resource_base_url_live"],
+            resource_base_url=resource_base_url,
             ocw_hugo_themes_branch=themes_branch,
             ocw_hugo_projects_branch=projects_branch,
             namespace=namespace,
         )
+        course_config.values["ocw_studio_url"] = ""
         across_var_values = [www_config.values, course_config.values]
 
         site_tasks = []
@@ -242,6 +251,74 @@ class TestPipelineDefinition(Pipeline):
                         max_in_flight=1,
                     )
                 ],
+            )
+        )
+        www_site_content_git_step = SiteContentGitTaskStep(
+            branch=site_content_branch,
+            short_id=www_slug,
+        )
+        www_site_content_git_step.task = www_content_git_identifier
+        www_site_content_git_step.config.outputs = [
+            Output(name=www_content_git_identifier)
+        ]
+        course_site_content_git_step = SiteContentGitTaskStep(
+            branch=site_content_branch,
+            short_id=course_slug,
+        )
+        course_site_content_git_step.task = course_content_git_identifier
+        course_site_content_git_step.config.outputs = [
+            Output(name=course_content_git_identifier)
+        ]
+        tasks.extend([www_site_content_git_step, course_site_content_git_step])
+        tasks.append(
+            TaskStep(
+                task=playwright_task_identifier,
+                timeout="20m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=PLAYWRIGHT_REGISTRY_IMAGE,
+                    inputs=[
+                        Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
+                        Input(name=www_content_git_identifier),
+                        Input(name=course_content_git_identifier),
+                    ],
+                    params={
+                        "PLAYWRIGHT_BASE_URL": common_pipeline_vars[
+                            "static_api_base_url_test"
+                        ],
+                        "CI": "1",
+                        "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
+                        "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+                        "OCW_STUDIO_BASE_URL": ocw_studio_url,
+                        "STATIC_API_BASE_URL": course_config.values["static_api_url"],
+                        "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                        "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
+                        "NOINDEX": course_config.values["noindex"],
+                        "COURSE_CONTENT_PATH": "../",
+                        "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",
+                        "FIELDS_CONTENT_PATH": "",
+                        "FIELDS_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/mit-fields/config.yaml",
+                        "GIT_CONTENT_SOURCE": "git@github.mit.edu:ocw-content-rc",
+                        "OCW_TEST_COURSE": course_content_git_identifier,
+                        "RESOURCE_BASE_URL": resource_base_url,
+                        "SITEMAP_DOMAIN": site_pipeline_vars["sitemap_domain"],
+                        "SEARCH_API_URL": "https://discussions-rc.odl.mit.edu/api/v0/search/",
+                        "SENTRY_ENV": "",
+                        "WEBPACK_WATCH_MODE": "false",
+                        "WWW_CONTENT_PATH": f"../{www_content_git_identifier}",
+                        "WWW_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-www/config.yaml",
+                    },
+                    run=Command(
+                        path="sh",
+                        dir=OCW_HUGO_THEMES_GIT_IDENTIFIER,
+                        args=[
+                            "-exc",
+                            "yarn install\nmkdir -p ./test-sites/tmp/dist/\ncp -r ./test-sites/__fixtures__/* ./test-sites/tmp/dist/\nnpx playwright test",
+                        ],
+                    ),
+                ),
             )
         )
 
