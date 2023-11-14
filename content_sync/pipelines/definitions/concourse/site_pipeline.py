@@ -97,7 +97,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "ocw_hugo_themes_branch": f"(({namespace}ocw_hugo_themes_branch))",
         "ocw_hugo_projects_url": f"(({namespace}ocw_hugo_projects_url))",
         "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
-        "ocw_studio_url": get_ocw_studio_api_url(),
+        "ocw_studio_url": f"(({namespace}ocw_studio_url))",
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
@@ -230,6 +230,7 @@ class SitePipelineDefinitionConfig:
             "ocw_hugo_themes_branch": ocw_hugo_themes_branch,
             "ocw_hugo_projects_url": self.ocw_hugo_projects_url,
             "ocw_hugo_projects_branch": ocw_hugo_projects_branch,
+            "ocw_studio_url": get_ocw_studio_api_url(),
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,
@@ -851,6 +852,7 @@ class SitePipelineDefinition(Pipeline):
                     "ocw_hugo_projects_branch": config.values[
                         "ocw_hugo_projects_branch"
                     ],
+                    "ocw_studio_url": config.values["ocw_studio_url"],
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
                     "prefix": config.values["prefix"],
