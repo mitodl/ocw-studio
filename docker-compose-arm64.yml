@@ -2,7 +2,5 @@
 version: "3.7"
 
 services:
-  concourse:
-    image: rdclda/concourse:7.9.1
   concourse-worker:
-    image: rdclda/concourse:7.9.1
+    image: concourse/dev:latest
