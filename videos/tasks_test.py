@@ -227,26 +227,28 @@ def test_start_transcript_job(
     video = create_video(youtube_id, title)
     video_content = create_content(video.website, youtube_id, title)
 
-    base_path = f"/some/path/to/{video_content.filename}"
+    base_filename = video_content.filename.rsplit("_", 1)[0]
+
+    base_path = f"/some/path/to/{base_filename}"
 
     if wrong_caption_type:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_captions_srt",
+            filename=f"{base_filename}_captions_srt",
             file=f"{base_path}_captions.srt",
         )
 
     if caption_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_captions_vtt",
+            filename=f"{base_filename}_captions_vtt",
             file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{video_content.filename}_transcript_pdf",
+            filename=f"{base_filename}_transcript_pdf",
             file=f"{base_path}_transcript.pdf",
         )
 
@@ -688,19 +690,20 @@ def test_update_transcripts_for_video_no_3play(
     video = videofile.video
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
-    base_path = f"{resource.website.s3_path}/{resource.filename}"
+    base_resource_filename = resource.filename.rsplit("_", 1)[0]
+    base_path = f"{resource.website.s3_path}/{base_resource_filename}"
 
     if caption_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{resource.filename}_captions_vtt",
+            filename=f"{base_resource_filename}_captions_vtt",
             file=f"{base_path}_captions.vtt",
         )
 
     if transcript_exists:
         WebsiteContentFactory.create(
             website=video.website,
-            filename=f"{resource.filename}_transcript_pdf",
+            filename=f"{base_resource_filename}_transcript_pdf",
             file=f"{base_path}_transcript.pdf",
         )
 
@@ -731,12 +734,12 @@ def test_update_transcripts_for_video_no_3play(
     mock_3play.assert_not_called()
 
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"/{video.website.url_path}/{resource.filename}_captions.vtt"
+        f"/{video.website.url_path}/{base_resource_filename}_captions.vtt"
         if caption_exists
         else None
     )
     assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
-        f"/{video.website.url_path}/{resource.filename}_transcript.pdf"
+        f"/{video.website.url_path}/{base_resource_filename}_transcript.pdf"
         if transcript_exists
         else None
     )
