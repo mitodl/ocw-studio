@@ -23,7 +23,8 @@ The high-level description of the process is below, and each subsequent section 
 - Once trancoding is complete, the video is uploaded to YouTube (set as unlisted prior to the course being published).
 - After the video has been successfully uploaded to YouTube, and if there are no pre-existing captions, Studio sends a transcript request to 3Play.
 - Once 3Play completes the transcript job, the captions (`.vtt` format) and transcript (`.pdf` format) are fetched and associated with the video.
-- When the course is published, the video metadata and YouTube metadata are updated, and the YouTube video is set to public.
+- On any publish action, the video metadata and YouTube metadata are updated, assuming the information has been received from the external services.
+- The YouTube video is set to public once the course has been published to live/production.
 
 # Google Drive Sync and AWS Transcoding
 
