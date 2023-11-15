@@ -1,6 +1,12 @@
 ---
 name: CI
-on: [push]
+on:
+  push:
+    branches:
+    - master
+    - release
+    - release-candidate
+  pull_request:
 jobs:
   python-tests:
     runs-on: ubuntu-20.04
