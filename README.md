@@ -370,6 +370,8 @@ be uploaded to Google Drive first, and then the "Sync w/Google Drive" button wil
   RESOURCE_TYPE_FIELDS=resourcetype,filetype,<your_custom_field_name>
   ```
 
+_Note: MIT OL Engineers may use Google Drive credentials from RC as an alternative to creating their own Google Drive folders._
+
 # Enabling AWS MediaConvert transcoding
 
 The following environment variables need to be defined in your .env file:
