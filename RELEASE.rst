@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.107.1
+---------------
+
+- ci: add pull_request trigger (#2020)
+- compose file updates (#2023)
+- fix(deps): update dependency @reduxjs/toolkit to v1.9.7 (#1995)
+
 Version 0.107.0 (Released November 13, 2023)
 ---------------
 
