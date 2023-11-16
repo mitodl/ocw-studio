@@ -156,15 +156,18 @@ export class Shortcode {
   private static IS_CLOSING_REGEXP = /\s*(?<isClosing>\/)?\s*/
 
   /**
-   * Regexp used for matching individual shortcode arguments.
+   * Regexp used for matching shortcode name, arguments,
+   * and whether it is self-closing.
    */
-  private static ARG_REGEXP = new RegExp(
+  private static NAME_ARG_SC_REGEXP = new RegExp(
     [
       /((?<name>[a-zA-Z\-_]+)=)?/.source,
       "(",
       /("(?<qvalue>.*?)(?<!\\)")/.source,
       "|",
-      /((?<uvalue>[^"\s=]+?)\s)/.source,
+      /((?<uvalue>[^(/")\s=]+?)\s)/.source,
+      "|",
+      /((?<fslash>[/]))/.source,
       ")",
     ].join(""),
     "g",
@@ -178,7 +181,7 @@ export class Shortcode {
     Shortcode.heuristicValidation(s)
     const isPercentDelmited = s.startsWith("{{%") && s.endsWith("%}}")
     let interior = s.slice(3, -3)
-    const isSelfClosing = interior.slice(-1) === "/"
+    let isSelfClosing = interior.slice(-1) === "/"
     if (isSelfClosing) {
       interior = interior.slice(0, -1)
     }
@@ -188,15 +191,21 @@ export class Shortcode {
     const nameAndArgs = interior.slice(isClosingMatch?.[0].length ?? 0)
 
     const [nameMatch, ...argMatches] = nameAndArgs.matchAll(
-      Shortcode.ARG_REGEXP,
+      Shortcode.NAME_ARG_SC_REGEXP,
     )
     const name = Shortcode.getArgMatchValue(nameMatch)
-    const params = argMatches.map((match) => {
-      return new ShortcodeParam(
+    const params: ShortcodeParam[] = []
+    for (const match of argMatches) {
+      if (match.groups?.fslash) {
+        isSelfClosing = true
+        break
+      }
+      const param = new ShortcodeParam(
         Shortcode.getArgMatchValue(match),
         Shortcode.getArgMatchName(match),
       )
-    })
+      params.push(param)
+    }
 
     return new Shortcode(
       name,
