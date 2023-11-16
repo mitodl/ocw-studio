@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.2
+Version 0.107.2 (Released November 16, 2023)
 ---------------
 
 - Fix self-closing shortcodes (#2025)
