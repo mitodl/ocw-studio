@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.1
+Version 0.107.1 (Released November 16, 2023)
 ---------------
 
 - ci: add pull_request trigger (#2020)
