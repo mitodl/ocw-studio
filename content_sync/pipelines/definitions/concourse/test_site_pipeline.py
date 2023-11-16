@@ -63,8 +63,9 @@ course_slug = settings.OCW_COURSE_TEST_SLUG
 www_content_git_identifier = Identifier("www-content-git").root
 course_content_git_identifier = Identifier("course-content-git").root
 upload_fixtures_step_identifier = Identifier("upload-fixtures-step").root
-test_pipeline_job_identifier = Identifier("e2e-test-job").root
+fetch_built_content_step_identifier = Identifier("fetch-built-content").root
 playwright_task_identifier = Identifier("playwright-task").root
+test_pipeline_job_identifier = Identifier("e2e-test-job").root
 
 
 class TestPipelineBaseTasks(list[StepModifierMixin]):
@@ -253,23 +254,43 @@ class TestPipelineDefinition(Pipeline):
                 ],
             )
         )
-        www_site_content_git_step = SiteContentGitTaskStep(
-            branch=site_content_branch,
-            short_id=www_slug,
+        fetch_built_content_commands = "\n".join(
+            [
+                "mkdir -p test-sites/tmp/dist/ocw-ci-test-www",
+                "mkdir -p test-sites/tmp/dist/courses/",
+                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/ test-sites/tmp/dist/ocw-ci-test-www/ --exclude *courses/*",
+                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/courses test-sites/tmp/dist/courses/",
+            ]
         )
-        www_site_content_git_step.task = www_content_git_identifier
-        www_site_content_git_step.config.outputs = [
-            Output(name=www_content_git_identifier)
-        ]
-        course_site_content_git_step = SiteContentGitTaskStep(
-            branch=site_content_branch,
-            short_id=course_slug,
+        fetch_built_content_step = TaskStep(
+            task=fetch_built_content_step_identifier,
+            timeout="40m",
+            params={
+                "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                    settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                ),
+            },
+            config=TaskConfig(
+                platform="linux",
+                image_resource=AWS_CLI_REGISTRY_IMAGE,
+                inputs=[Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
+                outputs=[Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
+                run=Command(
+                    path="sh",
+                    dir=OCW_HUGO_THEMES_GIT_IDENTIFIER,
+                    args=["-exc", fetch_built_content_commands],
+                ),
+            ),
         )
-        course_site_content_git_step.task = course_content_git_identifier
-        course_site_content_git_step.config.outputs = [
-            Output(name=course_content_git_identifier)
-        ]
-        tasks.extend([www_site_content_git_step, course_site_content_git_step])
+        if is_dev():
+            fetch_built_content_step.params.update(
+                {
+                    "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
+                    "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
+                }
+            )
+        tasks.append(fetch_built_content_step)
+        playwright_commands = "yarn install\nnpx playwright install chrome --with-deps\nnpx playwright test"
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
@@ -280,8 +301,6 @@ class TestPipelineDefinition(Pipeline):
                     image_resource=PLAYWRIGHT_REGISTRY_IMAGE,
                     inputs=[
                         Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                        Input(name=www_content_git_identifier),
-                        Input(name=course_content_git_identifier),
                     ],
                     params={
                         "PLAYWRIGHT_BASE_URL": common_pipeline_vars[
@@ -313,10 +332,7 @@ class TestPipelineDefinition(Pipeline):
                     run=Command(
                         path="sh",
                         dir=OCW_HUGO_THEMES_GIT_IDENTIFIER,
-                        args=[
-                            "-exc",
-                            "yarn install\nmkdir -p ./test-sites/tmp/dist/\ncp -r ./test-sites/__fixtures__/* ./test-sites/tmp/dist/\nnpx playwright test",
-                        ],
+                        args=["-exc", playwright_commands],
                     ),
                 ),
             )
