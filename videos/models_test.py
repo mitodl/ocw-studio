@@ -22,7 +22,9 @@ def test_video_youtube_id():
 
 @pytest.mark.parametrize("has_transcript", [True, False])
 @pytest.mark.parametrize("has_caption", [True, False])
-def test_video_caption_transcript_resources(has_transcript, has_caption):
+def test_video_caption_transcript_resources(
+    has_transcript, has_caption, preexisting_captions_filenames
+):
     """Test caption_transcript_resources finds appropriate resources for video"""
     youtube_id = "yt-id"
 
@@ -32,19 +34,19 @@ def test_video_caption_transcript_resources(has_transcript, has_caption):
     )
     WebsiteContentFactory.create(
         metadata={"video_metadata": {"youtube_id": youtube_id}},
-        filename="file_mp4",
+        filename=preexisting_captions_filenames["website_content"]["video"],
         website=video.website,
     )
 
     if has_transcript:
         WebsiteContentFactory.create(
-            filename="file_transcript_pdf",
+            filename=preexisting_captions_filenames["website_content"]["transcript"],
             website=video.website,
         )
 
     if has_caption:
         WebsiteContentFactory.create(
-            filename="file_captions_vtt",
+            filename=preexisting_captions_filenames["website_content"]["captions"],
             website=video.website,
         )
 
