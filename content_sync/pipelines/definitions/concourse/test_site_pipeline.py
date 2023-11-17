@@ -290,7 +290,7 @@ class TestPipelineDefinition(Pipeline):
                 }
             )
         tasks.append(fetch_built_content_step)
-        playwright_commands = "yarn install\nnpx playwright install chrome --with-deps\nnpx playwright test"
+        playwright_commands = "yarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test --workers 4"
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,

@@ -26,6 +26,6 @@ CURL_REGISTRY_IMAGE = AnonymousResource(
 PLAYWRIGHT_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
     source=RegistryImage(
-        repository="mcr.microsoft.com/playwright", tag="v1.33.0-jammy"
+        repository="mcr.microsoft.com/playwright", tag="v1.40.0-jammy"
     ),
 )
