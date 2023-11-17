@@ -13,6 +13,7 @@ from moto import mock_s3
 from gdrive_sync.api import create_gdrive_resource_content
 from gdrive_sync.factories import DriveFileFactory
 from main.s3_utils import get_boto3_client
+from main.utils import get_base_filename
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
@@ -227,7 +228,7 @@ def test_start_transcript_job(
     video = create_video(youtube_id, title)
     video_content = create_content(video.website, youtube_id, title)
 
-    base_filename = video_content.filename.rsplit("_", 1)[0]
+    base_filename = get_base_filename(video_content.filename)
 
     base_path = f"/some/path/to/{base_filename}"
 
@@ -690,7 +691,7 @@ def test_update_transcripts_for_video_no_3play(
     video = videofile.video
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
-    base_resource_filename = resource.filename.rsplit("_", 1)[0]
+    base_resource_filename = get_base_filename(resource.filename)
     base_path = f"{resource.website.s3_path}/{base_resource_filename}"
 
     if caption_exists:
