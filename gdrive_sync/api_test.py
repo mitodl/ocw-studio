@@ -595,6 +595,39 @@ def test_create_gdrive_resource_content_forbidden_name(
     assert drive_file.resource.filename not in CONTENT_FILENAMES_FORBIDDEN
 
 
+def test_create_gdrive_resource_content_preexisting_captions(
+    mocker, mock_gdrive_pdf, preexisting_captions_filenames
+):
+    """
+    Test create_gdrive_resource_content creates resources with expected filenames
+    for preexisting captions.
+    """
+    mocked_get_s3_content_type = mocker.patch("gdrive_sync.api.get_s3_content_type")
+    for drive_filename, content_filename, content_type in zip(
+        [
+            preexisting_captions_filenames["gdrive"]["video"],
+            preexisting_captions_filenames["gdrive"]["captions"],
+            preexisting_captions_filenames["gdrive"]["transcript"],
+        ],
+        [
+            preexisting_captions_filenames["website_content"]["video"],
+            preexisting_captions_filenames["website_content"]["captions"],
+            preexisting_captions_filenames["website_content"]["transcript"],
+        ],
+        ["video/mp4", "text/vtt", "application/pdf"],
+    ):
+        mocked_get_s3_content_type.return_value = content_type
+
+        drive_file = DriveFileFactory.create(
+            name=drive_filename, s3_key=f"/gdrive_uploads/website/{drive_filename}"
+        )
+
+        create_gdrive_resource_content(drive_file)
+        drive_file.refresh_from_db()
+
+        assert drive_file.resource.filename == content_filename
+
+
 def test_gdrive_pdf_failure(mock_get_s3_content_type, mocker):
     """Non-valid PDFs should raise an error"""
     mocker.patch(

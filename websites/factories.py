@@ -100,7 +100,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     )  # noqa: A003, RUF100
     markdown = factory.Faker("text")
     metadata = factory.LazyAttribute(lambda _: {})
-    filename = factory.Sequence(lambda n: f"my-file-{n}")
+    filename = factory.Sequence(lambda n: f"my-file-{n}_ext")
     dirpath = factory.Faker("uri_path", deep=2)
     website = factory.SubFactory(WebsiteFactory)
 
