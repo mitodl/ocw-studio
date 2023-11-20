@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.3
+Version 0.107.3 (Released November 20, 2023)
 ---------------
 
 - Create video workflow documentation (#2010)
