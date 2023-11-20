@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.107.3
+---------------
+
+- Create video workflow documentation (#2010)
+- test: improve tests for existing captions (#2026)
+
 Version 0.107.2 (Released November 16, 2023)
 ---------------
 
