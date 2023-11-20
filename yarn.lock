@@ -2612,10 +2612,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/pluralize@npm:^0.0.29":
-  version: 0.0.29
-  resolution: "@types/pluralize@npm:0.0.29"
-  checksum: db7732b733ba1dc59f080f87364c9f985c1ae9f1e5ec5fcefb83c1327149e01ecac42766352eb7b19b117cf39defa99cf514629f3666968a3bdeb00e74f2a97e
+"@types/pluralize@npm:^0.0.33":
+  version: 0.0.33
+  resolution: "@types/pluralize@npm:0.0.33"
+  checksum: 282d42dc0187e5e0912f9f36ee0f5615bfd273a08d40afe5bf5881cb28daf1977abe10564543032aa0f42352ebba739ff3d86bf5562ac4691c6d1761fcc7cf39
   languageName: node
   linkType: hard
 
@@ -10782,7 +10782,7 @@ __metadata:
     "@types/lodash": ^4.14.172
     "@types/luxon": ^3.2.0
     "@types/node": ^16.4.11
-    "@types/pluralize": ^0.0.29
+    "@types/pluralize": ^0.0.33
     "@types/ramda": ^0.27.44
     "@types/react": ^16.9.46
     "@types/react-dom": ^16.9.8
