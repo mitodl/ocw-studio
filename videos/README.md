@@ -17,6 +17,7 @@ This assumes that [Google Drive sync](/README.md#enabling-google-drive-integrati
 
 The high-level description of the process is below, and each subsequent section contains additional details, including links to the relevant code.
 
+- Browse to a course site in the Studio UI, go to the Resources page and click the icon to the right of the `Sync w/ Google Drive` button to open the site's Google Drive folder in the Google Drive UI.
 - Upload a video with the name `<video_name>.<video_extension>` to the `videos_final` folder on Google Drive, where `<video_extension>` is a valid video extension, such as `mp4`. If there are pre-existing captions that should be uploaded with the video (as opposed to requesting captions/transcript from 3Play), then these should be named _exactly_ `<video_name>_captions.vtt` and `<video_name>_transcript.pdf`, and uploaded into the `files_final` folder on Google Drive.
 - Sync using the Studio UI. This uploads the video to S3.
 - As soon as the upload to S3 is complete, Studio initiates a celery task to submit the video to the AWS Media Convert service.
@@ -36,7 +37,7 @@ The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that
 
 # YouTube Submission
 
-Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/youtube.py). The [YouTube upload success notification](/videos/templates/mail/youtube_upload_success/body.html) is sent by email when the [`update_youtube_statuses`](/videos/tasks.py) task is complete; exceptions in this task trigger the [YouTube upload failure notification](/videos/templates/mail/youtube_upload_failure/body.html). When the course is published to draft/staging, the video is set to private. However, when it is published to live/production, the video is made public on YouTube, via the [`update_youtube_metadata` function](/videos/youtube.py).
+Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/youtube.py). The [YouTube upload success notification](/videos/templates/mail/youtube_upload_success/body.html) is sent by email when the [`update_youtube_statuses`](/videos/tasks.py) task is complete; exceptions in this task trigger the [YouTube upload failure notification](/videos/templates/mail/youtube_upload_failure/body.html). When the course is published to draft/staging, the video is set to private. However, when it is published to live/production, the video is made public on YouTube, via the [`update_youtube_metadata` function](/videos/youtube.py). When a video is made public on YouTube, all YouTube subscribers will be notified. There are nearly 5 million subscribers to the OCW YouTube channel, so be careful with this setting.
 
 # Captioning and 3Play Transcript Request
 
@@ -48,4 +49,9 @@ Once the workflow is completed, the updates to the `Video` and `WebsiteContent` 
 
 # Management Commands
 
-In cases where something may have gone wrong with the data, often due to legacy data issues, there are management commands that can be run to resolve them. The commands are defined [here](/videos/management/commands/).
+In cases where something may have gone wrong with the data, often due to legacy data issues, there are management commands that can be run to resolve them. The commands are defined [here](/videos/management/commands/). These commands are:
+
+- [backpopulate_video_downloads](/videos/management/commands/backpopulate_video_downloads.py) In the existing video workflow, the MediaConvert job creates a downloadable verion as well as the YouTube version. Initially, these downloadable versions were not in the same S3 path as the course site's other resource content, and running this command moves them to the appropriate location.
+- [clear_webvtt_files](/videos/management/commands/clear_webvtt_files.py) Some captions were initially saved without an extension; this management command deletes them from S3 and clears the resource metadata, allowing them to be re-created.
+- [sync_missing_captions](/videos/management/commands/sync_missing_captions.py) This management command syncs captions and transcripts from 3Play to course videos missing them.
+- [sync_transcripts](/videos/management/commands/sync_transcripts.py). This management command syncs captions and transcripts for any videos missing them from one course (`from_course`) to another (`to_course`).
