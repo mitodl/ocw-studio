@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.107.2 (Released November 16, 2023)
+---------------
+
+- Fix self-closing shortcodes (#2025)
+
+Version 0.107.1 (Released November 16, 2023)
+---------------
+
+- ci: add pull_request trigger (#2020)
+- compose file updates (#2023)
+- fix(deps): update dependency @reduxjs/toolkit to v1.9.7 (#1995)
+
 Version 0.107.0 (Released November 13, 2023)
 ---------------
 

@@ -3,6 +3,7 @@ import pytest
 
 from main.utils import (
     are_equivalent_paths,
+    get_base_filename,
     get_dirpath_and_filename,
     get_file_extension,
     is_valid_uuid,
@@ -109,3 +110,16 @@ def test_valid_key(mocker, key, is_valid):
 def test_truncate_words(text, truncated):
     """truncate_words returns expected result"""
     assert truncate_words(text, 9, suffix="___") == truncated
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected_base_filename"),
+    [
+        ("file", "file"),
+        ("file_ext", "file"),
+        ("file_name_ext", "file_name"),
+    ],
+)
+def test_get_base_filename(filename, expected_base_filename):
+    """Test get_base_filename truncates extension"""
+    assert get_base_filename(filename) == expected_base_filename

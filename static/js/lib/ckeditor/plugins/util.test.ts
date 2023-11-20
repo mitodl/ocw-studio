@@ -197,7 +197,37 @@ describe("Shortcode", () => {
       expected: new Shortcode("some_shortcode", [], true, false, true),
     },
     {
-      text: "{{< some_shortcode / >}}", //not valid self-closing
+      text: "{{< some_shortcode / >}}", //valid self-closing
+      expected: new Shortcode("some_shortcode", [], false, false, true),
+    },
+    {
+      text: "{{% some_shortcode / %}}", //valid self-closing
+      expected: new Shortcode("some_shortcode", [], true, false, true),
+    },
+    {
+      //respects params before self-closing tag
+      text: "{{% some_shortcode some_param / %}}",
+      expected: new Shortcode(
+        "some_shortcode",
+        [new ShortcodeParam("some_param")],
+        true,
+        false,
+        true,
+      ),
+    },
+    {
+      //ignores params after self-closing tag
+      text: "{{% some_shortcode some_param / another_param %}}",
+      expected: new Shortcode(
+        "some_shortcode",
+        [new ShortcodeParam("some_param")],
+        true,
+        false,
+        true,
+      ),
+    },
+    {
+      text: '{{< some_shortcode "/" >}}', //not valid self-closing
       expected: new Shortcode(
         "some_shortcode",
         [new ShortcodeParam("/")],
