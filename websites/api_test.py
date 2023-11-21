@@ -41,6 +41,7 @@ from websites.messages import (
     PreviewOrPublishSuccessMessage,
 )
 from websites.models import Website
+from websites.serializers_test import EXAMPLE_METADATA
 
 pytestmark = pytest.mark.django_db
 
@@ -487,11 +488,22 @@ def test_update_unpublished_website_status(status, version):
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 @pytest.mark.parametrize("has_truncatable_text", [True, False])
 @pytest.mark.parametrize("is_draft", [True, False])
+@pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
 def test_get_content_warnings(
-    mocker, has_missing_ids, has_missing_captions, has_truncatable_text, is_draft
+    mocker,
+    has_missing_ids,
+    has_missing_captions,
+    has_truncatable_text,
+    is_draft,
+    metadata,
 ):
     """get_content_warnings should return expected warning messages"""
     website = WebsiteFactory.create()
+    has_site_metadata = bool(metadata)
+    has_site_metadata and WebsiteContentFactory.create(
+        type="sitemetadata", website=website, metadata=metadata
+    )
+    # website.has_site_metadata = has_site_metadata
     video_content = WebsiteContentFactory.create_batch(3, website=website)
     no_yt_ids = video_content[0:2] if has_missing_ids else []
     no_caps = video_content[1:3] if has_missing_captions else []
@@ -515,26 +527,36 @@ def test_get_content_warnings(
     )
     warnings = get_content_warnings(website)
     warnings_len = 0
+    if not has_site_metadata:
+        warnings_len += 1
     if has_missing_ids:
         warnings_len += 1
         for content in no_yt_ids:
-            assert content.title in warnings[0]
+            assert content.title in warnings[1 if not has_site_metadata else 0]
     if has_missing_captions:
         warnings_len += 1
         for content in no_caps:
-            assert content.title in warnings[1 if has_missing_ids else 0]
+            assert (
+                content.title
+                in warnings[int(not has_site_metadata) + int(has_missing_ids)]
+            )
     if has_truncatable_text:
         warnings_len += 1
         assert (
             video_content[2].title
-            in warnings[int(has_missing_ids) + int(has_missing_captions)]
+            in warnings[
+                int(not has_site_metadata)
+                + int(has_missing_ids)
+                + int(has_missing_captions)
+            ]
         )
     if is_draft:
         warnings_len += 1
         assert len(warnings) == warnings_len
         assert video_content[1].title in warnings[warnings_len - 1]
     if (
-        not has_missing_ids
+        has_site_metadata
+        and not has_missing_ids
         and not has_missing_captions
         and not has_truncatable_text
         and not is_draft

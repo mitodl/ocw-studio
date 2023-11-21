@@ -282,6 +282,11 @@ class Website(TimestampedModel):
         ]
         return "/".join([part.strip("/") for part in url_parts if part])
 
+    @property
+    def has_site_metadata(self):
+        site_metadata = self.websitecontent_set.filter(type="sitemetadata")
+        return bool(site_metadata and site_metadata[0].metadata)
+
     class Meta:
         permissions = (
             ("publish_website", "Publish or unpublish a website"),

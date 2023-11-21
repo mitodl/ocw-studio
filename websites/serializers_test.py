@@ -189,12 +189,16 @@ EXAMPLE_METADATA = {
 
 
 @pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
-def test_website_content_has_metadata(mocker, metadata):
+@pytest.mark.parametrize(
+    "serializer_class", [WebsiteDetailSerializer, WebsiteStatusSerializer]
+)
+def test_website_content_has_metadata(mocker, metadata, serializer_class):
+    """has_site_metadata should be true if we have metadata in WebsiteContent model"""
     website = WebsiteFactory.create()
     bool(metadata) and WebsiteContentFactory.create(
         type="sitemetadata", website=website, metadata=metadata
     )
-    serialized_data = WebsiteStatusSerializer(instance=website).data
+    serialized_data = serializer_class(instance=website).data
     assert serialized_data["has_site_metadata"] == bool(metadata)
 
 

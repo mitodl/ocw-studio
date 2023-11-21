@@ -239,24 +239,12 @@ class WebsiteUrlSuggestionMixin(serializers.Serializer):
         return instance.get_url_path(with_prefix=False)
 
 
-class WebsiteHasMetadataMixin(serializers.Serializer):
-    """Adds has_site_metadata custom serializer field."""
-
-    has_site_metadata = serializers.SerializerMethodField(read_only=True)
-
-    def get_has_site_metadata(self, instance):
-        """Get whether or not the site has metadata."""
-        site_metadata = instance.websitecontent_set.filter(type="sitemetadata")
-        return bool(site_metadata and site_metadata[0].metadata)
-
-
 class WebsiteDetailSerializer(
     serializers.ModelSerializer,
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     RequestUserSerializerMixin,
     WebsiteUrlSuggestionMixin,
-    WebsiteHasMetadataMixin,
 ):
     """Serializer for websites with serialized config"""
 
@@ -265,6 +253,7 @@ class WebsiteDetailSerializer(
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
     unpublished = serializers.ReadOnlyField()
+    has_site_metadata = serializers.ReadOnlyField()
 
     def get_is_admin(self, obj):
         """Determine if the request user is an admin"""
@@ -339,9 +328,10 @@ class WebsiteStatusSerializer(
     WebsiteGoogleDriveMixin,
     WebsiteValidationMixin,
     WebsiteUrlSuggestionMixin,
-    WebsiteHasMetadataMixin,
 ):
     """Serializer for website status fields"""
+
+    has_site_metadata = serializers.ReadOnlyField()
 
     class Meta:
         model = Website
