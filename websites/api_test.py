@@ -489,6 +489,7 @@ def test_update_unpublished_website_status(status, version):
 @pytest.mark.parametrize("has_truncatable_text", [True, False])
 @pytest.mark.parametrize("is_draft", [True, False])
 @pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
+#pylint: disable=too-many-arguments
 def test_get_content_warnings(
     mocker,
     has_missing_ids,
