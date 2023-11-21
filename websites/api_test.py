@@ -483,13 +483,13 @@ def test_update_unpublished_website_status(status, version):
     else:
         assert getattr(website, publish_date_field) is None
 
-#pylint: disable=too-many-arguments
+
 @pytest.mark.parametrize("has_missing_ids", [True, False])
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 @pytest.mark.parametrize("has_truncatable_text", [True, False])
 @pytest.mark.parametrize("is_draft", [True, False])
 @pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
-def test_get_content_warnings(
+def test_get_content_warnings(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     mocker,
     has_missing_ids,
     has_missing_captions,
@@ -503,7 +503,6 @@ def test_get_content_warnings(
     has_site_metadata and WebsiteContentFactory.create(
         type="sitemetadata", website=website, metadata=metadata
     )
-    # website.has_site_metadata = has_site_metadata
     video_content = WebsiteContentFactory.create_batch(3, website=website)
     no_yt_ids = video_content[0:2] if has_missing_ids else []
     no_caps = video_content[1:3] if has_missing_captions else []
