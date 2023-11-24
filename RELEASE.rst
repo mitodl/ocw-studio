@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.107.4
+---------------
+
+- fix(deps): update dependency luxon to v3.4.4 (#1910)
+- fix(deps): update dependency @types/pluralize to ^0.0.33 (#1912)
+
 Version 0.107.3 (Released November 20, 2023)
 ---------------
 
