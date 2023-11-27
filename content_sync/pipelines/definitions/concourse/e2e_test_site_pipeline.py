@@ -110,7 +110,7 @@ class TestPipelineBaseTasks(list[StepModifierMixin]):
                         "-exc",
                         "\n".join(
                             [
-                                f"aws s3{get_cli_endpoint_url()} sync {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/ s3://{common_pipeline_vars['test_bucket_name']}/"
+                                f"aws s3{get_cli_endpoint_url()} sync {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/ s3://{common_pipeline_vars['test_bucket_name']}/"  # noqa: E501
                             ]
                         ),
                     ],
@@ -258,8 +258,8 @@ class TestPipelineDefinition(Pipeline):
             [
                 "mkdir -p test-sites/tmp/dist/ocw-ci-test-www",
                 "mkdir -p test-sites/tmp/dist/courses/",
-                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/ test-sites/tmp/dist/ocw-ci-test-www/ --exclude *courses/*",
-                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/courses test-sites/tmp/dist/courses/",
+                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/ test-sites/tmp/dist/ocw-ci-test-www/ --exclude *courses/*",  # noqa: E501
+                f"aws s3{get_cli_endpoint_url()} sync s3://{common_pipeline_vars['test_bucket_name']}/courses test-sites/tmp/dist/courses/",  # noqa: E501
             ]
         )
         fetch_built_content_step = TaskStep(
@@ -290,7 +290,7 @@ class TestPipelineDefinition(Pipeline):
                 }
             )
         tasks.append(fetch_built_content_step)
-        playwright_commands = "yarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test --workers 4"
+        playwright_commands = "yarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test --workers 4"  # noqa: E501
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
@@ -316,9 +316,9 @@ class TestPipelineDefinition(Pipeline):
                         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                         "NOINDEX": course_config.values["noindex"],
                         "COURSE_CONTENT_PATH": "../",
-                        "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",
+                        "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",  # noqa: E501
                         "FIELDS_CONTENT_PATH": "",
-                        "FIELDS_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/mit-fields/config.yaml",
+                        "FIELDS_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/mit-fields/config.yaml",  # noqa: E501
                         "GIT_CONTENT_SOURCE": "git@github.mit.edu:ocw-content-rc",
                         "OCW_TEST_COURSE": course_content_git_identifier,
                         "RESOURCE_BASE_URL": resource_base_url,
@@ -327,7 +327,7 @@ class TestPipelineDefinition(Pipeline):
                         "SENTRY_ENV": "",
                         "WEBPACK_WATCH_MODE": "false",
                         "WWW_CONTENT_PATH": f"../{www_content_git_identifier}",
-                        "WWW_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-www/config.yaml",
+                        "WWW_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-www/config.yaml",  # noqa: E501
                     },
                     run=Command(
                         path="sh",
