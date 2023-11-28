@@ -47,12 +47,15 @@ const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
             children: [],
             targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
             targetUrl: null,
+            includeLicenseWarning: true,
           },
         ],
+        includeLicenseWarning: true,
         targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
         targetUrl: null,
       },
     ],
+    includeLicenseWarning: true,
     targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
     targetUrl: null,
   },
@@ -62,6 +65,7 @@ const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
     children: [],
     targetContentId: null,
     targetUrl: "http://example.com",
+    includeLicenseWarning: true,
   },
 ]
 
