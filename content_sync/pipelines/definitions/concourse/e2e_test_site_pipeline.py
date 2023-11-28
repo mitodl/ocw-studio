@@ -139,7 +139,14 @@ class TestPipelineDefinition(Pipeline):
     """
     A Pipeline that does the following:
 
-     -
+     - Fetches the ocw-hugo-themes and ocw-hugo-projects repos
+     - Runs the steps in SitePipelineOnlineTasks based on test site slugs
+     - Deploys the sites to the bucket denoted by AWS_TEST_BUCKET_NAME
+     - Runs the Playwright tests from ocw-hugo-themes against the output
+
+    Args:
+        themes_branch(str): The branch of ocw-hugo-themes to use
+        projects_branch(str): The branch of ocw-hugo-projects to use
     """
 
     def __init__(self, themes_branch: str, projects_branch: str, **kwargs):
