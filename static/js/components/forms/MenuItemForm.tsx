@@ -7,6 +7,7 @@ import RelationField from "../widgets/RelationField"
 import { FormError } from "./FormError"
 
 import { LinkType, WebsiteContent } from "../../types/websites"
+import BooleanField from "../widgets/BooleanField"
 
 interface Props {
   onSubmit: (
@@ -24,6 +25,7 @@ export type MenuItemFormValues = {
   menuItemType: LinkType.Internal | LinkType.External
   externalLink: string
   internalLink: string
+  includeLicenseWarning: boolean
 }
 
 const schema = yup.object().shape({
@@ -37,6 +39,10 @@ const schema = yup.object().shape({
     is: LinkType.Internal,
     then: yup.string().required(),
   }),
+  includeLicenseWarning: yup
+    .boolean()
+    .label("Include non-OCW licensing warning")
+    .default(true),
 })
 
 const emptyInitialValues: MenuItemFormValues = {
@@ -44,6 +50,7 @@ const emptyInitialValues: MenuItemFormValues = {
   menuItemType: LinkType.Internal,
   externalLink: "",
   internalLink: "",
+  includeLicenseWarning: true,
 }
 
 export default function MenuItemForm({
@@ -63,6 +70,7 @@ export default function MenuItemForm({
               : LinkType.Internal,
             externalLink: activeItem.targetUrl || "",
             internalLink: activeItem.targetContentId || "",
+            includeLicenseWarning: true,
           }
         : emptyInitialValues,
     [activeItem],
@@ -139,18 +147,52 @@ export default function MenuItemForm({
                 </>
               ) : (
                 <>
-                  <label className="px-2" htmlFor="externalLink">
-                    Link to:
-                  </label>
-                  <Field
-                    id="externalLink"
-                    name="externalLink"
-                    className="form-control"
-                  />
-                  <span className="help-text">
-                    URL, e.g. http://example.com
-                  </span>
-                  <ErrorMessage name="externalLink" component={FormError} />
+                  <div className="form-group w-100">
+                    <label className="px-2" htmlFor="externalLink">
+                      Link to:
+                    </label>
+                    <Field
+                      id="externalLink"
+                      name="externalLink"
+                      className="form-control"
+                    />
+                    <span className="help-text">
+                      URL, e.g. http://example.com
+                    </span>
+                    <ErrorMessage name="externalLink" component={FormError} />
+                  </div>
+                  <div className="form-group w-100">
+                    <label className="px-2" htmlFor="externalLink">
+                      Include non-OCW licensing warning
+                    </label>
+                    <div className="form-control">
+                      <Field
+                        as={BooleanField}
+                        id="includeLicenseWarning"
+                        name="includeLicenseWarning"
+                        value={values.includeLicenseWarning === true}
+                        additional_labels={{
+                          true_label: "Yes",
+                          false_label: "No",
+                        }}
+                        onChange={(event: { target: { value: boolean } }) => {
+                          setFieldValue(
+                            "includeLicenseWarning",
+                            event.target.value,
+                          )
+                        }}
+                      />
+                    </div>
+
+                    <span className="help-text">
+                      If yes, user sees warning that external content is not
+                      covered by OCW licensing.
+                    </span>
+                    <ErrorMessage
+                      name="includeLicenseWarning"
+                      component={FormError}
+                    />
+                  </div>
                 </>
               )}
             </div>

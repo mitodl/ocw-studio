@@ -1,4 +1,5 @@
 import React from "react"
+import { AdditionalLabelsFieldProps } from "../../types/websites"
 
 const radioOptionId = (name: string, bool: boolean): string =>
   `${name}_${String(bool)}`
@@ -12,8 +13,15 @@ interface Props {
 /**
  * A widget for editing boolean values
  */
-export default function BooleanField(props: Props): JSX.Element {
-  const { name, value, onChange } = props
+export default function BooleanField(
+  props: Props & AdditionalLabelsFieldProps,
+): JSX.Element {
+  const {
+    name,
+    value,
+    additional_labels: additionalLabels = {},
+    onChange,
+  } = props
 
   const handleChange = (event: any): void => {
     onChange({
@@ -35,7 +43,7 @@ export default function BooleanField(props: Props): JSX.Element {
         onChange={handleChange}
       />
       <label className="px-2" htmlFor={radioOptionId(name, true)}>
-        True
+        {additionalLabels.true_label ?? "True"}
       </label>
       <input
         type="radio"
@@ -46,7 +54,7 @@ export default function BooleanField(props: Props): JSX.Element {
         onChange={handleChange}
       />
       <label className="px-2" htmlFor={radioOptionId(name, false)}>
-        False
+        {additionalLabels.false_label ?? "False"}
       </label>
     </div>
   )

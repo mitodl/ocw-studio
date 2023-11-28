@@ -136,6 +136,15 @@ export interface RelationConfigField extends ConfigFieldBaseProps {
   cross_site?: boolean
 }
 
+export interface AdditionalLabelsField {
+  true_label?: string
+  false_label?: string
+}
+
+export interface AdditionalLabelsFieldProps {
+  additional_labels?: AdditionalLabelsField
+}
+
 export interface MenuConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Menu
   collections: string[]

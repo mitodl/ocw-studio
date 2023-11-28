@@ -78,6 +78,7 @@ const RELATION_EXTRA_PROPS = [
 ]
 const MENU_EXTRA_PROPS = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]
+const BOOLEAN_FIELD_PROPS = ["additional_labels"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
   name: "title",
@@ -107,6 +108,8 @@ export function widgetExtraProps(field: ConfigField): Record<string, any> {
       return pick(MENU_EXTRA_PROPS, field)
     case WidgetVariant.HierarchicalSelect:
       return pick(HIERARCHICAL_SELECT_EXTRA_PROPS, field)
+    case WidgetVariant.Boolean:
+      return pick(BOOLEAN_FIELD_PROPS, field)
     default:
       return {}
   }

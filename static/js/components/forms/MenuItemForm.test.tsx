@@ -56,6 +56,7 @@ describe("MenuItemForm", () => {
       menuItemType: LinkType.Internal,
       externalLink: "",
       internalLink: "",
+      includeLicenseWarning: true,
     })
   })
   ;[
@@ -76,6 +77,7 @@ describe("MenuItemForm", () => {
         menuItemType: expLinkType,
         externalLink: activeItem.targetUrl || "",
         internalLink: activeItem.targetContentId,
+        includeLicenseWarning: true,
       })
     })
   })

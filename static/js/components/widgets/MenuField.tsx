@@ -25,12 +25,17 @@ interface MenuFieldProps {
   contentContext: WebsiteContent[] | null
 }
 
+type HugoItemParams = {
+  includeLicenseWarning?: boolean
+}
+
 export type HugoItem = {
   identifier: string
   name: string
   url?: string
   weight: number
   parent?: string
+  params?: HugoItemParams
 }
 
 export type InternalSortableMenuItem = {
@@ -39,6 +44,7 @@ export type InternalSortableMenuItem = {
   targetContentId: string | null
   targetUrl: string | null
   children?: InternalSortableMenuItem[]
+  includeLicenseWarning: boolean
 }
 
 type onChangeProps = {
@@ -77,6 +83,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     id: item.identifier,
     text: item.name,
     children: [],
+    includeLicenseWarning: item.params?.includeLicenseWarning ?? true,
     ...partialHugoItem,
   }
 }
@@ -90,6 +97,9 @@ const internalItemToHugo = (
     identifier: item.id,
     name: item.text,
     weight: (siblingIdx + 1) * 10,
+    params: {
+      includeLicenseWarning: item.includeLicenseWarning,
+    },
     ...(item.targetUrl ? { url: item.targetUrl } : {}),
     ...(parent ? { parent: parent } : {}),
   }
@@ -361,6 +371,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     let updatedItems: InternalSortableMenuItem[]
     const updatedItem = {
       text: values.menuItemTitle,
+      includeLicenseWarning: values.includeLicenseWarning,
       ...(values.menuItemType === LinkType.External
         ? {
             id: `${EXTERNAL_LINK_PREFIX}${generateHashCode(
