@@ -615,6 +615,7 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
             "AWS_OFFLINE_TEST_BUCKET_NAME",
             "OCW_WWW_TEST_SLUG",
             "OCW_COURSE_TEST_SLUG",
+            "STATIC_API_BASE_URL_TEST",
         ]
         super().__init__(api=api)
         self.VERSION = VERSION_LIVE
