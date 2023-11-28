@@ -175,10 +175,26 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 @app.task(acks_late=True)
 def upsert_theme_assets_pipeline(
-    unpause=False, themes_branch=None  # noqa: FBT002
+    unpause=False, themes_branch=None, projects_branch=None  # noqa: FBT002
 ) -> bool:
     """Upsert the theme assets pipeline"""
-    pipeline = api.get_theme_assets_pipeline(themes_branch=themes_branch)
+    pipeline = api.get_test_pipeline(
+        themes_branch=themes_branch, projects_branch=projects_branch
+    )
+    pipeline.upsert_pipeline()
+    if unpause:
+        pipeline.unpause()
+    return True
+
+
+@app.task(acks_late=True)
+def upsert_test_pipeline(
+    unpause=False, themes_branch=None, projects_branch=None  # noqa: FBT002
+) -> bool:
+    """Upsert the end to end testing pipeline"""
+    pipeline = api.get_test_pipeline(
+        themes_branch=themes_branch, projects_branch=projects_branch
+    )
     pipeline.upsert_pipeline()
     if unpause:
         pipeline.unpause()

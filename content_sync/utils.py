@@ -185,6 +185,19 @@ def get_theme_branch():
     )
 
 
+def get_projects_branch():
+    """
+    Gets the branch to use of ocw-hugo-projects in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
+    if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_PROJECTS_BRANCH
+    """  # noqa: E501, D401
+    github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
+    return (
+        (settings.OCW_HUGO_PROJECTS_BRANCH or github_webhook_branch)
+        if is_dev()
+        else github_webhook_branch
+    )
+
+
 def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args=None):
     """
     Builds a string of arguments to be passed to the hugo command inserted into pipelines
