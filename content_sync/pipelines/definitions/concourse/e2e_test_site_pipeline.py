@@ -76,19 +76,19 @@ class TestPipelineBaseTasks(list[StepModifierMixin]):
     def __init__(self):
         webpack_manifest_get_step = GetStep(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
-            trigger=False,
+            trigger=True,
             timeout="5m",
             attempts=3,
         )
         ocw_hugo_themes_get_step = GetStep(
             get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
-            trigger=False,
+            trigger=True,
             timeout="5m",
             attempts=3,
         )
         ocw_hugo_projects_get_step = GetStep(
             get=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-            trigger=False,
+            trigger=True,
             timeout="5m",
             attempts=3,
         )
@@ -176,10 +176,12 @@ class TestPipelineDefinition(Pipeline):
             branch=themes_branch,
         )
         ocw_hugo_themes_resource = OcwHugoThemesGitResource(branch=themes_branch)
+        ocw_hugo_themes_resource.check_every = "1m"
         ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
             uri=ocw_hugo_projects_url,
             branch=projects_branch,
         )
+        ocw_hugo_projects_resource.check_every = "1m"
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
             site_name=course_website.name,
             api_token=settings.API_BEARER_TOKEN or "",
