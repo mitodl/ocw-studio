@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.4
+Version 0.107.4 (Released November 29, 2023)
 ---------------
 
 - fix(deps): update dependency luxon to v3.4.4 (#1910)
