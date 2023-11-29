@@ -44,7 +44,7 @@ export type InternalSortableMenuItem = {
   targetContentId: string | null
   targetUrl: string | null
   children?: InternalSortableMenuItem[]
-  includeLicenseWarning: boolean
+  includeLicenseWarning?: boolean
 }
 
 type onChangeProps = {
@@ -83,7 +83,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     id: item.identifier,
     text: item.name,
     children: [],
-    includeLicenseWarning: item.params?.includeLicenseWarning ?? true,
+    includeLicenseWarning: item.params?.includeLicenseWarning,
     ...partialHugoItem,
   }
 }
@@ -97,9 +97,13 @@ const internalItemToHugo = (
     identifier: item.id,
     name: item.text,
     weight: (siblingIdx + 1) * 10,
-    params: {
-      includeLicenseWarning: item.includeLicenseWarning,
-    },
+    ...(!R.isNil(item.includeLicenseWarning)
+      ? {
+          params: {
+            includeLicenseWarning: item.includeLicenseWarning,
+          },
+        }
+      : {}),
     ...(item.targetUrl ? { url: item.targetUrl } : {}),
     ...(parent ? { parent: parent } : {}),
   }
@@ -371,7 +375,6 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     let updatedItems: InternalSortableMenuItem[]
     const updatedItem = {
       text: values.menuItemTitle,
-      includeLicenseWarning: values.includeLicenseWarning,
       ...(values.menuItemType === LinkType.External
         ? {
             id: `${EXTERNAL_LINK_PREFIX}${generateHashCode(
@@ -379,6 +382,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
             )}-${Date.now().toString()}`,
             targetUrl: values.externalLink,
             targetContentId: null,
+            includeLicenseWarning: values.includeLicenseWarning,
           }
         : {
             id: values.internalLink,
