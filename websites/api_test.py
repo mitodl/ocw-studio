@@ -45,7 +45,6 @@ from websites.messages import (
 from websites.models import Website
 from websites.serializers_test import VALID_METADATA
 
-
 pytestmark = pytest.mark.django_db
 
 EXAMPLE_UUID_STR = "ae6cfe0b-37a7-4fe6-b194-5b7f1e3c349e"

@@ -100,24 +100,24 @@ def is_test_site(site_name: str) -> bool:
 
 
 def is_required_or_min(field):
-    """Get True if field have either 'required' property set to True or 'min' property set to > 0"""
+    """
+    Get True if field have either 'required' property set to True or 'min'
+    property set to > 0
+    """
     return ("required" in field or "min" in field) and (
         field.get("required") or (field.get("min") and int(field.get("min")) > 0)
     )
 
 
 def get_config_required_fields(config: SiteConfig):
-    """A utility fn for getting the 'required' fields in the WebsiteStarter metadata config"""
+    """Retrieve the 'required' fields in the WebsiteStarter."""
     config_item = config.find_item_by_name("metadata")
     metadata_fields = config_item.item.get("files")[0].get("fields")
-    fields = [
-        field.get("name") for field in metadata_fields if is_required_or_min(field)
-    ]
-    return fields
+    return [field.get("name") for field in metadata_fields if is_required_or_min(field)]
 
 
 def is_metadata_has_required_fields(config, metadata):
-    """Validates whether all the required fields are present in the WebsiteContent metadata"""
+    """Validate the presence of all required fields in the WebsiteContent metadata."""
     required_fields = get_config_required_fields(config)
     return all(
         field in metadata

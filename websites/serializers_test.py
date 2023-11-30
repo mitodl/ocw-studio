@@ -183,33 +183,6 @@ VALID_METADATA = {
     "department_numbers": ["3"],
     "hide_download": True,
 }
-# MISSING_TITLE_METADATA = {
-#     "status": False,
-#     "course_title": "",
-#     "primary_course_number": "1",
-#     "department_numbers": ["3"],
-#     "hide_download": False,
-# }
-# MISSING_COURSE_NUMBER_METADATA = {
-#     "status": False,
-#     "course_title": "example",
-#     "primary_course_number": "",
-#     "department_numbers": ["3"],
-#     "hide_download": False,
-# }
-# MISSING_DEP_NO_METADATA = {
-#     "status": False,
-#     "course_title": "example",
-#     "primary_course_number": "2",
-#     "department_numbers": [""],
-#     "hide_download": False,
-# }
-# MISSING_HIDE_DOWNLOAD_METADATA = {
-#     "status": False,
-#     "course_title": "",
-#     "primary_course_number": 2,
-#     "department_numbers": 3,
-# }
 
 
 @pytest.mark.parametrize(

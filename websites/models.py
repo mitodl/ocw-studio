@@ -285,7 +285,10 @@ class Website(TimestampedModel):
 
     @property
     def has_site_metadata(self):
-        """Get True when required fields are set in WebsiteContent metadata otherwise False"""
+        """
+        Get True when required fields are set in WebsiteContent metadata
+        otherwise False
+        """
         site_metadata = self.websitecontent_set.filter(type="sitemetadata")
         return bool(
             site_metadata
