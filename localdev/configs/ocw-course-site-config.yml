@@ -199,6 +199,11 @@ collections:
     - label: "Extra Course Numbers (comma separated list)"
       name: "extra_course_numbers"
       widget: "string"
+    - label: "Hide Course Download"
+      name: "hide_download"
+      required: true
+      widget: "boolean"
+      help: "Enable this setting to hide the course download button"
     - label: Course Image
       name: course_image
       widget: relation
