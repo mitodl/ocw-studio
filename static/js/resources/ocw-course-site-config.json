@@ -267,6 +267,13 @@
               "widget": "string"
             },
             {
+              "help": "Enable this setting to hide the course download button",
+              "label": "Hide Course Download",
+              "name": "hide_download",
+              "required": true,
+              "widget": "boolean"
+            },
+            {
               "collection": "resource",
               "display_field": "title",
               "filter": {

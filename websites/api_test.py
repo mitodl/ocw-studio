@@ -1,9 +1,11 @@
 """Tests for websites API functionality"""
-
+from pathlib import Path
 from uuid import UUID
 
 import factory
 import pytest
+import yaml
+from django.conf import settings
 from mitol.common.utils import now_in_utc
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -41,7 +43,8 @@ from websites.messages import (
     PreviewOrPublishSuccessMessage,
 )
 from websites.models import Website
-from websites.serializers_test import EXAMPLE_METADATA
+from websites.serializers_test import VALID_METADATA
+
 
 pytestmark = pytest.mark.django_db
 
@@ -488,19 +491,29 @@ def test_update_unpublished_website_status(status, version):
 @pytest.mark.parametrize("has_missing_captions", [True, False])
 @pytest.mark.parametrize("has_truncatable_text", [True, False])
 @pytest.mark.parametrize("is_draft", [True, False])
-@pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
+@pytest.mark.parametrize("valid_metadata", [True, False])
 def test_get_content_warnings(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     mocker,
     has_missing_ids,
     has_missing_captions,
     has_truncatable_text,
     is_draft,
-    metadata,
+    valid_metadata,
 ):
     """get_content_warnings should return expected warning messages"""
-    website = WebsiteFactory.create()
-    has_site_metadata = bool(metadata)
-    has_site_metadata and WebsiteContentFactory.create(
+    site_config_path = "localdev/configs/ocw-course-site-config.yml"
+    starter = WebsiteStarterFactory(
+        config=yaml.load(
+            (Path(settings.BASE_DIR) / site_config_path).read_text(),
+            Loader=yaml.SafeLoader,
+        )
+    )
+    website = WebsiteFactory.create(starter=starter)
+    metadata = {**VALID_METADATA}
+    if not valid_metadata:
+        del metadata["course_title"]
+
+    WebsiteContentFactory.create(
         type="sitemetadata", website=website, metadata=metadata
     )
     video_content = WebsiteContentFactory.create_batch(3, website=website)
@@ -526,25 +539,25 @@ def test_get_content_warnings(  # pylint: disable=too-many-arguments  # noqa: PL
     )
     warnings = get_content_warnings(website)
     warnings_len = 0
-    if not has_site_metadata:
+    if not valid_metadata:
         warnings_len += 1
     if has_missing_ids:
         warnings_len += 1
         for content in no_yt_ids:
-            assert content.title in warnings[1 if not has_site_metadata else 0]
+            assert content.title in warnings[1 if not valid_metadata else 0]
     if has_missing_captions:
         warnings_len += 1
         for content in no_caps:
             assert (
                 content.title
-                in warnings[int(not has_site_metadata) + int(has_missing_ids)]
+                in warnings[int(not valid_metadata) + int(has_missing_ids)]
             )
     if has_truncatable_text:
         warnings_len += 1
         assert (
             video_content[2].title
             in warnings[
-                int(not has_site_metadata)
+                int(not valid_metadata)
                 + int(has_missing_ids)
                 + int(has_missing_captions)
             ]
@@ -554,7 +567,7 @@ def test_get_content_warnings(  # pylint: disable=too-many-arguments  # noqa: PL
         assert len(warnings) == warnings_len
         assert video_content[1].title in warnings[warnings_len - 1]
     if (
-        has_site_metadata
+        valid_metadata
         and not has_missing_ids
         and not has_missing_captions
         and not has_truncatable_text

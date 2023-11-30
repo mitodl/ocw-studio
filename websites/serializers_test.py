@@ -1,10 +1,11 @@
 """Tests for websites.serializers"""
-
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import yaml
 from dateutil.parser import parse as parse_date
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 from mitol.common.utils import now_in_utc
@@ -175,31 +176,73 @@ def test_website_status_serializer(mocker, settings, drive_folder, warnings):
         assert serialized_data.get(key) == value
 
 
-EXAMPLE_METADATA = {
-    "term": "",
-    "year": "",
-    "level": [],
-    "topics": [],
-    "legacy_uid": "",
-    "instructors": {
-        "content": [],
-        "website": "jens-test-site-for-video-resource-icons",
-    },
+VALID_METADATA = {
+    "status": True,
+    "course_title": "example",
+    "primary_course_number": "1",
+    "department_numbers": ["3"],
+    "hide_download": True,
 }
+# MISSING_TITLE_METADATA = {
+#     "status": False,
+#     "course_title": "",
+#     "primary_course_number": "1",
+#     "department_numbers": ["3"],
+#     "hide_download": False,
+# }
+# MISSING_COURSE_NUMBER_METADATA = {
+#     "status": False,
+#     "course_title": "example",
+#     "primary_course_number": "",
+#     "department_numbers": ["3"],
+#     "hide_download": False,
+# }
+# MISSING_DEP_NO_METADATA = {
+#     "status": False,
+#     "course_title": "example",
+#     "primary_course_number": "2",
+#     "department_numbers": [""],
+#     "hide_download": False,
+# }
+# MISSING_HIDE_DOWNLOAD_METADATA = {
+#     "status": False,
+#     "course_title": "",
+#     "primary_course_number": 2,
+#     "department_numbers": 3,
+# }
 
 
-@pytest.mark.parametrize("metadata", [EXAMPLE_METADATA, {}])
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        None,
+        "course_title",
+        "primary_course_number",
+        "department_numbers",
+        "hide_download",
+    ],
+)
 @pytest.mark.parametrize(
     "serializer_class", [WebsiteDetailSerializer, WebsiteStatusSerializer]
 )
-def test_website_content_has_metadata(mocker, metadata, serializer_class):
+def test_website_content_has_metadata(mocker, missing_field, serializer_class):
     """has_site_metadata should be true if we have metadata in WebsiteContent model"""
-    website = WebsiteFactory.create()
-    bool(metadata) and WebsiteContentFactory.create(
+    site_config_path = "localdev/configs/ocw-course-site-config.yml"
+    starter = WebsiteStarterFactory(
+        config=yaml.load(
+            (Path(settings.BASE_DIR) / site_config_path).read_text(),
+            Loader=yaml.SafeLoader,
+        )
+    )
+    website = WebsiteFactory.create(starter=starter)
+    metadata = {**VALID_METADATA}
+    if missing_field:
+        del metadata[missing_field]
+    WebsiteContentFactory.create(
         type="sitemetadata", website=website, metadata=metadata
     )
     serialized_data = serializer_class(instance=website).data
-    assert serialized_data["has_site_metadata"] == bool(metadata)
+    assert serialized_data["has_site_metadata"] == bool(not missing_field)
 
 
 @pytest.mark.parametrize("has_starter", [True, False])
