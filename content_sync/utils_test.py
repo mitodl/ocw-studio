@@ -214,6 +214,10 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
             == settings.STATIC_API_BASE_URL_LIVE
         )
         assert (
+            pipeline_vars["static_api_base_url_test"]
+            == settings.STATIC_API_BASE_URL_TEST
+        )
+        assert (
             pipeline_vars["resource_base_url_draft"] == settings.RESOURCE_BASE_URL_DRAFT
         )
         assert (
