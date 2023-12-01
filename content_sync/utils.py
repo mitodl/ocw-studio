@@ -8,9 +8,12 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 
 from content_sync.constants import (
+    DEV_DRAFT_URL,
     DEV_END,
     DEV_ENDPOINT_URL,
+    DEV_LIVE_URL,
     DEV_START,
+    DEV_TEST_URL,
     END_TAG_PREFIX,
     NON_DEV_END,
     NON_DEV_START,
@@ -123,10 +126,17 @@ def get_common_pipeline_vars():
     }
     if is_dev():
         pipeline_vars["static_api_base_url_draft"] = (
-            settings.STATIC_API_BASE_URL_DRAFT or settings.OCW_STUDIO_DRAFT_URL
+            settings.STATIC_API_BASE_URL_DRAFT
+            or settings.OCW_STUDIO_DRAFT_URL
+            or DEV_DRAFT_URL
         )
         pipeline_vars["static_api_base_url_live"] = (
-            settings.STATIC_API_BASE_URL_LIVE or settings.OCW_STUDIO_LIVE_URL
+            settings.STATIC_API_BASE_URL_LIVE
+            or settings.OCW_STUDIO_LIVE_URL
+            or DEV_LIVE_URL
+        )
+        pipeline_vars["static_api_base_url_test"] = (
+            settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
         )
         pipeline_vars.update(
             {
