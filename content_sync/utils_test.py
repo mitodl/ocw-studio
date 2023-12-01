@@ -189,6 +189,7 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
         settings.OCW_STUDIO_LIVE_URL = "http://localhost:8045"
         settings.STATIC_API_BASE_URL_DRAFT = "http://draft.ocw.mit.edu"
         settings.STATIC_API_BASE_URL_LIVE = "http://ocw.mit.edu"
+        settings.STATIC_API_BASE_URL_TEST = "http://test.ocw.mit.edu"
     else:
         settings.ENVIRONMENT = "not_dev"
     pipeline_vars = get_common_pipeline_vars()
