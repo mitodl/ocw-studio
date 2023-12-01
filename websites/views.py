@@ -78,7 +78,7 @@ from websites.utils import get_valid_base_filename, permissions_group_name_for_r
 
 log = logging.getLogger(__name__)
 
-test_site_filter = ~Q(
+test_site_filter = Q(
     name__in=[settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG]
 )
 
