@@ -287,17 +287,21 @@ services:
       /bin/sh -c "
       /usr/bin/mc alias set minio http://10.1.0.100:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD;
       /usr/bin/mc mb minio/$AWS_STORAGE_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_STORAGE_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_STORAGE_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_PREVIEW_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_PREVIEW_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_PUBLISH_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_TEST_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_TEST_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_OFFLINE_PREVIEW_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_OFFLINE_PREVIEW_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_OFFLINE_PREVIEW_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_OFFLINE_PUBLISH_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_OFFLINE_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_OFFLINE_PUBLISH_BUCKET_NAME;
+      /usr/bin/mc mb minio/$AWS_OFFLINE_TEST_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_OFFLINE_TEST_BUCKET_NAME;
       /usr/bin/mc mb minio/$AWS_ARTIFACTS_BUCKET_NAME;
-      /usr/bin/mc policy set public minio/$AWS_ARTIFACTS_BUCKET_NAME;
+      /usr/bin/mc anonymous set public minio/$AWS_ARTIFACTS_BUCKET_NAME;
       /usr/bin/mc version enable minio/$AWS_ARTIFACTS_BUCKET_NAME;
       "
     networks:
