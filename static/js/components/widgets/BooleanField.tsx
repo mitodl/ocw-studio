@@ -1,5 +1,5 @@
 import React from "react"
-import { AdditionalLabelsFieldProps } from "../../types/websites"
+import { AdditionalLabelsFieldProp } from "../../types/websites"
 
 const radioOptionId = (name: string, bool: boolean): string =>
   `${name}_${String(bool)}`
@@ -14,7 +14,7 @@ interface Props {
  * A widget for editing boolean values
  */
 export default function BooleanField(
-  props: Props & AdditionalLabelsFieldProps,
+  props: Props & AdditionalLabelsFieldProp,
 ): JSX.Element {
   const {
     name,

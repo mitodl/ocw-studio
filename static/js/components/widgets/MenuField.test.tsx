@@ -8,10 +8,28 @@ import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 const dummyHugoItems: HugoItem[] = [
   {
-    identifier: "external-12345",
+    identifier: "external-123451",
     name: "External Link #1",
     url: "http://example.com",
     weight: 20,
+  },
+  {
+    identifier: "external-123452",
+    name: "External Link #2",
+    url: "http://example.com",
+    weight: 30,
+    params: {
+      includeLicenseWarning: true,
+    },
+  },
+  {
+    identifier: "external-123453",
+    name: "External Link #3",
+    url: "http://example.com",
+    weight: 40,
+    params: {
+      includeLicenseWarning: false,
+    },
   },
   {
     identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
@@ -32,7 +50,7 @@ const dummyHugoItems: HugoItem[] = [
   },
 ]
 
-const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
+const dummyInternalMenuItems: InternalSortableMenuItem[] = [
   {
     id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
     text: "Unit 1",
@@ -47,25 +65,37 @@ const dummyInternalMenuItems: Required<InternalSortableMenuItem>[] = [
             children: [],
             targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
             targetUrl: null,
-            includeLicenseWarning: true,
           },
         ],
-        includeLicenseWarning: true,
         targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
         targetUrl: null,
       },
     ],
-    includeLicenseWarning: true,
     targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
     targetUrl: null,
   },
   {
-    id: "external-12345",
+    id: "external-123451",
     text: "External Link #1",
     children: [],
     targetContentId: null,
     targetUrl: "http://example.com",
+  },
+  {
+    id: "external-123452",
+    text: "External Link #2",
+    children: [],
+    targetContentId: null,
+    targetUrl: "http://example.com",
     includeLicenseWarning: true,
+  },
+  {
+    id: "external-123453",
+    text: "External Link #3",
+    children: [],
+    targetContentId: null,
+    targetUrl: "http://example.com",
+    includeLicenseWarning: false,
   },
 ]
 
@@ -204,7 +234,9 @@ describe("MenuField", () => {
     expect(formProps.activeItem).toEqual(menuItem)
     expect(formProps.existingMenuIds).toEqual(
       new Set([
-        "external-12345",
+        "external-123451",
+        "external-123452",
+        "external-123453",
         "32629a02-3dc5-4128-8e43-0392b51e7b61",
         "32629a02-3dc5-4128-8e43-0392b51e7b62",
         "32629a02-3dc5-4128-8e43-0392b51e7b63",
@@ -224,7 +256,7 @@ describe("MenuField", () => {
       const internalLinkUuid = "12629a02-3dc5-4128-8e43-0392b51e7b61"
       const externalLinkUrl = "http://example.com"
       const menuItem = useExistingItem
-        ? dummyInternalMenuItems[0].children[0]
+        ? dummyInternalMenuItems[0].children![0]
         : null
       const menuItemForm = renderMenuItemForm(menuItem)
       const formProps = menuItemForm.props()
@@ -260,7 +292,7 @@ describe("MenuField", () => {
           }
         : {
             ...expectedMenuItem,
-            weight: 30,
+            weight: 50,
           }
       const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
       const updatedHugoMenuItem = updatedHugoMenuItems.find(

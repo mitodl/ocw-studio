@@ -60,14 +60,16 @@ describe("MenuItemForm", () => {
     })
   })
   ;[
-    ["http://example.com", LinkType.External],
-    [null, LinkType.Internal],
-  ].forEach(([targetUrl, expLinkType]) => {
+    ["http://example.com", LinkType.External, true],
+    ["http://example.com", LinkType.External, false],
+    [null, LinkType.Internal, null],
+  ].forEach(([targetUrl, expLinkType, includeWarning]) => {
     it(`renders with the correct initial values if given an active item with ${expLinkType} link`, () => {
       const activeItem = {
         text: "text",
         targetContentId: "content-id",
         targetUrl: targetUrl,
+        includeLicenseWarning: includeWarning,
       }
       const wrapper = renderForm({
         activeItem,
@@ -77,7 +79,7 @@ describe("MenuItemForm", () => {
         menuItemType: expLinkType,
         externalLink: activeItem.targetUrl || "",
         internalLink: activeItem.targetContentId,
-        includeLicenseWarning: true,
+        includeLicenseWarning: includeWarning !== false,
       })
     })
   })
@@ -153,6 +155,25 @@ describe("MenuItemForm", () => {
       false,
     )
   })
+  ;[LinkType.External, LinkType.Internal].forEach((itemType) =>
+    it("renders a BooleanField to include license warning only for external links", () => {
+      const wrapper = renderInnerForm(
+        {},
+        {
+          values: {
+            menuItemTitle: "",
+            menuItemType: itemType,
+            externalLink: "",
+            internalLink: "",
+          },
+        },
+      )
+      const includeWarningField = wrapper.find(
+        'BooleanField[name="includeLicenseWarning"]',
+      )
+      expect(includeWarningField.exists()).toBe(itemType === LinkType.External)
+    }),
+  )
 
   it("renders a RelationField and passes down the right props if the internal link option is selected", () => {
     const existingMenuIds = ["abc", "def"]

@@ -70,6 +70,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
   const partialHugoItem: {
     targetContentId: string | null
     targetUrl: string | null
+    includeLicenseWarning?: boolean
   } = {
     targetContentId: null,
     targetUrl: null,
@@ -83,7 +84,12 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     id: item.identifier,
     text: item.name,
     children: [],
-    includeLicenseWarning: item.params?.includeLicenseWarning,
+
+    ...(!R.isNil(item.params?.includeLicenseWarning)
+      ? {
+          includeLicenseWarning: item.params!.includeLicenseWarning,
+        }
+      : {}),
     ...partialHugoItem,
   }
 }

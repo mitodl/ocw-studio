@@ -141,7 +141,7 @@ export interface AdditionalLabelsField {
   false_label?: string
 }
 
-export interface AdditionalLabelsFieldProps {
+export interface AdditionalLabelsFieldProp {
   additional_labels?: AdditionalLabelsField
 }
 

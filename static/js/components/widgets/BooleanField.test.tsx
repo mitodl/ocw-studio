@@ -60,4 +60,32 @@ describe("BooleanField", () => {
       target: { name: "name", value: false },
     })
   })
+
+  it("passing additional_labels should change radio labels", () => {
+    const wrapper = render({
+      name: "name",
+      additional_labels: {
+        true_label: "custom true",
+        false_label: "custom false",
+      },
+    })
+
+    const trueLabel = wrapper.find('label[htmlFor="name_true"]')
+    const falseLabel = wrapper.find('label[htmlFor="name_false"]')
+
+    expect(trueLabel.text()).toBe("custom true")
+    expect(falseLabel.text()).toBe("custom false")
+  })
+
+  it("should have default labels", () => {
+    const wrapper = render({
+      name: "name",
+    })
+
+    const trueLabel = wrapper.find('label[htmlFor="name_true"]')
+    const falseLabel = wrapper.find('label[htmlFor="name_false"]')
+
+    expect(trueLabel.text()).toBe("True")
+    expect(falseLabel.text()).toBe("False")
+  })
 })

@@ -70,7 +70,7 @@ export default function MenuItemForm({
               : LinkType.Internal,
             externalLink: activeItem.targetUrl || "",
             internalLink: activeItem.targetContentId || "",
-            includeLicenseWarning: true,
+            includeLicenseWarning: activeItem.includeLicenseWarning ?? true,
           }
         : emptyInitialValues,
     [activeItem],
@@ -166,11 +166,9 @@ export default function MenuItemForm({
                       Include non-OCW licensing warning
                     </label>
                     <div className="form-control">
-                      <Field
-                        as={BooleanField}
-                        id="includeLicenseWarning"
+                      <BooleanField
                         name="includeLicenseWarning"
-                        value={values.includeLicenseWarning === true}
+                        value={values.includeLicenseWarning}
                         additional_labels={{
                           true_label: "Yes",
                           false_label: "No",
