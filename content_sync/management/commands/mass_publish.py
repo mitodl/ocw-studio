@@ -72,7 +72,7 @@ class Command(WebsiteFilterCommand):
 
         website_qset = Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
         website_qset = self.filter_websites(websites=website_qset)
-        website_qset = self.filter_unpublished_websites(
+        website_qset = self.exclude_unpublished_websites(
             version=version, websites=website_qset
         )
         if starter_str:

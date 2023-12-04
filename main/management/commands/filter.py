@@ -69,7 +69,7 @@ class WebsiteFilterCommand(BaseCommand):
             )
         return filtered_websites
 
-    def filter_unpublished_websites(
+    def exclude_unpublished_websites(
         self, version: str, websites: WebsiteQuerySet
     ) -> WebsiteQuerySet:
         """Filter websites that are unpublished or have never been published"""
