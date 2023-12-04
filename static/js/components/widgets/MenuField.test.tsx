@@ -310,7 +310,7 @@ describe("MenuField", () => {
     })
   })
   ;[LinkType.External, LinkType.Internal].forEach((linkType) => {
-    it.only(`should ${
+    it(`should ${
       linkType === LinkType.Internal ? "not " : ""
     }set includeLicenseWarning for ${linkType} links`, () => {
       const menuItemForm = renderMenuItemForm(null)
