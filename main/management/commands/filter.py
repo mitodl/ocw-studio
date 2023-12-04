@@ -61,11 +61,11 @@ class WebsiteFilterCommand(BaseCommand):
         filtered_websites = websites
         if self.filter_list:
             filtered_websites = filtered_websites.filter(
-                Q(name__in=self.filter_list) | Q(name__in=self.filter_list)
+                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
             )
         if self.exclude_list:
             filtered_websites = filtered_websites.exclude(
-                Q(name__in=self.exclude_list) | Q(name__in=self.exclude_list)
+                Q(name__in=self.exclude_list) | Q(short_id__in=self.exclude_list)
             )
         return filtered_websites
 
