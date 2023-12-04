@@ -1,6 +1,5 @@
 """Fix sites that have been assigned a new repo on every import"""
 from django.db import transaction
-from django.db.models import Q
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 
@@ -25,10 +24,7 @@ class Command(WebsiteFilterCommand):
             .filter(source="ocw-import", short_id__regex=r".+\-\d{1,2}$")
             .order_by("name")
         )
-        if self.filter_list:
-            websites = websites.filter(
-                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-            )
+        websites = self.filter_websites(websites=websites)
         self.stdout.write(f"Repairing repos for {websites.count()} sites")
         for website in websites:
             try:
