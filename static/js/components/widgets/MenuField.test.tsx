@@ -309,4 +309,32 @@ describe("MenuField", () => {
       )
     })
   })
+  ;[LinkType.External, LinkType.Internal].forEach((linkType) => {
+    it.only(`should ${
+      linkType === LinkType.Internal ? "not " : ""
+    }set includeLicenseWarning for ${linkType} links`, () => {
+      const menuItemForm = renderMenuItemForm(null)
+      const formProps = menuItemForm.props()
+      const title = `${linkType}-hashy-hash`
+
+      formProps.onSubmit({
+        menuItemTitle: title,
+        menuItemType: linkType,
+        externalLink: "",
+        internalLink: "",
+        includeLicenseWarning: true,
+      })
+
+      const updatedHugoMenuItems: HugoItem[] =
+        onChangeStub.mock.calls[0][0].target.value
+      const hugoItem = updatedHugoMenuItems.find(({ name }) => name === title)
+
+      if (linkType === LinkType.Internal) {
+        expect(hugoItem!.params).toBeUndefined()
+      } else {
+        expect(hugoItem!).toHaveProperty("params.includeLicenseWarning")
+        expect(hugoItem!.params?.includeLicenseWarning).toBe(false)
+      }
+    })
+  })
 })
