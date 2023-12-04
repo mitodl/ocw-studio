@@ -1,6 +1,5 @@
 """Backpopulate legacy videos"""  # noqa: INP001
 from django.core.management import CommandError
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.tasks import backpopulate_archive_videos
@@ -46,14 +45,8 @@ class Command(WebsiteFilterCommand):
         chunk_size = int(options["chunk_size"])
         is_verbose = options["verbosity"] > 1
 
-        if self.filter_list:
-            website_qset = Website.objects.filter(
-                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-            )
-        else:
-            website_qset = Website.objects.all()
-
-        website_qset = website_qset.filter(source=WEBSITE_SOURCE_OCW_IMPORT)
+        website_qset = Website.objects.filter(source=WEBSITE_SOURCE_OCW_IMPORT)
+        website_qset = self.filter_websites(websites=website_qset)
 
         website_names = list(website_qset.values_list("name", flat=True))
 
