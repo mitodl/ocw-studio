@@ -1,5 +1,4 @@
 """Backpopulate website groups and permissions"""  # noqa: INP001
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -42,13 +41,7 @@ class Command(WebsiteFilterCommand):
             )
 
         if not options["only-global"]:
-            if self.filter_list:
-                website_qset = Website.objects.filter(
-                    Q(name__in=self.filter_list)
-                    | Q(short_id__icontains=self.filter_list)
-                )
-            else:
-                website_qset = Website.objects.all()
+            website_qset = self.filter_websites(websites=Website.objects.all())
             for website in website_qset.iterator():
                 created, updated, owner_updated = setup_website_groups_permissions(
                     website
