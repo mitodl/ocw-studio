@@ -4,6 +4,7 @@ import json
 from django.core.management import BaseCommand
 from django.db.models import Q
 
+from content_sync.constants import VERSION_DRAFT
 from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
 
@@ -66,6 +67,17 @@ class WebsiteFilterCommand(BaseCommand):
             filtered_list = filtered_list.exclude(
                 Q(name__in=self.exclude_list) | Q(name__in=self.exclude_list)
             )
+        return filtered_list
+
+    def filter_unpublished_websites(
+        self, version: str, websites: WebsiteQuerySet
+    ) -> WebsiteQuerySet:
+        """Filter websites that are unpublished or have never been published"""
+        filtered_list = websites.filter(unpublish_status__isnull=True)
+        if version == VERSION_DRAFT:
+            filtered_list = filtered_list.exclude(draft_publish_date__isnull=True)
+        else:
+            filtered_list = filtered_list.exclude(publish_date__isnull=True)
         return filtered_list
 
     def filter_website_contents(
