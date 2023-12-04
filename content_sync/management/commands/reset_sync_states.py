@@ -62,22 +62,26 @@ class Command(WebsiteFilterCommand):
         source_str = options["source"].lower()
         skip_sync = options["skip_sync"]
 
-        content_qset = ContentSyncState.objects.exclude(synced_checksum__isnull=True)
+        content_sync_state_qset = ContentSyncState.objects.exclude(
+            synced_checksum__isnull=True
+        )
+        content_sync_state_qset = self.filter_content_sync_states(
+            content_sync_states=content_sync_state_qset
+        )
         if type_str:
-            content_qset = content_qset.filter(Q(content__type=type_str))
-        if self.filter_list:
-            content_qset = content_qset.filter(
-                Q(content__website__name__in=self.filter_list)
-                | Q(content__website__short_id__in=self.filter_list)
+            content_sync_state_qset = content_sync_state_qset.filter(
+                Q(content__type=type_str)
             )
         if starter_str:
-            content_qset = content_qset.filter(
+            content_sync_state_qset = content_sync_state_qset.filter(
                 content__website__starter__slug=starter_str
             )
         if source_str:
-            content_qset = content_qset.filter(content__website__source=source_str)
+            content_sync_state_qset = content_sync_state_qset.filter(
+                content__website__source=source_str
+            )
 
-        content_qset.update(synced_checksum=None, data=None)
+        content_sync_state_qset.update(synced_checksum=None, data=None)
 
         total_seconds = (now_in_utc() - start).total_seconds()
         self.stdout.write(
