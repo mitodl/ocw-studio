@@ -1,5 +1,4 @@
 """Updates/creates content sync records for website contents"""  # noqa: INP001
-from django.db.models import Q
 
 from content_sync.api import upsert_content_sync_state
 from main.management.commands.filter import WebsiteFilterCommand
@@ -32,11 +31,7 @@ class Command(WebsiteFilterCommand):
         if options["text_id"]:
             filter_qset["text_id"] = options["text_id"]
         content_qset = WebsiteContent.objects.filter(**filter_qset)
-        if self.filter_list:
-            content_qset = content_qset.filter(
-                Q(website__name__in=self.filter_list)
-                | Q(website__short_id__in=self.filter_list)
-            )
+        content_qset = self.filter_website_contents(website_contents=content_qset)
         num_records = content_qset.count()
         self.stdout.write(
             self.style.WARNING(
