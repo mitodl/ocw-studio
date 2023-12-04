@@ -26,27 +26,48 @@ class WebsiteFilterCommand(BaseCommand):
             default="",
             help="If specified, only trigger website pipelines whose names are in this comma-delimited list",  # noqa: E501
         )
+        parser.add_argument(
+            "-e",
+            "--exclude",
+            dest="exclude",
+            default="",
+            help="If specified, exclude website pipelines whose names are in this comma-delimited list",  # noqa: E501
+        )
 
     def handle(self, *args, **options):  # noqa: ARG002
         self.filter_list = []
+        filter_sites = options["filter"]
         filter_json = options["filter_json"]
+        exclude_sites = options["exclude"]
         if filter_json:
             with open(filter_json) as input_file:  # noqa: PTH123
                 self.filter_list = json.load(input_file)
-        else:
+        elif filter_sites:
             self.filter_list = [
-                site.strip() for site in options["filter"].split(",") if site
+                site.strip() for site in filter_sites.split(",") if site
+            ]
+        if exclude_sites:
+            self.exclude_list = [
+                site.strip() for site in exclude_sites.split(",") if site
             ]
         if self.filter_list and options["verbosity"] > 1:
             self.stdout.write(f"Filtering by website: {self.filter_list}")
+        if self.exclude_list and options["verbosity"] > 1:
+            self.stdout.write(f"Excluding websites: {self.exclude_list}")
 
     def filter_website_contents(
         self, website_contents: WebsiteContentQuerySet
     ) -> WebsiteContentQuerySet:
         """Filter website_contents based on CLI arguments."""
-        if not self.filter_list:
-            return website_contents
-        return website_contents.filter(
-            Q(website__name__in=self.filter_list)
-            | Q(website__short_id__in=self.filter_list)
-        )
+        filtered_list = website_contents
+        if self.filter_list:
+            filtered_list = filtered_list.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
+            )
+        if self.exclude_list:
+            filtered_list = filtered_list.exclude(
+                Q(website__name__in=self.exclude_list)
+                | Q(website__short_id__in=self.exclude_list)
+            )
+        return filtered_list
