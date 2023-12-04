@@ -6,6 +6,7 @@ from django.db.models import Q
 
 from content_sync.constants import VERSION_DRAFT
 from content_sync.models import ContentSyncStateQuerySet
+from videos.models import VideoQuerySet
 from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
 
@@ -117,3 +118,18 @@ class WebsiteFilterCommand(BaseCommand):
                 | Q(content__website__short_id__in=self.exclude_list)
             )
         return filtered_content_sync_states
+
+    def filter_videos(self, videos: VideoQuerySet) -> VideoQuerySet:
+        """Filter content_sync_states based on CLI arguments."""
+        filtered_videos = videos
+        if self.filter_list:
+            filtered_videos = filtered_videos.filter(
+                Q(website__name__in=self.filter_list)
+                | Q(website__short_id__in=self.filter_list)
+            )
+        if self.exclude_list:
+            filtered_videos = filtered_videos.exclude(
+                Q(website__name__in=self.exclude_list)
+                | Q(website__short_id__in=self.exclude_list)
+            )
+        return filtered_videos
