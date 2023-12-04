@@ -5,6 +5,7 @@ from django.core.management import BaseCommand
 from django.db.models import Q
 
 from content_sync.constants import VERSION_DRAFT
+from content_sync.models import ContentSyncStateQuerySet
 from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
 
@@ -98,3 +99,20 @@ class WebsiteFilterCommand(BaseCommand):
                 | Q(website__short_id__in=self.exclude_list)
             )
         return filtered_website_contents
+
+    def filter_content_sync_states(
+        self, content_sync_states: ContentSyncStateQuerySet
+    ) -> ContentSyncStateQuerySet:
+        """Filter content_sync_states based on CLI arguments."""
+        filtered_content_sync_states = content_sync_states
+        if self.filter_list:
+            filtered_content_sync_states = filtered_content_sync_states.filter(
+                Q(content__website__name__in=self.filter_list)
+                | Q(content__website__short_id__in=self.filter_list)
+            )
+        if self.exclude_list:
+            filtered_content_sync_states = filtered_content_sync_states.exclude(
+                Q(content__website__name__in=self.exclude_list)
+                | Q(content__website__short_id__in=self.exclude_list)
+            )
+        return filtered_content_sync_states
