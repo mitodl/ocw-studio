@@ -13,6 +13,7 @@ class WebsiteFilterCommand(BaseCommand):
     """Common options for filtering by Website"""
 
     filter_list = None
+    exclude_list = None
 
     def add_arguments(self, parser):
         parser.add_argument(
