@@ -5,7 +5,6 @@ import os
 from django.conf import settings
 from django.core.management.base import CommandParser
 from django.core.paginator import Paginator
-from django.db.models import Q
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
@@ -110,13 +109,22 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
         self.validate_options(options)
+        website_contents = (
+            WebsiteContent.all_objects.all()
+            .exclude(website__publish_date__isnull=True)
+            .order_by("id")
+            .prefetch_related("website")
+        )
+        website_contents = self.filter_website_contents(
+            website_contents=website_contents
+        )
         self.do_handle(
             commit=options["commit"],
             alias=options["alias"],
             out=options["out"],
             csv_only_changes=options["csv_only_changes"],
             limit=options["limit"],
-            filter_list=self.filter_list,
+            website_content=website_contents,
         )
 
         if (
@@ -134,7 +142,7 @@ class Command(WebsiteFilterCommand):
 
     @classmethod
     def do_handle(  # noqa: PLR0913
-        cls, alias, commit, out, csv_only_changes, limit, filter_list=None
+        cls, alias, commit, out, csv_only_changes, limit, website_contents
     ):  # noqa: PLR0913, RUF100
         """Replace baseurl with resource_link"""
 
@@ -143,17 +151,11 @@ class Command(WebsiteFilterCommand):
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
-        all_wc = (
-            WebsiteContent.all_objects.all()
-            .exclude(website__publish_date__isnull=True)
-            .order_by("id")
-            .prefetch_related("website")
+        target_wc = (
+            website_contents
+            if limit is None
+            else website_contents[0 : min(limit, len(website_contents))]
         )
-        if filter_list:
-            all_wc = all_wc.filter(
-                Q(website__name__in=filter_list) | Q(website__short_id__in=filter_list)
-            )
-        target_wc = all_wc if limit is None else all_wc[0 : min(limit, len(all_wc))]
         page_size = 100
         pages = Paginator(target_wc, page_size)
 
