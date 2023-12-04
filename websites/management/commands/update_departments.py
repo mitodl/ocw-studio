@@ -51,11 +51,7 @@ class Command(WebsiteFilterCommand):
                 ],
             ),
         )
-        if self.filter_list:
-            query_set = query_set.filter(
-                Q(website__name__in=self.filter_list)
-                | Q(website__short_id__in=self.filter_list)
-            )
+        query_set = self.filter_website_contents(website_contents=query_set)
 
         query_set = query_set.filter(type="sitemetadata")
         self.stdout.write(
