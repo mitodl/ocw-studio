@@ -4,7 +4,7 @@ import json
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from websites.models import WebsiteContentQuerySet
+from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
 
 class WebsiteFilterCommand(BaseCommand):
@@ -54,6 +54,19 @@ class WebsiteFilterCommand(BaseCommand):
             self.stdout.write(f"Filtering by website: {self.filter_list}")
         if self.exclude_list and options["verbosity"] > 1:
             self.stdout.write(f"Excluding websites: {self.exclude_list}")
+
+    def filter_websites(self, websites: WebsiteQuerySet) -> WebsiteQuerySet:
+        """Filter websites based on CLI arguments"""
+        filtered_list = websites
+        if self.filter_list:
+            filtered_list = filtered_list.filter(
+                Q(name__in=self.filter_list) | Q(name__in=self.filter_list)
+            )
+        if self.exclude_list:
+            filtered_list = filtered_list.exclude(
+                Q(name__in=self.exclude_list) | Q(name__in=self.exclude_list)
+            )
+        return filtered_list
 
     def filter_website_contents(
         self, website_contents: WebsiteContentQuerySet
