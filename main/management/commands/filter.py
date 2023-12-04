@@ -58,41 +58,43 @@ class WebsiteFilterCommand(BaseCommand):
 
     def filter_websites(self, websites: WebsiteQuerySet) -> WebsiteQuerySet:
         """Filter websites based on CLI arguments"""
-        filtered_list = websites
+        filtered_websites = websites
         if self.filter_list:
-            filtered_list = filtered_list.filter(
+            filtered_websites = filtered_websites.filter(
                 Q(name__in=self.filter_list) | Q(name__in=self.filter_list)
             )
         if self.exclude_list:
-            filtered_list = filtered_list.exclude(
+            filtered_websites = filtered_websites.exclude(
                 Q(name__in=self.exclude_list) | Q(name__in=self.exclude_list)
             )
-        return filtered_list
+        return filtered_websites
 
     def filter_unpublished_websites(
         self, version: str, websites: WebsiteQuerySet
     ) -> WebsiteQuerySet:
         """Filter websites that are unpublished or have never been published"""
-        filtered_list = websites.filter(unpublish_status__isnull=True)
+        filtered_websites = websites.filter(unpublish_status__isnull=True)
         if version == VERSION_DRAFT:
-            filtered_list = filtered_list.exclude(draft_publish_date__isnull=True)
+            filtered_websites = filtered_websites.exclude(
+                draft_publish_date__isnull=True
+            )
         else:
-            filtered_list = filtered_list.exclude(publish_date__isnull=True)
-        return filtered_list
+            filtered_websites = filtered_websites.exclude(publish_date__isnull=True)
+        return filtered_websites
 
     def filter_website_contents(
         self, website_contents: WebsiteContentQuerySet
     ) -> WebsiteContentQuerySet:
         """Filter website_contents based on CLI arguments."""
-        filtered_list = website_contents
+        filtered_website_contents = website_contents
         if self.filter_list:
-            filtered_list = filtered_list.filter(
+            filtered_website_contents = filtered_website_contents.filter(
                 Q(website__name__in=self.filter_list)
                 | Q(website__short_id__in=self.filter_list)
             )
         if self.exclude_list:
-            filtered_list = filtered_list.exclude(
+            filtered_website_contents = filtered_website_contents.exclude(
                 Q(website__name__in=self.exclude_list)
                 | Q(website__short_id__in=self.exclude_list)
             )
-        return filtered_list
+        return filtered_website_contents
