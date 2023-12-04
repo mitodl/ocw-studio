@@ -1,5 +1,4 @@
 """Populate file_size meta field for resources."""  # noqa: INP001
-from django.db.models import Q
 
 from gdrive_sync.tasks import populate_file_sizes_bulk
 from main.management.commands.filter import WebsiteFilterCommand
@@ -32,12 +31,7 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        if self.filter_list:
-            website_queryset = Website.objects.filter(
-                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-            )
-        else:
-            website_queryset = Website.objects.all()
+        website_queryset = self.filter_websites(websites=Website.objects.all())
 
         website_names = list(website_queryset.values_list("name", flat=True))
 
