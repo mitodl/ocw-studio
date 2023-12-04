@@ -41,7 +41,7 @@
       "is_page_content": true,
       "filename": "example_jpg",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/example_jpg.jpg"
+      "file": "courses/ocw-ci-test-course/example_jpg.jpg"
     }
   },
   {
@@ -85,7 +85,7 @@
       "is_page_content": true,
       "filename": "example_pdf",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/example_pdf.pdf"
+      "file": "courses/ocw-ci-test-course/example_pdf.pdf"
     }
   },
   {
@@ -373,9 +373,9 @@
         "file_size": 11518475,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1EL3mdmU6Lf0RjxNgxMrx2A7HkfnAg0x3_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1EL3mdmU6Lf0RjxNgxMrx2A7HkfnAg0x3_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/6yimgGYnAdc/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1EL3mdmU6Lf0RjxNgxMrx2A7HkfnAg0x3_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1EL3mdmU6Lf0RjxNgxMrx2A7HkfnAg0x3_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -434,7 +434,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v03_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v03_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v03_360p_360p_16_9.mp4"
     }
   },
   {
@@ -477,7 +477,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v04_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v04_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v04_360p_360p_16_9.mp4"
     }
   },
   {
@@ -503,9 +503,9 @@
         "file_size": 6765638,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1toaVm_cW3_ysK11vDXF6RwA0BNedij1J_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1toaVm_cW3_ysK11vDXF6RwA0BNedij1J_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/wlRu5nEvdDc/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1toaVm_cW3_ysK11vDXF6RwA0BNedij1J_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1toaVm_cW3_ysK11vDXF6RwA0BNedij1J_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -521,7 +521,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v04_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v04_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v04_360p_360p_16_9.mp4"
     }
   },
   {
@@ -547,9 +547,9 @@
         "file_size": 18406572,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1c3suLiszCo2chJxohC9k-fLIqJMigbSO_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1c3suLiszCo2chJxohC9k-fLIqJMigbSO_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/q3rMy5-fFZg/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1c3suLiszCo2chJxohC9k-fLIqJMigbSO_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1c3suLiszCo2chJxohC9k-fLIqJMigbSO_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -565,7 +565,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v05_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
     }
   },
   {
@@ -608,7 +608,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v01_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v01_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v01_360p_360p_16_9.mp4"
     }
   },
   {
@@ -634,9 +634,9 @@
         "file_size": 14830496,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1B64FuiCnXfVRL5AxD5_urpOcvisLTp2u_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1B64FuiCnXfVRL5AxD5_urpOcvisLTp2u_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/eLtmtHYcHCQ/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1B64FuiCnXfVRL5AxD5_urpOcvisLTp2u_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1B64FuiCnXfVRL5AxD5_urpOcvisLTp2u_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -652,7 +652,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v01_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v01_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v01_360p_360p_16_9.mp4"
     }
   },
   {
@@ -695,7 +695,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v02_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
     }
   },
   {
@@ -738,7 +738,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v03_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
     }
   },
   {
@@ -961,7 +961,7 @@
       "is_page_content": true,
       "filename": "917263bef37857bd94ef67692405bcc9_erlp_sbca1s_vtt",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/917263bef37857bd94ef67692405bcc9_erlp_sbca1s.vtt"
+      "file": "courses/ocw-ci-test-course/917263bef37857bd94ef67692405bcc9_erlp_sbca1s.vtt"
     }
   },
   {
@@ -1004,7 +1004,7 @@
       "is_page_content": true,
       "filename": "example_notes",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/example_pdf.pdf"
+      "file": "courses/ocw-ci-test-course/example_pdf.pdf"
     }
   },
   {
@@ -1159,9 +1159,9 @@
         "file_size": 11832129,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1heExJapmYR47C1bOYy8DNUwyrshNkNCe_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1heExJapmYR47C1bOYy8DNUwyrshNkNCe_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/RlzM-MDATzY/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1heExJapmYR47C1bOYy8DNUwyrshNkNCe_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1heExJapmYR47C1bOYy8DNUwyrshNkNCe_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -1203,9 +1203,9 @@
         "file_size": 10417165,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1oFeee-IVHEdxNBKfpikWNO06z1WhPqmT_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1oFeee-IVHEdxNBKfpikWNO06z1WhPqmT_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/EXiIY8fNv4A/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1oFeee-IVHEdxNBKfpikWNO06z1WhPqmT_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1oFeee-IVHEdxNBKfpikWNO06z1WhPqmT_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -1221,7 +1221,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v03_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v03_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v03_360p_360p_16_9.mp4"
     }
   },
   {
@@ -1264,7 +1264,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v05_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
     }
   },
   {
@@ -1290,9 +1290,9 @@
         "file_size": 18370208,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/NwQm2aSPiNE/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -1308,7 +1308,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v02_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
     }
   },
   {
@@ -1334,9 +1334,9 @@
         "file_size": 15878859,
         "file_type": "video/mp4",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.webvtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.webvtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/ufuYLysOvcg/default.jpg",
-          "video_transcript_file": "/courses/123-ocw-ci-test-course-fall-2022/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.pdf"
+          "video_transcript_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.pdf"
         },
         "content_type": "resource",
         "resourcetype": "Video",
@@ -1352,7 +1352,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l26v03_360p_mp4",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
     }
   },
   {
@@ -1515,7 +1515,7 @@
         "start_time": 13,
         "parent_type": "SupplementalResourceSection",
         "video_files": {
-          "video_captions_file": "/courses/123-ocw-ci-test-course-fall-2022/917263bef37857bd94ef67692405bcc9_erlp_sbca1s.vtt",
+          "video_captions_file": "/courses/ocw-ci-test-course/917263bef37857bd94ef67692405bcc9_erlp_sbca1s.vtt",
           "video_thumbnail_file": "https://img.youtube.com/vi/YWyHAlAuRL0/default.jpg",
           "video_transcript_file": "/courses/8-01sc-classical-mechanics-fall-2016/33f61131009a6cd12d9a4c0e42eb7f44_ErlP_SBcA1s.pdf"
         },
@@ -1538,7 +1538,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v01_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v01_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v01_360p_360p_16_9.mp4"
     }
   },
   {
@@ -1581,7 +1581,7 @@
       "is_page_content": true,
       "filename": "ocw_test_course_mit8_01f16_l01v02_360p",
       "dirpath": "content/resources",
-      "file": "courses/123-ocw-ci-test-course-fall-2022/ocw_test_course_mit8_01f16_l01v02_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v02_360p_360p_16_9.mp4"
     }
   },
   {
