@@ -66,8 +66,7 @@ class Command(WebsiteFilterCommand):
                 | Q(metadata__video_files__video_transcript_file=None)
             )
         )
-        if self.filter_list:
-            content_videos = self.filter_website_contents(content_videos)
+        content_videos = self.filter_website_contents(content_videos)
 
         if not content_videos:
             self.stdout.write("No courses found")
