@@ -29,7 +29,7 @@ from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
-from main.utils import uuid_string, valid_key
+from main.utils import is_dev, uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
@@ -159,11 +159,10 @@ class WebsiteViewSet(
             else:
                 queryset = queryset.exclude(published_filter)
 
-        return (
-            queryset.select_related("starter")
-            .order_by(ordering)
-            .exclude(test_site_filter)
-        )
+        if not is_dev():
+            queryset = queryset.exclude(test_site_filter)
+
+        return queryset.select_related("starter").order_by(ordering)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -346,9 +345,9 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         # If a starter has been specified by the query, only return sites made with that starter  # noqa: E501
         if starter:
             sites = sites.filter(starter=WebsiteStarter.objects.get(slug=starter))
-        sites = (
-            sites.prefetch_related("starter").order_by("name").exclude(test_site_filter)
-        )
+        sites = sites.prefetch_related("starter").order_by("name")
+        if not is_dev():
+            sites = sites.exclude(test_site_filter)
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
@@ -369,8 +368,9 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
             )
             .prefetch_related("starter")
             .order_by("name")
-            .exclude(test_site_filter)
         )
+        if not is_dev():
+            sites = sites.exclude(test_site_filter)
         serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
