@@ -40,6 +40,7 @@ class WebsiteFilterCommand(BaseCommand):
 
     def handle(self, *args, **options):  # noqa: ARG002
         self.filter_list = []
+        self.exclude_list = []
         filter_sites = options["filter"]
         filter_json = options["filter_json"]
         exclude_sites = options["exclude"]
