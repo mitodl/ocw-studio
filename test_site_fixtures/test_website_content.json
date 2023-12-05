@@ -1,6 +1,53 @@
 [
   {
     "model": "websites.websitecontent",
+    "pk": 522843,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-25T20:41:23.971Z",
+      "updated_on": "2023-11-13T19:42:40.335Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "0c1253c6-e8bc-4804-96ad-c7914220957c",
+      "title": "file.txt",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "text/plain",
+        "video_files": {
+          "video_captions_file": "",
+          "video_thumbnail_file": "",
+          "video_transcript_file": ""
+        },
+        "content_type": "resource",
+        "resourcetype": "Document",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "file_txt",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/file.txt"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
     "pk": 522807,
     "fields": {
       "deleted": null,
@@ -29,7 +76,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Image",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -73,7 +124,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -379,7 +434,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "6yimgGYnAdc",
@@ -422,7 +481,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "YDGGF2VWkAM",
@@ -465,7 +528,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "FsKS9kb1pao",
@@ -509,7 +576,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "wlRu5nEvdDc",
@@ -553,7 +624,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "q3rMy5-fFZg",
@@ -596,7 +671,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "i5wMXX91Hz4",
@@ -640,7 +719,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "eLtmtHYcHCQ",
@@ -653,92 +736,6 @@
       "filename": "ocw_test_course_mit8_01f16_l26v01_360p_mp4",
       "dirpath": "content/resources",
       "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v01_360p_360p_16_9.mp4"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522822,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:31.055Z",
-      "updated_on": "2023-11-13T19:42:42.268Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "41b2bc8e-ec7e-4701-8402-926d2e81f44d",
-      "title": "ocw_test_course_MIT8_01F16_L26v02_360p.mp4",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "video/mp4",
-        "video_files": {
-          "video_captions_file": "",
-          "video_thumbnail_file": "https://img.youtube.com/vi/0aV4-ZpKzaM/default.jpg",
-          "video_transcript_file": ""
-        },
-        "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "0aV4-ZpKzaM",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "ocw_test_course_mit8_01f16_l26v02_360p",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522824,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:31.410Z",
-      "updated_on": "2023-11-13T19:42:42.550Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "d7d99f55-b2c3-4c98-b484-9a52bbb03908",
-      "title": "ocw_test_course_MIT8_01F16_L26v03_360p.mp4",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "video/mp4",
-        "video_files": {
-          "video_captions_file": "",
-          "video_thumbnail_file": "https://img.youtube.com/vi/NoIhOLpmqbY/default.jpg",
-          "video_transcript_file": ""
-        },
-        "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "NoIhOLpmqbY",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "ocw_test_course_mit8_01f16_l26v03_360p",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
     }
   },
   {
@@ -769,7 +766,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Image",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -850,7 +851,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -863,33 +868,6 @@
       "filename": "file_py",
       "dirpath": "content/resources",
       "file": "courses/ocw-ci-test-course/file.py"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522802,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:27.741Z",
-      "updated_on": "2023-11-13T19:42:37.952Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "7b3ae5c4-3b27-4806-b0c5-f012f16fa245",
-      "title": "Subscripts and Superscripts",
-      "type": "page",
-      "parent": null,
-      "markdown": "\n**NOTE:** Not all of these are use-cases that we want to encourage. The goal here is to document what currently works and to alert ourselves if one of these stops working. For example, styling bold inside a subscript is absolutely not something we would encourage.\n\nExample, Normal: Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.\n\nExample, Bold: **Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.**\n\nExample, Italic: *Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.*\n\nExample, Interior Bold: Lorem ipsum dolor sit<sub>abc **123**</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc **123**</sup> amet consectetur.\n\nExample, Interior italic: Lorem ipsum dolor sit<sub>abc *123*</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc *123*</sup> amet consectetur.\n\nExample, Links in scripts: Lorem ipsum dolor sit<sub>[abc 123](https://mit.edu)</sub> amet consectetur. Lorem ipsum dolor sit<sup>[abc 123](https://mit.edu)</sup> amet consectetur.\n\nExample, Scripts in Links: Lorem ipsum dolor [sit<sub>abc 123</sub> amet](https://mit.edu) consectetur. Lorem ipsum dolor [sit<sup>abc 123</sup> amet](https://mit.edu) amet consectetur.\n\nExample, Resource Links in scripts: Lorem ipsum dolor sit<sub>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sub> amet consectetur. Lorem ipsum dolor sit<sup>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sup> amet consectetur.\n\nExample, Scripts in Resource Links: Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sub>abc 123</sub> amet\" %}} consectetur. Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sup>abc 123</sup> amet\" %}} consectetur.\n\n### Usage in tables\n\n{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nHeader One\n{{< thclose >}}{{< thopen >}}\nHeader Two\n{{< thclose >}}{{< thopen >}}\nHeader Three\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nlorem<sub>abc 123</sub> ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem[<sup>†</sup>](https://mit.edu) ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"<sup>‡</sup>\" %}} ipsum\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\na\n{{< tdclose >}}{{< tdopen >}}\nb\n{{< tdclose >}}{{< tdopen >}}\nc\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
-      "metadata": {
-        "draft": false,
-        "description": "Test page for subscripts and superscripts",
-        "content_type": "page"
-      },
-      "is_page_content": true,
-      "filename": "subscripts-and-superscripts",
-      "dirpath": "content/pages",
-      "file": ""
     }
   },
   {
@@ -907,7 +885,7 @@
       "title": "Video Series Overview",
       "type": "page",
       "parent": null,
-      "markdown": "\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n\nCleve Moler, founder and chief mathematician at MathWorks, and Gilbert Strang, professor and mathematician at Massachusetts Institute of Technology, provide an overview to their in-depth video series about differential equations and the MATLAB{{< sup \"®\" >}} ODE suite.\n\nDifferential equations and linear algebra are two crucial subjects in science and engineering. Gilbert Strang's video series develops those subjects both separately and together and supplements Gil Strang's textbook on this subject. Cleve Moler introduces computation for differential equations and explains the MATLAB ODE suite and its mathematical background. Cleve Moler's video series starts with Euler method and builds up to Runge Kutta and includes hands-on MATLAB exercises.",
+      "markdown": "\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n\nCleve Moler, founder and chief mathematician at MathWorks, and Gilbert Strang, professor and mathematician at Massachusetts Institute of Technology, provide an overview to their in-depth video series about differential equations and the MATLAB{{< sup \"\u00ae\" >}} ODE suite.\n\nDifferential equations and linear algebra are two crucial subjects in science and engineering. Gilbert Strang's video series develops those subjects both separately and together and supplements Gil Strang's textbook on this subject. Cleve Moler introduces computation for differential equations and explains the MATLAB ODE suite and its mathematical background. Cleve Moler's video series starts with Euler method and builds up to Runge Kutta and includes hands-on MATLAB exercises.",
       "metadata": {
         "ocw_type": "SupplementalResourceSection",
         "description": "This section includes a video by Cleve Moler and Gilbert Strang introducing the video series.",
@@ -949,7 +927,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -992,7 +974,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -1005,135 +991,6 @@
       "filename": "example_notes",
       "dirpath": "content/resources",
       "file": "courses/ocw-ci-test-course/example_pdf.pdf"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522838,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-25T20:41:22.939Z",
-      "updated_on": "2023-11-13T19:42:39.603Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "335051d5-910a-41ce-9850-c0749ecc74b5",
-      "title": "file.docx",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "video_files": {
-          "video_captions_file": "",
-          "video_thumbnail_file": "",
-          "video_transcript_file": ""
-        },
-        "content_type": "resource",
-        "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "file_docx",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/file.docx"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522839,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-25T20:41:23.077Z",
-      "updated_on": "2023-11-13T19:42:39.761Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "7f1c9c9a-7dd8-4c6e-8592-fb43e1d7d363",
-      "title": "file.mp4",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "video/mp4",
-        "video_files": {
-          "video_captions_file": "/courses/1-ht-test-site-spring-2023/1O2ibaxhTe_31s1vVUIz1YYRQGaRgguWY_transcript.webvtt",
-          "video_thumbnail_file": "https://img.youtube.com/vi/FNwzS2nCwS0/default.jpg",
-          "video_transcript_file": "/courses/1-ht-test-site-spring-2023/1O2ibaxhTe_31s1vVUIz1YYRQGaRgguWY_transcript.pdf"
-        },
-        "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "FNwzS2nCwS0",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "file_mp4",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/file_360p_16_9.mp4"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522840,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-25T20:41:23.415Z",
-      "updated_on": "2023-11-13T19:42:39.894Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "f816672c-d3b3-43f9-91d3-af02ae574260",
-      "title": "file.pdf",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "application/pdf",
-        "video_files": {
-          "video_captions_file": "",
-          "video_thumbnail_file": "",
-          "video_transcript_file": ""
-        },
-        "content_type": "resource",
-        "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "file_pdf",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/file2.pdf"
     }
   },
   {
@@ -1165,7 +1022,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "RlzM-MDATzY",
@@ -1209,7 +1070,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "EXiIY8fNv4A",
@@ -1226,17 +1091,17 @@
   },
   {
     "model": "websites.websitecontent",
-    "pk": 522818,
+    "pk": 522839,
     "fields": {
       "deleted": null,
       "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:30.498Z",
-      "updated_on": "2023-11-13T19:42:41.674Z",
+      "created_on": "2023-10-25T20:41:23.077Z",
+      "updated_on": "2023-11-13T19:42:39.761Z",
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "18b1e88c-5712-4cf9-9302-bb1cfd805bda",
-      "title": "ocw_test_course_MIT8_01F16_L01v05_360p.mp4",
+      "text_id": "7f1c9c9a-7dd8-4c6e-8592-fb43e1d7d363",
+      "title": "file.mp4",
       "type": "resource",
       "parent": null,
       "markdown": null,
@@ -1246,113 +1111,76 @@
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
         "file_type": "video/mp4",
         "video_files": {
+          "video_captions_file": "/courses/1-ht-test-site-spring-2023/1O2ibaxhTe_31s1vVUIz1YYRQGaRgguWY_transcript.webvtt",
+          "video_thumbnail_file": "https://img.youtube.com/vi/FNwzS2nCwS0/default.jpg",
+          "video_transcript_file": "/courses/1-ht-test-site-spring-2023/1O2ibaxhTe_31s1vVUIz1YYRQGaRgguWY_transcript.pdf"
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "FNwzS2nCwS0",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "file_mp4",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/file_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522840,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-25T20:41:23.415Z",
+      "updated_on": "2023-11-13T19:42:39.894Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "f816672c-d3b3-43f9-91d3-af02ae574260",
+      "title": "file.pdf",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "application/pdf",
+        "video_files": {
           "video_captions_file": "",
-          "video_thumbnail_file": "https://img.youtube.com/vi/Vb7V2wfLkU0/default.jpg",
+          "video_thumbnail_file": "",
           "video_transcript_file": ""
         },
         "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "resourcetype": "Document",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
-          "youtube_id": "Vb7V2wfLkU0",
+          "youtube_id": "",
           "video_speakers": "",
           "youtube_description": ""
         },
         "learning_resource_types": []
       },
       "is_page_content": true,
-      "filename": "ocw_test_course_mit8_01f16_l01v05_360p",
+      "filename": "file_pdf",
       "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522823,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:31.259Z",
-      "updated_on": "2023-11-13T19:42:42.405Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "e3054073-f401-4909-9794-3f281eae7a10",
-      "title": "ocw_test_course_MIT8_01F16_L26v02_360p.mp4",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_size": 18370208,
-        "file_type": "video/mp4",
-        "video_files": {
-          "video_captions_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.webvtt",
-          "video_thumbnail_file": "https://img.youtube.com/vi/NwQm2aSPiNE/default.jpg",
-          "video_transcript_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.pdf"
-        },
-        "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "NwQm2aSPiNE",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "ocw_test_course_mit8_01f16_l26v02_360p_mp4",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
-    }
-  },
-  {
-    "model": "websites.websitecontent",
-    "pk": 522825,
-    "fields": {
-      "deleted": null,
-      "deleted_by_cascade": false,
-      "created_on": "2023-10-19T22:18:31.543Z",
-      "updated_on": "2023-11-13T19:42:42.687Z",
-      "owner": null,
-      "updated_by": null,
-      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "abff96f9-6777-4e4e-be27-8a7b85fab93f",
-      "title": "ocw_test_course_MIT8_01F16_L26v03_360p.mp4",
-      "type": "resource",
-      "parent": null,
-      "markdown": null,
-      "metadata": {
-        "body": "",
-        "draft": false,
-        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_size": 15878859,
-        "file_type": "video/mp4",
-        "video_files": {
-          "video_captions_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.webvtt",
-          "video_thumbnail_file": "https://img.youtube.com/vi/ufuYLysOvcg/default.jpg",
-          "video_transcript_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.pdf"
-        },
-        "content_type": "resource",
-        "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
-        "video_metadata": {
-          "video_tags": "",
-          "youtube_id": "ufuYLysOvcg",
-          "video_speakers": "",
-          "youtube_description": ""
-        },
-        "learning_resource_types": []
-      },
-      "is_page_content": true,
-      "filename": "ocw_test_course_mit8_01f16_l26v03_360p_mp4",
-      "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
+      "file": "courses/ocw-ci-test-course/file2.pdf"
     }
   },
   {
@@ -1399,7 +1227,7 @@
         "course_title": "OCW CI Test Course",
         "hide_download": false,
         "site_short_id": "ocw-ci-test-course",
-        "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at  [https://github.mit.edu/ocw-content-rc/ocw-ci-test-course](https://github.mit.edu/ocw-content-rc/ocw-ci-test-course)\n- On OCW Studio at [https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course](https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course)\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
+        "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at \u00a0[https://github.mit.edu/ocw-content-rc/ocw-ci-test-course](https://github.mit.edu/ocw-content-rc/ocw-ci-test-course)\n- On OCW Studio at [https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course](https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course)\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n\u00a0Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
         "department_numbers": ["8", "6", "18"],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
@@ -1420,6 +1248,53 @@
   },
   {
     "model": "websites.websitecontent",
+    "pk": 522818,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-19T22:18:30.498Z",
+      "updated_on": "2023-11-13T19:42:41.674Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "18b1e88c-5712-4cf9-9302-bb1cfd805bda",
+      "title": "ocw_test_course_MIT8_01F16_L01v05_360p.mp4",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "video/mp4",
+        "video_files": {
+          "video_captions_file": "",
+          "video_thumbnail_file": "https://img.youtube.com/vi/Vb7V2wfLkU0/default.jpg",
+          "video_transcript_file": ""
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "Vb7V2wfLkU0",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "ocw_test_course_mit8_01f16_l01v05_360p",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l01v05_360p_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
     "pk": 522835,
     "fields": {
       "deleted": null,
@@ -1433,7 +1308,7 @@
       "title": "Multiple Videos Series Overview",
       "type": "page",
       "parent": null,
-      "markdown": "\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n\nCleve Moler, founder and chief mathematician at MathWorks, and Gilbert Strang, professor and mathematician at Massachusetts Institute of Technology, provide an overview to their in-depth video series about differential equations and the MATLAB{{< sup \"®\" >}} ODE suite.\n\nDifferential equations and linear algebra are two crucial subjects in science and engineering. Gilbert Strang's video series develops those subjects both separately and together and supplements Gil Strang's textbook on this subject. Cleve Moler introduces computation for differential equations and explains the MATLAB ODE suite and its mathematical background. Cleve Moler's video series starts with Euler method and builds up to Runge Kutta and includes hands-on MATLAB exercises.",
+      "markdown": "\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n{{< resource e95c5f3f-e4ba-4b8d-b505-824aa2a322d0 >}}\n\nCleve Moler, founder and chief mathematician at MathWorks, and Gilbert Strang, professor and mathematician at Massachusetts Institute of Technology, provide an overview to their in-depth video series about differential equations and the MATLAB{{< sup \"\u00ae\" >}} ODE suite.\n\nDifferential equations and linear algebra are two crucial subjects in science and engineering. Gilbert Strang's video series develops those subjects both separately and together and supplements Gil Strang's textbook on this subject. Cleve Moler introduces computation for differential equations and explains the MATLAB ODE suite and its mathematical background. Cleve Moler's video series starts with Euler method and builds up to Runge Kutta and includes hands-on MATLAB exercises.",
       "metadata": {
         "ocw_type": "SupplementalResourceSection",
         "description": "This section includes a video by Cleve Moler and Gilbert Strang introducing the video series.",
@@ -1448,17 +1323,17 @@
   },
   {
     "model": "websites.websitecontent",
-    "pk": 522843,
+    "pk": 522823,
     "fields": {
       "deleted": null,
       "deleted_by_cascade": false,
-      "created_on": "2023-10-25T20:41:23.971Z",
-      "updated_on": "2023-11-13T19:42:40.335Z",
+      "created_on": "2023-10-19T22:18:31.259Z",
+      "updated_on": "2023-11-13T19:42:42.405Z",
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "text_id": "0c1253c6-e8bc-4804-96ad-c7914220957c",
-      "title": "file.txt",
+      "text_id": "e3054073-f401-4909-9794-3f281eae7a10",
+      "title": "ocw_test_course_MIT8_01F16_L26v02_360p.mp4",
       "type": "resource",
       "parent": null,
       "markdown": null,
@@ -1466,7 +1341,224 @@
         "body": "",
         "draft": false,
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "file_type": "text/plain",
+        "file_size": 18370208,
+        "file_type": "video/mp4",
+        "video_files": {
+          "video_captions_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.webvtt",
+          "video_thumbnail_file": "https://img.youtube.com/vi/NwQm2aSPiNE/default.jpg",
+          "video_transcript_file": "/courses/ocw-ci-test-course/11wFKJb61wRWKOSOxmtjDlWPXf6MiVpIQ_transcript.pdf"
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "NwQm2aSPiNE",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "ocw_test_course_mit8_01f16_l26v02_360p_mp4",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522825,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-19T22:18:31.543Z",
+      "updated_on": "2023-11-13T19:42:42.687Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "abff96f9-6777-4e4e-be27-8a7b85fab93f",
+      "title": "ocw_test_course_MIT8_01F16_L26v03_360p.mp4",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_size": 15878859,
+        "file_type": "video/mp4",
+        "video_files": {
+          "video_captions_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.webvtt",
+          "video_thumbnail_file": "https://img.youtube.com/vi/ufuYLysOvcg/default.jpg",
+          "video_transcript_file": "/courses/ocw-ci-test-course/1pCfBpsMPh5QT56DL7dvvxGr8WGsy0HGP_transcript.pdf"
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "ufuYLysOvcg",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "ocw_test_course_mit8_01f16_l26v03_360p_mp4",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522802,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-19T22:18:27.741Z",
+      "updated_on": "2023-11-13T19:42:37.952Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "7b3ae5c4-3b27-4806-b0c5-f012f16fa245",
+      "title": "Subscripts and Superscripts",
+      "type": "page",
+      "parent": null,
+      "markdown": "\n**NOTE:** Not all of these are use-cases that we want to encourage. The goal here is to document what currently works and to alert ourselves if one of these stops working. For example, styling bold inside a subscript is absolutely not something we would encourage.\n\nExample, Normal: Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.\n\nExample, Bold: **Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.**\n\nExample, Italic: *Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.*\n\nExample, Interior Bold: Lorem ipsum dolor sit<sub>abc **123**</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc **123**</sup> amet consectetur.\n\nExample, Interior italic: Lorem ipsum dolor sit<sub>abc *123*</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc *123*</sup> amet consectetur.\n\nExample, Links in scripts: Lorem ipsum dolor sit<sub>[abc 123](https://mit.edu)</sub> amet consectetur. Lorem ipsum dolor sit<sup>[abc 123](https://mit.edu)</sup> amet consectetur.\n\nExample, Scripts in Links: Lorem ipsum dolor [sit<sub>abc 123</sub> amet](https://mit.edu) consectetur. Lorem ipsum dolor [sit<sup>abc 123</sup> amet](https://mit.edu) amet consectetur.\n\nExample, Resource Links in scripts: Lorem ipsum dolor sit<sub>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sub> amet consectetur. Lorem ipsum dolor sit<sup>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sup> amet consectetur.\n\nExample, Scripts in Resource Links: Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sub>abc 123</sub> amet\" %}} consectetur. Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sup>abc 123</sup> amet\" %}} consectetur.\n\n### Usage in tables\n\n{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nHeader One\n{{< thclose >}}{{< thopen >}}\nHeader Two\n{{< thclose >}}{{< thopen >}}\nHeader Three\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nlorem<sub>abc 123</sub> ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem[<sup>\u2020</sup>](https://mit.edu) ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"<sup>\u2021</sup>\" %}} ipsum\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\na\n{{< tdclose >}}{{< tdopen >}}\nb\n{{< tdclose >}}{{< tdopen >}}\nc\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "metadata": {
+        "draft": false,
+        "description": "Test page for subscripts and superscripts",
+        "content_type": "page"
+      },
+      "is_page_content": true,
+      "filename": "subscripts-and-superscripts",
+      "dirpath": "content/pages",
+      "file": ""
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522822,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-19T22:18:31.055Z",
+      "updated_on": "2023-11-13T19:42:42.268Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "41b2bc8e-ec7e-4701-8402-926d2e81f44d",
+      "title": "ocw_test_course_MIT8_01F16_L26v02_360p.mp4",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "video/mp4",
+        "video_files": {
+          "video_captions_file": "",
+          "video_thumbnail_file": "https://img.youtube.com/vi/0aV4-ZpKzaM/default.jpg",
+          "video_transcript_file": ""
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "0aV4-ZpKzaM",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "ocw_test_course_mit8_01f16_l26v02_360p",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v02_360p_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522824,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-19T22:18:31.410Z",
+      "updated_on": "2023-11-13T19:42:42.550Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "d7d99f55-b2c3-4c98-b484-9a52bbb03908",
+      "title": "ocw_test_course_MIT8_01F16_L26v03_360p.mp4",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "video/mp4",
+        "video_files": {
+          "video_captions_file": "",
+          "video_thumbnail_file": "https://img.youtube.com/vi/NoIhOLpmqbY/default.jpg",
+          "video_transcript_file": ""
+        },
+        "content_type": "resource",
+        "resourcetype": "Video",
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
+        "video_metadata": {
+          "video_tags": "",
+          "youtube_id": "NoIhOLpmqbY",
+          "video_speakers": "",
+          "youtube_description": ""
+        },
+        "learning_resource_types": []
+      },
+      "is_page_content": true,
+      "filename": "ocw_test_course_mit8_01f16_l26v03_360p",
+      "dirpath": "content/resources",
+      "file": "courses/ocw-ci-test-course/ocw_test_course_mit8_01f16_l26v03_360p_360p_16_9.mp4"
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522838,
+    "fields": {
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2023-10-25T20:41:22.939Z",
+      "updated_on": "2023-11-13T19:42:39.603Z",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "text_id": "335051d5-910a-41ce-9850-c0749ecc74b5",
+      "title": "file.docx",
+      "type": "resource",
+      "parent": null,
+      "markdown": null,
+      "metadata": {
+        "body": "",
+        "draft": false,
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "file_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "video_files": {
           "video_captions_file": "",
           "video_thumbnail_file": "",
@@ -1474,7 +1566,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Document",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "",
@@ -1484,9 +1580,9 @@
         "learning_resource_types": []
       },
       "is_page_content": true,
-      "filename": "file_txt",
+      "filename": "file_docx",
       "dirpath": "content/resources",
-      "file": "courses/ocw-ci-test-course/file.txt"
+      "file": "courses/ocw-ci-test-course/file.docx"
     }
   },
   {
@@ -1523,7 +1619,11 @@
         "parent_title": "Test Course Video",
         "resourcetype": "Video",
         "optional_text": "Lecture Notes\n{{% resource_link \"60fcbd34-2dd0-40ca-bc7c-689b96d7c0b0\" \"(PDF)\" %}}",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "YWyHAlAuRL0",
@@ -1569,7 +1669,11 @@
         },
         "content_type": "resource",
         "resourcetype": "Video",
-        "image_metadata": { "credit": "", "caption": "", "image-alt": "" },
+        "image_metadata": {
+          "credit": "",
+          "caption": "",
+          "image-alt": ""
+        },
         "video_metadata": {
           "video_tags": "",
           "youtube_id": "dExVYLm8iF8",
@@ -1696,15 +1800,30 @@
       "metadata": {
         "draft": false,
         "courses": [
-          { "id": "courses/ocw-ci-test-course", "title": "OCW CI Test Course" },
+          {
+            "id": "courses/ocw-ci-test-course",
+            "title": "OCW CI Test Course"
+          },
           {
             "id": "courses/some-featured-course",
             "title": "Some Featured Course for Testing"
           },
-          { "id": "courses/ocw-ci-test-course", "title": "OCW CI Test Course" },
-          { "id": "courses/ocw-ci-test-course", "title": "OCW CI Test Course" },
-          { "id": "courses/ocw-ci-test-course", "title": "OCW CI Test Course" },
-          { "id": "courses/ocw-ci-test-course", "title": "OCW CI Test Course" }
+          {
+            "id": "courses/ocw-ci-test-course",
+            "title": "OCW CI Test Course"
+          },
+          {
+            "id": "courses/ocw-ci-test-course",
+            "title": "OCW CI Test Course"
+          },
+          {
+            "id": "courses/ocw-ci-test-course",
+            "title": "OCW CI Test Course"
+          },
+          {
+            "id": "courses/ocw-ci-test-course",
+            "title": "OCW CI Test Course"
+          }
         ],
         "description": "",
         "content_type": "course-lists"

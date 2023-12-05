@@ -1,4 +1,5 @@
 """Export the courses denoted in settings.OCW_WWW_TEST_SLUG and settings.OCW_COURSE_TEST_SLUG"""  # noqa: E501, INP001
+import json
 from pathlib import Path
 
 from django.conf import settings
@@ -18,10 +19,18 @@ class Command(BaseCommand):
         course_slug = settings.OCW_COURSE_TEST_SLUG
         websites = Website.objects.filter(name__in=[www_slug, course_slug])
         content = WebsiteContent.objects.filter(website__in=websites)
-        websites_data = serializers.serialize("json", websites)
-        content_data = serializers.serialize("json", content)
-        with Path.open("test_websites.json", "w") as test_websites_file:
+        websites_data = json.dumps(
+            json.loads(serializers.serialize("json", websites)), indent=2
+        )
+        content_data = json.dumps(
+            json.loads(serializers.serialize("json", content)), indent=2
+        )
+        with Path("test_site_fixtures/test_websites.json").open(
+            mode="w", encoding="utf-8"
+        ) as test_websites_file:
             test_websites_file.write(websites_data)
-        with Path.open("test_website_content.json", "w") as test_website_content_file:
+        with Path("test_site_fixtures/test_website_content.json").open(
+            mode="w", encoding="utf-8"
+        ) as test_website_content_file:
             test_website_content_file.write(content_data)
         self.stdout.write("Test site content exported")
