@@ -674,13 +674,13 @@ class ExportWebsiteSerializer(serializers.ModelSerializer):
         data["latest_build_id_draft"] = None
         data["draft_publish_status"] = PUBLISH_STATUS_NOT_STARTED
         data["draft_publish_status_updated_on"] = None
-        data["draft_last_published_by_id"] = None
+        data["draft_last_published_by"] = None
         data["has_unpublished_live"] = True
         data["publish_date"] = None
         data["latest_build_id_live"] = None
         data["live_publish_status"] = PUBLISH_STATUS_NOT_STARTED
         data["live_publish_status_updated_on"] = None
-        data["live_last_published_by_id"] = None
+        data["live_last_published_by"] = None
         data["unpublish_status"] = None
         data["unpublish_status_updated_on"] = None
         data["last_unpublished_by_id"] = None
