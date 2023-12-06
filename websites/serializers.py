@@ -683,7 +683,7 @@ class ExportWebsiteSerializer(serializers.ModelSerializer):
         data["live_last_published_by"] = None
         data["unpublish_status"] = None
         data["unpublish_status_updated_on"] = None
-        data["last_unpublished_by_id"] = None
+        data["last_unpublished_by"] = None
         return data
 
 

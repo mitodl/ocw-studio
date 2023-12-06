@@ -32,8 +32,7 @@
     "draft_last_published_by": null,
     "last_unpublished_by": null,
     "updated_by": null,
-    "draft_published_date": null,
-    "last_unpublished_by_id": null
+    "draft_published_date": null
   },
   {
     "uuid": "ad453325-9251-4547-a273-e73dbfe8842c",
@@ -68,7 +67,6 @@
     "draft_last_published_by": null,
     "last_unpublished_by": null,
     "updated_by": null,
-    "draft_published_date": null,
-    "last_unpublished_by_id": null
+    "draft_published_date": null
   }
 ]
