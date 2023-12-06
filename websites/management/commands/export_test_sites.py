@@ -17,8 +17,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):  # noqa: ARG002
         www_slug = settings.OCW_WWW_TEST_SLUG
         course_slug = settings.OCW_COURSE_TEST_SLUG
-        websites = Website.objects.filter(name__in=[www_slug, course_slug])
-        content = WebsiteContent.objects.filter(website__in=websites)
+        websites = Website.objects.filter(name__in=[www_slug, course_slug]).order_by(
+            "pk"
+        )
+        content = WebsiteContent.objects.filter(website__in=websites).order_by("pk")
         websites_data = json.dumps(
             json.loads(serializers.serialize("json", websites)), indent=2
         )
