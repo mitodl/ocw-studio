@@ -27,6 +27,7 @@ from websites.factories import (
 )
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.serializers import (
+    ExportWebsiteContentSerializer,
     ExportWebsiteSerializer,
     WebsiteCollaboratorSerializer,
     WebsiteContentCreateSerializer,
@@ -771,3 +772,13 @@ def test_website_export_serializer(ocw_site):
     assert data["unpublish_status"] is None
     assert data["unpublish_status_updated_on"] is None
     assert data["last_unpublished_by"] is None
+
+
+def test_website_content_export_serializer(ocw_site):
+    """ExportWebsiteSerializer should strip out user information"""
+    user = UserFactory.create()
+    content = WebsiteContentFactory.create(owner=user, updated_by=user)
+    serializer = ExportWebsiteContentSerializer(content)
+    data = serializer.data
+    assert data["owner"] is None
+    assert data["updated_by"] is None
