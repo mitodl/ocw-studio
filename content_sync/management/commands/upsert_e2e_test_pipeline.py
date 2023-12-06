@@ -1,4 +1,4 @@
-"""Management command for backpopulating the theme pipeline"""  # noqa: INP001
+"""Management command for backpopulating the e2e test pipeline"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
@@ -26,7 +26,7 @@ class Command(BaseCommand):
             "--delete-all",
             dest="delete_all",
             action="store_true",
-            help="Delete existing theme assets pipelines first",
+            help="Delete existing e2e test pipelines first",
         )
         parser.add_argument(
             "-t",
