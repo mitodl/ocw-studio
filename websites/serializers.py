@@ -26,7 +26,11 @@ from websites.api import (
     sync_website_title,
     update_youtube_thumbnail,
 )
-from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
+from websites.constants import (
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_RESOURCE,
+    PUBLISH_STATUS_NOT_STARTED,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -652,3 +656,45 @@ class WebsiteContentCreateSerializer(
             "file",
             "is_page_content",
         ]
+
+
+class ExportWebsiteSerializer(serializers.ModelSerializer):
+    """Serializes Website objects for export"""
+
+    class Meta:
+        model = Website
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["owner"] = None
+        data["updated_by"] = None
+        data["has_unpublished_draft"] = True
+        data["draft_published_date"] = None
+        data["latest_build_id_draft"] = None
+        data["draft_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        data["draft_publish_status_updated_on"] = None
+        data["draft_last_published_by_id"] = None
+        data["has_unpublished_live"] = True
+        data["publish_date"] = None
+        data["latest_build_id_live"] = None
+        data["live_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        data["live_publish_status_updated_on"] = None
+        data["live_last_published_by_id"] = None
+        data["unpublish_status"] = None
+        data["unpublish_status_updated_on"] = None
+        return data
+
+
+class ExportWebsiteContentSerializer(serializers.ModelSerializer):
+    """Serializes Website objects for export"""
+
+    class Meta:
+        model = WebsiteContent
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["owner"] = None
+        data["updated_by"] = None
+        return data
