@@ -755,23 +755,22 @@ def test_website_export_serializer(ocw_site):
     ocw_site.last_unpublished_by = user
     serializer = ExportWebsiteSerializer(ocw_site)
     data = serializer.data
-    assert data["owner"] is None
-    assert data["updated_by"] is None
-    assert data["has_unpublished_draft"] is True
-    assert data["draft_published_date"] is None
-    assert data["latest_build_id_draft"] is None
-    assert data["draft_publish_status"] == PUBLISH_STATUS_NOT_STARTED
-    assert data["draft_publish_status_updated_on"] is None
-    assert data["draft_last_published_by"] is None
-    assert data["has_unpublished_live"] is True
-    assert data["publish_date"] is None
-    assert data["latest_build_id_live"] is None
-    assert data["live_publish_status"] == PUBLISH_STATUS_NOT_STARTED
-    assert data["live_publish_status_updated_on"] is None
-    assert data["live_last_published_by"] is None
-    assert data["unpublish_status"] is None
-    assert data["unpublish_status_updated_on"] is None
-    assert data["last_unpublished_by"] is None
+    assert data["fields"]["owner"] is None
+    assert data["fields"]["has_unpublished_draft"] is True
+    assert data["fields"]["draft_publish_date"] is None
+    assert data["fields"]["latest_build_id_draft"] is None
+    assert data["fields"]["draft_publish_status"] == PUBLISH_STATUS_NOT_STARTED
+    assert data["fields"]["draft_publish_status_updated_on"] is None
+    assert data["fields"]["draft_last_published_by"] is None
+    assert data["fields"]["has_unpublished_live"] is True
+    assert data["fields"]["publish_date"] is None
+    assert data["fields"]["latest_build_id_live"] is None
+    assert data["fields"]["live_publish_status"] == PUBLISH_STATUS_NOT_STARTED
+    assert data["fields"]["live_publish_status_updated_on"] is None
+    assert data["fields"]["live_last_published_by"] is None
+    assert data["fields"]["unpublish_status"] is None
+    assert data["fields"]["unpublish_status_updated_on"] is None
+    assert data["fields"]["last_unpublished_by"] is None
 
 
 def test_website_content_export_serializer(ocw_site):
@@ -780,5 +779,5 @@ def test_website_content_export_serializer(ocw_site):
     content = WebsiteContentFactory.create(owner=user, updated_by=user)
     serializer = ExportWebsiteContentSerializer(content)
     data = serializer.data
-    assert data["owner"] is None
-    assert data["updated_by"] is None
+    assert data["fields"]["owner"] is None
+    assert data["fields"]["updated_by"] is None

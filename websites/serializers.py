@@ -666,25 +666,24 @@ class ExportWebsiteSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["owner"] = None
-        data["updated_by"] = None
-        data["has_unpublished_draft"] = True
-        data["draft_published_date"] = None
-        data["latest_build_id_draft"] = None
-        data["draft_publish_status"] = PUBLISH_STATUS_NOT_STARTED
-        data["draft_publish_status_updated_on"] = None
-        data["draft_last_published_by"] = None
-        data["has_unpublished_live"] = True
-        data["publish_date"] = None
-        data["latest_build_id_live"] = None
-        data["live_publish_status"] = PUBLISH_STATUS_NOT_STARTED
-        data["live_publish_status_updated_on"] = None
-        data["live_last_published_by"] = None
-        data["unpublish_status"] = None
-        data["unpublish_status_updated_on"] = None
-        data["last_unpublished_by"] = None
-        return data
+        fields = super().to_representation(instance)
+        fields["owner"] = None
+        fields["has_unpublished_draft"] = True
+        fields["draft_publish_date"] = None
+        fields["latest_build_id_draft"] = None
+        fields["draft_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        fields["draft_publish_status_updated_on"] = None
+        fields["draft_last_published_by"] = None
+        fields["has_unpublished_live"] = True
+        fields["publish_date"] = None
+        fields["latest_build_id_live"] = None
+        fields["live_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        fields["live_publish_status_updated_on"] = None
+        fields["live_last_published_by"] = None
+        fields["unpublish_status"] = None
+        fields["unpublish_status_updated_on"] = None
+        fields["last_unpublished_by"] = None
+        return {"model": "websites.website", "pk": instance.pk, "fields": fields}
 
 
 class ExportWebsiteContentSerializer(serializers.ModelSerializer):
@@ -695,7 +694,7 @@ class ExportWebsiteContentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["owner"] = None
-        data["updated_by"] = None
-        return data
+        fields = super().to_representation(instance)
+        fields["owner"] = None
+        fields["updated_by"] = None
+        return {"model": "websites.websitecontent", "pk": instance.pk, "fields": fields}
