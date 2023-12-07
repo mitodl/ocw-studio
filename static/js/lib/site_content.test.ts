@@ -514,6 +514,21 @@ describe("site_content", () => {
       })
       expect(widgetExtraProps(field)).toStrictEqual(extras)
     })
+
+    it("should grab extra props for boolean widget", () => {
+      const extras = {
+        additional_labels: {
+          true_label: "Yes",
+          false_label: "No",
+        },
+      }
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Boolean,
+        ...extras,
+      })
+
+      expect(widgetExtraProps(field)).toStrictEqual(extras)
+    })
   })
 
   describe("main content UI", () => {

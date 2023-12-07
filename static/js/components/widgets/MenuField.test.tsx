@@ -322,7 +322,7 @@ describe("MenuField", () => {
         menuItemType: linkType,
         externalLink: "",
         internalLink: "",
-        includeLicenseWarning: true,
+        includeLicenseWarning: false,
       })
 
       const updatedHugoMenuItems: HugoItem[] =

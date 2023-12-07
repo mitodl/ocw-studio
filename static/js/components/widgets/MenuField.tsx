@@ -103,7 +103,7 @@ const internalItemToHugo = (
     identifier: item.id,
     name: item.text,
     weight: (siblingIdx + 1) * 10,
-    ...(!R.isNil(item.includeLicenseWarning)
+    ...(isExternalLinkId(item.id) && !R.isNil(item.includeLicenseWarning)
       ? {
           params: {
             includeLicenseWarning: item.includeLicenseWarning,
