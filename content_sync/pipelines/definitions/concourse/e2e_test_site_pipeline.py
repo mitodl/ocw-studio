@@ -6,6 +6,7 @@ from ol_concourse.lib.models.pipeline import (
     AcrossVar,
     Command,
     DoStep,
+    Duration,
     GetStep,
     Identifier,
     Input,
@@ -56,9 +57,6 @@ from main.utils import is_dev
 from websites.models import Website
 
 CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
-common_pipeline_vars = get_common_pipeline_vars()
-www_slug = settings.OCW_WWW_TEST_SLUG
-course_slug = settings.OCW_COURSE_TEST_SLUG
 
 www_content_git_identifier = Identifier("www-content-git").root
 course_content_git_identifier = Identifier("course-content-git").root
@@ -74,6 +72,7 @@ class TestPipelineBaseTasks(list[StepModifierMixin]):
     """
 
     def __init__(self):
+        common_pipeline_vars = get_common_pipeline_vars()
         webpack_manifest_get_step = GetStep(
             get=WEBPACK_MANIFEST_S3_IDENTIFIER,
             trigger=True,
@@ -135,7 +134,7 @@ class TestPipelineBaseTasks(list[StepModifierMixin]):
         )
 
 
-class TestPipelineDefinition(Pipeline):
+class EndToEndTestPipelineDefinition(Pipeline):
     """
     A Pipeline that does the following:
 
@@ -152,15 +151,16 @@ class TestPipelineDefinition(Pipeline):
     def __init__(self, themes_branch: str, projects_branch: str, **kwargs):
         base = super()
         base.__init__(**kwargs)
+        common_pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
         site_pipeline_vars = get_site_pipeline_definition_vars(namespace=namespace)
         static_api_base_url = common_pipeline_vars["static_api_base_url_test"]
         site_pipeline_vars["sitemap_domain"] = urlparse(static_api_base_url).netloc
         version = VERSION_LIVE
 
-        www_website = Website.objects.get(name=www_slug)
-        course_website = Website.objects.get(name=course_slug)
-        ocw_hugo_projects_url = www_website.starter.ocw_hugo_projects_url
+        www_site = Website.objects.get(name=settings.OCW_WWW_TEST_SLUG)
+        course_site = Website.objects.get(name=settings.OCW_COURSE_TEST_SLUG)
+        ocw_hugo_projects_url = www_site.starter.ocw_hugo_projects_url
         site_content_branch = get_site_content_branch(version)
 
         resource_types = [
@@ -175,14 +175,14 @@ class TestPipelineDefinition(Pipeline):
             branch=themes_branch,
         )
         ocw_hugo_themes_resource = OcwHugoThemesGitResource(branch=themes_branch)
-        ocw_hugo_themes_resource.check_every = "1m"
+        ocw_hugo_themes_resource.check_every = Duration(root="1m")
         ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
             uri=ocw_hugo_projects_url,
             branch=projects_branch,
         )
-        ocw_hugo_projects_resource.check_every = "1m"
+        ocw_hugo_projects_resource.check_every = Duration(root="1m")
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
-            site_name=course_website.name,
+            site_name=course_site.name,
             api_token=settings.API_BEARER_TOKEN or "",
         )
 
@@ -195,9 +195,9 @@ class TestPipelineDefinition(Pipeline):
         ]
 
         www_config = SitePipelineDefinitionConfig(
-            site=www_website,
+            site=www_site,
             pipeline_name=version,
-            instance_vars=f"?vars={quote(json.dumps({'site': www_website.name}))}",
+            instance_vars=f"?vars={quote(json.dumps({'site': www_site.name}))}",
             site_content_branch=site_content_branch,
             static_api_url=common_pipeline_vars["static_api_base_url_test"],
             storage_bucket=common_pipeline_vars["storage_bucket_name"],
@@ -216,9 +216,9 @@ class TestPipelineDefinition(Pipeline):
         www_config.values["base_url"] = ""
         www_config.values["ocw_studio_url"] = static_api_base_url
         course_config = SitePipelineDefinitionConfig(
-            site=course_website,
+            site=course_site,
             pipeline_name=version,
-            instance_vars=f"?vars={quote(json.dumps({'site': course_website.name}))}",
+            instance_vars=f"?vars={quote(json.dumps({'site': course_site.name}))}",
             site_content_branch=site_content_branch,
             static_api_url=common_pipeline_vars["static_api_base_url_test"],
             storage_bucket=common_pipeline_vars["storage_bucket_name"],

@@ -33,7 +33,7 @@ from content_sync.pipelines.base import (
     BaseUnpublishedSiteRemovalPipeline,
 )
 from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import (
-    TestPipelineDefinition,
+    EndToEndTestPipelineDefinition,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
@@ -628,7 +628,7 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
         """
 
         self.upsert_config(
-            TestPipelineDefinition(
+            EndToEndTestPipelineDefinition(
                 themes_branch=self.THEMES_BRANCH, projects_branch=self.PROJECTS_BRANCH
             ).json(),
             self.PIPELINE_NAME,
