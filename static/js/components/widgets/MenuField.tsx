@@ -87,7 +87,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
 
     ...(!R.isNil(item.params?.includeLicenseWarning)
       ? {
-          includeLicenseWarning: item.params!.includeLicenseWarning,
+          includeLicenseWarning: item.params?.includeLicenseWarning,
         }
       : {}),
     ...partialHugoItem,
