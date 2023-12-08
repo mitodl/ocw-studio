@@ -246,6 +246,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
             SitePipelineOnlineTasks(
                 pipeline_vars=site_pipeline_vars,
                 fastly_var=version,
+                skip_cache_clear=True,
             )
         )
 

@@ -64,6 +64,7 @@ from content_sync.utils import (
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.models import Website
+from websites.utils import is_test_site
 
 BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site").root
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build").root
@@ -436,15 +437,19 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
         fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
+        filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
+        skip_cache_clear(bool): (Optional) A boolean override for skipping the CDN cache clear step
     """  # noqa: E501
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_vars: dict,
         fastly_var: str,
         *,
         destructive_sync: bool = True,
         filter_videos: bool = False,
+        skip_cache_clear: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
@@ -579,7 +584,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 upload_online_build_step,
             ]
         )
-        if not is_dev():
+        if not is_dev() and not skip_cache_clear:
             self.append(clear_cdn_cache_online_step)
 
 
@@ -874,8 +879,11 @@ class SitePipelineDefinition(Pipeline):
         )
         steps = [ocw_studio_webhook_started_step]
         steps.extend(SitePipelineBaseTasks(config=config))
+        skip_cache_clear = is_test_site(config.site.name)
         online_tasks = SitePipelineOnlineTasks(
-            pipeline_vars=config.vars, fastly_var=config.pipeline_name
+            pipeline_vars=config.vars,
+            fastly_var=config.pipeline_name,
+            skip_cache_clear=skip_cache_clear,
         )
         for task in online_tasks:
             if hasattr(task, "task") and task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
