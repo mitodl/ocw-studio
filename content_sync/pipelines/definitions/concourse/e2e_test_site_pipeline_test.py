@@ -167,6 +167,11 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert course_values["resource_base_url"] == static_api_base_url
     assert course_values["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert course_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
+    across_step_build_steps = across_steps[0]["do"]
+    cdn_cache_clear_steps = [
+        step for step in e2e_test_tasks if step.get("task") == across_step_build_steps
+    ]
+    assert len(cdn_cache_clear_steps) == 0
     fetch_built_content_steps = [
         step
         for step in e2e_test_tasks
