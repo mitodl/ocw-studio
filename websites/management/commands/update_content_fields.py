@@ -5,7 +5,6 @@ from argparse import ArgumentTypeError
 from django.core.exceptions import FieldDoesNotExist
 from django.core.management import CommandError
 from django.db import transaction
-from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent
@@ -70,11 +69,7 @@ class Command(WebsiteFilterCommand):
                 contents = WebsiteContent.objects.filter(
                     website__starter__slug=starter, type=page_type
                 )
-                if self.filter_list:
-                    contents = contents.filter(
-                        Q(website__name__in=self.filter_list)
-                        | Q(website__short_id__in=self.filter_list)
-                    )
+                contents = self.filter_website_contents(website_contents=contents)
                 contents.update(**updated_data)
             except FieldDoesNotExist as e:
                 raise CommandError(e)  # noqa: B904, TRY200

@@ -48,9 +48,7 @@ class Command(WebsiteFilterCommand):
                 "Please provide a valid email address for an existing user to unpublish courses."  # noqa: E501
             )
             return
-        websites = Website.objects.filter(
-            Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-        )
+        websites = self.filter_websites(websites=Website.objects.all())
         unpublished_count = 0
         unpublished_names = []
         for website in websites:

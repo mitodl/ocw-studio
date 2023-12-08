@@ -1,6 +1,5 @@
 """Update content metadata for websites based on a specific starter"""  # noqa: INP001
 from django.db import transaction
-from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import WebsiteContent, WebsiteStarter
@@ -50,11 +49,7 @@ class Command(WebsiteFilterCommand):
         content_qset = WebsiteContent.objects.filter(
             website__starter__slug=starter_str, type=type_str
         )
-        if self.filter_list:
-            content_qset = content_qset.filter(
-                Q(website__name__in=self.filter_list)
-                | Q(website__short_id__in=self.filter_list)
-            )
+        content_qset = self.filter_website_contents(website_contents=content_qset)
         if source_str:
             content_qset = content_qset.filter(website__source=source_str)
 

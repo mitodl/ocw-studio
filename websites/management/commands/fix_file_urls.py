@@ -3,7 +3,6 @@ import csv
 import re
 
 from django.conf import settings
-from django.db.models import Q
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
@@ -63,11 +62,7 @@ class Command(WebsiteFilterCommand):
             type=CONTENT_TYPE_RESOURCE,
             file__regex=rf"^/?{prefix}/[A-Za-z0-9\-\.\_]+(\.).*",
         )
-        if self.filter_list:
-            bad_paths = bad_paths.filter(
-                Q(website__name__in=self.filter_list)
-                | Q(website__short_id__in=self.filter_list)
-            )
+        bad_paths = self.filter_website_contents(website_contents=bad_paths)
 
         self.stdout.write(
             f"Found {bad_paths.count()} resources with '{prefix}/' file paths missing website names"  # noqa: E501

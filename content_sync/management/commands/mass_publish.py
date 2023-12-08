@@ -1,10 +1,8 @@
 """Publish live or draft versions of multiple sites"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import CommandError
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
-from content_sync.constants import VERSION_DRAFT
 from content_sync.tasks import publish_websites
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.constants import STARTER_SOURCE_GITHUB
@@ -73,20 +71,14 @@ class Command(WebsiteFilterCommand):
         is_verbose = options["verbosity"] > 1
 
         website_qset = Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
-        if self.filter_list:
-            website_qset = website_qset.filter(
-                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-            )
+        website_qset = self.filter_websites(websites=website_qset)
+        website_qset = self.exclude_unpublished_websites(
+            version=version, websites=website_qset
+        )
         if starter_str:
             website_qset = website_qset.filter(starter__slug=starter_str)
         if source_str:
             website_qset = website_qset.filter(source=source_str)
-        # do not publish any sites that have been unpublished or never been published before  # noqa: E501
-        website_qset = website_qset.filter(unpublish_status__isnull=True)
-        if version == VERSION_DRAFT:
-            website_qset = website_qset.exclude(draft_publish_date__isnull=True)
-        else:
-            website_qset = website_qset.exclude(publish_date__isnull=True)
 
         website_names = list(website_qset.values_list("name", flat=True))
 

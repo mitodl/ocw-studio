@@ -1,8 +1,6 @@
 """Updates derived values in WebsiteContent records to match the site config"""  # noqa: E501, INP001
 import sys
 
-from django.db.models import Q
-
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.site_config_api import SiteConfig
@@ -51,11 +49,9 @@ class Command(WebsiteFilterCommand):
                     page_content_config_item_names.append(config_item.name)
                 else:
                     other_config_item_names.append(config_item.name)
-            websites = Website.objects.filter(starter=starter)
-            if self.filter_list:
-                websites = websites.filter(
-                    Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-                )
+            websites = self.filter_websites(
+                websites=Website.objects.filter(starter=starter)
+            )
             for website in websites:
                 _contents_updated = WebsiteContent.objects.filter(
                     website=website,

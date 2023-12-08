@@ -7,7 +7,6 @@ import os
 
 from django.conf import settings
 from django.core.management import CommandParser
-from django.db.models import Q
 from mitol.common.utils import now_in_utc
 
 from content_sync.tasks import sync_unsynced_websites
@@ -45,11 +44,7 @@ class Command(WebsiteFilterCommand):
         is_verbose = options["verbosity"] > 1
 
         videos = Video.objects.all()
-        if self.filter_list:
-            videos = videos.filter(
-                Q(website__name__in=self.filter_list)
-                | Q(website__short_id__in=self.filter_list)
-            )
+        self.filter_videos(videos=videos)
 
         self.stdout.write(
             f"Updating downloadable video files for {videos.count()} videos."

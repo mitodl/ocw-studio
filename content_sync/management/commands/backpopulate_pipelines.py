@@ -1,7 +1,6 @@
 """Backpopulate website pipelines"""  # noqa: INP001
 from django.conf import settings
 from django.core.management import CommandError
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_pipeline_api
@@ -94,12 +93,7 @@ class Command(WebsiteFilterCommand):
             else:
                 self.stdout.error("No pipeline api configured")
 
-        if self.filter_list:
-            website_qset = Website.objects.filter(
-                Q(name__in=self.filter_list) | Q(short_id__in=self.filter_list)
-            )
-        else:
-            website_qset = Website.objects.all()
+        website_qset = self.filter_websites(websites=Website.objects.all())
 
         if starter_str:
             website_qset = website_qset.filter(starter__slug=starter_str)

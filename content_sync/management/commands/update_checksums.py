@@ -2,7 +2,6 @@
 import logging
 
 from django.core.paginator import Paginator
-from django.db.models import Q
 from tqdm import tqdm
 
 from content_sync.models import ContentSyncState
@@ -27,12 +26,7 @@ class Command(WebsiteFilterCommand):
         sync_states = (
             ContentSyncState.objects.all().prefetch_related("content").order_by("id")
         )
-
-        if self.filter_list:
-            sync_states = sync_states.filter(
-                Q(content__website__name__in=self.filter_list)
-                | Q(content__website__short_id__in=self.filter_list)
-            )
+        sync_states = self.filter_content_sync_states(sync_states)
 
         page_size = 100
         pages = Paginator(sync_states, page_size)
