@@ -17,6 +17,9 @@ from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import 
     upload_fixtures_step_identifier,
     www_content_git_identifier,
 )
+from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    CLEAR_CDN_CACHE_IDENTIFIER,
+)
 from content_sync.utils import get_cli_endpoint_url, get_common_pipeline_vars
 from websites.constants import STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -169,7 +172,9 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert course_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     across_step_build_steps = across_steps[0]["do"]
     cdn_cache_clear_steps = [
-        step for step in e2e_test_tasks if step.get("task") == across_step_build_steps
+        step
+        for step in across_step_build_steps
+        if step.get("task") == CLEAR_CDN_CACHE_IDENTIFIER
     ]
     assert len(cdn_cache_clear_steps) == 0
     fetch_built_content_steps = [
