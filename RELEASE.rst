@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.107.5 (Released December 11, 2023)
+---------------
+
+- chore(deps): update dependency pytest to v7.4.3 (#2031)
+- fix(deps): update dependency js-beautify to v1.14.11 (#1914)
+
 Version 0.107.4 (Released November 29, 2023)
 ---------------
 
