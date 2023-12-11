@@ -59,7 +59,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     ocw_hugo_projects_branch,
 ):
     """
-    The unpublished site removal pipeline definition should contain the expected properties
+    The end to end test pipeline definition should contain the expected properties
     """
     www_site = test_sites["www"]
     course_site = test_sites["course"]
