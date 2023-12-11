@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.108.0
+Version 0.108.0 (Released December 11, 2023)
 ---------------
 
 - unpublished should be a boolean (#2046)
