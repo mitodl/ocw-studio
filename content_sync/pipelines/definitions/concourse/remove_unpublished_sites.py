@@ -120,7 +120,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                                 "webhook_key": open_webhook_key,
                                 "site_uid": "((.:site.site_uid))",
                                 "version": VERSION_LIVE,
-                                "unpublished": "true",
+                                "unpublished": True,
                             }
                         ),
                         f"{open_discussions_url}/api/v0/ocw_next_webhook/",
