@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.108.0
+---------------
+
+- unpublished should be a boolean (#2046)
+- add exclude filter to management commands (#2035)
+
 Version 0.107.5 (Released December 11, 2023)
 ---------------
 
