@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.107.5
+Version 0.107.5 (Released December 11, 2023)
 ---------------
 
 - chore(deps): update dependency pytest to v7.4.3 (#2031)
