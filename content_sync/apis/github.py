@@ -92,7 +92,10 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
 
     for config_file in config_files:
         try:
-            git_file = repo.get_contents(config_file, commit)
+            if commit:
+                git_file = repo.get_contents(config_file, commit)
+            else:
+                git_file = repo.get_contents(config_file)
             slug = (
                 git_file.path.split("/")[0]
                 if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
