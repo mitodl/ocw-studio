@@ -516,3 +516,21 @@ class GithubApiWrapper:
         ]
         if tree_elements:
             self.commit_tree(tree_elements, user)
+
+
+def find_files_recursive(
+    repo: Repository, path: str, file_name: str, commit: Optional[str] = None
+) -> Iterable[str]:
+    """Find files recursively in a Repository"""
+    file_paths = []
+    contents = repo.get_contents(path, commit) if commit else repo.get_contents(path)
+    for content in contents:
+        if content.type == "dir":
+            file_paths.extend(
+                find_files_recursive(
+                    repo=repo, path=content.path, file_name=file_name, commit=commit
+                )
+            )
+        elif file_name in content.name:
+            file_paths.append(content.path)
+    return file_paths
