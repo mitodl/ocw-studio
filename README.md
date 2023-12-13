@@ -365,7 +365,7 @@ AWS_TEST_BUCKET_NAME=ocw-content-test
 AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
 ```
 
-There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. They can be loaded into the database with the following commands:
+There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the ID's of the `ocw-www` and `ocw-course` starters are referenced. If these ID's are not correct on your system, you can get the ID's of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
 
 ```
 docker-compose exec web ./manage.py loaddata test_site_fixtures/test_websites.json
