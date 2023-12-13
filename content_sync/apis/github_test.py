@@ -16,6 +16,7 @@ from requests import HTTPError
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
     GithubApiWrapper,
+    find_files_recursive,
     get_app_installation_id,
     get_token,
     sync_starter_configs,
@@ -985,3 +986,45 @@ def test_batch_delete_files_none(mock_api_wrapper):
     """batch_delete_files shouldn't call commit_tree for an empty path list"""
     mock_api_wrapper.batch_delete_files([])
     mock_api_wrapper.org.get_repo.assert_not_called()
+
+
+def test_find_files_recursive(mocker, mock_github):
+    """find_files_recursive should find ocw-studio.yaml files in a repo regardless of their directory level"""
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
+
+    def get_content_side_effect(*args, **kwargs):
+        if kwargs["path"] == "":
+            return [
+                mocker.Mock(path="site-1", name="site-1", type="dir"),
+                mocker.Mock(path="site-1", name="site-2", type="dir"),
+            ]
+        elif kwargs["path"] == "site-1":
+            return [
+                mocker.Mock(
+                    path="site-1/ocw-studio.yaml",
+                    name="ocw-studio.yaml",
+                    type="file",
+                    decoded_content=config_content,
+                ),
+                mocker.Mock(
+                    path="site-1/unrelated-file.json",
+                    name="unrelated-file.json",
+                    type="file",
+                    decoded_content=config_content,
+                ),
+            ]
+        elif kwargs["path"] == "site-2":
+            return [
+                mocker.Mock(
+                    path="site-2/ocw-studio.yaml",
+                    name="ocw-studio.yaml",
+                    type="file",
+                    decoded_content=config_content,
+                ),
+            ]
+        return None
+
+    repo = mock_github.return_value.get_organization.return_value.get_repo.return_value
+    repo.get_contents.side_effect = get_content_side_effect
+    files = find_files_recursive(repo=repo, path="", file_name="ocw-studio.yaml")
+    assert files == ["site-1/ocw-studio.yaml", "site-1/ocw-studio.yaml"]

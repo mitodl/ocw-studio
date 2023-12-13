@@ -526,7 +526,11 @@ def find_files_recursive(
 ) -> Iterable[str]:
     """Find files recursively in a Repository"""
     file_paths = []
-    contents = repo.get_contents(path, commit) if commit else repo.get_contents(path)
+    contents = (
+        repo.get_contents(path=path, ref=commit)
+        if commit
+        else repo.get_contents(path=path)
+    )
     for content in contents:
         if content.type == "dir":
             file_paths.extend(
@@ -534,6 +538,6 @@ def find_files_recursive(
                     repo=repo, path=content.path, file_name=file_name, commit=commit
                 )
             )
-        elif file_name in content.name:
+        elif file_name in str(content.name):
             file_paths.append(content.path)
     return file_paths
