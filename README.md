@@ -177,7 +177,7 @@ You can also try `npm run fmt:check` to see if any files need to be reformatted.
 
 # Defining local starter projects and site configs
 
-The `ocw-studio` software allows you to create websites based on a configuration called a "starter." These configuration files are named `ocw-studio.yaml` by default but that name can be overridden by setting `OCW_STUDIO_SITE_CONFIG_FILE` in your environment. These starters can be imported into `ocw-studio` in a couple different ways.
+The `ocw-studio` software allows you to create websites based on a configuration called a "starter." These configuration files are named `ocw-studio.yaml` by default but that name can be overridden by setting `OCW_STUDIO_SITE_CONFIG_FILE` in your environment. These starters can be imported into `ocw-studio` in a couple of different ways.
 
 ### The `localdev` folder
 
