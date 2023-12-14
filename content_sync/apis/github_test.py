@@ -996,7 +996,7 @@ def test_find_files_recursive(mocker, mock_github):
         if kwargs["path"] == "":
             return [
                 mocker.Mock(path="site-1", name="site-1", type="dir"),
-                mocker.Mock(path="site-1", name="site-2", type="dir"),
+                mocker.Mock(path="site-2", name="site-2", type="dir"),
             ]
         elif kwargs["path"] == "site-1":
             return [
@@ -1027,4 +1027,4 @@ def test_find_files_recursive(mocker, mock_github):
     repo = mock_github.return_value.get_organization.return_value.get_repo.return_value
     repo.get_contents.side_effect = get_content_side_effect
     files = find_files_recursive(repo=repo, path="", file_name="ocw-studio.yaml")
-    assert files == ["site-1/ocw-studio.yaml", "site-1/ocw-studio.yaml"]
+    assert files == ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
