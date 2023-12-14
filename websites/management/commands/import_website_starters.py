@@ -50,6 +50,6 @@ class Command(BaseCommand):
             sync_starter_configs(
                 repo_url=git_url, config_files=config_files, commit=commit
             )
+            self.stdout.write("Successfully updated WebsiteStarter objects")
         else:
             self.stdout.write("No ocw-studio.yaml files found in the given repository")
-        self.stdout.write("Successfully updated WebsiteStarter objects")
