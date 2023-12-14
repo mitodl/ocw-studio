@@ -29,17 +29,22 @@ OCW Studio manages deployments for OCW courses.
 
 # Initial Setup
 
-ocw_studio follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
+`ocw_studio` follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
 Run through those steps **including the addition of `/etc/hosts` aliases and the optional step for running the
 `createsuperuser` command**.
 
-In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
+Websites are created using a template called a "starter." You can import a standard set of starters by running:
 
-Finally, create/update additional starters with the following command:
+```sh
+docker-compose exec web ./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects
+```
 
-```
-docker-compose run web python manage.py override_site_config
-```
+The `ocw-www` starter is meant for creating a home page, aka the "root website." This is called `ocw-www` by default, but the name of the site can be set on `ROOT_WEBSITE_NAME` in your environment if you wish to change it. The other starters are different types of websites that can be built within `ocw-studio`. After you have imported some starters, you are ready to start creating websites. To publish those websites, follow the guides in the table of contents above for setting up:
+
+- A Github organization
+- Google Drive integration for resources
+- AWS S3 credentials (Minio S3 emulation should work out of the box for local development)
+- Youtube / AWS MediaConvert / 3Play if you need to work with videos
 
 ### Testing Touchstone login with SAML via SSOCircle
 
