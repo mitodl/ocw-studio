@@ -92,7 +92,10 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
 
     for config_file in config_files:
         try:
-            git_file = repo.get_contents(config_file, commit)
+            if commit:
+                git_file = repo.get_contents(config_file, commit)
+            else:
+                git_file = repo.get_contents(config_file)
             slug = (
                 git_file.path.split("/")[0]
                 if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
@@ -516,3 +519,25 @@ class GithubApiWrapper:
         ]
         if tree_elements:
             self.commit_tree(tree_elements, user)
+
+
+def find_files_recursive(
+    repo: Repository, path: str, file_name: str, commit: Optional[str] = None
+) -> Iterable[str]:
+    """Find files recursively in a Repository"""
+    file_paths = []
+    contents = (
+        repo.get_contents(path=path, ref=commit)
+        if commit
+        else repo.get_contents(path=path)
+    )
+    for content in contents:
+        if content.type == "dir":
+            file_paths.extend(
+                find_files_recursive(
+                    repo=repo, path=content.path, file_name=file_name, commit=commit
+                )
+            )
+        elif file_name in str(content.name):
+            file_paths.append(content.path)
+    return file_paths

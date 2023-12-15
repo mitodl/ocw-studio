@@ -4,32 +4,47 @@ OCW Studio manages deployments for OCW courses.
 
 **SECTIONS**
 
-1. [Initial Setup](#initial-setup)
-1. [Testing and Formatting](#testing-and-formatting)
-1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
-1. [Enabling GitHub integration](#enabling-github-integration)
-1. [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
-1. [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
-1. [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
-1. [Video Workflow](#video-workflow)
-1. [Enabling YouTube integration](#enabling-youtube-integration)
-1. [Enabling Google Drive integration](#enabling-google-drive-integration)
-1. [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
-1. [Enabling 3Play integration](#enabling-3play-integration)
+- [ocw_studio](#ocw_studio)
+- [Initial Setup](#initial-setup)
+  - [Testing Touchstone login with SAML via SSOCircle](#testing-touchstone-login-with-saml-via-ssocircle)
+  - [Commits](#commits)
+- [Testing and Formatting](#testing-and-formatting)
+  - [JS/CSS Tests and Linting](#jscss-tests-and-linting)
+    - [JS tests](#js-tests)
+    - [JS formatting, linting, and typechecking](#js-formatting-linting-and-typechecking)
+- [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
+  - [The `localdev` folder](#the-localdev-folder)
+  - [Importing starter projects from Github](#importing-starter-projects-from-github)
+  - [Automatically updating starters from Github](#automatically-updating-starters-from-github)
+- [Enabling GitHub integration](#enabling-github-integration)
+- [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
+- [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
+  - [Running a Local Concourse Docker Container](#running-a-local-concourse-docker-container)
+- [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
+- [Video Workflow](#video-workflow)
+- [Enabling YouTube integration](#enabling-youtube-integration)
+- [Enabling Google Drive integration](#enabling-google-drive-integration)
+- [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
+- [Enabling 3Play integration](#enabling-3play-integration)
 
 # Initial Setup
 
-ocw_studio follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
+`ocw_studio` follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
 Run through those steps **including the addition of `/etc/hosts` aliases and the optional step for running the
 `createsuperuser` command**.
 
-In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
+Websites are created using a template called a "starter." You can import a standard set of starters by running:
 
-Finally, create/update additional starters with the following command:
+```sh
+docker-compose exec web ./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects
+```
 
-```
-docker-compose run web python manage.py override_site_config
-```
+The `ocw-www` starter is meant for creating a home page, aka the "root website." This is called `ocw-www` by default, but the name of the site can be set on `ROOT_WEBSITE_NAME` in your environment if you wish to change it. The other starters are different types of websites that can be built within `ocw-studio`. After you have imported some starters, you are ready to start creating websites. To publish those websites, follow the guides in the table of contents above for setting up:
+
+- A Github organization
+- Google Drive integration for resources
+- AWS S3 credentials (Minio S3 emulation should work out of the box for local development)
+- Youtube / AWS MediaConvert / 3Play if you need to work with videos
 
 ### Testing Touchstone login with SAML via SSOCircle
 
@@ -167,10 +182,25 @@ You can also try `npm run fmt:check` to see if any files need to be reformatted.
 
 # Defining local starter projects and site configs
 
-This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
+The `ocw-studio` software allows you to create websites based on a configuration called a "starter." These configuration files are named `ocw-studio.yaml` by default but that name can be overridden by setting `OCW_STUDIO_SITE_CONFIG_FILE` in your environment. These starters can be imported into `ocw-studio` in a couple of different ways.
 
-- Define entire starter projects within this repo and load them into your database
-- Override the site config for starters with a particular `slug` value
+### The `localdev` folder
+
+More details on this are in [this readme file](localdev/README.md)
+
+### Importing starter projects from Github
+
+MIT OCW has a set of starter configs that are used in building the official OCW site. They are stored in a repo called [`ocw-hugo-projects`](https://github.com/mitodl/ocw-hugo-projects). This repo can be used as a reference for setting up your own repo. When you make your own repo, make sure that your config files in the repo are in their own folder and the filenames match what is set to `OCW_STUDIO_SITE_CONFIG_FILE`, which is `ocw-studio.yaml` by default. The folder name is used to determine the `slug` property of the resulting starter object, and the config file is read from that folder and applied to the `config` property. When your repo is ready, make sure it is publically accessible and then you can import the starter configs from it by running:
+
+```sh
+docker-compose exec web ./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects
+```
+
+If you wish to use your own Github repo containing starters use that URL instead. If any starters already exist with the same slug as one being imported, their configuration will be updated.
+
+### Automatically updating starters from Github
+
+If you are hosting `ocw-studio` on the internet and wish to have your starter updated automatically when you make changes to the starter configurations in your Github repo, this is possible by configuring a webhook. In order to accomplish this, you will need to first set `GITHUB_WEBHOOK_BRANCH` in your environment to the branch that you wish to watch for changes on (i.e. `release`). Then, you will need to configure a webhook in the settings of your Github repo targeting `/api/starters/site_configs` on your instance of `ocw-studio`. After this is set up, on pushes to the configured branch, a webhook will be fired to your `ocw-studio` instance which will trigger automatic updating of your starter configurations.
 
 # Enabling GitHub integration
 
