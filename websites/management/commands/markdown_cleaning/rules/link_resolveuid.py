@@ -13,7 +13,7 @@ from websites.models import Website, WebsiteContent
 
 class LinkResolveuidRule(PyparsingRule):
     """
-    Rule to fix/resolve resolveuid links to resource_links.
+    Rule to fix resolveuid links.
     """
 
     alias = "link_resolveuid"
@@ -31,7 +31,7 @@ class LinkResolveuidRule(PyparsingRule):
     ]
 
     __link_markdown_pattern = re.compile(r"\]\(.*resolveuid.*\)")
-    __link_pattern = re.compile(".*resolveuid/(.*)")
+    __link_pattern = re.compile(r".*resolveuid/(.*)")
 
     @dataclass
     class ReplacementNotes:
@@ -40,22 +40,35 @@ class LinkResolveuidRule(PyparsingRule):
         found_referenced_entity: bool
         text_id: str
 
-    def _find_link_replacement(self, text_id: str, text: str, website: Website):
-        if WebsiteContent.objects.filter(text_id=text_id).exists():
+    def _find_link_replacement(
+        self, text_id: str, text: str, website: Website
+    ) -> str | None:
+        """
+        Find content corresponding to `text_id` or `text` and return a valid
+        replacement.
+        """
+        # text_id matches a content in the same website.
+        if WebsiteContent.objects.filter(text_id=text_id, website=website).exists():
             return ShortcodeTag.resource_link(text_id, text).to_hugo()
 
+        # text matches a content's title
         contents = WebsiteContent.objects.filter(title=text, website=website)
         if contents.count() == 1:
             content = contents.first()
             return ShortcodeTag.resource_link(content.text_id, text).to_hugo()
 
-        websites = Website.objects.filter(metadata__legacy_uid=text_id)
+        # text_id is a legacy site id
+        websites = Website.objects.filter(
+            metadata__legacy_uid=text_id, unpublish_status__isnull=True
+        )
         if websites.count() == 1:
             website = websites.first()
             return f'[{text}](/{website.url_path.lstrip("/")})'
+
         return None
 
-    def _uuid(self, text: str):
+    def _uuid(self, text: str) -> uuid.UUID | None:
+        """Return UUID if `text` is a valid UUID."""
         try:
             return uuid.UUID(text)
         except ValueError:
@@ -65,7 +78,7 @@ class LinkResolveuidRule(PyparsingRule):
         self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
     ):
         """
-        Replace resolveuid links with resource_links if applicable.
+        Replace resolveuid links with resource_links or markdown links, if applicable.
         """
         link_match = self.__link_pattern.match(toks[0].destination)
 
@@ -83,21 +96,21 @@ class LinkResolveuidRule(PyparsingRule):
         if not is_resolveuid_link:
             return replacement_text, notes
 
-        text_id = self._uuid(link_match.group(1).lower())
+        text_id = str(self._uuid(link_match.group(1).lower()))
 
         if text_id is not None:
-            notes.text_id = str(text_id)
+            notes.text_id = text_id
             replacement = self._find_link_replacement(
-                str(text_id), toks[0].text, website=website_content.website
+                text_id, toks[0].text, website=website_content.website
             )
 
             if replacement is not None:
-                notes.found_referenced_entity = replacement is not None
+                notes.found_referenced_entity = True
                 replacement_text = replacement
 
         return replacement_text, notes
 
-    def should_parse(self, text: str):
+    def should_parse(self, text: str) -> bool:
         """
         Return true if the content might contain a resolveuid link.
         """
