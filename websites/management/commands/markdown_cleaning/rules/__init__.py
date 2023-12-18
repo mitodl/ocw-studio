@@ -1,13 +1,20 @@
-import importlib
-import pkgutil
+from importlib import import_module
+from inspect import isclass
+from pathlib import Path
+from pkgutil import iter_modules
 
-for mod_info in pkgutil.walk_packages(__path__, __name__ + "."):
-    mod = importlib.import_module(mod_info.name)
+from markdown_cleaning.cleaner import MarkdownCleanupRule
 
-    # Emulate `from mod import *`
-    try:
-        names = mod.__dict__["__all__"]
-    except KeyError:
-        names = [k for k in mod.__dict__ if not k.startswith("_")]
+# Import all rule classes when `rules` module is loaded.
+#
+# Iterate through the modules in the current package
+package_dir = Path(__file__).resolve().parent
+for _, module_name, _ in iter_modules([str(package_dir)]):
+    # import the module and iterate through its attributes
+    module = import_module(f"{__name__}.{module_name}")
+    for attribute_name in dir(module):
+        attribute = getattr(module, attribute_name)
 
-    globals().update({k: getattr(mod, k) for k in names})
+        if isclass(attribute) and issubclass(attribute, MarkdownCleanupRule):
+            # Add the class to this package's variables
+            globals()[attribute_name] = attribute
