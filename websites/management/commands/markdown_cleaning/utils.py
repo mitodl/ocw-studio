@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from main.utils import is_valid_uuid
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.site_config_api import SiteConfig
 
 filepath_migration = importlib.import_module(
     "websites.migrations.0023_website_content_filepath"
@@ -29,6 +30,20 @@ def get_rootrelative_url_from_content(content: WebsiteContent):
     return "/".join(p for p in pieces if p)
 
 
+class StarterSiteConfigLookup:
+    """
+    Utility to get site config.
+    """
+
+    def __init__(self) -> None:
+        starters = WebsiteStarter.objects.all()
+
+        self.configs = {starter.id: SiteConfig(starter.config) for starter in starters}
+
+    def get_config(self, starter_id):
+        return self.configs[starter_id]
+
+
 class ContentLookup:
     """
     Helps find content by website_id and a valid OCW-Next url.
@@ -36,6 +51,8 @@ class ContentLookup:
 
     def __init__(self):
         website_contents = WebsiteContent.all_objects.all().prefetch_related("website")
+        websites = Website.objects.all()
+
         self.website_contents = {
             (wc.website_id, wc.dirpath, wc.filename): wc for wc in website_contents
         }
@@ -47,6 +64,8 @@ class ContentLookup:
         self.by_uuid = {
             UUID(wc.text_id): wc for wc in website_contents if is_valid_uuid(wc.text_id)
         }
+
+        self.websites_by_url_path = {website.url_path: website for website in websites}
 
     def __str__(self):
         return self.website_contents.__str__()
@@ -108,6 +127,9 @@ class ContentLookup:
             dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
+
+    def find_website_by_url_path(self, url_path: str):
+        return self.websites_by_url_path[url_path]
 
 
 class UrlSiteRelativiser:

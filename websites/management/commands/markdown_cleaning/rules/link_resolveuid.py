@@ -2,10 +2,12 @@ import re
 import uuid
 from dataclasses import dataclass
 from functools import partial
+from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
+    LinkParseResult,
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.models import Website, WebsiteContent
@@ -36,17 +38,18 @@ class LinkResolveuidRule(PyparsingRule):
     @dataclass
     class ReplacementNotes:
         is_resolveuid_link: bool
-        has_id_correction: bool
         found_referenced_entity: bool
         text_id: str
 
     def _find_link_replacement(
-        self, text_id: str, text: str, website: Website
+        self, text_id: str, result: LinkParseResult, website: Website
     ) -> str | None:
         """
-        Find content corresponding to `text_id` or `text` and return a valid
+        Find content corresponding to `text_id` or `result` and return a valid
         replacement.
         """
+        text = result.link.text
+
         # text_id matches a content in the same website.
         if WebsiteContent.objects.filter(text_id=text_id, website=website).exists():
             return ShortcodeTag.resource_link(text_id, text).to_hugo()
@@ -55,7 +58,9 @@ class LinkResolveuidRule(PyparsingRule):
         contents = WebsiteContent.objects.filter(title=text, website=website)
         if contents.count() == 1:
             content = contents.first()
-            return ShortcodeTag.resource_link(content.text_id, text).to_hugo()
+            return ShortcodeTag.resource_link(
+                content.text_id, text, urlparse(result.link.destination).fragment
+            ).to_hugo()
 
         # text_id is a legacy site id
         websites = Website.objects.filter(
@@ -88,7 +93,6 @@ class LinkResolveuidRule(PyparsingRule):
 
         notes = self.ReplacementNotes(
             is_resolveuid_link=is_resolveuid_link,
-            has_id_correction=False,
             found_referenced_entity=False,
             text_id=text_id,
         )
@@ -101,7 +105,7 @@ class LinkResolveuidRule(PyparsingRule):
         if text_id is not None:
             notes.text_id = text_id
             replacement = self._find_link_replacement(
-                text_id, toks[0].text, website=website_content.website
+                text_id, toks, website=website_content.website
             )
 
             if replacement is not None:
