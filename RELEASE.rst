@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.110.0
+---------------
+
+- end to end testing pipeline (#2018)
+
 Version 0.109.0 (Released December 20, 2023)
 ---------------
 
