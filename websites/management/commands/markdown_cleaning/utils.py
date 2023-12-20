@@ -26,8 +26,8 @@ def remove_prefix(string: str, prefix: str):
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
     filename = "" if content.filename == "_index" else content.filename
-    pieces = ["/courses", content.website.name, dirpath, filename]
-    return "/".join(p for p in pieces if p)
+    pieces = [content.website.url_path, dirpath, filename]
+    return "/" + "/".join(p for p in pieces if p)
 
 
 class StarterSiteConfigLookup:
@@ -38,10 +38,17 @@ class StarterSiteConfigLookup:
     def __init__(self) -> None:
         starters = WebsiteStarter.objects.all()
 
-        self.configs = {starter.id: SiteConfig(starter.config) for starter in starters}
+        self._configs = {starter.id: SiteConfig(starter.config) for starter in starters}
+        self._config_items = {
+            starter_id: list(config.iter_items())
+            for starter_id, config in self._configs.items()
+        }
 
     def get_config(self, starter_id):
-        return self.configs[starter_id]
+        return self._configs[starter_id]
+
+    def config_items(self, starter_id):
+        return self._config_items[starter_id]
 
 
 class ContentLookup:
