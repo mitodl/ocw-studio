@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.109.0
+Version 0.109.0 (Released December 20, 2023)
 ---------------
 
 - management command for importing website starters from GitHub (#2049)
