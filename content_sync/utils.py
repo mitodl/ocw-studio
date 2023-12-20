@@ -8,9 +8,12 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Q
 
 from content_sync.constants import (
+    DEV_DRAFT_URL,
     DEV_END,
     DEV_ENDPOINT_URL,
+    DEV_LIVE_URL,
     DEV_START,
+    DEV_TEST_URL,
     END_TAG_PREFIX,
     NON_DEV_END,
     NON_DEV_START,
@@ -109,21 +112,31 @@ def get_common_pipeline_vars():
     pipeline_vars = {
         "preview_bucket_name": settings.AWS_PREVIEW_BUCKET_NAME,
         "publish_bucket_name": settings.AWS_PUBLISH_BUCKET_NAME,
+        "test_bucket_name": settings.AWS_TEST_BUCKET_NAME,
         "offline_preview_bucket_name": settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME,
         "offline_publish_bucket_name": settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME,
+        "offline_test_bucket_name": settings.AWS_OFFLINE_TEST_BUCKET_NAME,
         "storage_bucket_name": settings.AWS_STORAGE_BUCKET_NAME,
         "artifacts_bucket_name": settings.AWS_ARTIFACTS_BUCKET_NAME,
         "static_api_base_url_draft": settings.OCW_STUDIO_DRAFT_URL,
         "static_api_base_url_live": settings.OCW_STUDIO_LIVE_URL,
+        "static_api_base_url_test": settings.STATIC_API_BASE_URL_TEST,
         "resource_base_url_draft": "",
         "resource_base_url_live": "",
     }
     if is_dev():
         pipeline_vars["static_api_base_url_draft"] = (
-            settings.STATIC_API_BASE_URL_DRAFT or settings.OCW_STUDIO_DRAFT_URL
+            settings.STATIC_API_BASE_URL_DRAFT
+            or settings.OCW_STUDIO_DRAFT_URL
+            or DEV_DRAFT_URL
         )
         pipeline_vars["static_api_base_url_live"] = (
-            settings.STATIC_API_BASE_URL_LIVE or settings.OCW_STUDIO_LIVE_URL
+            settings.STATIC_API_BASE_URL_LIVE
+            or settings.OCW_STUDIO_LIVE_URL
+            or DEV_LIVE_URL
+        )
+        pipeline_vars["static_api_base_url_test"] = (
+            settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
         )
         pipeline_vars.update(
             {
@@ -154,10 +167,14 @@ def get_publishable_sites(version: str):
     publish_date_field = (
         "publish_date" if version == VERSION_LIVE else "draft_publish_date"
     )
-    # Get all sites, minus any sites that have never been successfully published
-    sites = Website.objects.exclude(
-        Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
-    ).exclude(unpublish_status__isnull=False)
+    # Get all sites, minus any sites that have never been successfully published and test sites  # noqa: E501
+    sites = (
+        Website.objects.exclude(
+            Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+        )
+        .exclude(unpublish_status__isnull=False)
+        .exclude(name__in=[settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG])
+    )
     return sites.prefetch_related("starter")
 
 
@@ -177,6 +194,19 @@ def get_theme_branch():
     github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
     return (
         (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
+        if is_dev()
+        else github_webhook_branch
+    )
+
+
+def get_projects_branch():
+    """
+    Gets the branch to use of ocw-hugo-projects in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
+    if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_PROJECTS_BRANCH
+    """  # noqa: E501, D401
+    github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
+    return (
+        (settings.OCW_HUGO_PROJECTS_BRANCH or github_webhook_branch)
         if is_dev()
         else github_webhook_branch
     )

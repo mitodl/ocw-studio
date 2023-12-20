@@ -26,7 +26,11 @@ from websites.api import (
     sync_website_title,
     update_youtube_thumbnail,
 )
-from websites.constants import CONTENT_TYPE_METADATA, CONTENT_TYPE_RESOURCE
+from websites.constants import (
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_RESOURCE,
+    PUBLISH_STATUS_NOT_STARTED,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
@@ -652,3 +656,45 @@ class WebsiteContentCreateSerializer(
             "file",
             "is_page_content",
         ]
+
+
+class ExportWebsiteSerializer(serializers.ModelSerializer):
+    """Serializes Website objects for export"""
+
+    class Meta:
+        model = Website
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        fields = super().to_representation(instance)
+        fields["owner"] = None
+        fields["has_unpublished_draft"] = True
+        fields["draft_publish_date"] = None
+        fields["latest_build_id_draft"] = None
+        fields["draft_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        fields["draft_publish_status_updated_on"] = None
+        fields["draft_last_published_by"] = None
+        fields["has_unpublished_live"] = True
+        fields["publish_date"] = None
+        fields["latest_build_id_live"] = None
+        fields["live_publish_status"] = PUBLISH_STATUS_NOT_STARTED
+        fields["live_publish_status_updated_on"] = None
+        fields["live_last_published_by"] = None
+        fields["unpublish_status"] = None
+        fields["unpublish_status_updated_on"] = None
+        fields["last_unpublished_by"] = None
+        return {"model": "websites.website", "pk": instance.pk, "fields": fields}
+
+
+class ExportWebsiteContentSerializer(serializers.ModelSerializer):
+    """Serializes Website objects for export"""
+
+    class Meta:
+        model = WebsiteContent
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        fields = super().to_representation(instance)
+        fields["owner"] = None
+        fields["updated_by"] = None
+        return {"model": "websites.websitecontent", "pk": instance.pk, "fields": fields}

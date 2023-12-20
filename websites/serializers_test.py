@@ -14,6 +14,8 @@ from videos.constants import YT_THUMBNAIL_IMG
 from websites.constants import (
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
+    PUBLISH_STATUS_NOT_STARTED,
+    PUBLISH_STATUS_SUCCEEDED,
     ROLE_EDITOR,
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_SOURCE_OCW_IMPORT,
@@ -25,6 +27,8 @@ from websites.factories import (
 )
 from websites.models import WebsiteContent, WebsiteStarter
 from websites.serializers import (
+    ExportWebsiteContentSerializer,
+    ExportWebsiteSerializer,
     WebsiteCollaboratorSerializer,
     WebsiteContentCreateSerializer,
     WebsiteContentDetailSerializer,
@@ -726,3 +730,54 @@ def test_website_url_serializer_url_path_published(ocw_site):
     assert serializer.errors.get("url_path") == [
         "The URL cannot be changed after publishing."
     ]
+
+
+def test_website_export_serializer(ocw_site):
+    """ExportWebsiteSerializer should strip out user and publishing information"""
+    user = UserFactory.create()
+    now = now_in_utc()
+    ocw_site.owner = user
+    ocw_site.updated_by = user
+    ocw_site.has_unpublished_draft = False
+    ocw_site.draft_publish_date = now
+    ocw_site.latest_build_id_draft = 1
+    ocw_site.draft_publish_status = PUBLISH_STATUS_SUCCEEDED
+    ocw_site.draft_publish_status_updated_on = now
+    ocw_site.draft_last_published_by = user
+    ocw_site.has_unpublished_live = False
+    ocw_site.live_publish_date = now
+    ocw_site.latest_build_id_live = 1
+    ocw_site.live_publish_status = PUBLISH_STATUS_SUCCEEDED
+    ocw_site.live_publish_status_updated_on = now
+    ocw_site.live_last_published_by = user
+    ocw_site.unpublish_status = PUBLISH_STATUS_NOT_STARTED
+    ocw_site.unpublish_status_updated_on = now
+    ocw_site.last_unpublished_by = user
+    serializer = ExportWebsiteSerializer(ocw_site)
+    data = serializer.data
+    assert data["fields"]["owner"] is None
+    assert data["fields"]["has_unpublished_draft"] is True
+    assert data["fields"]["draft_publish_date"] is None
+    assert data["fields"]["latest_build_id_draft"] is None
+    assert data["fields"]["draft_publish_status"] == PUBLISH_STATUS_NOT_STARTED
+    assert data["fields"]["draft_publish_status_updated_on"] is None
+    assert data["fields"]["draft_last_published_by"] is None
+    assert data["fields"]["has_unpublished_live"] is True
+    assert data["fields"]["publish_date"] is None
+    assert data["fields"]["latest_build_id_live"] is None
+    assert data["fields"]["live_publish_status"] == PUBLISH_STATUS_NOT_STARTED
+    assert data["fields"]["live_publish_status_updated_on"] is None
+    assert data["fields"]["live_last_published_by"] is None
+    assert data["fields"]["unpublish_status"] is None
+    assert data["fields"]["unpublish_status_updated_on"] is None
+    assert data["fields"]["last_unpublished_by"] is None
+
+
+def test_website_content_export_serializer(ocw_site):
+    """ExportWebsiteSerializer should strip out user information"""
+    user = UserFactory.create()
+    content = WebsiteContentFactory.create(owner=user, updated_by=user)
+    serializer = ExportWebsiteContentSerializer(content)
+    data = serializer.data
+    assert data["fields"]["owner"] is None
+    assert data["fields"]["updated_by"] is None

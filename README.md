@@ -20,6 +20,7 @@ OCW Studio manages deployments for OCW courses.
 - [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
 - [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
   - [Running a Local Concourse Docker Container](#running-a-local-concourse-docker-container)
+  - [End to end testing of site pipelines](#end-to-end-testing-of-site-pipelines)
 - [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
 - [Video Workflow](#video-workflow)
 - [Enabling YouTube integration](#enabling-youtube-integration)
@@ -257,6 +258,10 @@ AWS_SECRET_ACCESS_KEY=minio_password
 AWS_STORAGE_BUCKET_NAME=ol-ocw-studio-app
 AWS_PREVIEW_BUCKET_NAME=ocw-content-draft
 AWS_PUBLISH_BUCKET_NAME=ocw-content-live
+AWS_TEST_BUCKET_NAME=ocw-content-test
+AWS_OFFLINE_PREVIEW_BUCKET_NAME=ocw-content-offline-draft
+AWS_OFFLINE_PUBLISH_BUCKET_NAME=ocw-content-offline-live
+AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
 AWS_ARTIFACTS_BUCKET_NAME=ol-eng-artifacts
 OCW_HUGO_THEMES_BRANCH=main
 OCW_HUGO_PROJECTS_BRANCH=main
@@ -346,6 +351,60 @@ need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use
 specify the sites to push up pipelines for. The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
 Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
 as using only one dockerized worker publishing the entire OCW site will take a very long time.
+
+### End to end testing of site pipelines
+
+There is a pipeline definition for end to end testing of sites using the `ocw-www` and `ocw-course` starters. It can be run locally in Concourse using the following steps to set it up.
+
+Firstly, there are some environment variables you will want to set:
+
+```
+OCW_WWW_TEST_SLUG=ocw-ci-test-www
+OCW_COURSE_TEST_SLUG=ocw-ci-test-course
+AWS_TEST_BUCKET_NAME=ocw-content-test
+AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
+```
+
+There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the ID's of the `ocw-www` and `ocw-course` starters are referenced. If these ID's are not correct on your system, you can get the ID's of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
+
+```
+docker-compose exec web ./manage.py loaddata test_site_fixtures/test_websites.json
+docker-compose exec web ./manage.py loaddata test_site_fixtures/test_website_content.json
+```
+
+Once the test sites are in your database, you will need to get them up to your Github org. The easiest way to do this is to run the following commands:
+
+```
+docker-compose exec web ./manage.py reset_sync_states --filter "ocw-ci-test-www, ocw-ci-test-course" --skip_sync
+docker-compose exec web ./manage.py sync_website_to_backend --filter "ocw-ci-test-www, ocw-ci-test-course"
+```
+
+At this point, you should be able to see the test sites in your Github org and the content should be on the `main` branch. In order to get the content up into the `release` branch, you will need to click the publish button on both sites:
+
+http://localhost:8043/sites/ocw-ci-test-www
+http://localhost:8043/sites/ocw-ci-test-course
+
+Publishing of the sites will fail because of missing fixtures, but that doesn't matter. All you need to run the end to end testing pipelines is for the content to be in the `release` branch in Github. The last prerequisite you need to set up is to load the static assets into Minio:
+
+- Download the contents of this Google Drive folder: https://drive.google.com/drive/folders/14Hlid31Qy7Yy5V4OgHUwNleYUFuJ5BH2?usp=sharing
+- Browse to the Minio web UI at http://localhost:9001 and log in with your credentials
+- Browse to the `ol-ocw-studio-app` bucket, go to the `courses` folder and create a folder here called `ocw-ci-test-course`
+- In this folder, upload the files you downloaded from Google Drive
+
+You are now ready to push up the test pipeline to Concourse, which can be done by running:
+
+```
+docker-compose exec web ./manage.py upsert_e2e_test_pipeline --themes-branch main --projects-branch main
+```
+
+You can alter the themes branch and projects branches to suit your needs if you are testing a different branch of `ocw-hugo-themes` or `ocw-hugo-projects`. Keep in mind that for any branch of `ocw-hugo-themes` you use, you will need to have built theme assets in Minio. You'll need to run the `upsert_theme_assets` pipeline for that branch and then run it.
+
+You should now have a pipeline in Concourse called `e2e-test-pipeline`. Run this pipeline and it will:
+
+- Pull down all the necessary git repos
+- Build the test sites
+- Deploy them to Minio
+- Run Playwright tests against the output
 
 # Running OCW Studio on Apple Silicon
 

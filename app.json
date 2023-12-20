@@ -50,6 +50,10 @@
       "description": "S3 offline publish bucket name.",
       "required": false
     },
+    "AWS_OFFLINE_TEST_BUCKET_NAME": {
+      "description": "S3 offline test bucket name.",
+      "required": false
+    },
     "AWS_PREVIEW_BUCKET_NAME": {
       "description": "S3 preview bucket name.",
       "required": false
@@ -76,6 +80,10 @@
     },
     "AWS_STORAGE_BUCKET_NAME": {
       "description": "S3 Bucket name.",
+      "required": false
+    },
+    "AWS_TEST_BUCKET_NAME": {
+      "description": "S3 test bucket name.",
       "required": false
     },
     "CELERY_BROKER_URL": {
@@ -421,6 +429,14 @@
       "description": "Use S3 for storage backend (required on Heroku)",
       "required": false
     },
+    "OCW_TEST_COURSE_STARTER_SLUG": {
+      "description": "The slug of the course Website used to run end to end tests",
+      "required": false
+    },
+    "OCW_TEST_WWW_STARTER_SLUG": {
+      "description": "The slug of the root Website used to run end to end tests",
+      "required": false
+    },
     "OPEN_DISCUSSIONS_URL": {
       "description": "Open discussions url",
       "required": false
@@ -550,6 +566,10 @@
     },
     "SOCIAL_AUTH_SAML_SP_PUBLIC_CERT": {
       "description": "The SAML public certificate",
+      "required": false
+    },
+    "STATIC_API_BASE_URL_TEST": {
+      "description": "The static api base url to use when building and deploying live sites locally to minio",
       "required": false
     },
     "STATUS_TOKEN": {
