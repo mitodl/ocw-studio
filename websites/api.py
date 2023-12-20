@@ -394,6 +394,9 @@ def get_content_warnings(website):
 
     messages = []
 
+    if not website.has_site_metadata:
+        messages.append("The course is missing metadata.")
+
     if len(missing_youtube_ids_titles) > 0:
         messages.append(
             f"The following video resources require YouTube IDs: {', '.join(missing_youtube_ids_titles)}"  # noqa: E501

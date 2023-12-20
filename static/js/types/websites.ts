@@ -236,6 +236,7 @@ export interface WebsiteStatus {
   synced_on: string | null
   sync_errors: Array<string> | null
   unpublished: boolean
+  has_site_metadata: boolean
 }
 
 export type Website = WebsiteStatus & {

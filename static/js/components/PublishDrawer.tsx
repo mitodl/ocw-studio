@@ -61,7 +61,9 @@ const getPublishingInfo = (
 const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
   const { publishingEnv, selected, onSelect, website, onPublishSuccess } = props
   const publishingInfo = getPublishingInfo(website, publishingEnv)
-
+  const isPublishDisabled =
+    !publishingInfo.hasUnpublishedChanges ||
+    (!website.has_site_metadata && publishingEnv === PublishingEnv.Production)
   const [{ isPending }, publish] = useMutation(
     (payload: WebsitePublishPayload) =>
       websitePublishAction(website.name, publishingEnv, payload),
@@ -123,7 +125,7 @@ const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
           )}
           <PublishForm
             onSubmit={handlePublish}
-            disabled={!publishingInfo.hasUnpublishedChanges}
+            disabled={isPublishDisabled}
             website={website}
             option={publishingEnv}
           />
