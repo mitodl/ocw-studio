@@ -1,3 +1,4 @@
+import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import partial
@@ -7,7 +8,6 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import Pyparsin
 from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     LinkParseResult,
-    MarkdownLink,
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.utils import (
@@ -20,14 +20,24 @@ from websites.models import WebsiteContent
 
 class BrokenLinkFixRuleMixin(ABC):
     """
-    Fix links.
+    A Mixin to use with BrokenMarkdownLinkFixRule and BrokenMetadataLinkFixRule.
+
+    This mixin holds the common broken link detection and replacement methods.
+
+    The following types of links are detected as broken with some examples:
+
+    1. Relative course links. These links should be absolute (start with /)
+       to function properly.
+        - courses/course-id
+    2. Unnecessarily `_index` postfix.
+        - /courses/course-id/pages/page/_index
+        - pages/page/_index
+    3. Legacy URLs.
+        - /courses/course-id/pages/section/subsection/content
+        - pages/section/subsection/content
     """
 
-    alias = "broken_link_fix"
-
     Parser = partial(LinkParser, recursive=True)
-
-    fields = []
 
     @dataclass
     class ReplacementNotes:
@@ -41,11 +51,42 @@ class BrokenLinkFixRuleMixin(ABC):
         self.config_lookup = StarterSiteConfigLookup()
 
     def replace_match(
-        self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
+        self,
+        s: str,  # noqa: ARG002
+        l: int,  # noqa: E741, ARG002
+        toks: LinkParseResult,
+        website_content,
     ):
-        return self.find_replacement(toks, website_content)
+        """
+        Run on each match of the parser. The match will be replaced by the
+        return value of this function.
 
-    def should_parse(self, text: str):
+        For more, see the docs for PyparsingRule.replace_match.
+        """
+        Notes = partial(
+            self.ReplacementNotes, issue_type=None, linked_content=None, fix=None
+        )
+
+        try:
+            url = urlparse(toks.link.destination)
+        except ValueError:
+            return toks.original_text, Notes(issue_type="Invalid URL")
+
+        if url.scheme.startswith(("http", "ftp", "mailto")):
+            # Fixing these is not in our scope, yet.
+            return toks.original_text, Notes(issue_type="External URL")
+
+        if url.path.startswith("courses/"):
+            replacement = self._find_course_url_replacement(toks, url.path)
+            if replacement:
+                return replacement, Notes(
+                    issue_type="Relative course URL",
+                    fix="Make URL Absolute",
+                )
+
+        return self._find_content_and_replacement(toks, website_content, url)
+
+    def should_parse(self, text: str) -> bool:
         """Return true if text has a markdown link."""
         return "](" in text
 
@@ -53,9 +94,27 @@ class BrokenLinkFixRuleMixin(ABC):
     def create_replacement(
         self, result: LinkParseResult, url: ParseResult, wc: WebsiteContent
     ) -> (str, str):
+        """
+        Return a link for `wc` to use as a replacement for the broken link.
+
+        Raises:
+            NotImplementedError: When not implemented.
+        """
         raise NotImplementedError
 
-    def _find_best_matching_content(self, url: ParseResult, wc: WebsiteContent):
+    def _find_best_matching_content(
+        self, url: ParseResult, wc: WebsiteContent
+    ) -> WebsiteContent | None:
+        """
+        Use the last segment of the url path to find a matching
+        content in any of the content folders/paths.
+
+        Returns None when either nothing is found or multiple
+        matches are found.
+
+        Returns:
+            Optional[WebsiteContent]: The matching WebsiteContent..
+        """
         filename = url.path.rstrip("/").split("/")[-1]
 
         config = self.config_lookup.get_config(wc.website.starter_id)
@@ -77,43 +136,42 @@ class BrokenLinkFixRuleMixin(ABC):
 
         return None
 
-    def find_replacement(  # noqa: C901,PLR0912
-        self, result: LinkParseResult, wc: WebsiteContent
-    ):
-        link = result.link
+    def _find_course_url_replacement(
+        self, result: LinkParseResult, url_path: str
+    ) -> str | None:
+        """
+        Return an absolute course url to use as a replacement
+        if `url_path` is a relative and valid course path.
+        """
+        try:
+            website_by_path = self.content_lookup.find_website_by_url_path(url_path)
+        except KeyError:
+            website_by_path = None
+
+        if website_by_path and website_by_path.unpublish_status is None:
+            # This is a course URL.
+            # These need to be absolute URLs to work correctly.
+            link = dataclasses.replace(result.link)
+            link.destination = "/" + link.destination
+            return link.to_markdown()
+
+        return None
+
+    def _find_content_and_replacement(
+        self, result: LinkParseResult, wc: WebsiteContent, url: ParseResult
+    ) -> (str, ReplacementNotes):
+        """
+        Find the content that best matches the `url` and return the
+        replacement.
+        """
         Notes = partial(
             self.ReplacementNotes, issue_type=None, linked_content=None, fix=None
         )
 
-        try:
-            url = urlparse(link.destination)
-        except ValueError:
-            return result.original_text, Notes(issue_type="Invalid URL")
-
-        if url.scheme.startswith(("http", "ftp", "mailto")):
-            # Fixing these is not in our scope, yet.
-            return result.original_text, Notes(issue_type="External URL")
-
-        if url.path.startswith("courses/"):
-            try:
-                website_by_path = self.content_lookup.find_website_by_url_path(url.path)
-            except KeyError:
-                website_by_path = None
-
-            if website_by_path and website_by_path.unpublish_status is None:
-                # This is a course URL.
-                # These need to be absolute URLs to work correctly.
-                link.destination = "/" + link.destination
-                return link.to_markdown(), Notes(
-                    issue_type="Relative course URL",
-                    fix="Make URL Absolute",
-                    linked_content=website_by_path.name,
-                )
-
         url_path = url.path.rstrip("/") or "/"
         if not url_path.startswith("/"):
             # Most likely a relative URL like "pages/syllabus".
-            # We'll make it root-relative.
+            # We'll make it root-relative to help with locating content.
             url_path = f"{get_rootrelative_url_from_content(wc)}/{url_path}"
 
         try:
@@ -153,7 +211,11 @@ class BrokenLinkFixRuleMixin(ABC):
 
 class BrokenMarkdownLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
     """
-    Fix links.
+    A rule to fix broken links in markdown.
+
+    This rule replaces broken links with shortcodes (i.e. resource_link or resource).
+
+    For information about the types of links replaced, see BrokenLinkFixRuleMixin.
     """
 
     alias = "broken_markdown_link_fix"
@@ -165,6 +227,12 @@ class BrokenMarkdownLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
     def create_replacement(
         self, result: LinkParseResult, url: ParseResult, wc: WebsiteContent
     ) -> (str, str):
+        """
+        Return a shortcode replacement text for `wc`.
+
+        Returns:
+            tuple(str, str): The shortcode text and note/comment.
+        """
         try:
             if result.link.is_image:
                 sc = ShortcodeTag.resource(wc.text_id)
@@ -195,16 +263,19 @@ class BrokenMetadataLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
 
     def create_replacement(
         self, result: LinkParseResult, url: ParseResult, wc: WebsiteContent
-    ) -> (str, BrokenLinkFixRuleMixin.ReplacementNotes):
-        content_url = get_rootrelative_url_from_content(wc)
-        link = result.link
-        fragment = f"#{url.fragment}" if url.fragment else ""
+    ) -> (str, str):
+        """
+        Return a markdown link replacement text for `wc` (because
+        shortcodes are not supported in metadata yet.)
 
-        new_link = MarkdownLink(
-            text=link.text,
-            destination=f"{content_url}{fragment}",
-            is_image=link.is_image,
-            title=link.title,
+        Returns:
+            tuple(str, str): The shortcode text and note/comment.
+        """
+        content_url = get_rootrelative_url_from_content(wc)
+
+        fragment = f"#{url.fragment}" if url.fragment else ""
+        new_link = dataclasses.replace(
+            result.link, destination=f"{content_url}{fragment}"
         )
 
         return new_link.to_markdown(), "Replaced with rootrelative URL"
