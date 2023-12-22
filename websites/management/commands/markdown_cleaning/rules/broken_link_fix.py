@@ -29,12 +29,15 @@ class BrokenLinkFixRuleMixin(ABC):
     1. Relative course links. These links should be absolute (start with /)
        to function properly.
         - courses/course-id
-    2. Unnecessarily `_index` postfix.
+    2. Unnecessarily `_index` postfixed.
         - /courses/course-id/pages/page/_index
         - pages/page/_index
     3. Legacy URLs.
         - /courses/course-id/pages/section/subsection/content
         - pages/section/subsection/content
+    4. Broken relative links. These appear under non-root pages, so these
+       should be root-relative.
+        - pages/page2
     """
 
     Parser = partial(LinkParser, recursive=True)

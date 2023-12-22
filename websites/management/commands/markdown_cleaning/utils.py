@@ -67,12 +67,11 @@ class ContentLookup:
             wc.website_id: wc for wc in website_contents if wc.type == "sitemetadata"
         }
         self.websites = {wc.website.name: wc.website_id for wc in website_contents}
+        self.websites_by_url_path = {website.url_path: website for website in websites}
 
         self.by_uuid = {
             UUID(wc.text_id): wc for wc in website_contents if is_valid_uuid(wc.text_id)
         }
-
-        self.websites_by_url_path = {website.url_path: website for website in websites}
 
     def __str__(self):
         return self.website_contents.__str__()
@@ -91,6 +90,10 @@ class ContentLookup:
         """Retrieve a content object by its UUID"""
         return self.by_uuid[uuid]
 
+    def find_website_by_url_path(self, url_path: str):
+        """Retrieve a website object by its url_path"""
+        return self.websites_by_url_path[url_path]
+
     def find(
         self, root_relative_path: str, base_site: Optional[Website] = None
     ) -> WebsiteContent:
@@ -107,7 +110,15 @@ class ContentLookup:
         site_name = standardized_path.split("/")[1]
 
         relative_path = remove_prefix(standardized_path, f"courses/{site_name}")
-        site_id = self.websites[site_name]
+
+        try:
+            site_id = self.websites_by_url_path[f"courses/{site_name}"].uuid
+        except KeyError:
+            # This point will probably never be reached, but we'll keep it here
+            # to support any links that might mistakenly use `name` instead
+            # of `url_path`.
+            site_id = self.websites[site_name]
+
         return self.find_within_site(site_id, relative_path)
 
     def find_within_site(self, website_id, site_relative_path: str) -> WebsiteContent:
@@ -134,9 +145,6 @@ class ContentLookup:
             dirpath = self.standardize_dirpath(site_relative_path)
             filename = "_index"
             return self.website_contents[(website_id, dirpath, filename)]
-
-    def find_website_by_url_path(self, url_path: str):
-        return self.websites_by_url_path[url_path]
 
 
 class UrlSiteRelativiser:
