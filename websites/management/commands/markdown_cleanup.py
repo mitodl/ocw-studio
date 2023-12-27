@@ -47,6 +47,7 @@ class Command(WebsiteFilterCommand):
         rules.LinkResolveuidRule,
         rules.BrokenMarkdownLinkFixRule,
         rules.BrokenMetadataLinkFixRule,
+        rules.CourseAbsoluteLinkRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:

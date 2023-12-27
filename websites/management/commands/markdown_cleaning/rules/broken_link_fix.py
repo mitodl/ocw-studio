@@ -26,18 +26,26 @@ class BrokenLinkFixRuleMixin(ABC):
 
     The following types of links are detected as broken with some examples:
 
-    1. Relative course links. These links should be absolute (start with /)
-       to function properly.
-        - courses/course-id
-    2. Unnecessarily `_index` postfixed.
-        - /courses/course-id/pages/page/_index
-        - pages/page/_index
-    3. Legacy URLs.
-        - /courses/course-id/pages/section/subsection/content
-        - pages/section/subsection/content
-    4. Broken relative links. These appear under non-root pages, so these
+    1. Unnecessarily `_index` postfixed.
+        Broken:
+            - /courses/course-id/pages/page/_index
+            - pages/page/_index
+        Fixed (in markdown we use resource_link shortcode):
+            - /courses/course-id/pages/page
+            - pages/page
+    2. Legacy URLs.
+        Broken:
+            - /courses/course-id/pages/section/subsection/content
+            - pages/section/subsection/content
+        Fixed (in markdown we use resource_link shortcode):
+            - /courses/course-id/pages/content
+            - pages/content
+    3. Broken relative links. These appear under non-root pages, so these
        should be root-relative.
-        - pages/page2
+        Broken:
+            - pages/page2
+        Fixed (in markdown we use resource_link shortcode):
+            - /pages/page2
     """
 
     Parser = partial(LinkParser, recursive=True)
@@ -79,14 +87,6 @@ class BrokenLinkFixRuleMixin(ABC):
             # Fixing these is not in our scope, yet.
             return toks.original_text, Notes(issue_type="External URL")
 
-        if url.path.startswith("courses/"):
-            replacement = self._find_course_url_replacement(toks, url.path)
-            if replacement:
-                return replacement, Notes(
-                    issue_type="Relative course URL",
-                    fix="Make URL Absolute",
-                )
-
         return self._find_content_and_replacement(toks, website_content, url)
 
     def should_parse(self, text: str) -> bool:
@@ -115,8 +115,20 @@ class BrokenLinkFixRuleMixin(ABC):
         Returns None when either nothing is found or multiple
         matches are found.
 
+        For example, for a url `pages/library/videos/lecture-6-debugging`
+        this method may find the following contents:
+
+        - pages/lecture-6-debugging
+        - resources/lecture-6-debugging
+        - video_galleries/lecture-6-debugging
+        - lists/lecture-6-debugging
+        etc.
+
+        The paths, in which we search for the content, are defined
+        in the site's starter config.
+
         Returns:
-            Optional[WebsiteContent]: The matching WebsiteContent..
+            Optional[WebsiteContent]: The matching WebsiteContent.
         """
         filename = url.path.rstrip("/").split("/")[-1]
 
@@ -136,27 +148,6 @@ class BrokenLinkFixRuleMixin(ABC):
                     pass
         if len(matched_contents) == 1:
             return matched_contents[0]
-
-        return None
-
-    def _find_course_url_replacement(
-        self, result: LinkParseResult, url_path: str
-    ) -> str | None:
-        """
-        Return an absolute course url to use as a replacement
-        if `url_path` is a relative and valid course path.
-        """
-        try:
-            website_by_path = self.content_lookup.find_website_by_url_path(url_path)
-        except KeyError:
-            website_by_path = None
-
-        if website_by_path and website_by_path.unpublish_status is None:
-            # This is a course URL.
-            # These need to be absolute URLs to work correctly.
-            link = dataclasses.replace(result.link)
-            link.destination = "/" + link.destination
-            return link.to_markdown()
 
         return None
 
@@ -186,6 +177,7 @@ class BrokenLinkFixRuleMixin(ABC):
 
         if found_wc and url_path.endswith(("_index", "index.htm", "index.html")):
             # Remove the extra _index* url component.
+            # Example url_path: courses/id/pages/page/_index
             replacement, fix_note = self.create_replacement(result, url, found_wc)
             notes = Notes(
                 issue_type="_index postfix",
@@ -204,7 +196,7 @@ class BrokenLinkFixRuleMixin(ABC):
             if found_wc:
                 replacement, fix_note = self.create_replacement(result, url, found_wc)
                 notes = Notes(
-                    issue_type="Unknown link",
+                    issue_type="Unknown link: Unique fuzzy match",
                     fix=fix_note,
                     linked_content=found_wc.text_id,
                 )
@@ -250,7 +242,11 @@ class BrokenMarkdownLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
 
 class BrokenMetadataLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
     """
-    Fix links.
+    A rule to fix broken links in metadata.
+
+    This rule replaces broken links with markdown links.
+
+    For information about the types of links replaced, see BrokenLinkFixRuleMixin.
     """
 
     alias = "broken_metadata_link_fix"
@@ -268,8 +264,7 @@ class BrokenMetadataLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
         self, result: LinkParseResult, url: ParseResult, wc: WebsiteContent
     ) -> (str, str):
         """
-        Return a markdown link replacement text for `wc` (because
-        shortcodes are not supported in metadata yet.)
+        Return a markdown link replacement text for `wc`.
 
         Returns:
             tuple(str, str): The shortcode text and note/comment.
