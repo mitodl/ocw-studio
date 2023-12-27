@@ -6,13 +6,16 @@ from websites.management.commands.markdown_cleaning.rules.metadata_relative_urls
     MetadataRelativeUrlsRule,
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
+    patch_website_all,
     patch_website_contents_all,
 )
 
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""  # noqa: D401
-    with patch_website_contents_all(website_contents):
+    with patch_website_contents_all(website_contents), patch_website_all(
+        {c.website for c in website_contents}
+    ):
         rule = MetadataRelativeUrlsRule()
         return WebsiteContentMarkdownCleaner(rule)
 
@@ -24,7 +27,7 @@ def test_updates_multiple_metadata_fields():
     """
     assert len(MetadataRelativeUrlsRule.fields) > 1
 
-    website = WebsiteFactory.build(name="site-1")
+    website = WebsiteFactory.build(name="site-1", url_path="courses/site-1")
     wc1 = WebsiteContentFactory.build(
         filename="thing1",
         dirpath="content/resources",

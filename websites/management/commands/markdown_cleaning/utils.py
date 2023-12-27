@@ -32,7 +32,7 @@ def get_rootrelative_url_from_content(content: WebsiteContent):
 
 class StarterSiteConfigLookup:
     """
-    Utility to get site config.
+    Utility to get site config and config_items for website starters.
     """
 
     def __init__(self) -> None:
@@ -45,9 +45,11 @@ class StarterSiteConfigLookup:
         }
 
     def get_config(self, starter_id):
+        """Return SiteConfig for `starter_id`."""
         return self._configs[starter_id]
 
     def config_items(self, starter_id):
+        """Return a list ConfigItem for `starter_id`."""
         return self._config_items[starter_id]
 
 

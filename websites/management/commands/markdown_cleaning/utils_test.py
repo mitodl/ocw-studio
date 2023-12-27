@@ -21,19 +21,31 @@ def string_uuid():
     return str(uuid4()).replace("-", "")
 
 
+def get_content_lookup(contents):
+    """Get a ContentLookup instance."""
+    with patch_website_contents_all(contents), patch_website_all(
+        {c.website for c in contents}
+    ):
+        return ContentLookup()
+
+
 def test_get_rootrelative_url_from_content():
     c1 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(name="site-name-1"),
+        website=WebsiteFactory.build(
+            name="site-name-1", url_path="courses/site-name-1"
+        ),
         dirpath="content/pages/path/to",
         filename="file1",
     )
     c2 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(name="site-name-2"),
+        website=WebsiteFactory.build(
+            name="site-name-2", url_path="courses/site-name-2"
+        ),
         dirpath="content/pages/assignments",
         filename="_index",
     )
     c3 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(name="site-THREE"),
+        website=WebsiteFactory.build(name="site-THREE", url_path="courses/site-THREE"),
         dirpath="content/resources/long/path/to",
         filename="file3",
     )
@@ -59,12 +71,11 @@ def test_content_finder_is_site_specific():
         text_id="content-uuid-1",
     )
 
-    with patch_website_contents_all([content_w1, content_w2]):
-        content_lookup = ContentLookup()
+    content_lookup = get_content_lookup([content_w1, content_w2])
 
-        url = "/resources/path/to/file1"
-        assert content_lookup.find_within_site(content_w1.website_id, url) == content_w1
-        assert content_lookup.find_within_site(content_w2.website_id, url) == content_w2
+    url = "/resources/path/to/file1"
+    assert content_lookup.find_within_site(content_w1.website_id, url) == content_w1
+    assert content_lookup.find_within_site(content_w2.website_id, url) == content_w2
 
 
 @pytest.mark.parametrize(
@@ -108,10 +119,9 @@ def test_content_finder_specific_url_replacements(
         text_id="content-uuid",
     )
 
-    with patch_website_contents_all([content]):
-        content_lookup = ContentLookup()
+    content_lookup = get_content_lookup([content])
 
-        assert content_lookup.find_within_site("website_uuid", url) == content
+    assert content_lookup.find_within_site("website_uuid", url) == content
 
 
 @pytest.mark.parametrize(
@@ -138,13 +148,13 @@ def test_content_finder_find(root_relative_path, base_site_name, expected_conten
         website=website,
         text_id="uuid-unicorns",
     )
-    with patch_website_contents_all([c1, c2]):
-        content_lookup = ContentLookup()
-        base_site = website if base_site_name == website.name else None
-        assert (
-            content_lookup.find(root_relative_path, base_site).text_id
-            == expected_content_uuid
-        )
+
+    content_lookup = get_content_lookup([c1, c2])
+    base_site = website if base_site_name == website.name else None
+    assert (
+        content_lookup.find(root_relative_path, base_site).text_id
+        == expected_content_uuid
+    )
 
 
 @pytest.mark.parametrize(
@@ -163,16 +173,14 @@ def test_content_finder_returns_metadata_for_site(site_uuid, content_index):
             text_id="content-2",
         ),
     ]
-    with patch_website_contents_all(contents):
-        content_lookup = ContentLookup()
-        assert (
-            content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
-        )
+
+    content_lookup = get_content_lookup(contents)
+    assert content_lookup.find_within_site(site_uuid, "/") == contents[content_index]
 
 
 @patch_website_contents_all([])
 def test_content_finder_raises_keyerror():
-    content_lookup = ContentLookup()
+    content_lookup = get_content_lookup([])
     with pytest.raises(KeyError):
         assert content_lookup.find_within_site("website_uuid", "url/to/thing")
 

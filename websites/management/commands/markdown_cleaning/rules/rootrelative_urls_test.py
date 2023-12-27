@@ -74,8 +74,8 @@ def get_markdown_cleaner(websites, website_contents):
 def test_rootrel_rule_only_uses_resource_links_for_same_site(
     markdown, site_name, expected_markdown
 ):
-    w1 = WebsiteFactory.build(name="site_one")
-    w2 = WebsiteFactory.build(name="site_two")
+    w1 = WebsiteFactory.build(name="site_one", url_path="courses/site_one")
+    w2 = WebsiteFactory.build(name="site_two", url_path="courses/site_two")
     websites = {w.name: w for w in [w1, w2]}
     c1 = WebsiteContentFactory.build(
         website=w1, filename="page1", dirpath="content/pages/stuff", text_id="uuid-1"
@@ -127,11 +127,11 @@ def test_rootrel_rule_only_uses_resource_links_for_same_site(
     ],
 )
 @allow_invalid_uuids()
-def test_rootrel_rule_handles_site_homeages_correctly(
+def test_rootrel_rule_handles_site_homepages_correctly(
     markdown, site_name, expected_markdown
 ):
-    w1 = WebsiteFactory.build(name="site_one")
-    w2 = WebsiteFactory.build(name="site_two")
+    w1 = WebsiteFactory.build(name="site_one", url_path="courses/site_one")
+    w2 = WebsiteFactory.build(name="site_two", url_path="courses/site_two")
     websites = {w.name: w for w in [w1, w2]}
     c1 = WebsiteContentFactory.build(
         website=w1, type="sitemetadata", filename="", dirpath="", text_id="uuid-1"
@@ -175,8 +175,8 @@ def test_rootrel_rule_handles_site_homeages_correctly(
 )
 @allow_invalid_uuids()
 def test_rootrel_rule_uses_images_for_image(markdown, site_name, expected_markdown):
-    w1 = WebsiteFactory.build(name="site_one")
-    w2 = WebsiteFactory.build(name="site_two")
+    w1 = WebsiteFactory.build(name="site_one", url_path="courses/site_one")
+    w2 = WebsiteFactory.build(name="site_two", url_path="courses/site_two")
     websites = {w.name: w for w in [w1, w2]}
     c1 = WebsiteContentFactory.build(
         website=w1,
