@@ -31,21 +31,17 @@ def get_content_lookup(contents):
 
 def test_get_rootrelative_url_from_content():
     c1 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(
-            name="site-name-1", url_path="courses/site-name-1"
-        ),
+        website=WebsiteFactory.build(url_path="courses/site-name-1"),
         dirpath="content/pages/path/to",
         filename="file1",
     )
     c2 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(
-            name="site-name-2", url_path="courses/site-name-2"
-        ),
+        website=WebsiteFactory.build(url_path="courses/site-name-2"),
         dirpath="content/pages/assignments",
         filename="_index",
     )
     c3 = WebsiteContentFactory.build(
-        website=WebsiteFactory.build(name="site-THREE", url_path="courses/site-THREE"),
+        website=WebsiteFactory.build(url_path="courses/site-THREE"),
         dirpath="content/resources/long/path/to",
         filename="file3",
     )
