@@ -36,7 +36,7 @@ class LinkResolveuidRule(PyparsingRule):
         "markdown",
     ]
 
-    __link_markdown_pattern = re.compile(r"\]\(.*resolveuid.*\)")
+    __link_markdown_pattern = re.compile(r"\]\([^\)]*resolveuid[^\)]*\)")
     __link_pattern = re.compile(r".*resolveuid/(.*)")
 
     @dataclass
@@ -74,9 +74,12 @@ class LinkResolveuidRule(PyparsingRule):
 
         # text_id matches a content in the same website.
         if content and content.website == website:
-            return ShortcodeTag.resource_link(str(text_id), text).to_hugo(), Notes(
-                text_id=str(text_id), match_type="text_id"
-            )
+            if result.link.is_image:
+                replacement = ShortcodeTag.resource(text_id).to_hugo()
+            else:
+                replacement = ShortcodeTag.resource_link(text_id, text).to_hugo()
+
+            return replacement, Notes(text_id=str(text_id), match_type="text_id")
 
         # text_id is a legacy site id
         websites = Website.objects.filter(
@@ -92,9 +95,13 @@ class LinkResolveuidRule(PyparsingRule):
         contents = WebsiteContent.objects.filter(title=text, website=website)
         if contents.count() == 1:
             content = contents.first()
-            return ShortcodeTag.resource_link(
-                content.text_id, text, urlparse(result.link.destination).fragment
-            ).to_hugo(), Notes(match_type="content title")
+            if result.link.is_image:
+                replacement = ShortcodeTag.resource(content.text_id).to_hugo()
+            else:
+                replacement = ShortcodeTag.resource_link(
+                    content.text_id, text, urlparse(result.link.destination).fragment
+                ).to_hugo()
+            return replacement, Notes(match_type="content title")
 
         return None, Notes(found_referenced_entity=False)
 
