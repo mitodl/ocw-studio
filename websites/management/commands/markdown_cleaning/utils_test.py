@@ -3,15 +3,21 @@ from uuid import uuid4
 
 import pytest
 
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.management.commands.markdown_cleaning.testing_utils import (
     patch_website_all,
     patch_website_contents_all,
+    patch_website_starter_all,
 )
 from websites.management.commands.markdown_cleaning.utils import (
     CONTENT_FILENAME_MAX_LEN,
     ContentLookup,
     LegacyFileLookup,
+    StarterSiteConfigLookup,
     UrlSiteRelativiser,
     get_rootrelative_url_from_content,
 )
@@ -151,6 +157,21 @@ def test_content_finder_find(root_relative_path, base_site_name, expected_conten
         content_lookup.find(root_relative_path, base_site).text_id
         == expected_content_uuid
     )
+
+
+def test_content_finder_find_by_website_url_path_and_name():
+    """Test finding content when website.url_path and website.name are different."""
+    website = WebsiteFactory.build(name="pets", url_path="courses/animals")
+    c1 = WebsiteContentFactory.build(
+        filename="dogs",
+        dirpath="content/pages",
+        website=website,
+        text_id="uuid-dogs",
+    )
+    content_lookup = get_content_lookup([c1])
+
+    assert content_lookup.find("/courses/animals/pages/dogs").text_id == "uuid-dogs"
+    assert content_lookup.find("/courses/pets/pages/dogs").text_id == "uuid-dogs"
 
 
 @pytest.mark.parametrize(
@@ -298,3 +319,24 @@ def test_legacy_file_lookup_raises_keyerror_for_none():
     legacy_file_lookup = LegacyFileLookup()
     with pytest.raises(KeyError):
         assert legacy_file_lookup.find("some-site-uuid", "captain-nemo.file")
+
+
+def test_find_website_by_url_path():
+    """Test finding a website by url_path."""
+    contents = [
+        WebsiteContentFactory.build(
+            website=WebsiteFactory.build(url_path="courses/id", name="name"),
+        )
+    ]
+
+    content_lookup = get_content_lookup(contents)
+    assert content_lookup.find_website_by_url_path("courses/id").name == "name"
+
+
+def test_site_config_lookup():
+    """Test starter site config lookup returns correct config."""
+    starter = WebsiteStarterFactory.build()
+
+    with patch_website_starter_all([starter]):
+        lookup = StarterSiteConfigLookup()
+        assert lookup.get_config(starter.id).raw_data == starter.config

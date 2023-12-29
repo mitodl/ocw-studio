@@ -146,6 +146,7 @@ class BrokenLinkFixRuleMixin(ABC):
                         matched_contents.append(content)
                 except KeyError:
                     pass
+
         if len(matched_contents) == 1:
             return matched_contents[0]
 
@@ -163,10 +164,15 @@ class BrokenLinkFixRuleMixin(ABC):
         )
 
         url_path = url.path.rstrip("/") or "/"
-        if not url_path.startswith("/"):
+        if not url_path.startswith(("/", "courses/", r"{{< baseurl >}}")):
             # Most likely a relative URL like "pages/syllabus".
             # We'll make it root-relative to help with locating content.
             url_path = f"{get_rootrelative_url_from_content(wc)}/{url_path}"
+        elif url_path.startswith("/") and not url_path.startswith("/courses"):
+            # Probably a URL like "/pages/syllabus".
+            # We'll prepend the website.url_path to help with the content
+            # lookup.
+            url_path = f"/{wc.website.url_path}{url_path}"
 
         try:
             found_wc = self.content_lookup.find(url_path, base_site=wc.website)
