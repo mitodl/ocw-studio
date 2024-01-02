@@ -61,7 +61,7 @@ def github_content_file(mocker):
 
 
 @pytest.fixture(autouse=True)
-def required_concourse_settings(settings):  # noqa: PT004
+def required_concourse_settings(settings):
     """Other required settings for concourse pipelines"""
     settings.CONCOURSE_URL = "http://localconcourse.edu"
     settings.CONCOURSE_USERNAME = "test"
@@ -70,8 +70,10 @@ def required_concourse_settings(settings):  # noqa: PT004
     settings.AWS_ARTIFACTS_BUCKET_NAME = "artifacts_bucket"
     settings.AWS_PREVIEW_BUCKET_NAME = "preview_bucket"
     settings.AWS_PUBLISH_BUCKET_NAME = "publish_bucket"
+    settings.AWS_TEST_BUCKET_NAME = "test_bucket"
     settings.AWS_OFFLINE_PREVIEW_BUCKET_NAME = "offline_preview_bucket"
     settings.AWS_OFFLINE_PUBLISH_BUCKET_NAME = "offline_publish_bucket"
+    settings.AWS_OFFLINE_TEST_BUCKET_NAME = "offline_test_bucket"
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
     settings.GIT_BRANCH_PREVIEW = "preview"
     settings.GIT_BRANCH_RELEASE = "release"
@@ -82,6 +84,9 @@ def required_concourse_settings(settings):  # noqa: PT004
     settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret  # noqa: S105
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
+    settings.OCW_WWW_TEST_SLUG = "ocw-ci-test-www"
+    settings.OCW_COURSE_TEST_SLUG = "ocw-ci-test-course"
+    return settings
 
 
 @pytest.fixture(scope="module")

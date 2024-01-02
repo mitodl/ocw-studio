@@ -63,6 +63,18 @@ def get_theme_assets_pipeline(
 
 
 @is_publish_pipeline_enabled
+def get_test_pipeline(
+    themes_branch: Optional[str] = None,
+    projects_branch: Optional[str] = None,
+    api: Optional[object] = None,
+) -> BasePipeline:
+    """Get the configured end to end testing pipeline"""
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.TestPipeline"
+    )(themes_branch=themes_branch, projects_branch=projects_branch, api=api)
+
+
+@is_publish_pipeline_enabled
 def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     version: str,
     *,

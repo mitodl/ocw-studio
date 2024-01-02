@@ -1,6 +1,7 @@
 """Websites utils"""
 from typing import Any, Optional
 
+from django.conf import settings
 from django.db.models import Q
 
 from websites import constants
@@ -88,3 +89,7 @@ def resource_reference_field_filter(
         q = Q(**{lookup: [{"identifier": resource_id}]})
 
     return q
+
+
+def is_test_site(site_name: str) -> bool:
+    return site_name in [settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG]

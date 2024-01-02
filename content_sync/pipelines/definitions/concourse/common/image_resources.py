@@ -22,3 +22,10 @@ BASH_REGISTRY_IMAGE = AnonymousResource(
 CURL_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE, source=RegistryImage(repository="curlimages/curl")
 )
+
+PLAYWRIGHT_REGISTRY_IMAGE = AnonymousResource(
+    type=REGISTRY_IMAGE,
+    source=RegistryImage(
+        repository="mcr.microsoft.com/playwright", tag="v1.40.0-jammy"
+    ),
+)

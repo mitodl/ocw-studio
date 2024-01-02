@@ -28,8 +28,12 @@ from content_sync.pipelines.base import (
     BaseMassBuildSitesPipeline,
     BasePipelineApi,
     BaseSitePipeline,
+    BaseTestPipeline,
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
+)
+from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import (
+    EndToEndTestPipelineDefinition,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
@@ -48,6 +52,7 @@ from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
 from content_sync.utils import (
     check_mandatory_settings,
     get_common_pipeline_vars,
+    get_projects_branch,
     get_site_content_branch,
     get_theme_branch,
     strip_dev_lines,
@@ -380,6 +385,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
             artifacts_bucket=template_vars["artifacts_bucket_name"],
             preview_bucket=template_vars["preview_bucket_name"],
             publish_bucket=template_vars["publish_bucket_name"],
+            test_bucket=template_vars["test_bucket_name"],
             ocw_hugo_themes_branch=self.BRANCH,
         )
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
@@ -588,4 +594,42 @@ class UnpublishedSiteRemovalPipeline(
 
         self.upsert_config(
             UnpublishedSiteRemovalPipelineDefinition().json(), self.PIPELINE_NAME
+        )
+
+
+class TestPipeline(BaseTestPipeline, GeneralPipeline):
+    """Concourse pipeline to run end to end tests from ocw-hugo-themes"""
+
+    PIPELINE_NAME = BaseTestPipeline.PIPELINE_NAME
+
+    def __init__(
+        self,
+        themes_branch: str,
+        projects_branch: str,
+        api: Optional[PipelineApi] = None,
+    ):
+        """Initialize the pipeline instance"""
+        self.MANDATORY_SETTINGS = [
+            *MANDATORY_CONCOURSE_SETTINGS,
+            "AWS_TEST_BUCKET_NAME",
+            "AWS_OFFLINE_TEST_BUCKET_NAME",
+            "OCW_WWW_TEST_SLUG",
+            "OCW_COURSE_TEST_SLUG",
+            "STATIC_API_BASE_URL_TEST",
+        ]
+        super().__init__(api=api)
+        self.VERSION = VERSION_LIVE
+        self.THEMES_BRANCH = themes_branch or get_theme_branch()
+        self.PROJECTS_BRANCH = projects_branch or get_projects_branch()
+
+    def upsert_pipeline(self):  # pylint:disable=too-many-locals
+        """
+        Create or update the concourse pipeline
+        """
+
+        self.upsert_config(
+            EndToEndTestPipelineDefinition(
+                themes_branch=self.THEMES_BRANCH, projects_branch=self.PROJECTS_BRANCH
+            ).json(),
+            self.PIPELINE_NAME,
         )

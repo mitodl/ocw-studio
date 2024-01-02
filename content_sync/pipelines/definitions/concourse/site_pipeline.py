@@ -64,6 +64,7 @@ from content_sync.utils import (
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.models import Website
+from websites.utils import is_test_site
 
 BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site").root
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build").root
@@ -86,6 +87,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "noindex": f"(({namespace}noindex))",
         "pipeline_name": f"(({namespace}pipeline_name))",
         "instance_vars": f"(({namespace}instance_vars))",
+        "sitemap_domain": f"(({namespace}sitemap_domain))",
         "static_api_url": f"(({namespace}static_api_url))",
         "storage_bucket": f"(({namespace}storage_bucket))",
         "artifacts_bucket": f"(({namespace}artifacts_bucket))",
@@ -96,6 +98,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "ocw_hugo_themes_branch": f"(({namespace}ocw_hugo_themes_branch))",
         "ocw_hugo_projects_url": f"(({namespace}ocw_hugo_projects_url))",
         "ocw_hugo_projects_branch": f"(({namespace}ocw_hugo_projects_branch))",
+        "ocw_studio_url": f"(({namespace}ocw_studio_url))",
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
@@ -217,6 +220,7 @@ class SitePipelineDefinitionConfig:
             "noindex": self.noindex,
             "pipeline_name": pipeline_name,
             "instance_vars": instance_vars,
+            "sitemap_domain": settings.SITEMAP_DOMAIN,
             "static_api_url": static_api_url,
             "storage_bucket": storage_bucket,
             "artifacts_bucket": artifacts_bucket,
@@ -227,6 +231,7 @@ class SitePipelineDefinitionConfig:
             "ocw_hugo_themes_branch": ocw_hugo_themes_branch,
             "ocw_hugo_projects_url": self.ocw_hugo_projects_url,
             "ocw_hugo_projects_branch": ocw_hugo_projects_branch,
+            "ocw_studio_url": get_ocw_studio_api_url(),
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,
@@ -432,15 +437,19 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
         fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
+        filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
+        skip_cache_clear(bool): (Optional) A boolean override for skipping the CDN cache clear step
     """  # noqa: E501
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_vars: dict,
         fastly_var: str,
         *,
         destructive_sync: bool = True,
         filter_videos: bool = False,
+        skip_cache_clear: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
@@ -454,11 +463,11 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
+                    "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+                    "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
                 },
@@ -575,7 +584,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 upload_online_build_step,
             ]
         )
-        if not is_dev():
+        if not is_dev() and not skip_cache_clear:
             self.append(clear_cdn_cache_online_step)
 
 
@@ -634,11 +643,11 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                    "OCW_STUDIO_BASE_URL": get_ocw_studio_api_url(),
+                    "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                    "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+                    "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
                     "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
@@ -835,6 +844,7 @@ class SitePipelineDefinition(Pipeline):
                     "noindex": config.values["noindex"],
                     "pipeline_name": config.values["pipeline_name"],
                     "instance_vars": config.values["instance_vars"],
+                    "sitemap_domain": config.values["sitemap_domain"],
                     "static_api_url": config.values["static_api_url"],
                     "storage_bucket": config.values["storage_bucket"],
                     "artifacts_bucket": config.values["artifacts_bucket"],
@@ -847,6 +857,7 @@ class SitePipelineDefinition(Pipeline):
                     "ocw_hugo_projects_branch": config.values[
                         "ocw_hugo_projects_branch"
                     ],
+                    "ocw_studio_url": config.values["ocw_studio_url"],
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
                     "prefix": config.values["prefix"],
@@ -868,8 +879,11 @@ class SitePipelineDefinition(Pipeline):
         )
         steps = [ocw_studio_webhook_started_step]
         steps.extend(SitePipelineBaseTasks(config=config))
+        skip_cache_clear = is_test_site(config.site.name)
         online_tasks = SitePipelineOnlineTasks(
-            pipeline_vars=config.vars, fastly_var=config.pipeline_name
+            pipeline_vars=config.vars,
+            fastly_var=config.pipeline_name,
+            skip_cache_clear=skip_cache_clear,
         )
         for task in online_tasks:
             if hasattr(task, "task") and task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:

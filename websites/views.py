@@ -29,7 +29,7 @@ from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
-from main.utils import uuid_string, valid_key
+from main.utils import is_dev, uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
@@ -77,6 +77,10 @@ from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename, permissions_group_name_for_role
 
 log = logging.getLogger(__name__)
+
+test_site_filter = Q(
+    name__in=[settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG]
+)
 
 
 class WebsiteViewSet(
@@ -154,6 +158,9 @@ class WebsiteViewSet(
                 queryset = queryset.filter(published_filter)
             else:
                 queryset = queryset.exclude(published_filter)
+
+        if not is_dev():
+            queryset = queryset.exclude(test_site_filter)
 
         return queryset.select_related("starter").order_by(ordering)
 
@@ -339,6 +346,8 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         if starter:
             sites = sites.filter(starter=WebsiteStarter.objects.get(slug=starter))
         sites = sites.prefetch_related("starter").order_by("name")
+        if not is_dev():
+            sites = sites.exclude(test_site_filter)
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
@@ -360,6 +369,8 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
             .prefetch_related("starter")
             .order_by("name")
         )
+        if not is_dev():
+            sites = sites.exclude(test_site_filter)
         serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 

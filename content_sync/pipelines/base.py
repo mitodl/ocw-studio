@@ -88,3 +88,9 @@ class BaseUnpublishedSiteRemovalPipeline(BasePipeline):
     """Base class for removing unpublished sites"""
 
     PIPELINE_NAME = "remove-unpublished-sites"
+
+
+class BaseTestPipeline(BasePipeline):
+    """Base class for end to end testing"""
+
+    PIPELINE_NAME = "e2e-test-pipeline"

@@ -4,32 +4,48 @@ OCW Studio manages deployments for OCW courses.
 
 **SECTIONS**
 
-1. [Initial Setup](#initial-setup)
-1. [Testing and Formatting](#testing-and-formatting)
-1. [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
-1. [Enabling GitHub integration](#enabling-github-integration)
-1. [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
-1. [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
-1. [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
-1. [Video Workflow](#video-workflow)
-1. [Enabling YouTube integration](#enabling-youtube-integration)
-1. [Enabling Google Drive integration](#enabling-google-drive-integration)
-1. [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
-1. [Enabling 3Play integration](#enabling-3play-integration)
+- [ocw_studio](#ocw_studio)
+- [Initial Setup](#initial-setup)
+  - [Testing Touchstone login with SAML via SSOCircle](#testing-touchstone-login-with-saml-via-ssocircle)
+  - [Commits](#commits)
+- [Testing and Formatting](#testing-and-formatting)
+  - [JS/CSS Tests and Linting](#jscss-tests-and-linting)
+    - [JS tests](#js-tests)
+    - [JS formatting, linting, and typechecking](#js-formatting-linting-and-typechecking)
+- [Defining local starter projects and site configs](#defining-local-starter-projects-and-site-configs)
+  - [The `localdev` folder](#the-localdev-folder)
+  - [Importing starter projects from Github](#importing-starter-projects-from-github)
+  - [Automatically updating starters from Github](#automatically-updating-starters-from-github)
+- [Enabling GitHub integration](#enabling-github-integration)
+- [Local S3 emulation with Minio](#local-s3-emulation-with-minio)
+- [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
+  - [Running a Local Concourse Docker Container](#running-a-local-concourse-docker-container)
+  - [End to end testing of site pipelines](#end-to-end-testing-of-site-pipelines)
+- [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
+- [Video Workflow](#video-workflow)
+- [Enabling YouTube integration](#enabling-youtube-integration)
+- [Enabling Google Drive integration](#enabling-google-drive-integration)
+- [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
+- [Enabling 3Play integration](#enabling-3play-integration)
 
 # Initial Setup
 
-ocw_studio follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
+`ocw_studio` follows the same [initial setup steps outlined in the common ODL web app guide](https://mitodl.github.io/handbook/how-to/common-web-app-guide.html).
 Run through those steps **including the addition of `/etc/hosts` aliases and the optional step for running the
 `createsuperuser` command**.
 
-In addition, you should create a starter with `slug=ocw-www` through the admin interface with config data taken from the `ocw-www` starter on RC or production. Then, you should go to the `/sites` UI and create a new site with `name=ocw-www` using the `ocw-www` starter.
+Websites are created using a template called a "starter." You can import a standard set of starters by running:
 
-Finally, create/update additional starters with the following command:
+```sh
+docker-compose exec web ./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects
+```
 
-```
-docker-compose run web python manage.py override_site_config
-```
+The `ocw-www` starter is meant for creating a home page, aka the "root website." This is called `ocw-www` by default, but the name of the site can be set on `ROOT_WEBSITE_NAME` in your environment if you wish to change it. The other starters are different types of websites that can be built within `ocw-studio`. After you have imported some starters, you are ready to start creating websites. To publish those websites, follow the guides in the table of contents above for setting up:
+
+- A Github organization
+- Google Drive integration for resources
+- AWS S3 credentials (Minio S3 emulation should work out of the box for local development)
+- Youtube / AWS MediaConvert / 3Play if you need to work with videos
 
 ### Testing Touchstone login with SAML via SSOCircle
 
@@ -167,10 +183,25 @@ You can also try `npm run fmt:check` to see if any files need to be reformatted.
 
 # Defining local starter projects and site configs
 
-This project includes some tools that simplify development with starter projects and site configs. These tools allow you to do the following:
+The `ocw-studio` software allows you to create websites based on a configuration called a "starter." These configuration files are named `ocw-studio.yaml` by default but that name can be overridden by setting `OCW_STUDIO_SITE_CONFIG_FILE` in your environment. These starters can be imported into `ocw-studio` in a couple of different ways.
 
-- Define entire starter projects within this repo and load them into your database
-- Override the site config for starters with a particular `slug` value
+### The `localdev` folder
+
+More details on this are in [this readme file](localdev/README.md)
+
+### Importing starter projects from Github
+
+MIT OCW has a set of starter configs that are used in building the official OCW site. They are stored in a repo called [`ocw-hugo-projects`](https://github.com/mitodl/ocw-hugo-projects). This repo can be used as a reference for setting up your own repo. When you make your own repo, make sure that your config files in the repo are in their own folder and the filenames match what is set to `OCW_STUDIO_SITE_CONFIG_FILE`, which is `ocw-studio.yaml` by default. The folder name is used to determine the `slug` property of the resulting starter object, and the config file is read from that folder and applied to the `config` property. When your repo is ready, make sure it is publically accessible and then you can import the starter configs from it by running:
+
+```sh
+docker-compose exec web ./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects
+```
+
+If you wish to use your own Github repo containing starters use that URL instead. If any starters already exist with the same slug as one being imported, their configuration will be updated.
+
+### Automatically updating starters from Github
+
+If you are hosting `ocw-studio` on the internet and wish to have your starter updated automatically when you make changes to the starter configurations in your Github repo, this is possible by configuring a webhook. In order to accomplish this, you will need to first set `GITHUB_WEBHOOK_BRANCH` in your environment to the branch that you wish to watch for changes on (i.e. `release`). Then, you will need to configure a webhook in the settings of your Github repo targeting `/api/starters/site_configs` on your instance of `ocw-studio`. After this is set up, on pushes to the configured branch, a webhook will be fired to your `ocw-studio` instance which will trigger automatic updating of your starter configurations.
 
 # Enabling GitHub integration
 
@@ -227,6 +258,10 @@ AWS_SECRET_ACCESS_KEY=minio_password
 AWS_STORAGE_BUCKET_NAME=ol-ocw-studio-app
 AWS_PREVIEW_BUCKET_NAME=ocw-content-draft
 AWS_PUBLISH_BUCKET_NAME=ocw-content-live
+AWS_TEST_BUCKET_NAME=ocw-content-test
+AWS_OFFLINE_PREVIEW_BUCKET_NAME=ocw-content-offline-draft
+AWS_OFFLINE_PUBLISH_BUCKET_NAME=ocw-content-offline-live
+AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
 AWS_ARTIFACTS_BUCKET_NAME=ol-eng-artifacts
 OCW_HUGO_THEMES_BRANCH=main
 OCW_HUGO_PROJECTS_BRANCH=main
@@ -316,6 +351,60 @@ need to run `docker-compose exec web ./manage.py backpopulate_pipelines` and use
 specify the sites to push up pipelines for. The mass build sites pipeline can be pushed up with `docker-compose exec web ./manage.py upsert_mass_build_pipeline`.
 Beware that when testing the mass build pipeline locally, you will likely need to limit the amount of sites in your local instance
 as using only one dockerized worker publishing the entire OCW site will take a very long time.
+
+### End to end testing of site pipelines
+
+There is a pipeline definition for end to end testing of sites using the `ocw-www` and `ocw-course` starters. It can be run locally in Concourse using the following steps to set it up.
+
+Firstly, there are some environment variables you will want to set:
+
+```
+OCW_WWW_TEST_SLUG=ocw-ci-test-www
+OCW_COURSE_TEST_SLUG=ocw-ci-test-course
+AWS_TEST_BUCKET_NAME=ocw-content-test
+AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
+```
+
+There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the ID's of the `ocw-www` and `ocw-course` starters are referenced. If these ID's are not correct on your system, you can get the ID's of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
+
+```
+docker-compose exec web ./manage.py loaddata test_site_fixtures/test_websites.json
+docker-compose exec web ./manage.py loaddata test_site_fixtures/test_website_content.json
+```
+
+Once the test sites are in your database, you will need to get them up to your Github org. The easiest way to do this is to run the following commands:
+
+```
+docker-compose exec web ./manage.py reset_sync_states --filter "ocw-ci-test-www, ocw-ci-test-course" --skip_sync
+docker-compose exec web ./manage.py sync_website_to_backend --filter "ocw-ci-test-www, ocw-ci-test-course"
+```
+
+At this point, you should be able to see the test sites in your Github org and the content should be on the `main` branch. In order to get the content up into the `release` branch, you will need to click the publish button on both sites:
+
+http://localhost:8043/sites/ocw-ci-test-www
+http://localhost:8043/sites/ocw-ci-test-course
+
+Publishing of the sites will fail because of missing fixtures, but that doesn't matter. All you need to run the end to end testing pipelines is for the content to be in the `release` branch in Github. The last prerequisite you need to set up is to load the static assets into Minio:
+
+- Download the contents of this Google Drive folder: https://drive.google.com/drive/folders/14Hlid31Qy7Yy5V4OgHUwNleYUFuJ5BH2?usp=sharing
+- Browse to the Minio web UI at http://localhost:9001 and log in with your credentials
+- Browse to the `ol-ocw-studio-app` bucket, go to the `courses` folder and create a folder here called `ocw-ci-test-course`
+- In this folder, upload the files you downloaded from Google Drive
+
+You are now ready to push up the test pipeline to Concourse, which can be done by running:
+
+```
+docker-compose exec web ./manage.py upsert_e2e_test_pipeline --themes-branch main --projects-branch main
+```
+
+You can alter the themes branch and projects branches to suit your needs if you are testing a different branch of `ocw-hugo-themes` or `ocw-hugo-projects`. Keep in mind that for any branch of `ocw-hugo-themes` you use, you will need to have built theme assets in Minio. You'll need to run the `upsert_theme_assets` pipeline for that branch and then run it.
+
+You should now have a pipeline in Concourse called `e2e-test-pipeline`. Run this pipeline and it will:
+
+- Pull down all the necessary git repos
+- Build the test sites
+- Deploy them to Minio
+- Run Playwright tests against the output
 
 # Running OCW Studio on Apple Silicon
 

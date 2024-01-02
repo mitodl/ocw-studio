@@ -19,11 +19,13 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
     artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
     preview_bucket = settings.AWS_PREVIEW_BUCKET_NAME
     publish_bucket = settings.AWS_PUBLISH_BUCKET_NAME
+    test_bucket = settings.AWS_TEST_BUCKET_NAME
     ocw_hugo_themes_branch = "main"
     pipeline_definition = ThemeAssetsPipelineDefinition(
         artifacts_bucket=artifacts_bucket,
         preview_bucket=preview_bucket,
         publish_bucket=publish_bucket,
+        test_bucket=test_bucket,
         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
     )
     rendered_definition = json.loads(pipeline_definition.json(indent=2))
