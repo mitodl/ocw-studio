@@ -3,7 +3,7 @@ from inspect import isclass
 from pathlib import Path
 from pkgutil import iter_modules
 
-from ..cleaner import MarkdownCleanupRule  # noqa: TID252
+from websites.management.commands.markdown_cleaning.cleaner import MarkdownCleanupRule
 
 # Import all rule classes when `rules` module is loaded.
 #
