@@ -207,6 +207,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
             resource_base_url=static_api_base_url,
             ocw_hugo_themes_branch=themes_branch,
             ocw_hugo_projects_branch=projects_branch,
+            sitemap_domain=site_pipeline_vars["sitemap_domain"],
             namespace=namespace,
         )
         www_config.is_root_website = True
@@ -228,6 +229,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
             resource_base_url=static_api_base_url,
             ocw_hugo_themes_branch=themes_branch,
             ocw_hugo_projects_branch=projects_branch,
+            sitemap_domain=site_pipeline_vars["sitemap_domain"],
             namespace=namespace,
         )
         course_config.values["ocw_studio_url"] = ""
