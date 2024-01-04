@@ -90,7 +90,7 @@ class BrokenLinkFixRuleMixin(ABC):
         return self._find_content_and_replacement(toks, website_content, url)
 
     def should_parse(self, text: str) -> bool:
-        """Return true if text has a markdown link."""
+        """Return true if text might have a markdown link."""
         return "](" in text
 
     @abstractmethod
