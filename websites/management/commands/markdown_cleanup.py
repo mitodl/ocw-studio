@@ -44,6 +44,10 @@ class Command(WebsiteFilterCommand):
         rules.LinkWrappedImagesRule,
         rules.ResourceLinkNextPrevRule,
         rules.SubSupFixes,
+        rules.LinkResolveuidRule,
+        rules.BrokenMarkdownLinkFixRule,
+        rules.BrokenMetadataLinkFixRule,
+        rules.CourseAbsoluteLinkRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -124,7 +128,7 @@ class Command(WebsiteFilterCommand):
             out=options["out"],
             csv_only_changes=options["csv_only_changes"],
             limit=options["limit"],
-            website_content=website_contents,
+            website_contents=website_contents,
         )
 
         if (

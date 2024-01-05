@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 from uuid import UUID
 
 from main.utils import is_valid_uuid
-from websites.models import Website, WebsiteContent
+from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.site_config_api import SiteConfig
 
 filepath_migration = importlib.import_module(
     "websites.migrations.0023_website_content_filepath"
@@ -25,8 +26,31 @@ def remove_prefix(string: str, prefix: str):
 def get_rootrelative_url_from_content(content: WebsiteContent):
     dirpath = remove_prefix(content.dirpath, "content/")
     filename = "" if content.filename == "_index" else content.filename
-    pieces = ["/courses", content.website.name, dirpath, filename]
-    return "/".join(p for p in pieces if p)
+    pieces = [content.website.url_path, dirpath, filename]
+    return "/" + "/".join(p for p in pieces if p)
+
+
+class StarterSiteConfigLookup:
+    """
+    Utility to get site config and config_items for website starters.
+    """
+
+    def __init__(self) -> None:
+        starters = WebsiteStarter.objects.all()
+
+        self._configs = {starter.id: SiteConfig(starter.config) for starter in starters}
+        self._config_items = {
+            starter_id: list(config.iter_items())
+            for starter_id, config in self._configs.items()
+        }
+
+    def get_config(self, starter_id):
+        """Return SiteConfig for `starter_id`."""
+        return self._configs[starter_id]
+
+    def config_items(self, starter_id):
+        """Return a list ConfigItem for `starter_id`."""
+        return self._config_items[starter_id]
 
 
 class ContentLookup:
@@ -36,6 +60,8 @@ class ContentLookup:
 
     def __init__(self):
         website_contents = WebsiteContent.all_objects.all().prefetch_related("website")
+        websites = Website.objects.all()
+
         self.website_contents = {
             (wc.website_id, wc.dirpath, wc.filename): wc for wc in website_contents
         }
@@ -43,6 +69,7 @@ class ContentLookup:
             wc.website_id: wc for wc in website_contents if wc.type == "sitemetadata"
         }
         self.websites = {wc.website.name: wc.website_id for wc in website_contents}
+        self.websites_by_url_path = {website.url_path: website for website in websites}
 
         self.by_uuid = {
             UUID(wc.text_id): wc for wc in website_contents if is_valid_uuid(wc.text_id)
@@ -65,6 +92,10 @@ class ContentLookup:
         """Retrieve a content object by its UUID"""
         return self.by_uuid[uuid]
 
+    def find_website_by_url_path(self, url_path: str):
+        """Retrieve a website object by its url_path"""
+        return self.websites_by_url_path[url_path]
+
     def find(
         self, root_relative_path: str, base_site: Optional[Website] = None
     ) -> WebsiteContent:
@@ -81,7 +112,15 @@ class ContentLookup:
         site_name = standardized_path.split("/")[1]
 
         relative_path = remove_prefix(standardized_path, f"courses/{site_name}")
-        site_id = self.websites[site_name]
+
+        try:
+            site_id = self.websites_by_url_path[f"courses/{site_name}"].uuid
+        except KeyError:
+            # This point will probably never be reached, but we'll keep it here
+            # to support any links that might mistakenly use `name` instead
+            # of `url_path`.
+            site_id = self.websites[site_name]
+
         return self.find_within_site(site_id, relative_path)
 
     def find_within_site(self, website_id, site_relative_path: str) -> WebsiteContent:

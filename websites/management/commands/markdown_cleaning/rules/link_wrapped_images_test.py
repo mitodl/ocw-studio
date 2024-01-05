@@ -9,13 +9,16 @@ from websites.management.commands.markdown_cleaning.rules.link_wrapped_images im
 )
 from websites.management.commands.markdown_cleaning.testing_utils import (
     allow_invalid_uuids,
+    patch_website_all,
     patch_website_contents_all,
 )
 
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""  # noqa: D401
-    with patch_website_contents_all(website_contents):
+    with patch_website_contents_all(website_contents), patch_website_all(
+        {c.website for c in website_contents}
+    ):
         rule = LinkWrappedImagesRule()
         return WebsiteContentMarkdownCleaner(rule)
 
@@ -66,8 +69,8 @@ def test_link_wrapped_image_replacement(old_markdown, new_markdown, same_site):
     """
     Test link-wrapped images update to resource shortcodes correctly.
     """
-    w1 = WebsiteFactory.build(name="pets")
-    w2 = WebsiteFactory.build(name="other-site")
+    w1 = WebsiteFactory.build(name="pets", url_path="courses/pets")
+    w2 = WebsiteFactory.build(name="other-site", url_path="courses/other-site")
     linked_content = WebsiteContentFactory.build(
         text_id="unicorn_uuid",
         filename="unicorn",
