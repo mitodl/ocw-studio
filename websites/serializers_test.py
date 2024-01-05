@@ -1,4 +1,5 @@
 """Tests for websites.serializers"""
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -776,8 +777,11 @@ def test_website_export_serializer(ocw_site):
 def test_website_content_export_serializer(ocw_site):
     """ExportWebsiteSerializer should strip out user information"""
     user = UserFactory.create()
-    content = WebsiteContentFactory.create(owner=user, updated_by=user)
+    content = WebsiteContentFactory.create(
+        owner=user, updated_by=user, file="http://example.com/file.txt"
+    )
     serializer = ExportWebsiteContentSerializer(content)
     data = serializer.data
     assert data["fields"]["owner"] is None
     assert data["fields"]["updated_by"] is None
+    assert data["fields"]["file"] == str(Path(content.website.url_path) / "file.txt")

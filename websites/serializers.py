@@ -2,7 +2,8 @@
 import logging
 import re
 from collections import defaultdict
-from urllib.parse import urljoin
+from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -697,4 +698,7 @@ class ExportWebsiteContentSerializer(serializers.ModelSerializer):
         fields = super().to_representation(instance)
         fields["owner"] = None
         fields["updated_by"] = None
+        if fields["file"]:
+            filename = Path(urlparse(fields["file"]).path).name
+            fields["file"] = str(Path(instance.website.url_path) / filename)
         return {"model": "websites.websitecontent", "pk": instance.pk, "fields": fields}
