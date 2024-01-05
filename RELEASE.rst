@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.110.0
+---------------
+
+- allow sitemap_domain to be overridden in the site pipeline config, and override it in the end to end testing pipeline (#2061)
+- fix file path formatting issue in test course data export (#2058)
+- chore(deps): update node.js to v20 (#2055)
+- feat(management): add broken link fixing cleanup rules (#2050)
+- end to end testing pipeline (#2018)
+
 Version 0.109.0 (Released December 20, 2023)
 ---------------
 
