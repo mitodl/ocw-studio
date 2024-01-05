@@ -142,6 +142,7 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_themes_branch: str,
         ocw_hugo_projects_branch: str,
         hugo_override_args: Optional[str] = "",
+        sitemap_domain: Optional[str] = settings.SITEMAP_DOMAIN,
         prefix: str = "",
         namespace: str = "site:",
     ):
@@ -220,7 +221,7 @@ class SitePipelineDefinitionConfig:
             "noindex": self.noindex,
             "pipeline_name": pipeline_name,
             "instance_vars": instance_vars,
-            "sitemap_domain": settings.SITEMAP_DOMAIN,
+            "sitemap_domain": sitemap_domain,
             "static_api_url": static_api_url,
             "storage_bucket": storage_bucket,
             "artifacts_bucket": artifacts_bucket,

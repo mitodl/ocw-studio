@@ -81,6 +81,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     static_api_base_url = common_pipeline_vars["static_api_base_url_test"]
     test_bucket = common_pipeline_vars["test_bucket_name"]
     offline_test_bucket = common_pipeline_vars["offline_test_bucket_name"]
+    sitemap_domain = urlparse(static_api_base_url).netloc
 
     pipeline_definition = EndToEndTestPipelineDefinition(
         themes_branch=ocw_hugo_themes_branch,
@@ -158,6 +159,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert www_values["resource_base_url"] == static_api_base_url
     assert www_values["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert www_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
+    assert www_values["sitemap_domain"] == sitemap_domain
     course_values = next(
         values
         for values in across_values
@@ -170,6 +172,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert course_values["resource_base_url"] == static_api_base_url
     assert course_values["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert course_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
+    assert course_values["sitemap_domain"] == sitemap_domain
     across_step_build_steps = across_steps[0]["do"]
     cdn_cache_clear_steps = [
         step
