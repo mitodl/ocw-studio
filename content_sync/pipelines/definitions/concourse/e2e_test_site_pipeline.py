@@ -109,7 +109,6 @@ class TestPipelineBaseTasks(list[StepModifierMixin]):
                         "-exc",
                         "\n".join(
                             [
-                                "|-",
                                 f"aws s3{get_cli_endpoint_url()} sync {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/ s3://{common_pipeline_vars['test_bucket_name']}/",  # noqa: E501
                                 f"aws s3{get_cli_endpoint_url()} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/api/websites.json s3://{common_pipeline_vars['test_bucket_name']}/api/websites/index.html",  # noqa: E501
                                 f"aws s3{get_cli_endpoint_url()} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/api/publish.json s3://{common_pipeline_vars['test_bucket_name']}/api/publish/index.html",  # noqa: E501
