@@ -124,9 +124,20 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     ]
     assert len(upload_fixtures_task_steps) == 1
     upload_fixtures_task_step = upload_fixtures_task_steps[0]
+    upload_fixtures_commands = upload_fixtures_task_step["config"]["run"]["args"][
+        1
+    ].split("\n")
     assert (
         f"aws s3{get_cli_endpoint_url()} sync {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/ s3://{common_pipeline_vars['test_bucket_name']}/"
-        in upload_fixtures_task_step["config"]["run"]["args"]
+        in upload_fixtures_commands
+    )
+    assert (
+        f"aws s3{get_cli_endpoint_url()} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/api/websites.json s3://{common_pipeline_vars['test_bucket_name']}/api/websites/index.html"
+        in upload_fixtures_commands
+    )
+    assert (
+        f"aws s3{get_cli_endpoint_url()} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/test-sites/__fixtures__/api/publish.json s3://{common_pipeline_vars['test_bucket_name']}/api/publish/index.html"
+        in upload_fixtures_commands
     )
     if is_dev:
         assert (
