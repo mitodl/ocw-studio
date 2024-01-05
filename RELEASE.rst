@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.110.0
+---------------
+
+- feat(management): add broken link fixing cleanup rules (#2050)
+- end to end testing pipeline (#2018)
+
 Version 0.109.0 (Released December 20, 2023)
 ---------------
 
