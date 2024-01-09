@@ -1060,13 +1060,13 @@ files = [
 
 [[package]]
 name = "django-webpack-loader"
-version = "1.4.1"
+version = "1.8.1"
 description = "Transparently use webpack with django"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-webpack-loader-1.4.1.tar.gz", hash = "sha256:7e34085b7fc4d352e482ff9cf7d09ae4524e730675e25432ab1d25a2dd94e583"},
-    {file = "django_webpack_loader-1.4.1-py2.py3-none-any.whl", hash = "sha256:290ce20a1347e14ba1cadfb5df90f2d1218eb81a1ecdcfb7ccc8ef9adab4b7d3"},
+    {file = "django-webpack-loader-1.8.1.tar.gz", hash = "sha256:073beda18e2929fa5cd83bafbcaaf975e5945e84a17bfa81927cb6c9f5a17b94"},
+    {file = "django_webpack_loader-1.8.1-py2.py3-none-any.whl", hash = "sha256:2d50a902256cf94bdd87eac3e7687989c9aa757a63af21db68773115216cedee"},
 ]
 
 [[package]]
@@ -3478,4 +3478,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "21a4bb12174b3e1e8f93ab77abe46a19279cc35c013557998567a09650b062b5"
+content-hash = "7ddfd642e65015d5e5f2e2721ac9e676b65fb6934059921bb4c36a254628684e"
