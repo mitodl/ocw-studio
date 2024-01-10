@@ -363,6 +363,7 @@ OCW_WWW_TEST_SLUG=ocw-ci-test-www
 OCW_COURSE_TEST_SLUG=ocw-ci-test-course
 AWS_TEST_BUCKET_NAME=ocw-content-test
 AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
+STATIC_API_BASE_URL_TEST=http://10.1.0.102:8046
 ```
 
 There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the ID's of the `ocw-www` and `ocw-course` starters are referenced. If these ID's are not correct on your system, you can get the ID's of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
