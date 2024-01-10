@@ -303,7 +303,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                 }
             )
         tasks.append(fetch_built_content_step)
-        playwright_commands = "yarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test"  # noqa: E501
+        playwright_commands = "corepack enable\nyarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test"  # noqa: E501
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
