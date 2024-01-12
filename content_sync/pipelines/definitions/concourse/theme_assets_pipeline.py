@@ -105,6 +105,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                             "-exc",
                             f"""
                             cd {OCW_HUGO_THEMES_GIT_IDENTIFIER}
+                            corepack enable
                             yarn install --immutable
                             npm run build:webpack
                             npm run build:githash
