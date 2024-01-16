@@ -40,7 +40,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
-    OpenDiscussionsResource,
+    OpenCatalogResource,
     SlackAlertResource,
     WebpackManifestResource,
 )
@@ -174,7 +174,8 @@ class MassBuildSitesResources(list[Resource]):
         )
         self.append(SlackAlertResource())
         if not is_dev():
-            self.append(OpenDiscussionsResource())
+            for url in settings.OPEN_CATALOG_URLS:
+                self.append(OpenCatalogResource(url))
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):

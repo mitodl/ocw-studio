@@ -12,9 +12,9 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
-    OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
+    get_ocw_catalog_identifier,
 )
 from content_sync.utils import get_ocw_studio_api_url
 from main.utils import is_dev
@@ -39,19 +39,19 @@ class SlackAlertResource(Resource):
         )
 
 
-class OpenDiscussionsResource(Resource):
+class OpenCatalogResource(Resource):
     """
-    A Resource that uses the http-resource ResourceType to trigger API calls to open-discussions
+    A Resource that uses the http-resource ResourceType to trigger API calls to open catalog sites
     """  # noqa: E501
 
-    def __init__(self, **kwargs):
+    def __init__(self, open_url, **kwargs):
         super().__init__(
-            name=OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+            name=get_ocw_catalog_identifier(open_url),
             icon="cloud-search",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
-                "url": f"{settings.OPEN_DISCUSSIONS_URL}/api/v0/ocw_next_webhook/",
+                "url": f"{open_url.rstrip('/')}/api/v0/ocw_next_webhook/",
                 "method": "POST",
                 "out_only": True,
                 "headers": {

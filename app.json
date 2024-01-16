@@ -437,8 +437,8 @@
       "description": "The slug of the root Website used to run end to end tests",
       "required": false
     },
-    "OPEN_DISCUSSIONS_URL": {
-      "description": "Open discussions url",
+    "OPEN_CATALOG_URLS": {
+      "description": "List of open catalog urls",
       "required": false
     },
     "PGBOUNCER_DEFAULT_POOL_SIZE": {

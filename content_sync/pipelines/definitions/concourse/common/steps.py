@@ -20,9 +20,9 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
-    OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
+    get_ocw_catalog_identifier,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
@@ -244,7 +244,7 @@ class OcwStudioWebhookCurlStep(TryStep):
         )
 
 
-class OpenDiscussionsWebhookStep(TryStep):
+class OpenCatalogWebhookStep(TryStep):
     """
     A PutStep to the open-discussions api resource that refreshes the search index for a given site_url and version
 
@@ -253,10 +253,12 @@ class OpenDiscussionsWebhookStep(TryStep):
         pipeline_name(str): The pipeline name to use as the version (draft / live)
     """  # noqa: E501
 
-    def __init__(self, site_url: str, pipeline_name: str, **kwargs):
+    def __init__(
+        self, site_url: str, pipeline_name: str, open_catalog_url: str, **kwargs
+    ):
         super().__init__(
             try_=PutStep(
-                put=OPEN_DISCUSSIONS_RESOURCE_IDENTIFIER,
+                put=get_ocw_catalog_identifier(open_catalog_url),
                 timeout="1m",
                 attempts=3,
                 params={

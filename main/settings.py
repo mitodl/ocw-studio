@@ -505,10 +505,10 @@ OCW_NEXT_SEARCH_WEBHOOK_KEY = get_string(
     description="Open discussions webhook key",
     required=False,
 )
-OPEN_DISCUSSIONS_URL = get_string(
-    name="OPEN_DISCUSSIONS_URL",
+OPEN_CATALOG_URLS = get_delimited_list(
+    name="OPEN_CATALOG_URLS",
     default="",
-    description="Open discussions url",
+    description="Open catalog urls",
     required=False,
 )
 VIDEO_S3_TRANSCODE_PREFIX = get_string(
