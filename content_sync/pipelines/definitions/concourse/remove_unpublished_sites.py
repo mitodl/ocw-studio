@@ -15,6 +15,9 @@ from ol_concourse.lib.models.pipeline import (
 )
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    get_ocw_catalog_identifier,
+)
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     BASH_REGISTRY_IMAGE,
@@ -61,7 +64,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     ).root
     _unpublished_sites_output_identifier = Identifier("unpublished-sites-output").root
     _unpublished_sites_var_identifier = Identifier("unpublished-sites-var").root
-    _search_index_removal_task_identifier = Identifier("search-index-removal-task").root
+    _search_index_removal_task_prefix = "search-index-removal-task"
     _empty_s3_bucket_task_identifier = Identifier("empty-s3-bucket-task").root
     _clear_cdn_cache_task_identifier = Identifier("clear-cdn-cache-task").root
     _ocw_studio_webhook_task_identifier = Identifier("ocw-studio-webhook-task").root
@@ -105,7 +108,9 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
         )
         search_index_removal_across_tasks = [
             TaskStep(
-                task=self._search_index_removal_task_identifier,
+                task=get_ocw_catalog_identifier(
+                    catalog_url, prefix=self._search_index_removal_task_prefix
+                ),
                 timeout="1m",
                 attempts=3,
                 config=TaskConfig(

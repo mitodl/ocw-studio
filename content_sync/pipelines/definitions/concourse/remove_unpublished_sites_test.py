@@ -15,7 +15,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     The unpublished site removal pipeline definition should contain the expected properties
     """
     open_webhook_key = "abc123"
-    open_catalog_urls = "https://example.com,http://other_example.com"
+    open_catalog_urls = ["https://example.com", "http://other_example.com"]
     common_pipeline_vars = get_common_pipeline_vars()
     cli_endpoint_url = get_cli_endpoint_url()
     web_bucket = common_pipeline_vars["publish_bucket_name"]
@@ -76,19 +76,18 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
         search_index_removal_tasks = [
             task
             for task in across_tasks
-            if task.get("task")
-            == pipeline_definition._search_index_removal_task_identifier  # noqa: SLF001
+            if pipeline_definition._search_index_removal_task_prefix  # noqa: SLF001
+            in task.get("task")
         ]
-        assert len(search_index_removal_tasks) == 1
-        search_index_removal_task = search_index_removal_tasks[0]
-        search_index_removal_command = " ".join(
-            search_index_removal_task["config"]["run"]["args"]
-        )
-        assert f'"webhook_key": "{open_webhook_key}"' in search_index_removal_command
-        assert f'"version": "{VERSION_LIVE}"' in search_index_removal_command
-        for catalog_url in open_catalog_urls.split(","):
+        assert len(search_index_removal_tasks) == len(open_catalog_urls)
+        for idx, task in enumerate(search_index_removal_tasks):
+            search_index_removal_command = " ".join(task["config"]["run"]["args"])
             assert (
-                f"{catalog_url}/api/v0/ocw_next_webhook/"
+                f'"webhook_key": "{open_webhook_key}"' in search_index_removal_command
+            )
+            assert f'"version": "{VERSION_LIVE}"' in search_index_removal_command
+            assert (
+                f"{open_catalog_urls[idx]}/api/v0/ocw_next_webhook/"
                 in search_index_removal_command
             )
         clear_cdn_cache_tasks = [

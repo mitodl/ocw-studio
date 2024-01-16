@@ -27,7 +27,7 @@ MASS_BUILD_SITES_JOB_IDENTIFIER = Identifier("mass-build-sites-job").root
 MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER = Identifier("batch-gate").root
 
 
-def get_ocw_catalog_identifier(url: str):
+def get_ocw_catalog_identifier(url: str, prefix="open-catalog-webhook"):
     """
     Get the identifier for a given OCW Catalog URL
 
@@ -37,4 +37,4 @@ def get_ocw_catalog_identifier(url: str):
     Returns:
         Identifier
     """
-    return Identifier(f"open-catalog-webhook-{slugify(urlparse(url).netloc)}").root
+    return Identifier(f"{prefix}-{slugify(urlparse(url).netloc)}").root
