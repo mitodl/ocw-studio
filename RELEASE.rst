@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.110.0 (Released January 16, 2024)
+---------------
+
+- fix api mocking in e2e test pipeline (#2066)
+- fix(deps): update dependency django-webpack-loader to v1.8.1 (#2041)
+- fix(deps): update dependency webpack to v5.89.0 (#2037)
+- allow sitemap_domain to be overridden in the site pipeline config, and override it in the end to end testing pipeline (#2061)
+- fix file path formatting issue in test course data export (#2058)
+- chore(deps): update node.js to v20 (#2055)
+- feat(management): add broken link fixing cleanup rules (#2050)
+- end to end testing pipeline (#2018)
+
 Version 0.109.0 (Released December 20, 2023)
 ---------------
 
