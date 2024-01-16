@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.110.0
+Version 0.110.0 (Released January 16, 2024)
 ---------------
 
 - fix api mocking in e2e test pipeline (#2066)
