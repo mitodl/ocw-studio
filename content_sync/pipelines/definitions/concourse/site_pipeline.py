@@ -468,6 +468,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                    "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"],
                     "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
@@ -506,9 +507,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             instance_vars=pipeline_vars["instance_vars"],
         )
         if is_dev():
-            build_online_site_step.params["RESOURCE_BASE_URL"] = pipeline_vars[
-                "resource_base_url"
-            ]
             build_online_site_step.params[
                 "AWS_ACCESS_KEY_ID"
             ] = settings.AWS_ACCESS_KEY_ID
@@ -648,6 +646,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                    "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"] or "",
                     "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
@@ -685,9 +684,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             instance_vars=pipeline_vars["instance_vars"],
         )
         if is_dev():
-            build_offline_site_step.params["RESOURCE_BASE_URL"] = (
-                pipeline_vars["resource_base_url"] or ""
-            )
             build_offline_site_step.params["AWS_ACCESS_KEY_ID"] = (
                 settings.AWS_ACCESS_KEY_ID or ""
             )
