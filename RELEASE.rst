@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.110.1
+---------------
+
+- Fix theme assets pipeline on Apple Silicon (#2069)
+
 Version 0.110.0 (Released January 16, 2024)
 ---------------
 
