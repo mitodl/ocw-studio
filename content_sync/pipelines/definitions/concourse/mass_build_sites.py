@@ -174,8 +174,9 @@ class MassBuildSitesResources(list[Resource]):
         )
         self.append(SlackAlertResource())
         if not is_dev():
-            for url in settings.OPEN_CATALOG_URLS:
-                self.append(OpenCatalogResource(url))
+            self.extend(
+                [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
+            )
 
 
 class MassBuildSitesPipelineBaseTasks(list[StepModifierMixin]):

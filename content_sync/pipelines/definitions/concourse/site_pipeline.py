@@ -295,8 +295,12 @@ class SitePipelineResources(list[Resource]):
             ]
         )
         if not is_dev():
-            for url in settings.OPEN_CATALOG_URLS:
-                self.append(OpenCatalogResource(url.rstrip("/")))
+            self.extend(
+                [
+                    OpenCatalogResource(url.rstrip("/"))
+                    for url in settings.OPEN_CATALOG_URLS
+                ]
+            )
 
 
 class SitePipelineBaseTasks(list[StepModifierMixin]):
