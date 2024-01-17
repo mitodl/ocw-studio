@@ -86,7 +86,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
         open_catalog_urls = [
             catalog_url.rstrip("/") for catalog_url in settings.OPEN_CATALOG_URLS
         ]
-        open_webhook_key = settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+        open_webhook_key = settings.OPEN_CATALOG_WEBHOOK_KEY
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
 

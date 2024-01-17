@@ -264,7 +264,7 @@ class OpenCatalogWebhookStep(TryStep):
                 params={
                     "text": json.dumps(
                         {
-                            "webhook_key": settings.OCW_NEXT_SEARCH_WEBHOOK_KEY,
+                            "webhook_key": settings.OPEN_CATALOG_WEBHOOK_KEY,
                             "prefix": f"{site_url}/",
                             "version": pipeline_name,
                         }

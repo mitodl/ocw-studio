@@ -21,7 +21,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     web_bucket = common_pipeline_vars["publish_bucket_name"]
     offline_bucket = common_pipeline_vars["offline_publish_bucket_name"]
     settings.OPEN_CATALOG_URLS = open_catalog_urls
-    settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = open_webhook_key
+    settings.OPEN_CATALOG_WEBHOOK_KEY = open_webhook_key
 
     pipeline_definition = UnpublishedSiteRemovalPipelineDefinition()
     rendered_definition = json.loads(pipeline_definition.json(indent=2))
