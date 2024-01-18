@@ -51,7 +51,7 @@ class OpenCatalogResource(Resource):
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
-                "url": f"{open_url.rstrip('/')}/api/v0/ocw_next_webhook/",
+                "url": f"{open_url}",
                 "method": "POST",
                 "out_only": True,
                 "headers": {

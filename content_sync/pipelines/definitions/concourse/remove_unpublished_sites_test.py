@@ -15,7 +15,10 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     The unpublished site removal pipeline definition should contain the expected properties
     """
     open_webhook_key = "abc123"
-    open_catalog_urls = ["https://example.com", "http://other_example.com"]
+    open_catalog_urls = [
+        "https://example.com/api/v0/ocw_next_webhook/",
+        "http://other_example.com/api/v1/ocw_next_webhook/",
+    ]
     common_pipeline_vars = get_common_pipeline_vars()
     cli_endpoint_url = get_cli_endpoint_url()
     web_bucket = common_pipeline_vars["publish_bucket_name"]
@@ -86,10 +89,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
                 f'"webhook_key": "{open_webhook_key}"' in search_index_removal_command
             )
             assert f'"version": "{VERSION_LIVE}"' in search_index_removal_command
-            assert (
-                f"{open_catalog_urls[idx]}/api/v0/ocw_next_webhook/"
-                in search_index_removal_command
-            )
+            assert f"{open_catalog_urls[idx]}" in search_index_removal_command
         clear_cdn_cache_tasks = [
             task
             for task in across_tasks

@@ -296,10 +296,7 @@ class SitePipelineResources(list[Resource]):
         )
         if not is_dev():
             self.extend(
-                [
-                    OpenCatalogResource(url.rstrip("/"))
-                    for url in settings.OPEN_CATALOG_URLS
-                ]
+                [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
             )
 
 

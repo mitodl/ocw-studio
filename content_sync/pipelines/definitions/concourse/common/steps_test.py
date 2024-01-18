@@ -93,7 +93,7 @@ def test_put_steps_empty_inputs():
             OpenCatalogWebhookStep(
                 pipeline_name="test_pipeline",
                 site_url="http://ocw.mit.edu/courses/test_course",
-                open_catalog_url="http://test_open_catalog",
+                open_catalog_url="http://test_open_catalog/api/v0/ocw_next_webhook/",
             ).model_dump_json(by_alias=True)
         )["try"]["inputs"]
         == []

@@ -78,9 +78,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
         ocw_studio_url = get_ocw_studio_api_url().rstrip("/")
         cli_endpoint_url = get_cli_endpoint_url()
         api_token = settings.API_BEARER_TOKEN
-        open_catalog_urls = [
-            catalog_url.rstrip("/") for catalog_url in settings.OPEN_CATALOG_URLS
-        ]
+        open_catalog_urls = settings.OPEN_CATALOG_URLS
         open_webhook_key = settings.OPEN_CATALOG_WEBHOOK_KEY
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
@@ -128,13 +126,14 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                                     "unpublished": True,
                                 }
                             ),
-                            f"{catalog_url}/api/v0/ocw_next_webhook/",
+                            catalog_url,
                         ],
                     ),
                 ),
                 on_failure=unpublish_failed_webhook_across_step,
             )
             for catalog_url in open_catalog_urls
+            if catalog_url
         ]
         empty_s3_bucket_across_task = TaskStep(
             task=self._empty_s3_bucket_task_identifier,

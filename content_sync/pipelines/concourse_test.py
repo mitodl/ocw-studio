@@ -132,7 +132,7 @@ def pipeline_settings(settings, request):  # noqa: PT004
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
     settings.OCW_COURSE_STARTER_SLUG = "another_custom_slug"
     settings.OPEN_CATALOG_WEBHOOK_KEY = "abc123"
-    settings.OPEN_CATALOG_URLS = "https://open.mit.edu,http://mitopen.odl.mit.edu"
+    settings.OPEN_CATALOG_URLS = "https://open.mit.edu/api/v0/ocw_next_webhook/,http://mitopen.odl.mit.edu/api/v1/ocw_next_webhook/"
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"  # noqa: S105
