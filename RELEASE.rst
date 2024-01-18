@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.110.3
+---------------
+
+- Multiple open catalog webhook endpoints (#2071)
+
 Version 0.110.2 (Released January 18, 2024)
 ---------------
 
