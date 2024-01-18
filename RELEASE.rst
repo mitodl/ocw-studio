@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.110.2
+---------------
+
+- set RESOURCE_BASE_URL regardless of environment (#2073)
+
 Version 0.110.1 (Released January 16, 2024)
 ---------------
 
