@@ -22,7 +22,6 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
     GitResource,
-    OpenCatalogResource,
     SlackAlertResource,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
@@ -60,10 +59,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         "clear-draft-cdn-cache-task"
     ).root
     _clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task").root
-
-    _open_catalog_resources = [
-        OpenCatalogResource(catalog_url) for catalog_url in settings.OPEN_CATALOG_URLS
-    ]
     _slack_resource = SlackAlertResource()
 
     def __init__(  # noqa: PLR0913

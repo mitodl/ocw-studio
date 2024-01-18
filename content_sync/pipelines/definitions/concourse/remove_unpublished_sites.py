@@ -28,7 +28,6 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
-    OpenCatalogResource,
     SlackAlertResource,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
@@ -68,10 +67,6 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     _empty_s3_bucket_task_identifier = Identifier("empty-s3-bucket-task").root
     _clear_cdn_cache_task_identifier = Identifier("clear-cdn-cache-task").root
     _ocw_studio_webhook_task_identifier = Identifier("ocw-studio-webhook-task").root
-
-    _open_catalog_resources = [
-        OpenCatalogResource(catalog_url) for catalog_url in settings.OPEN_CATALOG_URLS
-    ]
     _slack_resource = SlackAlertResource()
 
     def __init__(self, **kwargs):

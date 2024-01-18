@@ -246,7 +246,7 @@ class OcwStudioWebhookCurlStep(TryStep):
 
 class OpenCatalogWebhookStep(TryStep):
     """
-    A PutStep to the open-discussions api resource that refreshes the search index for a given site_url and version
+    A PutStep to an open catalog api resource that refreshes the search index for a given site_url and version
 
     Args:
         site_url(str): The url path of the site
