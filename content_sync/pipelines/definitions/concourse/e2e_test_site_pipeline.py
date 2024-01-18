@@ -37,6 +37,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
+    OpenCatalogResource,
     SlackAlertResource,
     WebpackManifestResource,
 )
@@ -187,6 +188,9 @@ class EndToEndTestPipelineDefinition(Pipeline):
             site_name=course_site.name,
             api_token=settings.API_BEARER_TOKEN or "",
         )
+        open_catalog_resources = [
+            OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS
+        ]
 
         resources = [
             webpack_manifest_resource,
@@ -195,6 +199,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
             ocw_studio_webhook_resource,
             SlackAlertResource(),
         ]
+        if not is_dev():
+            resources.extend(open_catalog_resources)
 
         www_config = SitePipelineDefinitionConfig(
             site=www_site,
@@ -249,8 +255,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
         site_tasks.extend(
             SitePipelineOnlineTasks(
                 pipeline_vars=site_pipeline_vars,
-                fastly_var=version,
-                skip_cache_clear=True,
+                fastly_var="test",
+                skip_cache_clear=is_dev(),
             )
         )
 
