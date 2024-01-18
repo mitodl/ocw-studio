@@ -27,6 +27,7 @@ OCW Studio manages deployments for OCW courses.
 - [Enabling Google Drive integration](#enabling-google-drive-integration)
 - [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
 - [Enabling 3Play integration](#enabling-3play-integration)
+- [Enabling Open Catalog Search Webhooks](#enabling-open-catalog-search-webhooks)
 
 # Initial Setup
 
@@ -488,4 +489,13 @@ The following environment variables need to be defined in your .env file (for a 
 THREEPLAY_API_KEY
 THREEPLAY_CALLBACK_KEY
 THREEPLAY_PROJECT_ID
+```
+
+# Enabling Open Catalog Search Webhooks
+
+The following environment variables need to be defined in your .env file in order to notify external course catalogs like MIT Open when OCW sites are created/updated.
+
+```
+OPEN_CATALOG_URLS=delimited list of api endpoint urls that webhooks should be sent to
+OPEN_CATALOG_WEBHOOK_KEY=secret key that will be used to confirm that webhook requests are legitimate
 ```

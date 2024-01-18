@@ -15,6 +15,9 @@ from ol_concourse.lib.models.pipeline import (
 )
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    get_ocw_catalog_identifier,
+)
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     BASH_REGISTRY_IMAGE,
@@ -25,7 +28,6 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
-    OpenDiscussionsResource,
     SlackAlertResource,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
@@ -61,12 +63,10 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     ).root
     _unpublished_sites_output_identifier = Identifier("unpublished-sites-output").root
     _unpublished_sites_var_identifier = Identifier("unpublished-sites-var").root
-    _search_index_removal_task_identifier = Identifier("search-index-removal-task").root
+    _search_index_removal_task_prefix = "search-index-removal-task"
     _empty_s3_bucket_task_identifier = Identifier("empty-s3-bucket-task").root
     _clear_cdn_cache_task_identifier = Identifier("clear-cdn-cache-task").root
     _ocw_studio_webhook_task_identifier = Identifier("ocw-studio-webhook-task").root
-
-    _open_discussions_resource = OpenDiscussionsResource()
     _slack_resource = SlackAlertResource()
 
     def __init__(self, **kwargs):
@@ -78,8 +78,8 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
         ocw_studio_url = get_ocw_studio_api_url().rstrip("/")
         cli_endpoint_url = get_cli_endpoint_url()
         api_token = settings.API_BEARER_TOKEN
-        open_discussions_url = settings.OPEN_DISCUSSIONS_URL.rstrip("/")
-        open_webhook_key = settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+        open_catalog_urls = settings.OPEN_CATALOG_URLS
+        open_webhook_key = settings.OPEN_CATALOG_WEBHOOK_KEY
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
 
@@ -99,36 +99,42 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                 "unpublished": True,
             },
         )
-        search_index_removal_across_task = TaskStep(
-            task=self._search_index_removal_task_identifier,
-            timeout="1m",
-            attempts=3,
-            config=TaskConfig(
-                platform="linux",
-                image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(
-                    path="curl",
-                    args=[
-                        "-f",
-                        "-X",
-                        "POST",
-                        "-H",
-                        "Content-Type: application/json",
-                        "--data",
-                        json.dumps(
-                            {
-                                "webhook_key": open_webhook_key,
-                                "site_uid": "((.:site.site_uid))",
-                                "version": VERSION_LIVE,
-                                "unpublished": True,
-                            }
-                        ),
-                        f"{open_discussions_url}/api/v0/ocw_next_webhook/",
-                    ],
+        search_index_removal_across_tasks = [
+            TaskStep(
+                task=get_ocw_catalog_identifier(
+                    catalog_url, prefix=self._search_index_removal_task_prefix
                 ),
-            ),
-            on_failure=unpublish_failed_webhook_across_step,
-        )
+                timeout="1m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=CURL_REGISTRY_IMAGE,
+                    run=Command(
+                        path="curl",
+                        args=[
+                            "-f",
+                            "-X",
+                            "POST",
+                            "-H",
+                            "Content-Type: application/json",
+                            "--data",
+                            json.dumps(
+                                {
+                                    "webhook_key": open_webhook_key,
+                                    "site_uid": "((.:site.site_uid))",
+                                    "version": VERSION_LIVE,
+                                    "unpublished": True,
+                                }
+                            ),
+                            catalog_url,
+                        ],
+                    ),
+                ),
+                on_failure=unpublish_failed_webhook_across_step,
+            )
+            for catalog_url in open_catalog_urls
+            if catalog_url
+        ]
         empty_s3_bucket_across_task = TaskStep(
             task=self._empty_s3_bucket_task_identifier,
             timeout="10m",
@@ -168,7 +174,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             empty_s3_bucket_across_task,
         ]
         if not is_dev():
-            across_tasks.append(search_index_removal_across_task)
+            across_tasks.extend(search_index_removal_across_tasks)
             across_tasks.append(clear_cdn_cache_step)
         tasks = [
             TaskStep(

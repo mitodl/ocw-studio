@@ -64,9 +64,12 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     www_site = test_sites["www"]
     course_site = test_sites["course"]
     open_webhook_key = "abc123"
-    open_discussions_url = "https://example.com"
-    settings.OPEN_DISCUSSIONS_URL = open_discussions_url
-    settings.OCW_NEXT_SEARCH_WEBHOOK_KEY = open_webhook_key
+    open_catalog_urls = [
+        "https://example.com/api/v0/ocw_next_webhook/",
+        "http://other_example.com/api/v1/ocw_next_webhook/",
+    ]
+    settings.OPEN_CATALOG_URLS = open_catalog_urls
+    settings.OPEN_CATALOG_WEBHOOK_KEY = open_webhook_key
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"

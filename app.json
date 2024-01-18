@@ -333,8 +333,8 @@
       "description": "The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
       "required": false
     },
-    "OCW_NEXT_SEARCH_WEBHOOK_KEY": {
-      "description": "Open discussions webhook key",
+    "OPEN_CATALOG_WEBHOOK_KEY": {
+      "description": "Open catalog webhook key",
       "required": false
     },
     "OCW_STUDIO_ADMIN_EMAIL": {
@@ -437,8 +437,8 @@
       "description": "The slug of the root Website used to run end to end tests",
       "required": false
     },
-    "OPEN_DISCUSSIONS_URL": {
-      "description": "Open discussions url",
+    "OPEN_CATALOG_URLS": {
+      "description": "List of open catalog urls",
       "required": false
     },
     "PGBOUNCER_DEFAULT_POOL_SIZE": {

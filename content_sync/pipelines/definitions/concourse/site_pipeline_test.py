@@ -410,7 +410,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         )
         assert (
             open_discussions_webhook_step_online_params["webhook_key"]
-            == settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+            == settings.OPEN_CATALOG_WEBHOOK_KEY
         )
         assert (
             open_discussions_webhook_step_online_params["prefix"]
@@ -579,7 +579,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         )
         assert (
             open_discussions_webhook_step_offline_params["webhook_key"]
-            == settings.OCW_NEXT_SEARCH_WEBHOOK_KEY
+            == settings.OPEN_CATALOG_WEBHOOK_KEY
         )
         assert (
             open_discussions_webhook_step_offline_params["prefix"]

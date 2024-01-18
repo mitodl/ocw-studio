@@ -45,7 +45,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
-    OpenDiscussionsResource,
+    OpenCatalogResource,
     SiteContentGitResource,
     SlackAlertResource,
     WebpackManifestResource,
@@ -53,7 +53,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     OcwStudioWebhookStep,
-    OpenDiscussionsWebhookStep,
+    OpenCatalogWebhookStep,
     add_error_handling,
 )
 from content_sync.utils import (
@@ -295,7 +295,9 @@ class SitePipelineResources(list[Resource]):
             ]
         )
         if not is_dev():
-            self.append(OpenDiscussionsResource())
+            self.extend(
+                [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
+            )
 
 
 class SitePipelineBaseTasks(list[StepModifierMixin]):
@@ -565,10 +567,14 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         clear_cdn_cache_online_step.on_success = TryStep(
             try_=DoStep(
                 do=[
-                    OpenDiscussionsWebhookStep(
-                        site_url=pipeline_vars["url_path"],
-                        pipeline_name=pipeline_vars["pipeline_name"],
-                    ),
+                    *[
+                        OpenCatalogWebhookStep(
+                            site_url=pipeline_vars["url_path"],
+                            pipeline_name=pipeline_vars["pipeline_name"],
+                            open_catalog_url=open_catalog_url,
+                        )
+                        for open_catalog_url in settings.OPEN_CATALOG_URLS
+                    ],
                     OcwStudioWebhookStep(
                         pipeline_name=pipeline_vars["pipeline_name"],
                         status="succeeded",
@@ -748,10 +754,14 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         clear_cdn_cache_offline_step.on_success = TryStep(
             try_=DoStep(
                 do=[
-                    OpenDiscussionsWebhookStep(
-                        site_url=pipeline_vars["url_path"],
-                        pipeline_name=pipeline_vars["pipeline_name"],
-                    ),
+                    *[
+                        OpenCatalogWebhookStep(
+                            site_url=pipeline_vars["url_path"],
+                            pipeline_name=pipeline_vars["pipeline_name"],
+                            open_catalog_url=open_catalog_url,
+                        )
+                        for open_catalog_url in settings.OPEN_CATALOG_URLS
+                    ],
                     OcwStudioWebhookStep(
                         pipeline_name=pipeline_vars["pipeline_name"],
                         status="succeeded",

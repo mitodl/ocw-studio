@@ -18,7 +18,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     ErrorHandlingStep,
     OcwStudioWebhookStep,
-    OpenDiscussionsWebhookStep,
+    OpenCatalogWebhookStep,
     SiteContentGitTaskStep,
     SlackAlertStep,
     add_error_handling,
@@ -90,9 +90,10 @@ def test_put_steps_empty_inputs():
     )
     assert (
         json.loads(
-            OpenDiscussionsWebhookStep(
+            OpenCatalogWebhookStep(
                 pipeline_name="test_pipeline",
                 site_url="http://ocw.mit.edu/courses/test_course",
+                open_catalog_url="http://test_open_catalog/api/v0/ocw_next_webhook/",
             ).model_dump_json(by_alias=True)
         )["try"]["inputs"]
         == []
