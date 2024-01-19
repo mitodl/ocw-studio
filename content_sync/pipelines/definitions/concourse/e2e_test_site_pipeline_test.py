@@ -193,7 +193,10 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
         for step in across_step_build_steps
         if step.get("task") == CLEAR_CDN_CACHE_IDENTIFIER
     ]
-    assert len(cdn_cache_clear_steps) == 0
+    if is_dev:
+        assert len(cdn_cache_clear_steps) == 0
+    else:
+        assert len(cdn_cache_clear_steps) == 1
     fetch_built_content_steps = [
         step
         for step in e2e_test_tasks
