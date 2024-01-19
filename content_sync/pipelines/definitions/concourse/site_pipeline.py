@@ -569,13 +569,15 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         clear_cdn_cache_online_on_success_steps = []
         if not skip_search_index_update:
             clear_cdn_cache_online_on_success_steps.extend(
-                *[
-                    OpenCatalogWebhookStep(
-                        site_url=pipeline_vars["url_path"],
-                        pipeline_name=pipeline_vars["pipeline_name"],
-                        open_catalog_url=open_catalog_url,
-                    )
-                    for open_catalog_url in settings.OPEN_CATALOG_URLS
+                [
+                    *[
+                        OpenCatalogWebhookStep(
+                            site_url=pipeline_vars["url_path"],
+                            pipeline_name=pipeline_vars["pipeline_name"],
+                            open_catalog_url=open_catalog_url,
+                        )
+                        for open_catalog_url in settings.OPEN_CATALOG_URLS
+                    ]
                 ]
             )
         clear_cdn_cache_online_on_success_steps.append(
