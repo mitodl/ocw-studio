@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.110.4
+---------------
+
+- e2e test pipeline cache clearing (#2078)
+
 Version 0.110.3 (Released January 22, 2024)
 ---------------
 
