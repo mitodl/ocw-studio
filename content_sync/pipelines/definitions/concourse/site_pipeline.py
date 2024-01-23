@@ -443,6 +443,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
         filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
         skip_cache_clear(bool): (Optional) A boolean override for skipping the CDN cache clear step
+        skip_search_index_update(bool): (Optional) A boolean override for skipping the search index update
     """  # noqa: E501
 
     def __init__(  # noqa: PLR0913
@@ -453,6 +454,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         destructive_sync: bool = True,
         filter_videos: bool = False,
         skip_cache_clear: bool = False,
+        skip_search_index_update: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
@@ -564,9 +566,10 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
         )
-        clear_cdn_cache_online_step.on_success = TryStep(
-            try_=DoStep(
-                do=[
+        clear_cdn_cache_online_on_success_steps = []
+        if not skip_search_index_update:
+            clear_cdn_cache_online_on_success_steps.extend(
+                [
                     *[
                         OpenCatalogWebhookStep(
                             site_url=pipeline_vars["url_path"],
@@ -574,13 +577,17 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             open_catalog_url=open_catalog_url,
                         )
                         for open_catalog_url in settings.OPEN_CATALOG_URLS
-                    ],
-                    OcwStudioWebhookStep(
-                        pipeline_name=pipeline_vars["pipeline_name"],
-                        status="succeeded",
-                    ),
+                    ]
                 ]
             )
+        clear_cdn_cache_online_on_success_steps.append(
+            OcwStudioWebhookStep(
+                pipeline_name=pipeline_vars["pipeline_name"],
+                status="succeeded",
+            )
+        )
+        clear_cdn_cache_online_step.on_success = TryStep(
+            try_=DoStep(do=clear_cdn_cache_online_on_success_steps)
         )
         self.extend(
             [

@@ -249,8 +249,9 @@ class EndToEndTestPipelineDefinition(Pipeline):
         site_tasks.extend(
             SitePipelineOnlineTasks(
                 pipeline_vars=site_pipeline_vars,
-                fastly_var=version,
-                skip_cache_clear=True,
+                fastly_var="test",
+                skip_cache_clear=is_dev(),
+                skip_search_index_update=True,
             )
         )
 
