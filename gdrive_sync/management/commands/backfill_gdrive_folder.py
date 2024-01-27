@@ -19,6 +19,7 @@ from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
     DRIVE_FILE_FIELDS,
+    DRIVE_FILE_ID,
     DRIVE_FILE_MD5_CHECKSUM,
     DRIVE_FILE_MODIFIED_TIME,
     DRIVE_FILE_SIZE,
@@ -176,9 +177,9 @@ class Command(WebsiteFilterCommand):
             )
             return
 
-        gdrive_dl = self.get_gdrive_file(gdrive_file.get("id"))
+        gdrive_dl = self.get_gdrive_file(gdrive_file.get(DRIVE_FILE_ID))
         DriveFile.objects.create(
-            file_id=gdrive_file.get("id"),
+            file_id=gdrive_file.get(DRIVE_FILE_ID),
             checksum=gdrive_dl.get(DRIVE_FILE_MD5_CHECKSUM),
             name=name,
             mime_type=resource.metadata["file_type"],
@@ -219,7 +220,7 @@ class Command(WebsiteFilterCommand):
             .create(
                 body=file_metadata,
                 media_body=media,
-                fields="id",
+                fields=DRIVE_FILE_ID,
                 supportsAllDrives=True,
             )
             .execute()
@@ -239,8 +240,11 @@ class Command(WebsiteFilterCommand):
             self.gdrive_service.files()
             .get(
                 fileId=file_id,
-                fields="id, md5Checksum, createdTime,"
-                "modifiedTime, size, webContentLink",
+                fields=(
+                    f"{DRIVE_FILE_ID},{DRIVE_FILE_MD5_CHECKSUM},"
+                    f"{DRIVE_FILE_CREATED_TIME},{DRIVE_FILE_MODIFIED_TIME},"
+                    f"{DRIVE_FILE_SIZE},{DRIVE_FILE_DOWNLOAD_LINK}"
+                ),
                 supportsAllDrives=True,
             )
             .execute()

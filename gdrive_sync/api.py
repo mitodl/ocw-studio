@@ -25,10 +25,12 @@ from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
+    DRIVE_FILE_ID,
     DRIVE_FILE_MD5_CHECKSUM,
     DRIVE_FILE_MIME_TYPE,
     DRIVE_FILE_MODIFIED_TIME,
     DRIVE_FILE_NAME,
+    DRIVE_FILE_SIZE,
     DRIVE_FOLDER_FILES,
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
@@ -139,7 +141,9 @@ def _get_or_create_drive_file(
     DriveFile respectively.
     Returns None if no change is detected.
     """  # noqa: D401
-    existing_file_same_id = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
+    existing_file_same_id = DriveFile.objects.filter(
+        file_id=file_obj.get(DRIVE_FILE_ID)
+    ).first()
     if (
         existing_file_same_id
         and existing_file_same_id.checksum == file_obj.get(DRIVE_FILE_MD5_CHECKSUM, "")
@@ -165,7 +169,7 @@ def _get_or_create_drive_file(
         "checksum": file_obj.get(DRIVE_FILE_MD5_CHECKSUM),
         "modified_time": file_obj.get(DRIVE_FILE_MODIFIED_TIME),
         "created_time": file_obj.get(DRIVE_FILE_CREATED_TIME),
-        "size": file_obj.get("size"),
+        "size": file_obj.get(DRIVE_FILE_SIZE),
         "download_link": file_obj.get(DRIVE_FILE_DOWNLOAD_LINK),
         "sync_error": None,
         "sync_dt": sync_date,
@@ -183,7 +187,7 @@ def _get_or_create_drive_file(
             website=website,
         ).first()
 
-        file_data.update({"file_id": file_obj.get("id")})
+        file_data.update({"file_id": file_obj.get(DRIVE_FILE_ID)})
 
         if replace_file and existing_file_same_path:
             # A drive file already exists on the same path.
