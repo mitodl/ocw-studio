@@ -1,4 +1,4 @@
-from django.conf import settings  # noqa: INP001
+from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
 from mitol.common.utils import now_in_utc

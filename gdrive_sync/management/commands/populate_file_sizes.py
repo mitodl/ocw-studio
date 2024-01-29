@@ -1,4 +1,4 @@
-"""Populate file_size meta field for resources."""  # noqa: INP001
+"""Populate file_size meta field for resources."""
 
 from gdrive_sync.tasks import populate_file_sizes_bulk
 from main.management.commands.filter import WebsiteFilterCommand
