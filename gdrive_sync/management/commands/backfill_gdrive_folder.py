@@ -41,6 +41,13 @@ class Command(WebsiteFilterCommand):
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""
         super().add_arguments(parser)
+        filter_action = next(
+            action
+            for action in parser._actions  # noqa: SLF001
+            if action.dest == "filter"
+        )
+        filter_action.required = True
+        filter_action.help = "String to filter websites by name or short ID."
 
     def handle(self, *args, **options):
         """
@@ -68,12 +75,9 @@ class Command(WebsiteFilterCommand):
             QuerySet: A queryset containing the filtered websites.
         """
         websites = Website.objects.all()
-        if website_filter:
-            websites = websites.filter(
-                Q(name__startswith=website_filter)
-                | Q(short_id__startswith=website_filter)
-            )
-        return websites
+        return websites.filter(
+            Q(name__startswith=website_filter) | Q(short_id__startswith=website_filter)
+        )
 
     def process_website(self, website):
         """

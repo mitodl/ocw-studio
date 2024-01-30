@@ -16,7 +16,7 @@ from django.core.management import call_command
 
 from gdrive_sync.constants import DRIVE_MIMETYPE_FOLDER
 from gdrive_sync.models import DriveFile
-from websites.models import Website, WebsiteContent
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -83,11 +83,13 @@ def test_backfill_gdrive_folder(
             return_value=[{"id": "test_file"}],
         )
 
-    website = Website.objects.create(
+    website = WebsiteFactory.create(
         name="Test Site", short_id="test-site", gdrive_folder="test_folder"
     )
-    resource = WebsiteContent.objects.create(
+
+    resource = WebsiteContentFactory.create(
         website=website,
+        title="test.txt",
         type="resource",
         file="test_file",
         metadata={
