@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.111.0
+---------------
+
+- Backfill Google Drive folder for legacy courses (#2081)
+- Correctly set branch when commit hash is not given (#2083)
+
 Version 0.110.4 (Released January 24, 2024)
 ---------------
 
