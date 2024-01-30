@@ -892,7 +892,7 @@ def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
     config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
     fake_commit = "abc123"
     release_branch = "release"
-    config_content = b"---\ncollections: []"
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
         mocker.Mock(path=config_filenames[0], decoded_content=config_content),
         mocker.Mock(path=config_filenames[1], decoded_content=config_content),
@@ -908,6 +908,38 @@ def test_sync_starter_configs_webhook_branch_hash_match(mocker, mock_github):
     for config_file in config_filenames:
         mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_any_call(
             config_file, fake_commit
+        )
+
+
+def test_sync_starter_configs_webhook_branch_nohash(mocker, mock_github):
+    """
+    Sync starter with a non-main settings.GITHUB_WEBHOOK_BRANCH should trigger
+    getting that branch without needing a commit hash
+    """
+    git_url = "https://github.com/testorg/ocws-configs"
+    config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+    release_branch = "release"
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
+
+    mock_github.reset_mock()
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.side_effect = [
+        mocker.Mock(path=config_filenames[0], decoded_content=config_content),
+        mocker.Mock(path=config_filenames[1], decoded_content=config_content),
+    ]
+    settings.GITHUB_WEBHOOK_BRANCH = release_branch
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value.name = (
+        release_branch
+    )
+
+    sync_starter_configs(git_url, config_filenames)
+
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.assert_called_once_with(
+        release_branch
+    )
+
+    for config_file in config_filenames:
+        mock_github.return_value.get_organization.return_value.get_repo.return_value.get_contents.assert_any_call(
+            config_file, ref=release_branch
         )
 
 
