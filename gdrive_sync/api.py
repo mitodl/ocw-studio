@@ -23,6 +23,14 @@ from googleapiclient.http import MediaIoBaseDownload
 from content_sync.api import get_sync_backend
 from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
+    DRIVE_FILE_CREATED_TIME,
+    DRIVE_FILE_DOWNLOAD_LINK,
+    DRIVE_FILE_ID,
+    DRIVE_FILE_MD5_CHECKSUM,
+    DRIVE_FILE_MIME_TYPE,
+    DRIVE_FILE_MODIFIED_TIME,
+    DRIVE_FILE_NAME,
+    DRIVE_FILE_SIZE,
     DRIVE_FOLDER_FILES,
     DRIVE_FOLDER_FILES_FINAL,
     DRIVE_FOLDER_VIDEOS_FINAL,
@@ -133,11 +141,13 @@ def _get_or_create_drive_file(
     DriveFile respectively.
     Returns None if no change is detected.
     """  # noqa: D401
-    existing_file_same_id = DriveFile.objects.filter(file_id=file_obj.get("id")).first()
+    existing_file_same_id = DriveFile.objects.filter(
+        file_id=file_obj.get(DRIVE_FILE_ID)
+    ).first()
     if (
         existing_file_same_id
-        and existing_file_same_id.checksum == file_obj.get("md5Checksum", "")
-        and existing_file_same_id.name == file_obj.get("name")
+        and existing_file_same_id.checksum == file_obj.get(DRIVE_FILE_MD5_CHECKSUM, "")
+        and existing_file_same_id.name == file_obj.get(DRIVE_FILE_NAME, "")
         and existing_file_same_id.status
         in (
             DriveFileStatus.COMPLETE,
@@ -153,14 +163,14 @@ def _get_or_create_drive_file(
 
     file_data = {
         "drive_path": drive_path,
-        "name": file_obj.get("name"),
+        "name": file_obj.get(DRIVE_FILE_NAME),
         "website": website,
-        "mime_type": file_obj.get("mimeType"),
-        "checksum": file_obj.get("md5Checksum"),
-        "modified_time": file_obj.get("modifiedTime"),
-        "created_time": file_obj.get("createdTime"),
-        "size": file_obj.get("size"),
-        "download_link": file_obj.get("webContentLink"),
+        "mime_type": file_obj.get(DRIVE_FILE_MIME_TYPE),
+        "checksum": file_obj.get(DRIVE_FILE_MD5_CHECKSUM),
+        "modified_time": file_obj.get(DRIVE_FILE_MODIFIED_TIME),
+        "created_time": file_obj.get(DRIVE_FILE_CREATED_TIME),
+        "size": file_obj.get(DRIVE_FILE_SIZE),
+        "download_link": file_obj.get(DRIVE_FILE_DOWNLOAD_LINK),
         "sync_error": None,
         "sync_dt": sync_date,
     }
@@ -173,11 +183,11 @@ def _get_or_create_drive_file(
     else:
         existing_file_same_path = DriveFile.objects.filter(
             drive_path=drive_path,
-            name=file_obj.get("name"),
+            name=file_obj.get(DRIVE_FILE_NAME),
             website=website,
         ).first()
 
-        file_data.update({"file_id": file_obj.get("id")})
+        file_data.update({"file_id": file_obj.get(DRIVE_FILE_ID)})
 
         if replace_file and existing_file_same_path:
             # A drive file already exists on the same path.
@@ -248,11 +258,11 @@ def process_file_result(
         folder_names = [folder["name"] for folder in folder_tree]
         in_video_folder = DRIVE_FOLDER_VIDEOS_FINAL in folder_names
         in_file_folder = DRIVE_FOLDER_FILES_FINAL in folder_names
-        is_video = file_obj["mimeType"].lower().startswith("video/")
+        is_video = file_obj[DRIVE_FILE_MIME_TYPE].lower().startswith("video/")
         processable = (
             ((in_video_folder and is_video) or in_file_folder)
-            and file_obj.get("webContentLink") is not None
-            and file_obj.get("md5Checksum") is not None
+            and file_obj.get(DRIVE_FILE_DOWNLOAD_LINK) is not None
+            and file_obj.get(DRIVE_FILE_MD5_CHECKSUM) is not None
         )
 
         if website and processable:
