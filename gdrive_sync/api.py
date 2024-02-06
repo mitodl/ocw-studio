@@ -448,7 +448,8 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 website_pk=drive_file.website.pk,
                 dirpath=dirpath,
                 filename_base=slugify(
-                    get_valid_base_filename(basename, CONTENT_TYPE_RESOURCE)
+                    get_valid_base_filename(basename, CONTENT_TYPE_RESOURCE),
+                    allow_unicode=True,
                 ),
             )
             resource_type_fields = {
@@ -579,7 +580,9 @@ def rename_file(obj_text_id, obj_new_filename):
     s3 = get_boto3_resource("s3")
     # slugify just the provided name and then make the extensions lowercase
     filepath = Path(obj_new_filename)
-    new_filename = slugify(obj_new_filename.rstrip("".join(filepath.suffixes)))
+    new_filename = slugify(
+        obj_new_filename.rstrip("".join(filepath.suffixes)), allow_unicode=True
+    )
     if filepath.suffixes:
         new_filename += "".join(filepath.suffixes).lower()
     df_path = df.s3_key.split("/")

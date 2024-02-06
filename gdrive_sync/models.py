@@ -81,7 +81,7 @@ class DriveFile(TimestampedModel):
         adding/incrementing a numerical suffix as necessary.
         """
         basename, ext = os.path.splitext(self.name)  # noqa: PTH122
-        basename = slugify(basename)
+        basename = slugify(basename, allow_unicode=True)
         ext = ext.lower()
         prefix = self.s3_prefix
         key_sections = [

@@ -58,7 +58,7 @@ def validate_yaml(value):
 
 def validate_slug(value):
     """Validator function to ensure that the value is a properly-formatted slug"""  # noqa: D401, E501
-    slugified = slugify(value)
+    slugified = slugify(value, allow_unicode=True)
     if slugified != value:
         msg = f"Value '{value}' is not a proper slug (slugified version: {slugified})"
         raise ValidationError(msg)
@@ -256,11 +256,11 @@ class Website(TimestampedModel):
                     content = self.websitecontent_set.filter(type=section_type).first()
                     if content:
                         value = get_dict_field(content.metadata, section_field)
-                if not value:  # noqa: SIM108
+                if not value:
                     # Incomplete metadata required for url
                     value = section
                 else:
-                    value = slugify(value.replace(".", "-"))
+                    value = slugify(value.replace(".", "-"), allow_unicode=True)
                 url_format = url_format.replace(section, value)
         return url_format
 

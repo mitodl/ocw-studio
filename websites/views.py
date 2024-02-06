@@ -190,7 +190,7 @@ class WebsiteViewSet(
             and self.request.data.get("title")
         ):
             request_data = self.request.data.copy()
-            request_data["name"] = slugify(request_data["title"])
+            request_data["name"] = slugify(request_data["title"], allow_unicode=True)
             kwargs["data"] = request_data
 
         return serializer_class(*args, **kwargs)
@@ -539,7 +539,9 @@ def _get_derived_website_content_data(
         added_data["filename"] = get_valid_new_filename(
             website_pk=website_pk,
             dirpath=dirpath,
-            filename_base=slugify(get_valid_base_filename(slug, content_type)),
+            filename_base=slugify(
+                get_valid_base_filename(slug, content_type), allow_unicode=True
+            ),
         )
     return added_data
 
