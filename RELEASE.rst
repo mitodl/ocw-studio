@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.111.0
+Version 0.111.0 (Released February 06, 2024)
 ---------------
 
 - Backfill Google Drive folder for legacy courses (#2081)
