@@ -91,7 +91,7 @@ def test_backfill_gdrive_folder(
         website=website,
         title="test.txt",
         type="resource",
-        file="test_file",
+        file="/test_path/test_file",
         metadata={
             "file_type": "text/plain",
             "title": "test.txt",
@@ -101,7 +101,7 @@ def test_backfill_gdrive_folder(
     call_command("backfill_gdrive_folder", filter="test-site")
     if return_empty_files:
         mock_s3.download_fileobj.assert_called_with(
-            settings.AWS_STORAGE_BUCKET_NAME, str(resource.file), mocker.ANY
+            settings.AWS_STORAGE_BUCKET_NAME, str(resource.file).lstrip("/"), mocker.ANY
         )
         mock_gdrive_service.files().create.assert_called_with(
             body=mocker.ANY, media_body=mocker.ANY, fields="id", supportsAllDrives=True
