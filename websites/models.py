@@ -256,11 +256,11 @@ class Website(TimestampedModel):
                     content = self.websitecontent_set.filter(type=section_type).first()
                     if content:
                         value = get_dict_field(content.metadata, section_field)
-                if not value:
+                if not value:  # noqa: SIM108
                     # Incomplete metadata required for url
                     value = section
                 else:
-                    value = slugify(value.replace(".", "-"), allow_unicode=True)
+                    value = slugify(value.replace(".", "-"))
                 url_format = url_format.replace(section, value)
         return url_format
 
