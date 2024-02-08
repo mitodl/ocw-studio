@@ -37,6 +37,4 @@ def get_ocw_catalog_identifier(url: str, prefix="open-catalog-webhook"):
     Returns:
         Identifier
     """
-    return Identifier(
-        f"{prefix}-{slugify(urlparse(url).netloc, allow_unicode=True)}"
-    ).root
+    return Identifier(f"{prefix}-{slugify(urlparse(url).netloc)}").root
