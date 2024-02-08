@@ -577,7 +577,7 @@ def test_websites_autogenerate_name(drf_client):
     )
     website_title = "My Title"
     website_short_id = "my-title"
-    slugified_title = slugify(website_title, allow_unicode=True)
+    slugified_title = slugify(website_title)
     resp = drf_client.post(
         reverse("websites_api-list"),
         {"title": website_title, "short_id": website_short_id, "starter": starter.id},
