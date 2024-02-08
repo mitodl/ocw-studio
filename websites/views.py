@@ -190,7 +190,7 @@ class WebsiteViewSet(
             and self.request.data.get("title")
         ):
             request_data = self.request.data.copy()
-            request_data["name"] = slugify(request_data["title"], allow_unicode=True)
+            request_data["name"] = slugify(request_data["title"])
             kwargs["data"] = request_data
 
         return serializer_class(*args, **kwargs)
