@@ -58,7 +58,7 @@ def validate_yaml(value):
 
 def validate_slug(value):
     """Validator function to ensure that the value is a properly-formatted slug"""  # noqa: D401, E501
-    slugified = slugify(value, allow_unicode=True)
+    slugified = slugify(value)
     if slugified != value:
         msg = f"Value '{value}' is not a proper slug (slugified version: {slugified})"
         raise ValidationError(msg)
