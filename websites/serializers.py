@@ -590,7 +590,7 @@ class WebsiteContentDetailSerializer(
         if instance.file:
             file_field = instance.get_config_file_field()
             if file_field:
-                result[file_field["name"]] = instance.file.url
+                result[file_field["name"]] = instance.file.name
         return result
 
     class Meta:
