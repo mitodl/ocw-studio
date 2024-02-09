@@ -155,8 +155,11 @@ class Command(WebsiteFilterCommand):
         )
         try:
             self.s3.download_fileobj(
-                settings.AWS_STORAGE_BUCKET_NAME, str(resource.file), file_obj
+                settings.AWS_STORAGE_BUCKET_NAME,
+                f"{resource.file}".lstrip("/"),
+                file_obj,
             )
+
         except BotoCoreError as e:
             self.stdout.write(f"Error downloading {resource.file}: {e}")
             return
