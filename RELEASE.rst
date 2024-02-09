@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.111.1
+---------------
+
+- Update dependency faker to v19.13.0 (#2091)
+- Update dependency celery to v5.3.6 (#2093)
+- Update dependency beautifulsoup4 to v4.12.3 (#2092)
+- Update dependency boto3 to v1.34.38 (#2090)
+- Fix S3 path for Google Drive backfill (#2089)
+
 Version 0.111.0 (Released February 06, 2024)
 ---------------
 
