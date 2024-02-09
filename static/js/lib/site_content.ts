@@ -240,7 +240,9 @@ export const contentInitialValues = (
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
     } else if (field.widget === WidgetVariant.File) {
-      values[field.name] = decodeURI(content[field.name]) ?? null
+      values[field.name] = content[field.name]
+        ? decodeURI(content[field.name])
+        : null
     } else {
       values[field.name] =
         metadata[field.name] ?? defaultForField(field, website)
