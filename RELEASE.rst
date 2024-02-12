@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.112.0
+Version 0.112.0 (Released February 12, 2024)
 ---------------
 
 - Update dependency django-safedelete to v1.3.3 (#2102)
