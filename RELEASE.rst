@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.111.1
+Version 0.111.1 (Released February 12, 2024)
 ---------------
 
 - Update dependency faker to v19.13.0 (#2091)
