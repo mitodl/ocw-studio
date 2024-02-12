@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.112.0
+---------------
+
+- Update dependency django-safedelete to v1.3.3 (#2102)
+- allow unicode characters in filenames (#2087)
+- Update dependency django-hijack to v3.4.5 (#2101)
+- Update dependency cryptography to v41.0.7 (#2100)
+- Update dependency boto3 to v1.34.39 (#2099)
+- Update dependency google-auth to v2.27.0 (#2097)
+- Update dependency tqdm to v4.66.2 (#2096)
+
 Version 0.111.1 (Released February 12, 2024)
 ---------------
 
