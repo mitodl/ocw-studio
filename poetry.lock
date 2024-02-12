@@ -1016,13 +1016,13 @@ files = [
 
 [[package]]
 name = "django-safedelete"
-version = "1.3.2"
+version = "1.3.3"
 description = "Mask your objects instead of deleting them from your database."
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-safedelete-1.3.2.tar.gz", hash = "sha256:27ce5f92d7f4c6adab67c085420aa8c2a8e6751a7fb4a1c0afa70547ddeb2d7d"},
-    {file = "django_safedelete-1.3.2-py3-none-any.whl", hash = "sha256:82a97f2fe47654b202b0a7e0e46168292a1e28b5300b8d3cabb5eafa9ee2bda7"},
+    {file = "django-safedelete-1.3.3.tar.gz", hash = "sha256:dcd320f868bc3c71974aac340ab4508bc1ffeb1687b5e7cf5ba97cde676b96f2"},
+    {file = "django_safedelete-1.3.3-py3-none-any.whl", hash = "sha256:a26bc360436159ccfaa367927e19de8e0b44fea3908702006bc87c649323e52b"},
 ]
 
 [package.dependencies]
@@ -3480,4 +3480,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "73257eb0bb2d6c7ec1260d245f888846c1b75288c8de1288519240dbe753a7ef"
+content-hash = "47182ababc7a9868b68a37debeb93b92d11d80d3a5b79292de972d8ce6c784b0"
