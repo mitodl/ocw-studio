@@ -37,6 +37,12 @@ def test_get_valid_s3_key():
         name="(file).PnG", mime_type="image/png", s3_key=None
     )
     assert file_4.get_valid_s3_key() == f"{site_prefix}/{file_4.website.name}/file.png"
+    # Unicode filename
+    file_5 = DriveFileFactory.create(
+        name="テストファイル.png", website=site, mime_type="image/png", s3_key=None
+    )
+    file_5.s3_key = file_5.get_valid_s3_key()
+    assert file_5.s3_key == f"{site_prefix}/{site.name}/テストファイル.png"
 
 
 @pytest.mark.django_db()
