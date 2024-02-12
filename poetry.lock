@@ -960,17 +960,17 @@ Django = ">=2.2"
 
 [[package]]
 name = "django-hijack"
-version = "3.4.1"
+version = "3.4.5"
 description = "django-hijack allows superusers to hijack (=login as) and work on behalf of another user."
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-hijack-3.4.1.tar.gz", hash = "sha256:2bdd7ffa42198637f49c195468b8330ea51dc36b7c2bee0f3c220c9d7de78764"},
-    {file = "django_hijack-3.4.1-py3-none-any.whl", hash = "sha256:d49b4b6426f4c4694ee0c7591990f9ccb91a7910ba22a8f10e11e0b1f3e0b5b4"},
+    {file = "django-hijack-3.4.5.tar.gz", hash = "sha256:7e45b1de786bdc130628e4230b359dde6d8744ecd3bcd668d2b27c5d614a071c"},
+    {file = "django_hijack-3.4.5-py3-none-any.whl", hash = "sha256:129cbe75444b163135871a947d38ffb72181f4f2583544703fc9efe083c9ddad"},
 ]
 
 [package.dependencies]
-django = ">=2.2"
+django = ">=3.2"
 
 [package.extras]
 test = ["pytest", "pytest-cov", "pytest-django"]
@@ -3480,4 +3480,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "4fe54473eec1001f38fd76531ec24d65cba9cde71bc11f896aab6c71774a29a7"
+content-hash = "73257eb0bb2d6c7ec1260d245f888846c1b75288c8de1288519240dbe753a7ef"

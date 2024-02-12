@@ -45,7 +45,7 @@ dj-database-url = "2.0.0"
 django-anymail = {version = "10.0", extras = ["mailgun"]}
 django-bulk-update-or-create = "0.3.0"
 django-guardian = "2.4.0"
-django-hijack = "3.4.1"
+django-hijack = "3.4.5"
 django-redis = "5.0.0"
 djangorestframework = "3.14.0"
 django-robots = "6.0b0"
