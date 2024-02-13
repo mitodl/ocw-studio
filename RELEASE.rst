@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.112.1
+Version 0.112.1 (Released February 13, 2024)
 ---------------
 
 - new params (#2109)
