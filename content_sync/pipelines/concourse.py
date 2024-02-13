@@ -368,6 +368,8 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
         "AWS_PUBLISH_BUCKET_NAME",
         "GITHUB_WEBHOOK_BRANCH",
         "SEARCH_API_URL",
+        "COURSE_SEARCH_API_URL",
+        "CONTENT_FILE_SEARCH_API_URL",
     ]
 
     def __init__(
