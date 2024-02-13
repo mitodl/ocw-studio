@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.112.1
+---------------
+
+- new params (#2109)
+- Update dependency ipython to v8.21.0 (#2103)
+- Update dependency google-auth-oauthlib to v1.2.0 (#2098)
+- Update dependency google-api-python-client to v2.117.0 (#2105)
+- Update dependency black to v22.12.0 (#2104)
+
 Version 0.112.0 (Released February 12, 2024)
 ---------------
 
