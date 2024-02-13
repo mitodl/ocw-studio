@@ -336,6 +336,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "RESOURCE_BASE_URL": static_api_base_url,
                         "SITEMAP_DOMAIN": site_pipeline_vars["sitemap_domain"],
                         "SEARCH_API_URL": "https://discussions-rc.odl.mit.edu/api/v0/search/",
+                        "COURSE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/learning_resources_search/",
+                        "CONTENT_FILE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/content_file_search/",
                         "SENTRY_ENV": "",
                         "WEBPACK_WATCH_MODE": "false",
                         "WWW_CONTENT_PATH": f"../{www_content_git_identifier}",

@@ -616,6 +616,8 @@ def test_upsert_pipeline(
     publish_bucket_name = expected_template_vars["publish_bucket_name"]
     artifacts_bucket_name = expected_template_vars["artifacts_bucket_name"]
     assert settings.SEARCH_API_URL in config_str
+    assert settings.COURSE_SEARCH_API_URL in config_str
+    assert settings.CONTENT_FILE_SEARCH_API_URL in config_str
     assert preview_bucket_name in config_str
     assert publish_bucket_name in config_str
     assert (

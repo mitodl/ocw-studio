@@ -495,6 +495,14 @@
       "description": "The URL to open discussions search to inject into the theme assets build",
       "required": false
     },
+    "COURSE_SEARCH_API_URL": {
+      "description": "The URL to open discussions learning resource search to inject into the theme assets build",
+      "required": false
+    },
+    "CONTENT_FILE_SEARCH_API_URL": {
+      "description": "The URL to open discussions content file search to inject into the theme assets build",
+      "required": false
+    },
     "SECRET_KEY": {
       "description": "Django secret key.",
       "generator": "secret",
