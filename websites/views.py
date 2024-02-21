@@ -338,6 +338,8 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
         # If a starter has been specified by the query, only return sites made with that starter  # noqa: E501
         if starter:
             sites = sites.filter(starter=WebsiteStarter.objects.get(slug=starter))
+        # Exclude the test sites from the mass build
+        sites = sites.exclude(name__in=settings.OCW_TEST_SITE_SLUGS)
         sites = sites.prefetch_related("starter").order_by("name")
         serializer = WebsiteMassBuildSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
