@@ -1,5 +1,5 @@
 from typing import Optional
-from urllib import urlparse
+from urllib.parse import urlparse
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
@@ -128,7 +128,7 @@ class SitePipelineDefinitionConfig:
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913 PLR0915
         self,
         site: Website,
         pipeline_name: str,
@@ -163,6 +163,7 @@ class SitePipelineDefinitionConfig:
         self.sitemap_domain = sitemap_domain
         self.url_path = site.get_url_path()
         self.resource_base_url = resource_base_url
+        self.ocw_studio_url = get_ocw_studio_api_url()
         if (
             self.site_content_branch == settings.GIT_BRANCH_PREVIEW
             or settings.ENV_NAME not in PRODUCTION_NAMES
@@ -188,9 +189,7 @@ class SitePipelineDefinitionConfig:
             self.offline_bucket = settings.AWS_OFFLINE_TEST_BUCKET_NAME
             self.static_api_url = settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
             self.sitemap_domain = urlparse(self.static_api_url).netloc
-            self.ocw_studio_url = (
-                self.static_api_base_url if self.is_root_website else ""
-            )
+            self.ocw_studio_url = self.static_api_url if self.is_root_website else ""
         starter_slug = site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
@@ -249,7 +248,7 @@ class SitePipelineDefinitionConfig:
             "ocw_hugo_themes_branch": ocw_hugo_themes_branch,
             "ocw_hugo_projects_url": self.ocw_hugo_projects_url,
             "ocw_hugo_projects_branch": ocw_hugo_projects_branch,
-            "ocw_studio_url": get_ocw_studio_api_url(),
+            "ocw_studio_url": self.ocw_studio_url,
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,

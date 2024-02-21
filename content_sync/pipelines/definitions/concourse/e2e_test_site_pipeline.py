@@ -160,7 +160,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
         sitemap_domain = urlparse(static_api_base_url).netloc
         version = VERSION_LIVE
 
-        test_sites = Website.objects.filter(name__in=settings.TEST_SITE_SLUGS)
+        test_sites = Website.objects.filter(name__in=settings.OCW_TEST_SITE_SLUGS)
         www_test_site = Website.objects.get(name=settings.TEST_ROOT_WEBSITE_NAME)
         ocw_hugo_projects_url = www_test_site.starter.ocw_hugo_projects_url
         site_content_branch = get_site_content_branch(version)
