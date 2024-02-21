@@ -86,8 +86,7 @@ def required_concourse_settings(settings):
     settings.COURSE_SEARCH_API_URL = "http://test.edu/api/v1/learning_resources_search"
     settings.CONTENT_FILE_SEARCH_API_URL = "http://test.edu/api/v1/content_file_search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
-    settings.OCW_WWW_TEST_SLUG = "ocw-ci-test-www"
-    settings.OCW_COURSE_TEST_SLUG = "ocw-ci-test-course"
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-www", "ocw-ci-test-course"]
     return settings
 
 

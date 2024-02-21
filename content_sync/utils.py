@@ -168,13 +168,9 @@ def get_publishable_sites(version: str):
         "publish_date" if version == VERSION_LIVE else "draft_publish_date"
     )
     # Get all sites, minus any sites that have never been successfully published and test sites  # noqa: E501
-    sites = (
-        Website.objects.exclude(
-            Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
-        )
-        .exclude(unpublish_status__isnull=False)
-        .exclude(name__in=[settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG])
-    )
+    sites = Website.objects.exclude(
+        Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+    ).exclude(unpublish_status__isnull=False)
     return sites.prefetch_related("starter")
 
 

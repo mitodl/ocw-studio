@@ -1,4 +1,4 @@
-"""Export the courses denoted in settings.OCW_WWW_TEST_SLUG and settings.OCW_COURSE_TEST_SLUG"""  # noqa: E501, INP001
+"""Export the courses denoted in settings.OCW_TEST_SITE_SLUGS"""  # noqa: INP001
 import json
 from pathlib import Path
 
@@ -11,16 +11,14 @@ from websites.serializers import ExportWebsiteContentSerializer, ExportWebsiteSe
 
 
 class Command(BaseCommand):
-    """Export the courses denoted in settings.OCW_WWW_TEST_SLUG and settings.OCW_COURSE_TEST_SLUG"""  # noqa: E501
+    """Export the courses denoted in settings.OCW_TEST_SITE_SLUGS"""
 
     help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):  # noqa: ARG002
-        www_slug = settings.OCW_WWW_TEST_SLUG
-        course_slug = settings.OCW_COURSE_TEST_SLUG
-        websites = Website.objects.filter(name__in=[www_slug, course_slug]).order_by(
-            "pk"
-        )
+        websites = Website.objects.filter(
+            name__in=settings.OCW_TEST_SITES_SLUGS
+        ).order_by("pk")
         serialized_websites = ExportWebsiteSerializer(instance=websites, many=True).data
         content = WebsiteContent.objects.filter(website__in=websites).order_by("pk")
         serialized_website_content = ExportWebsiteContentSerializer(

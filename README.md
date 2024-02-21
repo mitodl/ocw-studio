@@ -360,8 +360,7 @@ There is a pipeline definition for end to end testing of sites using the `ocw-ww
 Firstly, there are some environment variables you will want to set:
 
 ```
-OCW_WWW_TEST_SLUG=ocw-ci-test-www
-OCW_COURSE_TEST_SLUG=ocw-ci-test-course
+OCW_TEST_SITE_SLUGS=["ocw-ci-test-www", "ocw-ci-test-course"]
 AWS_TEST_BUCKET_NAME=ocw-content-test
 AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
 STATIC_API_BASE_URL_TEST=http://10.1.0.102:8046

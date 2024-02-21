@@ -92,4 +92,4 @@ def resource_reference_field_filter(
 
 
 def is_test_site(site_name: str) -> bool:
-    return site_name in [settings.OCW_WWW_TEST_SLUG, settings.OCW_COURSE_TEST_SLUG]
+    return site_name in settings.OCW_TEST_SITE_SLUGS
