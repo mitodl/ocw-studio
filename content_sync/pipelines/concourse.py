@@ -615,6 +615,7 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
             *MANDATORY_CONCOURSE_SETTINGS,
             "AWS_TEST_BUCKET_NAME",
             "AWS_OFFLINE_TEST_BUCKET_NAME",
+            "TEST_ROOT_WEBSITE_NAME",
             "OCW_TEST_SITE_SLUGS",
             "STATIC_API_BASE_URL_TEST",
         ]
