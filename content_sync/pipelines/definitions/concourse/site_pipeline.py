@@ -188,6 +188,7 @@ class SitePipelineDefinitionConfig:
             self.web_bucket = settings.AWS_TEST_BUCKET_NAME
             self.offline_bucket = settings.AWS_OFFLINE_TEST_BUCKET_NAME
             self.static_api_url = settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
+            self.resource_base_url = self.static_api_url
             self.sitemap_domain = urlparse(self.static_api_url).netloc
             self.ocw_studio_url = self.static_api_url if self.is_root_website else ""
         starter_slug = site.starter.slug
@@ -238,12 +239,12 @@ class SitePipelineDefinitionConfig:
             "pipeline_name": pipeline_name,
             "instance_vars": instance_vars,
             "sitemap_domain": self.sitemap_domain,
-            "static_api_url": static_api_url,
+            "static_api_url": self.static_api_url,
             "storage_bucket": storage_bucket,
             "artifacts_bucket": artifacts_bucket,
-            "web_bucket": web_bucket,
-            "offline_bucket": offline_bucket,
-            "resource_base_url": resource_base_url,
+            "web_bucket": self.web_bucket,
+            "offline_bucket": self.offline_bucket,
+            "resource_base_url": self.resource_base_url,
             "site_content_branch": site_content_branch,
             "ocw_hugo_themes_branch": ocw_hugo_themes_branch,
             "ocw_hugo_projects_url": self.ocw_hugo_projects_url,
