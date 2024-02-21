@@ -1118,6 +1118,11 @@ OCW_STUDIO_LIVE_URL = get_string(
     default=None,
     description="The base url of the live site",
 )
+OCW_STUDIO_TEST_URL = get_string(
+    name="OCW_STUDIO_TEST_URL",
+    default=None,
+    description="The base url of the test site",
+)
 PREPUBLISH_ACTIONS = get_delimited_list(
     name="PREPUBLISH_ACTIONS",
     default=[],

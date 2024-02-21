@@ -207,8 +207,15 @@ class Website(TimestampedModel):
             if version == VERSION_LIVE
             else settings.OCW_STUDIO_DRAFT_URL
         )
+        if self.name in settings.OCW_TEST_SITE_SLUGS:
+            base_url = settings.OCW_STUDIO_TEST_URL
         url_path = self.url_path
-        if url_path and self.name != settings.ROOT_WEBSITE_NAME:
+
+        if (
+            url_path
+            and self.name != settings.ROOT_WEBSITE_NAME
+            and self.name != settings.TEST_ROOT_WEBSITE_NAME
+        ):
             return urljoin(base_url, url_path)
         else:
             return urljoin(base_url, self.get_site_root_path())
