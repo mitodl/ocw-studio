@@ -190,6 +190,8 @@ class SitePipelineDefinitionConfig:
             self.resource_base_url = self.static_api_url
             self.sitemap_domain = urlparse(self.static_api_url).netloc
             self.ocw_studio_url = self.static_api_url if self.is_root_website else ""
+            if self.is_root_website:
+                self.url_path = site.name
         starter_slug = site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
