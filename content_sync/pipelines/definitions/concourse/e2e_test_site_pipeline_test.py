@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 import pytest
 
+from content_sync.constants import DEV_TEST_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -82,6 +83,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     mock_pipeline_is_dev.return_value = is_dev
     common_pipeline_vars = get_common_pipeline_vars()
     static_api_base_url = common_pipeline_vars["static_api_base_url_test"]
+    ocw_studio_url = DEV_TEST_URL if is_dev else static_api_base_url
     test_bucket = common_pipeline_vars["test_bucket_name"]
     offline_test_bucket = common_pipeline_vars["offline_test_bucket_name"]
     sitemap_domain = urlparse(static_api_base_url).netloc
@@ -166,7 +168,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert www_values["delete_flag"] == ""
     assert www_values["url_path"] == www_site.name
     assert www_values["base_url"] == ""
-    assert www_values["ocw_studio_url"] == static_api_base_url
+    assert www_values["ocw_studio_url"] == ocw_studio_url
     assert www_values["static_api_url"] == static_api_base_url
     assert www_values["web_bucket"] == test_bucket
     assert www_values["offline_bucket"] == offline_test_bucket
