@@ -176,7 +176,6 @@ class SitePipelineDefinitionConfig:
         self.ocw_hugo_projects_branch = ocw_hugo_projects_branch
         if self.is_root_website:
             self.base_url = ""
-            self.url_path = ""
             self.delete_flag = ""
             self.static_resources_subdirectory = f"/{site.get_url_path()}/"
         else:

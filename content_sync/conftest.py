@@ -88,6 +88,7 @@ def required_concourse_settings(settings):
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
     settings.TEST_ROOT_WEBSITE_NAME = "ocw-ci-test-www"
     settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-www", "ocw-ci-test-course"]
+    settings.ROOT_WEBSITE_NAME = "root-website"
     return settings
 
 
