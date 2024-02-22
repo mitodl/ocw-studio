@@ -81,6 +81,7 @@ def required_concourse_settings(settings):
     settings.GIT_ORGANIZATION = "test_org"
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     settings.SITE_BASE_URL = "http://test.edu"
+    settings.STATIC_API_BASE_URL_TEST = "http://test.ocw.mit.edu"
     settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret  # noqa: S105
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.COURSE_SEARCH_API_URL = "http://test.edu/api/v1/learning_resources_search"
