@@ -125,6 +125,10 @@ class WebsiteViewSet(
             # Other authenticated users should get a list of websites they are editors/admins/owners for.  # noqa: E501
             queryset = get_objects_for_user(user, constants.PERMISSION_VIEW)
 
+        # Only superusers should be able to edit the test sites
+        if not self.request.user.is_superuser:
+            queryset = queryset.exclude(name__in=settings.OCW_TEST_SITE_SLUGS)
+
         if search is not None and search != "":
             # search query param is used in react-select typeahead, and should
             # match on the title, name, and short_id
