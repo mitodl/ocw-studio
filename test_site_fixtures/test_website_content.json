@@ -15,14 +15,21 @@
       "metadata": {
         "term": "Fall",
         "year": "2022",
-        "level": ["Graduate", "Undergraduate"],
+        "level": [
+          "Graduate",
+          "Undergraduate"
+        ],
         "topics": [
           [
             "Engineering",
             "Computer Science",
             "Software Design and Engineering"
           ],
-          ["Science", "Physics", "Quantum Mechanics"]
+          [
+            "Science",
+            "Physics",
+            "Quantum Mechanics"
+          ]
         ],
         "legacy_uid": "",
         "instructors": {
@@ -41,7 +48,11 @@
         "hide_download": false,
         "site_short_id": "ocw-ci-test-course",
         "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at \u00a0[https://github.mit.edu/ocw-content-rc/ocw-ci-test-course](https://github.mit.edu/ocw-content-rc/ocw-ci-test-course)\n- On OCW Studio at [https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course](https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course)\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n\u00a0Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
-        "department_numbers": ["8", "6", "18"],
+        "department_numbers": [
+          "8",
+          "6",
+          "18"
+        ],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
         "course_image_thumbnail": {
@@ -71,7 +82,7 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-19T22:18:26.762000Z",
-      "updated_on": "2023-11-13T19:42:36.629000Z",
+      "updated_on": "2024-02-23T07:58:41.873548Z",
       "text_id": "navmenu",
       "title": null,
       "type": "navmenu",
@@ -99,6 +110,26 @@
             "identifier": "7b3ae5c4-3b27-4806-b0c5-f012f16fa245"
           },
           {
+            "name": "Video Series Overview",
+            "weight": 50,
+            "identifier": "a9916d12-f128-bdd2-a11b-02e75f786ba1"
+          },
+          {
+            "name": "Multiple Videos Series Overview",
+            "weight": 60,
+            "identifier": "a7716d12-f128-bdd2-a11b-02e75f786ba1"
+          },
+          {
+            "name": "Resource List",
+            "weight": 70,
+            "identifier": "79392061-a205-4e93-83f2-276dbc9668e6"
+          },
+          {
+            "name": "External Resources",
+            "weight": 80,
+            "identifier": "2f9c424e-c9ba-4d1e-b1f6-e89de1bf682a"
+          },
+          {
             "name": "Subsection 1a Menu Title",
             "parent": "d9eb8c7e-b9ac-42db-83d1-5e36b8189f5d",
             "weight": 10,
@@ -111,19 +142,10 @@
             "identifier": "874d2ec0-06db-40da-b376-4f6579590d20"
           },
           {
-            "name": "Video Series Overview",
-            "weight": 50,
-            "identifier": "a9916d12-f128-bdd2-a11b-02e75f786ba1"
-          },
-          {
-            "name": "Multiple Videos Series Overview",
-            "weight": 60,
-            "identifier": "a7716d12-f128-bdd2-a11b-02e75f786ba1"
-          },
-          {
-            "name": "Resource List",
-            "weight": 80,
-            "identifier": "79392061-a205-4e93-83f2-276dbc9668e6"
+            "name": "Google.com",
+            "parent": "2f9c424e-c9ba-4d1e-b1f6-e89de1bf682a",
+            "weight": 10,
+            "identifier": "8ef7f3de-f238-4b3f-afb1-2d11a16f7247"
           }
         ]
       },
@@ -448,7 +470,9 @@
           "video_speakers": "",
           "youtube_description": ""
         },
-        "learning_resource_types": ["Activity Assignments"]
+        "learning_resource_types": [
+          "Activity Assignments"
+        ]
       },
       "is_page_content": true,
       "filename": "example_jpg",
@@ -1871,6 +1895,93 @@
       "filename": "file_txt",
       "dirpath": "content/resources",
       "file": "courses/ocw-ci-test-course/file.txt",
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522844,
+    "fields": {
+      "id": 522844,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2024-02-23T07:53:21.875476Z",
+      "updated_on": "2024-02-23T07:53:21.875494Z",
+      "text_id": "8ef7f3de-f238-4b3f-afb1-2d11a16f7247",
+      "title": "Google.com",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "is_broken": "",
+        "backup_url": "",
+        "external_url": "https://google.com",
+        "has_external_license_warning": true
+      },
+      "is_page_content": true,
+      "filename": "googlecom",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522845,
+    "fields": {
+      "id": 522845,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2024-02-23T07:53:39.387880Z",
+      "updated_on": "2024-02-23T07:54:24.625703Z",
+      "text_id": "3ee0856f-f641-4d3f-9cdc-79714fff907d",
+      "title": "Broken Google.com",
+      "type": "external-resource",
+      "markdown": "",
+      "metadata": {
+        "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "is_broken": true,
+        "backup_url": "https://youtube.com",
+        "external_url": "https://google.com",
+        "has_external_license_warning": true
+      },
+      "is_page_content": true,
+      "filename": "broken-googlecom",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 522846,
+    "fields": {
+      "id": 522846,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2024-02-23T07:56:46.974400Z",
+      "updated_on": "2024-02-23T07:56:46.974416Z",
+      "text_id": "2f9c424e-c9ba-4d1e-b1f6-e89de1bf682a",
+      "title": "External Resources Page",
+      "type": "page",
+      "markdown": "This is an external resource {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google.com\" %}}. This is a {{% resource_link \"3ee0856f-f641-4d3f-9cdc-79714fff907d\" \"broken external resource\" %}} The broken resource opens YouTube (backup\\_url) instead of Google.com.",
+      "metadata": {
+        "draft": false,
+        "description": "Test external resources."
+      },
+      "is_page_content": true,
+      "filename": "external-resources-page",
+      "dirpath": "content/pages",
+      "file": null,
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
