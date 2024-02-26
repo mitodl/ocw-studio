@@ -15,21 +15,14 @@
       "metadata": {
         "term": "Fall",
         "year": "2022",
-        "level": [
-          "Graduate",
-          "Undergraduate"
-        ],
+        "level": ["Graduate", "Undergraduate"],
         "topics": [
           [
             "Engineering",
             "Computer Science",
             "Software Design and Engineering"
           ],
-          [
-            "Science",
-            "Physics",
-            "Quantum Mechanics"
-          ]
+          ["Science", "Physics", "Quantum Mechanics"]
         ],
         "legacy_uid": "",
         "instructors": {
@@ -48,11 +41,7 @@
         "hide_download": false,
         "site_short_id": "ocw-ci-test-course",
         "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at \u00a0[https://github.mit.edu/ocw-content-rc/ocw-ci-test-course](https://github.mit.edu/ocw-content-rc/ocw-ci-test-course)\n- On OCW Studio at [https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course](https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course)\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n\u00a0Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
-        "department_numbers": [
-          "8",
-          "6",
-          "18"
-        ],
+        "department_numbers": ["8", "6", "18"],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
         "course_image_thumbnail": {
@@ -470,9 +459,7 @@
           "video_speakers": "",
           "youtube_description": ""
         },
-        "learning_resource_types": [
-          "Activity Assignments"
-        ]
+        "learning_resource_types": ["Activity Assignments"]
       },
       "is_page_content": true,
       "filename": "example_jpg",
