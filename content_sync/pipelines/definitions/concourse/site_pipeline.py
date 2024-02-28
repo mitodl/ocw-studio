@@ -161,6 +161,7 @@ class SitePipelineDefinitionConfig:
         self.offline_bucket = offline_bucket
         self.static_api_url = static_api_url
         self.sitemap_domain = sitemap_domain
+        self.prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
         self.url_path = site.get_url_path()
         self.resource_base_url = resource_base_url
         self.ocw_studio_url = get_ocw_studio_api_url()
@@ -198,7 +199,7 @@ class SitePipelineDefinitionConfig:
         base_online_args.update(
             {
                 "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",  # noqa: E501
-                "--baseURL": f"/{self.base_url}",
+                "--baseURL": f"/{self.prefix}{self.base_url}",
                 "--destination": "output-online",
             }
         )
@@ -253,7 +254,7 @@ class SitePipelineDefinitionConfig:
             "ocw_studio_url": self.ocw_studio_url,
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
-            "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,
+            "prefix": self.prefix,
         }
 
 
