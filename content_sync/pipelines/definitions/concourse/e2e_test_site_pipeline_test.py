@@ -74,12 +74,16 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
     settings.OCW_HUGO_THEMES_SENTRY_DSN = "test_sentry_dsn"
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
-    mock_pipeline_is_dev = mocker.patch(
+    mock_test_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline.is_dev"
+    )
+    mock_site_pipeline_is_dev = mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     is_dev = settings.ENV_NAME == "dev"
     mock_utils_is_dev.return_value = is_dev
-    mock_pipeline_is_dev.return_value = is_dev
+    mock_test_pipeline_is_dev.return_value = is_dev
+    mock_site_pipeline_is_dev.return_value = is_dev
     common_pipeline_vars = get_common_pipeline_vars()
     static_api_base_url = common_pipeline_vars["static_api_base_url_test"]
     test_bucket = common_pipeline_vars["test_bucket_name"]
@@ -164,7 +168,7 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     )
     assert www_values["is_root_website"] == 1
     assert www_values["delete_flag"] == ""
-    assert www_values["url_path"] == ""
+    assert www_values["url_path"] == www_site.name
     assert www_values["base_url"] == ""
     assert www_values["ocw_studio_url"] == static_api_base_url
     assert www_values["static_api_url"] == static_api_base_url

@@ -264,12 +264,10 @@ def test_get_publishable_sites(settings, mocker, mass_build_websites, version):
     else:
         unpublished_site.publish_date = None
     unpublished_site.save()
-    test_www_site = mass_build_websites[1]
-    test_www_site.name = settings.OCW_WWW_TEST_SLUG
-    test_www_site.save()
-    test_course_site = mass_build_websites[2]
-    test_course_site.name = settings.OCW_COURSE_TEST_SLUG
-    test_course_site.save()
+    for index, test_site_slug in enumerate(settings.OCW_TEST_SITE_SLUGS):
+        test_site = mass_build_websites[index + 1]
+        test_site.name = test_site_slug
+        test_site.save()
     assert len(mass_build_websites) == 7
     publishable_sites = get_publishable_sites(version)
     assert publishable_sites.count() == 4

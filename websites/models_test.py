@@ -191,6 +191,20 @@ def test_website_content_unpublished():
     [
         ["test-course", "courses", False, "live", "courses/test-course"],  # noqa: PT007
         ["ocw-home-page", "", True, "draft", ""],  # noqa: PT007
+        [  # noqa: PT007
+            "ocw-ci-test-course",
+            "courses",
+            False,
+            "draft",
+            "courses/ocw-ci-test-course",
+        ],
+        [  # noqa: PT007
+            "ocw-ci-test-course",
+            "courses",
+            False,
+            "live",
+            "courses/ocw-ci-test-course",
+        ],
     ],
 )
 def test_website_get_full_url(  # noqa: PLR0913
@@ -199,11 +213,15 @@ def test_website_get_full_url(  # noqa: PLR0913
     """Verify that Website.get_full_url returns the expected value"""
     settings.OCW_STUDIO_LIVE_URL = "http://test-live.edu"
     settings.OCW_STUDIO_DRAFT_URL = "http://test-draft.edu"
+    settings.OCW_STUDIO_TEST_URL = "http://test-test.edu"
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-course"]
     expected_domain = (
         settings.OCW_STUDIO_LIVE_URL
         if version == "live"
         else settings.OCW_STUDIO_DRAFT_URL
     )
+    if name in settings.OCW_TEST_SITE_SLUGS:
+        expected_domain = settings.OCW_STUDIO_TEST_URL
     starter = WebsiteStarterFactory.create()
     starter.config["root-url-path"] = root_url
     starter.save()

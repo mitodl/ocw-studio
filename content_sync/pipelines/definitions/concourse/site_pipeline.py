@@ -1,4 +1,5 @@
 from typing import Optional
+from urllib.parse import urlparse
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
@@ -22,7 +23,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import TARGET_OFFLINE, TARGET_ONLINE
+from content_sync.constants import DEV_TEST_URL, TARGET_OFFLINE, TARGET_ONLINE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -127,7 +128,7 @@ class SitePipelineDefinitionConfig:
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913 PLR0915
         self,
         site: Website,
         pipeline_name: str,
@@ -148,22 +149,21 @@ class SitePipelineDefinitionConfig:
     ):
         self.site = site
         self.pipeline_name = pipeline_name
-        self.is_root_website = site.name == settings.ROOT_WEBSITE_NAME
-        if self.is_root_website:
-            self.base_url = ""
-            self.static_resources_subdirectory = f"/{site.get_url_path()}/"
-            self.delete_flag = ""
-        else:
-            self.base_url = site.get_url_path()
-            self.static_resources_subdirectory = "/"
-            self.delete_flag = " --delete"
+        self.is_root_website = site.name in [
+            settings.ROOT_WEBSITE_NAME,
+            settings.TEST_ROOT_WEBSITE_NAME,
+        ]
+        self.is_test_website = site.name in settings.OCW_TEST_SITE_SLUGS
         self.site_content_branch = site_content_branch
-        self.static_api_url = static_api_url
         self.storage_bucket_name = storage_bucket
         self.artifacts_bucket = artifacts_bucket
         self.web_bucket = web_bucket
         self.offline_bucket = offline_bucket
+        self.static_api_url = static_api_url
+        self.sitemap_domain = sitemap_domain
+        self.url_path = site.get_url_path()
         self.resource_base_url = resource_base_url
+        self.ocw_studio_url = get_ocw_studio_api_url()
         if (
             self.site_content_branch == settings.GIT_BRANCH_PREVIEW
             or settings.ENV_NAME not in PRODUCTION_NAMES
@@ -174,6 +174,24 @@ class SitePipelineDefinitionConfig:
         self.ocw_hugo_themes_branch = ocw_hugo_themes_branch
         self.ocw_hugo_projects_url = site.starter.ocw_hugo_projects_url
         self.ocw_hugo_projects_branch = ocw_hugo_projects_branch
+        if self.is_root_website:
+            self.base_url = ""
+            self.delete_flag = ""
+            self.static_resources_subdirectory = f"/{site.get_url_path()}/"
+        else:
+            self.base_url = site.get_url_path()
+            self.static_resources_subdirectory = "/"
+            self.delete_flag = " --delete"
+        if self.is_test_website:
+            self.noindex = "true"
+            self.web_bucket = settings.AWS_TEST_BUCKET_NAME
+            self.offline_bucket = settings.AWS_OFFLINE_TEST_BUCKET_NAME
+            self.static_api_url = settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
+            self.resource_base_url = self.static_api_url
+            self.sitemap_domain = urlparse(self.static_api_url).netloc
+            self.ocw_studio_url = self.static_api_url if self.is_root_website else ""
+            if self.is_root_website:
+                self.url_path = site.name
         starter_slug = site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
@@ -214,25 +232,25 @@ class SitePipelineDefinitionConfig:
             "short_id": site.short_id,
             "site_name": site.name,
             "s3_path": site.s3_path,
-            "url_path": site.get_url_path(),
+            "url_path": self.url_path,
             "base_url": self.base_url,
             "static_resources_subdirectory": self.static_resources_subdirectory,
             "delete_flag": self.delete_flag,
             "noindex": self.noindex,
             "pipeline_name": pipeline_name,
             "instance_vars": instance_vars,
-            "sitemap_domain": sitemap_domain,
-            "static_api_url": static_api_url,
+            "sitemap_domain": self.sitemap_domain,
+            "static_api_url": self.static_api_url,
             "storage_bucket": storage_bucket,
             "artifacts_bucket": artifacts_bucket,
-            "web_bucket": web_bucket,
-            "offline_bucket": offline_bucket,
-            "resource_base_url": resource_base_url,
+            "web_bucket": self.web_bucket,
+            "offline_bucket": self.offline_bucket,
+            "resource_base_url": self.resource_base_url,
             "site_content_branch": site_content_branch,
             "ocw_hugo_themes_branch": ocw_hugo_themes_branch,
             "ocw_hugo_projects_url": self.ocw_hugo_projects_url,
             "ocw_hugo_projects_branch": ocw_hugo_projects_branch,
-            "ocw_studio_url": get_ocw_studio_api_url(),
+            "ocw_studio_url": self.ocw_studio_url,
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": f"{prefix.strip('/')}/" if prefix != "" else prefix,

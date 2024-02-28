@@ -111,13 +111,15 @@ def test_websites_endpoint_list(drf_client, filter_by_type, websites, settings):
         ] <= now.strftime(ISO_8601_FORMAT)
 
 
-def test_websites_endpoint_list_permissions(drf_client, permission_groups):
+def test_websites_endpoint_list_permissions(drf_client, permission_groups, settings):
     """Authenticated users should only see the websites they have permissions for"""
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-course"]
     for [user, count] in [
         [permission_groups.global_admin, 2],
         [permission_groups.global_author, 0],
         [permission_groups.site_admin, 1],
         [permission_groups.websites[0].owner, 2],
+        [permission_groups.superuser, 3],
     ]:
         drf_client.force_login(user)
         resp = drf_client.get(reverse("websites_api-list"))

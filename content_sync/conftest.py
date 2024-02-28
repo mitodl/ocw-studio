@@ -81,13 +81,14 @@ def required_concourse_settings(settings):
     settings.GIT_ORGANIZATION = "test_org"
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     settings.SITE_BASE_URL = "http://test.edu"
+    settings.STATIC_API_BASE_URL_TEST = "http://test.ocw.mit.edu"
     settings.API_BEARER_TOKEN = "abc123"  # pragma: allowlist secret  # noqa: S105
     settings.SEARCH_API_URL = "http://test.edu/api/v0/search"
     settings.COURSE_SEARCH_API_URL = "http://test.edu/api/v1/learning_resources_search"
     settings.CONTENT_FILE_SEARCH_API_URL = "http://test.edu/api/v1/content_file_search"
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
-    settings.OCW_WWW_TEST_SLUG = "ocw-ci-test-www"
-    settings.OCW_COURSE_TEST_SLUG = "ocw-ci-test-course"
+    settings.TEST_ROOT_WEBSITE_NAME = "ocw-ci-test-www"
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-www", "ocw-ci-test-course"]
     return settings
 
 

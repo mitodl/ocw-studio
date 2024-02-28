@@ -20,6 +20,7 @@ from mitol.common.envs import (
 )
 
 from main.constants import PRODUCTION_NAMES
+from main.envs import get_list_of_str
 from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
@@ -1012,18 +1013,13 @@ OCW_COURSE_STARTER_SLUG = get_string(
     description="The slug of the WebsiteStarter currently used for OCW course sites",
     required=False,
 )
-OCW_WWW_TEST_SLUG = get_string(
-    name="OCW_WWW_TEST_SLUG",
+TEST_ROOT_WEBSITE_NAME = get_string(
+    name="TEST_ROOT_WEBSITE_NAME",
     default="ocw-ci-test-www",
-    description="The slug of the root Website used to run end to end tests",
+    description="The Website name for the site at the root of the test domain",
     required=False,
 )
-OCW_COURSE_TEST_SLUG = get_string(
-    name="OCW_COURSE_TEST_SLUG",
-    default="ocw-ci-test-course",
-    description="The slug of the course Website used to run end to end tests",
-    required=False,
-)
+OCW_TEST_SITE_SLUGS = get_list_of_str(name="OCW_TEST_SITE_SLUGS", default=[])
 OCW_GTM_ACCOUNT_ID = get_string(
     name="OCW_GTM_ACCOUNT_ID",
     default=None,
@@ -1121,6 +1117,11 @@ OCW_STUDIO_LIVE_URL = get_string(
     name="OCW_STUDIO_LIVE_URL",
     default=None,
     description="The base url of the live site",
+)
+OCW_STUDIO_TEST_URL = get_string(
+    name="OCW_STUDIO_TEST_URL",
+    default=None,
+    description="The base url of the test site",
 )
 PREPUBLISH_ACTIONS = get_delimited_list(
     name="PREPUBLISH_ACTIONS",

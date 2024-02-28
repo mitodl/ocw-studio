@@ -615,8 +615,8 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
             *MANDATORY_CONCOURSE_SETTINGS,
             "AWS_TEST_BUCKET_NAME",
             "AWS_OFFLINE_TEST_BUCKET_NAME",
-            "OCW_WWW_TEST_SLUG",
-            "OCW_COURSE_TEST_SLUG",
+            "TEST_ROOT_WEBSITE_NAME",
+            "OCW_TEST_SITE_SLUGS",
             "STATIC_API_BASE_URL_TEST",
         ]
         super().__init__(api=api)

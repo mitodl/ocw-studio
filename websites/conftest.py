@@ -33,12 +33,16 @@ def permission_groups():
         site_owner,
         site_admin,
         site_editor,
-    ) = UserFactory.create_batch(5)
+        superuser,
+    ) = UserFactory.create_batch(6)
     websites = WebsiteFactory.create_batch(2, owner=site_owner, with_url_path=True)
+    websites.append(WebsiteFactory.create(name="ocw-ci-test-course"))
     global_admin.groups.add(Group.objects.get(name=constants.GLOBAL_ADMIN))
     global_author.groups.add(Group.objects.get(name=constants.GLOBAL_AUTHOR))
     site_admin.groups.add(websites[0].admin_group)
     site_editor.groups.add(websites[0].editor_group)
+    superuser.is_superuser = True
+    superuser.save()
 
     website = websites[0]
     owner_content = WebsiteContentFactory.create(website=website, owner=website.owner)
@@ -49,6 +53,7 @@ def permission_groups():
         global_author=global_author,
         site_admin=site_admin,
         site_editor=site_editor,
+        superuser=superuser,
         websites=websites,
         owner_content=owner_content,
         editor_content=editor_content,

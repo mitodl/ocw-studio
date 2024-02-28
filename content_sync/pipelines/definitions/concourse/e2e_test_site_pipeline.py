@@ -19,7 +19,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
+from content_sync.constants import DEV_ENDPOINT_URL, DEV_TEST_URL, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -156,13 +156,13 @@ class EndToEndTestPipelineDefinition(Pipeline):
         common_pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
         site_pipeline_vars = get_site_pipeline_definition_vars(namespace=namespace)
-        static_api_base_url = common_pipeline_vars["static_api_base_url_test"]
-        site_pipeline_vars["sitemap_domain"] = urlparse(static_api_base_url).netloc
+        static_api_base_url = settings.STATIC_API_BASE_URL_TEST or DEV_TEST_URL
+        sitemap_domain = urlparse(static_api_base_url).netloc
         version = VERSION_LIVE
 
-        www_site = Website.objects.get(name=settings.OCW_WWW_TEST_SLUG)
-        course_site = Website.objects.get(name=settings.OCW_COURSE_TEST_SLUG)
-        ocw_hugo_projects_url = www_site.starter.ocw_hugo_projects_url
+        test_sites = Website.objects.filter(name__in=settings.OCW_TEST_SITE_SLUGS)
+        www_test_site = Website.objects.get(name=settings.TEST_ROOT_WEBSITE_NAME)
+        ocw_hugo_projects_url = www_test_site.starter.ocw_hugo_projects_url
         site_content_branch = get_site_content_branch(version)
 
         resource_types = [
@@ -184,7 +184,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
         )
         ocw_hugo_projects_resource.check_every = Duration(root="1m")
         ocw_studio_webhook_resource = OcwStudioWebhookResource(
-            site_name=course_site.name,
+            site_name=www_test_site.name,
             api_token=settings.API_BEARER_TOKEN or "",
         )
 
@@ -196,46 +196,24 @@ class EndToEndTestPipelineDefinition(Pipeline):
             SlackAlertResource(),
         ]
 
-        www_config = SitePipelineDefinitionConfig(
-            site=www_site,
-            pipeline_name=version,
-            instance_vars=f"?vars={quote(json.dumps({'site': www_site.name}))}",
-            site_content_branch=site_content_branch,
-            static_api_url=common_pipeline_vars["static_api_base_url_test"],
-            storage_bucket=common_pipeline_vars["storage_bucket_name"],
-            artifacts_bucket=common_pipeline_vars["artifacts_bucket_name"],
-            web_bucket=common_pipeline_vars["test_bucket_name"],
-            offline_bucket=common_pipeline_vars["offline_test_bucket_name"],
-            resource_base_url=static_api_base_url,
-            ocw_hugo_themes_branch=themes_branch,
-            ocw_hugo_projects_branch=projects_branch,
-            sitemap_domain=site_pipeline_vars["sitemap_domain"],
-            namespace=namespace,
-        )
-        www_config.is_root_website = True
-        www_config.values["is_root_website"] = 1
-        www_config.values["delete_flag"] = ""
-        www_config.values["url_path"] = ""
-        www_config.values["base_url"] = ""
-        www_config.values["ocw_studio_url"] = static_api_base_url
-        course_config = SitePipelineDefinitionConfig(
-            site=course_site,
-            pipeline_name=version,
-            instance_vars=f"?vars={quote(json.dumps({'site': course_site.name}))}",
-            site_content_branch=site_content_branch,
-            static_api_url=common_pipeline_vars["static_api_base_url_test"],
-            storage_bucket=common_pipeline_vars["storage_bucket_name"],
-            artifacts_bucket=common_pipeline_vars["artifacts_bucket_name"],
-            web_bucket=common_pipeline_vars["test_bucket_name"],
-            offline_bucket=common_pipeline_vars["offline_test_bucket_name"],
-            resource_base_url=static_api_base_url,
-            ocw_hugo_themes_branch=themes_branch,
-            ocw_hugo_projects_branch=projects_branch,
-            sitemap_domain=site_pipeline_vars["sitemap_domain"],
-            namespace=namespace,
-        )
-        course_config.values["ocw_studio_url"] = ""
-        across_var_values = [www_config.values, course_config.values]
+        across_var_values = []
+        for test_site in test_sites:
+            site_config = SitePipelineDefinitionConfig(
+                site=test_site,
+                pipeline_name=version,
+                instance_vars=f"?vars={quote(json.dumps({'site': test_site.name}))}",
+                site_content_branch=site_content_branch,
+                static_api_url=common_pipeline_vars["static_api_base_url_test"],
+                storage_bucket=common_pipeline_vars["storage_bucket_name"],
+                artifacts_bucket=common_pipeline_vars["artifacts_bucket_name"],
+                web_bucket=common_pipeline_vars["test_bucket_name"],
+                offline_bucket=common_pipeline_vars["offline_test_bucket_name"],
+                resource_base_url=static_api_base_url,
+                ocw_hugo_themes_branch=themes_branch,
+                ocw_hugo_projects_branch=projects_branch,
+                namespace=namespace,
+            )
+            across_var_values.append(site_config.values)
 
         site_tasks = []
         site_tasks.extend(
@@ -326,7 +304,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                        "NOINDEX": course_config.values["noindex"],
+                        "NOINDEX": "true",
                         "COURSE_CONTENT_PATH": "../",
                         "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",  # noqa: E501
                         "FIELDS_CONTENT_PATH": "",
@@ -334,7 +312,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "GIT_CONTENT_SOURCE": "git@github.mit.edu:ocw-content-rc",
                         "OCW_TEST_COURSE": course_content_git_identifier,
                         "RESOURCE_BASE_URL": static_api_base_url,
-                        "SITEMAP_DOMAIN": site_pipeline_vars["sitemap_domain"],
+                        "SITEMAP_DOMAIN": sitemap_domain,
                         "SEARCH_API_URL": "https://discussions-rc.odl.mit.edu/api/v0/search/",
                         "COURSE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/learning_resources_search/",
                         "CONTENT_FILE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/content_file_search/",
