@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.113.0
+---------------
+
+- Allow editing and publishing of test sites (#2114)
+
 Version 0.112.1 (Released February 13, 2024)
 ---------------
 
