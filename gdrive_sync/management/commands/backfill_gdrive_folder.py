@@ -181,7 +181,7 @@ class Command(WebsiteFilterCommand):
             )
             return
 
-        gdrive_dl = get_gdrive_file(gdrive_file.get(DRIVE_FILE_ID))
+        gdrive_dl = get_gdrive_file(self.gdrive_service, gdrive_file.get(DRIVE_FILE_ID))
         DriveFile.objects.create(
             file_id=gdrive_file.get(DRIVE_FILE_ID),
             checksum=gdrive_dl.get(DRIVE_FILE_MD5_CHECKSUM),

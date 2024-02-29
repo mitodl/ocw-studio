@@ -55,7 +55,7 @@ def fetch_drive_file_size(
     return size
 
 
-def get_gdrive_file(self, file_id):
+def get_gdrive_file(gdrive_service, file_id):
     """
     Retrieve information about a Google Drive file.
 
@@ -66,7 +66,7 @@ def get_gdrive_file(self, file_id):
         dict: A dictionary containing information about the file.
     """
     return (
-        self.gdrive_service.files()
+        gdrive_service.files()
         .get(
             fileId=file_id,
             fields=(
