@@ -140,12 +140,12 @@ class Command(BaseCommand):
         """
         Update the associated transcript and captions files for a resource.
         """
-        resource.metadata["video_files"]["video_transcript_file"] = str(
-            new_transcript_file
-        ).lstrip("/")
-        resource.metadata["video_files"]["video_captions_file"] = str(
-            new_captions_file
-        ).lstrip("/")
+        resource.metadata["video_files"][
+            "video_transcript_file"
+        ] = f"/{str(new_transcript_file).lstrip('/')}"
+        resource.metadata["video_files"][
+            "video_captions_file"
+        ] = f"/{str(new_captions_file).lstrip('/')}"
 
         resource.save()
 
