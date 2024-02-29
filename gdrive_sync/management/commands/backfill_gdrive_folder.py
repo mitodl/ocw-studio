@@ -10,11 +10,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
 from mitol.common.utils import now_in_utc
 
-from gdrive_sync.api import (
-    get_drive_service,
-    query_files,
-    walk_gdrive_folder,
-)
+from gdrive_sync.api import get_drive_service, query_files, walk_gdrive_folder
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
@@ -28,6 +24,7 @@ from gdrive_sync.constants import (
     DriveFileStatus,
 )
 from gdrive_sync.models import DriveFile
+from gdrive_sync.utils import get_gdrive_file, get_resource_name
 from main import settings
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
@@ -170,7 +167,7 @@ class Command(WebsiteFilterCommand):
             mimetype=resource.metadata["file_type"],
             resumable=True,
         )
-        name = self.get_resource_name(resource)
+        name = get_resource_name(resource)
         file_metadata = {
             "name": name,
             "mimeType": resource.metadata["file_type"],
@@ -184,7 +181,7 @@ class Command(WebsiteFilterCommand):
             )
             return
 
-        gdrive_dl = self.get_gdrive_file(gdrive_file.get(DRIVE_FILE_ID))
+        gdrive_dl = get_gdrive_file(gdrive_file.get(DRIVE_FILE_ID))
         DriveFile.objects.create(
             file_id=gdrive_file.get(DRIVE_FILE_ID),
             checksum=gdrive_dl.get(DRIVE_FILE_MD5_CHECKSUM),
@@ -203,23 +200,6 @@ class Command(WebsiteFilterCommand):
         )
         self.stdout.write(f"{resource.file} uploaded to Google Drive folder.")
 
-    def get_resource_name(self, resource):
-        """
-        Infer the name of the resource based on the title or filename.
-
-        Args:
-            resource (WebsiteContent): The resource object.
-
-        Returns:
-            The name of the resource.
-        """
-        if resource.title:
-            return resource.title
-        elif resource.metadata.get("title"):
-            return resource.metadata["title"]
-        else:
-            return str(resource.file)
-
     def upload_file_to_gdrive(self, file_metadata, media):
         """Upload a file to Google Drive."""
         return (
@@ -228,30 +208,6 @@ class Command(WebsiteFilterCommand):
                 body=file_metadata,
                 media_body=media,
                 fields=DRIVE_FILE_ID,
-                supportsAllDrives=True,
-            )
-            .execute()
-        )
-
-    def get_gdrive_file(self, file_id):
-        """
-        Retrieve information about a Google Drive file.
-
-        Args:
-            file_id (str): The ID of the file to retrieve.
-
-        Returns:
-            dict: A dictionary containing information about the file.
-        """
-        return (
-            self.gdrive_service.files()
-            .get(
-                fileId=file_id,
-                fields=(
-                    f"{DRIVE_FILE_ID},{DRIVE_FILE_MD5_CHECKSUM},"
-                    f"{DRIVE_FILE_CREATED_TIME},{DRIVE_FILE_MODIFIED_TIME},"
-                    f"{DRIVE_FILE_SIZE},{DRIVE_FILE_DOWNLOAD_LINK}"
-                ),
                 supportsAllDrives=True,
             )
             .execute()

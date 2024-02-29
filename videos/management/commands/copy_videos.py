@@ -18,9 +18,8 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from gdrive_sync.utils import get_gdrive_file, get_resource_name
-from main.utils import uuid_string
 from videos.models import Video, VideoFile
-from videos.utils import copy_obj_s3
+from videos.utils import create_new_content
 from websites.models import Website, WebsiteContent
 
 
@@ -106,22 +105,6 @@ class Command(BaseCommand):
         for video in source_course_videos:
             self.copy_video_resource(source_course, destination_course, video)
 
-    def copy_resource(self, source_resource, destination_course):
-        """
-        Copy a website resource from the source course to the destination course.
-        """
-        copied_resource = source_resource
-        copied_resource.pk = None
-        copied_resource.text_id = uuid_string()
-        copied_resource.metadata["uid"] = copied_resource.text_id
-        copied_resource.website = destination_course
-        if copied_resource.file:
-            new_s3_loc = copy_obj_s3(source_resource, destination_course)
-            copied_resource.file = str(new_s3_loc).lstrip("/")
-        copied_resource.save()
-
-        return copied_resource
-
     def copy_gdrive_file(self, gdrive_file, destination_course):
         """
         Copy a Google Drive file to destination course.
@@ -156,8 +139,12 @@ class Command(BaseCommand):
         """
         Update the associated transcript and captions files for a resource.
         """
-        resource.metadata["video_files"]["video_transcript_file"] = new_transcript_file
-        resource.metadata["video_files"]["video_captions_file"] = new_captions_file
+        resource.metadata["video_files"]["video_transcript_file"] = str(
+            new_transcript_file
+        ).lstrip("/")
+        resource.metadata["video_files"]["video_captions_file"] = str(
+            new_captions_file
+        ).lstrip("/")
 
         resource.save()
 
@@ -195,12 +182,12 @@ class Command(BaseCommand):
         video_captions_file = source_resource.metadata["video_files"][
             "video_captions_file"
         ]
-        new_resource = self.copy_resource(source_resource, destination_course)
+        new_resource = create_new_content(source_resource, destination_course)
         if video_transcript_file and video_captions_file:
             video_transcript_resource = WebsiteContent.objects.filter(
                 file=video_transcript_file
             ).first()
-            new_transcript_resource = self.copy_resource(
+            new_transcript_resource = create_new_content(
                 video_transcript_resource, destination_course
             )
             new_transcript_file = new_transcript_resource.file
@@ -208,7 +195,7 @@ class Command(BaseCommand):
             video_captions_resource = WebsiteContent.objects.filter(
                 file=video_captions_file
             ).first()
-            new_captions_resource = self.copy_resource(
+            new_captions_resource = create_new_content(
                 video_captions_resource, destination_course
             )
             new_captions_file = new_captions_resource.file
@@ -217,7 +204,7 @@ class Command(BaseCommand):
                 new_resource, new_transcript_file, new_captions_file
             )
             transcript_gdrive_file = DriveFile.objects.filter(
-                s3_key=video_transcript_file.s3_key
+                s3_key=video_transcript_file
             ).first()
             if transcript_gdrive_file:
                 self.copy_gdrive_file(transcript_gdrive_file, destination_course)
@@ -225,7 +212,7 @@ class Command(BaseCommand):
                     transcript_gdrive_file, new_transcript_resource, destination_course
                 )
             captions_gdrive_file = DriveFile.objects.filter(
-                s3_key=video_captions_file.s3_key
+                s3_key=video_captions_file
             ).first()
             if captions_gdrive_file:
                 self.copy_gdrive_file(captions_gdrive_file, destination_course)

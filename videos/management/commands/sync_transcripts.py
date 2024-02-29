@@ -1,12 +1,9 @@
 """Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: EXE002, E501
-from copy import deepcopy
-from uuid import uuid4
 
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from main.utils import get_dirpath_and_filename
-from videos.utils import copy_obj_s3
+from videos.utils import create_new_content
 from websites.models import Website, WebsiteContent
 
 
@@ -86,7 +83,7 @@ class Command(BaseCommand):
                     source_captions = WebsiteContent.objects.get(
                         file=from_course_videos[video_youtube_id][0]
                     )
-                    new_captions = self.create_new_content(source_captions, to_course)
+                    new_captions = create_new_content(source_captions, to_course)
                     video.metadata["video_files"]["video_captions_file"] = str(
                         new_captions.file
                     )
@@ -153,31 +150,3 @@ class Command(BaseCommand):
             if (captions_file is not None) and (transcript_file is not None):
                 youtube_dict[youtube_id] = (captions_file, transcript_file)
         return youtube_dict
-
-    def update_metadata(self, source_obj, new_uid, new_s3_path):
-        """Generate updated metadata for new WebsiteContent object"""
-        new_metadata = deepcopy(source_obj.metadata)
-        new_metadata["uid"] = new_uid
-        new_metadata["file"] = new_s3_path
-        return new_metadata
-
-    def create_new_content(self, source_obj, to_course):
-        """Create new WebsiteContent object from source_obj in to_course"""
-        new_text_id = str(uuid4())
-        new_s3_loc = copy_obj_s3(source_obj, to_course)
-        new_obj_metadata = self.update_metadata(source_obj, new_text_id, new_s3_loc)
-        new_obj = WebsiteContent.objects.get_or_create(
-            website=to_course,
-            text_id=new_text_id,
-            defaults={
-                "metadata": new_obj_metadata,
-                "title": source_obj.title,
-                "type": source_obj.type,
-                "file": new_s3_loc,
-                "dirpath": get_dirpath_and_filename(new_s3_loc)[0],
-                "filename": get_dirpath_and_filename(new_s3_loc)[1],
-                "is_page_content": True,
-            },
-        )[0]
-        new_obj.save()
-        return new_obj
