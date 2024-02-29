@@ -2,13 +2,11 @@
 from copy import deepcopy
 from uuid import uuid4
 
-from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
-from videos.utils import generate_s3_path
+from videos.utils import copy_obj_s3
 from websites.models import Website, WebsiteContent
 
 
@@ -18,6 +16,7 @@ class Command(BaseCommand):
     help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
+        """Add arguments to the command's argument parser."""
         parser.add_argument(
             "--from_course",
             dest="from_course",
@@ -32,7 +31,10 @@ class Command(BaseCommand):
             required=True,
         )
 
-    def handle(self, *args, **options):  # noqa: ARG002
+    def handle(self, **options):
+        """
+        Handle the captions/transcript syncing process between the two courses.
+        """
         from_course = Website.objects.get(
             Q(short_id=options["from_course"]) | Q(name=options["from_course"])
         )
@@ -159,19 +161,10 @@ class Command(BaseCommand):
         new_metadata["file"] = new_s3_path
         return new_metadata
 
-    def copy_obj_s3(self, source_obj, dest_course):
-        """Copy source_obj to the S3 bucket of dest_course"""
-        s3 = get_boto3_resource("s3")
-        new_s3_path = generate_s3_path(source_obj, dest_course)
-        s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
-            CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME.rstrip('/')}/{str(source_obj.file).lstrip('/')}"
-        )
-        return new_s3_path
-
     def create_new_content(self, source_obj, to_course):
         """Create new WebsiteContent object from source_obj in to_course"""
         new_text_id = str(uuid4())
-        new_s3_loc = self.copy_obj_s3(source_obj, to_course)
+        new_s3_loc = copy_obj_s3(source_obj, to_course)
         new_obj_metadata = self.update_metadata(source_obj, new_text_id, new_s3_loc)
         new_obj = WebsiteContent.objects.get_or_create(
             website=to_course,

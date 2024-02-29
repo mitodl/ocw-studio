@@ -3,6 +3,14 @@ from typing import Optional
 
 import requests
 
+from gdrive_sync.constants import (
+    DRIVE_FILE_CREATED_TIME,
+    DRIVE_FILE_DOWNLOAD_LINK,
+    DRIVE_FILE_ID,
+    DRIVE_FILE_MD5_CHECKSUM,
+    DRIVE_FILE_MODIFIED_TIME,
+    DRIVE_FILE_SIZE,
+)
 from gdrive_sync.models import DriveFile
 from websites.models import WebsiteContent
 
@@ -45,3 +53,46 @@ def fetch_drive_file_size(
         size = bucket.Object(file_key).content_length
 
     return size
+
+
+def get_gdrive_file(self, file_id):
+    """
+    Retrieve information about a Google Drive file.
+
+    Args:
+        file_id (str): The ID of the file to retrieve.
+
+    Returns:
+        dict: A dictionary containing information about the file.
+    """
+    return (
+        self.gdrive_service.files()
+        .get(
+            fileId=file_id,
+            fields=(
+                f"{DRIVE_FILE_ID},{DRIVE_FILE_MD5_CHECKSUM},"
+                f"{DRIVE_FILE_CREATED_TIME},{DRIVE_FILE_MODIFIED_TIME},"
+                f"{DRIVE_FILE_SIZE},{DRIVE_FILE_DOWNLOAD_LINK}"
+            ),
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+
+
+def get_resource_name(resource):
+    """
+    Infer the name of the resource based on the title or filename.
+
+    Args:
+        resource (WebsiteContent): The resource object.
+
+    Returns:
+        The name of the resource.
+    """
+    if resource.title:
+        return resource.title
+    elif resource.metadata.get("title"):
+        return resource.metadata["title"]
+    else:
+        return str(resource.file)

@@ -5,9 +5,12 @@ This module provides several utility functions that simplify the task of working
 import os
 import re
 
+from django.conf import settings
+
+from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.models import WebsiteContent
-from websites.models import WebsiteStarter
+from websites.models import Website, WebsiteStarter
 
 
 def generate_s3_path(file_or_webcontent, website):
@@ -46,3 +49,13 @@ def get_content_dirpath(slug, collection_type):
             continue
         return collection["folder"]
     return None
+
+
+def copy_obj_s3(source_obj: WebsiteContent, dest_course: Website) -> str:
+    """Copy source_obj to the S3 bucket of dest_course"""
+    s3 = get_boto3_resource("s3")
+    new_s3_path = generate_s3_path(source_obj, dest_course)
+    s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_s3_path).copy_from(
+        CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME.rstrip('/')}/{str(source_obj.file).lstrip('/')}"
+    )
+    return new_s3_path
