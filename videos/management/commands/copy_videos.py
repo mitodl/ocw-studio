@@ -71,6 +71,7 @@ class Command(BaseCommand):
         )
         if video_uuids:
             video_uuids = video_uuids.split(",")
+            video_uuids = [uuid.strip() for uuid in video_uuids]
             source_course_videos = source_course_videos.filter(text_id__in=video_uuids)
         if not source_course_videos:
             self.stdout.write(
