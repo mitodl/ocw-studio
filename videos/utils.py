@@ -63,7 +63,9 @@ def copy_obj_s3(source_obj: WebsiteContent, dest_course: Website) -> str:
 
 
 def create_new_content(source_obj, to_course):
-    """Create new WebsiteContent object from source_obj in to_course"""
+    """Create new WebsiteContent object from source_obj in to_course,
+    or update existing object if it exists.
+    """
     new_text_id = uuid_string()
     if source_obj.file:
         new_s3_loc = copy_obj_s3(source_obj, to_course)
@@ -74,19 +76,32 @@ def create_new_content(source_obj, to_course):
         new_dirpath = source_obj.dirpath
         new_filename = source_obj.filename
     new_obj_metadata = update_metadata(source_obj, new_text_id, new_s3_loc)
-    new_obj = WebsiteContent.objects.create(
-        website=to_course,
-        text_id=new_text_id,
-        metadata=new_obj_metadata,
-        title=source_obj.title,
-        type=source_obj.type,
-        file=new_s3_loc,
-        dirpath=new_dirpath,
-        filename=new_filename,
-        is_page_content=True,
-    )
-    new_obj.save()
-    return new_obj
+    existing_content = WebsiteContent.objects.filter(
+        website=to_course, dirpath=new_dirpath, filename=new_filename
+    ).first()
+    if existing_content is None:
+        new_obj = WebsiteContent.objects.update_or_create(
+            website=to_course,
+            text_id=new_text_id,
+            defaults={
+                "metadata": new_obj_metadata,
+                "title": source_obj.title,
+                "type": source_obj.type,
+                "file": new_s3_loc,
+                "dirpath": new_dirpath,
+                "filename": new_filename,
+                "is_page_content": True,
+            },
+        )[0]
+        new_obj.save()
+    else:
+        existing_content.metadata = new_obj_metadata
+        existing_content.title = source_obj.title
+        existing_content.type = source_obj.type
+        existing_content.file = new_s3_loc
+        existing_content.is_page_content = True
+        existing_content.save()
+    return new_obj if existing_content is None else existing_content
 
 
 def update_metadata(source_obj, new_uid, new_s3_path):
