@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.114.0
+---------------
+
+- Copy videos from one course to another (#2120)
+- chore(e2e): update fixtures for external resource tests (#2116)
+
 Version 0.113.0 (Released February 28, 2024)
 ---------------
 
