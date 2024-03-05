@@ -398,7 +398,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                 # In the dev environment, Minio prefixes the path with the bucket name
                 if is_dev() and file_path.startswith(storage_bucket_prefix):
                     file_path = file_path.replace(storage_bucket_prefix, "/")
-                full_metadata[file_field["name"]] = urlparse(file_url).path
+                full_metadata[file_field["name"]] = file_path
             else:
                 full_metadata[file_field["name"]] = None
             modified = True
