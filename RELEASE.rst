@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.114.0
+Version 0.114.0 (Released March 05, 2024)
 ---------------
 
 - Copy videos from one course to another (#2120)
