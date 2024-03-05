@@ -618,5 +618,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["ocw_hugo_projects_url"] == website.starter.ocw_hugo_projects_url
     assert dummy_vars["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     assert dummy_vars["hugo_args_online"] == config.hugo_args_online
+    assert f"--baseURL /{prefix.lstrip('/')}" in dummy_vars["hugo_args_online"]
     assert dummy_vars["hugo_args_offline"] == config.hugo_args_offline
     assert dummy_vars["prefix"] == expected_prefix
