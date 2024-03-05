@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.114.1
+Version 0.114.1 (Released March 05, 2024)
 ---------------
 
 - use the prefix argument in the hugo baseURL argument during the online build (#2121)
