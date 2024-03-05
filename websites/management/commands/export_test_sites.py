@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):  # noqa: ARG002
         websites = Website.objects.filter(
-            name__in=settings.OCW_TEST_SITES_SLUGS
+            name__in=settings.OCW_TEST_SITE_SLUGS
         ).order_by("pk")
         serialized_websites = ExportWebsiteSerializer(instance=websites, many=True).data
         content = WebsiteContent.objects.filter(website__in=websites).order_by("pk")
