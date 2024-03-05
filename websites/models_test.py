@@ -56,11 +56,24 @@ def test_websitecontent_calculate_checksum(metadata, markdown, dirpath, exp_chec
 @pytest.mark.parametrize("is_video", [True, False])
 @pytest.mark.parametrize("has_metadata", [True, False])
 @pytest.mark.parametrize("transcript_value", [None, "", "transcript.pdf"])
-def test_websitecontent_full_metadata(
-    has_file_widget, has_file, is_video, has_metadata, transcript_value
+@pytest.mark.parametrize("is_dev", [True, False])
+def test_websitecontent_full_metadata(  # noqa: PLR0913
+    mocker,
+    settings,
+    has_file_widget,
+    has_file,
+    is_video,
+    has_metadata,
+    transcript_value,
+    is_dev,
 ):
     """WebsiteContent.full_metadata returns expected file field in metadata when appropriate"""
+    mock_is_dev = mocker.patch("websites.models.is_dev")
+    mock_is_dev.return_value = is_dev
     file = SimpleUploadedFile("test.txt", b"content")
+    storage_bucket_prefix = f"/{settings.AWS_STORAGE_BUCKET_NAME}/"
+    if is_dev:
+        file.url = f"{storage_bucket_prefix}test.txt"
     title = ("Test Title",)
     description = "Test Description"
     config_fields = [
@@ -140,6 +153,8 @@ def test_websitecontent_full_metadata(
             if has_file
             else None
         )
+        if is_dev and has_file:
+            assert not full_metadata["my_file"].startswith(storage_bucket_prefix)
     elif has_metadata:
         assert "my_file" not in full_metadata
 
