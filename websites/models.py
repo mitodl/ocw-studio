@@ -26,7 +26,7 @@ from safedelete.queryset import SafeDeleteQueryset
 
 from content_sync.constants import VERSION_LIVE
 from main.settings import YT_FIELD_CAPTIONS, YT_FIELD_TRANSCRIPT
-from main.utils import uuid_string
+from main.utils import is_dev, uuid_string
 from users.models import User
 from websites import constants
 from websites.constants import (
@@ -393,6 +393,11 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                 file_url = self.file.url
                 if url_path and s3_path != url_path:
                     file_url = file_url.replace(s3_path, url_path, 1)
+                file_path = urlparse(file_url).path
+                storage_bucket_prefix = f"/{settings.AWS_STORAGE_BUCKET_NAME}/"
+                # In the dev environment, Minio prefixes the path with the bucket name
+                if is_dev() and file_path.startswith(storage_bucket_prefix):
+                    file_path = file_path.replace(storage_bucket_prefix, "/")
                 full_metadata[file_field["name"]] = urlparse(file_url).path
             else:
                 full_metadata[file_field["name"]] = None
