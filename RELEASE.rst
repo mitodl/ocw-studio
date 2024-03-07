@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.115.0
+---------------
+
+- chore(e2e): update fixtures and fix typo (#2125)
+
 Version 0.114.1 (Released March 05, 2024)
 ---------------
 
