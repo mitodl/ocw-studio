@@ -286,8 +286,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
-                timeout="20m",
-                attempts=3,
+                timeout="2h",
+                attempts=1,
                 config=TaskConfig(
                     platform="linux",
                     image_resource=PLAYWRIGHT_REGISTRY_IMAGE,
