@@ -4,7 +4,13 @@ from uuid import uuid4
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from videos.utils import clean_uuid_filename, generate_s3_path, get_content_dirpath
+from videos.utils import (
+    clean_uuid_filename,
+    create_new_content,
+    generate_s3_path,
+    get_content_dirpath,
+    update_metadata,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -59,3 +65,36 @@ def test_get_content_dirpath():
     dirpath = get_content_dirpath(starter.slug, "resource")
 
     assert dirpath == "content/resource"
+
+
+def test_create_new_content(mocker):
+    """Test that create_new_content creates or updates the resource correctly."""
+    source_course = WebsiteFactory.create()
+    destination_course = WebsiteFactory.create()
+    source_content = WebsiteContentFactory.create(
+        website=source_course, file="source_file"
+    )
+
+    mock_copy_obj_s3 = mocker.patch(
+        "videos.utils.copy_obj_s3", return_value="new_s3_loc"
+    )
+    mock_get_dirpath_and_filename = mocker.patch(
+        "videos.utils.get_dirpath_and_filename",
+        return_value=["new_dirpath", "new_filename"],
+    )
+    mock_uuid_string = mocker.patch("videos.utils.uuid_string", return_value="new-uuid")
+    new_content = create_new_content(source_content, destination_course)
+
+    assert new_content.website == destination_course
+    assert new_content.title == source_content.title
+    assert new_content.type == source_content.type
+    assert new_content.text_id == "new-uuid"
+    expected_metadata = update_metadata(source_content, "new-uuid", "new_s3_loc")
+    assert new_content.metadata == expected_metadata
+    assert new_content.file.name == "new_s3_loc"
+    assert new_content.dirpath == "content/resources"
+    assert new_content.filename == "new_filename"
+
+    mock_copy_obj_s3.assert_called_once_with(source_content, destination_course)
+    mock_get_dirpath_and_filename.assert_called_once_with("new_s3_loc")
+    mock_uuid_string.assert_called_once()
