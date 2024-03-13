@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.115.0
+Version 0.115.0 (Released March 13, 2024)
 ---------------
 
 - fix: increase timeout for e2e tests (#2128)
