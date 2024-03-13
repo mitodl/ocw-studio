@@ -29,6 +29,12 @@ class LinkToExternalResourceRule(PyparsingRule):
 
     fields = [
         "markdown",
+        "metadata.related_resources_text",
+        "metadata.image_metadata.caption",
+        "metadata.image_metadata.credit",
+        "metadata.optional_text",
+        "metadata.description",
+        "metadata.course_description",
     ]
 
     @dataclass
@@ -71,7 +77,7 @@ class LinkToExternalResourceRule(PyparsingRule):
         )
         metadata["external_url"] = toks.link.destination
 
-        text_id = uuid_string()  # to avoid collisions
+        text_id = uuid_string()
         link_text = toks.link.text
         config_item = config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
@@ -86,14 +92,13 @@ class LinkToExternalResourceRule(PyparsingRule):
                 "is_page_content": config.is_page_content(config_item),
                 "filename": slugify(
                     get_valid_base_filename(
-                        f"{link_text}_{text_id}", CONTENT_TYPE_EXTERNAL_RESOURCE
+                        f"{link_text}_{text_id}",  # to avoid collisions
+                        CONTENT_TYPE_EXTERNAL_RESOURCE,
                     ),
                     allow_unicode=True,
                 ),
             },
         )
-
-        resource.delete()
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
