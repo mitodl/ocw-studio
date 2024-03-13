@@ -15,6 +15,7 @@ from gdrive_sync.constants import (
     DRIVE_FILE_MODIFIED_TIME,
     DRIVE_FILE_SIZE,
     DRIVE_FOLDER_FILES_FINAL,
+    DRIVE_FOLDER_VIDEOS_FINAL,
     DRIVE_MIMETYPE_FOLDER,
     DriveFileStatus,
 )
@@ -31,6 +32,13 @@ class Command(BaseCommand):
     """
 
     help = "Copy videos from source course to destination course"  # noqa: A003
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize the command.
+        """
+        super().__init__(*args, **kwargs)
+        self.gdrive_service = get_drive_service()
 
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""
@@ -103,8 +111,6 @@ class Command(BaseCommand):
         if not source_course_videos:
             return
 
-        self.gdrive_service = get_drive_service()
-
         for video in source_course_videos:
             self.copy_video_resource(source_course, destination_course, video)
 
@@ -163,10 +169,17 @@ class Command(BaseCommand):
 
         resource.save()
 
-    def create_drivefile(self, gdrive_file, new_resource, destination_course):
+    def create_drivefile(
+        self, gdrive_file, new_resource, destination_course, files_or_videos
+    ):
         """
         Create a DriveFile for gdrive_file in the destination course.
         """
+        files_or_videos = (
+            DRIVE_FOLDER_FILES_FINAL
+            if files_or_videos == "files"
+            else DRIVE_FOLDER_VIDEOS_FINAL
+        )
         gdrive_dl = get_gdrive_file(self.gdrive_service, gdrive_file.file_id)
         DriveFile.objects.update_or_create(
             file_id=gdrive_dl.get(DRIVE_FILE_ID),
@@ -178,9 +191,7 @@ class Command(BaseCommand):
                 "website": destination_course,
                 "s3_key": str(new_resource.file).lstrip("/"),
                 "resource": new_resource,
-                "drive_path": (
-                    f"{destination_course.short_id}/{DRIVE_FOLDER_FILES_FINAL}"
-                ),
+                "drive_path": (f"{destination_course.short_id}/{files_or_videos}"),
                 "modified_time": gdrive_dl.get(DRIVE_FILE_MODIFIED_TIME),
                 "created_time": gdrive_dl.get(DRIVE_FILE_CREATED_TIME),
                 "size": gdrive_dl.get(DRIVE_FILE_SIZE),
@@ -227,7 +238,10 @@ class Command(BaseCommand):
             if transcript_gdrive_file:
                 self.copy_gdrive_file(transcript_gdrive_file, destination_course)
                 self.create_drivefile(
-                    transcript_gdrive_file, new_transcript_resource, destination_course
+                    transcript_gdrive_file,
+                    new_transcript_resource,
+                    destination_course,
+                    "files",
                 )
             captions_gdrive_file = DriveFile.objects.filter(
                 s3_key=video_captions_file.lstrip("/")
@@ -235,7 +249,10 @@ class Command(BaseCommand):
             if captions_gdrive_file:
                 self.copy_gdrive_file(captions_gdrive_file, destination_course)
                 self.create_drivefile(
-                    captions_gdrive_file, new_captions_resource, destination_course
+                    captions_gdrive_file,
+                    new_captions_resource,
+                    destination_course,
+                    "files",
                 )
 
         videofile = VideoFile.objects.filter(
@@ -255,4 +272,6 @@ class Command(BaseCommand):
             gdrive_file = DriveFile.objects.filter(video=video).first()
             if gdrive_file:
                 self.copy_gdrive_file(gdrive_file, destination_course)
-                self.create_drivefile(gdrive_file, new_resource, destination_course)
+                self.create_drivefile(
+                    gdrive_file, new_resource, destination_course, "videos"
+                )
