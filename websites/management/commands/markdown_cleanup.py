@@ -153,6 +153,7 @@ class Command(WebsiteFilterCommand):
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
         rule = Rule()
+        rule.set_options({"commit": commit})
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 

@@ -81,24 +81,34 @@ class LinkToExternalResourceRule(PyparsingRule):
         link_text = toks.link.text
         config_item = config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
-        resource, _ = WebsiteContent.objects.get_or_create(
+        resource = WebsiteContent.objects.filter(
             metadata=metadata,
             dirpath=config_item.file_target,
             website=website_content.website,
             type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-            defaults={
-                "text_id": text_id,
-                "title": link_text,
-                "is_page_content": config.is_page_content(config_item),
-                "filename": slugify(
+        ).first()
+        needs_creation = False
+
+        if resource is None:
+            needs_creation = True
+            resource = WebsiteContent(
+                metadata=metadata,
+                dirpath=config_item.file_target,
+                website=website_content.website,
+                type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+                text_id=text_id,
+                title=link_text,
+                is_page_content=config.is_page_content(config_item),
+                filename=slugify(
                     get_valid_base_filename(
                         f"{link_text}_{text_id}",  # to avoid collisions
                         CONTENT_TYPE_EXTERNAL_RESOURCE,
                     ),
                     allow_unicode=True,
                 ),
-            },
-        )
+            )
+        if needs_creation and self.options.get("commit", True):
+            resource.save()
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
