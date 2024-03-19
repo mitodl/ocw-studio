@@ -7,7 +7,10 @@ from django.utils.text import slugify
 
 from main.utils import uuid_string
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
-from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
+from websites.management.commands.markdown_cleaning.cleanup_rule import (
+    MarkdownCleanupRule,
+    PyparsingRule,
+)
 from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     LinkParseResult,
@@ -16,6 +19,50 @@ from websites.management.commands.markdown_cleaning.parsing_utils import Shortco
 from websites.management.commands.markdown_cleaning.utils import StarterSiteConfigLookup
 from websites.models import WebsiteContent
 from websites.utils import get_valid_base_filename
+
+
+def get_or_create_external_resource(
+    website_content, site_config, url, link_text, should_commit
+):
+    metadata = site_config.generate_item_metadata(
+        CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
+    )
+    metadata["external_url"] = url
+
+    text_id = uuid_string()
+    config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
+
+    resource = WebsiteContent.objects.filter(
+        metadata__external_url=url,
+        dirpath=config_item.file_target,
+        website=website_content.website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+    ).first()
+    needs_creation = False
+
+    if resource is None:
+        needs_creation = True
+        resource = WebsiteContent(
+            metadata=metadata,
+            dirpath=config_item.file_target,
+            website=website_content.website,
+            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+            text_id=text_id,
+            title=link_text,
+            is_page_content=site_config.is_page_content(config_item),
+            filename=slugify(
+                get_valid_base_filename(
+                    f"{link_text}_{text_id}",  # to avoid collisions
+                    CONTENT_TYPE_EXTERNAL_RESOURCE,
+                ),
+                allow_unicode=True,
+            ),
+        )
+
+    if needs_creation and should_commit:
+        resource.save()
+
+    return resource
 
 
 class LinkToExternalResourceRule(PyparsingRule):
@@ -71,44 +118,15 @@ class LinkToExternalResourceRule(PyparsingRule):
             return toks.original_text, self.ReplacementNotes(note="not course content")
 
         config = self.starter_lookup.get_config(starter_id)
-
-        metadata = config.generate_item_metadata(
-            CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
-        )
-        metadata["external_url"] = toks.link.destination
-
-        text_id = uuid_string()
         link_text = toks.link.text
-        config_item = config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
-        resource = WebsiteContent.objects.filter(
-            metadata=metadata,
-            dirpath=config_item.file_target,
-            website=website_content.website,
-            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-        ).first()
-        needs_creation = False
-
-        if resource is None:
-            needs_creation = True
-            resource = WebsiteContent(
-                metadata=metadata,
-                dirpath=config_item.file_target,
-                website=website_content.website,
-                type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-                text_id=text_id,
-                title=link_text,
-                is_page_content=config.is_page_content(config_item),
-                filename=slugify(
-                    get_valid_base_filename(
-                        f"{link_text}_{text_id}",  # to avoid collisions
-                        CONTENT_TYPE_EXTERNAL_RESOURCE,
-                    ),
-                    allow_unicode=True,
-                ),
-            )
-        if needs_creation and self.options.get("commit", True):
-            resource.save()
+        resource = get_or_create_external_resource(
+            website_content=website_content,
+            site_config=config,
+            url=toks.link.destination,
+            link_text=link_text,
+            should_commit=self.options.get("commit", True),
+        )
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
@@ -121,3 +139,72 @@ class LinkToExternalResourceRule(PyparsingRule):
         markdown links.
         """  # noqa: D401
         return "](" in text
+
+
+class NavItemToExternalResourceRule(MarkdownCleanupRule):
+    alias = "nav_item_to_external_resource"
+
+    fields = [
+        "metadata.leftnav",
+    ]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.starter_lookup = StarterSiteConfigLookup()
+
+    def generate_external_resource(self, website_content, item):
+        url = item.get("url", "")
+        link_text = item.get("name", url)
+
+        starter_id = website_content.website.starter_id
+        config = self.starter_lookup.get_config(starter_id)
+
+        resource = get_or_create_external_resource(
+            website_content=website_content,
+            site_config=config,
+            url=url,
+            link_text=link_text,
+            should_commit=self.options.get("commit", True),
+        )
+
+        new_item = {
+            **item,
+            "identifier": str(resource.text_id),
+        }
+
+        if url:
+            del new_item["url"]
+
+        return new_item
+
+    def transform_text(
+        self, website_content: WebsiteContent, text: list, on_match
+    ) -> str:
+        nav_items = text
+        transformed_items = []
+        id_replacements = {}
+        for item in nav_items:
+            if (
+                item.get("identifier", "").startswith("external")
+                and item.get("url") is not None
+            ):
+                item_repalcement = self.generate_external_resource(
+                    website_content, item
+                )
+                notes = self.ReplacementNotes()
+
+                on_match(item, item_repalcement, website_content, notes)
+
+                transformed_items.append(item_repalcement)
+                id_replacements[item["identifier"]] = item_repalcement["identifier"]
+            else:
+                transformed_items.append(item)
+
+        for item in transformed_items:
+            if (
+                item.get("parent") is not None
+                and id_replacements.get(item["parent"]) is not None
+            ):
+                item["parent"] = id_replacements[item["parent"]]
+
+        return transformed_items

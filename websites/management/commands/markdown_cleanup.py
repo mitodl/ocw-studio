@@ -49,6 +49,7 @@ class Command(WebsiteFilterCommand):
         rules.BrokenMetadataLinkFixRule,
         rules.CourseAbsoluteLinkRule,
         rules.LinkToExternalResourceRule,
+        rules.NavItemToExternalResourceRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
