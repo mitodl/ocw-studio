@@ -21,8 +21,13 @@ from websites.models import WebsiteContent
 from websites.utils import get_valid_base_filename
 
 
-def get_or_create_external_resource(
-    website_content, site_config, url, link_text, should_commit
+def get_or_create_external_resource(  # noqa: PLR0913
+    website_content,
+    site_config,
+    url,
+    link_text,
+    should_commit,
+    force_create=False,  # noqa: FBT002
 ):
     metadata = site_config.generate_item_metadata(
         CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
@@ -40,7 +45,7 @@ def get_or_create_external_resource(
     ).first()
     needs_creation = False
 
-    if resource is None:
+    if resource is None or force_create:
         needs_creation = True
         resource = WebsiteContent(
             metadata=metadata,
@@ -148,34 +153,39 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         "metadata.leftnav",
     ]
 
+    @dataclass
+    class ReplacementNotes:
+        url: str
+        external_resource: str
+        has_external_license_warning: bool
+
     def __init__(self) -> None:
         super().__init__()
         self.starter_lookup = StarterSiteConfigLookup()
 
-    def generate_external_resource(self, website_content, item):
+    def generate_item_replacement(self, website_content, item):
         url = item.get("url", "")
         link_text = item.get("name", url)
-
         starter_id = website_content.website.starter_id
-        config = self.starter_lookup.get_config(starter_id)
+        site_config = self.starter_lookup.get_config(starter_id)
 
         resource = get_or_create_external_resource(
             website_content=website_content,
-            site_config=config,
+            site_config=site_config,
             url=url,
             link_text=link_text,
             should_commit=self.options.get("commit", True),
+            force_create=True,
         )
 
-        new_item = {
+        item_replacement = {
             **item,
             "identifier": str(resource.text_id),
         }
 
-        if url:
-            del new_item["url"]
+        del item_replacement["url"]
 
-        return new_item
+        return item_replacement, resource
 
     def transform_text(
         self, website_content: WebsiteContent, text: list, on_match
@@ -183,20 +193,28 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         nav_items = text
         transformed_items = []
         id_replacements = {}
+
         for item in nav_items:
             if (
                 item.get("identifier", "").startswith("external")
                 and item.get("url") is not None
             ):
-                item_repalcement = self.generate_external_resource(
+                item_replacement, resource = self.generate_item_replacement(
                     website_content, item
                 )
-                notes = self.ReplacementNotes()
 
-                on_match(item, item_repalcement, website_content, notes)
+                notes = self.ReplacementNotes(
+                    url=item["url"],
+                    external_resource=str(resource.text_id),
+                    has_external_license_warning=resource.metadata[
+                        "has_external_license_warning"
+                    ],
+                )
 
-                transformed_items.append(item_repalcement)
-                id_replacements[item["identifier"]] = item_repalcement["identifier"]
+                on_match(item, item_replacement, website_content, notes)
+
+                transformed_items.append(item_replacement)
+                id_replacements[item["identifier"]] = item_replacement["identifier"]
             else:
                 transformed_items.append(item)
 
