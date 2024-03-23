@@ -65,7 +65,7 @@ psycopg2 = "^2.9.6"
 pygithub = "1.58.2"
 pypdf2 = "^3.0.1"
 python-magic = "^0.4.27"
-redis = "^4.5.5"
+redis = "^5.0.0"
 requests = "2.31.0"
 sentry-sdk = "1.27.0"
 smart-open = {extras = ["s3"], version = "^6.3.0"}
