@@ -1,4 +1,5 @@
 """Unit tests for middleware"""
+
 from unittest.mock import Mock, patch
 
 import ddt

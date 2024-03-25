@@ -8,7 +8,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Updates/creates content sync records for website contents"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

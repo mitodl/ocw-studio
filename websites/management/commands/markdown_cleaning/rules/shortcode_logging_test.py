@@ -1,4 +1,5 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
+
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,

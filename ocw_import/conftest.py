@@ -1,4 +1,5 @@
 """Test config for ocw_import app"""
+
 import glob
 from os.path import isfile
 from shutil import copytree, rmtree

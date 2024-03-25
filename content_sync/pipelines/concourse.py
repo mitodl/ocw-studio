@@ -4,6 +4,7 @@ The pylint no-name-in-module is disabled here because of a weird issue
 that occurred after adding the OCW_HUGO_THEMES_GIT constant, which
 clearly exists but pylint thinks it doesn't
 """
+
 # pylint: disable=no-name-in-module
 import json
 import logging
@@ -89,7 +90,7 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def auth(self):
-        """Same as the base class but with retries and support for concourse 7.7"""  # noqa: D401, E501
+        """Same as the base class but with retries and support for concourse 7.7"""  # noqa: D401
         if self.has_username_and_passwd:
             self.ATC_AUTH = None
             session = self._set_new_session()
@@ -131,7 +132,7 @@ class PipelineApi(Api, BasePipelineApi):
         stream: bool = False,  # noqa: FBT001, FBT002
         iterator: bool = False,  # noqa: FBT001, FBT002
     ) -> tuple[dict, dict]:
-        """Customized base get method, returning response data and headers"""  # noqa: D401, E501
+        """Customized base get method, returning response data and headers"""  # noqa: D401
         url = self._make_api_url(path)
         r = self.requests.get(url, headers=self.headers, stream=stream)
         if not self._is_response_ok(r) and self.has_username_and_passwd:

@@ -1,4 +1,5 @@
 """API for parsing/validating site configs"""
+
 import os
 
 import yamale

@@ -1,4 +1,5 @@
 """Github API tests"""
+
 import json
 from hashlib import sha1
 from types import SimpleNamespace

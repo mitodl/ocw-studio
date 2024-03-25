@@ -1,6 +1,7 @@
 """
 Django settings for ocw_studio.
 """
+
 import logging
 import os
 import platform

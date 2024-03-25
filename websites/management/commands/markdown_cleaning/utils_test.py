@@ -1,4 +1,5 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
+
 from uuid import uuid4
 
 import pytest

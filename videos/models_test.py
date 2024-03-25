@@ -1,4 +1,5 @@
 """Video models tests"""
+
 import pytest
 
 from videos.constants import DESTINATION_YOUTUBE

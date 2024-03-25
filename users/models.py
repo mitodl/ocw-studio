@@ -1,4 +1,5 @@
 """Models for users"""
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,

@@ -1,4 +1,5 @@
 """decorators for content_sync.backends"""
+
 import functools
 import logging
 from collections.abc import Callable

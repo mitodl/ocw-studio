@@ -1,4 +1,5 @@
-"""Fix WebsiteContent files that are missing the Website name in their paths"""  # noqa: E501, INP001
+"""Fix WebsiteContent files that are missing the Website name in their paths"""  # noqa: INP001
+
 import csv
 import re
 
@@ -15,7 +16,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Fix WebsiteContent files that are missing the Website name in their paths"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

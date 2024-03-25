@@ -1,4 +1,5 @@
 """Website email messages"""
+
 from types import SimpleNamespace
 
 from mitol.mail.messages import TemplatedMessage

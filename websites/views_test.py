@@ -1,4 +1,5 @@
 """Tests for websites views"""
+
 import datetime
 from types import SimpleNamespace
 

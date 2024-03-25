@@ -1,4 +1,5 @@
 """Export the courses denoted in settings.OCW_TEST_SITE_SLUGS"""  # noqa: INP001
+
 import json
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from websites.serializers import ExportWebsiteContentSerializer, ExportWebsiteSe
 class Command(BaseCommand):
     """Export the courses denoted in settings.OCW_TEST_SITE_SLUGS"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def handle(self, *args, **options):  # noqa: ARG002
         websites = Website.objects.filter(

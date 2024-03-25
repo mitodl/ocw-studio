@@ -1,4 +1,5 @@
 """Common fixtures for ocw-studio"""
+
 import pytest
 from rest_framework.test import APIClient
 

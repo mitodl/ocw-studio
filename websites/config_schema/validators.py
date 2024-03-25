@@ -1,4 +1,5 @@
 """Site config validation functionality to supplement the features that the schema gives us"""  # noqa: E501
+
 from collections import defaultdict
 
 from mitol.common.utils import first_or_none, partition_to_lists

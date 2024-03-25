@@ -1,6 +1,7 @@
 """
 Test end to end django views.
 """
+
 import json
 
 import pytest
@@ -80,14 +81,16 @@ def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             "sentry_dsn": "",
             "release_version": settings.VERSION,
             "gdrive_enabled": is_gdrive_enabled,
-            "user": {
-                "username": user.username,
-                "email": user.email,
-                "name": user.name,
-                "canAddWebsite": False,
-            }
-            if is_authenticated
-            else None,
+            "user": (
+                {
+                    "username": user.username,
+                    "email": user.email,
+                    "name": user.name,
+                    "canAddWebsite": False,
+                }
+                if is_authenticated
+                else None
+            ),
             "features": settings.FEATURES,
             "features_default": settings.FEATURES_DEFAULT,
         }

@@ -1,4 +1,5 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
+
 import pytest
 
 from websites.factories import WebsiteContentFactory, WebsiteFactory

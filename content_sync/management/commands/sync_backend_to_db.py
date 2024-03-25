@@ -1,4 +1,5 @@
 """Syncs a website from a backend (Github, et al) to the database"""  # noqa: INP001
+
 import sys
 
 from github.GithubObject import NotSet
@@ -11,7 +12,7 @@ from websites.api import fetch_website, reset_publishing_fields
 class Command(WebsiteFilterCommand):
     """Syncs a website from a backend (Github, et al) to the database"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

@@ -1,11 +1,12 @@
 """Project conftest"""
+
 import os
 from types import SimpleNamespace
 
 import pytest
 import yaml
 
-from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import  # noqa: E501, F403
+from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import  # noqa: F403
 from websites.constants import OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteStarter
 from websites.site_config_api import SiteConfig
@@ -38,14 +39,14 @@ def mocked_celery(mocker):
 @pytest.fixture()
 @pytest.mark.django_db()
 def course_starter(settings):
-    """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""  # noqa: D401, E501
+    """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""  # noqa: D401
     return WebsiteStarter.objects.get(slug=settings.OCW_COURSE_STARTER_SLUG)
 
 
 @pytest.fixture()
 @pytest.mark.django_db()
 def omnibus_starter():
-    """Returns the omnibus WebsiteStarter that is seeded in a data migration"""  # noqa: D401, E501
+    """Returns the omnibus WebsiteStarter that is seeded in a data migration"""  # noqa: D401
     return WebsiteStarter.objects.get(slug=OMNIBUS_STARTER_SLUG)
 
 

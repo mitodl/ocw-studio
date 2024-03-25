@@ -1,4 +1,5 @@
 """Update OCW course sites and content via update_ocw_resource_data"""
+
 from mitol.common.utils.datetime import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -8,7 +9,7 @@ from ocw_import.tasks import update_ocw_resource_data
 class Command(WebsiteFilterCommand):
     """Import OCW course sites and content via ocw2hugo output"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

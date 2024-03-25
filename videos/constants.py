@@ -1,4 +1,5 @@
 """constants for videos"""
+
 from main.constants import STATUS_COMPLETE, STATUS_CREATED, STATUS_FAILED
 
 DESTINATION_YOUTUBE = "youtube"

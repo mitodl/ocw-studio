@@ -1,4 +1,5 @@
 """videos.signals tests"""
+
 import pytest
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import TemporaryUploadedFile

@@ -1,4 +1,5 @@
 """API functionality for working with site configs"""
+
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Optional
@@ -135,7 +136,7 @@ class SiteConfig:
                 yield ConfigField(field=inner_field, parent_field=field)
 
     def find_item_by_name(self, name: str) -> Optional[ConfigItem]:
-        """Finds a config item in the site config with a matching 'name' value"""  # noqa: D401, E501
+        """Finds a config item in the site config with a matching 'name' value"""  # noqa: D401
         for config_item in self.iter_items():
             if config_item.item.get("name") == name:
                 return config_item
@@ -185,7 +186,7 @@ class SiteConfig:
         return item_dict
 
     def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:
-        """Finds a config item in the site config with a matching 'file' value"""  # noqa: D401, E501
+        """Finds a config item in the site config with a matching 'file' value"""  # noqa: D401
         filepath = remove_trailing_slashes(filepath)
         for config_item in self.iter_items():
             if (

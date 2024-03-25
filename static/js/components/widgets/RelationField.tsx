@@ -348,8 +348,8 @@ export default function RelationField(props: Props): JSX.Element {
       crossSite
         ? (value as CrossSitePair[]).map((pair) => pair[0])
         : multiple
-        ? (value as string[])
-        : [value as string],
+          ? (value as string[])
+          : [value as string],
     [multiple, value, crossSite],
   )
 

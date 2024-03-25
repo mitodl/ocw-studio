@@ -1,4 +1,5 @@
 """Content sync task tests"""
+
 import os
 from datetime import timedelta
 

@@ -2,6 +2,7 @@
 A collection of helper functions for generating s3 file paths and filenames.
 This module provides several utility functions that simplify the task of working with file path and name generation
 """  # noqa: E501
+
 import os
 import re
 from copy import deepcopy
