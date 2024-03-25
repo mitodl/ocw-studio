@@ -21,51 +21,66 @@ from websites.models import WebsiteContent
 from websites.utils import get_valid_base_filename
 
 
-def get_or_create_external_resource(  # noqa: PLR0913
-    website_content,
+def is_ocw_domain_url(url: str):
+    parsed_url = urlparse(url)
+    return parsed_url.netloc == "ocw.mit.edu"
+
+
+def build_external_resource(
     site_config,
+    website,
+    title,
     url,
-    link_text,
-    should_commit,
-    force_create=False,  # noqa: FBT002
 ):
     metadata = site_config.generate_item_metadata(
         CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
     )
     metadata["external_url"] = url
+    metadata["has_external_licence_warning"] = not is_ocw_domain_url(url)
 
+    config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
     text_id = uuid_string()
+
+    return WebsiteContent(
+        metadata=metadata,
+        dirpath=config_item.file_target,
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        text_id=text_id,
+        title=title,
+        is_page_content=site_config.is_page_content(config_item),
+        filename=slugify(
+            get_valid_base_filename(
+                f"{title}_{text_id}",  # to avoid collisions
+                CONTENT_TYPE_EXTERNAL_RESOURCE,
+            ),
+            allow_unicode=True,
+        ),
+    )
+
+
+def get_or_build_external_resource(
+    website,
+    site_config,
+    url,
+    title,
+):
     config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
     resource = WebsiteContent.objects.filter(
         metadata__external_url=url,
         dirpath=config_item.file_target,
-        website=website_content.website,
+        website=website,
         type=CONTENT_TYPE_EXTERNAL_RESOURCE,
     ).first()
-    needs_creation = False
 
-    if resource is None or force_create:
-        needs_creation = True
-        resource = WebsiteContent(
-            metadata=metadata,
-            dirpath=config_item.file_target,
-            website=website_content.website,
-            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-            text_id=text_id,
-            title=link_text,
-            is_page_content=site_config.is_page_content(config_item),
-            filename=slugify(
-                get_valid_base_filename(
-                    f"{link_text}_{text_id}",  # to avoid collisions
-                    CONTENT_TYPE_EXTERNAL_RESOURCE,
-                ),
-                allow_unicode=True,
-            ),
+    if resource is None:
+        resource = build_external_resource(
+            site_config=site_config,
+            website=website,
+            title=title,
+            url=url,
         )
-
-    if needs_creation and should_commit:
-        resource.save()
 
     return resource
 
@@ -92,6 +107,9 @@ class LinkToExternalResourceRule(PyparsingRule):
     @dataclass
     class ReplacementNotes:
         note: str
+        url: str = ""
+        external_resource: str = ""
+        has_external_license_warning: bool = ""
 
     def __init__(self) -> None:
         super().__init__()
@@ -125,17 +143,26 @@ class LinkToExternalResourceRule(PyparsingRule):
         config = self.starter_lookup.get_config(starter_id)
         link_text = toks.link.text
 
-        resource = get_or_create_external_resource(
-            website_content=website_content,
+        resource = get_or_build_external_resource(
+            website=website_content.website,
             site_config=config,
             url=toks.link.destination,
-            link_text=link_text,
-            should_commit=self.options.get("commit", True),
+            title=link_text,
         )
+
+        if self.options.get("commit", True):
+            resource.save()
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
-        return shortcode.to_hugo(), self.ReplacementNotes(note="replaced successfully")
+        return shortcode.to_hugo(), self.ReplacementNotes(
+            note="replaced successfully",
+            url=url,
+            external_resource=resource,
+            has_external_license_warning=resource.metadata[
+                "has_external_license_warning"
+            ],
+        )
 
     def should_parse(self, text: str):
         """Should the text be parsed?
@@ -163,20 +190,21 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         super().__init__()
         self.starter_lookup = StarterSiteConfigLookup()
 
-    def generate_item_replacement(self, website_content, item):
+    def generate_item_replacement(self, website_content: WebsiteContent, item):
         url = item.get("url", "")
         link_text = item.get("name", url)
         starter_id = website_content.website.starter_id
         site_config = self.starter_lookup.get_config(starter_id)
 
-        resource = get_or_create_external_resource(
-            website_content=website_content,
+        resource = build_external_resource(
+            website=website_content.website,
             site_config=site_config,
             url=url,
-            link_text=link_text,
-            should_commit=self.options.get("commit", True),
-            force_create=True,
+            title=link_text,
         )
+
+        if self.options.get("commit", True):
+            resource.save()
 
         item_replacement = {
             **item,
