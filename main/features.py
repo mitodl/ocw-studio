@@ -1,4 +1,5 @@
 """OCW Studio feature flags"""
+
 from functools import wraps
 
 from django.conf import settings

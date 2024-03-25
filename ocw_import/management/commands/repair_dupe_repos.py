@@ -1,4 +1,5 @@
 """Fix sites that have been assigned a new repo on every import"""
+
 from django.db import transaction
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
@@ -12,7 +13,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Fix sites that have been assigned a new repo on every import"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def handle(self, *args, **options):
         super().handle(*args, **options)

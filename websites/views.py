@@ -1,4 +1,5 @@
 """Views for websites"""
+
 import json
 import logging
 import os
@@ -321,7 +322,7 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
     serializer_class = WebsiteMassBuildSerializer
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):  # noqa: A003, ARG002
+    def list(self, request):  # noqa: ARG002
         """Return a list of websites that have been previously published, per version"""
         version = self.request.query_params.get("version")
         starter = self.request.query_params.get("starter")
@@ -356,7 +357,7 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
 
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):  # noqa: A003, ARG002
+    def list(self, request):  # noqa: ARG002
         """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""  # noqa: E501
         sites = (
             Website.objects.exclude(

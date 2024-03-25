@@ -1,4 +1,5 @@
 """Tests for gdrive_sync.models"""
+
 import pytest
 
 from gdrive_sync.conftest import (

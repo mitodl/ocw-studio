@@ -1,4 +1,5 @@
 """Update departments metadata for website(s)"""  # noqa: INP001
+
 from functools import reduce
 
 from django.db import transaction
@@ -11,7 +12,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Update departments metadata for website(s)"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

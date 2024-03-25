@@ -39,8 +39,8 @@ class MarkdownLink:
 
     # Tuple of tuples (ParseResults, start_index, end_index) where
     # - ParseResult has named tokens
-    #       - link: MarkdownLinkOrImage  # noqa: ERA001
-    #       - original_text: str  # noqa: ERA001
+    #       - link: MarkdownLinkOrImage
+    #       - original_text: str
     # - start_index, end_index are the start/end of this link within self.text
     text_links: Union[tuple, None] = None
 

@@ -1,4 +1,5 @@
 """General utility function tests"""
+
 import pytest
 
 from main.utils import (

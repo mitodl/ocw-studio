@@ -1,4 +1,5 @@
 """Overrides locally-stored site configs based on a YAML file in this repo"""
+
 import os
 
 import yaml
@@ -13,7 +14,7 @@ from websites.models import WebsiteStarter
 class Command(BaseCommand):
     """Overrides locally-stored site configs based on a YAML file in this repo"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def _get_pairs(self):
         """

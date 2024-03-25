@@ -11,6 +11,7 @@ This happens particularly with links containing baseurl:
 So, this removes the unescape for links whose destination starts with a
 shortcode (which is most of them).
 """
+
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (

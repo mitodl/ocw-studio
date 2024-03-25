@@ -1,4 +1,5 @@
 """Update content metadata for websites based on a specific starter"""  # noqa: INP001
+
 from django.db import transaction
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -12,7 +13,7 @@ class Command(WebsiteFilterCommand):
     affects content whose value for that metadata entry are null or empty.
     """
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

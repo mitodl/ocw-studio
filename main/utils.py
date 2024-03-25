@@ -1,4 +1,5 @@
 """ocw_studio utilities"""
+
 import hashlib
 import hmac
 import re

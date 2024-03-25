@@ -1,4 +1,5 @@
-"""Syncs a Website and all of its contents to a backend (Github, et al)"""  # noqa: E501, INP001
+"""Syncs a Website and all of its contents to a backend (Github, et al)"""  # noqa: INP001
+
 from content_sync.api import get_sync_backend
 from content_sync.models import ContentSyncState
 from main.management.commands.filter import WebsiteFilterCommand
@@ -8,7 +9,7 @@ from websites.api import fetch_website, reset_publishing_fields
 class Command(WebsiteFilterCommand):
     """Syncs a Website and all of its contents to a backend (Github, et al)"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

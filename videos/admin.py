@@ -1,4 +1,5 @@
 """Admin for videos"""
+
 from django.contrib import admin
 from mitol.common.admin import TimestampedModelAdmin
 

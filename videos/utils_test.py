@@ -1,4 +1,5 @@
 """Tests for videos.utils"""
+
 from uuid import uuid4
 
 import pytest

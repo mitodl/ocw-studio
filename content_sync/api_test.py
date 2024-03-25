@@ -1,4 +1,5 @@
 """Content sync api tests"""
+
 from types import SimpleNamespace
 
 import pytest

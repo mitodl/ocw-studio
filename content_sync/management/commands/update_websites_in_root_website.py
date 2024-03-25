@@ -1,4 +1,5 @@
 """Update websites in the root website"""  # noqa: INP001
+
 from django.conf import settings
 from mitol.common.utils.datetime import now_in_utc
 
@@ -9,7 +10,7 @@ from main.management.commands.filter import WebsiteFilterCommand
 class Command(WebsiteFilterCommand):
     """Update website WebsiteContent objects in the root website denoted by settings.ROOT_WEBSITE_NAME"""  # noqa: E501
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

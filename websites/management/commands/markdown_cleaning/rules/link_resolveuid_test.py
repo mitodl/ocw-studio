@@ -1,4 +1,5 @@
 """Tests for link_resolveuid.py"""
+
 import factory
 import pytest
 

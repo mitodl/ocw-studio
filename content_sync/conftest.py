@@ -1,4 +1,5 @@
 """Test config for content_sync app"""
+
 from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace

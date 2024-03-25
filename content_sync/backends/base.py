@@ -1,4 +1,5 @@
 """Sync abstract base"""
+
 import abc
 from typing import Any, Optional
 

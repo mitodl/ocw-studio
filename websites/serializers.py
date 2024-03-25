@@ -1,4 +1,5 @@
 """Serializers for websites"""
+
 import logging
 import re
 from collections import defaultdict

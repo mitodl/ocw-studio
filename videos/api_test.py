@@ -1,4 +1,5 @@
 """Test for videos.api"""
+
 import json
 from os import path
 

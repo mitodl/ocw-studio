@@ -1,4 +1,5 @@
 """Site config API tests"""
+
 import pytest
 
 from websites.constants import (

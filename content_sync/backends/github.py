@@ -1,4 +1,5 @@
 """Github backend"""
+
 import logging
 from typing import Optional
 

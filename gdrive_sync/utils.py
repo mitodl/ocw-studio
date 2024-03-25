@@ -1,4 +1,5 @@
 """Common utilities"""
+
 from typing import Optional
 
 import requests

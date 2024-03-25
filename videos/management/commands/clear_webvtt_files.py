@@ -21,7 +21,7 @@ class Command(BaseCommand):
     delete _webvtt caption files without extension from s3 and clear resource metadata
     """
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def handle(self, *args, **options):  # noqa: ARG002
         """

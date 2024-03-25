@@ -1,4 +1,5 @@
 """message classes for videos"""
+
 from types import SimpleNamespace
 
 from mitol.mail.messages import TemplatedMessage

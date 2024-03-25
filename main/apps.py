@@ -1,6 +1,7 @@
 """
 Django app
 """
+
 from mitol.common import envs
 from mitol.common.apps import BaseApp
 

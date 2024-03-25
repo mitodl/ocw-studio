@@ -4,6 +4,7 @@ Rule to replaces relative course (root) links with absolute links.
 For example, `courses/1-050-solid-mechanics-fall-2004` is replaced with
 `/courses/1-050-solid-mechanics-fall-2004`.
 """
+
 import re
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
