@@ -17,21 +17,28 @@ from websites.management.commands.markdown_cleaning.link_parser import (
 )
 from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
 from websites.management.commands.markdown_cleaning.utils import StarterSiteConfigLookup
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
+from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
 
-def is_ocw_domain_url(url: str):
+def is_ocw_domain_url(url: str) -> bool:
+    """Return True `url` has an ocw domain."""
     parsed_url = urlparse(url)
     return parsed_url.netloc == "ocw.mit.edu"
 
 
 def build_external_resource(
-    site_config,
-    website,
-    title,
-    url,
-):
+    site_config: SiteConfig,
+    website: Website,
+    title: str,
+    url: str,
+) -> WebsiteContent:
+    """
+    Build a WebsiteContent object for an external-resource.
+
+    This does not save the object to the database.
+    """
     metadata = site_config.generate_item_metadata(
         CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
     )
@@ -60,11 +67,16 @@ def build_external_resource(
 
 
 def get_or_build_external_resource(
-    website,
-    site_config,
-    url,
-    title,
-):
+    website: WebsiteContent,
+    site_config: SiteConfig,
+    url: str,
+    title: str,
+) -> WebsiteContent:
+    """
+    Find or build a WebsiteContent object for an external resource.
+
+    This method does not create new entities in the database.
+    """
     config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
     resource = WebsiteContent.objects.filter(
@@ -87,7 +99,8 @@ def get_or_build_external_resource(
 
 class LinkToExternalResourceRule(PyparsingRule):
     """
-    Convert links to external resources.
+    Converts links to external resources by replacing
+    markdown links with resource_link shortcodes.
     """
 
     alias = "link_to_external_resource"
@@ -118,7 +131,7 @@ class LinkToExternalResourceRule(PyparsingRule):
     def replace_match(
         self,
         s: str,  # noqa: ARG002
-        l: int,  # noqa: E741, ARG002
+        l: int,  # noqa: ARG002, E741
         toks: LinkParseResult,
         website_content: WebsiteContent,
     ):
@@ -164,16 +177,20 @@ class LinkToExternalResourceRule(PyparsingRule):
             ],
         )
 
-    def should_parse(self, text: str):
-        """Should the text be parsed?
-
-        If the text does not contain '](', then it definitely does not have
-        markdown links.
-        """  # noqa: D401
+    def should_parse(self, text: str) -> bool:
+        """
+        Return True if `text` may contain a markdown link.
+        """
         return "](" in text
 
 
 class NavItemToExternalResourceRule(MarkdownCleanupRule):
+    """
+    Convert navigation menu's external links to external resources.
+
+    Creates a new external resource for each link.
+    """
+
     alias = "nav_item_to_external_resource"
 
     fields = [
@@ -190,7 +207,13 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         super().__init__()
         self.starter_lookup = StarterSiteConfigLookup()
 
-    def generate_item_replacement(self, website_content: WebsiteContent, item):
+    def generate_item_replacement(
+        self, website_content: WebsiteContent, item: dict
+    ) -> dict:
+        """
+        Generate a new item linked to an external resource using
+        the values from `item`.
+        """
         url = item.get("url", "")
         link_text = item.get("name", url)
         starter_id = website_content.website.starter_id
@@ -216,17 +239,17 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         return item_replacement, resource
 
     def transform_text(
-        self, website_content: WebsiteContent, text: list, on_match
+        self, website_content: WebsiteContent, text: list[dict], on_match
     ) -> str:
+        """
+        Return new text to relace `text`.
+        """
         nav_items = text
         transformed_items = []
         id_replacements = {}
 
         for item in nav_items:
-            if (
-                item.get("identifier", "").startswith("external")
-                and item.get("url") is not None
-            ):
+            if item.get("identifier", "").startswith("external") and item.get("url"):
                 item_replacement, resource = self.generate_item_replacement(
                     website_content, item
                 )
@@ -246,11 +269,12 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
             else:
                 transformed_items.append(item)
 
+        # when external links are changed into external resources,
+        # their `identifier` property changes.
+        # The snippet below updates the `parent` property to use
+        # the new identifiers.
         for item in transformed_items:
-            if (
-                item.get("parent") is not None
-                and id_replacements.get(item["parent"]) is not None
-            ):
+            if item.get("parent") and id_replacements.get(item["parent"]):
                 item["parent"] = id_replacements[item["parent"]]
 
         return transformed_items
