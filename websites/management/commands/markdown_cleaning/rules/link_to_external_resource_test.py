@@ -221,7 +221,7 @@ def test_link_to_external_resources(settings, content, expected_content_template
     cleaner = get_cleaner("markdown")
     cleaner.update_website_content(target_content)
 
-    wc_ocw = WebsiteContent.objects.get(title="OCW").text_id
+    wc_ocw = WebsiteContent.objects.get(title="OCW")
     wc_ocw_2 = WebsiteContent.objects.get(title="OCW same but not so")
 
     expected_content = expected_content_template.format(
