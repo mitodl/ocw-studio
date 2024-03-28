@@ -18,6 +18,10 @@ class MarkdownCleanupRule(abc.ABC):
     rules, inherit from RegexpCleanupRule.
     """
 
+    def set_options(self, options: dict | None = None):
+        """Arbitrary options for any particular rule instance."""
+        self.options = options
+
     @property
     @abc.abstractclassmethod
     def alias(cls) -> str:
