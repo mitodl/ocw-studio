@@ -101,6 +101,24 @@ class LinkToExternalResourceRule(PyparsingRule):
     """
     Converts links to external resources by replacing
     markdown links with resource_link shortcodes.
+
+    Creates new WebsiteContent objects for unqiue links.
+
+    Example:
+    From:
+    ```
+        [OCW](https://ocw.mit.edu)
+        [OCW clone](https://ocw.mit.edu)
+        [OCW same but not so](https://ocw.mit.edu#fragment)
+    ```
+
+    To:
+    ```
+    {{% resource_link "f3d0ebae-7083-4524-9b93-f688537a0317" "OCW" %}}
+    {{% resource_link "f3d0ebae-7083-4524-9b93-f688537a0317" "OCW clone" %}}
+    {{% resource_link "d3d0ebae-7083-3453-7b92-a688537a0276" "OCW same but not so" %}}
+    ```
+    and two new WebsiteContent objects.
     """
 
     alias = "link_to_external_resource"
@@ -189,6 +207,33 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
     Convert navigation menu's external links to external resources.
 
     Creates a new external resource for each link.
+
+    Example
+        From:
+
+        ```
+        [
+            {
+                "name": "Name",
+                "url": "https://ocw.mit.edu",
+                "weight": 10,
+                "identifier": "external--760432549-1711617249481"
+            }
+        ]
+        ```
+
+        To:
+
+        ```
+        [
+            {
+                "name": "Nest",
+                "weight": 10,
+                "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317"
+            }
+        ]
+        ```
+        and a new corresponding WebsiteContent object.
     """
 
     alias = "nav_item_to_external_resource"
@@ -242,7 +287,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         self, website_content: WebsiteContent, text: list[dict], on_match
     ) -> str:
         """
-        Return new text to relace `text`.
+        Return new text to replace `text`.
         """
         nav_items = text
         transformed_items = []
