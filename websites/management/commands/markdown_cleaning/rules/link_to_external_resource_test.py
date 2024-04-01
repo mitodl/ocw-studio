@@ -20,11 +20,7 @@ from websites.management.commands.markdown_cleaning.rules.link_to_external_resou
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
 
-EXAMPLE_RESOLVEUID = "89ce47d27edcdd9b8a8cbe641a59b520"
-EXAMPLE_RESOLVEUID_FORMATTED = "89ce47d2-7edc-dd9b-8a8c-be641a59b520"
-
-
-SITE_CONFIG = {
+SAMPLE_SITE_CONFIG = {
     "collections": [
         {
             "category": "Content",
@@ -117,13 +113,16 @@ def test_is_ocw_domain_url(url, expected_result):
 
 def test_build_external_resource():
     """Test build_external_resource."""
-    starter = WebsiteStarterFactory.create(config=SITE_CONFIG)
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
     title = "title"
     url = "https://google.com"
 
     external_resource = build_external_resource(
-        website=website, site_config=SiteConfig(SITE_CONFIG), title=title, url=url
+        website=website,
+        site_config=SiteConfig(SAMPLE_SITE_CONFIG),
+        title=title,
+        url=url,
     )
 
     assert external_resource.title == title
@@ -136,11 +135,11 @@ def test_build_external_resource():
 @pytest.mark.parametrize("content_exists", [True, False])
 def test_get_or_build_external_resource(content_exists):
     """Test get_or_build_external_resource builds or gets depending on content existence."""
-    starter = WebsiteStarterFactory.create(config=SITE_CONFIG)
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
     title = "title"
     url = "https://google.com"
-    site_config = SiteConfig(SITE_CONFIG)
+    site_config = SiteConfig(SAMPLE_SITE_CONFIG)
     config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
     if content_exists:
@@ -158,7 +157,10 @@ def test_get_or_build_external_resource(content_exists):
         )
 
     external_resource = get_or_build_external_resource(
-        website=website, site_config=SiteConfig(SITE_CONFIG), title=title, url=url
+        website=website,
+        site_config=SiteConfig(SAMPLE_SITE_CONFIG),
+        title=title,
+        url=url,
     )
 
     assert external_resource.title == title
@@ -199,7 +201,7 @@ def test_link_to_external_resources(settings, content, expected_content_template
     Test link_to_external_resources correctly replaces links
     with resource_link shortcode.
     """
-    starter = WebsiteStarterFactory.create(config=SITE_CONFIG)
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
     settings.OCW_COURSE_STARTER_SLUG = starter.slug
 
@@ -311,7 +313,7 @@ def test_link_to_external_resources(settings, content, expected_content_template
 )
 def test_nav_item_to_external_resources(content, expected_content_template):
     """Test nav_item_to_external_resource correctly converts external links to external resources."""
-    starter = WebsiteStarterFactory.create(config=SITE_CONFIG)
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
 
     target_content = WebsiteContentFactory.create(

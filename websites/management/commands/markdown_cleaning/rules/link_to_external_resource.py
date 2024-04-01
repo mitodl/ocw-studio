@@ -107,9 +107,9 @@ class LinkToExternalResourceRule(PyparsingRule):
     Example:
     From:
     ```
-        [OCW](https://ocw.mit.edu)
-        [OCW clone](https://ocw.mit.edu)
-        [OCW same but not so](https://ocw.mit.edu#fragment)
+    [OCW](https://ocw.mit.edu)
+    [OCW clone](https://ocw.mit.edu)
+    [OCW same but not so](https://ocw.mit.edu#fragment)
     ```
 
     To:
@@ -140,7 +140,7 @@ class LinkToExternalResourceRule(PyparsingRule):
         note: str
         url: str = ""
         external_resource: str = ""
-        has_external_license_warning: bool = ""
+        has_external_license_warning: bool = True
 
     def __init__(self) -> None:
         super().__init__()
@@ -227,7 +227,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         ```
         [
             {
-                "name": "Nest",
+                "name": "Name",
                 "weight": 10,
                 "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317"
             }
@@ -254,7 +254,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
 
     def generate_item_replacement(
         self, website_content: WebsiteContent, item: dict
-    ) -> dict:
+    ) -> tuple[dict, WebsiteContent]:
         """
         Generate a new item linked to an external resource using
         the values from `item`.
