@@ -188,8 +188,8 @@ class LinkToExternalResourceRule(PyparsingRule):
 
         return shortcode.to_hugo(), self.ReplacementNotes(
             note="replaced successfully",
-            url=url,
-            external_resource=resource,
+            url=toks.link.destination,
+            external_resource=resource.text_id,
             has_external_license_warning=resource.metadata[
                 "has_external_license_warning"
             ],
