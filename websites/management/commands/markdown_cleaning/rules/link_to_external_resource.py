@@ -6,7 +6,7 @@ from django.conf import settings
 from django.utils.text import slugify
 
 from main.utils import uuid_string
-from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
+from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
     PyparsingRule,
@@ -48,21 +48,27 @@ def build_external_resource(
     config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
     text_id = uuid_string()
 
+    filename = slugify(
+        get_valid_base_filename(
+            f"{title}_{text_id}",  # to avoid collisions
+            CONTENT_TYPE_EXTERNAL_RESOURCE,
+        ),
+        allow_unicode=True,
+    )
+
+    if len(filename) > CONTENT_FILENAME_MAX_LEN:
+        # trim excess from the middle, preserving the uuid
+        filename = filename[: CONTENT_FILENAME_MAX_LEN - 36] + filename[-36:]
+
     return WebsiteContent(
         metadata=metadata,
         dirpath=config_item.file_target,
         website=website,
         type=CONTENT_TYPE_EXTERNAL_RESOURCE,
         text_id=text_id,
-        title=title,
+        title=title[:512],
         is_page_content=site_config.is_page_content(config_item),
-        filename=slugify(
-            get_valid_base_filename(
-                f"{title}_{text_id}",  # to avoid collisions
-                CONTENT_TYPE_EXTERNAL_RESOURCE,
-            ),
-            allow_unicode=True,
-        ),
+        filename=filename,
     )
 
 
