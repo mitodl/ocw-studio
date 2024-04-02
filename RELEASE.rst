@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.115.0 (Released March 13, 2024)
+---------------
+
+- fix: increase timeout for e2e tests (#2128)
+- chore(deps): update react monorepo (#1949)
+- chore(e2e): update fixtures and fix typo (#2125)
+
 Version 0.114.1 (Released March 05, 2024)
 ---------------
 
