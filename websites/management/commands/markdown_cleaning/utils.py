@@ -43,10 +43,15 @@ class StarterSiteConfigLookup:
             starter_id: list(config.iter_items())
             for starter_id, config in self._configs.items()
         }
+        self._starters = {starter.id: starter for starter in starters}
 
-    def get_config(self, starter_id):
+    def get_config(self, starter_id) -> SiteConfig:
         """Return SiteConfig for `starter_id`."""
         return self._configs[starter_id]
+
+    def get_starter(self, starter_id) -> WebsiteStarter:
+        """Return Starter for `starter_id`."""
+        return self._starters[starter_id]
 
     def config_items(self, starter_id):
         """Return a list ConfigItem for `starter_id`."""
