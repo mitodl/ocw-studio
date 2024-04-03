@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.116.0
+---------------
+
+- feat: add link to external resource rules (#2130)
+- fix(deps): update dependency express to v4.19.2 [security] (#2136)
+- fix(deps): update dependency webpack-dev-middleware to v5.3.4 [security] (#2135)
+
 Version 0.115.0 (Released March 13, 2024)
 ---------------
 
