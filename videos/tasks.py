@@ -7,10 +7,26 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from googleapiclient.errors import HttpError
+from mitol.common.utils import now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.decorators import single_task
+from gdrive_sync.api import query_files
+from gdrive_sync.constants import (
+    DRIVE_FILE_CREATED_TIME,
+    DRIVE_FILE_DOWNLOAD_LINK,
+    DRIVE_FILE_FIELDS,
+    DRIVE_FILE_ID,
+    DRIVE_FILE_MD5_CHECKSUM,
+    DRIVE_FILE_MODIFIED_TIME,
+    DRIVE_FILE_SIZE,
+    DRIVE_FOLDER_FILES_FINAL,
+    DRIVE_FOLDER_VIDEOS_FINAL,
+    DRIVE_MIMETYPE_FOLDER,
+    DriveFileStatus,
+)
 from gdrive_sync.models import DriveFile
+from gdrive_sync.utils import get_gdrive_file, get_resource_name
 from main.celery import app
 from main.constants import STATUS_CREATED
 from main.s3_utils import get_boto3_resource
@@ -23,6 +39,7 @@ from videos.constants import (
     YouTubeStatus,
 )
 from videos.models import Video, VideoFile
+from videos.utils import create_new_content
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -383,3 +400,177 @@ def mail_transcripts_complete_notification(website: Website):
                     },
                 },
             )
+
+
+@app.task(acks_late=True)
+def copy_gdrive_file(gdrive_file, destination_course, gdrive_service):
+    """
+    Copy a Google Drive file to destination course.
+    """
+    file_id = gdrive_file.file_id
+    gdrive_file = (
+        gdrive_service.files()
+        .get(fileId=file_id, fields="id, parents", supportsAllDrives=True)
+        .execute()
+    )
+    new_folder_id = destination_course.gdrive_folder
+    original_parent_id = gdrive_file["parents"][0]
+    original_parent = (
+        gdrive_service.files()
+        .get(fileId=original_parent_id, fields="name", supportsAllDrives=True)
+        .execute()
+    )
+    original_parent_name = original_parent.get(
+        "name"
+    )  # either files_final or videos_final
+    gdrive_query = (
+        f'parents = "{new_folder_id}" and name = "{original_parent_name}" '
+        f'and mimeType = "{DRIVE_MIMETYPE_FOLDER}" and not trashed'
+    )
+    gdrive_files = list(query_files(query=gdrive_query, fields=DRIVE_FILE_FIELDS))
+    new_parent_id = gdrive_files[0].get(
+        "id"
+    )  # ID of either files_final or videos_final folder
+    new_file = (
+        gdrive_service.files()
+        .copy(
+            fileId=file_id,
+            body={"parents": [new_parent_id]},
+            fields="id, parents",
+            supportsAllDrives=True,
+        )
+        .execute()
+    )
+    return new_file.get("id")
+
+
+@app.task(acks_late=True)
+def update_transcript_and_captions(resource, new_transcript_file, new_captions_file):
+    """
+    Update the associated transcript and captions files for a resource.
+    """
+    resource.metadata["video_files"][
+        "video_transcript_file"
+    ] = f"/{str(new_transcript_file).lstrip('/')}"
+    resource.metadata["video_files"][
+        "video_captions_file"
+    ] = f"/{str(new_captions_file).lstrip('/')}"
+
+    resource.save()
+
+
+@app.task(acks_late=True)
+def create_drivefile(
+    gdrive_file, new_resource, destination_course, files_or_videos, gdrive_service
+):
+    """
+    Create a DriveFile for gdrive_file in the destination course.
+    """
+    files_or_videos = (
+        DRIVE_FOLDER_FILES_FINAL
+        if files_or_videos == "files"
+        else DRIVE_FOLDER_VIDEOS_FINAL
+    )
+    gdrive_dl = get_gdrive_file(gdrive_service, gdrive_file.file_id)
+    DriveFile.objects.update_or_create(
+        file_id=gdrive_dl.get(DRIVE_FILE_ID),
+        defaults={
+            "checksum": gdrive_dl.get(DRIVE_FILE_MD5_CHECKSUM),
+            "name": get_resource_name(new_resource),
+            "mime_type": new_resource.metadata["file_type"],
+            "status": DriveFileStatus.COMPLETE,
+            "website": destination_course,
+            "s3_key": str(new_resource.file).lstrip("/"),
+            "resource": new_resource,
+            "drive_path": (f"{destination_course.short_id}/{files_or_videos}"),
+            "modified_time": gdrive_dl.get(DRIVE_FILE_MODIFIED_TIME),
+            "created_time": gdrive_dl.get(DRIVE_FILE_CREATED_TIME),
+            "size": gdrive_dl.get(DRIVE_FILE_SIZE),
+            "download_link": gdrive_dl.get(DRIVE_FILE_DOWNLOAD_LINK),
+            "sync_dt": now_in_utc(),
+        },
+    )
+
+
+@app.task(acks_late=True)
+def copy_video_resource(
+    source_course, destination_course, source_resource, drive_service
+):
+    """
+    Copy a video resource and associated captions/transcripts.
+    """
+
+    video_transcript_file = source_resource.metadata["video_files"][
+        "video_transcript_file"
+    ]
+    video_captions_file = source_resource.metadata["video_files"]["video_captions_file"]
+    new_resource = create_new_content(source_resource, destination_course)
+    if video_transcript_file and video_captions_file:
+        video_transcript_resource = WebsiteContent.objects.filter(
+            file=video_transcript_file
+        ).first()
+        new_transcript_resource = create_new_content(
+            video_transcript_resource, destination_course
+        )
+        new_transcript_file = new_transcript_resource.file
+
+        video_captions_resource = WebsiteContent.objects.filter(
+            file=video_captions_file
+        ).first()
+        new_captions_resource = create_new_content(
+            video_captions_resource, destination_course
+        )
+        new_captions_file = new_captions_resource.file
+
+        update_transcript_and_captions.delay(
+            new_resource, new_transcript_file, new_captions_file
+        ).get()
+        transcript_gdrive_file = DriveFile.objects.filter(
+            s3_key=video_transcript_file.lstrip("/")
+        ).first()
+        if transcript_gdrive_file:
+            copy_gdrive_file.delay(
+                transcript_gdrive_file, destination_course, drive_service
+            ).get()
+            create_drivefile.delay(
+                transcript_gdrive_file,
+                new_transcript_resource,
+                destination_course,
+                "files",
+                drive_service,
+            ).get()
+        captions_gdrive_file = DriveFile.objects.filter(
+            s3_key=video_captions_file.lstrip("/")
+        ).first()
+        if captions_gdrive_file:
+            copy_gdrive_file.delay(
+                captions_gdrive_file, destination_course, drive_service
+            ).get()
+            create_drivefile.delay(
+                captions_gdrive_file,
+                new_captions_resource,
+                destination_course,
+                "files",
+                drive_service,
+            ).get()
+
+    videofile = VideoFile.objects.filter(
+        video__website=source_course,
+        destination="youtube",
+        destination_id=source_resource.metadata.get("youtube_id"),
+    ).first()
+
+    if videofile:
+        video = videofile.video
+        Video.objects.create(
+            website_content=new_resource,
+            video_id=video.video_id,
+            status=video.status,
+        )
+
+        gdrive_file = DriveFile.objects.filter(video=video).first()
+        if gdrive_file:
+            copy_gdrive_file.delay(gdrive_file, destination_course, drive_service).get()
+            create_drivefile.delay(
+                gdrive_file, new_resource, destination_course, "videos", drive_service
+            ).get()
