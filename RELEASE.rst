@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.116.0
+Version 0.116.0 (Released April 04, 2024)
 ---------------
 
 - feat: add link to external resource rules (#2130)
