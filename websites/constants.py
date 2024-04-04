@@ -10,6 +10,7 @@ CONTENT_TYPE_INSTRUCTOR = "instructor"
 CONTENT_TYPE_METADATA = "sitemetadata"
 CONTENT_TYPE_NAVMENU = "navmenu"
 CONTENT_TYPE_COURSE_LIST = "course-lists"
+CONTENT_TYPE_EXTERNAL_RESOURCE = "external-resource"
 
 
 COURSE_PAGE_LAYOUTS = ["instructor_insights"]
