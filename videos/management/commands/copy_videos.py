@@ -96,5 +96,8 @@ class Command(BaseCommand):
 
         for video in source_course_videos:
             copy_video_resource.delay(
-                source_course, destination_course, video, self.gdrive_service
+                source_course.uuid,
+                destination_course.uuid,
+                video.id,
+                self.gdrive_service,
             )

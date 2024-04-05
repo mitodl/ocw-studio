@@ -403,11 +403,11 @@ def mail_transcripts_complete_notification(website: Website):
 
 
 @app.task(acks_late=True)
-def copy_gdrive_file(gdrive_file, destination_course, gdrive_service):
+def copy_gdrive_file(file_id, destination_course_id, gdrive_service):
     """
     Copy a Google Drive file to destination course.
     """
-    file_id = gdrive_file.file_id
+    destination_course = Website.objects.get(id=destination_course_id)
     gdrive_file = (
         gdrive_service.files()
         .get(fileId=file_id, fields="id, parents", supportsAllDrives=True)
@@ -445,10 +445,11 @@ def copy_gdrive_file(gdrive_file, destination_course, gdrive_service):
 
 
 @app.task(acks_late=True)
-def update_transcript_and_captions(resource, new_transcript_file, new_captions_file):
+def update_transcript_and_captions(resource_id, new_transcript_file, new_captions_file):
     """
     Update the associated transcript and captions files for a resource.
     """
+    resource = WebsiteContent.objects.get(id=resource_id)
     resource.metadata["video_files"][
         "video_transcript_file"
     ] = f"/{str(new_transcript_file).lstrip('/')}"
@@ -461,11 +462,18 @@ def update_transcript_and_captions(resource, new_transcript_file, new_captions_f
 
 @app.task(acks_late=True)
 def create_drivefile(
-    gdrive_file, new_resource, destination_course, files_or_videos, gdrive_service
+    gdrive_file_id,
+    new_resource_id,
+    destination_course_id,
+    files_or_videos,
+    gdrive_service,
 ):
     """
     Create a DriveFile for gdrive_file in the destination course.
     """
+    gdrive_file = DriveFile.objects.get(id=gdrive_file_id)
+    new_resource = WebsiteContent.objects.get(id=new_resource_id)
+    destination_course = Website.objects.get(id=destination_course_id)
     files_or_videos = (
         DRIVE_FOLDER_FILES_FINAL
         if files_or_videos == "files"
@@ -494,12 +502,14 @@ def create_drivefile(
 
 @app.task(acks_late=True)
 def copy_video_resource(
-    source_course, destination_course, source_resource, drive_service
+    source_course_id, destination_course_id, source_resource_id, drive_service
 ):
     """
     Copy a video resource and associated captions/transcripts.
     """
-
+    source_course = Website.objects.get(id=source_course_id)
+    destination_course = Website.objects.get(id=destination_course_id)
+    source_resource = WebsiteContent.objects.get(id=source_resource_id)
     video_transcript_file = source_resource.metadata["video_files"][
         "video_transcript_file"
     ]
@@ -523,19 +533,19 @@ def copy_video_resource(
         new_captions_file = new_captions_resource.file
 
         update_transcript_and_captions.delay(
-            new_resource, new_transcript_file, new_captions_file
+            new_resource.id, new_transcript_file, new_captions_file
         ).get()
         transcript_gdrive_file = DriveFile.objects.filter(
             s3_key=video_transcript_file.lstrip("/")
         ).first()
         if transcript_gdrive_file:
             copy_gdrive_file.delay(
-                transcript_gdrive_file, destination_course, drive_service
+                transcript_gdrive_file.file_id, destination_course.uuid, drive_service
             ).get()
             create_drivefile.delay(
-                transcript_gdrive_file,
-                new_transcript_resource,
-                destination_course,
+                transcript_gdrive_file.file_id,
+                new_transcript_resource.id,
+                destination_course.uuid,
                 "files",
                 drive_service,
             ).get()
@@ -544,12 +554,12 @@ def copy_video_resource(
         ).first()
         if captions_gdrive_file:
             copy_gdrive_file.delay(
-                captions_gdrive_file, destination_course, drive_service
+                captions_gdrive_file.file_id, destination_course.uuid, drive_service
             ).get()
             create_drivefile.delay(
-                captions_gdrive_file,
-                new_captions_resource,
-                destination_course,
+                captions_gdrive_file.file_id,
+                new_captions_resource.id,
+                destination_course.uuid,
                 "files",
                 drive_service,
             ).get()
@@ -570,7 +580,13 @@ def copy_video_resource(
 
         gdrive_file = DriveFile.objects.filter(video=video).first()
         if gdrive_file:
-            copy_gdrive_file.delay(gdrive_file, destination_course, drive_service).get()
+            copy_gdrive_file.delay(
+                gdrive_file.file_id, destination_course.uuid, drive_service
+            ).get()
             create_drivefile.delay(
-                gdrive_file, new_resource, destination_course, "videos", drive_service
+                gdrive_file.file_id,
+                new_resource.id,
+                destination_course.uuid,
+                "videos",
+                drive_service,
             ).get()
