@@ -4,7 +4,6 @@ Management command for copying videos from one course to another.
 from django.core.management import BaseCommand
 from django.db.models import Q
 
-from gdrive_sync.api import get_drive_service
 from videos.tasks import copy_video_resource
 from websites.models import Website, WebsiteContent
 
@@ -21,7 +20,6 @@ class Command(BaseCommand):
         Initialize the command.
         """
         super().__init__(*args, **kwargs)
-        self.gdrive_service = get_drive_service()
 
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""
@@ -96,8 +94,5 @@ class Command(BaseCommand):
 
         for video in source_course_videos:
             copy_video_resource.delay(
-                source_course.uuid,
-                destination_course.uuid,
-                video.id,
-                self.gdrive_service,
+                source_course.uuid, destination_course.uuid, video.id
             )
