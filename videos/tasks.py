@@ -492,7 +492,7 @@ def create_drivefile(gdrive_file, new_resource, destination_course, files_or_vid
 @app.task(acks_late=True)
 def copy_video_resource(source_course_id, destination_course_id, source_resource_id):
     """
-    Copy a video resource and associated captions/transcripts.
+    Copy a video resource and associated captions/transcripts (celery task).
     """
     source_course = Website.objects.get(uuid=source_course_id)
     destination_course = Website.objects.get(uuid=destination_course_id)
@@ -527,9 +527,11 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             s3_key=video_transcript_file.lstrip("/")
         ).first()
         if transcript_gdrive_file:
-            copy_gdrive_file(transcript_gdrive_file, destination_course)
+            new_transcript_gdrive_file = copy_gdrive_file(
+                transcript_gdrive_file, destination_course
+            )
             create_drivefile(
-                transcript_gdrive_file,
+                new_transcript_gdrive_file,
                 new_transcript_resource,
                 destination_course,
                 "files",
@@ -538,9 +540,11 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             s3_key=video_captions_file.lstrip("/")
         ).first()
         if captions_gdrive_file:
-            copy_gdrive_file(captions_gdrive_file, destination_course)
+            new_captions_gdrive_file = copy_gdrive_file(
+                captions_gdrive_file, destination_course
+            )
             create_drivefile(
-                captions_gdrive_file,
+                new_captions_gdrive_file,
                 new_captions_resource,
                 destination_course,
                 "files",
@@ -562,5 +566,7 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
 
         gdrive_file = DriveFile.objects.filter(video=video).first()
         if gdrive_file:
-            copy_gdrive_file(gdrive_file, destination_course)
-            create_drivefile(gdrive_file, new_resource, destination_course, "videos")
+            new_gdrive_file = copy_gdrive_file(gdrive_file, destination_course)
+            create_drivefile(
+                new_gdrive_file, new_resource, destination_course, "videos"
+            )
