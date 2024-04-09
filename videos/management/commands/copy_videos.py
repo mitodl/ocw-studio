@@ -87,6 +87,9 @@ class Command(BaseCommand):
             return
 
         for video in source_course_videos:
-            copy_video_resource.delay(
+            video_copy_task = copy_video_resource.delay(
                 source_course.uuid, destination_course.uuid, video.text_id
+            )
+            self.stdout.write(
+                f"Started celery task {video_copy_task.id} for video {video.text_id}."
             )

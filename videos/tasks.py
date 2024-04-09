@@ -458,7 +458,7 @@ def update_transcript_and_captions(resource, new_transcript_file, new_captions_f
     resource.save()
 
 
-def create_drivefile(gdrive_file, new_resource, destination_course, files_or_videos):
+def create_drivefile(gdrive_file_id, new_resource, destination_course, files_or_videos):
     """
     Create a DriveFile for gdrive_file in the destination course.
     """
@@ -468,7 +468,7 @@ def create_drivefile(gdrive_file, new_resource, destination_course, files_or_vid
         if files_or_videos == "files"
         else DRIVE_FOLDER_VIDEOS_FINAL
     )
-    gdrive_dl = get_gdrive_file(gdrive_service, gdrive_file.file_id)
+    gdrive_dl = get_gdrive_file(gdrive_service, gdrive_file_id)
     DriveFile.objects.update_or_create(
         file_id=gdrive_dl.get(DRIVE_FILE_ID),
         defaults={
