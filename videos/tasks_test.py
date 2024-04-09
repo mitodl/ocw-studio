@@ -898,7 +898,7 @@ def test_create_drivefile(mocker):
     mock_update_or_create = mocker.patch.object(DriveFile.objects, "update_or_create")
 
     create_drivefile(
-        mock_gdrive_file, new_resource, destination_course, files_or_videos
+        mock_gdrive_file.file_id, new_resource, destination_course, files_or_videos
     )
 
     mock_get_drive_service.assert_called_once()
