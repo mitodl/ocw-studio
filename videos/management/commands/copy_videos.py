@@ -15,12 +15,6 @@ class Command(BaseCommand):
 
     help = "Copy videos from source course to destination course"  # noqa: A003
 
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize the command.
-        """
-        super().__init__(*args, **kwargs)
-
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""
         parser.add_argument(
