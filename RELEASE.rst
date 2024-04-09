@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.116.1
+Version 0.116.1 (Released April 09, 2024)
 ---------------
 
 - Fix Google Drive copy and adding test (#2131)
