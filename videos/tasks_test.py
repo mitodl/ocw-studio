@@ -11,7 +11,18 @@ from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_s3
 
 from gdrive_sync.api import create_gdrive_resource_content
+from gdrive_sync.constants import (
+    DRIVE_FILE_CREATED_TIME,
+    DRIVE_FILE_DOWNLOAD_LINK,
+    DRIVE_FILE_ID,
+    DRIVE_FILE_MD5_CHECKSUM,
+    DRIVE_FILE_MODIFIED_TIME,
+    DRIVE_FILE_SIZE,
+    DriveFileStatus,
+)
 from gdrive_sync.factories import DriveFileFactory
+from gdrive_sync.models import DriveFile
+from gdrive_sync.utils import get_resource_name
 from main.s3_utils import get_boto3_client
 from main.utils import get_base_filename
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
@@ -28,10 +39,13 @@ from videos.factories import VideoFactory, VideoFileFactory
 from videos.models import VideoFile
 from videos.tasks import (
     attempt_to_update_missing_transcripts,
+    copy_gdrive_file,
+    create_drivefile,
     delete_s3_objects,
     mail_transcripts_complete_notification,
     remove_youtube_video,
     start_transcript_job,
+    update_transcript_and_captions,
     update_transcripts_for_updated_videos,
     update_transcripts_for_video,
     update_transcripts_for_website,
@@ -801,3 +815,116 @@ def test_mail_transcripts_complete_notification(settings, mocker):
                 },
             },
         )
+
+
+def test_copy_gdrive_file(mocker):
+    """Test that copy_gdrive_file correctly copies a file to a new Google Drive folder."""
+    source_file_id = "sourceFileId"
+    new_file_id = "newFileId"
+    destination_folder_id = "destinationFolderId"
+    original_parent_id = "originalParentId"
+    original_parent_name = "originalParentName"
+    new_parent_id = "newParentId"
+    destination_course = WebsiteFactory.create(gdrive_folder=destination_folder_id)
+    mock_gdrive_file = DriveFileFactory.create(file_id=source_file_id)
+    mock_gdrive_service = mocker.Mock()
+    mocker.patch("videos.tasks.get_drive_service", return_value=mock_gdrive_service)
+    mocker.patch("videos.tasks.query_files", return_value=[{"id": new_parent_id}])
+    mock_gdrive_service.files().get().execute.side_effect = [
+        {"id": source_file_id, "parents": [original_parent_id]},
+        {"name": original_parent_name},
+    ]
+    mock_copy = mocker.Mock()
+    mock_gdrive_service.files().copy = mock_copy
+    mock_copy.return_value.execute.return_value = {"id": new_file_id}
+
+    result = copy_gdrive_file(mock_gdrive_file, destination_course)
+
+    assert result == new_file_id
+    mock_copy.assert_called_once_with(
+        fileId=source_file_id,
+        body={"parents": [new_parent_id]},
+        fields="id, parents",
+        supportsAllDrives=True,
+    )
+
+
+def test_update_transcript_and_captions(mocker):
+    """Test that update_transcript_and_captions correctly updates the transcript and captions files for a resource."""
+    test_resource = WebsiteContentFactory.create()
+    test_resource.metadata = {"video_files": {}}
+    new_transcript_file = "/path/to/new_transcript_file"
+    new_captions_file = "/path/to/new_captions_file"
+    mocker.spy(test_resource, "save")
+
+    update_transcript_and_captions(
+        test_resource, new_transcript_file, new_captions_file
+    )
+
+    assert (
+        test_resource.metadata["video_files"]["video_transcript_file"]
+        == new_transcript_file
+    )
+    assert (
+        test_resource.metadata["video_files"]["video_captions_file"]
+        == new_captions_file
+    )
+    test_resource.save.assert_called_once()
+
+
+def test_create_drivefile(mocker):
+    """Test that create_drivefile correctly creates a DriveFile for a given Google Drive file in the destination course."""
+    mock_gdrive_file = DriveFileFactory.create()
+    new_resource = WebsiteContentFactory.create(
+        file="/path/to/file", metadata={"file_type": "application/pdf"}
+    )
+    destination_course = WebsiteFactory.create()
+    mock_gdrive_service = mocker.Mock()
+    mock_gdrive_dl = {
+        DRIVE_FILE_ID: "file_id",
+        DRIVE_FILE_MD5_CHECKSUM: "checksum",
+        DRIVE_FILE_MODIFIED_TIME: "modified_time",
+        DRIVE_FILE_CREATED_TIME: "created_time",
+        DRIVE_FILE_SIZE: "size",
+        DRIVE_FILE_DOWNLOAD_LINK: "download_link",
+    }
+    files_or_videos = "files"
+    mock_get_drive_service = mocker.patch(
+        "videos.tasks.get_drive_service", return_value=mock_gdrive_service
+    )
+    mock_get_gdrive_file = mocker.patch(
+        "videos.tasks.get_gdrive_file", return_value=mock_gdrive_dl
+    )
+    mock_update_or_create = mocker.patch.object(DriveFile.objects, "update_or_create")
+
+    create_drivefile(
+        mock_gdrive_file.file_id, new_resource, destination_course, files_or_videos
+    )
+
+    mock_get_drive_service.assert_called_once()
+    mock_get_gdrive_file.assert_called_once_with(
+        mock_gdrive_service, mock_gdrive_file.file_id
+    )
+    mock_update_or_create.assert_called_once()
+
+    actual_call_args = mock_update_or_create.call_args[1]
+    assert isinstance(actual_call_args["defaults"]["sync_dt"], datetime)
+    actual_call_args["defaults"].pop("sync_dt")
+
+    assert actual_call_args == {
+        "file_id": "file_id",
+        "defaults": {
+            "checksum": mock_gdrive_dl.get(DRIVE_FILE_MD5_CHECKSUM),
+            "name": get_resource_name(new_resource),
+            "mime_type": new_resource.metadata["file_type"],
+            "status": DriveFileStatus.COMPLETE,
+            "website": destination_course,
+            "s3_key": str(new_resource.file).lstrip("/"),
+            "resource": new_resource,
+            "drive_path": (f"{destination_course.short_id}/files_final"),
+            "modified_time": mock_gdrive_dl.get(DRIVE_FILE_MODIFIED_TIME),
+            "created_time": mock_gdrive_dl.get(DRIVE_FILE_CREATED_TIME),
+            "size": mock_gdrive_dl.get(DRIVE_FILE_SIZE),
+            "download_link": mock_gdrive_dl.get(DRIVE_FILE_DOWNLOAD_LINK),
+        },
+    }
