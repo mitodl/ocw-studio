@@ -947,12 +947,13 @@ redis = ">=3.0.0"
 
 [[package]]
 name = "django-robots"
-version = "6.0b0"
+version = "7.0b0"
 description = "Robots exclusion application for Django, complementing Sitemaps."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-robots-6.0b0.tar.gz", hash = "sha256:1af59398961355aed632b2890978cf5cd325c0181d2cfb50d4d0e64b5f8b1fb1"},
+    {file = "django-robots-7.0b0.tar.gz", hash = "sha256:9a71e9ced40a18c430c41a14aa7c1541c407829dbfb41b59497f56b9e2af459c"},
+    {file = "django_robots-7.0b0-py3-none-any.whl", hash = "sha256:761a50f53c8674bb7be8bf6d6c1f87e6feac67be1aa9a4c74ceeae0660beda14"},
 ]
 
 [[package]]
@@ -3400,4 +3401,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.2"
-content-hash = "076916455c02b3cd81d3320d7385c65204227b7af18ed3dfe896662e36fa730d"
+content-hash = "9515e69cf7cf898f18519716ff049fded62ff2114d1303a583b559f6fade8c8d"
