@@ -541,7 +541,7 @@ def mock_gdrive_pdf(mocker):  # noqa: PT004
         return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
     )
     mocker.patch(
-        "gdrive_sync.api.PyPDF2.PdfReader",
+        "gdrive_sync.api.PdfReader",
         return_value=mocker.Mock(metadata={}),
     )
 
@@ -657,7 +657,7 @@ def test_create_gdrive_pdf(mock_get_s3_content_type, mocker, mytitle):
         return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
     )
     mocker.patch(
-        "gdrive_sync.api.PyPDF2.PdfReader",
+        "gdrive_sync.api.PdfReader",
         return_value=mocker.Mock(metadata={"/Title": mytitle}),
     )
     drive_file = DriveFileFactory.create(
@@ -677,7 +677,7 @@ def test_create_gdrive_pdf_no_metadata(mock_get_s3_content_type, mocker):
         return_value=mocker.Mock(read=mocker.Mock(return_value=b"fake_bytes")),
     )
     mocker.patch(
-        "gdrive_sync.api.PyPDF2.PdfReader",
+        "gdrive_sync.api.PdfReader",
         return_value=mocker.Mock(metadata=None),
     )
     drive_file = DriveFileFactory.create(

@@ -8,7 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import PyPDF2
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -19,6 +18,8 @@ from google.oauth2.service_account import (  # pylint:disable=no-name-in-module
 )
 from googleapiclient.discovery import Resource, build
 from googleapiclient.http import MediaIoBaseDownload
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from content_sync.api import get_sync_backend
 from content_sync.decorators import retry_on_failure
@@ -424,7 +425,7 @@ def walk_gdrive_folder(folder_id: str, fields: str) -> Iterable[dict]:
 def get_pdf_title(drive_file: DriveFile) -> str:
     """Get the title of a PDF from its metadata, if available"""
     with io.BytesIO(GDriveStreamReader(drive_file).read()) as pdf_file:
-        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        pdf_reader = PdfReader(pdf_file)
         pdf_metadata = pdf_reader.metadata
         if pdf_metadata and "/Title" in pdf_metadata and pdf_metadata["/Title"] != "":
             return pdf_metadata["/Title"]
@@ -493,7 +494,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
-    except PyPDF2.errors.PdfReadError:
+    except PdfReadError:
         log.exception(
             "Could not create a resource from Google Drive file %s because it is not a valid PDF",  # noqa: E501
             drive_file.file_id,
