@@ -918,17 +918,17 @@ test = ["pytest", "pytest-cov", "pytest-django"]
 
 [[package]]
 name = "django-model-utils"
-version = "4.2.0"
+version = "4.5.0"
 description = "Django model mixins and utilities"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "django-model-utils-4.2.0.tar.gz", hash = "sha256:e7a95e102f9c9653427eadab980d5d59e1dea972913b9c9e01ac37f86bba0ddf"},
-    {file = "django_model_utils-4.2.0-py3-none-any.whl", hash = "sha256:a768a25c80514e0ad4e4a6f9c02c44498985f36c5dfdea47b5b1e8cf994beba6"},
+    {file = "django-model-utils-4.5.0.tar.gz", hash = "sha256:08715a87fe114d1038c889c1c9eadade5f400f16230a9988e6ee36ace589240b"},
+    {file = "django_model_utils-4.5.0-py3-none-any.whl", hash = "sha256:745bf343f44e4c95216dd1c0b8307ad50906caadb9b8b4c337d768452840c252"},
 ]
 
 [package.dependencies]
-Django = ">=2.0.1"
+Django = ">=3.2"
 
 [[package]]
 name = "django-redis"
@@ -3401,4 +3401,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.2"
-content-hash = "9515e69cf7cf898f18519716ff049fded62ff2114d1303a583b559f6fade8c8d"
+content-hash = "4a6c52f37be22da180120aa40ee187e4de0ce56154ec500008971268cdbbf1e7"
