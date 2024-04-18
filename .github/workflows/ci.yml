@@ -44,7 +44,7 @@ jobs:
         - 9200:9200
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
     - name: update
       run: sudo apt-get update -y
@@ -120,7 +120,7 @@ jobs:
   frontend-tests:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
     - name: Setup NodeJS
       uses: actions/setup-node@v3
