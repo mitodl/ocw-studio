@@ -1,6 +1,5 @@
 """Tests for feature_flag middleware"""
 
-# pylint: disable=redefined-outer-name
 import pytest
 
 from main.middleware import (
