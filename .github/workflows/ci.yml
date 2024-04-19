@@ -44,7 +44,8 @@ jobs:
         - 9200:9200
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
 
     - name: update
       run: sudo apt-get update -y
@@ -60,7 +61,7 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5
       with:
         python-version: "3.10.12"
         cache: "poetry"
@@ -120,10 +121,10 @@ jobs:
   frontend-tests:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
     - name: Setup NodeJS
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
       with:
         node-version: 20
         cache: yarn
