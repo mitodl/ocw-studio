@@ -47,7 +47,7 @@ services:
     - concourse-network
 
   nginx:
-    image: nginx:1.22.0
+    image: nginx:1.25.5
     environment:
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
