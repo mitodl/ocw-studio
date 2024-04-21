@@ -28,7 +28,7 @@ networks:
       - subnet: "10.1.0.0/24"
 services:
   db:
-    image: postgres:12.8
+    image: postgres:12.18
     ports:
     - "5431:5432"
     environment:
