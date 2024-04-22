@@ -7,3 +7,5 @@ net-tools
 libpq-dev
 postgresql-client
 libxmlsec1-dev
+libxml2-dev
+libxslt-dev
