@@ -152,6 +152,7 @@ INSTALLED_APPS = [
     "content_sync",
     "gdrive_sync",
     "videos",
+    "external_resources",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
