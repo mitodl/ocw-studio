@@ -27,7 +27,7 @@ ENV  \
   VIRTUAL_ENV="/opt/venv"
 ENV PATH="$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
 
-COPY pyproject.toml /src/
+COPY pyproject.toml poetry.toml /src/
 RUN chown -R mitodl:mitodl /src
 RUN mkdir ${VIRTUAL_ENV} && chown -R mitodl:mitodl ${VIRTUAL_ENV}
 
