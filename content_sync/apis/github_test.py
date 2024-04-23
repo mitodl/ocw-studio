@@ -473,7 +473,7 @@ def test_upsert_content_files_modified_only(  # noqa: PLR0913
     content.save()
 
     mock_api_wrapper.upsert_content_files_for_user(user.id)
-    mock_git_tree_element.called_once_with(
+    mock_git_tree_element.assert_any_call(
         fake_destination_filepath(content), "100644", "blob", mocker.ANY
     )
 
@@ -534,7 +534,7 @@ def test_upsert_content_files_deleted(
     content.delete()
 
     mock_api_wrapper.upsert_content_files()
-    mock_git_tree_element.called_once_with(
+    mock_git_tree_element.assert_called_once_with(
         fake_destination_filepath(content), "100644", "blob", sha=None
     )
 

@@ -6,10 +6,30 @@ from django.utils.deprecation import MiddlewareMixin
 from main.utils import FeatureFlag
 
 
-class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
+class QueryStringFeatureFlagMiddleware:
     """
     Extracts feature flags from the query string
     """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        prefix = self.get_flag_key("")
+        if request.GET and any(key.startswith(prefix) for key in request.GET):
+            response = shortcuts.redirect(request.path)
+            if self.get_flag_key("CLEAR") in request.GET:
+                response.delete_cookie(settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME)
+            else:
+                response.set_signed_cookie(
+                    settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME,
+                    self.encode_feature_flags(request.GET),
+                    max_age=settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS,
+                    httponly=True,
+                )
+            return response
+
+        return self.get_response(request)
 
     @classmethod
     def get_flag_key(cls, suffix):
@@ -44,34 +64,25 @@ class QueryStringFeatureFlagMiddleware(MiddlewareMixin):
                 mask = mask | member.value
         return str(mask)
 
-    def process_request(self, request):
+
+class CookieFeatureFlagMiddleware:
+    """
+    Extracts feature flags from a cookie
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
         """
-        Processes an individual request for the feature flag query parameters
+        Processes an individual request for the feature flag cookie
 
         Args:
             request (django.http.request.Request): the request to inspect
         """  # noqa: D401
-        prefix = self.get_flag_key("")
-        if request.GET and any(key.startswith(prefix) for key in request.GET):
-            response = shortcuts.redirect(request.path)
-            if self.get_flag_key("CLEAR") in request.GET:
-                response.delete_cookie(settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME)
-            else:
-                response.set_signed_cookie(
-                    settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME,
-                    self.encode_feature_flags(request.GET),
-                    max_age=settings.MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS,
-                    httponly=True,
-                )
-            return response
+        request.main_feature_flags = self.get_feature_flags(request)
 
-        return None
-
-
-class CookieFeatureFlagMiddleware(MiddlewareMixin):
-    """
-    Extracts feature flags from a cookie
-    """
+        return self.get_response(request)
 
     @classmethod
     def decode_feature_flags(cls, value):
@@ -109,15 +120,6 @@ class CookieFeatureFlagMiddleware(MiddlewareMixin):
             return cls.decode_feature_flags(value)
         else:
             return set()
-
-    def process_request(self, request):
-        """
-        Processes an individual request for the feature flag cookie
-
-        Args:
-            request (django.http.request.Request): the request to inspect
-        """  # noqa: D401
-        request.ocw_studio_feature_flags = self.get_feature_flags(request)
 
 
 class CachelessAPIMiddleware(MiddlewareMixin):

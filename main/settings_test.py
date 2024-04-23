@@ -84,10 +84,12 @@ class TestSettings(TestCase):
                 "AWS_STORAGE_BUCKET_NAME": "3",
             }
         )
-        assert (
-            settings_vars.get("DEFAULT_FILE_STORAGE")
-            == "storages.backends.s3boto3.S3Boto3Storage"
-        )
+        assert settings_vars.get("STORAGES") == {
+            "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
 
     def test_admin_settings(self):
         """Verify that we configure email with environment variable"""
