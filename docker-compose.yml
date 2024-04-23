@@ -28,7 +28,7 @@ networks:
       - subnet: "10.1.0.0/24"
 services:
   db:
-    image: postgres:12.18
+    image: postgres:12.8
     ports:
     - "5431:5432"
     environment:
@@ -39,7 +39,7 @@ services:
         ipv4_address: 10.1.0.103
 
   redis:
-    image: redis:6.2.14
+    image: redis:6.0.10
     ports:
     - "6379"
     networks:
@@ -47,7 +47,7 @@ services:
     - concourse-network
 
   nginx:
-    image: nginx:1.25.5
+    image: nginx:1.22.0
     environment:
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
@@ -101,7 +101,7 @@ services:
     - django_media:/var/media
 
   watch:
-    image: node:20.12.2
+    image: node:20.10.0
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'

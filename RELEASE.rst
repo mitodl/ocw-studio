@@ -1,11 +1,6 @@
 Release Notes
 =============
 
-Version 0.116.2 (Released April 18, 2024)
----------------
-
-- Fix: Add nubbins for celery monitoring (#2142)
-
 Version 0.116.1 (Released April 09, 2024)
 ---------------
 
