@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.117.0
+---------------
+
+- fix(deps): update dependency boto3 to v1.34.90 (#2164)
+- Django 4.2.11 / Python 3.12.2 upgrade (#2141)
+- Fix runtime errors w/ lmxl + xmlsec (#2161)
+- chore(deps): update redis docker tag to v6.2.14 (#2159)
+- chore(deps): update postgres docker tag to v12.18 (#2158)
+- chore(deps): update postgres docker tag to v11.16 (#2157)
+- chore(deps): update node.js to v20.12.2 (#2156)
+- chore(deps): update nginx docker tag to v1.25.5 (#2155)
+- chore(deps): update docker.elastic.co/elasticsearch/elasticsearch docker tag to v6.8.23 (#2154)
+- chore(deps): update dependency turndown to v7.1.3 (#2153)
+- fix(deps): update dependency boto3 to v1.34.88 (#2151)
+
 Version 0.116.3 (Released April 24, 2024)
 ---------------
 
