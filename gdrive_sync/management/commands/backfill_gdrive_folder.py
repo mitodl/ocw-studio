@@ -88,15 +88,7 @@ class Command(WebsiteFilterCommand):
         gdrive_folder = website.gdrive_folder
         gdrive_query = self.get_gdrive_query(gdrive_folder)
         subfolder_list = list(query_files(query=gdrive_query, fields=DRIVE_FILE_FIELDS))
-        gdrive_files = list(
-            walk_gdrive_folder(subfolder_list[0]["id"], fields=DRIVE_FILE_FIELDS)
-        )
-        if len(gdrive_files) > 0:
-            self.stdout.write(
-                f"The Google Drive folder {gdrive_folder} already has "
-                f"content. Skipping backfill."
-            )
-            return
+        list(walk_gdrive_folder(subfolder_list[0]["id"], fields=DRIVE_FILE_FIELDS))
         resources = self.get_resources(website)
         for resource in resources:
             self.process_resource(resource, website, subfolder_list[0]["id"])
@@ -144,7 +136,32 @@ class Command(WebsiteFilterCommand):
             parent_id (str): The ID of the parent folder in Google Drive.
 
         """
-
+        drive_file = DriveFile.objects.filter(resource=resource).first()
+        if drive_file:
+            try:
+                self.gdrive_service.files().get(fileId=drive_file.file_id).execute()
+            except HttpError as error:
+                if error.resp.status == 404:  # noqa: PLR2004
+                    self.stdout.write(
+                        "No file found at {} for resource {}. "
+                        "Deleting DriveFile and continuing.".format(
+                            drive_file.download_link, resource.file
+                        )
+                    )
+                    drive_file.delete()
+                else:
+                    self.stdout.write(
+                        "Unexpected error when checking {} for resource {}. "
+                        "Skipping.".format(drive_file.download_link, resource.file)
+                    )
+                    return
+            else:
+                self.stdout.write(
+                    "File exists at {} for resource {}. Skipping.".format(
+                        drive_file.download_link, resource.file
+                    )
+                )
+                return
         file_obj = io.BytesIO()
         self.stdout.write(
             f"Downloading file {resource.file} from S3 bucket "
