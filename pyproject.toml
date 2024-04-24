@@ -69,7 +69,7 @@ requests = "2.31.0"
 sentry-sdk = "1.45.0"
 smart-open = {extras = ["s3"], version = "^6.3.0"}
 social-auth-core = {version = "^4", extras = ["saml"]}
-social-auth-app-django = "5.4.0"
+social-auth-app-django = "5.4.1"
 uwsgi = "^2.0.21"
 pyyaml = "^6.0.1"
 tqdm = "^4.65.0"
