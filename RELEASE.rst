@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.116.3 (Released April 24, 2024)
+---------------
+
+- Update actions: checkout, setup-python, setup-node, node-version (#2146)
+
 Version 0.116.2 (Released April 18, 2024)
 ---------------
 
