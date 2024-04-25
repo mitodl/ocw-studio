@@ -16,6 +16,7 @@ import {
   siteApiContentListingUrl,
   siteContentNewUrl,
   siteContentDetailUrl,
+  siteContentRerouteUrl,
 } from "./urls"
 
 describe("urls", () => {
@@ -153,6 +154,14 @@ describe("urls", () => {
             .query({ offset: 40 })
             .toString(),
         ).toBe("/api/websites/the-best-course/content/?limit=10&offset=40")
+      })
+
+      it("renders a content reroute URL", () => {
+        expect(
+          siteContentRerouteUrl
+            .param({ name: "site-name", uuid: "test-uuid" })
+            .toString(),
+        ).toBe("/sites/site-name/content/test-uuid/")
       })
     })
   })
