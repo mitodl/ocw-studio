@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
 from django.urls import path, re_path
+from django.views.generic import TemplateView
 
 from main.views import public_index, restricted_index
 
@@ -41,6 +42,7 @@ urlpatterns = [
     path("", include("mitol.authentication.urls.saml")),
     path("", include("mitol.mail.urls")),
     path("", include("videos.urls")),
+    re_path(r"^content/.*$", TemplateView.as_view(template_name="index.html")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
