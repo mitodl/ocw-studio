@@ -26,7 +26,7 @@ import {
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
-import { siteContentDetailUrl } from "../../lib/urls"
+import { siteContentRerouteUrl } from "../../lib/urls"
 
 export interface Props {
   value?: string
@@ -128,9 +128,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     const resourceLink = {
       [RESOURCE_LINK_CONFIG_KEY]: {
         hrefTemplate: `${location.origin}${
-          siteContentDetailUrl.param({
+          siteContentRerouteUrl.param({
             name: website.name,
-            contentType: "resource",
           }).pathname
         }`,
       },
