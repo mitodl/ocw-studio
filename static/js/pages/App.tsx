@@ -20,7 +20,6 @@ import ErrorComponent from "../components/ErrorComponent"
 import { siteDetailUrl, sitesBaseUrl } from "../lib/urls"
 import AuthenticationAlert from "../components/AuthenticationAlert"
 import PrivateRoute from "../components/util/PrivateRoute"
-import GenericContentReroutePage from "../components/GenericContentReroutePage"
 interface SiteMatchParams {
   name: string
 }
@@ -74,10 +73,6 @@ export default function App(): JSX.Element {
             <Route path="/markdown-editor">
               <MarkdownEditorTestPage />
             </Route>
-            <Route
-              path="/content/:uuid"
-              component={GenericContentReroutePage}
-            />
             <Route path="*">
               <ErrorComponent>
                 <h1>That's a 404!</h1>
