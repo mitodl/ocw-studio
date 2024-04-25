@@ -6,8 +6,6 @@ import Router from "./components/util/Router"
 
 import App from "./pages/App"
 import { getQueries } from "./lib/redux_query"
-import { Route } from "react-router"
-import GenericContentReroutePage from "./components/GenericContentReroutePage"
 
 export interface RootProps {
   store: Store
@@ -20,10 +18,6 @@ export default function Root(props: RootProps): JSX.Element {
         <ReduxQueryProvider queriesSelector={getQueries}>
           <Router>
             <App />
-            <Route
-              path="/content/:uuid"
-              component={GenericContentReroutePage}
-            />
           </Router>
         </ReduxQueryProvider>
       </Provider>
