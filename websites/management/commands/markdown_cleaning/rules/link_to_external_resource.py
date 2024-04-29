@@ -43,7 +43,14 @@ def build_external_resource(
         CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
     )
     metadata["external_url"] = url
-    metadata["has_external_licence_warning"] = not is_ocw_domain_url(url)
+    metadata["has_external_license_warning"] = not is_ocw_domain_url(url)
+
+    # title is a special field. By default the value of title
+    # is stored in `website_content.title` field. Having both,
+    # `website_content.title` and `website_content.metadata['title']`,
+    # not only confuses the developer but also some UI components like
+    # navmenu.
+    metadata.pop("title", None)
 
     config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
     text_id = uuid_string()
