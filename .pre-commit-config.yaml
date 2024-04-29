@@ -9,7 +9,7 @@ ci:
   - prettier-django
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.6.0
   hooks:
   - id: trailing-whitespace
     exclude: static/js/lib/ckeditor/plugins/MarkdownListSyntax.test.ts
@@ -24,7 +24,7 @@ repos:
   - id: check-toml
   - id: debug-statements
 - repo: https://github.com/pre-commit/mirrors-prettier
-  rev: v3.0.3
+  rev: v4.0.0-alpha.8
   hooks:
   - id: prettier
     types_or: [javascript, jsx, ts, tsx, json, scss, sass, css, markdown]
@@ -40,11 +40,11 @@ repos:
     - prettier
     - prettier-plugin-django-alpine
 - repo: https://github.com/psf/black
-  rev: 23.9.1
+  rev: 24.4.2
   hooks:
   - id: black
 - repo: https://github.com/scop/pre-commit-shfmt
-  rev: v3.7.0-1
+  rev: v3.8.0-1
   hooks:
   - id: shfmt-docker
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
@@ -63,7 +63,7 @@ repos:
     - --preserve-quotes
     exclude: content_sync/pipelines/definitions/
 - repo: https://github.com/adrienverge/yamllint.git
-  rev: v1.32.0
+  rev: v1.35.1
   hooks:
   - id: yamllint
     args: [--format, parsable, -d, relaxed]
@@ -92,7 +92,7 @@ repos:
     - --exclude-files
     - ".*/generated/"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.0.288"
+  rev: "v0.4.2"
   hooks:
   - id: ruff
     args: [--extend-ignore=D1, --fix]
@@ -117,7 +117,7 @@ repos:
     exclude: node_modules/
     require_serial: false
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.9.0.5
+  rev: v0.10.0.1
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]
