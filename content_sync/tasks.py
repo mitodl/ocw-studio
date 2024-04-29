@@ -1,4 +1,5 @@
 """Content sync tasks"""
+
 import logging
 import os
 from datetime import timedelta

@@ -1,4 +1,5 @@
 """Import OCW course sites and content via ocw2hugo output"""
+
 import pydoc
 
 from django.conf import settings
@@ -14,7 +15,7 @@ from ocw_import.tasks import import_ocw2hugo_courses
 class Command(WebsiteFilterCommand):
     """Import OCW course sites and content via ocw2hugo output"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

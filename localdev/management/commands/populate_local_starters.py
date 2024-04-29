@@ -1,4 +1,5 @@
 """Scans the starter project directory in the local filesystem and creates/updates relevant db records"""  # noqa: E501
+
 import os
 from collections import defaultdict
 
@@ -15,7 +16,7 @@ LOCAL_STARTERS_DIR = "localdev/starters/"
 class Command(BaseCommand):
     """Scans the starter project directory in the local filesystem and creates/updates relevant db records"""  # noqa: E501
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         parser.add_argument(

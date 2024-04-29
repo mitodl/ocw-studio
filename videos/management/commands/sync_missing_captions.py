@@ -1,4 +1,5 @@
 """Management command to sync captions and transcripts for any videos missing them from 3play API"""  # noqa: E501
+
 from uuid import uuid4
 
 from django.conf import settings
@@ -17,7 +18,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def __init__(self):
         super().__init__()

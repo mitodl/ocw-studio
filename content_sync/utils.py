@@ -1,4 +1,5 @@
 """Content sync utility functionality"""
+
 import logging
 import os
 from typing import Optional

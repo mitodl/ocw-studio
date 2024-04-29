@@ -1,4 +1,5 @@
 """Tests for videos.views"""
+
 import json
 from types import SimpleNamespace
 

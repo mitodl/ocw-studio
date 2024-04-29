@@ -1,4 +1,5 @@
 """S3 utility functions"""
+
 import boto3
 from django.conf import settings
 

@@ -1,4 +1,5 @@
 """Replace baseurl-based links with resource_link shortcodes."""  # noqa: INP001
+
 import logging
 import os
 
@@ -30,7 +31,7 @@ class Command(WebsiteFilterCommand):
     square brackets.
     """
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     Rules: "list[type[MarkdownCleanupRule]]" = [
         rules.BaseurlReplacementRule,

@@ -1,4 +1,5 @@
 """Video tasks"""
+
 import logging
 from urllib.parse import urljoin
 
@@ -272,12 +273,12 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
     website = video.website
     if is_ocw_site(website):  # pylint: disable=too-many-nested-blocks
         search_fields = {}
-        search_fields[
-            get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
-        ] = RESOURCE_TYPE_VIDEO
-        search_fields[
-            get_dict_query_field("metadata", settings.YT_FIELD_ID)
-        ] = video.youtube_id()
+        search_fields[get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)] = (
+            RESOURCE_TYPE_VIDEO
+        )
+        search_fields[get_dict_query_field("metadata", settings.YT_FIELD_ID)] = (
+            video.youtube_id()
+        )
 
         for video_resource in website.websitecontent_set.filter(**search_fields):
             metadata = video_resource.metadata

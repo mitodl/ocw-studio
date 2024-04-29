@@ -1,4 +1,5 @@
 """Replace link-wrapped images with resource shortcodes"""
+
 import re
 from dataclasses import dataclass
 from typing import Optional

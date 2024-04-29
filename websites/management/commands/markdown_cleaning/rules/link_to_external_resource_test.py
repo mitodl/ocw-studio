@@ -1,4 +1,5 @@
 """Tests for link_resolveuid.py"""
+
 import pytest
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE

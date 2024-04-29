@@ -117,9 +117,11 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     cli_endpoint_url = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev else ""
     branch_vars.update(
         {
-            "resource_base_url": "http://localhost:8044/"
-            if branch_vars["pipeline_name"] == VERSION_DRAFT
-            else "http://localhost:8045/"
+            "resource_base_url": (
+                "http://localhost:8044/"
+                if branch_vars["pipeline_name"] == VERSION_DRAFT
+                else "http://localhost:8045/"
+            )
         }
     )
     ocw_studio_url = "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL

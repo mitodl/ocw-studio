@@ -1,4 +1,5 @@
 """Video sync views"""
+
 import json
 import logging
 from urllib.parse import urljoin

@@ -1,4 +1,5 @@
 """Constants for websites"""
+
 from model_utils import Choices
 
 CONTENT_TYPE_PAGE = "page"

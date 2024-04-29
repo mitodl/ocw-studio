@@ -1,4 +1,5 @@
 """Tests for local development site configs"""
+
 import json
 import os
 

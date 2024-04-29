@@ -1,4 +1,5 @@
 """Factories for websites"""
+
 from pathlib import Path
 
 import factory
@@ -95,7 +96,7 @@ class WebsiteContentFactory(DjangoModelFactory):
     """Factory for WebsiteContent"""
 
     title = factory.Sequence(lambda n: f"OCW Site Content {n}")
-    type = FuzzyChoice(  # noqa: A003
+    type = FuzzyChoice(
         [constants.CONTENT_TYPE_PAGE, constants.CONTENT_TYPE_RESOURCE]
     )  # noqa: A003, RUF100
     markdown = factory.Faker("text")

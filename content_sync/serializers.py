@@ -1,4 +1,5 @@
 """Serialization/deserialization logic for transforming database content into file content and vice versa"""  # noqa: E501
+
 import abc
 import json
 import re
@@ -182,14 +183,14 @@ class YamlFileSerializer(BaseContentFileSerializer):
 
 
 def _has_menu_fields(config_item: ConfigItem) -> bool:
-    """Returns True if the config item has any fields with the 'menu' widget"""  # noqa: D401, E501
+    """Returns True if the config item has any fields with the 'menu' widget"""  # noqa: D401
     return any(
         field for field in config_item.fields if field["widget"] == CONTENT_MENU_FIELD
     )
 
 
 def _get_uuid_content_map(hugo_menu_data: dict) -> dict[str, WebsiteContent]:
-    """Returns a mapping of UUIDs to the WebsiteContent records with those ids"""  # noqa: D401, E501
+    """Returns a mapping of UUIDs to the WebsiteContent records with those ids"""  # noqa: D401
     content_uuids = [
         menu_item["identifier"]
         for menu_item in hugo_menu_data

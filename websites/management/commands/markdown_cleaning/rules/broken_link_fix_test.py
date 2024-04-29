@@ -1,4 +1,5 @@
 """Tests for broken_link_fix.py"""
+
 import factory
 import pytest
 

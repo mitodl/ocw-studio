@@ -1,4 +1,5 @@
 """Content sync utility functionality tests"""
+
 import os
 
 import pytest

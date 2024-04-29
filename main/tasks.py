@@ -1,4 +1,5 @@
 """main tasks"""
+
 from main.celery import app
 
 

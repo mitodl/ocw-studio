@@ -1,4 +1,5 @@
 """Facilitates find-and-replace on WebsiteContent objects."""
+
 import csv
 from dataclasses import asdict, dataclass, fields
 from functools import partial
@@ -72,9 +73,9 @@ class WebsiteContentMarkdownCleaner:
 
     def __init__(self, rule: MarkdownCleanupRule):
         self.rule = rule
-        self.replacement_matches: "list[WebsiteContentMarkdownCleaner.ReplacementMatch]" = (  # noqa: E501
-            []
-        )
+        self.replacement_matches: (
+            "list[WebsiteContentMarkdownCleaner.ReplacementMatch]"
+        ) = []
 
     def store_match_data(  # noqa: PLR0913
         self,

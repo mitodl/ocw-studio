@@ -10,7 +10,7 @@ from websites.models import Website
 class Command(BaseCommand):
     """Creates a Google drive folder for websites that don't already have one"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         parser.add_argument(

@@ -1,4 +1,5 @@
 """Common test vars for videos"""
+
 import pytest
 
 TEST_VIDEOS_WEBHOOK_PATH = "./test_videos_webhook"

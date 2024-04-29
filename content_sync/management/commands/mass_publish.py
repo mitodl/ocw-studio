@@ -1,4 +1,5 @@
 """Publish live or draft versions of multiple sites"""  # noqa: INP001
+
 from django.conf import settings
 from django.core.management import CommandError
 from mitol.common.utils.datetime import now_in_utc
@@ -12,7 +13,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Publish live or draft versions of multiple sites"""
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

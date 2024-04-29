@@ -1,4 +1,5 @@
 """Websites utils"""
+
 from typing import Any, Optional
 
 from django.conf import settings

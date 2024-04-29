@@ -1,4 +1,5 @@
 """Test config for websites app"""
+
 import os
 from pathlib import Path
 from types import SimpleNamespace

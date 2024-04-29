@@ -1,4 +1,5 @@
 """APi functions for video processing"""
+
 import json
 import logging
 import os
@@ -75,12 +76,12 @@ def create_media_convert_job(video: Video):
     ) as job_template:
         job_dict = json.loads(job_template.read())
         job_dict["UserMetadata"]["filter"] = settings.VIDEO_TRANSCODE_QUEUE
-        job_dict[
-            "Queue"
-        ] = f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"  # noqa: E501
-        job_dict[
-            "Role"
-        ] = f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
+        job_dict["Queue"] = (
+            f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"
+        )
+        job_dict["Role"] = (
+            f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
+        )
         destination = os.path.splitext(  # noqa: PTH122
             video.source_key.replace(
                 source_prefix,
@@ -110,9 +111,11 @@ def process_video_outputs(video: Video, output_group_details: dict):
                     video=video,
                     s3_key=s3_key,
                     defaults={
-                        "destination": DESTINATION_YOUTUBE
-                        if basename.endswith("youtube")
-                        else DESTINATION_ARCHIVE,
+                        "destination": (
+                            DESTINATION_YOUTUBE
+                            if basename.endswith("youtube")
+                            else DESTINATION_ARCHIVE
+                        ),
                         "destination_id": None,
                         "destination_status": None,
                         "status": VideoFileStatus.CREATED,

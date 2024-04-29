@@ -1,4 +1,5 @@
 """Local development site config functionality"""
+
 import json
 import os
 import re

@@ -1,4 +1,5 @@
 """Github API wrapper"""
+
 import logging
 from base64 import b64decode
 from collections.abc import Iterable, Iterator

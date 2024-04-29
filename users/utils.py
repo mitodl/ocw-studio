@@ -1,4 +1,5 @@
 """Utils for users"""
+
 from email.utils import formataddr
 
 from users.models import User

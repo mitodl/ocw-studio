@@ -1,4 +1,5 @@
 """Tests for websites permissions"""
+
 import pytest
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from guardian.shortcuts import remove_perm
