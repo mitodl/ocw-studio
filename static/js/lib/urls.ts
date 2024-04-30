@@ -10,6 +10,7 @@ export const sitesBaseUrl = UrlAssembler.prefix("/sites/")
 export const newSiteUrl = UrlAssembler.prefix("/new-site/")
 
 export const siteDetailUrl = sitesBaseUrl.segment(":name/")
+export const siteContentRerouteUrl = siteDetailUrl.segment("content/:uuid/")
 export const siteContentListingUrl = siteDetailUrl.segment("type/:contentType/")
 export const siteContentNewUrl = siteContentListingUrl.segment("new/")
 export const siteContentDetailUrl = siteContentListingUrl.segment("edit/:uuid/")
