@@ -59,7 +59,7 @@ class Command(WebsiteFilterCommand):
 
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(
-                "Creation of website permission groups finished, took {} seconds".format(  # noqa: E501
+                "Creation of website permission groups finished, took {} seconds".format(  # noqa: E501, UP032
                     total_seconds
                 )
             )

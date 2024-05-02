@@ -28,7 +28,10 @@ class TranscodeJobView(GenericAPIView):
     permission_classes = (AllowAny,)
 
     def post(
-        self, request, *args, **kwargs  # noqa: ARG002
+        self,
+        request,
+        *args,  # noqa: ARG002
+        **kwargs,  # noqa: ARG002
     ):  # pylint: disable=unused-argument
         """Update Video and VideoFile objects based on request body"""
         message = json.loads(request.body)
@@ -52,7 +55,10 @@ class TranscriptJobView(GenericAPIView):
     permission_classes = (AllowAny,)
 
     def post(
-        self, request, *args, **kwargs  # noqa: ARG002
+        self,
+        request,
+        *args,  # noqa: ARG002
+        **kwargs,  # noqa: ARG002
     ):  # pylint: disable=unused-argument
         """Update transcripts"""
         video_id = request.query_params.get("video_id")
@@ -72,7 +78,10 @@ class YoutubeTokensView(GenericAPIView):
     permission_classes = (IsAdminUser,)
 
     def get(
-        self, request, *args, **kwargs  # noqa: ARG002
+        self,
+        request,
+        *args,  # noqa: ARG002
+        **kwargs,  # noqa: ARG002
     ):  # pylint: disable=unused-argument
         """Return Youtube credential info"""
         token_url = urljoin(settings.SITE_BASE_URL, reverse("yt_tokens"))

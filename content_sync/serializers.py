@@ -95,7 +95,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         front_matter_data = yaml.load(md_file_sections[0], Loader=yaml.SafeLoader)
         markdown = (
             md_file_sections[1] if len(md_file_sections) == 2 else None  # noqa: PLR2004
-        )  # noqa: PLR2004, RUF100
+        )
         text_id = front_matter_data.get("uid", None)
         content_type = front_matter_data.get("content_type")
         dirpath, filename = get_dirpath_and_filename(
@@ -210,7 +210,7 @@ def _transform_hugo_menu_data(
 
     Returns the dict of all values that will be serialized to the target file, including the transformed
     "menu" fields.
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     config_item = site_config.find_item_by_name(website_content.type)
     menu_fields = {
         field["name"]
@@ -247,7 +247,7 @@ def _untransform_hugo_menu_data(
 
     Returns the dict of all values that will be deserialized to website content, including the transformed
     "menu" fields.
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     config_item = site_config.find_item_by_filepath(filepath)
     menu_fields = {
         field["name"]

@@ -1,7 +1,7 @@
 """Test config for content_sync app"""
 
 from base64 import b64encode
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -97,7 +97,7 @@ def required_concourse_settings(settings):
 def mass_build_websites(django_db_setup, django_db_blocker):  # noqa: ARG001
     """Generate websites for testing the mass build pipeline"""
     with django_db_blocker.unblock():
-        now = datetime.now(tz=timezone.utc) - timedelta(hours=48)
+        now = datetime.now(tz=UTC) - timedelta(hours=48)
         total_sites = 6
         ocw_hugo_projects_path = "https://github.com/org/repo"
         root_starter = WebsiteStarterFactory.create(

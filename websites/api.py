@@ -109,7 +109,7 @@ def find_available_name(
     initial_filename_base = "abcdefghijklmnopqrstuvwxy" (25 characters long, assuming 26 character max)
         Existing filenames = "abc...y", "abc...y1" through "abc...y9"
         Return value = "abcdefghijklmnopqrstuvwx10"  # pragma: allowlist secret
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     # Keeps track of the number of characters that must be cut from the filename to be less than  # noqa: E501
     # the filename max length when the suffix is applied.
     chars_to_truncate = 0 if len(initial_filename_base) < max_length else 1
@@ -128,9 +128,7 @@ def find_available_name(
             fieldname, flat=True
         )
         if extension:
-            existing_names = [
-                os.path.splitext(name)[0] for name in existing_names  # noqa: PTH122
-            ]  # noqa: PTH122, RUF100
+            existing_names = [os.path.splitext(name)[0] for name in existing_names]  # noqa: PTH122
         max_suffix = max_or_none(
             int(filename[len(name_base) :]) for filename in existing_names
         )
@@ -190,7 +188,9 @@ def is_ocw_site(website: Website) -> bool:
 
 
 def update_youtube_thumbnail(
-    website_id: str, metadata: dict, overwrite=False  # noqa: FBT002
+    website_id: str,
+    metadata: dict,
+    overwrite=False,  # noqa: FBT002
 ):
     """Assign a youtube thumbnail url if appropriate to a website's metadata"""
     website = Website.objects.get(uuid=website_id)
@@ -278,7 +278,10 @@ def draft_content(website: Website) -> list[WebsiteContent]:
 
 
 def mail_on_publish(
-    website_name: str, version: str, success: bool, user_id: int  # noqa: FBT001
+    website_name: str,
+    version: str,
+    success: bool,  # noqa: FBT001
+    user_id: int,
 ):
     """Send a publishing success or failure message to the requesting user"""
     message = (

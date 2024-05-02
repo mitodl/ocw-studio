@@ -52,7 +52,7 @@ def assign_website_permissions(group_or_user, perms, website=None):
                 assign_perm(perm, group_or_user, website)
             else:
                 assign_perm(perm, group_or_user)
-        except Permission.DoesNotExist as err:  # noqa: PERF203
+        except Permission.DoesNotExist as err:
             msg = f"Permission '{perm}' not found"
             raise Permission.DoesNotExist(msg) from err
     return True

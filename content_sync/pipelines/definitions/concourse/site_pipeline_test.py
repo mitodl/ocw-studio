@@ -272,7 +272,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             if offline:
                 assert (
                     pipeline_definition._online_site_job_identifier  # noqa: SLF001
-                    in step["passed"]  # noqa: RUF100, SLF001
+                    in step["passed"]
                 )
         static_resources_s3_task = get_dict_list_item_by_field(
             items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
@@ -300,7 +300,9 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
     jobs = rendered_definition["jobs"]
     online_site_job = get_dict_list_item_by_field(
-        jobs, "name", pipeline_definition._online_site_job_identifier  # noqa: SLF001
+        jobs,
+        "name",
+        pipeline_definition._online_site_job_identifier,  # noqa: SLF001
     )
     online_site_tasks = online_site_job["plan"]
     assert (
@@ -391,7 +393,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     assert (
         upload_online_build_task["on_success"]["try"]["params"]["text"]
-        == f"{{\"version\": \"{config.vars['pipeline_name']}\", \"status\": \"succeeded\"}}"
+        == f'{{"version": "{config.vars['pipeline_name']}", "status": "succeeded"}}'
     )
     if is_dev:
         assert set(
@@ -427,7 +429,9 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     offline_site_job = get_dict_list_item_by_field(
-        jobs, "name", pipeline_definition._offline_site_job_identifier  # noqa: SLF001
+        jobs,
+        "name",
+        pipeline_definition._offline_site_job_identifier,  # noqa: SLF001
     )
     offline_site_tasks = offline_site_job["plan"]
     offline_build_gate_get_task = offline_site_tasks[0]

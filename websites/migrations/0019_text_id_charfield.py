@@ -12,7 +12,7 @@ def change_text_id_to_uuid(apps, schema_editor):
     """
     Fetches all WebsiteContent records with a non-uuid text_id value, and generates a uuid for them. This is to
     prepare those records for reversing this migration
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     possible_non_uuid_qset = WebsiteContent.objects.annotate(
         text_id_len=Length("text_id")
@@ -20,7 +20,7 @@ def change_text_id_to_uuid(apps, schema_editor):
     for website_content in possible_non_uuid_qset:
         try:
             UUID(str(website_content.text_id), version=4)
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             website_content.text_id = uuid4()
             website_content.save()
 

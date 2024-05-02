@@ -21,8 +21,9 @@ from websites.management.commands.markdown_cleaning.utils import (
 
 def get_markdown_cleaner(website_contents):
     """Convenience to get rule-specific cleaner"""  # noqa: D401
-    with patch_website_contents_all(website_contents), patch_website_all(
-        {c.website for c in website_contents}
+    with (
+        patch_website_contents_all(website_contents),
+        patch_website_all({c.website for c in website_contents}),
     ):
         rule = BaseurlReplacementRule()
         return WebsiteContentMarkdownCleaner(rule)

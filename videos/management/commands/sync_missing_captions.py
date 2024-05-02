@@ -91,7 +91,7 @@ class Command(WebsiteFilterCommand):
         )
 
     def fetch_and_update_content(self, video, youtube_id):
-        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""  # noqa: E501, D401
+        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""  # noqa: D401, E501
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
         if (

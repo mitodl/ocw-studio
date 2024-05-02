@@ -55,7 +55,9 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
 
 
 def resource_reference_field_filter(
-    field: dict, resource_id: str, website: "Website"  # noqa: F821
+    field: dict,
+    resource_id: str,
+    website: "Website",  # noqa: F821
 ) -> Optional[Q]:
     """
     Generates an appropriate Q expression to filter a field for a resource usage.

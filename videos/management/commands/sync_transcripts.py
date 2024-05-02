@@ -1,4 +1,4 @@
-"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: EXE002, E501
+"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: E501
 
 from django.core.management import BaseCommand
 from django.db.models import Q

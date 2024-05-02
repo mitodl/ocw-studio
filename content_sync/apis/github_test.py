@@ -83,9 +83,7 @@ def mock_github_integration(mocker):  # noqa: PT004
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = json.loads(GITHUB_APP_INSTALLATIONS)
     mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
-    mock_integration.return_value.get_access_token.return_value.token = (
-        "gh_token"  # noqa: S105
-    )
+    mock_integration.return_value.get_access_token.return_value.token = "gh_token"  # noqa: S105
 
 
 @pytest.fixture()
@@ -873,9 +871,7 @@ def test_sync_starter_configs_webhook_branch_hash_mismatch(mocker, mock_github):
     """A push to a branch other than the default branch without GITHUB_WEBHOOK_BRANCH should not trigger a starter update"""
     git_url = "https://github.com/testorg/ocws-configs"
     config_filenames = ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
-    mock_github.return_value.get_organization.return_value.get_repo.return_value.default_branch.return_value = (
-        settings.GIT_BRANCH_MAIN
-    )
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.default_branch.return_value = settings.GIT_BRANCH_MAIN
     mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value = mocker.Mock(
         commit=mocker.Mock(sha="abc123")
     )
@@ -928,9 +924,7 @@ def test_sync_starter_configs_webhook_branch_nohash(mocker, mock_github):
         mocker.Mock(path=config_filenames[1], decoded_content=config_content),
     ]
     settings.GITHUB_WEBHOOK_BRANCH = release_branch
-    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value.name = (
-        release_branch
-    )
+    mock_github.return_value.get_organization.return_value.get_repo.return_value.get_branch.return_value.name = release_branch
 
     sync_starter_configs(git_url, config_filenames)
 

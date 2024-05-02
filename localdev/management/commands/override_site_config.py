@@ -74,7 +74,7 @@ class Command(BaseCommand):
         for config_path, starter_slug in zip(config_paths, slugs_to_override):
             with open(  # noqa: PTH123
                 os.path.join(settings.BASE_DIR, config_path)  # noqa: PTH118
-            ) as f:  # noqa: PTH118, PTH123, RUF100
+            ) as f:
                 raw_config = f.read().strip()
             parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
             try:

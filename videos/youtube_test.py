@@ -169,9 +169,7 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     """
     Test that the upload_youtube_video task truncates title and description if too long
     """
-    name = "".join(
-        random.choice(string.ascii_lowercase) for c in range(105)  # noqa: S311
-    )  # noqa: RUF100, S311
+    name = "".join(random.choice(string.ascii_lowercase) for c in range(105))  # noqa: S311
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")
@@ -186,9 +184,7 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     """
     Test that the upload_youtube_video task appropriately sets notifySubscribers
     """
-    name = "".join(
-        random.choice(string.ascii_lowercase) for c in range(50)  # noqa: S311
-    )  # noqa: RUF100, S311
+    name = "".join(random.choice(string.ascii_lowercase) for c in range(50))  # noqa: S311
     video_file = VideoFileFactory.create()
     video_file.video.source_key = video_file.s3_key.replace("file_", name)
     mocker.patch("videos.youtube.resumable_upload")

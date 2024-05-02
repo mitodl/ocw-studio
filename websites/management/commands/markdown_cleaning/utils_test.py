@@ -30,8 +30,9 @@ def string_uuid():
 
 def get_content_lookup(contents):
     """Get a ContentLookup instance."""
-    with patch_website_contents_all(contents), patch_website_all(
-        {c.website for c in contents}
+    with (
+        patch_website_contents_all(contents),
+        patch_website_all({c.website for c in contents}),
     ):
         return ContentLookup()
 

@@ -190,7 +190,7 @@ def update_youtube_statuses(self):  # noqa: C901
             if video_file.status == VideoFileStatus.COMPLETE:
                 mail_youtube_upload_success(video_file)
 
-        except IndexError:  # noqa: PERF203
+        except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.  # noqa: E501
             video_file.status = VideoFileStatus.FAILED
             video_file.save()
@@ -232,7 +232,8 @@ def remove_youtube_video(video_id):
 
 @app.task(acks_late=True)
 def delete_s3_objects(
-    key: str, as_filter: bool = False  # noqa: FBT001, FBT002
+    key: str,
+    as_filter: bool = False,  # noqa: FBT001, FBT002
 ):  # pylint:disable=unused-argument
     """
     Delete objects from an S3 bucket
@@ -377,7 +378,8 @@ def attempt_to_update_missing_transcripts():
 
 @app.task(acks_late=True)
 def update_transcripts_for_website(
-    website: Website, **kwargs  # noqa: ARG001
+    website: Website,
+    **kwargs,  # noqa: ARG001
 ):  # pylint:disable=unused-argument
     """Update transcripts from 3play for every video for a website"""
 
@@ -449,12 +451,12 @@ def update_transcript_and_captions(resource, new_transcript_file, new_captions_f
     """
     Update the associated transcript and captions files for a resource.
     """
-    resource.metadata["video_files"][
-        "video_transcript_file"
-    ] = f"/{str(new_transcript_file).lstrip('/')}"
-    resource.metadata["video_files"][
-        "video_captions_file"
-    ] = f"/{str(new_captions_file).lstrip('/')}"
+    resource.metadata["video_files"]["video_transcript_file"] = (
+        f"/{str(new_transcript_file).lstrip('/')}"
+    )
+    resource.metadata["video_files"]["video_captions_file"] = (
+        f"/{str(new_captions_file).lstrip('/')}"
+    )
 
     resource.save()
 

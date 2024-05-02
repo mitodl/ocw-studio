@@ -18,9 +18,7 @@ class Command(WebsiteFilterCommand):
 
     def _parse_data(self, data):
         """Parse the data"""
-        tuples = re.findall(
-            r"([^\d\W]\w*)=(\S+)", data
-        )  # pylint:disable=anomalous-backslash-in-string
+        tuples = re.findall(r"([^\d\W]\w*)=(\S+)", data)
         if not tuples:
             raise ArgumentTypeError
         return tuples[0]

@@ -311,21 +311,23 @@ def test_get_hugo_arg_string(build_target, pipeline_name, default_args, override
 def test_check_matching_tags():
     """check_matching_tags should throw an exception if the tags don't match"""
     uneven_tags_test_file = os.path.join(  # noqa: PTH118
-        os.path.dirname(__file__), UNEVEN_TAGS_TEST_FILE  # noqa: PTH120
+        os.path.dirname(__file__),  # noqa: PTH120
+        UNEVEN_TAGS_TEST_FILE,
     )
     even_tags_test_file = os.path.join(  # noqa: PTH118
-        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
-    )  # noqa: PTH118, PTH120, RUF100
+        os.path.dirname(__file__),  # noqa: PTH120
+        EVEN_TAGS_TEST_FILE,
+    )
     with open(  # noqa: PTH123
         uneven_tags_test_file, encoding="utf-8"
-    ) as test_config_file:  # noqa: PTH123, RUF100
+    ) as test_config_file:
         test_config = test_config_file.read()
         with pytest.raises(ValueError):  # noqa: PT011
             check_matching_tags(test_config, DEV_START, DEV_END)
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
     with open(  # noqa: PTH123
         even_tags_test_file, encoding="utf-8"
-    ) as test_config_file:  # noqa: PTH123, RUF100
+    ) as test_config_file:
         test_config = test_config_file.read()
         assert check_matching_tags(test_config, DEV_START, DEV_END) is True
         assert check_matching_tags(test_config, NON_DEV_START, NON_DEV_END) is True
@@ -341,11 +343,12 @@ def test_check_matching_tags():
 def test_strip_lines_between(start_tag, end_tag, expected):
     """Check that strip_lines_between strips the expected content"""
     even_tags_test_file = os.path.join(  # noqa: PTH118
-        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
-    )  # noqa: PTH118, PTH120, RUF100
+        os.path.dirname(__file__),  # noqa: PTH120
+        EVEN_TAGS_TEST_FILE,
+    )
     with open(  # noqa: PTH123
         even_tags_test_file, encoding="utf-8"
-    ) as test_config_file:  # noqa: PTH123, RUF100
+    ) as test_config_file:
         test_config = test_config_file.read()
         assert expected == strip_lines_between(test_config, start_tag, end_tag)
 
@@ -365,11 +368,12 @@ def test_strip_lines_between(start_tag, end_tag, expected):
 def test_bad_tags(start_tag, end_tag):
     """Make sure errors are thrown if a bad combination of start_tag and end_tag are passed"""
     even_tags_test_file = os.path.join(  # noqa: PTH118
-        os.path.dirname(__file__), EVEN_TAGS_TEST_FILE  # noqa: PTH120
-    )  # noqa: PTH118, PTH120, RUF100
+        os.path.dirname(__file__),  # noqa: PTH120
+        EVEN_TAGS_TEST_FILE,
+    )
     with open(  # noqa: PTH123
         even_tags_test_file, encoding="utf-8"
-    ) as test_config_file:  # noqa: PTH123, RUF100
+    ) as test_config_file:
         test_config = test_config_file.read()
         with pytest.raises(ValueError):  # noqa: PT011
             check_matching_tags(test_config, start_tag, end_tag)

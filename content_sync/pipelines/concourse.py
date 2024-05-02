@@ -228,7 +228,10 @@ class GeneralPipeline(BaseGeneralPipeline):
     PIPELINE_NAME = None
 
     def __init__(
-        self, *args, api: Optional[object] = None, **kwargs  # noqa: ARG002
+        self,
+        *args,  # noqa: ARG002
+        api: Optional[object] = None,
+        **kwargs,  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Initialize the pipeline API instance"""
         if self.MANDATORY_SETTINGS:
@@ -247,8 +250,9 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get the pipeline definition as a string, processing for environment"""
         with open(  # noqa: PTH123
             os.path.join(  # noqa: PTH118
-                os.path.dirname(__file__), pipeline_file  # noqa: PTH120
-            )  # noqa: PTH118, PTH120, RUF100
+                os.path.dirname(__file__),  # noqa: PTH120
+                pipeline_file,
+            )
         ) as pipeline_config_file:
             pipeline_config = pipeline_config_file.read()
             pipeline_config = (
@@ -497,9 +501,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             )
 
 
-class MassBuildSitesPipeline(
-    BaseMassBuildSitesPipeline, GeneralPipeline
-):  # pylint: disable=too-many-instance-attributes
+class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # pylint: disable=too-many-instance-attributes
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME

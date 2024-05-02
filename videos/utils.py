@@ -33,7 +33,7 @@ def generate_s3_path(file_or_webcontent, website):
 
     return os.path.join(  # noqa: PTH118
         website.s3_path.strip(os.path.sep), new_filename
-    )  # noqa: PTH118, RUF100
+    )
 
 
 def clean_uuid_filename(filename):

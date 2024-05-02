@@ -47,7 +47,7 @@ class TimestampedModelAdmin(admin.ModelAdmin):
         Returns:
             Tuple[str]: The combined field names without any duplicates, unless there were any duplicates in the
                 tuple of existing field names
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         return existing_field_names + tuple(
             field for field in field_names_to_add if field not in existing_field_names
         )
@@ -119,7 +119,7 @@ class WhitespaceErrorList(ErrorList):
     """  # noqa: E501
 
     def as_ul(self):
-        """Overrides base method. This is the method that is called to output an error for a single form field."""  # noqa: E501, D401
+        """Overrides base method. This is the method that is called to output an error for a single form field."""  # noqa: D401, E501
         if self.data:
             error_lines = self
             # If the error message has any line breaks, return a custom <ul> which maintains the spacing  # noqa: E501

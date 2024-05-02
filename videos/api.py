@@ -71,7 +71,7 @@ def create_media_convert_job(video: Video):
     with open(  # noqa: PTH123
         os.path.join(  # noqa: PTH118
             settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"
-        ),  # noqa: PTH118, RUF100
+        ),
         encoding="utf-8",
     ) as job_template:
         job_dict = json.loads(job_template.read())
@@ -91,9 +91,9 @@ def create_media_convert_job(video: Video):
         job_dict["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
             "FileGroupSettings"
         ]["Destination"] = f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{destination}"
-        job_dict["Settings"]["Inputs"][0][
-            "FileInput"
-        ] = f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
+        job_dict["Settings"]["Inputs"][0]["FileInput"] = (
+            f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
+        )
         job = client.create_job(**job_dict)
         VideoJob.objects.get_or_create(video=video, job_id=job["Job"]["Id"])
         video.status = VideoStatus.TRANSCODING

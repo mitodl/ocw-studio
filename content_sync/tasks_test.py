@@ -211,7 +211,8 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
 
 
 @pytest.mark.parametrize(
-    ("calls_left", "use_default_sleep"), [[5, False], [5000, True]]  # noqa: PT007
+    ("calls_left", "use_default_sleep"),
+    [[5, False], [5000, True]],  # noqa: PT007
 )
 def test_sync_all_websites_rate_limit_sleep_length(
     mocker, settings, calls_left, use_default_sleep
@@ -885,7 +886,7 @@ def test_backpopulate_archive_videos_batch(  # pylint:disable=too-many-arguments
         }
         online_destination_s3_path = os.path.join(  # noqa: PTH118
             site.url_path, "test_video.mp4"
-        )  # noqa: PTH118, RUF100
+        )
         offline_destination_s3_path = os.path.join(  # noqa: PTH118
             site.url_path, "static_resources", "test_video.mp4"
         )

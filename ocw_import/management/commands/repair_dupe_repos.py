@@ -43,10 +43,10 @@ class Command(WebsiteFilterCommand):
                     for i in range(3, int(idx) + 1):
                         try:
                             backend.api.org.get_repo(f"{base_repo}-{i}").delete()
-                        except GithubException as ge:  # noqa: PERF203
+                        except GithubException as ge:
                             if ge.status != 404:  # noqa: PLR2004
                                 raise
-            except (  # noqa: PERF203
+            except (
                 Exception  # noqa: BLE001
             ) as exc:  # pylint:disable=broad-except
                 self.stderr.write(

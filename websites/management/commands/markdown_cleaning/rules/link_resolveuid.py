@@ -113,7 +113,11 @@ class LinkResolveuidRule(PyparsingRule):
             return None
 
     def replace_match(
-        self, s: str, l: int, toks, website_content  # noqa: E741, ARG002
+        self,
+        s: str,  # noqa: ARG002
+        l: int,  # noqa: ARG002, E741
+        toks,
+        website_content,
     ):
         """
         Replace resolveuid links with resource_links or markdown links, if applicable.

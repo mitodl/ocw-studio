@@ -57,7 +57,7 @@ def omnibus_config(settings):
     with open(  # noqa: PTH123
         os.path.join(  # noqa: PTH118
             settings.BASE_DIR, "localdev/configs/omnibus-site-config.yml"
-        )  # noqa: PTH118, RUF100
+        )
     ) as f:
         raw_config = f.read().strip()
     parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)

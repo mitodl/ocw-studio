@@ -509,7 +509,7 @@ class WebsiteStarter(TimestampedModel):
         Yields:
             Iterator[Tuple[bool, ConfigItem]]: A generator where yield[0] indicates whether or not the ConfigItem
                 yield[1] belongs to the starter of `website`.
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         if website.starter is None:
             msg = f"Website {website} does not have a starter. Cannot iterate config."
             raise ValidationError(msg)
