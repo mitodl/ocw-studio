@@ -1,4 +1,5 @@
 """Tasks for OCW course site import"""
+
 import logging
 
 import celery
@@ -43,7 +44,11 @@ def import_ocw2hugo_course_paths(paths=None, bucket_name=None, prefix=None):
 
 @app.task()
 def update_ocw2hugo_course_paths(
-    paths, bucket_name, prefix, content_field, create_new_content=False  # noqa: FBT002
+    paths,
+    bucket_name,
+    prefix,
+    content_field,
+    create_new_content=False,  # noqa: FBT002
 ):
     """
     Import all ocw2hugo courses & content

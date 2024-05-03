@@ -1,4 +1,5 @@
 """Tests for utility functions for OCW News"""
+
 import xml.etree.ElementTree as ET  # noqa: N817
 
 import pytest

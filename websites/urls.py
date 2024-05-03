@@ -1,5 +1,5 @@
-"""websites URL Configuration
-"""
+"""websites URL Configuration"""
+
 from django.urls import include, re_path
 from rest_framework_extensions.routers import ExtendedSimpleRouter as SimpleRouter
 

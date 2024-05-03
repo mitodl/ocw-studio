@@ -1,4 +1,5 @@
 """Views for websites"""
+
 import json
 import logging
 import os
@@ -321,7 +322,7 @@ class WebsiteMassBuildViewSet(viewsets.ViewSet):
     serializer_class = WebsiteMassBuildSerializer
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):  # noqa: A003, ARG002
+    def list(self, request):  # noqa: ARG002
         """Return a list of websites that have been previously published, per version"""
         version = self.request.query_params.get("version")
         starter = self.request.query_params.get("starter")
@@ -356,7 +357,7 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
 
     permission_classes = (BearerTokenPermission,)
 
-    def list(self, request):  # noqa: A003, ARG002
+    def list(self, request):  # noqa: ARG002
         """Return a list of websites that need to be processed by the remove-unpublished-sites pipeline"""  # noqa: E501
         sites = (
             Website.objects.exclude(
@@ -412,7 +413,7 @@ class WebsiteStarterViewSet(
                     ]
                     for file in sublist
                     if os.path.basename(file)  # noqa: PTH119
-                    == settings.OCW_STUDIO_SITE_CONFIG_FILE  # noqa: PTH119, RUF100
+                    == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
@@ -446,7 +447,7 @@ class WebsiteCollaboratorViewSet(
         """
         Builds a queryset of relevant users with permissions for this website, and annotates them by group name/role
         (owner, administrator, editor, or global administrator)
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         website = self.website
         website_group_names = [
             *list(get_groups_with_perms(website).values_list("name", flat=True)),
@@ -504,7 +505,7 @@ class WebsiteCollaboratorViewSet(
 def _get_derived_website_content_data(
     request_data: dict, site_config: SiteConfig, website_pk: str
 ) -> dict:
-    """Derives values that should be added to the request data if a WebsiteContent object is being created"""  # noqa: E501, D401
+    """Derives values that should be added to the request data if a WebsiteContent object is being created"""  # noqa: D401, E501
     added_data = {}
     if "text_id" not in request_data:
         added_data["text_id"] = uuid_string()
@@ -675,7 +676,9 @@ class WebsiteContentViewSet(
         permission_classes=(HasWebsiteContentPermission,),
     )
     def gdrive_sync(
-        self, request, **kwargs  # noqa: ARG002
+        self,
+        request,  # noqa: ARG002
+        **kwargs,  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Trigger a task to sync all non-video Google Drive files"""
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))

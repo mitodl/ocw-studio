@@ -1,4 +1,5 @@
 """Google Drive API functions"""
+
 import io
 import json
 import logging
@@ -633,7 +634,7 @@ def find_missing_files(
 
     Returns:
         Iterable[DriveFile]: DriveFile objects that exist in our database but not in `gDriveFiles`.
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     gdrive_file_ids = [f["id"] for f in gDriveFiles]
     drive_files = DriveFile.objects.filter(website=website)
     return [file for file in drive_files if file.file_id not in gdrive_file_ids]

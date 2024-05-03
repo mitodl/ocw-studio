@@ -2,6 +2,7 @@
 A collection of helper functions for generating s3 file paths and filenames.
 This module provides several utility functions that simplify the task of working with file path and name generation
 """  # noqa: E501
+
 import os
 import re
 from copy import deepcopy
@@ -32,7 +33,7 @@ def generate_s3_path(file_or_webcontent, website):
 
     return os.path.join(  # noqa: PTH118
         website.s3_path.strip(os.path.sep), new_filename
-    )  # noqa: PTH118, RUF100
+    )
 
 
 def clean_uuid_filename(filename):

@@ -1,6 +1,7 @@
 """
 Django settings for ocw_studio.
 """
+
 import logging
 import os
 import platform
@@ -73,7 +74,7 @@ import_settings_modules(
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(  # noqa: PTH120
     os.path.dirname(os.path.abspath(__file__))  # noqa: PTH100, PTH120
-)  # noqa: PTH100, PTH120, RUF100
+)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_string(

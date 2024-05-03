@@ -109,9 +109,7 @@ def test_create_gdrive_folders_batch_errors(mocker, has_error):
     assert result == ([short_ids[1]] if has_error else True)
 
 
-def test_import_website_files(
-    mocker, mocked_celery, mock_gdrive_files
-):  # pylint:disable=unused-argument
+def test_import_website_files(mocker, mocked_celery, mock_gdrive_files):  # pylint:disable=unused-argument
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
@@ -181,9 +179,7 @@ def test_import_website_files_query_error(mocker):
     assert sorted(website.sync_errors) == sorted(sync_errors)
 
 
-def test_import_website_files_processing_error(
-    mocker, mock_gdrive_files
-):  # pylint:disable=unused-argument
+def test_import_website_files_processing_error(mocker, mock_gdrive_files):  # pylint:disable=unused-argument
     """import_website_files should log exceptions raised by process_file_result and update website status"""
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     mock_log = mocker.patch("gdrive_sync.tasks.log.exception")

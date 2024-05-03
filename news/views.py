@@ -1,4 +1,5 @@
 """Views related to OCW News"""
+
 import xml.etree.ElementTree as ET  # noqa: N817
 
 import requests

@@ -1,4 +1,5 @@
 """Tests for websites API functionality"""
+
 from uuid import UUID
 
 import factory

@@ -31,7 +31,7 @@ def populate_empty_names(apps, schema_editor):
     """
     Fetches all Websites with empty/duplicate 'name' values and sets those values to something we know will be
     unique. That way, reintroducing the unique constraint on the field will not fail.
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     Website = apps.get_model("websites", "Website")
     # Set the 'name' for all records with an empty 'name' value
     for website in Website.objects.filter(name=None):

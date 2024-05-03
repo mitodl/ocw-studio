@@ -1,4 +1,5 @@
 """Replace baseurl-based links with resource_link shortcodes."""  # noqa: INP001
+
 import logging
 import os
 
@@ -30,7 +31,7 @@ class Command(WebsiteFilterCommand):
     square brackets.
     """
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     Rules: "list[type[MarkdownCleanupRule]]" = [
         rules.BaseurlReplacementRule,
@@ -149,7 +150,7 @@ class Command(WebsiteFilterCommand):
     @classmethod
     def do_handle(  # noqa: PLR0913
         cls, alias, commit, out, csv_only_changes, limit, website_contents
-    ):  # noqa: PLR0913, RUF100
+    ):
         """Replace baseurl with resource_link"""
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
@@ -185,5 +186,5 @@ class Command(WebsiteFilterCommand):
         if out is not None:
             outpath = os.path.normpath(
                 os.path.join(os.getcwd(), out)  # noqa: PTH109, PTH118
-            )  # noqa: PTH109, PTH118, RUF100
+            )
             cleaner.write_matches_to_csv(outpath, only_changes=csv_only_changes)

@@ -530,12 +530,12 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             instance_vars=pipeline_vars["instance_vars"],
         )
         if is_dev():
-            build_online_site_step.params[
-                "AWS_ACCESS_KEY_ID"
-            ] = settings.AWS_ACCESS_KEY_ID
-            build_online_site_step.params[
-                "AWS_SECRET_ACCESS_KEY"
-            ] = settings.AWS_SECRET_ACCESS_KEY
+            build_online_site_step.params["AWS_ACCESS_KEY_ID"] = (
+                settings.AWS_ACCESS_KEY_ID
+            )
+            build_online_site_step.params["AWS_SECRET_ACCESS_KEY"] = (
+                settings.AWS_SECRET_ACCESS_KEY
+            )
 
         online_sync_command = f"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
@@ -760,12 +760,12 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             instance_vars=pipeline_vars["instance_vars"],
         )
         if is_dev():
-            upload_offline_build_step.params[
-                "AWS_ACCESS_KEY_ID"
-            ] = settings.AWS_ACCESS_KEY_ID
-            upload_offline_build_step.params[
-                "AWS_SECRET_ACCESS_KEY"
-            ] = settings.AWS_SECRET_ACCESS_KEY
+            upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
+                settings.AWS_ACCESS_KEY_ID
+            )
+            upload_offline_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
+                settings.AWS_SECRET_ACCESS_KEY
+            )
         clear_cdn_cache_offline_step = add_error_handling(
             ClearCdnCacheStep(
                 name=CLEAR_CDN_CACHE_IDENTIFIER,

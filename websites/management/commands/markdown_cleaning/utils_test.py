@@ -1,4 +1,5 @@
 """Tests for convert_baseurl_links_to_resource_links.py"""
+
 from uuid import uuid4
 
 import pytest
@@ -29,8 +30,9 @@ def string_uuid():
 
 def get_content_lookup(contents):
     """Get a ContentLookup instance."""
-    with patch_website_contents_all(contents), patch_website_all(
-        {c.website for c in contents}
+    with (
+        patch_website_contents_all(contents),
+        patch_website_all({c.website for c in contents}),
     ):
         return ContentLookup()
 

@@ -1,4 +1,5 @@
 """Website models tests"""
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mitol.common.utils import now_in_utc

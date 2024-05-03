@@ -1,4 +1,5 @@
 """Local development site config functionality"""
+
 import json
 import os
 import re
@@ -19,10 +20,10 @@ def example_config_file_iter():
     Yields:
         (str, str, str): A tuple containing the directory path, filename without extension, and the extension for an
             example site config file
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     base_dir_path = os.path.join(  # noqa: PTH118
         settings.BASE_DIR, SOURCE_CONFIG_DIRECTORY
-    )  # noqa: PTH118, RUF100
+    )
     for dirpath, _, filenames in os.walk(base_dir_path):
         for filename in filenames:
             extension = get_file_extension(filename)
@@ -41,7 +42,7 @@ def generate_example_config_json(config_filepath):
 
     Returns:
         str: The contents of the site config at the given filepath, serialized as a JSON string
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     with open(config_filepath) as f:  # noqa: PTH123
         raw_config = f.read().strip()
     parsed_config = yaml.load(raw_config, Loader=yaml.SafeLoader)
@@ -54,18 +55,19 @@ def generate_example_configs():
 
     Returns:
         list(str): A list of files that were created/overwritten
-    """  # noqa: E501, D401
+    """  # noqa: D401, E501
     written_files = []
     for dirpath, base_filename, extension in example_config_file_iter():
         filename = f"{base_filename}.{extension}"
         config_json = generate_example_config_json(
             os.path.join(dirpath, filename)  # noqa: PTH118
-        )  # noqa: PTH118, RUF100
+        )
         json_filepath = os.path.join(  # noqa: PTH118
             JS_CONFIG_DIRECTORY, f"{base_filename}.json"
-        )  # noqa: PTH118, RUF100
+        )
         with open(  # noqa: PTH123
-            os.path.join(settings.BASE_DIR, json_filepath), "w+"  # noqa: PTH118
+            os.path.join(settings.BASE_DIR, json_filepath),  # noqa: PTH118
+            "w+",
         ) as json_config_file:
             json_config_file.write(config_json)
         written_files.append(json_filepath)

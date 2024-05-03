@@ -23,7 +23,7 @@ class Command(WebsiteFilterCommand):
     metadata to point to that path for downloads.
     """  # noqa: E501
 
-    help = __doc__  # noqa: A003
+    help = __doc__
 
     def add_arguments(self, parser: CommandParser) -> None:
         super().add_arguments(parser)

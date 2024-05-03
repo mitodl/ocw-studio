@@ -1,4 +1,5 @@
 """Constants for gdrive_sync"""
+
 from main.constants import STATUS_CREATED
 
 DRIVE_API_CHANGES = "changes"
