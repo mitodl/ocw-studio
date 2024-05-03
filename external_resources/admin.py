@@ -25,7 +25,7 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
     raw_id_fields = ("content",)
     ordering = ("-created_on",)
 
-    def get_queryset(self):
+    def get_queryset(self, request):  # noqa: ARG002
         return self.model.objects.get_queryset().select_related("content__website")
 
     def get_content_title(self, obj):
