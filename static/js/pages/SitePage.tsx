@@ -9,11 +9,13 @@ import Spinner from "../components/util/Spinner"
 import {
   siteCollaboratorsUrl,
   siteContentListingUrl,
+  siteContentRerouteUrl,
   siteDetailUrl,
 } from "../lib/urls"
 
 import { useWebsite } from "../context/Website"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
+import GenericContentReroutePage from "../components/GenericContentReroutePage"
 
 interface SitePageProps {
   isLoading: boolean
@@ -33,6 +35,12 @@ export default function SitePage(props: SitePageProps): JSX.Element | null {
             <SiteSidebar website={website} />
           </Card>
           <div className="content pl-3">
+            <Route
+              path={
+                siteContentRerouteUrl.param({ name: website.name }).pathname
+              }
+              component={GenericContentReroutePage}
+            />
             <Route
               path={siteCollaboratorsUrl.param("name", website.name).toString()}
             >
