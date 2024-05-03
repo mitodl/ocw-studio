@@ -152,7 +152,7 @@ class Command(WebsiteFilterCommand):
                     .execute()
                 )
                 if gdrive_resp["trashed"]:
-                    self.raise_trashed_error()
+                    self.raise_http_error()
 
             except HttpError as error:
                 if error.resp.status == 404:  # noqa: PLR2004
@@ -250,9 +250,9 @@ class Command(WebsiteFilterCommand):
         drive_file.delete()
         pre_delete.connect(delete_from_s3, sender=DriveFile)
 
-    def raise_trashed_error(self):
+    def raise_http_error(self):
         """
-        Raise an HttpError for a trashed file.
+        Raise an HttpError with a 404 status code.
         """
         resp = Response({"status": 404, "reason": "File not found"})
         content = b"File not found"
