@@ -127,6 +127,13 @@ export function FormFields(props: InnerFormProps): JSX.Element {
         if (Object.keys(errors).length > 0) {
           scrollToElement(target as HTMLElement, ".form-error")
         }
+
+        Object.keys(values).forEach((key) => {
+          if (typeof values[key] === "string" && values[key] === "") {
+            values[key] = null;
+          }
+        });
+        // console.log("Modified values:", values);
       }}
     >
       <div>
