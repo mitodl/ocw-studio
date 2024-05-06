@@ -11,7 +11,7 @@ log = logging.getLogger()
 STATUS_CODE_WHITELIST = [401, 402, 403, 429]
 
 
-def is_url_valid(url: str) -> tuple[bool, Optional[int]]:
+def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
     if url.strip() == "":
         return False, None
 
@@ -27,18 +27,18 @@ def is_url_valid(url: str) -> tuple[bool, Optional[int]]:
         400 <= response.status_code < 600  # noqa: PLR2004
         and response.status_code not in STATUS_CODE_WHITELIST
     ):
-        return False, response.status_code
+        return True, response.status_code
 
-    return True, response.status_code
+    return False, response.status_code
 
 
-def is_external_url_valid(
+def is_external_url_broken(
     external_resoure: WebsiteContent,
 ) -> tuple[bool, Optional[int]]:
     url = external_resoure.metadata.get("external_url", "")
-    return is_url_valid(url)
+    return is_url_broken(url)
 
 
-def is_backup_url_valid(external_resoure: WebsiteContent) -> tuple[bool, Optional[int]]:
+def is_backup_url_broken(external_resoure: WebsiteContent) -> tuple[bool, Optional[int]]:
     url = external_resoure.metadata.get("backup_url", "")
-    return is_url_valid(url)
+    return is_url_broken(url)

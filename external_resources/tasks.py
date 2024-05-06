@@ -22,24 +22,24 @@ def check_external_resources_for_breakages():
             )
 
         try:
-            is_url_valid, url_status = api.is_external_url_valid(resource)
+            is_url_broken, url_status = api.is_external_url_broken(resource)
             state.external_url_response_code = url_status
-            state.is_external_url_broken = is_url_valid
+            state.is_external_url_broken = is_url_broken
 
-            is_backup_url_valid, backup_url_status = api.is_backup_url_valid(resource)
+            is_backup_url_broken, backup_url_status = api.is_backup_url_broken(resource)
             state.backup_url_response_code = backup_url_status
-            state.is_backup_url_broken = is_backup_url_valid
+            state.is_backup_url_broken = is_backup_url_broken
         except CheckFailedError:
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
-            if not is_url_valid and not is_backup_url_valid:
+            if not is_url_broken and not is_backup_url_broken:
                 # Neither external_url nor backup_url are valid.
                 state.status = ExternalResourceState.Status.BROKEN
             else:
                 # Either external_url or backup_url is valid.
                 state.status = ExternalResourceState.Status.VALID
 
-            if not is_url_valid and not resource.metadata.get("is_broken", False):
+            if not is_url_broken and not resource.metadata.get("is_broken", False):
                 resource.metadata["is_broken"] = True
                 resource.save()
         finally:
