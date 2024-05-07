@@ -158,19 +158,29 @@ class Command(WebsiteFilterCommand):
             except HttpError as error:
                 if error.resp.status == 404:  # noqa: PLR2004
                     self.stdout.write(
-                        f"No file found at {drive_file.download_link} for resource {resource.file}. "
+                        "No file found at "
+                        f"{drive_file.download_link} "
+                        "for resource "
+                        f"{resource.file}. "
                         "Deleting DriveFile and continuing."
                     )
                     self.delete_drivefile_keep_s3(drive_file)
                 else:
                     self.stdout.write(
-                        f"Unexpected error when checking {drive_file.download_link} for resource {resource.file}. "
+                        f"Unexpected error when checking "
+                        f"{drive_file.download_link} "
+                        "for resource "
+                        f"{resource.file}. "
                         "Skipping."
                     )
                     return
             else:
                 self.stdout.write(
-                    f"File exists at {drive_file.download_link} for resource {resource.file}. Skipping."
+                    f"File exists at "
+                    f"{drive_file.download_link} "
+                    "for resource "
+                    f"{resource.file}. "
+                    "Skipping."
                 )
                 return
         file_obj = io.BytesIO()
