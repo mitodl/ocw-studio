@@ -26,8 +26,12 @@ class ResourceLinkNextPrevRule(PyparsingRule):
         return any("<" in m for m in matches) or any(">" in m for m in matches)
 
     def replace_match(
-        self, s: str, l: int, toks: ShortcodeParseResult, wc  # noqa: ARG002, E741
-    ):  # noqa: E741, RUF100
+        self,
+        s: str,  # noqa: ARG002
+        l: int,  # noqa: ARG002, E741
+        toks: ShortcodeParseResult,
+        wc,  # noqa: ARG002
+    ):
         shortcode = toks.shortcode
         original_text = toks.original_text
 

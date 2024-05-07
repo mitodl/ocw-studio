@@ -32,8 +32,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     jobs = [
         job
         for job in rendered_definition["jobs"]
-        if job["name"]
-        == pipeline_definition._remove_unpublished_sites_job_identifier  # noqa: SLF001
+        if job["name"] == pipeline_definition._remove_unpublished_sites_job_identifier  # noqa: SLF001
     ]
     assert len(jobs) == 1
     remove_unpublished_sites_job = jobs[0]
@@ -55,8 +54,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     search_index_removal_tasks = [
         task
         for task in remove_unpublished_sites_job["plan"]
-        if task.get("load_var")
-        == pipeline_definition._unpublished_sites_var_identifier  # noqa: SLF001
+        if task.get("load_var") == pipeline_definition._unpublished_sites_var_identifier  # noqa: SLF001
     ]
     assert len(search_index_removal_tasks) == 1
     load_unpublished_sites_task = search_index_removal_tasks[0]
@@ -93,8 +91,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
         clear_cdn_cache_tasks = [
             task
             for task in across_tasks
-            if task.get("task")
-            == pipeline_definition._clear_cdn_cache_task_identifier  # noqa: SLF001
+            if task.get("task") == pipeline_definition._clear_cdn_cache_task_identifier  # noqa: SLF001
         ]
         assert len(clear_cdn_cache_tasks) == 1
         clear_cdn_cache_task = clear_cdn_cache_tasks[0]
@@ -103,8 +100,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     empty_s3_buckets_tasks = [
         task
         for task in across_tasks
-        if task.get("task")
-        == pipeline_definition._empty_s3_bucket_task_identifier  # noqa: SLF001
+        if task.get("task") == pipeline_definition._empty_s3_bucket_task_identifier  # noqa: SLF001
     ]
     assert len(empty_s3_buckets_tasks) == 1
     empty_s3_buckets_task = empty_s3_buckets_tasks[0]

@@ -1,4 +1,5 @@
 """Site config validation functionality to supplement the features that the schema gives us"""  # noqa: E501
+
 from collections import defaultdict
 
 from mitol.common.utils import first_or_none, partition_to_lists
@@ -24,7 +25,7 @@ class AddedSchemaRule:
 
         Returns:
             list of str: A list of error messages (or an empty list if the data is valid)
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         raise NotImplementedError
 
     @classmethod
@@ -35,7 +36,7 @@ class AddedSchemaRule:
 
         Raises:
             YamaleError: A standard Yamale exception
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         error_strs = cls.apply_rule(data)
         if error_strs:
             validation_results = [

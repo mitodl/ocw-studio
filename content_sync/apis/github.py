@@ -1,4 +1,5 @@
 """Github API wrapper"""
+
 import logging
 from base64 import b64decode
 from collections.abc import Iterable, Iterator
@@ -115,7 +116,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             if created:
                 starter.name = starter.slug
                 starter.save()
-        except YamaleError:  # noqa: PERF203
+        except YamaleError:
             log.exception("Invalid site config YAML found in %s", config_file)
             continue
         except:  # pylint: disable=bare-except  # noqa: E722
@@ -154,7 +155,9 @@ def get_token():
             private_key = (
                 default_backend()
                 .load_pem_private_key(
-                    settings.GITHUB_APP_PRIVATE_KEY, None, False  # noqa: FBT003
+                    settings.GITHUB_APP_PRIVATE_KEY,
+                    None,
+                    False,  # noqa: FBT003
                 )
                 .private_bytes(
                     serialization.Encoding.PEM,
@@ -268,7 +271,10 @@ class GithubApiWrapper:
 
     @retry_on_failure
     def create_branch(
-        self, branch: str, source: str, delete_source=False  # noqa: FBT002
+        self,
+        branch: str,
+        source: str,
+        delete_source=False,  # noqa: FBT002
     ) -> Branch:
         """
         Create a new git branch, and optionally delete the source branch afterward.

@@ -1,4 +1,5 @@
 """Models for gdrive_sync"""
+
 import os
 from collections.abc import Iterable
 from functools import reduce

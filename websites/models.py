@@ -1,4 +1,5 @@
 """websites models"""
+
 import json
 import logging
 import re
@@ -57,7 +58,7 @@ def validate_yaml(value):
 
 
 def validate_slug(value):
-    """Validator function to ensure that the value is a properly-formatted slug"""  # noqa: D401, E501
+    """Validator function to ensure that the value is a properly-formatted slug"""  # noqa: D401
     slugified = slugify(value)
     if slugified != value:
         msg = f"Value '{value}' is not a proper slug (slugified version: {slugified})"
@@ -329,7 +330,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     title = models.CharField(  # noqa: DJ001
         max_length=512, null=True, blank=True, db_index=True
     )
-    type = models.CharField(max_length=24, blank=False, null=False)  # noqa: A003
+    type = models.CharField(max_length=24, blank=False, null=False)
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="contents", on_delete=models.CASCADE
     )
@@ -508,7 +509,7 @@ class WebsiteStarter(TimestampedModel):
         Yields:
             Iterator[Tuple[bool, ConfigItem]]: A generator where yield[0] indicates whether or not the ConfigItem
                 yield[1] belongs to the starter of `website`.
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         if website.starter is None:
             msg = f"Website {website} does not have a starter. Cannot iterate config."
             raise ValidationError(msg)

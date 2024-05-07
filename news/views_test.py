@@ -1,4 +1,5 @@
 """Views for OCW News"""
+
 import json
 
 import pytest

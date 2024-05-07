@@ -1,4 +1,5 @@
 """Backpopulate website groups and permissions"""  # noqa: INP001
+
 from mitol.common.utils.datetime import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -9,7 +10,7 @@ from websites.permissions import create_global_groups, setup_website_groups_perm
 class Command(WebsiteFilterCommand):
     """Backpopulate website groups and permissions"""
 
-    help = "Backpopulate website groups and permissions"  # noqa: A003
+    help = "Backpopulate website groups and permissions"
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -58,7 +59,7 @@ class Command(WebsiteFilterCommand):
 
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(
-                "Creation of website permission groups finished, took {} seconds".format(  # noqa: E501
+                "Creation of website permission groups finished, took {} seconds".format(  # noqa: E501, UP032
                     total_seconds
                 )
             )

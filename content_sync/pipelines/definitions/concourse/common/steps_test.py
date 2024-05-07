@@ -1,4 +1,5 @@
 """Tests for Concourse Steps"""
+
 import json
 
 import pytest

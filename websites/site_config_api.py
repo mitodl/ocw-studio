@@ -1,4 +1,5 @@
 """API functionality for working with site configs"""
+
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Optional
@@ -53,7 +54,8 @@ class ConfigItem:
         return "file" in self.item
 
     def iter_fields(
-        self, only_cross_site: bool = False  # noqa: FBT001, FBT002
+        self,
+        only_cross_site: bool = False,  # noqa: FBT001, FBT002
     ) -> Iterator["ConfigField"]:
         """
         Yields ConfigField for each field.
@@ -87,7 +89,7 @@ class SiteConfig:
     def content_dir(self) -> str:
         """
         Returns the content directory described in the site config, or the default if that directory isn't included
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         return (
             self.raw_data.get(WEBSITE_CONFIG_CONTENT_DIR_KEY)
             or WEBSITE_CONFIG_DEFAULT_CONTENT_DIR
@@ -135,7 +137,7 @@ class SiteConfig:
                 yield ConfigField(field=inner_field, parent_field=field)
 
     def find_item_by_name(self, name: str) -> Optional[ConfigItem]:
-        """Finds a config item in the site config with a matching 'name' value"""  # noqa: D401, E501
+        """Finds a config item in the site config with a matching 'name' value"""  # noqa: D401
         for config_item in self.iter_items():
             if config_item.item.get("name") == name:
                 return config_item
@@ -185,7 +187,7 @@ class SiteConfig:
         return item_dict
 
     def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:
-        """Finds a config item in the site config with a matching 'file' value"""  # noqa: D401, E501
+        """Finds a config item in the site config with a matching 'file' value"""  # noqa: D401
         filepath = remove_trailing_slashes(filepath)
         for config_item in self.iter_items():
             if (
@@ -198,7 +200,7 @@ class SiteConfig:
     def is_page_content(self, config_item: ConfigItem) -> bool:
         """
         Returns True if the given config item describes page content, as opposed to data/configuration
-        """  # noqa: E501, D401
+        """  # noqa: D401, E501
         file_target = config_item.file_target
         return file_target is not None and (
             file_target == self.content_dir
