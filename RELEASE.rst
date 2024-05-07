@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.118.0
+---------------
+
+- Improve Google Drive Backfill to Handle Non-Empty Folders (#2170)
+- [pre-commit.ci] pre-commit autoupdate (#1977)
+- Route different content types to correct edit pages (#2169)
+- fix: link to external resource rule (#2163)
+- fix(deps): update dependency social-auth-app-django to v5.4.1 [security] (#2167)
+
 Version 0.117.0 (Released May 07, 2024)
 ---------------
 
