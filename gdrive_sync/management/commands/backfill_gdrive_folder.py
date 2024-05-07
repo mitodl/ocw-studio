@@ -5,7 +5,7 @@ from website's S3 bucket.
 
 import io
 
-from botocore.exceptions import BotoCoreError
+from botocore.exceptions import BotoCoreError, ClientError
 from django.db.models import Q
 from django.db.models.signals import pre_delete
 from googleapiclient.errors import HttpError
@@ -195,7 +195,7 @@ class Command(WebsiteFilterCommand):
                 file_obj,
             )
 
-        except BotoCoreError as e:
+        except (BotoCoreError, ClientError) as e:
             self.stdout.write(f"Error downloading {resource.file}: {e}")
             return
 
