@@ -5,10 +5,12 @@ from website's S3 bucket.
 
 import io
 
-from botocore.exceptions import BotoCoreError
+from botocore.exceptions import BotoCoreError, ClientError
 from django.db.models import Q
+from django.db.models.signals import pre_delete
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaIoBaseUpload
+from httplib2 import Response
 from mitol.common.utils import now_in_utc
 
 from gdrive_sync.api import get_drive_service, query_files, walk_gdrive_folder
@@ -25,6 +27,7 @@ from gdrive_sync.constants import (
     DriveFileStatus,
 )
 from gdrive_sync.models import DriveFile
+from gdrive_sync.signals import delete_from_s3
 from gdrive_sync.utils import get_gdrive_file, get_resource_name
 from main import settings
 from main.management.commands.filter import WebsiteFilterCommand
@@ -89,15 +92,7 @@ class Command(WebsiteFilterCommand):
         gdrive_folder = website.gdrive_folder
         gdrive_query = self.get_gdrive_query(gdrive_folder)
         subfolder_list = list(query_files(query=gdrive_query, fields=DRIVE_FILE_FIELDS))
-        gdrive_files = list(
-            walk_gdrive_folder(subfolder_list[0]["id"], fields=DRIVE_FILE_FIELDS)
-        )
-        if len(gdrive_files) > 0:
-            self.stdout.write(
-                f"The Google Drive folder {gdrive_folder} already has "
-                f"content. Skipping backfill."
-            )
-            return
+        list(walk_gdrive_folder(subfolder_list[0]["id"], fields=DRIVE_FILE_FIELDS))
         resources = self.get_resources(website)
         for resource in resources:
             self.process_resource(resource, website, subfolder_list[0]["id"])
@@ -145,7 +140,49 @@ class Command(WebsiteFilterCommand):
             parent_id (str): The ID of the parent folder in Google Drive.
 
         """
+        drive_file = DriveFile.objects.filter(resource=resource).first()
+        if drive_file:
+            try:
+                gdrive_resp = (
+                    self.gdrive_service.files()
+                    .get(
+                        fileId=drive_file.file_id,
+                        supportsAllDrives=True,
+                        fields="trashed",
+                    )
+                    .execute()
+                )
+                if gdrive_resp["trashed"]:
+                    self.raise_http_error()
 
+            except HttpError as error:
+                if error.resp.status == 404:  # noqa: PLR2004
+                    self.stdout.write(
+                        "No file found at "
+                        f"{drive_file.download_link} "
+                        "for resource "
+                        f"{resource.file}. "
+                        "Deleting DriveFile and continuing."
+                    )
+                    self.delete_drivefile_keep_s3(drive_file)
+                else:
+                    self.stdout.write(
+                        f"Unexpected error when checking "
+                        f"{drive_file.download_link} "
+                        "for resource "
+                        f"{resource.file}. "
+                        "Skipping."
+                    )
+                    return
+            else:
+                self.stdout.write(
+                    f"File exists at "
+                    f"{drive_file.download_link} "
+                    "for resource "
+                    f"{resource.file}. "
+                    "Skipping."
+                )
+                return
         file_obj = io.BytesIO()
         self.stdout.write(
             f"Downloading file {resource.file} from S3 bucket "
@@ -158,7 +195,7 @@ class Command(WebsiteFilterCommand):
                 file_obj,
             )
 
-        except BotoCoreError as e:
+        except (BotoCoreError, ClientError) as e:
             self.stdout.write(f"Error downloading {resource.file}: {e}")
             return
 
@@ -213,3 +250,17 @@ class Command(WebsiteFilterCommand):
             )
             .execute()
         )
+
+    def delete_drivefile_keep_s3(self, drive_file):
+        """Delete a DriveFile object without deleting the corresponding file from S3."""
+        pre_delete.disconnect(delete_from_s3, sender=DriveFile)
+        drive_file.delete()
+        pre_delete.connect(delete_from_s3, sender=DriveFile)
+
+    def raise_http_error(self):
+        """
+        Raise an HttpError with a 404 status code.
+        """
+        resp = Response({"status": 404, "reason": "File not found"})
+        content = b"File not found"
+        raise HttpError(resp, content)
