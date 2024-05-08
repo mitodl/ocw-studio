@@ -34,6 +34,7 @@ app.conf.task_routes = {
     "content_sync.tasks.trigger_mass_build": {"queue": "batch"},
     "content_sync.tasks.publish_website_batch": {"queue": "batch"},
     "content_sync.tasks.publish_websites": {"queue": "batch"},
+    "external_resources.tasks.check_external_resources": {"queue": "batch"},
 }
 
 
