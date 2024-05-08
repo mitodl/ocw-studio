@@ -13,7 +13,7 @@ from websites.constants import (
 from websites.models import WebsiteContent
 
 
-@app.task(acks_late=True, rate_limit="100/s", priority=1)
+@app.task(acks_late=True, rate_limit="100/s", priority=-1)
 def check_external_resources(resources: list[str]):
     """Check external resources for broken links"""
 
