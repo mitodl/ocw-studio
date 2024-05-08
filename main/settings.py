@@ -650,6 +650,13 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
+# Check External Resources settings
+CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
+    name="CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY",
+    default=60,
+    description="Frequency (in seconds) to run a check on potentially broken external urls",  # noqa: E501
+    required=False,
+)
 
 # Celery
 REDISCLOUD_URL = get_string(
@@ -716,6 +723,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
+    "check-broken-external-urls": {
+        "task": "external_resources.tasks.check_external_resources_for_breakages",
+        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY
+    }
 }
 
 # django cache back-ends

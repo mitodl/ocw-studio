@@ -23,10 +23,7 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
         log.debug(ex)
         raise CheckFailedError from ex
 
-    if (
-        400 <= response.status_code < 600  # noqa: PLR2004
-        and response.status_code not in STATUS_CODE_WHITELIST
-    ):
+    if 400 <= response.status_code < 600:  # noqa: PLR2004
         return True, response.status_code
 
     return False, response.status_code
