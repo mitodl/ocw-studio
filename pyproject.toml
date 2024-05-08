@@ -53,6 +53,7 @@ tqdm = "^4.65.0"
 uwsgi = "^2.0.21"
 uwsgitop = "^0.11"
 yamale = "4.0.4"
+xmlsec = "1.3.13"
 
 [tool.poetry.group.dev.dependencies]
 bpython = "^0.24"
