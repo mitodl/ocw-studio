@@ -17,7 +17,7 @@ def backpopulate_null_dirpaths(apps, schema_editor):
     """
     Finds all WebsiteContent records with a null dirpath, and sets the dirpath to the value in the site config if
     the content was created for a "folder"-type config item
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     WebsiteStarter = apps.get_model("websites", "WebsiteStarter")
 

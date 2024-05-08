@@ -1,7 +1,6 @@
 """
 WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_links
 """
-
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse

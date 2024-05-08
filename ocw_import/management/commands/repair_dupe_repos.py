@@ -1,5 +1,4 @@
 """Fix sites that have been assigned a new repo on every import"""
-
 from django.db import transaction
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
@@ -13,7 +12,7 @@ from websites.models import Website
 class Command(WebsiteFilterCommand):
     """Fix sites that have been assigned a new repo on every import"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -43,10 +42,10 @@ class Command(WebsiteFilterCommand):
                     for i in range(3, int(idx) + 1):
                         try:
                             backend.api.org.get_repo(f"{base_repo}-{i}").delete()
-                        except GithubException as ge:
+                        except GithubException as ge:  # noqa: PERF203
                             if ge.status != 404:  # noqa: PLR2004
                                 raise
-            except (
+            except (  # noqa: PERF203
                 Exception  # noqa: BLE001
             ) as exc:  # pylint:disable=broad-except
                 self.stderr.write(

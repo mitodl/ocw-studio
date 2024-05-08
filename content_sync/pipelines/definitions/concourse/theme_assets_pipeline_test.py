@@ -41,14 +41,16 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
     jobs = [
         job
         for job in rendered_definition["jobs"]
-        if job["name"] == pipeline_definition._build_theme_assets_job_identifier  # noqa: SLF001
+        if job["name"]
+        == pipeline_definition._build_theme_assets_job_identifier  # noqa: SLF001
     ]
     assert len(jobs) == 1
     build_theme_assets_job = jobs[0]
     build_ocw_hugo_themes_tasks = [
         task
         for task in build_theme_assets_job["plan"]
-        if task.get("task") == pipeline_definition._build_ocw_hugo_themes_identifier  # noqa: SLF001
+        if task.get("task")
+        == pipeline_definition._build_ocw_hugo_themes_identifier  # noqa: SLF001
     ]
     assert len(build_ocw_hugo_themes_tasks) == 1
     build_ocw_hugo_themes_task = build_ocw_hugo_themes_tasks[0]
@@ -59,7 +61,8 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
     upload_theme_assets_tasks = [
         task
         for task in build_theme_assets_job["plan"]
-        if task.get("task") == pipeline_definition._upload_theme_assets_task_identifier  # noqa: SLF001
+        if task.get("task")
+        == pipeline_definition._upload_theme_assets_task_identifier  # noqa: SLF001
     ]
     assert len(upload_theme_assets_tasks) == 1
     upload_theme_assets_task = upload_theme_assets_tasks[0]

@@ -1,5 +1,4 @@
 """Test config for websites app"""
-
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -85,7 +84,7 @@ def site_config_yml(settings):
     with open(  # noqa: PTH123
         os.path.join(  # noqa: PTH118
             settings.BASE_DIR, SCHEMA_RESOURCES_DIR, SCHEMA_CONFIG_FILE
-        ),
+        ),  # noqa: PTH118, RUF100
         encoding="utf-8",
     ) as f:
         return f.read().strip()
@@ -99,7 +98,7 @@ def parsed_site_config(site_config_yml):
 
 @pytest.fixture()
 def site_config_repeatable_only(basic_site_config):
-    """Returns an example site config with a repeatable config item as the only item in 'collections'"""  # noqa: D401, E501
+    """Returns an example site config with a repeatable config item as the only item in 'collections'"""  # noqa: E501, D401
     site_config = basic_site_config.copy()
     config_item = site_config["collections"][0]
     assert (  # noqa: S101
@@ -110,7 +109,7 @@ def site_config_repeatable_only(basic_site_config):
 
 @pytest.fixture()
 def site_config_singleton_only(basic_site_config):
-    """Returns an example site config with a singleton config item as the only item in 'collections'"""  # noqa: D401, E501
+    """Returns an example site config with a singleton config item as the only item in 'collections'"""  # noqa: E501, D401
     site_config = basic_site_config.copy()
     files_config_item = site_config["collections"][2]
     file_config_item = files_config_item.get("files", [None])[0]

@@ -12,7 +12,7 @@ from websites.models import Website, WebsiteContent
 class Command(BaseCommand):
     """Moves nonvideo files mistakenly placed in a `Website.short_id` path to a `Website.name` path"""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):  # noqa: ARG002
         s3 = get_boto3_client("s3")

@@ -1,5 +1,4 @@
 """Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""  # noqa: E501, INP001
-
 import json
 
 from django.conf import settings
@@ -26,7 +25,7 @@ from websites.serializers import WebsiteBasicSerializer, WebsiteContentSerialize
 class Command(WebsiteFilterCommand):
     """Unpublish course webpages provided to the command that have no dependencies. If there are dependencies, print the dependencies."""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

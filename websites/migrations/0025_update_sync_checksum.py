@@ -24,7 +24,7 @@ def calculate_checksum(website_content):
 def recalculate_checksums(apps, schema_editor):
     """
     Updates checksum values for all ContentSyncState objects due to a change in the checksum properties
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     ContentSyncState = apps.get_model("content_sync", "ContentSyncState")
     sync_states = ContentSyncState.objects.select_related("content").all()
     for sync_state in sync_states:

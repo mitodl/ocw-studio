@@ -1,5 +1,4 @@
 """Content sync serializer tests"""
-
 import json
 import re
 

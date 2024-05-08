@@ -1,5 +1,4 @@
 """Tests for site config schema and validation"""
-
 import pytest
 import yaml
 

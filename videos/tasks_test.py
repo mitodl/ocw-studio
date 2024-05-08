@@ -1,5 +1,4 @@
 """videos.tasks tests"""
-
 import string
 from datetime import datetime
 from random import choice

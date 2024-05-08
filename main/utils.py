@@ -1,5 +1,4 @@
 """ocw_studio utilities"""
-
 import hashlib
 import hmac
 import re
@@ -78,8 +77,7 @@ def are_equivalent_paths(filepath1: str, filepath2: str) -> bool:
 
 
 def get_dirpath_and_filename(
-    filepath: str,
-    expect_file_extension=True,  # noqa: FBT002
+    filepath: str, expect_file_extension=True  # noqa: FBT002
 ) -> tuple[str, str]:
     """
     Given a full filepath, returns the directory path and filename (without extension)
@@ -169,7 +167,7 @@ def get_dict_list_item_by_field(items: list[dict], field: str, value: str):
 
     Returns:
         (dict): The first dict with a field value that matches the given parameters
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return next(
         (item for item in items if item.get(field, None) == value),
         None,

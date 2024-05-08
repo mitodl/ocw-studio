@@ -1,5 +1,4 @@
 """Sync abstract base"""
-
 import abc
 
 

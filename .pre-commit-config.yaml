@@ -3,13 +3,13 @@
 # See https://pre-commit.com/hooks.html for more hooks
 ci:
   skip:
-  - prettier
   - eslint
-  - stylelint
+  - scss-lint
   - shfmt-docker
+  - prettier-django
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
+  rev: v4.4.0
   hooks:
   - id: trailing-whitespace
     exclude: static/js/lib/ckeditor/plugins/MarkdownListSyntax.test.ts
@@ -23,8 +23,28 @@ repos:
   - id: check-merge-conflict
   - id: check-toml
   - id: debug-statements
+- repo: https://github.com/pre-commit/mirrors-prettier
+  rev: v3.0.3
+  hooks:
+  - id: prettier
+    types_or: [javascript, jsx, ts, tsx, json, scss, sass, css, markdown]
+    args:
+    - --no-config
+    - --no-semi
+    - --ignore-path=.prettierignore
+  - id: prettier
+    alias: prettier-django
+    name: prettier-django
+    types: [html]
+    additional_dependencies:
+    - prettier
+    - prettier-plugin-django-alpine
+- repo: https://github.com/psf/black
+  rev: 23.9.1
+  hooks:
+  - id: black
 - repo: https://github.com/scop/pre-commit-shfmt
-  rev: v3.8.0-1
+  rev: v3.7.0-1
   hooks:
   - id: shfmt-docker
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
@@ -43,7 +63,7 @@ repos:
     - --preserve-quotes
     exclude: content_sync/pipelines/definitions/
 - repo: https://github.com/adrienverge/yamllint.git
-  rev: v1.35.1
+  rev: v1.32.0
   hooks:
   - id: yamllint
     args: [--format, parsable, -d, relaxed]
@@ -72,39 +92,32 @@ repos:
     - --exclude-files
     - ".*/generated/"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.4.2"
+  rev: "v0.0.288"
   hooks:
-  - id: ruff-format
   - id: ruff
     args: [--extend-ignore=D1, --fix]
 - repo: local
   hooks:
-  - id: prettier
-    name: Prettier
-    language: node
-    entry: yarn
-    args: [run, prettier, --write, --ignore-unknown]
-    types_or: [javascript, jsx, ts, tsx, json, scss, sass, css, markdown, html]
   - id: eslint
     name: eslint
     description: "Lint JS/TS files and apply automatic fixes"
-    entry: yarn
+    entry: bash -c "npx eslint --fix $@"
     language: node
     types_or: [javascript, jsx, ts, tsx]
-    args: [run, eslint, --fix, --quiet]
+    args: []
     exclude: "(node_modules/|.yarn/)"
     require_serial: false
-  - id: stylelint
-    name: stylelint
+  - id: scss-lint
+    name: scss-lint
     description: "Lint SCSS files"
-    entry: yarn
+    entry: bash -c "npx stylelint --allow-empty-input --fix $@"
     language: node
     types_or: [scss, css, sass]
-    args: [run, stylelint, --allow-empty-input, --fix]
-    exclude: "(node_modules/|static/css/vendor/)"
+    args: []
+    exclude: node_modules/
     require_serial: false
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.10.0.1
+  rev: v0.9.0.5
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]

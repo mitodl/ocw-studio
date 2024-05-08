@@ -1,5 +1,4 @@
 """Management command for backpopulating the e2e test pipeline"""  # noqa: INP001
-
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
@@ -12,7 +11,7 @@ from content_sync.tasks import upsert_test_pipeline
 class Command(BaseCommand):
     """Backpopulate the end to end testing pipeline"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(

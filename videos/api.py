@@ -1,5 +1,4 @@
 """APi functions for video processing"""
-
 import json
 import logging
 import os
@@ -71,17 +70,17 @@ def create_media_convert_job(video: Video):
     with open(  # noqa: PTH123
         os.path.join(  # noqa: PTH118
             settings.BASE_DIR, f"{VideoApp.name}/config/mediaconvert.json"
-        ),
+        ),  # noqa: PTH118, RUF100
         encoding="utf-8",
     ) as job_template:
         job_dict = json.loads(job_template.read())
         job_dict["UserMetadata"]["filter"] = settings.VIDEO_TRANSCODE_QUEUE
-        job_dict["Queue"] = (
-            f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"
-        )
-        job_dict["Role"] = (
-            f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
-        )
+        job_dict[
+            "Queue"
+        ] = f"arn:aws:mediaconvert:{settings.AWS_REGION}:{settings.AWS_ACCOUNT_ID}:queues/{settings.VIDEO_TRANSCODE_QUEUE}"  # noqa: E501
+        job_dict[
+            "Role"
+        ] = f"arn:aws:iam::{settings.AWS_ACCOUNT_ID}:role/{settings.AWS_ROLE_NAME}"
         destination = os.path.splitext(  # noqa: PTH122
             video.source_key.replace(
                 source_prefix,
@@ -91,9 +90,9 @@ def create_media_convert_job(video: Video):
         job_dict["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
             "FileGroupSettings"
         ]["Destination"] = f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{destination}"
-        job_dict["Settings"]["Inputs"][0]["FileInput"] = (
-            f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
-        )
+        job_dict["Settings"]["Inputs"][0][
+            "FileInput"
+        ] = f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
         job = client.create_job(**job_dict)
         VideoJob.objects.get_or_create(video=video, job_id=job["Job"]["Id"])
         video.status = VideoStatus.TRANSCODING
@@ -111,11 +110,9 @@ def process_video_outputs(video: Video, output_group_details: dict):
                     video=video,
                     s3_key=s3_key,
                     defaults={
-                        "destination": (
-                            DESTINATION_YOUTUBE
-                            if basename.endswith("youtube")
-                            else DESTINATION_ARCHIVE
-                        ),
+                        "destination": DESTINATION_YOUTUBE
+                        if basename.endswith("youtube")
+                        else DESTINATION_ARCHIVE,
                         "destination_id": None,
                         "destination_status": None,
                         "status": VideoFileStatus.CREATED,

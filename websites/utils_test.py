@@ -1,5 +1,4 @@
 """Website utils tests"""
-
 import pytest
 
 from websites import constants

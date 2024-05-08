@@ -1,5 +1,4 @@
 """Management command for upserting the mass build pipeline"""  # noqa: INP001
-
 from django.conf import settings
 from django.core.management import BaseCommand
 from mitol.common.utils.datetime import now_in_utc
@@ -12,7 +11,7 @@ from content_sync.pipelines.base import BaseMassBuildSitesPipeline
 class Command(BaseCommand):
     """Management command for upserting the mass build pipeline"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(

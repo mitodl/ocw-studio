@@ -1,5 +1,4 @@
 """gdrive_sync.signals tests"""
-
 import pytest
 
 from gdrive_sync.factories import DriveFileFactory

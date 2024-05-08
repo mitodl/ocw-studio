@@ -1,5 +1,4 @@
 """3play api requests"""
-
 import logging
 from io import BytesIO
 from urllib.parse import urljoin

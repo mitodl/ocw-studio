@@ -1,5 +1,4 @@
-"""Import WebsiteStarter objects from ocw-studio.yaml files in a Github repo"""  # noqa: INP001
-
+"""Import WebsiteStarter objects from ocw-studio.yaml files in a Github repo"""  # noqa: E501 INP001
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -12,7 +11,7 @@ from content_sync.apis.github import find_files_recursive, sync_starter_configs
 class Command(BaseCommand):
     """Import WebsiteStarter objects from ocw-studio.yaml files in a Github repo"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

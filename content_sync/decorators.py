@@ -1,5 +1,4 @@
 """decorators for content_sync.backends"""
-
 import functools
 import logging
 from collections.abc import Callable
@@ -28,7 +27,7 @@ def retry_on_failure(func: F) -> F:
         while retries > 0:
             try:
                 return func(*args, **kwargs)
-            except RateLimitExceededException:
+            except RateLimitExceededException:  # noqa: PERF203
                 # No point in retrying
                 raise
             except:  # pylint:disable=bare-except  # noqa: E722
@@ -83,8 +82,7 @@ def check_sync_state(func: Callable) -> Callable:
 
 
 def single_task(
-    timeout: int,
-    raise_block: Optional[bool] = True,  # noqa: FBT002
+    timeout: int, raise_block: Optional[bool] = True  # noqa: FBT002
 ) -> Callable:
     """
     Only allow one instance of a task to run concurrently, based on the task name

@@ -1,4 +1,4 @@
-"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: E501
+"""Management command to sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: EXE002, E501
 
 from django.core.management import BaseCommand
 from django.db.models import Q
@@ -10,7 +10,7 @@ from websites.models import Website, WebsiteContent
 class Command(BaseCommand):
     """Sync captions and transcripts for any videos missing them from one course (from_course) to another (to_course)"""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""

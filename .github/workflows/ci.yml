@@ -9,7 +9,7 @@ on:
   pull_request:
 jobs:
   python-tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
 
     services:
       db:
@@ -68,7 +68,21 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction
 
-        # Configurations required for elasticsearch.
+    - name: Lint
+      run: poetry run ruff --extend-ignore=D1 .
+      env:
+        DJANGO_SETTINGS_MODULE: "main.settings"
+        PYTHONPATH: "."
+        MAILGUN_SENDER_DOMAIN: "fake.example.com"
+        MAILGUN_KEY: "fake"
+        OCW_STUDIO_BASE_URL: "http://localhost:8043/"
+        SOCIAL_AUTH_SAML_LOGIN_URL: "fake.example.com/login/saml/"
+        SECRET_KEY: "secret"   # pragma: allowlist secret
+
+    - name: Black
+      run: poetry run black --check .
+
+          # Configurations required for elasticsearch.
     - name: Configure sysctl limits
       run: |
         sudo swapoff -a

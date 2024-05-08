@@ -2,7 +2,6 @@
 Management command to backfill Google Drive folder content
 from website's S3 bucket.
 """
-
 import io
 
 from botocore.exceptions import BotoCoreError, ClientError

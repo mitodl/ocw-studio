@@ -48,11 +48,7 @@ class LinkLoggingRule(PyparsingRule):
         self.content_lookup = ContentLookup()
 
     def replace_match(
-        self,
-        s: str,  # noqa: ARG002
-        l: int,  # noqa: ARG002, E741
-        toks,
-        website_content,
+        self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
     ):
         return toks.original_text, self.classify_link(toks, website_content)
 
@@ -66,7 +62,7 @@ class LinkLoggingRule(PyparsingRule):
 
     def classify_link(  # noqa: C901, PLR0911, PLR0912
         self, result: LinkParseResult, wc: WebsiteContent
-    ):
+    ):  # noqa: PLR0911, PLR0912, RUF100
         link = result.link
         Notes = partial(
             self.ReplacementNotes,

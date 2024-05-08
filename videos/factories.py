@@ -1,5 +1,4 @@
 """videos factories"""
-
 import factory
 from django.conf import settings
 from factory.django import DjangoModelFactory

@@ -1,5 +1,4 @@
 """Tests for schema validators"""
-
 import yaml
 
 from websites.config_schema.validators import CollectionsKeysRule

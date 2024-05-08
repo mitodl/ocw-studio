@@ -1,5 +1,4 @@
 """Test for videos.api"""
-
 import json
 from os import path
 
@@ -54,7 +53,7 @@ def test_create_media_convert_job(settings, mocker):
     )
     assert destination.endswith(
         path.splitext(video.source_key.split("/")[-1])[0]  # noqa: PTH122
-    )
+    )  # noqa: PTH122, RUF100
     assert (
         call_kwargs["Settings"]["Inputs"][0]["FileInput"]
         == f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"

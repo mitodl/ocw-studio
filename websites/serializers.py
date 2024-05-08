@@ -1,5 +1,4 @@
 """Serializers for websites"""
-
 import logging
 import re
 from collections import defaultdict
@@ -426,7 +425,7 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        """Creating a contributor adds the user to the group corresponding to the specified role"""  # noqa: D401, E501
+        """Creating a contributor adds the user to the group corresponding to the specified role"""  # noqa: E501, D401
         website = self.website
         role = validated_data.get("role")
         user = User.objects.get(email=validated_data.get("email"))
@@ -517,7 +516,7 @@ class WebsiteContentDetailSerializer(
 
     def get_content_context(  # noqa: C901, PLR0912
         self, instance
-    ):  # pylint:disable=too-many-branches
+    ):  # pylint:disable=too-many-branches  # noqa: PLR0912, RUF100
         """
         Create mapping of uuid to a display name for any values in the metadata
         """

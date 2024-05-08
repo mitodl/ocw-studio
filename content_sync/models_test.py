@@ -1,5 +1,4 @@
 """Content sync model tests"""
-
 import pytest
 
 from content_sync.models import ContentSyncState

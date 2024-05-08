@@ -1,5 +1,4 @@
-"""Updates derived values in WebsiteContent records to match the site config"""  # noqa: INP001
-
+"""Updates derived values in WebsiteContent records to match the site config"""  # noqa: E501, INP001
 import sys
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -10,7 +9,7 @@ from websites.site_config_api import SiteConfig
 class Command(WebsiteFilterCommand):
     """Updates derived values in WebsiteContent records to match the site config"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

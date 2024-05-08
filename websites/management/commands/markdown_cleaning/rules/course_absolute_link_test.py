@@ -1,5 +1,4 @@
 """Tests for course_absolute_link.py"""
-
 import pytest
 
 from websites.factories import (

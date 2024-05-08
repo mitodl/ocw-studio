@@ -1,5 +1,4 @@
 """Utility functions for interacting with OCW News"""
-
 import re
 
 from bs4 import BeautifulSoup

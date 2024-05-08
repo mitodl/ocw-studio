@@ -1,5 +1,4 @@
 """Content sync apps"""
-
 from django.apps import AppConfig
 
 

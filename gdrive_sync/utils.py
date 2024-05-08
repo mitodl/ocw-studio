@@ -1,5 +1,4 @@
 """Common utilities"""
-
 from typing import Optional
 
 import requests
@@ -17,8 +16,7 @@ from websites.models import WebsiteContent
 
 
 def fetch_content_file_size(
-    content: WebsiteContent,
-    bucket: "s3.Bucket",  # noqa: F821
+    content: WebsiteContent, bucket: "s3.Bucket"  # noqa: F821
 ) -> Optional[int]:
     """Return the size (in bytes) of the file associated with `content`."""
     size = None
@@ -45,9 +43,8 @@ def fetch_content_file_size(
 
 
 def fetch_drive_file_size(
-    drive_file: DriveFile,
-    bucket: "s3.Bucket",  # noqa: F821
-) -> Optional[int]:
+    drive_file: DriveFile, bucket: "s3.Bucket"  # noqa: F821
+) -> Optional[int]:  # noqa: F821, RUF100
     """Return the size (in bytes) of the file associated with `drive_file.s3_key`."""
     size = None
     file_key = drive_file.s3_key

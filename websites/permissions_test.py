@@ -1,5 +1,4 @@
 """Tests for websites permissions"""
-
 import pytest
 from django.contrib.auth.models import AnonymousUser, Group, Permission
 from guardian.shortcuts import remove_perm
@@ -88,8 +87,7 @@ def test_can_view_edit_preview_website(mocker, permission_groups, method):
 
 
 @pytest.mark.parametrize(
-    ("method", "has_perm"),
-    [["PATCH", False], ["GET", True]],  # noqa: PT007
+    ("method", "has_perm"), [["PATCH", False], ["GET", True]]  # noqa: PT007
 )
 def test_editor_can_view_not_edit_website(mocker, permission_groups, method, has_perm):
     """A site editor should be able to view but not edit the website"""

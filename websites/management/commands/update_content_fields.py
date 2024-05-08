@@ -1,5 +1,4 @@
 """Updates multiple fields of content based on starter"""  # noqa: INP001
-
 import re
 from argparse import ArgumentTypeError
 
@@ -14,11 +13,13 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Updates multiple fields of content based on starter"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def _parse_data(self, data):
         """Parse the data"""
-        tuples = re.findall(r"([^\d\W]\w*)=(\S+)", data)
+        tuples = re.findall(
+            r"([^\d\W]\w*)=(\S+)", data
+        )  # pylint:disable=anomalous-backslash-in-string
         if not tuples:
             raise ArgumentTypeError
         return tuples[0]

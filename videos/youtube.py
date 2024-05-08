@@ -1,5 +1,4 @@
 """YouTube API interface"""
-
 import http
 import logging
 import re

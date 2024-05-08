@@ -1,5 +1,4 @@
 """Tests for websites.serializers"""
-
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -404,11 +403,9 @@ def test_website_content_detail_serializer_content_context(  # pylint:disable=to
         starter__config={
             "collections": [
                 {
-                    "fields": (
-                        [{"name": "outer", "fields": field_list}]
-                        if nested
-                        else field_list
-                    )
+                    "fields": [{"name": "outer", "fields": field_list}]
+                    if nested
+                    else field_list
                 }
             ]
         }

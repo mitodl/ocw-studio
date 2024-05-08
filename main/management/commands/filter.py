@@ -1,5 +1,4 @@
 """Filter options for website management commands"""
-
 import json
 
 from django.core.management import BaseCommand

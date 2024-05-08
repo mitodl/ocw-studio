@@ -1,5 +1,4 @@
 """Custom permissions"""
-
 from rest_framework import permissions
 
 

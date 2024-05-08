@@ -1,5 +1,4 @@
 """API for parsing/validating site configs"""
-
 import os
 
 import yamale
@@ -41,7 +40,7 @@ def validate_raw_site_config(yaml_to_validate):
 
     Raises:
         ValueError: Raised if the given site config YAML is invalid
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     schema = yamale.make_schema(path=SITE_CONFIG_SCHEMA_PATH)
     yamale_data = yamale.make_data(content=yaml_to_validate)
     yamale.validate(schema, yamale_data)
@@ -65,6 +64,6 @@ def validate_parsed_site_config(config_to_validate):
 
     Raises:
         ValueError: Raised if the given site config YAML is invalid
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     raw_site_config = yaml.dump(config_to_validate, Dumper=yaml.Dumper)
     return validate_raw_site_config(raw_site_config)

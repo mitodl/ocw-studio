@@ -1,5 +1,4 @@
 """General utility function tests"""
-
 import pytest
 
 from main.utils import (
@@ -93,8 +92,7 @@ def test_are_equivalent_paths(filepath1, filepath2, exp_result):
 
 
 @pytest.mark.parametrize(
-    ("key", "is_valid"),
-    [["unit-test-me", True], ["wrong-key", False]],  # noqa: PT007
+    ("key", "is_valid"), [["unit-test-me", True], ["wrong-key", False]]  # noqa: PT007
 )
 def test_valid_key(mocker, key, is_valid):
     """valid_key should return True for a valid key, false otherwise"""

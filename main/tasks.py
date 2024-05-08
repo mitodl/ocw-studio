@@ -1,5 +1,4 @@
 """main tasks"""
-
 from main.celery import app
 
 
@@ -8,5 +7,5 @@ def chord_finisher(*args, **kwargs):  # pylint:disable=unused-argument  # noqa: 
     """
     Dummy task to indicate a chord has finished processing, so the next step(s) can proceed
     https://stackoverflow.com/a/19018521
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return True

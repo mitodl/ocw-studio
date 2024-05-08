@@ -23,9 +23,7 @@ class ShortcodeParser(WrappedParser):
             """  # noqa: D401
 
             def _parse_action(
-                s: str,
-                l: int,  # noqa: ARG001, E741
-                toks: "list[list[str]]",
+                s: str, l: int, toks: "list[list[str]]"  # noqa: ARG001, E741
             ):
                 if len(toks) > 1:
                     msg = "Assumption violated. Investigate."

@@ -39,8 +39,8 @@ class MarkdownLink:
 
     # Tuple of tuples (ParseResults, start_index, end_index) where
     # - ParseResult has named tokens
-    #       - link: MarkdownLinkOrImage
-    #       - original_text: str
+    #       - link: MarkdownLinkOrImage  # noqa: ERA001
+    #       - original_text: str  # noqa: ERA001
     # - start_index, end_index are the start/end of this link within self.text
     text_links: Union[tuple, None] = None
 
@@ -189,7 +189,7 @@ class LinkParser(WrappedParser):
             nestedExpr(opener="(", closer=")")
         ).addParseAction(
             lambda s, l, toks: toks[0][1:-1]  # noqa: ARG005, E741
-        )
+        )  # noqa: E741, RUF100
 
         destination = Combine(
             # Zero or more non-space characters.
@@ -210,7 +210,7 @@ class LinkParser(WrappedParser):
             .setResultsName("title")
             .setParseAction(
                 lambda s, l, toks: unescape_quoted_string(toks[0])  # noqa: ARG005, E741
-            )
+            )  # noqa: E741, RUF100
         )
 
         # This will parse the contents of dest_and_title

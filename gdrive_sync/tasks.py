@@ -1,5 +1,4 @@
 """gdrive_sync tasks"""
-
 import logging
 from collections import Counter
 from datetime import datetime
@@ -61,7 +60,7 @@ def create_gdrive_resource_content_batch(drive_file_ids: list[Optional[str]]):
     Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
 
     `drive_file_ids` are expected to be results from `process_drive_file` tasks.
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     for drive_file_id in drive_file_ids:
         if drive_file_id is None:
             continue
@@ -140,8 +139,7 @@ def import_website_files(self, name: str):
     gdrive_subfolder_files, errors = _get_gdrive_files(website)
 
     deleted_drive_files = api.find_missing_files(
-        sum(gdrive_subfolder_files.values(), []),  # noqa: RUF017
-        website,
+        sum(gdrive_subfolder_files.values(), []), website
     )
     delete_file_tasks = [
         delete_drive_file.si(drive_file.file_id, website.synced_on)
@@ -161,7 +159,7 @@ def import_website_files(self, name: str):
                 )
                 if drive_file:
                     file_tasks.append(process_drive_file.s(drive_file.file_id))
-            except:  # pylint:disable=bare-except  # noqa: E722
+            except:  # pylint:disable=bare-except  # noqa: E722, PERF203
                 errors.append(f"Error processing gdrive file {gdfile.get('name')}")
                 log.exception(
                     "Error processing gdrive file %s for %s",
@@ -207,7 +205,7 @@ def create_gdrive_folders_batch(short_ids: list[str]):
     for short_id in short_ids:
         try:
             api.create_gdrive_folders(short_id)
-        except:  # pylint:disable=bare-except  # noqa: E722
+        except:  # pylint:disable=bare-except  # noqa: E722, PERF203
             log.exception("Could not create google drive folders for %s", short_id)
             errors.append(short_id)
     return errors or True
@@ -235,9 +233,8 @@ def update_website_status(website_pk: str, sync_dt: datetime):
 
 @app.task
 def populate_file_sizes(  # noqa: C901, PLR0912
-    website_name: str,
-    override_existing: bool = False,  # noqa: FBT001, FBT002
-):
+    website_name: str, override_existing: bool = False  # noqa: FBT001, FBT002
+):  # noqa: PLR0912, RUF100
     """Populate all resource content of `website` with the `file_size` metadata field."""  # noqa: E501
     website = Website.objects.get(name=website_name)
     log.info("Starting file size population for %s.", website_name)

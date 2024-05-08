@@ -260,9 +260,9 @@ def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback
     }
 
     if threeplay_callback_key:
-        payload["callback"] = (
-            "http://url.edu/api/transcription-jobs/?video_id=123&callback_key=threeplay_callback_key"
-        )
+        payload[
+            "callback"
+        ] = "http://url.edu/api/transcription-jobs/?video_id=123&callback_key=threeplay_callback_key"
 
     result = threeplay_order_transcript_request(123, 456)
 

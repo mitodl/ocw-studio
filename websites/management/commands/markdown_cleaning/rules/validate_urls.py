@@ -50,10 +50,8 @@ class ValidateUrlsRule(RegexpCleanupRule):
         self.content_lookup = ContentLookup()
 
     def replace_match(  # noqa: C901, PLR0911, PLR0912
-        self,
-        match: re.Match,
-        wc: WebsiteContent,  # noqa: ARG002
-    ):
+        self, match: re.Match, wc: WebsiteContent  # noqa: ARG002
+    ):  # noqa: PLR0911, PLR0912, RUF100
         original_text = match[0]
         try:
             url = urlparse(match.group("url"))

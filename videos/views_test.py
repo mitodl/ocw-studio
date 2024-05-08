@@ -1,5 +1,4 @@
 """Tests for videos.views"""
-
 import json
 from types import SimpleNamespace
 
@@ -105,7 +104,7 @@ def test_transcode_jobs_subscribe(settings, mocker, drf_client):
     mock_get = mocker.patch("videos.views.requests.get")
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
-    ) as infile:
+    ) as infile:  # noqa: PTH123, RUF100
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
@@ -121,7 +120,7 @@ def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
     mock_get = mocker.patch("videos.views.requests.get")
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
-    ) as infile:
+    ) as infile:  # noqa: PTH123, RUF100
         data = json.loads(
             infile.read()
             .replace("AWS_ACCOUNT_ID", "other_account")
@@ -180,7 +179,7 @@ def test_youtube_token_callback(mocker, admin_client):
         "videos.views.InstalledAppFlow.from_client_config",
         return_value=mocker.Mock(
             credentials=mocker.Mock(token="a", refresh_token="b")  # noqa: S106
-        ),
+        ),  # noqa: RUF100, S106
     )
     response = admin_client.get(f"{reverse('yt_tokens')}?code=abcdef")
     mock_flow.return_value.fetch_token.assert_called_once()

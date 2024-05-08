@@ -18,7 +18,7 @@ class HttpResourceType(ResourceType):
             name=HTTP_RESOURCE_TYPE_IDENTIFIER,
             type=REGISTRY_IMAGE,
             source={"repository": "jgriff/http-resource", "tag": "latest"},
-            **kwargs,
+            **kwargs
         )
 
 
@@ -35,7 +35,7 @@ class KeyvalResourceType(ResourceType):
                 "repository": "ghcr.io/cludden/concourse-keyval-resource",
                 "tag": "latest",
             },
-            **kwargs,
+            **kwargs
         )
 
 
@@ -49,5 +49,5 @@ class S3IamResourceType(ResourceType):
             name=S3_IAM_RESOURCE_TYPE_IDENTIFIER,
             type=REGISTRY_IMAGE,
             source={"repository": "governmentpaas/s3-resource", "tag": "latest"},
-            **kwargs,
+            **kwargs
         )

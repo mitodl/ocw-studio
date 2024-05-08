@@ -1,5 +1,4 @@
 """Content sync factories"""
-
 import factory
 from factory.django import DjangoModelFactory
 

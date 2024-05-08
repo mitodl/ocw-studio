@@ -1,5 +1,4 @@
 """Replace baseurl-based links with resource_link shortcodes."""
-
 import re
 from dataclasses import dataclass
 from urllib.parse import urlparse

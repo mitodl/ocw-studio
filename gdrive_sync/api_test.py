@@ -1,5 +1,4 @@
 """gdrive_sync.api tests"""
-
 import json
 from datetime import timedelta
 
@@ -365,11 +364,9 @@ def test_process_file_result(  # noqa: PLR0913
             },
             {
                 "id": "subFolderId",
-                "name": (
-                    DRIVE_FOLDER_VIDEOS_FINAL
-                    if in_video_folder
-                    else DRIVE_FOLDER_FILES_FINAL
-                ),
+                "name": DRIVE_FOLDER_VIDEOS_FINAL
+                if in_video_folder
+                else DRIVE_FOLDER_FILES_FINAL,
             },
         ],
     )

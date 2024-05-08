@@ -1,5 +1,4 @@
 """gdrive_sync apps"""
-
 from django.apps import AppConfig
 
 

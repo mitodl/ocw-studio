@@ -1,5 +1,4 @@
 """Replace baseurl-based links with resource_link shortcodes."""
-
 import importlib
 import os
 from collections import defaultdict

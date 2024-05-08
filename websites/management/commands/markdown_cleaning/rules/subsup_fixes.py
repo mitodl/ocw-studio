@@ -35,12 +35,8 @@ class SubSupFixes(PyparsingRule):
         return any(v in s for v in variants)
 
     def replace_match(
-        self,
-        s: str,  # noqa: ARG002
-        l: int,  # noqa: ARG002, E741
-        toks: ShortcodeParseResult,
-        wc,  # noqa: ARG002
-    ):
+        self, s: str, l: int, toks: ShortcodeParseResult, wc  # noqa: ARG002, E741
+    ):  # noqa: E741, RUF100
         shortcode = toks.shortcode
         original_text = toks.original_text
         if shortcode.name not in ["sub", "sup"]:

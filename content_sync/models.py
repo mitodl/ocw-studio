@@ -1,5 +1,4 @@
 """Content sync models"""
-
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.db import models
 from mitol.common.models import TimestampedModel, TimestampedModelQuerySet

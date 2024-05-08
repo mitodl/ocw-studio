@@ -1,5 +1,4 @@
 """videos signals"""
-
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
@@ -10,9 +9,7 @@ from videos.tasks import delete_s3_objects, remove_youtube_video
 
 @receiver(pre_delete, sender=Video)
 def delete_video_transcripts(
-    sender,  # noqa: ARG001
-    instance: Video,
-    **kwargs,  # noqa: ARG001
+    sender, instance: Video, **kwargs  # noqa: ARG001
 ):  # pylint:disable=unused-argument
     """
     Delete transcript files.
@@ -28,8 +25,7 @@ def delete_video_transcripts(
 
 @receiver(pre_delete, sender=VideoFile)
 def delete_youtube_video(
-    sender,  # noqa: ARG001
-    **kwargs,
+    sender, **kwargs  # noqa: ARG001
 ):  # pylint:disable=unused-argument
     """
     Call the YouTube API to delete a video

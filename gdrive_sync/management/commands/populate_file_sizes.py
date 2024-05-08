@@ -16,7 +16,7 @@ class Command(WebsiteFilterCommand):
     ./manage.py populate_file_sizes --filter course-id --override-existing
     """
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

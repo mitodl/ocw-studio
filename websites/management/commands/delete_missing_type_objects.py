@@ -7,7 +7,7 @@ from websites.models import WebsiteContent
 class Command(BaseCommand):
     """Delete objects in the Django database that are missing a type"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def handle(self, *args, **options):  # noqa: ARG002
         missing_type_content = WebsiteContent.objects.all(force_visibility=True).filter(

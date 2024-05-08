@@ -1,5 +1,4 @@
 """Reset ContentSyncState synced checksums to None"""  # noqa: INP001
-
 from django.conf import settings
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
@@ -12,7 +11,7 @@ from main.management.commands.filter import WebsiteFilterCommand
 class Command(WebsiteFilterCommand):
     """Reset ContentSyncState synced checksums to None"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         super().add_arguments(parser)

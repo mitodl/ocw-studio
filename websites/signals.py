@@ -1,5 +1,4 @@
 """Signals for websites"""
-
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -15,10 +14,7 @@ from websites.permissions import setup_website_groups_permissions
 )
 @transaction.atomic
 def handle_website_save(
-    sender,  # noqa: ARG001
-    instance,
-    created,
-    **kwargs,  # noqa: ARG001
+    sender, instance, created, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """
     Add website-specific groups with appropriate permissions when a website is created

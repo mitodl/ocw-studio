@@ -1,5 +1,4 @@
 """Tests for ocw_import.api"""
-
 import json
 import re
 from unittest.mock import Mock, patch
@@ -129,7 +128,9 @@ def test_import_ocw2hugo_course_content(mocker, settings):
 
 
 @mock_s3
-def test_import_ocw2hugo_sitemetadata_legacy(settings, root_website):
+def test_import_ocw2hugo_sitemetadata_legacy(
+    settings, root_website
+):  # pylint: disable=unused-argument
     """Make sure we handle importing levels, term, and year in a legacy format"""
     setup_s3(settings)
     name = "1-050-engineering-mechanics-i-fall-2007"

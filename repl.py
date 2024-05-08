@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Run Django shell with imported modules"""
-
 if __name__ == "__main__":
     import os
 
@@ -31,5 +30,5 @@ if __name__ == "__main__":
         try:  # noqa: SIM105
             # pylint: disable=exec-used
             exec(f"from {app}.models import *")  # noqa: S102
-        except ModuleNotFoundError:
+        except ModuleNotFoundError:  # noqa: PERF203
             pass

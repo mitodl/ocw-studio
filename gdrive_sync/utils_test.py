@@ -1,5 +1,4 @@
 """gdrive_sync.utils tests"""
-
 import pytest
 from django.core.files import File
 from moto import mock_s3

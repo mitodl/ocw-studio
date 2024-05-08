@@ -104,7 +104,7 @@ class OcwStudioWebhookResource(Resource):
         ocw_studio_url = get_ocw_studio_api_url()
         api_path = os.path.join(  # noqa: PTH118
             "api", "websites", site_name, "pipeline_status"
-        )
+        )  # noqa: PTH118, RUF100
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
             name=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,

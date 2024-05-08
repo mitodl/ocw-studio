@@ -1,5 +1,4 @@
 """Tests for local development site configs"""
-
 import json
 import os
 
@@ -15,7 +14,7 @@ def test_valid_local_dev_configs():
     for dirpath, base_filename, extension in example_config_file_iter():
         with open(  # noqa: PTH123
             os.path.join(dirpath, f"{base_filename}.{extension}")  # noqa: PTH118
-        ) as f:
+        ) as f:  # noqa: PTH118, PTH123, RUF100
             raw_config_override = f.read().strip()
         parsed_site_config = yaml.load(raw_config_override, Loader=yaml.SafeLoader)
         validate_parsed_site_config(parsed_site_config)
@@ -46,7 +45,6 @@ def test_equivalent_example_configs(settings):
         ), f"'{js_config_path}' does not exist. {_assert_msg}"
         with open(js_config_path) as f:  # noqa: PTH123
             json_config = json.load(f)
-        assert (
-            json.dumps(parsed_config, sort_keys=True)
-            == json.dumps(json_config, sort_keys=True)
+        assert json.dumps(parsed_config, sort_keys=True) == json.dumps(
+            json_config, sort_keys=True
         ), f"'{js_config_path}' does not match the contents of '{filename}'. {_assert_msg}"

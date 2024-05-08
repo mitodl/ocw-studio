@@ -252,7 +252,7 @@ class ShortcodeTag:
         href_uuid: Optional[Union[str, UUID]] = None,
         href: Optional[str] = None,
     ):
-        """Convenience method to create valid resource_link ShortcodeTag objects."""  # noqa: D401
+        """Convenience method to create valid resource_link ShortcodeTag objects."""  # noqa: D401, E501
         cls.validate_uuid(uuid)
         params = [ShortcodeParam(name="uuid", value=str(uuid))]
         if href_uuid and href:

@@ -1,5 +1,4 @@
 """Replace link-wrapped images with resource shortcodes"""
-
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -65,12 +64,8 @@ class LinkWrappedImagesRule(PyparsingRule):
         return "[{{< resource" in text
 
     def replace_match(  # noqa: PLR0911
-        self,
-        s,  # noqa: ARG002
-        l,  # noqa: ARG002, E741
-        toks: LinkParseResult,
-        wc: WebsiteContent,
-    ):
+        self, s, l, toks: LinkParseResult, wc: WebsiteContent  # noqa: ARG002, E741
+    ):  # noqa: E741, PLR0911, RUF100
         """
         Replace a single markdown link with shortcodes.
 

@@ -1,5 +1,4 @@
 """Tests for websites views"""
-
 import datetime
 from types import SimpleNamespace
 
@@ -210,8 +209,7 @@ def test_websites_endpoint_status(drf_client):
 
 
 @pytest.mark.parametrize(
-    ("method", "status"),
-    [["post", 405], ["put", 403], ["delete", 405]],  # noqa: PT007
+    ("method", "status"), [["post", 405], ["put", 403], ["delete", 405]]  # noqa: PT007
 )
 def test_websites_endpoint_detail_methods_denied(drf_client, method, status):
     """Certain request methods should always be denied"""
@@ -502,7 +500,9 @@ def test_websites_endpoint_sorting(drf_client, websites, settings):
 
 
 @pytest.mark.parametrize("published", [True, False])
-def test_websites_endpoint_publish_sorting(drf_client, published, websites):  # pylint: disable=unused-argument
+def test_websites_endpoint_publish_sorting(
+    drf_client, published, websites
+):  # pylint: disable=unused-argument
     """Should be able to filter to just published or not"""
     superuser = UserFactory.create(is_superuser=True)
     drf_client.force_login(superuser)
@@ -618,8 +618,7 @@ def test_website_starters_retrieve(drf_client):
 
 
 @pytest.mark.parametrize(
-    ("use_local_starters", "exp_result_count"),
-    [[True, 4], [False, 2]],  # noqa: PT007
+    ("use_local_starters", "exp_result_count"), [[True, 4], [False, 2]]  # noqa: PT007
 )
 def test_website_starters_local(
     settings, drf_client, use_local_starters, exp_result_count
@@ -831,7 +830,9 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
 
 
 @pytest.mark.parametrize("published", [True, False])
-def test_websites_content_publish_sorting(drf_client, global_admin_user, published):  # pylint: disable=unused-argument
+def test_websites_content_publish_sorting(
+    drf_client, global_admin_user, published
+):  # pylint: disable=unused-argument
     """Should be able to filter to just published or not"""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create(published=True)

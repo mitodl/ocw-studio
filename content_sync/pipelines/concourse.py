@@ -4,7 +4,6 @@ The pylint no-name-in-module is disabled here because of a weird issue
 that occurred after adding the OCW_HUGO_THEMES_GIT constant, which
 clearly exists but pylint thinks it doesn't
 """
-
 # pylint: disable=no-name-in-module
 import json
 import logging
@@ -90,7 +89,7 @@ class PipelineApi(Api, BasePipelineApi):
 
     @retry_on_failure
     def auth(self):
-        """Same as the base class but with retries and support for concourse 7.7"""  # noqa: D401
+        """Same as the base class but with retries and support for concourse 7.7"""  # noqa: D401, E501
         if self.has_username_and_passwd:
             self.ATC_AUTH = None
             session = self._set_new_session()
@@ -132,7 +131,7 @@ class PipelineApi(Api, BasePipelineApi):
         stream: bool = False,  # noqa: FBT001, FBT002
         iterator: bool = False,  # noqa: FBT001, FBT002
     ) -> tuple[dict, dict]:
-        """Customized base get method, returning response data and headers"""  # noqa: D401
+        """Customized base get method, returning response data and headers"""  # noqa: D401, E501
         url = self._make_api_url(path)
         r = self.requests.get(url, headers=self.headers, stream=stream)
         if not self._is_response_ok(r) and self.has_username_and_passwd:
@@ -228,10 +227,7 @@ class GeneralPipeline(BaseGeneralPipeline):
     PIPELINE_NAME = None
 
     def __init__(
-        self,
-        *args,  # noqa: ARG002
-        api: Optional[object] = None,
-        **kwargs,  # noqa: ARG002
+        self, *args, api: Optional[object] = None, **kwargs  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Initialize the pipeline API instance"""
         if self.MANDATORY_SETTINGS:
@@ -250,9 +246,8 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get the pipeline definition as a string, processing for environment"""
         with open(  # noqa: PTH123
             os.path.join(  # noqa: PTH118
-                os.path.dirname(__file__),  # noqa: PTH120
-                pipeline_file,
-            )
+                os.path.dirname(__file__), pipeline_file  # noqa: PTH120
+            )  # noqa: PTH118, PTH120, RUF100
         ) as pipeline_config_file:
             pipeline_config = pipeline_config_file.read()
             pipeline_config = (
@@ -501,7 +496,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             )
 
 
-class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # pylint: disable=too-many-instance-attributes
+class MassBuildSitesPipeline(
+    BaseMassBuildSitesPipeline, GeneralPipeline
+):  # pylint: disable=too-many-instance-attributes
     """Specialized concourse pipeline for mass building multiple sites"""
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME

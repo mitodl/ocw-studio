@@ -1,7 +1,6 @@
 """
 Management command for copying videos from one course to another.
 """
-
 from django.core.management import BaseCommand
 from django.db.models import Q
 
@@ -14,7 +13,7 @@ class Command(BaseCommand):
     Management command that copies videos from a source course to a destination course.
     """
 
-    help = "Copy videos from source course to destination course"
+    help = "Copy videos from source course to destination course"  # noqa: A003
 
     def add_arguments(self, parser):
         """Add arguments to the command's argument parser."""

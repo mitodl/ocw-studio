@@ -1,5 +1,4 @@
 """Test config for ocw_import app"""
-
 import glob
 from os.path import isfile
 from shutil import copytree, rmtree
@@ -24,7 +23,7 @@ def get_ocw2hugo_files(path):
         f
         for f in glob.glob(  # noqa: PTH207
             get_ocw2hugo_path(path) + "**/*", recursive=True
-        )
+        )  # noqa: PTH207, RUF100
         if isfile(f)  # noqa: PTH113
     ]
 

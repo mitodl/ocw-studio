@@ -1,5 +1,4 @@
 """Management command to sync captions and transcripts for any videos missing them from 3play API"""  # noqa: E501
-
 from uuid import uuid4
 
 from django.conf import settings
@@ -18,7 +17,7 @@ from websites.models import WebsiteContent
 class Command(WebsiteFilterCommand):
     """Check for WebContent with missing caption/transcripts, and syncs via 3play API"""
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def __init__(self):
         super().__init__()
@@ -91,7 +90,7 @@ class Command(WebsiteFilterCommand):
         )
 
     def fetch_and_update_content(self, video, youtube_id):
-        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""  # noqa: D401, E501
+        """Fetches captions/transcripts and creates new WebsiteContent object using 3play API"""  # noqa: E501, D401
         threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
 
         if (

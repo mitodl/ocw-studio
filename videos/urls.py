@@ -1,5 +1,4 @@
 """Urls for video"""
-
 from django.urls import re_path
 
 from videos.views import TranscodeJobView, TranscriptJobView, YoutubeTokensView

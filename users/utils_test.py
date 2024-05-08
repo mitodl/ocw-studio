@@ -1,5 +1,4 @@
 """Tests for user utils"""
-
 import pytest
 
 from users.factories import UserFactory

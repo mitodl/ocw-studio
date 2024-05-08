@@ -1,5 +1,4 @@
 """Tests for broken_link_fix.py"""
-
 import factory
 import pytest
 
@@ -31,11 +30,9 @@ EXAMPLE_UUIDS = [
 
 def get_cleaner(rule_type, website_contents, websites, starters):
     """Get cleaner for this test module."""
-    with (
-        patch_website_contents_all(website_contents),
-        patch_website_all(websites),
-        patch_website_starter_all(starters),
-    ):
+    with patch_website_contents_all(website_contents), patch_website_all(
+        websites
+    ), patch_website_starter_all(starters):
         if rule_type == "markdown":
             rule = BrokenMarkdownLinkFixRule()
         else:

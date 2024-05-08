@@ -1,5 +1,4 @@
 """Tests for signals"""
-
 import pytest
 
 from users.factories import UserFactory

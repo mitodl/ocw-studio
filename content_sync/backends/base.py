@@ -1,5 +1,4 @@
 """Sync abstract base"""
-
 import abc
 from typing import Any, Optional
 
@@ -61,7 +60,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the backend.
 
         An example would be commiting the contents of the WebsiteContent to the VCS repository.
-        """  # noqa: D401, E501
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -72,7 +71,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the backend.
 
         An example would be commiting the updated contents of the WebsiteContent to the VCS repository.
-        """  # noqa: D401, E501
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -118,7 +117,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the database.
 
         An example would be taking a VCS commit/file object and writing it to the database.
-        """  # noqa: D401, E501
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -127,7 +126,7 @@ class BaseSyncBackend(abc.ABC):
         Called to update a piece of content in the database.
 
         An example would be taking a VCS commit/file object and writing the updates to the database.
-        """  # noqa: D401, E501
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod
@@ -136,7 +135,7 @@ class BaseSyncBackend(abc.ABC):
         Called to create a piece of content in the database.
 
         An example would be deleting the content from the database if it doesn't exist in the VCS repository.
-        """  # noqa: D401, E501
+        """  # noqa: E501, D401
         ...
 
     @abc.abstractmethod

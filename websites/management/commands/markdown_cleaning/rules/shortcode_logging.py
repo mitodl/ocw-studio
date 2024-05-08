@@ -19,11 +19,7 @@ class ShortcodeLoggingRule(PyparsingRule):
         args: "list[str]"
 
     def replace_match(
-        self,
-        s: str,  # noqa: ARG002
-        l: int,  # noqa: ARG002, E741
-        toks,
-        website_content,  # noqa: ARG002
+        self, s: str, l: int, toks, website_content  # noqa: ARG002, E741
     ):
         shortcode = toks.shortcode
         notes = self.ReplacementNotes(

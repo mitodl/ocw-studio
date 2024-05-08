@@ -6,7 +6,7 @@ from gdrive_sync.api import rename_file
 class Command(BaseCommand):
     """Rename the file on S3 associated with the WebsiteContent object to a new filename, and update the object and corresponding DriveFile."""  # noqa: E501
 
-    help = __doc__
+    help = __doc__  # noqa: A003
 
     def add_arguments(self, parser):
         parser.add_argument(

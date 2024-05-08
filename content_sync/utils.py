@@ -1,5 +1,4 @@
 """Content sync utility functionality"""
-
 import logging
 import os
 from typing import Optional
@@ -41,7 +40,7 @@ def get_destination_filepath(
 ) -> Optional[str]:
     """
     Returns the full filepath where the equivalent file for the WebsiteContent record should be placed
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     if content.is_page_content:
         return os.path.join(  # noqa: PTH118
             content.dirpath, f"{content.filename}.{WEBSITE_CONTENT_FILETYPE}"
@@ -191,7 +190,7 @@ def get_theme_branch():
     """
     Gets the branch to use of ocw-hugo-themes in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
     if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_THEMES_BRANCH
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
     return (
         (settings.OCW_HUGO_THEMES_BRANCH or github_webhook_branch)
@@ -204,7 +203,7 @@ def get_projects_branch():
     """
     Gets the branch to use of ocw-hugo-projects in pipelines, defaulting to settings.GITHUB_WEBHOOK_BRANCH
     if settings.ENVIRONMENT is anything but "dev," otherwise take the value of settings.OCW_HUGO_PROJECTS_BRANCH
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     github_webhook_branch = settings.GITHUB_WEBHOOK_BRANCH
     return (
         (settings.OCW_HUGO_PROJECTS_BRANCH or github_webhook_branch)
@@ -225,7 +224,7 @@ def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args
 
     Returns:
         str: A string of arguments that can be appended to the hugo command in a pipeline
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     hugo_args = default_args.copy()
     if pipeline_name == VERSION_DRAFT:
         hugo_args["--buildDrafts"] = ""
@@ -263,7 +262,7 @@ def check_matching_tags(pipeline_config, start_tag, end_tag):
 
     Returns:
         bool: True if the amount of start_tag matches the amount of end_tag in pipeline_config_file, False if not
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
 
     start_tags = 0
     end_tags = 0
@@ -302,7 +301,7 @@ def strip_lines_between(pipeline_config, start_tag, end_tag):
 
     Returns:
         str: The contents of pipeline_config with the lines between start_tag and end_tag stripped out
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     check_matching_tags(pipeline_config, start_tag, end_tag)
     if start_tag not in pipeline_config and end_tag not in pipeline_config:
         return pipeline_config
@@ -340,7 +339,7 @@ def strip_dev_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between DEV_START and DEV_END stripped out
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, DEV_START, DEV_END)
 
 
@@ -353,7 +352,7 @@ def strip_non_dev_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between NON_DEV_START and NON_DEV_END stripped out
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, NON_DEV_START, NON_DEV_END)
 
 
@@ -366,7 +365,7 @@ def strip_offline_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between OFFLINE_START and OFFLINE_END stripped out
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, OFFLINE_START, OFFLINE_END)
 
 
@@ -381,5 +380,5 @@ def strip_online_lines(pipeline_config):
 
     Returns:
         str: The contents of pipeline_config with the lines between ONLINE_START and ONLINE_END stripped out
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     return strip_lines_between(pipeline_config, ONLINE_START, ONLINE_END)

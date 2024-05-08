@@ -1,5 +1,4 @@
 """Tests for decorators"""
-
 import pytest
 
 from content_sync.decorators import single_task

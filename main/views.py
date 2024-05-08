@@ -1,7 +1,6 @@
 """
 ocw_studio views
 """
-
 import json
 
 from django.conf import settings
@@ -51,9 +50,7 @@ def _index(request):
 
 
 def public_index(
-    request,
-    *args,  # noqa: ARG001
-    **kwargs,  # noqa: ARG001
+    request, *args, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """
     Render a React page. The frontend will render an appropriate UI based on the URL
@@ -63,9 +60,7 @@ def public_index(
 
 @login_required
 def restricted_index(
-    request,
-    *args,  # noqa: ARG001
-    **kwargs,  # noqa: ARG001
+    request, *args, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """
     Render a React page. The frontend will render an appropriate UI based on the URL

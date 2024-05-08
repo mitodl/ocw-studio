@@ -1,5 +1,4 @@
 """Content sync tasks"""
-
 import logging
 import os
 from datetime import timedelta
@@ -176,8 +175,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 @app.task(acks_late=True)
 def upsert_theme_assets_pipeline(
-    unpause=False,  # noqa: FBT002
-    themes_branch=None,
+    unpause=False, themes_branch=None  # noqa: FBT002
 ) -> bool:
     """Upsert the theme assets pipeline"""
     pipeline = api.get_theme_assets_pipeline(
@@ -191,9 +189,7 @@ def upsert_theme_assets_pipeline(
 
 @app.task(acks_late=True)
 def upsert_test_pipeline(
-    unpause=False,  # noqa: FBT002
-    themes_branch=None,
-    projects_branch=None,
+    unpause=False, themes_branch=None, projects_branch=None  # noqa: FBT002
 ) -> bool:
     """Upsert the end to end testing pipeline"""
     pipeline = api.get_test_pipeline(
@@ -326,7 +322,7 @@ def publish_website_batch(
                 prepublish=prepublish,
                 trigger_pipeline=trigger_pipeline,
             )
-        except:  # pylint:disable=bare-except  # noqa: E722
+        except:  # pylint:disable=bare-except  # noqa: E722, PERF203
             log.exception("Error publishing %s website %s", version, name)
             result = False
     return result
@@ -444,7 +440,7 @@ def check_incomplete_publish_build_statuses():  # noqa: C901, PLR0912
                         status = PUBLISH_STATUS_ABORTED
                     if status != last_status:
                         update_website_status(website, version, status, now)
-        except:  # pylint: disable=bare-except  # noqa: E722
+        except:  # pylint: disable=bare-except  # noqa: E722, PERF203
             log.exception(
                 "Error updating publishing status for website %s", website.name
             )
@@ -602,10 +598,11 @@ def backpopulate_archive_videos_batch(
                 extra_args = {"ACL": "public-read"}
                 source_s3_path = os.path.join(  # noqa: PTH118
                     prefix, archive_path
-                ).lstrip("/")
+                ).lstrip(
+                    "/"
+                )  # noqa: PTH118, RUF100
                 online_destination_s3_path = os.path.join(  # noqa: PTH118
-                    website.url_path,
-                    os.path.basename(archive_path),  # noqa: PTH119
+                    website.url_path, os.path.basename(archive_path)  # noqa: PTH119
                 )
                 offline_destination_s3_path = os.path.join(  # noqa: PTH118
                     website.url_path,

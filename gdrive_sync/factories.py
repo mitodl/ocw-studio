@@ -1,5 +1,4 @@
 """gdrive_sync factory classes"""
-
 import factory
 import pytz
 from factory.django import DjangoModelFactory

@@ -1,5 +1,4 @@
 """S3 utility functions"""
-
 import boto3
 from django.conf import settings
 
@@ -64,7 +63,7 @@ def get_s3_object_and_read(obj, iteration=0):
 
     Returns:
         bytes: The contents of a json file read from S3
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     try:
         return obj.get()["Body"].read()
     except Exception:  # pylint: disable=broad-except  # noqa: BLE001

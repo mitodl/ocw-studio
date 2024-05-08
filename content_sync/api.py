@@ -1,5 +1,4 @@
 """Syncing API"""
-
 import logging
 from datetime import datetime
 from time import sleep

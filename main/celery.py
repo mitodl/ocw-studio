@@ -39,8 +39,7 @@ app.conf.task_routes = {
 
 @before_task_publish.connect
 def timestamp_task_send(
-    headers=None,
-    **kwargs,  # noqa: ARG001
+    headers=None, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """Before a task is sent, timestamp the task with the current time"""
     headers.setdefault("task_sent_timestamp", time.time())
@@ -48,9 +47,7 @@ def timestamp_task_send(
 
 @task_postrun.connect
 def log_task_deltatime(
-    task=None,
-    state=None,
-    **kwargs,  # noqa: ARG001
+    task=None, state=None, **kwargs  # noqa: ARG001
 ):  # pylint: disable=unused-argument
     """If the task provided a timestamp for which it was sent, log timing information"""
     # Note: you'd think headers would come in on `task.request.headers` but you'd be wrong  # noqa: E501

@@ -1,5 +1,4 @@
 """concourse tests"""
-
 import json
 from html import unescape
 from urllib.parse import quote, urljoin

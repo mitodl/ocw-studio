@@ -1,5 +1,4 @@
 """API functionality for OCW course site import"""
-
 import json
 import logging
 import re
@@ -69,7 +68,7 @@ def fetch_ocw2hugo_course_paths(bucket_name, prefix="", filter_list=None):
 
     Yields:
         str: The path to a course JSON document in S3
-    """  # noqa: D401, E501
+    """  # noqa: E501, D401
     s3 = get_boto3_resource("s3")
     bucket = s3.Bucket(bucket_name)
     paginator = bucket.meta.client.get_paginator("list_objects")
@@ -126,11 +125,7 @@ def import_ocw2hugo_content(bucket, prefix, website):  # pylint:disable=too-many
 
 
 def update_ocw2hugo_content(
-    bucket,
-    prefix,
-    website,
-    update_field,
-    create_new_content=False,  # noqa: FBT002
+    bucket, prefix, website, update_field, create_new_content=False  # noqa: FBT002
 ):
     """
     update the update_field of all content files for an ocw course from hugo2ocw output
@@ -304,7 +299,7 @@ def get_content_data(filepath, data, website):  # pylint:disable=too-many-locals
                 s3_content_parts[1]
                 if len(s3_content_parts) == 2  # noqa: PLR2004
                 else None
-            ),
+            ),  # noqa: PLR2004, RUF100
             "parent": parent,
             "title": content_json.get("title"),
             "type": content_type,
@@ -374,7 +369,9 @@ def get_short_id(name: str, metadata: dict) -> str:
     return short_id
 
 
-def import_ocw2hugo_sitemetadata(course_data, website):  # pylint:disable=too-many-locals
+def import_ocw2hugo_sitemetadata(
+    course_data, website
+):  # pylint:disable=too-many-locals
     """
     Create and populate sitemetadata from an ocw course
 

@@ -1,5 +1,4 @@
 """Constants for tests in content_sync"""
-
 UNEVEN_TAGS_TEST_FILE = "pipelines/definitions/concourse/test-pipeline-uneven.yml"
 EVEN_TAGS_TEST_FILE = "pipelines/definitions/concourse/test-pipeline-even.yml"
 EXPECTED_REMAINING_STRING_DEV = """bar: line 2
