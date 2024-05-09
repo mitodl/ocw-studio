@@ -725,8 +725,8 @@ CELERY_BEAT_SCHEDULE = {
     },
     "check-broken-external-urls": {
         "task": "external_resources.tasks.check_external_resources_for_breakages",
-        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY
-    }
+        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
+    },
 }
 
 # django cache back-ends
