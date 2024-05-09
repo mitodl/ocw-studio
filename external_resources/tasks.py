@@ -17,6 +17,10 @@ from websites.models import WebsiteContent
 def check_external_resources(resources: list[str]):
     """Check external resources for broken links"""
 
+    resources = WebsiteContent.objects.filter(id__in=resources).select_related(
+        "external_resource_state"
+    )
+
     for resource in resources:
         try:
             state = resource.external_resource_state
@@ -60,9 +64,11 @@ def check_external_resources(resources: list[str]):
 @app.task(bind=True, acks_late=True)
 def check_external_resources_for_breakages(self):
     """Check external resources for broken links."""
-    external_resources = WebsiteContent.objects.filter(
-        type=CONTENT_TYPE_EXTERNAL_RESOURCE
-    ).select_related("external_resource_state")
+    external_resources = list(
+        WebsiteContent.objects.filter(type=CONTENT_TYPE_EXTERNAL_RESOURCE).values_list(
+            "id", flat=True
+        )
+    )
 
     tasks = [
         check_external_resources.s(resources)
