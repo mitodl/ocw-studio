@@ -49,7 +49,7 @@ repos:
     args: [--format, parsable, -d, relaxed]
     exclude: content_sync/pipelines/definitions/
 - repo: https://github.com/Yelp/detect-secrets
-  rev: v1.4.0
+  rev: v1.5.0
   hooks:
   - id: detect-secrets
     args:
@@ -72,7 +72,7 @@ repos:
     - --exclude-files
     - ".*/generated/"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.4.2"
+  rev: "v0.4.3"
   hooks:
   - id: ruff-format
   - id: ruff
