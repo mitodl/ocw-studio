@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.118.0
+Version 0.118.0 (Released May 10, 2024)
 ---------------
 
 - Downgrade xmlsec to 1.3.13 (#2180)
