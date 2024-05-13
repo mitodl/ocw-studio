@@ -8,7 +8,7 @@ from websites.factories import WebsiteContentFactory
 class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
     """External Resource Factory"""
 
-    class Meta:  # noqa: D106
+    class Meta:
         model = ExternalResourceState
 
     content = factory.SubFactory(WebsiteContentFactory)

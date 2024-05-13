@@ -1,6 +1,6 @@
 import pytest
 
-from external_resources.api import is_url_broken, STATUS_CODE_WHITELIST
+from external_resources.api import STATUS_CODE_WHITELIST, is_url_broken
 from external_resources.exceptions import CheckFailedError
 
 
@@ -12,6 +12,7 @@ def test_is_url_broken_valid(mocker):
     result, status_code = is_url_broken("http://google.com")
     assert not result
     assert status_code == 200
+
 
 @pytest.mark.parametrize("status_code", STATUS_CODE_WHITELIST)
 def test_is_url_broken_whitelisted(mocker, status_code):
