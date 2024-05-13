@@ -14,7 +14,7 @@ from websites.models import WebsiteContent
 
 
 @app.task(acks_late=True, rate_limit="100/s", priority=-1)
-def check_external_resources(resources: list[str]):
+def check_external_resources(resources: list[int]):
     """Check external resources for broken links"""
 
     resources = WebsiteContent.objects.filter(id__in=resources).select_related(
@@ -76,4 +76,5 @@ def check_external_resources_for_breakages(self):
             external_resources, chunk_size=BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK
         )
     ]
-    raise self.replace(celery.group(tasks))
+    if tasks:
+        raise self.replace(celery.group(tasks))
