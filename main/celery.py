@@ -19,6 +19,12 @@ app = Celery("ocw_studio")
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
 app.conf.task_default_queue = "default"
+app.conf.task_default_priority = 2
+app.conf.broker_transport_options = {
+    "priority_steps": list(range(5)),
+    "sep": ":",
+    "queue_order_strategy": "priority",
+}
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
