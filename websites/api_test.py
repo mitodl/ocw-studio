@@ -1,4 +1,5 @@
 """Tests for websites API functionality"""
+
 from pathlib import Path
 from uuid import UUID
 

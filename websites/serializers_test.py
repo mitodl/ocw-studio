@@ -1,4 +1,5 @@
 """Tests for websites.serializers"""
+
 from pathlib import Path
 from types import SimpleNamespace
 
