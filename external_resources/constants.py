@@ -1,4 +1,4 @@
-"""Constant  for External Resources module"""
+"""Constants for External Resources module"""
 
 STATUS_CODE_WHITELIST = [401, 402, 403, 429]
 EXTERNAL_RESOURCE_TASK_RATE_LIMIT = "100/s"
