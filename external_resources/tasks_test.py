@@ -24,7 +24,7 @@ def test_check_external_resources_for_breakages_valid(
     mocked_celery: SimpleNamespace,
     webite_content_subset: Literal[10, 110],
 ):
-    """Test for external  Resource Task"""
+    """Test for external Resource Task"""
     mock_filter = mocker.patch("websites.models.WebsiteContent.objects.filter")
     mock_filter.return_value.values_list.return_value = list(
         range(webite_content_subset)

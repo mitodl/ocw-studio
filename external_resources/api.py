@@ -8,10 +8,10 @@ from websites.models import WebsiteContent
 
 log = logging.getLogger()
 
-STATUS_CODE_WHITELIST = [401, 402, 403, 429]
 
 
 def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
+    """Check if provided url is broken"""
     if url.strip() == "":
         return False, None
 
@@ -30,14 +30,16 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
 
 
 def is_external_url_broken(
-    external_resoure: WebsiteContent,
+    external_resource: WebsiteContent,
 ) -> tuple[bool, Optional[int]]:
-    url = external_resoure.metadata.get("external_url", "")
+    """Check if external url of the provided WebsiteContent is broken"""
+    url = external_resource.metadata.get("external_url", "")
     return is_url_broken(url)
 
 
 def is_backup_url_broken(
-    external_resoure: WebsiteContent,
+    external_resource: WebsiteContent,
 ) -> tuple[bool, Optional[int]]:
-    url = external_resoure.metadata.get("backup_url", "")
+    """Check if backup url of the provided WebsiteContent is broken"""
+    url = external_resource.metadata.get("backup_url", "")
     return is_url_broken(url)

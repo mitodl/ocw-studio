@@ -1,8 +1,15 @@
+import logging
+
 import celery
 from django.utils import timezone
 from mitol.common.utils import chunks
 
 from external_resources import api
+from external_resources.constants import (
+    EXTERNAL_RESOURCE_TASK_PRIORITY,
+    EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
+    STATUS_CODE_WHITELIST,
+)
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
 from main.celery import app
@@ -12,8 +19,13 @@ from websites.constants import (
 )
 from websites.models import WebsiteContent
 
+log = logging.getLogger()
 
-@app.task(acks_late=True, rate_limit="100/s", priority=0)
+@app.task(
+    acks_late=True,
+    rate_limit=EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
+    priority=EXTERNAL_RESOURCE_TASK_PRIORITY,
+)
 def check_external_resources(resources: list[int]):
     """Check external resources for broken links"""
 
@@ -24,7 +36,8 @@ def check_external_resources(resources: list[int]):
     for resource in resources:
         try:
             state = resource.external_resource_state
-        except ExternalResourceState.DoesNotExist:
+        except ExternalResourceState.DoesNotExist as ex:
+            log.debug(ex)
             state = ExternalResourceState(
                 content=resource,
             )
@@ -38,12 +51,13 @@ def check_external_resources(resources: list[int]):
             is_backup_url_broken, backup_url_status = api.is_backup_url_broken(resource)
             state.backup_url_response_code = backup_url_status
             state.is_backup_url_broken = is_backup_url_broken
-        except CheckFailedError:
+        except CheckFailedError as ex:
+            log.debug(ex)
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
             if (
-                url_status not in api.STATUS_CODE_WHITELIST
-                or backup_url_status not in api.STATUS_CODE_WHITELIST
+                url_status not in STATUS_CODE_WHITELIST
+                or backup_url_status not in STATUS_CODE_WHITELIST
             ):
                 if is_url_broken and is_backup_url_broken:
                     # both external_url and backup_url are broken.
