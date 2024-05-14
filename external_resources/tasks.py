@@ -21,6 +21,7 @@ from websites.models import WebsiteContent
 
 log = logging.getLogger()
 
+
 @app.task(
     acks_late=True,
     rate_limit=EXTERNAL_RESOURCE_TASK_RATE_LIMIT,

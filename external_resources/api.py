@@ -9,7 +9,6 @@ from websites.models import WebsiteContent
 log = logging.getLogger()
 
 
-
 def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
     """Check if provided url is broken"""
     if url.strip() == "":
