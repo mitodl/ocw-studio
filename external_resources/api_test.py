@@ -1,6 +1,7 @@
 import pytest
 
-from external_resources.api import STATUS_CODE_WHITELIST, is_url_broken
+from external_resources.api import is_url_broken
+from external_resources.constants import STATUS_CODE_WHITELIST
 from external_resources.exceptions import CheckFailedError
 
 
