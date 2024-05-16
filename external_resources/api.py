@@ -24,7 +24,7 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
 
     try:
         response = requests.head(url, allow_redirects=True, timeout=30)
-    except Exception as ex:  # noqa: BLE001
+    except Exception as ex:
         log.debug(ex)
         raise CheckFailedError from ex
 
