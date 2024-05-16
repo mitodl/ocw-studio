@@ -1,8 +1,14 @@
+"""External Resources API"""
+
 import logging
 from typing import Optional
 
 import requests
 
+from external_resources.constants import (
+    RESOURCE_BROKEN_STATUS_END,
+    RESOURCE_BROKEN_STATUS_START,
+)
 from external_resources.exceptions import CheckFailedError
 from websites.models import WebsiteContent
 
@@ -18,11 +24,14 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
 
     try:
         response = requests.head(url, allow_redirects=True, timeout=30)
-    except Exception as ex:
+    except Exception as ex:  # noqa: BLE001
         log.debug(ex)
         raise CheckFailedError from ex
 
-    if 400 <= response.status_code < 600:  # noqa: PLR2004
+    if (
+        response.status_code >= RESOURCE_BROKEN_STATUS_START
+        and response.status_code < RESOURCE_BROKEN_STATUS_END
+    ):
         return True, response.status_code
 
     return False, response.status_code

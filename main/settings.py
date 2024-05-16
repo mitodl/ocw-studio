@@ -653,7 +653,7 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
 # Check External Resources settings
 CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
     name="CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY",
-    default=60,
+    default=604800,
     description="Frequency (in seconds) to run a check on potentially broken external urls",  # noqa: E501
     required=False,
 )

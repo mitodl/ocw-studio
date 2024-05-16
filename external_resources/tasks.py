@@ -1,3 +1,5 @@
+"""External Resources Tasks"""
+
 import logging
 
 import celery
@@ -8,7 +10,7 @@ from external_resources import api
 from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
-    STATUS_CODE_WHITELIST,
+    RESOURCE_UNCHECKED_STATUSES,
 )
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
@@ -57,8 +59,8 @@ def check_external_resources(resources: list[int]):
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
             if (
-                url_status not in STATUS_CODE_WHITELIST
-                or backup_url_status not in STATUS_CODE_WHITELIST
+                url_status not in RESOURCE_UNCHECKED_STATUSES
+                or backup_url_status not in RESOURCE_UNCHECKED_STATUSES
             ):
                 if is_url_broken and is_backup_url_broken:
                     # both external_url and backup_url are broken.

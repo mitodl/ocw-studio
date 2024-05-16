@@ -1,3 +1,5 @@
+"""External Resources Admin"""
+
 from django.contrib import admin
 from mitol.common.admin import TimestampedModelAdmin
 

@@ -4,6 +4,8 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Django Migration for External Resources"""
+
     dependencies = [
         ("external_resources", "0001_initial"),
     ]

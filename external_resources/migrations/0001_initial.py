@@ -5,6 +5,8 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Initial Migration for External Resources"""
+
     initial = True
 
     dependencies = [

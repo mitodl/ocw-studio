@@ -1,2 +1,4 @@
+"""External Resources Exceptions"""
+
 class CheckFailedError(Exception):
-    pass
+    """Check Failed Exception"""

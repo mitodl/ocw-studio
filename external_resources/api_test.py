@@ -1,7 +1,9 @@
+"""Tests for External Resources API"""
+
 import pytest
 
 from external_resources.api import is_url_broken
-from external_resources.constants import STATUS_CODE_WHITELIST
+from external_resources.constants import RESOURCE_UNCHECKED_STATUSES
 from external_resources.exceptions import CheckFailedError
 
 
@@ -15,7 +17,7 @@ def test_is_url_broken_valid(mocker):
     assert status_code == 200
 
 
-@pytest.mark.parametrize("status_code", STATUS_CODE_WHITELIST)
+@pytest.mark.parametrize("status_code", RESOURCE_UNCHECKED_STATUSES)
 def test_is_url_broken_whitelisted(mocker, status_code):
     """Test for broken url"""
     mock_response = mocker.Mock(status_code=status_code)

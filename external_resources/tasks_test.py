@@ -51,7 +51,7 @@ def test_check_external_resources_for_breakages_valid(
 def test_check_external_resources_for_breakages_zero_websites(
     mocker, mocked_celery: SimpleNamespace
 ):
-    """Test for external  Resource Task"""
+    """Test for external Resource Task"""
     mock_filter = mocker.patch("websites.models.WebsiteContent.objects.filter")
     mock_filter.return_value.values_list.return_value = []
 

@@ -1,4 +1,4 @@
-"""Content sync models"""
+"""External Resources models"""
 
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.db import models
@@ -11,6 +11,8 @@ class ExternalResourceState(TimestampedModel):
     """Data model for tracking the state of external resources"""
 
     class Status(models.TextChoices):
+        """Choices for External Resource Status"""
+
         UNCHECKED = "unchecked", "Unchecked or pending check"
         VALID = "valid", "Either URL or backup URL is valid"
         BROKEN = "broken", "Both URL and backup URL are broken"

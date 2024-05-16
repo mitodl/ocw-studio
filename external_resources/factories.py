@@ -1,3 +1,5 @@
+"""External Resources Factories"""
+
 import factory
 import pytz
 
@@ -9,6 +11,8 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
     """External Resource Factory"""
 
     class Meta:
+        """Meta class for External Resource State Factory"""
+
         model = ExternalResourceState
 
     content = factory.SubFactory(WebsiteContentFactory)
