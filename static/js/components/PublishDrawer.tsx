@@ -13,7 +13,7 @@ import {
 import { isErrorStatusCode } from "../lib/util"
 import PublishStatusIndicator from "./PublishStatusIndicator"
 
-import { Website } from "../types/websites"
+import { Starter, Website } from "../types/websites"
 import PublishForm, {
   OnSubmitPublish,
   SiteFormValues,
@@ -63,7 +63,9 @@ const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
   const publishingInfo = getPublishingInfo(website, publishingEnv)
   const isPublishDisabled =
     !publishingInfo.hasUnpublishedChanges ||
-    (!website.has_site_metadata && publishingEnv === PublishingEnv.Production)
+    (!website.has_site_metadata &&
+      website.starter?.name !== Starter.ocw_www &&
+      publishingEnv === PublishingEnv.Production)
   const [{ isPending }, publish] = useMutation(
     (payload: WebsitePublishPayload) =>
       websitePublishAction(website.name, publishingEnv, payload),

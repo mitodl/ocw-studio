@@ -334,3 +334,8 @@ export interface WebsiteInitials {
   title: string
   short_id: string
 }
+
+export enum Starter {
+  ocw_course = "ocw-course-v2",
+  ocw_www = "ocw-www",
+}
