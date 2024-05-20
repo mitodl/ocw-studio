@@ -498,3 +498,7 @@ The following environment variables need to be defined in your .env file in orde
 OPEN_CATALOG_URLS=delimited list of api endpoint urls that webhooks should be sent to
 OPEN_CATALOG_WEBHOOK_KEY=secret key that will be used to confirm that webhook requests are legitimate
 ```
+
+# Checking External Resource Availability
+
+This feaature sets up a cron job to validate external resource urls. The workflow for checking external Resource availabity is described [here](/external_resources/README.md).
