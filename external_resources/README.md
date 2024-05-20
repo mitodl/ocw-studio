@@ -39,4 +39,3 @@ The rate-limit for the external resource batch-tasks is set using `EXTERNAL_RESO
 Batch-task priority is set using the `EXTERNAL_RESOURCE_TASK_PRIORITY` in [here](constants.py). The default priority for each celery task has been  pre-configured to `2` out of range `0(lowest) - 4(highest)`. External resource tasks have lowest (`0`) priority by default.
 
 Priority levels and celery default task priority can be configured by `PRIORITY_STEPS` and `DEFAULT_PRIORITY`, respectively, in [here](/main/constants.py).
-
