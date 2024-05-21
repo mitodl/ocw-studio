@@ -17,7 +17,7 @@ import { IntegrationTestHelper } from "../testing_utils"
 
 import PublishDrawer from "./PublishDrawer"
 
-import { Website } from "../types/websites"
+import { Starter, Website } from "../types/websites"
 import userEvent from "@testing-library/user-event"
 import { waitFor, screen } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
@@ -203,7 +203,7 @@ describe("PublishDrawer", () => {
         await simulateClickPublish(wrapper, action)
         wrapper.update()
         expect(wrapper.find(".btn-publish").prop("disabled")).toBe(
-          action === "production",
+          action === "production" && website.starter?.name !== Starter.ocw_www,
         )
       })
 
