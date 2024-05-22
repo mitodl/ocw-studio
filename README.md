@@ -501,4 +501,4 @@ OPEN_CATALOG_WEBHOOK_KEY=secret key that will be used to confirm that webhook re
 
 # Checking External Resource Availability
 
-This feaature sets up a cron job to validate external resource urls. The workflow for checking external Resource availabity is described [here](/external_resources/README.md).
+This feature sets up a cron job to validate external resource urls. The workflow for checking external resource availability is described [here](/external_resources/README.md).

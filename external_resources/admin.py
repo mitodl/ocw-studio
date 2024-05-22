@@ -28,7 +28,7 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
     ordering = ("-created_on",)
 
     def get_queryset(self, request):  # noqa: ARG002
-        """Return data alongwith the related WebsiteContent"""
+        """Return data along with the related WebsiteContent"""
         return self.model.objects.get_queryset().select_related("content__website")
 
     def get_content_title(self, obj):

@@ -18,16 +18,16 @@ from websites.constants import (
 )
 
 
-@pytest.mark.parametrize("webite_content_subset", [10, 110])
+@pytest.mark.parametrize("website_content_subset", [10, 110])
 def test_check_external_resources_for_breakages_valid(
     mocker,
     mocked_celery: SimpleNamespace,
-    webite_content_subset: Literal[10, 110],
+    website_content_subset: Literal[10, 110],
 ):
     """Test for external Resource Task"""
     mock_filter = mocker.patch("websites.models.WebsiteContent.objects.filter")
     mock_filter.return_value.values_list.return_value = list(
-        range(webite_content_subset)
+        range(website_content_subset)
     )
 
     mock_batch = mocker.patch("external_resources.tasks.check_external_resources.s")
@@ -37,10 +37,10 @@ def test_check_external_resources_for_breakages_valid(
     mock_filter.assert_called_once_with(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
     assert (
         mock_batch.call_count
-        == webite_content_subset // BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK
+        == website_content_subset // BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK
         + (
             1
-            if webite_content_subset % BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK
+            if website_content_subset % BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK
             else 0
         )
     )
