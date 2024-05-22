@@ -67,7 +67,7 @@ def get_s3_object_and_read(obj, iteration=0):
     """  # noqa: D401, E501
     try:
         return obj.get()["Body"].read()
-    except Exception:  # pylint: disable=broad-except  # noqa: BLE001
+    except Exception:  # pylint: disable=broad-except
         if iteration < settings.MAX_S3_GET_ITERATIONS:
             return get_s3_object_and_read(obj, iteration + 1)
         else:
