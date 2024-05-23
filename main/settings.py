@@ -658,6 +658,13 @@ CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
+CHECK_EXTERNAL_RESOURCE_TASK_ENABLE = get_bool(
+    name="CHECK_EXTERNAL_RESOURCE_TASK_STATUS",
+    default=True,
+    description="Enables celery task to check potentially broken external urls",
+    required=False,
+)
+
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
@@ -723,11 +730,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
-    "check-broken-external-urls": {
+}
+
+if CHECK_EXTERNAL_RESOURCE_TASK_ENABLE:
+    CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
         "task": "external_resources.tasks.check_external_resources_for_breakages",
         "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
-    },
-}
+    }
 
 # django cache back-ends
 CACHES = {
