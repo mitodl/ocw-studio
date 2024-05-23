@@ -24,6 +24,7 @@ from videos.constants import (
 )
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
+    OCW_WWW_STARTER_SLUG,
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -398,7 +399,7 @@ def get_content_warnings(website):
 
     messages = []
 
-    if not website.has_site_metadata:
+    if not website.has_site_metadata and website.starter.name != OCW_WWW_STARTER_SLUG:
         messages.append("The course is missing metadata.")
 
     if len(missing_youtube_ids_titles) > 0:
