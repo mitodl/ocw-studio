@@ -4,7 +4,7 @@ LABEL maintainer "ODL DevOps <mitx-devops@mit.edu>"
 # Add package files, install updated node and pip
 WORKDIR /tmp
 
-# Install packages and add repo needed for postgres 16.3
+# Install packages and add repo needed for postgres 9.6
 COPY apt.txt /tmp/apt.txt
 RUN apt-get update
 RUN apt-get install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ")
