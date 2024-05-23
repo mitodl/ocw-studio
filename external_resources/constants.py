@@ -23,4 +23,4 @@ RESOURCE_UNCHECKED_STATUSES = [
 
 # Celery Task
 EXTERNAL_RESOURCE_TASK_RATE_LIMIT = "100/s"
-EXTERNAL_RESOURCE_TASK_PRIORITY = 0  # Lowest priority from range (0 - 4)
+EXTERNAL_RESOURCE_TASK_PRIORITY = 4  # Lowest priority from range (0 - 4)
