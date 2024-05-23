@@ -399,7 +399,9 @@ def get_content_warnings(website):
 
     messages = []
 
-    if not website.has_site_metadata and website.starter.name != OCW_WWW_STARTER_SLUG:
+    if not website.has_site_metadata and (
+        website.starter and website.starter.name != OCW_WWW_STARTER_SLUG
+    ):
         messages.append("The course is missing metadata.")
 
     if len(missing_youtube_ids_titles) > 0:
