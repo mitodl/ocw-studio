@@ -4,7 +4,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+import yaml
 from dateutil.parser import parse as parse_date
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 from mitol.common.utils import now_in_utc
@@ -173,6 +175,48 @@ def test_website_status_serializer(mocker, settings, drive_folder, warnings):
     assert sorted(serialized_data["content_warnings"]) == sorted(warnings)
     for key, value in values.items():
         assert serialized_data.get(key) == value
+
+
+VALID_METADATA = {
+    "status": True,
+    "course_title": "example",
+    "primary_course_number": "1",
+    "department_numbers": ["3"],
+    "hide_download": True,
+}
+
+
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        None,
+        "course_title",
+        "primary_course_number",
+        "department_numbers",
+        "hide_download",
+    ],
+)
+@pytest.mark.parametrize(
+    "serializer_class", [WebsiteDetailSerializer, WebsiteStatusSerializer]
+)
+def test_website_content_has_metadata(mocker, missing_field, serializer_class):
+    """has_site_metadata should be true if we have metadata in WebsiteContent model"""
+    site_config_path = "localdev/configs/ocw-course-site-config.yml"
+    starter = WebsiteStarterFactory(
+        config=yaml.load(
+            (Path(settings.BASE_DIR) / site_config_path).read_text(),
+            Loader=yaml.SafeLoader,
+        )
+    )
+    website = WebsiteFactory.create(starter=starter)
+    metadata = {**VALID_METADATA}
+    if missing_field:
+        del metadata[missing_field]
+    WebsiteContentFactory.create(
+        type="sitemetadata", website=website, metadata=metadata
+    )
+    serialized_data = serializer_class(instance=website).data
+    assert serialized_data["has_site_metadata"] == bool(not missing_field)
 
 
 @pytest.mark.parametrize("has_starter", [True, False])

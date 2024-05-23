@@ -236,6 +236,7 @@ export interface WebsiteStatus {
   synced_on: string | null
   sync_errors: Array<string> | null
   unpublished: boolean
+  has_site_metadata: boolean
 }
 
 export type Website = WebsiteStatus & {
@@ -332,4 +333,9 @@ export interface WebsiteInitials {
   name: string
   title: string
   short_id: string
+}
+
+export enum Starter {
+  ocw_course = "ocw-course-v2",
+  ocw_www = "ocw-www",
 }
