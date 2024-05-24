@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.119.0
+---------------
+
+- Course publish without metadata (unforked) (#2183)
+- upgraded PostgreSQL version from 12.8 to 16.3 (#2184)
+- [pre-commit.ci] pre-commit autoupdate (#2182)
+- chore(deps): lock file maintenance (#1884)
+- [pre-commit.ci] pre-commit autoupdate (#2173)
+
 Version 0.118.0 (Released May 10, 2024)
 ---------------
 
