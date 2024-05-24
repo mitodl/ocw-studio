@@ -5,6 +5,7 @@ This document describes the workflow for the external resources validation tasks
 **SECTIONS**
 
 1. [Overview](#overview)
+1. [Enabling Task](#enabling-task)
 1. [Frequency Control](#frequency-control)
 1. [Rate Limiting](#rate-limiting)
 1. [Task Priority](#task-priority)
@@ -26,6 +27,9 @@ The high-level description of the process is below, and each subsequent section 
 * The status of resource is then added to DB.
 * Batch tasks have a preconfigured rate-limiter and lower priority by default.
 
+
+## Enabling Task
+The task for external resource checking can be enabled/disabled using the `CHECK_EXTERNAL_RESOURCE_TASK_ENABLE` defined in [here](/main/settings.py). However, once scheduled, the task can be removed only if `Celery` is restarted along with toggling `CHECK_EXTERNAL_RESOURCE_TASK_ENABLE` to `False`.
 
 ## Frequency Control
 
