@@ -89,36 +89,8 @@ export default function MenuItemForm({
               />
               <ErrorMessage name="menuItemTitle" component={FormError} />
             </div>
+            
             <div className="form-group w-100">
-              <input
-                type="radio"
-                id="menuItemTypeInternal"
-                name="menuItemType"
-                value={LinkType.Internal}
-                checked={values.menuItemType === LinkType.Internal}
-                onChange={() => {
-                  setFieldValue("menuItemType", LinkType.Internal)
-                }}
-              />
-              <label className="px-2" htmlFor="menuItemTypeInternal">
-                Internal
-              </label>
-              <input
-                type="radio"
-                id="menuItemTypeExternal"
-                name="menuItemType"
-                value={LinkType.External}
-                checked={values.menuItemType === LinkType.External}
-                onChange={() => {
-                  setFieldValue("menuItemType", LinkType.External)
-                }}
-              />
-              <label className="px-2" htmlFor="menuItemTypeExternal">
-                External
-              </label>
-            </div>
-            <div className="form-group w-100">
-              {values.menuItemType === LinkType.Internal ? (
                 <>
                   <label className="px-2" htmlFor="internalLink">
                     Link to:
@@ -137,22 +109,6 @@ export default function MenuItemForm({
                   />
                   <ErrorMessage name="internalLink" component={FormError} />
                 </>
-              ) : (
-                <>
-                  <label className="px-2" htmlFor="externalLink">
-                    Link to:
-                  </label>
-                  <Field
-                    id="externalLink"
-                    name="externalLink"
-                    className="form-control"
-                  />
-                  <span className="help-text">
-                    URL, e.g. http://example.com
-                  </span>
-                  <ErrorMessage name="externalLink" component={FormError} />
-                </>
-              )}
             </div>
             <div className="form-group d-flex w-100 justify-content-end">
               <button
