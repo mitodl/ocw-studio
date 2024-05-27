@@ -9,7 +9,7 @@ import { WebsiteContent } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
 
 describe("MenuItemForm", () => {
-  let onSubmitStub, contentContext
+  let onSubmitStub: any, contentContext: WebsiteContent[]
 
   beforeEach(() => {
     onSubmitStub = jest.fn()
@@ -27,8 +27,8 @@ describe("MenuItemForm", () => {
     )
 
   const renderInnerForm = (
-    formProps,
-    formikChildProps,
+    formProps: { [key: string]: any },
+    formikChildProps: Partial<FormikProps<any>>,
   ) => {
     const wrapper = renderForm(formProps || {})
     return wrapper.find(Formik).renderProp("children")({
