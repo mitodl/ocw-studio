@@ -62,6 +62,7 @@ describe("MenuItemForm", () => {
     const activeItem = {
       text: "text",
       targetContentId: "content-id",
+      menuItemType: "internal",
     }
     const wrapper = renderForm({
       activeItem,
