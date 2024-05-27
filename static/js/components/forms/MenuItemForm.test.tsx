@@ -53,7 +53,7 @@ describe("MenuItemForm", () => {
     })
     expect(wrapper.prop("initialValues")).toEqual({
       menuItemTitle: "",
-      menuItemType: "internal", // This line can be removed
+      menuItemType: "internal",
       internalLink: "",
     })
   })
