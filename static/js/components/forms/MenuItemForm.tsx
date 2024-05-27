@@ -21,28 +21,18 @@ interface Props {
 
 export type MenuItemFormValues = {
   menuItemTitle: string
-  menuItemType: LinkType.Internal | LinkType.External
-  externalLink: string
+  menuItemType: LinkType.Internal
   internalLink: string
 }
 
 const schema = yup.object().shape({
   menuItemTitle: yup.string().required().label("Title"),
-  menuItemType: yup.mixed().oneOf([LinkType.Internal, LinkType.External]),
-  externalLink: yup.string().label("External link").url().when("menuItemType", {
-    is: LinkType.External,
-    then: yup.string().required(),
-  }),
-  internalLink: yup.string().label("Internal link").when("menuItemType", {
-    is: LinkType.Internal,
-    then: yup.string().required(),
-  }),
+  internalLink: yup.string().required().label("Internal link"),
 })
 
 const emptyInitialValues: MenuItemFormValues = {
   menuItemTitle: "",
   menuItemType: LinkType.Internal,
-  externalLink: "",
   internalLink: "",
 }
 
@@ -58,10 +48,7 @@ export default function MenuItemForm({
       activeItem
         ? {
             menuItemTitle: activeItem.text,
-            menuItemType: activeItem.targetUrl
-              ? LinkType.External
-              : LinkType.Internal,
-            externalLink: activeItem.targetUrl || "",
+            menuItemType: LinkType.Internal,
             internalLink: activeItem.targetContentId || "",
           }
         : emptyInitialValues,
@@ -89,26 +76,23 @@ export default function MenuItemForm({
               />
               <ErrorMessage name="menuItemTitle" component={FormError} />
             </div>
-            
             <div className="form-group w-100">
-                <>
-                  <label className="px-2" htmlFor="internalLink">
-                    Link to:
-                  </label>
-                  <RelationField
-                    name="internalLink"
-                    collection={collections}
-                    display_field="title"
-                    multiple={false}
-                    onChange={(event) => {
-                      setFieldValue("internalLink", event.target.value.content)
-                    }}
-                    value={values.internalLink}
-                    valuesToOmit={existingMenuIds}
-                    contentContext={contentContext}
-                  />
-                  <ErrorMessage name="internalLink" component={FormError} />
-                </>
+              <label className="px-2" htmlFor="internalLink">
+                Link to:
+              </label>
+              <RelationField
+                name="internalLink"
+                collection={collections}
+                display_field="title"
+                multiple={false}
+                onChange={(event) => {
+                  setFieldValue("internalLink", event.target.value.content)
+                }}
+                value={values.internalLink}
+                valuesToOmit={existingMenuIds}
+                contentContext={contentContext}
+              />
+              <ErrorMessage name="internalLink" component={FormError} />
             </div>
             <div className="form-group d-flex w-100 justify-content-end">
               <button
