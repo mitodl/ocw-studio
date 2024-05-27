@@ -4,10 +4,9 @@ import * as R from "ramda"
 import BasicModal from "../BasicModal"
 import MenuItemForm, { MenuItemFormValues } from "../forms/MenuItemForm"
 import Dialog from "../Dialog"
-import { EXTERNAL_LINK_PREFIX } from "../../constants"
-import { generateHashCode, isExternalLinkId } from "../../lib/util"
+import { isExternalLinkId } from "../../lib/util"
 
-import { LinkType, WebsiteContent } from "../../types/websites"
+import { WebsiteContent } from "../../types/websites"
 import { ModalState, createModalState } from "../../types/modal_state"
 
 interface IMenuModalState {
@@ -361,19 +360,11 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     let updatedItems: InternalSortableMenuItem[]
     const updatedItem = {
       text: values.menuItemTitle,
-      ...(values.menuItemType === LinkType.External
-        ? {
-            id: `${EXTERNAL_LINK_PREFIX}${generateHashCode(
-              values.externalLink,
-            )}-${Date.now().toString()}`,
-            targetUrl: values.externalLink,
-            targetContentId: null,
-          }
-        : {
-            id: values.internalLink,
-            targetUrl: null,
-            targetContentId: values.internalLink,
-          }),
+      ...{
+        id: values.internalLink,
+        targetUrl: null,
+        targetContentId: values.internalLink,
+      },
     }
     if (modalState.editing()) {
       const activeItemLens = R.lensPath(modalState.wrapped.path)

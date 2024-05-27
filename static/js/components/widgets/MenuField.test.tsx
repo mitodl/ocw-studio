@@ -1,7 +1,6 @@
 import React from "react"
 import { shallow } from "enzyme"
 import MenuField, { HugoItem, InternalSortableMenuItem } from "./MenuField"
-import { EXTERNAL_LINK_PREFIX } from "../../constants"
 
 import { LinkType, WebsiteContent } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
@@ -212,39 +211,23 @@ describe("MenuField", () => {
     [false, true, "new menu item, internal link"],
     [true, false, "existing menu item, external link"],
     [true, true, "existing menu item, internal link"],
-  ].forEach(([useExistingItem, isInternalLink, desc]) => {
+  ].forEach(([useExistingItem, desc]) => {
     it(`menu item form should correctly update widget value with ${desc}`, async () => {
-      let submitData, expPartialIdentifier, expectedMenuItem
       const initialMenuItemCount = dummyHugoItems.length
       const title = "My Title"
       const internalLinkUuid = "12629a02-3dc5-4128-8e43-0392b51e7b61"
-      const externalLinkUrl = "http://example.com"
       const menuItem = useExistingItem
         ? dummyInternalMenuItems[0].children[0]
         : null
       const menuItemForm = renderMenuItemForm(menuItem)
       const formProps = menuItemForm.props()
-      if (isInternalLink) {
-        submitData = {
-          menuItemTitle: title,
-          menuItemType: LinkType.Internal,
-          internalLink: internalLinkUuid,
-        }
-        expectedMenuItem = {
-          name: title,
-        }
-        expPartialIdentifier = internalLinkUuid
-      } else {
-        submitData = {
-          menuItemTitle: title,
-          menuItemType: LinkType.External,
-          externalLink: externalLinkUrl,
-        }
-        expectedMenuItem = {
-          name: title,
-          url: externalLinkUrl,
-        }
-        expPartialIdentifier = `${EXTERNAL_LINK_PREFIX}-631280213`
+      const submitData = {
+        menuItemTitle: title,
+        menuItemType: LinkType.Internal,
+        internalLink: internalLinkUuid,
+      }
+      const expectedMenuItem = {
+        name: title,
       }
       formProps.onSubmit(submitData)
       expect(onChangeStub.mock.calls.length).toEqual(1)
@@ -266,7 +249,7 @@ describe("MenuField", () => {
         expect.objectContaining(matchingMenuItem),
       )
       expect(updatedHugoMenuItem.identifier).toEqual(
-        expect.stringContaining(expPartialIdentifier),
+        expect.stringContaining(internalLinkUuid),
       )
       expect(updatedHugoMenuItems).toHaveLength(
         useExistingItem ? initialMenuItemCount : initialMenuItemCount + 1,
