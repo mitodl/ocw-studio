@@ -70,6 +70,7 @@ describe("MenuItemForm", () => {
     expect(wrapper.prop("initialValues")).toEqual({
       menuItemTitle: activeItem.text,
       internalLink: activeItem.targetContentId,
+      menuItemType: "internal",
     })
   })
 
