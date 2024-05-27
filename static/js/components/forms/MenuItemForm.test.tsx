@@ -86,7 +86,6 @@ describe("MenuItemForm", () => {
     expect(relationField.exists()).toBe(true)
   })
 
-
   it("renders a RelationField and passes down the right props", () => {
     const existingMenuIds = ["abc", "def"]
     const value = "def"
