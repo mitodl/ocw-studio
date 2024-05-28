@@ -15,7 +15,7 @@ celery = "^5.3.0"
 cryptography = "^41.0.3"
 dj-database-url = "2.0.0"
 django = "4.2.13"
-django-anymail = {version = "10.0", extras = ["mailgun"]}
+django-anymail = {version = "10.3", extras = ["mailgun"]}
 django-bulk-update-or-create = "0.3.0"
 django-guardian = "2.4.0"
 django-hijack = "3.4.5"
