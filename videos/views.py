@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
 from videos.api import update_video_job
-from videos.constants import VideoStatus
+from videos.constants import TRANSCODE_JOB_SUBSCRIPTION_URL, VideoStatus
 from videos.models import Video, VideoJob
 from videos.tasks import update_transcripts_for_video
 
@@ -39,7 +39,14 @@ class TranscodeJobView(GenericAPIView):
             # Confirm the subscription
             if settings.AWS_ACCOUNT_ID not in message.get("TopicArn", ""):
                 raise PermissionDenied
-            requests.get(message.get("SubscribeURL"), timeout=60)
+
+            token = message.get("Token", "")
+            subscribe_url = TRANSCODE_JOB_SUBSCRIPTION_URL.format(
+                AWS_REGION=settings.AWS_REGION,
+                AWS_ACCOUNT_ID=settings.AWS_ACCOUNT_ID,
+                TOKEN=token,
+            )
+            requests.get(subscribe_url, timeout=60)
         else:
             if message.get("account", "") != settings.AWS_ACCOUNT_ID:
                 raise PermissionDenied
