@@ -1,6 +1,23 @@
 Release Notes
 =============
 
+Version 0.119.0
+---------------
+
+- Check external resources for broken links (#2171)
+- fix(deps): update dependency django-anymail to v10.3 (#2193)
+- chore(deps): update node.js to v20.13.1 (#2194)
+- chore(deps): update dependency turndown to v7.2.0 (#2192)
+- fix(deps): update dependency django-model-utils to v4.5.1 (#2191)
+- fix(deps): update dependency django to v4.2.13 (#2190)
+- fix(deps): update dependency boto3 to v1.34.113 (#2189)
+- updated postgres version in CI (#2185)
+- Course publish without metadata (unforked) (#2183)
+- upgraded PostgreSQL version from 12.8 to 16.3 (#2184)
+- [pre-commit.ci] pre-commit autoupdate (#2182)
+- chore(deps): lock file maintenance (#1884)
+- [pre-commit.ci] pre-commit autoupdate (#2173)
+
 Version 0.118.0 (Released May 10, 2024)
 ---------------
 
