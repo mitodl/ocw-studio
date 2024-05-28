@@ -152,6 +152,7 @@ INSTALLED_APPS = [
     "content_sync",
     "gdrive_sync",
     "videos",
+    "external_resources",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
@@ -649,6 +650,20 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
+# Check External Resources settings
+CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
+    name="CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY",
+    default=604800,
+    description="Frequency (in seconds) to check potentially broken external urls",
+    required=False,
+)
+
+CHECK_EXTERNAL_RESOURCE_TASK_ENABLE = get_bool(
+    name="CHECK_EXTERNAL_RESOURCE_TASK_STATUS",
+    default=True,
+    description="Enables celery task to check potentially broken external urls",
+    required=False,
+)
 
 # Celery
 REDISCLOUD_URL = get_string(
@@ -716,6 +731,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
+
+if CHECK_EXTERNAL_RESOURCE_TASK_ENABLE:
+    CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
+        "task": "external_resources.tasks.check_external_resources_for_breakages",
+        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
+    }
 
 # django cache back-ends
 CACHES = {

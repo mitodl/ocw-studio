@@ -10,6 +10,8 @@ import time
 from celery import Celery
 from celery.signals import before_task_publish, task_postrun
 
+from main.constants import DEFAULT_PRIORITY, PRIORITY_STEPS
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "main.settings")
 
 log = logging.getLogger(__name__)
@@ -19,6 +21,12 @@ app = Celery("ocw_studio")
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.
 app.conf.task_default_queue = "default"
+app.conf.task_default_priority = DEFAULT_PRIORITY
+app.conf.broker_transport_options = {
+    "priority_steps": list(range(PRIORITY_STEPS)),
+    "sep": ":",
+    "queue_order_strategy": "priority",
+}
 app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
@@ -34,6 +42,7 @@ app.conf.task_routes = {
     "content_sync.tasks.trigger_mass_build": {"queue": "batch"},
     "content_sync.tasks.publish_website_batch": {"queue": "batch"},
     "content_sync.tasks.publish_websites": {"queue": "batch"},
+    "external_resources.tasks.check_external_resources": {"queue": "batch"},
 }
 
 

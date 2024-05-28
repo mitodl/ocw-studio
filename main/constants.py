@@ -7,3 +7,6 @@ STATUS_COMPLETE = "Complete"
 STATUS_FAILED = "Failed"
 
 PRODUCTION_NAMES = {"prod", "production"}
+
+PRIORITY_STEPS = 5  # priority range (0 - 4)
+DEFAULT_PRIORITY = 2  # Half step of range (0 - 4)
