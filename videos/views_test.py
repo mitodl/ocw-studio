@@ -1,6 +1,7 @@
 """Tests for videos.views"""
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -135,8 +136,8 @@ def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
 def test_transcode_jobs_subscribe_bad_request(settings, mocker, drf_client):
     """TranscodeJobView should deny a subscription request if token is invalid"""
     mock_get = mocker.patch("videos.views.requests.get")
-    with open(  # noqa: PTH123
-        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
+    with Path(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json").open(
+        encoding="utf-8"
     ) as infile:
         data = json.loads(
             infile.read()
