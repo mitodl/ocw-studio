@@ -11,6 +11,7 @@ from django.conf import settings
 
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
+from videos.constants import TRANSCODE_JOB_SUBSCRIPTION_URL
 from videos.models import WebsiteContent
 from websites.models import Website, WebsiteStarter
 
@@ -111,3 +112,13 @@ def update_metadata(source_obj, new_uid, new_s3_path):
     new_metadata["uid"] = new_uid
     new_metadata["file"] = str(new_s3_path).lstrip("/")
     return new_metadata
+
+
+def get_subscribe_url(token: str) -> str:
+    """Get a sns subscribe url"""
+
+    return TRANSCODE_JOB_SUBSCRIPTION_URL.format(
+        AWS_REGION=settings.AWS_REGION,
+        AWS_ACCOUNT_ID=settings.AWS_ACCOUNT_ID,
+        TOKEN=token,
+    )

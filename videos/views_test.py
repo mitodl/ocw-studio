@@ -132,6 +132,26 @@ def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
     mock_get.assert_not_called()
 
 
+def test_transcode_jobs_subscribe_bad_request(settings, mocker, drf_client):
+    """TranscodeJobView should deny a subscription request if token is invalid"""
+    mock_get = mocker.patch("videos.views.requests.get")
+    with open(  # noqa: PTH123
+        f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
+    ) as infile:
+        data = json.loads(
+            infile.read()
+            .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
+            .replace("AWS_REGION", settings.AWS_REGION)
+        )
+
+    # mock token
+    data["Token"] = ""
+
+    response = drf_client.post(reverse("transcode_jobs"), data=data)
+    assert response.status_code == 400
+    mock_get.assert_not_called()
+
+
 @pytest.mark.parametrize("callback_key", [None, "callback_key", "different_key"])
 @pytest.mark.parametrize("video_status", ["submitted_for_transcription", "complete"])
 def test_transcript_job(mocker, video_status, callback_key, drf_client, settings):
