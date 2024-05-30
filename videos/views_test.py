@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 from django.http.response import HttpResponse
 from django.urls import reverse
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from gdrive_sync.factories import DriveFileFactory
 from users.factories import UserFactory
@@ -102,7 +103,7 @@ def test_transcode_jobs_wrong_account(drf_client):
 
 
 def test_transcode_jobs_subscribe(settings, mocker, drf_client):
-    """TranscodeJobView should confirm a subcsription request"""
+    """TranscodeJobView should confirm a subscription request"""
     mock_get = mocker.patch("videos.views.requests.get")
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
@@ -149,7 +150,7 @@ def test_transcode_jobs_subscribe_bad_request(settings, mocker, drf_client):
     data["Token"] = ""
 
     response = drf_client.post(reverse("transcode_jobs"), data=data)
-    assert response.status_code == 400
+    assert response.status_code == HTTP_400_BAD_REQUEST
     mock_get.assert_not_called()
 
 

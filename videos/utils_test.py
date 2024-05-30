@@ -103,7 +103,7 @@ def test_create_new_content(mocker):
 
 
 def test_get_subscribe_url(mocker):
-    """Test for get_subscribe_url method"""
+    """Test get_subscribe_url to format ConfirmSubscription url correctly"""
 
     mocker.patch("django.conf.settings.AWS_REGION", "us-east-1")
     mocker.patch("django.conf.settings.AWS_ACCOUNT_ID", "1234567890")

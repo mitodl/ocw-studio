@@ -15,7 +15,7 @@ PDF_FORMAT_ID = 46
 WEBVTT_FORMAT_ID = 51
 
 TRANSCODE_JOB_SUBSCRIPTION_URL = "https://sns.{AWS_REGION}.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:{AWS_REGION}:{AWS_ACCOUNT_ID}:MediaConvertJobAlert&Token={TOKEN}"
-BAD_REQUEST_MSG = "Token Cannot be empty!"
+BAD_REQUEST_MSG = "Token cannot be empty!"
 
 
 class VideoStatus:

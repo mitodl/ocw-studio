@@ -5,7 +5,7 @@ from rest_framework.exceptions import APIException
 
 
 class BadRequest(APIException):
-    """Exception for Invalid request data"""
+    """Exception for invalid request data"""
 
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Bad request."
