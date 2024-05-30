@@ -115,7 +115,7 @@ def update_metadata(source_obj, new_uid, new_s3_path):
 
 
 def get_subscribe_url(token: str) -> str:
-    """Get a sns subscribe url"""
+    """Get a SNS subscribe url"""
 
     return TRANSCODE_JOB_SUBSCRIPTION_URL.format(
         AWS_REGION=settings.AWS_REGION,
