@@ -53,8 +53,7 @@ describe("MenuItemForm", () => {
     })
     expect(wrapper.prop("initialValues")).toEqual({
       menuItemTitle: "",
-      menuItemType: "internal",
-      internalLink: "",
+      contentLink: "",
     })
   })
 
@@ -62,15 +61,13 @@ describe("MenuItemForm", () => {
     const activeItem = {
       text: "text",
       targetContentId: "content-id",
-      menuItemType: "internal",
     }
     const wrapper = renderForm({
       activeItem,
     })
     expect(wrapper.prop("initialValues")).toEqual({
       menuItemTitle: activeItem.text,
-      internalLink: activeItem.targetContentId,
-      menuItemType: "internal",
+      contentLink: activeItem.targetContentId,
     })
   })
 
@@ -80,11 +77,11 @@ describe("MenuItemForm", () => {
       {
         values: {
           menuItemTitle: "",
-          internalLink: "",
+          contentLink: "",
         },
       },
     )
-    const relationField = wrapper.find('RelationField[name="internalLink"]')
+    const relationField = wrapper.find('RelationField[name="contentLink"]')
     expect(relationField.exists()).toBe(true)
   })
 
@@ -101,12 +98,12 @@ describe("MenuItemForm", () => {
       {
         values: {
           menuItemTitle: "",
-          internalLink: value,
+          contentLink: value,
         },
         setFieldValue: setFieldValueStub,
       },
     )
-    const relationField = wrapper.find('RelationField[name="internalLink"]')
+    const relationField = wrapper.find('RelationField[name="contentLink"]')
     expect(relationField.exists()).toBe(true)
     expect(relationField.prop("value")).toEqual(value)
     expect(relationField.prop("valuesToOmit")).toEqual(existingMenuIds)
@@ -117,6 +114,6 @@ describe("MenuItemForm", () => {
     }
     // @ts-expect-error Not using a full event
     relationField.prop("onChange")(fakeEvent)
-    expect(setFieldValueStub).toHaveBeenCalledWith("internalLink", "abc")
+    expect(setFieldValueStub).toHaveBeenCalledWith("contentLink", "abc")
   })
 })

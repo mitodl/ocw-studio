@@ -4,13 +4,12 @@ import * as R from "ramda"
 import BasicModal from "../BasicModal"
 import MenuItemForm, { MenuItemFormValues } from "../forms/MenuItemForm"
 import Dialog from "../Dialog"
-import { isExternalLinkId } from "../../lib/util"
 
 import { WebsiteContent } from "../../types/websites"
 import { ModalState, createModalState } from "../../types/modal_state"
 
 interface IMenuModalState {
-  item: InternalSortableMenuItem
+  item: SortableMenuItem
   path: ItemPath
 }
 
@@ -32,12 +31,12 @@ export type HugoItem = {
   parent?: string
 }
 
-export type InternalSortableMenuItem = {
+export type SortableMenuItem = {
   id: any
   text: string
   targetContentId: string | null
   targetUrl: string | null
-  children?: InternalSortableMenuItem[]
+  children?: SortableMenuItem[]
 }
 
 type onChangeProps = {
@@ -59,7 +58,7 @@ const topLevelKey = "_"
 const compareHugoValues = (item1: HugoItem, item2: HugoItem): number =>
   item1.weight < item2.weight ? -1 : 1
 
-const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
+const hugoItemToInternal = (item: HugoItem): SortableMenuItem => {
   const partialHugoItem: {
     targetContentId: string | null
     targetUrl: string | null
@@ -67,11 +66,9 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
     targetContentId: null,
     targetUrl: null,
   }
-  if (isExternalLinkId(item.identifier) && item.url) {
-    partialHugoItem.targetUrl = item.url
-  } else {
-    partialHugoItem.targetContentId = item.identifier
-  }
+
+  partialHugoItem.targetContentId = item.identifier
+
   return {
     id: item.identifier,
     text: item.name,
@@ -81,7 +78,7 @@ const hugoItemToInternal = (item: HugoItem): InternalSortableMenuItem => {
 }
 
 const internalItemToHugo = (
-  item: InternalSortableMenuItem,
+  item: SortableMenuItem,
   siblingIdx: number,
   parent: string | null,
 ): HugoItem => {
@@ -146,7 +143,7 @@ const internalItemToHugo = (
       }
     ]
  */
-const internalItemsToHugo = (internalItems: InternalSortableMenuItem[]) => {
+const internalItemsToHugo = (internalItems: SortableMenuItem[]) => {
   let results = internalItems.map((internalItem, itemIdx) =>
     internalItemToHugo(internalItem, itemIdx, null),
   )
@@ -174,9 +171,7 @@ const internalItemsToHugo = (internalItems: InternalSortableMenuItem[]) => {
  * Converts from Hugo-compatible formatted menu items to internal representation. Reverses the example conversion
  * shown in the internalItemsToHugo documentation.
  */
-const hugoItemsToInternal = (
-  hugoItems: HugoItem[],
-): InternalSortableMenuItem[] => {
+const hugoItemsToInternal = (hugoItems: HugoItem[]): SortableMenuItem[] => {
   if (hugoItems.length === 0) {
     return []
   }
@@ -186,7 +181,7 @@ const hugoItemsToInternal = (
     parentChildMap[key] = parentChildMap[key] || []
     parentChildMap[key].push(hugoItem)
   })
-  let results: InternalSortableMenuItem[] = parentChildMap[topLevelKey]
+  let results: SortableMenuItem[] = parentChildMap[topLevelKey]
     .sort(compareHugoValues)
     .map(hugoItemToInternal)
   const idToResultPath: Record<string, any[]> = Object.fromEntries(
@@ -224,14 +219,14 @@ const hugoItemsToInternal = (
 type ItemPath = Array<string | number>
 
 const getItemPath = (
-  items: InternalSortableMenuItem[],
+  items: SortableMenuItem[],
   itemIdToFind: string,
 ): ItemPath => {
-  let itemsToSearch: InternalSortableMenuItem[][] = [[...items]]
+  let itemsToSearch: SortableMenuItem[][] = [[...items]]
   const parentPaths: Array<string | number>[] = [[]]
   while (itemsToSearch.length > 0) {
     const parentPath = parentPaths.pop() as Array<string | number>
-    const items = itemsToSearch.pop() as InternalSortableMenuItem[]
+    const items = itemsToSearch.pop() as SortableMenuItem[]
     for (let idx = 0; idx < items.length; idx++) {
       const item = items[idx]
       if (item.id === itemIdToFind) {
@@ -251,7 +246,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
 
   const [menuData, setMenuData] = useState<{
     hugoItems: HugoItem[]
-    internalItems: InternalSortableMenuItem[]
+    internalItems: SortableMenuItem[]
   }>(() => {
     const hugoItems = value || []
     return {
@@ -284,14 +279,15 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     [setModalState],
   )
 
-  const [itemToRemove, setItemToRemove] =
-    useState<InternalSortableMenuItem | null>(null)
+  const [itemToRemove, setItemToRemove] = useState<SortableMenuItem | null>(
+    null,
+  )
 
   const closeRemoveDialog = useCallback(() => {
     setItemToRemove(null)
   }, [setItemToRemove])
 
-  const updateValues = (menuItems: InternalSortableMenuItem[]) => {
+  const updateValues = (menuItems: SortableMenuItem[]) => {
     const hugoItems = internalItemsToHugo(menuItems)
     setMenuData({
       internalItems: menuItems,
@@ -301,7 +297,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     onChange({ target: { value: hugoItems, name } })
   }
 
-  const startEditMenuItem = (menuItem: InternalSortableMenuItem) => {
+  const startEditMenuItem = (menuItem: SortableMenuItem) => {
     setModalState(
       createModalState("editing", {
         path: getItemPath(menuData.internalItems, menuItem.id),
@@ -312,7 +308,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
 
   const removeMenuItem = () => {
     const itemPath = getItemPath(menuData.internalItems, itemToRemove?.id)
-    const updatedItems: InternalSortableMenuItem[] = R.dissocPath(
+    const updatedItems: SortableMenuItem[] = R.dissocPath(
       itemPath,
       menuData.internalItems,
     )
@@ -320,7 +316,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
   }
 
   const onListChange = ({ items }: onChangeProps) => {
-    updateValues(items as InternalSortableMenuItem[])
+    updateValues(items as SortableMenuItem[])
   }
 
   const renderItem = ({ item }: renderItemProps) => (
@@ -332,7 +328,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
           className="material-icons mr-2 item-action-button"
           onClick={(event) => {
             event.preventDefault()
-            startEditMenuItem(item as InternalSortableMenuItem)
+            startEditMenuItem(item as SortableMenuItem)
           }}
         >
           settings
@@ -341,7 +337,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
           className="material-icons item-action-button"
           onClick={(event) => {
             event.preventDefault()
-            setItemToRemove(item as InternalSortableMenuItem)
+            setItemToRemove(item as SortableMenuItem)
           }}
         >
           delete
@@ -357,13 +353,13 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
     values: MenuItemFormValues
     hideModal: () => void
   }) => {
-    let updatedItems: InternalSortableMenuItem[]
+    let updatedItems: SortableMenuItem[]
     const updatedItem = {
       text: values.menuItemTitle,
       ...{
-        id: values.internalLink,
+        id: values.contentLink,
         targetUrl: null,
-        targetContentId: values.internalLink,
+        targetContentId: values.contentLink,
       },
     }
     if (modalState.editing()) {

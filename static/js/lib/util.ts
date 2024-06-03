@@ -1,6 +1,5 @@
 import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
-import { EXTERNAL_LINK_PREFIX } from "../constants"
 import { SiteFormValue } from "../types/forms"
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
@@ -71,9 +70,6 @@ const uuid4regex =
 
 export const isUuid4 = (strToTest: string): boolean =>
   uuid4regex.test(strToTest)
-
-export const isExternalLinkId = (textId: string): boolean =>
-  textId.startsWith(EXTERNAL_LINK_PREFIX)
 
 export const generateHashCode = (strToHash: string): string => {
   let hash = 0,
