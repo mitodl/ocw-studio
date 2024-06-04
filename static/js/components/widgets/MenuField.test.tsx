@@ -222,7 +222,7 @@ describe("MenuField", () => {
           }
         : {
             ...expectedMenuItem,
-            weight: 30,
+            weight: 20,
           }
       const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
       const updatedHugoMenuItem = updatedHugoMenuItems.find(
