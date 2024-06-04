@@ -4,6 +4,11 @@ from types import SimpleNamespace
 from typing import Literal
 
 import pytest
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+)
 
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
@@ -72,13 +77,49 @@ def test_check_external_resources_for_breakages_zero_websites(
         "resource_status",
     ),
     [
-        (False, 200, False, 200, ExternalResourceState.Status.VALID),
-        (False, 200, True, 400, ExternalResourceState.Status.VALID),
-        (True, 400, False, 200, ExternalResourceState.Status.VALID),
-        (True, 400, True, 400, ExternalResourceState.Status.BROKEN),
-        (False, 200, True, 401, ExternalResourceState.Status.VALID),
-        (True, 401, False, 200, ExternalResourceState.Status.VALID),
-        (True, 401, True, 401, ExternalResourceState.Status.UNCHECKED),
+        (False, HTTP_200_OK, False, HTTP_200_OK, ExternalResourceState.Status.VALID),
+        (
+            False,
+            HTTP_200_OK,
+            True,
+            HTTP_400_BAD_REQUEST,
+            ExternalResourceState.Status.VALID,
+        ),
+        (
+            True,
+            HTTP_400_BAD_REQUEST,
+            False,
+            HTTP_200_OK,
+            ExternalResourceState.Status.VALID,
+        ),
+        (
+            True,
+            HTTP_400_BAD_REQUEST,
+            True,
+            HTTP_400_BAD_REQUEST,
+            ExternalResourceState.Status.BROKEN,
+        ),
+        (
+            False,
+            HTTP_200_OK,
+            True,
+            HTTP_401_UNAUTHORIZED,
+            ExternalResourceState.Status.VALID,
+        ),
+        (
+            True,
+            HTTP_401_UNAUTHORIZED,
+            False,
+            HTTP_200_OK,
+            ExternalResourceState.Status.VALID,
+        ),
+        (
+            True,
+            HTTP_401_UNAUTHORIZED,
+            True,
+            HTTP_401_UNAUTHORIZED,
+            ExternalResourceState.Status.UNCHECKED,
+        ),
     ],
 )
 def test_check_external_resources(  # noqa: PLR0913
