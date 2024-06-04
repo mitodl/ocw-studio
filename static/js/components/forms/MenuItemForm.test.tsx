@@ -57,7 +57,7 @@ describe("MenuItemForm", () => {
     })
   })
 
-  it("renders with the correct initial values if given an active item with internal link", () => {
+  it("renders with the correct initial values if given an active item with link", () => {
     const activeItem = {
       text: "text",
       targetContentId: "content-id",
@@ -71,7 +71,7 @@ describe("MenuItemForm", () => {
     })
   })
 
-  it("renders an internal link dropdown", () => {
+  it("renders a link dropdown", () => {
     const wrapper = renderInnerForm(
       {},
       {
