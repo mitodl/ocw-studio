@@ -10,6 +10,7 @@ from videos.utils import (
     create_new_content,
     generate_s3_path,
     get_content_dirpath,
+    get_subscribe_url,
     update_metadata,
 )
 from websites.factories import (
@@ -99,3 +100,15 @@ def test_create_new_content(mocker):
     mock_copy_obj_s3.assert_called_once_with(source_content, destination_course)
     mock_get_dirpath_and_filename.assert_called_once_with("new_s3_loc")
     mock_uuid_string.assert_called_once()
+
+
+def test_get_subscribe_url(mocker):
+    """Test get_subscribe_url to format ConfirmSubscription url correctly"""
+
+    mocker.patch("django.conf.settings.AWS_REGION", "us-east-1")
+    mocker.patch("django.conf.settings.AWS_ACCOUNT_ID", "1234567890")
+
+    assert (
+        get_subscribe_url("fake-token")
+        == "https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:us-east-1:1234567890:MediaConvertJobAlert&Token=fake-token"
+    )

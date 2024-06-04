@@ -1,11 +1,13 @@
 """Tests for videos.views"""
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from django.http.response import HttpResponse
 from django.urls import reverse
+from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from gdrive_sync.factories import DriveFileFactory
 from users.factories import UserFactory
@@ -101,7 +103,7 @@ def test_transcode_jobs_wrong_account(drf_client):
 
 
 def test_transcode_jobs_subscribe(settings, mocker, drf_client):
-    """TranscodeJobView should confirm a subcsription request"""
+    """TranscodeJobView should confirm a subscription request"""
     mock_get = mocker.patch("videos.views.requests.get")
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json", encoding="utf-8"
@@ -129,6 +131,26 @@ def test_transcode_jobs_subscribe_denied(settings, mocker, drf_client):
         )
     response = drf_client.post(reverse("transcode_jobs"), data=data)
     assert response.status_code == 403
+    mock_get.assert_not_called()
+
+
+def test_transcode_jobs_subscribe_bad_request(settings, mocker, drf_client):
+    """TranscodeJobView should deny a subscription request if token is invalid"""
+    mock_get = mocker.patch("videos.views.requests.get")
+    with Path(f"{TEST_VIDEOS_WEBHOOK_PATH}/subscribe.json").open(
+        encoding="utf-8"
+    ) as infile:
+        data = json.loads(
+            infile.read()
+            .replace("AWS_ACCOUNT_ID", settings.AWS_ACCOUNT_ID)
+            .replace("AWS_REGION", settings.AWS_REGION)
+        )
+
+    # mock token
+    data["Token"] = ""
+
+    response = drf_client.post(reverse("transcode_jobs"), data=data)
+    assert response.status_code == HTTP_400_BAD_REQUEST
     mock_get.assert_not_called()
 
 
