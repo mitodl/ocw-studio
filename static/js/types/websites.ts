@@ -312,11 +312,6 @@ export interface ContentDetailParams {
   textId: string
 }
 
-export enum LinkType {
-  Internal = "internal",
-  External = "external",
-}
-
 /**
  * For the WebsiteContent drawer we need to keep track of a
  * content ID when we're editing existing content.

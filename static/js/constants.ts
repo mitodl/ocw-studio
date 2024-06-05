@@ -6,7 +6,7 @@ import {
   WebsiteStarterConfig,
 } from "./types/websites"
 
-import { WidgetVariant, LinkType } from "./types/websites"
+import { WidgetVariant } from "./types/websites"
 
 export const ROLE_ADMIN = "admin"
 export const ROLE_EDITOR = "editor"
@@ -31,8 +31,6 @@ export const WEBSITE_CONTENT_PAGE_SIZE = 10
  */
 export const MAIN_PAGE_CONTENT_FIELD = "body"
 export const MAIN_PAGE_CONTENT_DB_FIELD = "markdown"
-
-export const EXTERNAL_LINK_PREFIX = `${LinkType.External}-`
 
 /* eslint-disable quote-props, key-spacing */
 export const exampleSiteConfig: WebsiteStarterConfig = {

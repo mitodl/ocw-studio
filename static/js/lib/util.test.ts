@@ -8,7 +8,6 @@ import {
   getResponseBodyError,
   isUuid4,
   generateHashCode,
-  isExternalLinkId,
 } from "./util"
 
 describe("util", () => {
@@ -129,10 +128,5 @@ describe("util", () => {
   it("generateHashCode should produce a numeric hash code for some string value", () => {
     expect(generateHashCode("abcdefg")).toEqual("-1206291356")
     expect(generateHashCode("http://example.com")).toEqual("-631280213")
-  })
-
-  it("isExternalLinkId returns true if the string starts with the external link prefix", () => {
-    expect(isExternalLinkId("external-1234")).toBe(true)
-    expect(isExternalLinkId("not-external-link")).toBe(false)
   })
 })
