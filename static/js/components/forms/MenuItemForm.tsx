@@ -26,7 +26,7 @@ export type MenuItemFormValues = {
 
 const schema = yup.object().shape({
   menuItemTitle: yup.string().required().label("Title"),
-  contentLink: yup.string().required().label("Content link"),
+  contentLink: yup.string().required().label("Link"),
 })
 
 const emptyInitialValues: MenuItemFormValues = {
