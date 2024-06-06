@@ -253,7 +253,6 @@ class WebsiteDetailSerializer(
     live_url = serializers.SerializerMethodField(read_only=True)
     draft_url = serializers.SerializerMethodField(read_only=True)
     unpublished = serializers.ReadOnlyField()
-    has_site_metadata = serializers.ReadOnlyField()
 
     def get_is_admin(self, obj):
         """Determine if the request user is an admin"""
@@ -298,7 +297,6 @@ class WebsiteDetailSerializer(
             "sync_errors",
             "synced_on",
             "content_warnings",
-            "has_site_metadata",
         ]
         read_only_fields = [
             "uuid",
@@ -331,8 +329,6 @@ class WebsiteStatusSerializer(
 ):
     """Serializer for website status fields"""
 
-    has_site_metadata = serializers.ReadOnlyField()
-
     class Meta:
         model = Website
         fields = [
@@ -353,7 +349,6 @@ class WebsiteStatusSerializer(
             "synced_on",
             "content_warnings",
             "url_suggestion",
-            "has_site_metadata",
         ]
         read_only_fields = fields
 

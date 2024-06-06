@@ -17,7 +17,7 @@ import { IntegrationTestHelper } from "../testing_utils"
 
 import PublishDrawer from "./PublishDrawer"
 
-import { Starter, Website } from "../types/websites"
+import { Website } from "../types/websites"
 import userEvent from "@testing-library/user-event"
 import { waitFor, screen } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
@@ -95,7 +95,6 @@ describe("PublishDrawer", () => {
       urlField: "draft_url",
       publishDateField: "draft_publish_date",
       publishStatusField: "draft_publish_status",
-      hasSiteMetaData: "has_site_metadata",
       idx: 0,
     },
     {
@@ -106,7 +105,6 @@ describe("PublishDrawer", () => {
       urlField: "live_url",
       publishDateField: "publish_date",
       publishStatusField: "live_publish_status",
-      hasSiteMetaData: "has_site_metadata",
       idx: 1,
     },
   ])(
@@ -119,7 +117,6 @@ describe("PublishDrawer", () => {
       urlField,
       publishDateField,
       publishStatusField,
-      hasSiteMetaData,
       idx,
     }) => {
       ;[true, false].forEach((visible) => {
@@ -197,16 +194,6 @@ describe("PublishDrawer", () => {
         expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
       })
 
-      it("disables publish button in production if no metadata is set", async () => {
-        website[hasSiteMetaData] = false
-        const { wrapper } = await render()
-        await simulateClickPublish(wrapper, action)
-        wrapper.update()
-        expect(wrapper.find(".btn-publish").prop("disabled")).toBe(
-          action === "production" && website.starter?.name !== Starter.ocw_www,
-        )
-      })
-
       it("render only the preview button if user is not an admin", async () => {
         website["is_admin"] = false
         const { wrapper } = await render()
@@ -253,10 +240,9 @@ describe("PublishDrawer", () => {
         const { wrapper } = await render()
         await simulateClickPublish(wrapper, action)
         wrapper.update()
-        website.has_site_metadata &&
-          expect(
-            wrapper.find("PublishForm").find(".btn-publish").prop("disabled"),
-          ).toBeFalsy()
+        expect(
+          wrapper.find("PublishForm").find(".btn-publish").prop("disabled"),
+        ).toBeFalsy()
         await act(async () => {
           wrapper.find("PublishForm").find(".btn-publish").simulate("submit")
         })

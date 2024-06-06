@@ -41,7 +41,6 @@ from websites.constants import (
 from websites.site_config_api import ConfigItem, SiteConfig
 from websites.utils import (
     get_dict_field,
-    is_metadata_has_required_fields,
     permissions_group_name_for_role,
     set_dict_field,
 )
@@ -282,21 +281,6 @@ class Website(TimestampedModel):
             self.name,
         ]
         return "/".join([part.strip("/") for part in url_parts if part])
-
-    @property
-    def has_site_metadata(self):
-        """
-        Get True when required fields are set in WebsiteContent metadata
-        otherwise False
-        """
-        site_metadata = self.websitecontent_set.filter(type="sitemetadata")
-        return bool(
-            site_metadata
-            and site_metadata[0].metadata
-            and is_metadata_has_required_fields(
-                SiteConfig(self.starter.config), site_metadata[0].metadata
-            )
-        )
 
     class Meta:
         permissions = (
