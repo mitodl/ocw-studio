@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.119.0
+Version 0.119.0 (Released June 06, 2024)
 ---------------
 
 - Revert "Course publish without metadata (unforked) (#2183)" (#2200)
