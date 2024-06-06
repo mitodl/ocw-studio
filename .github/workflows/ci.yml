@@ -53,7 +53,7 @@ jobs:
       run: cat Aptfile | sudo xargs apt-get install
 
     - name: Install poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@93ada01c735cc8a383ce0ce2ae205a21c415379b # v1
       with:
         version: 1.5.1
         virtualenvs-create: true
