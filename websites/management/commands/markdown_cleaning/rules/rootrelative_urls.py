@@ -71,7 +71,7 @@ class RootRelativeUrlRule(PyparsingRule):
         self.content_lookup = ContentLookup()
         self.legacy_file_lookup = LegacyFileLookup()
 
-    def fuzzy_find_linked_content(  # noqa: C901, PLR0911, PLR0912, PLR0915
+    def fuzzy_find_linked_content(  # noqa: C901, PLR0911, PLR0915
         self, url: str
     ):
         """
