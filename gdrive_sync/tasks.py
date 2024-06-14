@@ -234,7 +234,7 @@ def update_website_status(website_pk: str, sync_dt: datetime):
 
 
 @app.task
-def populate_file_sizes(  # noqa: C901, PLR0912
+def populate_file_sizes(  # noqa: C901
     website_name: str,
     override_existing: bool = False,  # noqa: FBT001, FBT002
 ):

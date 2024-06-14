@@ -369,7 +369,7 @@ def sync_github_site_configs(url: str, files: list[str], commit: Optional[str] =
 
 
 @app.task(acks_late=True)
-def check_incomplete_publish_build_statuses():  # noqa: C901, PLR0912
+def check_incomplete_publish_build_statuses():  # noqa: C901
     """
     Check statuses of concourse builds that have not been updated in a reasonable amount of time
     """  # noqa: E501

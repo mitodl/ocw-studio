@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.119.1
+---------------
+
+- Revert "Add flag for Celery to send task state change events"
+- Add flag for Celery to send task state change events
+- chore(deps): pin snok/install-poetry action to 93ada01 (#2149)
+- [pre-commit.ci] pre-commit autoupdate (#2195)
+
 Version 0.119.0 (Released June 06, 2024)
 ---------------
 
