@@ -11071,7 +11071,7 @@ __metadata:
     stylelint: ^15.10.3
     stylelint-config-standard-scss: ^10.0.0
     svg-inline-loader: ^0.8.2
-    swc-loader: ^0.1.15
+    swc-loader: ^0.2.0
     tiny-invariant: ^1.3.1
     turndown: ^7.0.0
     typescript: ^4.9.5
@@ -14530,13 +14530,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"swc-loader@npm:^0.1.15":
-  version: 0.1.16
-  resolution: "swc-loader@npm:0.1.16"
+"swc-loader@npm:^0.2.0":
+  version: 0.2.6
+  resolution: "swc-loader@npm:0.2.6"
+  dependencies:
+    "@swc/counter": ^0.1.3
   peerDependencies:
     "@swc/core": ^1.2.147
     webpack: ">=2"
-  checksum: 168ddd62105a74884f8bc1dbecc913d8c542a55baeb484c22590dfe5f89f081dbdd4012ad8d04fb3b0c230729babee25b82a71208e573874b4156a074ab7d3d2
+  checksum: fe90948c02a51bb8ffcff1ce3590e01dc12860b0bb7c9e22052b14fa846ed437781ae265614a5e14344bea22001108780f00a6e350e28c0b3499bc4cd11335fb
   languageName: node
   linkType: hard
 
