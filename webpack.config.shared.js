@@ -1,8 +1,11 @@
 const path = require("path")
 // eslint-disable-next-line no-unused-vars
 const webpack = require("webpack")
-// eslint-disable-next-line no-unused-vars
-const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
+/* eslint-disable no-unused-vars */
+const {
+  CKEditorTranslationsPlugin,
+} = require("@ckeditor/ckeditor5-dev-translations")
+/* eslint-enable no-unused-vars */
 const { styles } = require("@ckeditor/ckeditor5-dev-utils")
 
 module.exports = {
