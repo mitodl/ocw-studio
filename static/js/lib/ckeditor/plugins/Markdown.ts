@@ -57,7 +57,8 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    * Convert markdown string to CKEditor View
    */
   toView(md: string): DocumentFragment {
-    const html = this.md2html(md)
+    // Decode HTML URLs to Markdown Syntax
+    const html = this.md2html(md).replace(/%28/g, "(").replace(/%29/g, ")")
     return this._htmlDP.toView(html)
   }
 
@@ -66,7 +67,9 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    */
   toData(viewFragment: DocumentFragment): string {
     const html = this._htmlDP.toData(viewFragment)
-    return this.html2md(html)
+
+    // Encode parentheses in URL to HTML encoding for URLs
+    return this.html2md(html).replace(/\\\(/g, "%28").replace(/\\\)/g, "%29")
   }
 }
 
