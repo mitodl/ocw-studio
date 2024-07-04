@@ -2,6 +2,7 @@
 
 from urllib.parse import urlparse
 
+from django.conf import settings
 from django.db import migrations
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
@@ -9,28 +10,26 @@ from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 
 def is_ocw_domain_url(url: str) -> bool:
     """Return True `url` has an ocw domain."""
-    parsed_url = urlparse(url)
-    return parsed_url.netloc == "ocw.mit.edu"
+    parsed_domain = urlparse(url)
+    parsed_ocw_domain = urlparse(settings.STATIC_API_BASE_URL_LIVE)
+    return parsed_domain.netloc == parsed_ocw_domain
 
 
 def migrate_fields_forward(apps, schema_editor):
     """Run migration in forward direction."""
-    remove_field_has_external_licence_warning(apps, forward=True)
+    remove_field_has_external_licence_warning(apps)
 
 
 def migrate_fields_backward(apps, schema_editor):
-    """Run migration in backward direction."""
-    remove_field_has_external_licence_warning(apps, forward=False)
+    """Run migration in backward direction.
+    This will not return the DB to original state.
+    """
 
 
-def remove_field_has_external_licence_warning(apps, forward):
+def remove_field_has_external_licence_warning(apps):
     """Remove duplicate field from metadata."""
-    if forward:
-        key = "has_external_licence_warning"
-        updated_key = "has_external_license_warning"
-    else:
-        key = "has_external_license_warning"
-        updated_key = "has_external_licence_warning"
+    key = "has_external_licence_warning"
+    updated_key = "has_external_license_warning"
 
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     resources = WebsiteContent.objects.filter(
