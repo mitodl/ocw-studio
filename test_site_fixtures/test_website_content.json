@@ -44,10 +44,6 @@
         "department_numbers": ["8", "6", "18"],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
-        "course_image_thumbnail": {
-          "content": "5388b0c3-c599-4c42-8a3c-f89beed7c154",
-          "website": "ocw-ci-test-course"
-        },
         "learning_resource_types": [
           "Activity Assignments",
           "Exams with Solutions"
