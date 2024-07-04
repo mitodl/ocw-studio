@@ -12,7 +12,7 @@ import {
   turndownHtmlHelpers,
 } from "../turndown"
 import Turndown from "turndown"
-import { buildAttrsString } from "./util"
+import { buildAttrsString, encodeParentheses, decodeParentheses } from "./util"
 import { validateHtml2md } from "./validateMdConversion"
 
 /**
@@ -58,7 +58,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    */
   toView(md: string): DocumentFragment {
     // Decode HTML URLs to Markdown Syntax
-    const html = this.md2html(md).replace(/%28/g, "(").replace(/%29/g, ")")
+    const html = decodeParentheses(this.md2html(md))
     return this._htmlDP.toView(html)
   }
 
@@ -69,7 +69,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
     const html = this._htmlDP.toData(viewFragment)
 
     // Encode parentheses in URL to HTML encoding for URLs
-    return this.html2md(html).replace(/\\\(/g, "%28").replace(/\\\)/g, "%29")
+    return encodeParentheses(this.html2md(html))
   }
 }
 

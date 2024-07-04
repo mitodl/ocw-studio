@@ -380,3 +380,21 @@ export const makeHtmlString = (
 export const escapeShortcodes = (text: string) => {
   return text.replace(/{{</g, "{{\\<").replace("{{%", "{\\{%")
 }
+
+/**
+ *
+ * Encode parentheses in URL which are escaped in markdown string,
+ * `"\("` --> `"%28"` and `"\)"` --> `"%29"`
+ */
+export const encodeParentheses = (text: string) => {
+  return text.replace(/\\\(/g, "%28").replace(/\\\)/g, "%29")
+}
+
+/**
+ *
+ * Decode parentheses in URL to view original in Edit dialogue,
+ * `"%28"` --> `"("` and `"%29"` --> `")"`
+ */
+export const decodeParentheses = (text: string) => {
+  return text.replace(/%28/g, "(").replace(/%29/g, ")")
+}
