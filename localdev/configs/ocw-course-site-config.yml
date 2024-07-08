@@ -209,16 +209,6 @@ collections:
         field: "resourcetype"
         filter_type: "equals"
         value: "Image"
-    - label: Course Image Thumbnail
-      name: course_image_thumbnail
-      widget: relation
-      collection: resource
-      display_field: title
-      multiple: false
-      filter:
-        field: "resourcetype"
-        filter_type: "equals"
-        value: "Image"
     - label: "Department Numbers"
       min: 1
       multiple: true
