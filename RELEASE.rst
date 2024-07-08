@@ -1,6 +1,34 @@
 Release Notes
 =============
 
+Version 0.120.0
+---------------
+
+- xmlsec downgrade (fix server error) (#2235)
+- Course Image Thumbnail Cleanup (#2232)
+- fix(deps): update dependency django-storages to v1.14.3 (#2224)
+- fix(deps): update dependency django-safedelete to v1.4.0 (#2220)
+- chore(deps): update node.js to v20.15.0 (#2223)
+- fix(deps): update dependency requests to v2.32.3 (#2222)
+- fix(deps): update dependency django-hijack to v3.5.4 (#2221)
+- fix(deps): update dependency boto3 to v1.34.136 (#2219)
+- [pre-commit.ci] pre-commit autoupdate (#2217)
+- fix(deps): update dependency djangorestframework to v3.15.2 [security] (#2218)
+- fix(deps): update dependency swc-loader to ^0.2.0 (#2214)
+- [pre-commit.ci] pre-commit autoupdate (#2212)
+- fix(deps): update dependency requests to v2.32.2 [security] (#2211)
+- fix(deps): update dependency django-hijack to v3.5.1 (#2209)
+- fix(deps): update dependency dj-database-url to v2.2.0 (#2208)
+- chore(deps): update node.js to v20.14.0 (#2207)
+- chore(deps): update nginx docker tag to v1.27.0 (#2206)
+- fix(deps): update dependency xmlsec to v1.3.14 (#2205)
+- fix(deps): update dependency boto3 to v1.34.127 (#2204)
+- Add -E flag to worker subcommand for sending task events
+- Revert "Add flag for Celery to send task state change events"
+- Add flag for Celery to send task state change events
+- chore(deps): pin snok/install-poetry action to 93ada01 (#2149)
+- [pre-commit.ci] pre-commit autoupdate (#2195)
+
 Version 0.119.0 (Released June 06, 2024)
 ---------------
 
