@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.120.0
+Version 0.120.0 (Released July 09, 2024)
 ---------------
 
 - xmlsec downgrade (fix server error) (#2235)
