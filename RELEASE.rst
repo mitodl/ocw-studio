@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.121.0
+---------------
+
+- added encoding/decoding for URL in markdown editor (#2231)
+- added migration to remove duplicate fields and correct value (#2213)
+- chore(deps): lock file maintenance (#2241)
+- fix(deps): update dependency django to v4.2.14 [security] (#2242)
+- chore(deps): update dependency ruff to ^0.5 (#2239)
+- chore(deps): update node.js to v20.15.1 (#2238)
+- fix(deps): update dependency django-hijack to v3.6.0 (#2237)
+- added heroku release phase script (#2233)
+
 Version 0.120.0 (Released July 09, 2024)
 ---------------
 
