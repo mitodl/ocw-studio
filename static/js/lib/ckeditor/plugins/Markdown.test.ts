@@ -183,11 +183,11 @@ describe("Handling of raw HTML", () => {
 
     const html = `
     <p>
-    <a href="http://host.com/with_(parenthese)/uri">Hello World</a>
+    <a href="http://host.com/with_(parentheses)/uri">Hello World</a>
     </p>
     `
     expect(encodeParentheses(html2md(html))).toBe(
-      `[Hello World](http://host.com/with_%28parenthese%29/uri)`,
+      `[Hello World](http://host.com/with_%28parentheses%29/uri)`,
     )
   })
 
@@ -199,10 +199,10 @@ describe("Handling of raw HTML", () => {
 
     expect(
       decodeParentheses(
-        md2html(`[Hello World](http://host.com/with_%28parenthese%29/uri)`),
+        md2html(`[Hello World](http://host.com/with_%28parentheses%29/uri)`),
       ),
     ).toBe(
-      `<p><a href="http://host.com/with_(parenthese)/uri">Hello World</a></p>`,
+      `<p><a href="http://host.com/with_(parentheses)/uri">Hello World</a></p>`,
     )
   })
 })
