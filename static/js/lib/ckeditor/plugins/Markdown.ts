@@ -12,7 +12,7 @@ import {
   turndownHtmlHelpers,
 } from "../turndown"
 import Turndown from "turndown"
-import { buildAttrsString } from "./util"
+import { buildAttrsString, encodeParentheses, decodeParentheses } from "./util"
 import { validateHtml2md } from "./validateMdConversion"
 
 /**
@@ -57,7 +57,8 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    * Convert markdown string to CKEditor View
    */
   toView(md: string): DocumentFragment {
-    const html = this.md2html(md)
+    // Decode HTML URLs to Markdown Syntax
+    const html = decodeParentheses(this.md2html(md))
     return this._htmlDP.toView(html)
   }
 
@@ -66,7 +67,9 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
    */
   toData(viewFragment: DocumentFragment): string {
     const html = this._htmlDP.toData(viewFragment)
-    return this.html2md(html)
+
+    // Encode parentheses in URL to HTML encoding for URLs
+    return encodeParentheses(this.html2md(html))
   }
 }
 

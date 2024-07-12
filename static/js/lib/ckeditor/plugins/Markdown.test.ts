@@ -6,6 +6,7 @@ import { TEST_MARKDOWN, TEST_HTML } from "../../../test_constants"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { ShowdownExtension } from "showdown"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
+import { decodeParentheses, encodeParentheses } from "./util"
 
 describe("Markdown CKEditor plugin", () => {
   const getEditor = createTestEditor([Markdown])
@@ -171,6 +172,37 @@ describe("Handling of raw HTML", () => {
     `
     expect(html2md(html)).toBe(
       'hello <sup><span>meow</span>alert("maliciousness")</sup> world',
+    )
+  })
+
+  test("URLs with parentheses are encoded", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] },
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = `
+    <p>
+    <a href="http://host.com/with_(parentheses)/uri">Hello World</a>
+    </p>
+    `
+    expect(encodeParentheses(html2md(html))).toBe(
+      `[Hello World](http://host.com/with_%28parentheses%29/uri)`,
+    )
+  })
+
+  test("URLs with encoded parentheses are decoded", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] },
+    })
+    const { md2html } = getConverters(editor)
+
+    expect(
+      decodeParentheses(
+        md2html(`[Hello World](http://host.com/with_%28parentheses%29/uri)`),
+      ),
+    ).toBe(
+      `<p><a href="http://host.com/with_(parentheses)/uri">Hello World</a></p>`,
     )
   })
 })
