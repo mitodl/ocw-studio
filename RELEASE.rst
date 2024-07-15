@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.121.0
+Version 0.121.0 (Released July 15, 2024)
 ---------------
 
 - added encoding/decoding for URL in markdown editor (#2231)
