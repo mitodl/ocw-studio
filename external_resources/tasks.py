@@ -58,6 +58,7 @@ def check_external_resources(resources: list[int]):
             log.debug(ex)
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
+            # Status and flag should be updated if codes are not in ignored cases
             if (
                 url_status not in RESOURCE_UNCHECKED_STATUSES
                 or backup_url_status not in RESOURCE_UNCHECKED_STATUSES

@@ -10,6 +10,7 @@ from rest_framework.status import (
     HTTP_401_UNAUTHORIZED,
 )
 
+from external_resources.constants import RESOURCE_UNCHECKED_STATUSES
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
 from external_resources.models import ExternalResourceState
@@ -148,7 +149,6 @@ def test_check_external_resources(  # noqa: PLR0913
 
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
-    assert updated_state.status == resource_status
     assert updated_state.last_checked is not None
 
     assert updated_state.is_external_url_broken is url_status
@@ -157,9 +157,15 @@ def test_check_external_resources(  # noqa: PLR0913
     assert updated_state.external_url_response_code == url_status_code
     assert updated_state.backup_url_response_code == backup_url_status_code
 
-    assert updated_state.content.metadata.get("is_broken", False) == (
-        url_status and (backup_url_status_code is None or backup_url_status)
-    )
+    # Status and flag are updated if codes are not in ignored cases
+    if (
+        url_status_code not in RESOURCE_UNCHECKED_STATUSES
+        or backup_url_status_code not in RESOURCE_UNCHECKED_STATUSES
+    ):
+        assert updated_state.status == resource_status
+        assert updated_state.content.metadata.get("is_broken", False) == (
+            url_status and (backup_url_status_code is None or backup_url_status)
+        )
 
 
 @pytest.mark.django_db()
