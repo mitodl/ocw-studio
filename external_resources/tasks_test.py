@@ -157,7 +157,9 @@ def test_check_external_resources(  # noqa: PLR0913
     assert updated_state.external_url_response_code == url_status_code
     assert updated_state.backup_url_response_code == backup_url_status_code
 
-    assert updated_state.content.metadata.get("is_broken", False) is url_status
+    assert updated_state.content.metadata.get("is_broken", False) == (
+        url_status and (backup_url_status_code is None or backup_url_status)
+    )
 
 
 @pytest.mark.django_db()
