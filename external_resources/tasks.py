@@ -62,16 +62,19 @@ def check_external_resources(resources: list[int]):
                 url_status not in RESOURCE_UNCHECKED_STATUSES
                 or backup_url_status not in RESOURCE_UNCHECKED_STATUSES
             ):
-                if is_url_broken and is_backup_url_broken:
+                is_broken = is_url_broken and (
+                    backup_url_status is None or is_backup_url_broken
+                )
+                if is_broken:
                     # both external_url and backup_url are broken.
                     state.status = ExternalResourceState.Status.BROKEN
                 else:
                     # Either external_url or backup_url is valid.
                     state.status = ExternalResourceState.Status.VALID
 
-            if is_url_broken and not resource.metadata.get("is_broken", False):
-                resource.metadata["is_broken"] = True
-                resource.save()
+                if resource.metadata.get("is_broken") != is_broken:
+                    resource.metadata["is_broken"] = is_broken
+                    resource.save()
         finally:
             state.last_checked = timezone.now()
 
