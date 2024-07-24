@@ -69,7 +69,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
     const html = this._htmlDP.toData(viewFragment)
 
     // Encode parentheses in URL to HTML encoding for URLs
-    return encodeParentheses(this.html2md(html))
+    return this.html2md(encodeParentheses(html))
   }
 }
 
