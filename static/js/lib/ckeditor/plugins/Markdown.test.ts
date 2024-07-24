@@ -186,7 +186,7 @@ describe("Handling of raw HTML", () => {
     <a href="http://host.com/with_(parentheses)/uri">Hello World</a>
     </p>
     `
-    expect(encodeParentheses(html2md(html))).toBe(
+    expect(html2md(encodeParentheses(html))).toBe(
       `[Hello World](http://host.com/with_%28parentheses%29/uri)`,
     )
   })
