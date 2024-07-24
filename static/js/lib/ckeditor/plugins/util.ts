@@ -418,7 +418,6 @@ export const decodeParentheses = (text: string) => {
   for (const anchor of anchorTags) {
     anchor.href = anchor.href?.replace(/%28/g, "(").replace(/%29/g, ")")
   }
-  console.log(text, doc.body.innerHTML)
   // Return the modified HTML string
   return doc.body.innerHTML
 }
