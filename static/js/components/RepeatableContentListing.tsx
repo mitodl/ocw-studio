@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
@@ -154,6 +153,18 @@ export default function RepeatableContentListing(props: {
     )
   })
 
+  const onDelete = async () => {
+    if (deleteQueryState.isPending) {
+      return
+    }
+    const response = await deleteContent()
+    if (!response) {
+      return
+    } else if (fetchWebsiteContentListing) {
+      fetchWebsiteContentListing()
+    }
+  }
+
   return (
     <>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
@@ -239,6 +250,18 @@ export default function RepeatableContentListing(props: {
           fetchWebsiteContentListing={fetchWebsiteContentListing}
         />
       </Route>
+      <Dialog
+        open={deleteModal}
+        onCancel={closeDeleteModal}
+        headerContent={"Remove content"}
+        bodyContent={`Are you sure you want to remove ${
+          selectedContent && selectedContent.title
+            ? selectedContent.title
+            : "this content"
+        }?`}
+        acceptText="Delete"
+        onAccept={onDelete}
+      />
     </>
   )
 }
