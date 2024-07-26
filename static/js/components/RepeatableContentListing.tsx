@@ -162,6 +162,7 @@ export default function RepeatableContentListing(props: {
       return
     } else if (fetchWebsiteContentListing) {
       fetchWebsiteContentListing()
+      await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
     }
   }
 
@@ -253,14 +254,17 @@ export default function RepeatableContentListing(props: {
       <Dialog
         open={deleteModal}
         onCancel={closeDeleteModal}
-        headerContent={"Remove content"}
+        headerContent={`Remove ${labelSingular}`}
         bodyContent={`Are you sure you want to remove ${
           selectedContent && selectedContent.title
             ? selectedContent.title
             : "this content"
         }?`}
         acceptText="Delete"
-        onAccept={onDelete}
+        onAccept={() => {
+          onDelete()
+          closeDeleteModal()
+        }}
       />
     </>
   )
