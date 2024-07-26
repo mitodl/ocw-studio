@@ -2,6 +2,7 @@
 
 import logging
 
+from content_sync.api import get_sync_backend
 from gdrive_sync.api import process_file_result
 from gdrive_sync.tasks import _get_gdrive_files, process_drive_file
 from main.management.commands.filter import WebsiteFilterCommand
@@ -63,5 +64,8 @@ class Command(WebsiteFilterCommand):
                         )
 
                     process_drive_file.delay(gdrive_file["id"])
+
+            backend = get_sync_backend(website)
+            backend.sync_all_content_to_backend()
 
         self.stdout.write("Done")
