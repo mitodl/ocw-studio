@@ -511,13 +511,21 @@ describe("Shortcode", () => {
 describe("urlWithParentheses", () => {
   it("decode URL with Parentheses", () => {
     expect(
-      decodeParentheses(`http://host.com/with_%28parentheses%29/uri`),
-    ).toBe(`http://host.com/with_(parentheses)/uri`)
+      decodeParentheses(
+        `<p><a href="http://host.com/with_%28parentheses%29/uri">URL Test</a></p>`,
+      ),
+    ).toBe(
+      `<p><a href="http://host.com/with_(parentheses)/uri">URL Test</a></p>`,
+    )
   })
 
   it("encode URL with Parentheses", () => {
     expect(
-      encodeParentheses(`http://host.com/with_\\\(parentheses\\\)/uri`), //eslint-disable-line
-    ).toBe(`http://host.com/with_%28parentheses%29/uri`)
+      encodeParentheses(
+        `<p><a href="http://host.com/with_(parentheses)/uri">URL Test</a></p>`,
+      ),
+    ).toBe(
+      `<p><a href="http://host.com/with_%28parentheses%29/uri">URL Test</a></p>`,
+    )
   })
 })

@@ -186,7 +186,7 @@ describe("Handling of raw HTML", () => {
     <a href="http://host.com/with_(parentheses)/uri">Hello World</a>
     </p>
     `
-    expect(encodeParentheses(html2md(html))).toBe(
+    expect(html2md(encodeParentheses(html))).toBe(
       `[Hello World](http://host.com/with_%28parentheses%29/uri)`,
     )
   })
@@ -203,6 +203,52 @@ describe("Handling of raw HTML", () => {
       ),
     ).toBe(
       `<p><a href="http://host.com/with_(parentheses)/uri">Hello World</a></p>`,
+    )
+  })
+
+  test("Text with parentheses is unchanged in encoding", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] },
+    })
+    const { html2md } = getConverters(editor)
+
+    const html = `
+    <p>
+    Text with (parentheses) is unchanged out of anchor tag and
+    <a href="http://host.com/with_(parentheses)/uri">(inside) the anchor tag</a>
+    as well.
+    </p>
+    `
+    expect(html2md(encodeParentheses(html))).toBe(
+      `Text with (parentheses) is unchanged out of anchor tag and [(inside) the anchor tag](http://host.com/with_%28parentheses%29/uri) as well.`,
+    )
+  })
+
+  test("Text with parentheses is unchanged in decoding", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] },
+    })
+    const { md2html } = getConverters(editor)
+
+    const html = `<p>Text with (parentheses) is unchanged out of anchor tag and <a href="http://host.com/with_(parentheses)/uri">(inside) the anchor tag</a> as well.</p>`
+    expect(
+      decodeParentheses(
+        md2html(
+          `Text with (parentheses) is unchanged out of anchor tag and [(inside) the anchor tag](http://host.com/with_%28parentheses%29/uri) as well.`,
+        ),
+      ),
+    ).toBe(html)
+  })
+
+  test("URL with parentheses", async () => {
+    const editor = await getEditor("", {
+      "markdown-config": { allowedHtml: ["sup", "span"] },
+    })
+    const { md2html, html2md } = getConverters(editor)
+
+    const html = `<p>Text with (parentheses) is unchanged out of anchor tag and <a href="http://host.com/with_(parentheses)/uri">(inside) the anchor tag</a> as well.</p>`
+    expect(decodeParentheses(md2html(html2md(encodeParentheses(html))))).toBe(
+      html,
     )
   })
 })

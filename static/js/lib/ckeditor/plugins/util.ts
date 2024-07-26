@@ -384,10 +384,22 @@ export const escapeShortcodes = (text: string) => {
 /**
  *
  * Encode parentheses in URL which are escaped in markdown string,
- * `"\("` --> `"%28"` and `"\)"` --> `"%29"`
+ * `"("` --> `"%28"` and `")"` --> `"%29"`
  */
 export const encodeParentheses = (text: string) => {
-  return text.replace(/\\\(/g, "%28").replace(/\\\)/g, "%29")
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(text, "text/html")
+
+  // Find all anchor tags (<a>)
+  const anchorTags = Array.from(doc.querySelectorAll("a"))
+
+  // Loop through anchor tags and encode parentheses within their href
+  for (const anchor of anchorTags) {
+    anchor.href = anchor.href?.replace(/\(/g, "%28").replace(/\)/g, "%29")
+  }
+
+  // Return the modified HTML string
+  return doc.body.innerHTML
 }
 
 /**
@@ -396,5 +408,16 @@ export const encodeParentheses = (text: string) => {
  * `"%28"` --> `"("` and `"%29"` --> `")"`
  */
 export const decodeParentheses = (text: string) => {
-  return text.replace(/%28/g, "(").replace(/%29/g, ")")
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(text, "text/html")
+
+  // Find all anchor tags (<a>)
+  const anchorTags = Array.from(doc.querySelectorAll("a"))
+
+  // Loop through anchor tags and decode parentheses within their href
+  for (const anchor of anchorTags) {
+    anchor.href = anchor.href?.replace(/%28/g, "(").replace(/%29/g, ")")
+  }
+  // Return the modified HTML string
+  return doc.body.innerHTML
 }
