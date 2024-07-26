@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.122.0
+---------------
+
+- added change to restrict the parentheses encoding/decoding to anchor … (#2254)
+- fix(deps): update dependency django-storages to v1.14.4 (#2246)
+- fix(deps): update dependency boto3 to v1.34.143 (#2245)
+
 Version 0.121.0 (Released July 15, 2024)
 ---------------
 
