@@ -417,7 +417,7 @@ export default function MenuField(props: MenuFieldProps): JSX.Element {
       <Dialog
         open={!!itemToRemove}
         onCancel={closeRemoveDialog}
-        headerContent={"Remove Menu"}
+        headerContent={"Remove collaborator"}
         bodyContent={`Are you sure you want to remove "${itemToRemove?.text}"`}
         acceptText="Remove"
         onAccept={() => {
