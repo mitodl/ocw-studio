@@ -228,9 +228,9 @@ export default function RepeatableContentListing(props: {
               .toString()}
             title={item.title ?? ""}
             subtitle={`Updated ${formatUpdatedOn(item)}`}
-            {...(isExternalResource && {
-              menuOptions: [["Delete", startDelete(item)]],
-            })}
+            menuOptions={
+              isExternalResource ? [["Delete", startDelete(item)]] : undefined
+            }
           />
         ))}
       </StudioList>
