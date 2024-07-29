@@ -31,7 +31,6 @@ class Command(WebsiteFilterCommand):
         parser.add_argument(
             "--filename",
             dest="filename",
-            action="store_true",
             default="",
             help="If specified, only trigger processing files whose names are in this comma-delimited list",  # noqa: E501
         )
