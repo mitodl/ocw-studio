@@ -215,8 +215,64 @@ describe("RepeatableContentListing", () => {
     expect(spy).toHaveBeenCalledWith("?q=my-search-string")
   })
 
-  it("should delete a content item", async () => {
-    const contentItemToDelete = contentListingItems[0]
+  it("should delete an external resource", async () => {
+    const configItemExternal = makeRepeatableConfigItem("external-resource")
+    const externalContentListingItem = makeWebsiteContentListItem()
+    websiteContentDetailsLookup = {
+      [contentDetailKey({
+        name: website.name,
+        textId: externalContentListingItem.text_id,
+      })]: externalContentListingItem,
+    }
+    const externalApiResponse = {
+      results: [externalContentListingItem],
+      count: 1,
+      next: null,
+      previous: null,
+    }
+    const contentListingLookup = {
+      [contentListingKey({
+        name: website.name,
+        type: configItemExternal.name,
+        offset: 0,
+      })]: {
+        ...externalApiResponse,
+        results: externalApiResponse.results.map((item) => item.text_id),
+      },
+    }
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: website.name,
+        })
+        .query({ offset: 0, type: configItemExternal.name })
+        .toString(),
+      externalApiResponse,
+    )
+    render = helper.configureRenderer(
+      (props) => (
+        <WebsiteContext.Provider value={website}>
+          <RepeatableContentListing {...props} />
+        </WebsiteContext.Provider>
+      ),
+      { configItem: configItemExternal },
+      {
+        entities: {
+          websiteDetails: { [website.name]: website },
+          websiteContentListing: contentListingLookup,
+          websiteContentDetails: websiteContentDetailsLookup,
+        },
+        queries: {},
+      },
+    )
+    const contentItemToDelete = externalContentListingItem
+    const getStatusStub = helper.mockGetRequest(
+      siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString(),
+      { sync_status: "Complete" },
+    )
     const deleteContentStub = helper.mockDeleteRequest(
       siteApiContentDetailUrl
         .param({
@@ -225,13 +281,6 @@ describe("RepeatableContentListing", () => {
         })
         .toString(),
       {},
-    )
-    const getStatusStub = helper.mockGetRequest(
-      siteApiDetailUrl
-        .param({ name: website.name })
-        .query({ only_status: true })
-        .toString(),
-      { sync_status: "Complete" },
     )
     const { wrapper } = await render()
     wrapper.find(".transparent-button").at(0).simulate("click")
