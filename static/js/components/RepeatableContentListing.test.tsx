@@ -215,6 +215,52 @@ describe("RepeatableContentListing", () => {
     expect(spy).toHaveBeenCalledWith("?q=my-search-string")
   })
 
+  it("should delete a content item", async () => {
+    const contentItemToDelete = contentListingItems[0]
+    const deleteContentStub = helper.mockDeleteRequest(
+      siteApiContentDetailUrl
+        .param({
+          name: website.name,
+          textId: contentItemToDelete.text_id,
+        })
+        .toString(),
+      {},
+    )
+    const getStatusStub = helper.mockGetRequest(
+      siteApiDetailUrl
+        .param({ name: website.name })
+        .query({ only_status: true })
+        .toString(),
+      { sync_status: "Complete" },
+    )
+    const { wrapper } = await render()
+    wrapper.find(".transparent-button").at(0).simulate("click")
+    wrapper.update()
+    act(() => {
+      wrapper.find("button.dropdown-item").at(0).simulate("click")
+    })
+    wrapper.update()
+    let dialog = wrapper.find("Dialog")
+    expect(dialog.prop("open")).toBe(true)
+    expect(dialog.prop("bodyContent")).toContain(contentItemToDelete.title)
+
+    // Confirm the deletion in the dialog
+    await act(async () => {
+      dialog.find("ModalFooter").find("button").at(1).simulate("click")
+    })
+    wrapper.update()
+
+    // Assert the DELETE request was called
+    sinon.assert.calledOnce(deleteContentStub)
+
+    // Assert the GET request for website status was called
+    sinon.assert.calledOnce(getStatusStub)
+
+    // Assert the dialog is closed
+    dialog = wrapper.find("Dialog")
+    expect(dialog.prop("open")).toBe(false)
+  })
+
   it("should show each content item with edit links", async () => {
     const { wrapper } = await render()
 
@@ -474,50 +520,5 @@ describe("RepeatableContentListing", () => {
         name: website.name,
       }).pathname,
     ])
-  })
-  it("should delete a content item", async () => {
-    const contentItemToDelete = contentListingItems[0]
-    const deleteContentStub = helper.mockDeleteRequest(
-      siteApiContentDetailUrl
-        .param({
-          name: website.name,
-          textId: contentItemToDelete.text_id,
-        })
-        .toString(),
-      {},
-    )
-    const getStatusStub = helper.mockGetRequest(
-      siteApiDetailUrl
-        .param({ name: website.name })
-        .query({ only_status: true })
-        .toString(),
-      { sync_status: "Complete" },
-    )
-    const { wrapper } = await render()
-    wrapper.find(".transparent-button").at(0).simulate("click")
-    wrapper.update()
-    act(() => {
-      wrapper.find("button.dropdown-item").at(0).simulate("click")
-    })
-    wrapper.update()
-    let dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBe(true)
-    expect(dialog.prop("bodyContent")).toContain(contentItemToDelete.title)
-
-    // Confirm the deletion in the dialog
-    await act(async () => {
-      dialog.find("ModalFooter").find("button").at(1).simulate("click")
-    })
-    wrapper.update()
-
-    // Assert the DELETE request was called
-    sinon.assert.calledOnce(deleteContentStub)
-
-    // Assert the GET request for website status was called
-    sinon.assert.calledOnce(getStatusStub)
-
-    // Assert the dialog is closed
-    dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBe(false)
   })
 })
