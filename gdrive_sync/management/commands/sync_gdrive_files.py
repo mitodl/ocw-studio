@@ -57,14 +57,15 @@ class Command(WebsiteFilterCommand):
                         continue
 
                     try:
+                        # Add/Update Drivefile objects and perform necessary operations
                         process_file_result(gdrive_file, website)
 
-                        drive_file_id = process_drive_file.apply((gdrive_file["id"],))
+                        # Upload to S3 and transcoding operations if video
+                        process_drive_file.apply((gdrive_file["id"],))
 
-                        drive_file = DriveFile.objects.get(file_id=drive_file_id)
-
+                        # Get the related drive file and update status
+                        drive_file = DriveFile.objects.get(file_id=gdrive_file["id"])
                         drive_file.status = DriveFileStatus.COMPLETE
-
                         drive_file.save()
 
                     except:  # pylint:disable=bare-except  # noqa: E722
