@@ -228,7 +228,6 @@ export default function RepeatableContentListing(props: {
               .toString()}
             title={item.title ?? ""}
             subtitle={`Updated ${formatUpdatedOn(item)}`}
-            menuOptions={[["Delete", startDelete(item)]]}
             {...(isExternalResource && {
               menuOptions: [["Delete", startDelete(item)]],
             })}
