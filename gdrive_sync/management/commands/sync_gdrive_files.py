@@ -4,6 +4,8 @@ import logging
 
 from content_sync.api import get_sync_backend
 from gdrive_sync.api import process_file_result
+from gdrive_sync.constants import DriveFileStatus
+from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import _get_gdrive_files, process_drive_file
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
@@ -56,14 +58,21 @@ class Command(WebsiteFilterCommand):
 
                     try:
                         process_file_result(gdrive_file, website)
+
+                        drive_file_id = process_drive_file.apply((gdrive_file["id"],))
+
+                        drive_file = DriveFile.objects.get(file_id=drive_file_id)
+
+                        drive_file.status = DriveFileStatus.COMPLETE
+
+                        drive_file.save()
+
                     except:  # pylint:disable=bare-except  # noqa: E722
                         log.exception(
                             "Error processing GDrive file %s for %s",
                             gdrive_file["name"],
                             website.short_id,
                         )
-
-                    process_drive_file.delay(gdrive_file["id"])
 
             backend = get_sync_backend(website)
             backend.sync_all_content_to_backend()
