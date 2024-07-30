@@ -55,6 +55,12 @@ class Command(WebsiteFilterCommand):
                         continue
 
                     try:
+                        log.info(
+                            "Processing GDrive file %s for %s",
+                            gdrive_file["name"],
+                            website.short_id,
+                        )
+
                         # Add/Update Drivefile objects and perform necessary operations
                         process_file_result(gdrive_file, website)
 
