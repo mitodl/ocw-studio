@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.123.0
+Version 0.123.0 (Released July 30, 2024)
 ---------------
 
 - Always enable publishing (#2258)
