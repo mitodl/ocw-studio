@@ -216,16 +216,17 @@ describe("RepeatableContentListing", () => {
   })
 
   it("should delete an external resource", async () => {
-    const configItemExternal = makeRepeatableConfigItem("external-resource")
-    const externalContentListingItem = makeWebsiteContentListItem()
+    const externalResourceConfigItem =
+      makeRepeatableConfigItem("external-resource")
+    const externalContentItem = makeWebsiteContentListItem()
     websiteContentDetailsLookup = {
       [contentDetailKey({
         name: website.name,
-        textId: externalContentListingItem.text_id,
-      })]: externalContentListingItem,
+        textId: externalContentItem.text_id,
+      })]: externalContentItem,
     }
-    const externalApiResponse = {
-      results: [externalContentListingItem],
+    const externalResourceApiResponse = {
+      results: [externalContentItem],
       count: 1,
       next: null,
       previous: null,
@@ -233,11 +234,13 @@ describe("RepeatableContentListing", () => {
     const contentListingLookup = {
       [contentListingKey({
         name: website.name,
-        type: configItemExternal.name,
+        type: externalResourceConfigItem.name,
         offset: 0,
       })]: {
-        ...externalApiResponse,
-        results: externalApiResponse.results.map((item) => item.text_id),
+        ...externalResourceApiResponse,
+        results: externalResourceApiResponse.results.map(
+          (item) => item.text_id,
+        ),
       },
     }
     helper.mockGetRequest(
@@ -245,9 +248,9 @@ describe("RepeatableContentListing", () => {
         .param({
           name: website.name,
         })
-        .query({ offset: 0, type: configItemExternal.name })
+        .query({ offset: 0, type: externalResourceConfigItem.name })
         .toString(),
-      externalApiResponse,
+      externalResourceApiResponse,
     )
     render = helper.configureRenderer(
       (props) => (
@@ -255,7 +258,7 @@ describe("RepeatableContentListing", () => {
           <RepeatableContentListing {...props} />
         </WebsiteContext.Provider>
       ),
-      { configItem: configItemExternal },
+      { configItem: externalResourceConfigItem },
       {
         entities: {
           websiteDetails: { [website.name]: website },
@@ -265,7 +268,7 @@ describe("RepeatableContentListing", () => {
         queries: {},
       },
     )
-    const contentItemToDelete = externalContentListingItem
+    const contentItemToDelete = externalContentItem
     const getStatusStub = helper.mockGetRequest(
       siteApiDetailUrl
         .param({ name: website.name })
