@@ -123,7 +123,7 @@ const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
           )}
           <PublishForm
             onSubmit={handlePublish}
-            disabled={!publishingInfo.hasUnpublishedChanges}
+            disabled={false} //publishing is always enabled
             website={website}
             option={publishingEnv}
           />
