@@ -55,10 +55,8 @@ class Command(WebsiteFilterCommand):
                         continue
 
                     try:
-                        log.info(
-                            "Processing GDrive file %s for %s",
-                            gdrive_file["name"],
-                            website.short_id,
+                        self.stdout.write(
+                            f"Processing GDrive file {gdrive_file['name']} for {website.short_id}"  # noqa: E501
                         )
 
                         # Add/Update Drivefile objects and perform necessary operations
@@ -72,10 +70,8 @@ class Command(WebsiteFilterCommand):
                         create_gdrive_resource_content(drive_file)
 
                     except:  # pylint:disable=bare-except  # noqa: E722
-                        log.exception(
-                            "Error processing GDrive file %s for %s",
-                            gdrive_file["name"],
-                            website.short_id,
+                        self.stderr.write(
+                            f"Error processing GDrive file {gdrive_file['name']} for {website.short_id}"  # noqa: E501
                         )
 
             backend = get_sync_backend(website)
