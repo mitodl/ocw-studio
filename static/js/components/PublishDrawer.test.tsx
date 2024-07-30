@@ -186,12 +186,12 @@ describe("PublishDrawer", () => {
         expect(wrapper.find(".publish-option label").at(idx).text()).toBe(label)
       })
 
-      it("disables the button if there is no unpublished content", async () => {
+      it("publish button is enabled even with no unpublished content", async () => {
         website[unpublishedField] = false
         const { wrapper } = await render()
         await simulateClickPublish(wrapper, action)
         wrapper.update()
-        expect(wrapper.find(".btn-publish").prop("disabled")).toBe(true)
+        expect(wrapper.find(".btn-publish").prop("disabled")).toBe(false)
       })
 
       it("render only the preview button if user is not an admin", async () => {
