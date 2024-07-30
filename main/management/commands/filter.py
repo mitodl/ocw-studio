@@ -7,6 +7,7 @@ from django.db.models import Q
 
 from content_sync.constants import VERSION_DRAFT
 from content_sync.models import ContentSyncStateQuerySet
+from main.constants import IS_FILTER_REQUIRED
 from videos.models import VideoQuerySet
 from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
@@ -17,7 +18,7 @@ class WebsiteFilterCommand(BaseCommand):
     filter_list = None
     exclude_list = None
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser, is_filter_required=IS_FILTER_REQUIRED):
         parser.add_argument(
             "--filter-json",
             dest="filter_json",
@@ -29,6 +30,7 @@ class WebsiteFilterCommand(BaseCommand):
             "--filter",
             dest="filter",
             default="",
+            required=is_filter_required,
             help="If specified, only trigger website pipelines whose names are in this comma-delimited list",  # noqa: E501
         )
         parser.add_argument(

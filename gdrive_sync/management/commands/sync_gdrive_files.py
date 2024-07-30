@@ -18,7 +18,6 @@ class Command(WebsiteFilterCommand):
 
     Usage Examples
 
-    ./manage.py sync_gdrive_files
     ./manage.py sync_gdrive_files --filter course-id
     ./manage.py sync_gdrive_files --filter course-id --filename filename1
     """
@@ -26,7 +25,8 @@ class Command(WebsiteFilterCommand):
     help = __doc__
 
     def add_arguments(self, parser):
-        super().add_arguments(parser)
+        super().add_arguments(parser, is_filter_required=True)
+
         parser.add_argument(
             "--filename",
             dest="filename",
