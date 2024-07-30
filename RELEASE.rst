@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.122.0
+Version 0.122.0 (Released July 30, 2024)
 ---------------
 
 - added change to restrict the parentheses encoding/decoding to anchor … (#2254)
