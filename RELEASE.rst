@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.124.0
+---------------
+
+- Management command for gdrive file sync (#2257)
+
 Version 0.123.0 (Released July 30, 2024)
 ---------------
 
