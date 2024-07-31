@@ -28,6 +28,7 @@ from websites.api import (
     update_website_status,
 )
 from websites.constants import (
+    CONTENT_TYPE_WEBSITE,
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUSES_FINAL,
@@ -542,7 +543,7 @@ def update_website_in_root_website(website, version):
             filename=website.short_id,
             defaults={
                 "title": website.title,
-                "type": "website",
+                "type": CONTENT_TYPE_WEBSITE,
                 "is_page_content": True,
                 "metadata": get_website_in_root_website_metadata(website, version),
             },
