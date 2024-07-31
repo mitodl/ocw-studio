@@ -491,7 +491,7 @@ def update_websites_in_root_website():
                 bulk_update.queue(
                     WebsiteContent(
                         website=root_website,
-                        type="website",
+                        type=CONTENT_TYPE_WEBSITE,
                         title=website.title,
                         dirpath=WEBSITE_LISTING_DIRPATH,
                         filename=website.short_id,
@@ -500,7 +500,7 @@ def update_websites_in_root_website():
                     )
                 )
         website_content = WebsiteContent.objects.filter(
-            website=root_website, type="website"
+            website=root_website, type=CONTENT_TYPE_WEBSITE
         )
         with ContentSyncState.objects.bulk_update_or_create_context(
             ["content", "current_checksum"], match_field="content", batch_size=100
