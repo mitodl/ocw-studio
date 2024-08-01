@@ -500,6 +500,22 @@ export const createWebsiteContentMutation = (
   },
 })
 
+export const deleteWebsiteContentMutation = (
+  websiteName: string,
+  contentId: string,
+): QueryConfig => {
+  return {
+    queryKey: "deleteWebsiteContentMutation",
+    url: siteApiContentDetailUrl
+      .param({ name: websiteName, textId: contentId })
+      .toString(),
+    options: {
+      method: "DELETE",
+      ...DEFAULT_POST_OPTIONS,
+    },
+  }
+}
+
 export const syncWebsiteContentMutation = (siteName: string): QueryConfig => ({
   url: siteApiContentSyncGDriveUrl.param({ name: siteName }).toString(),
   options: {
