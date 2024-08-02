@@ -3,7 +3,9 @@ const path = require("path")
 const BundleTracker = require("webpack-bundle-tracker")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const { config } = require(path.resolve("./webpack.config.shared.js"))
-const CKEditorWebpackPlugin = require("@ckeditor/ckeditor5-dev-webpack-plugin")
+const {
+  CKEditorTranslationsPlugin,
+} = require("@ckeditor/ckeditor5-dev-translations")
 
 const prodConfig = Object.assign({}, config)
 prodConfig.module.rules = [
@@ -48,7 +50,7 @@ module.exports = Object.assign(prodConfig, {
     new MiniCssExtractPlugin({
       filename: "[name]-[contenthash].css",
     }),
-    new CKEditorWebpackPlugin({
+    new CKEditorTranslationsPlugin({
       language: "en",
       addMainLanguageTranslationsToAllAssets: true,
     }),
