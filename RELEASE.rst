@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.124.0
+---------------
+
+- Remove and migrate dependency ckeditor5-dev-webpack-plugin (#2216)
+- Umar/4903 external resources false broken (#2249)
+- Allow external resources to be deleted (#2255)
+- Management command for gdrive file sync (#2257)
+
 Version 0.123.0 (Released July 30, 2024)
 ---------------
 
