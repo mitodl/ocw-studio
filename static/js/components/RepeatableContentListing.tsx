@@ -44,9 +44,9 @@ export default function RepeatableContentListing(props: {
   const store = useStore()
   const { configItem } = props
   const isResource = configItem.name === "resource"
-  const isExternalResource = configItem.name === "external-resource"
-  const isInstructor = configItem.name === "instructor"
-  const isDeletable = isExternalResource || isInstructor
+  const isDeletable = ["external-resource", "instructor"].includes(
+    configItem.name,
+  )
   const website = useWebsite()
 
   const getListingParams = useCallback(
