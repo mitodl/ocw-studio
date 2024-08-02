@@ -45,6 +45,8 @@ export default function RepeatableContentListing(props: {
   const { configItem } = props
   const isResource = configItem.name === "resource"
   const isExternalResource = configItem.name === "external-resource"
+  const isInstructor = configItem.name === "instructor"
+  const isDeletable = isExternalResource || isInstructor
   const website = useWebsite()
 
   const getListingParams = useCallback(
@@ -229,7 +231,7 @@ export default function RepeatableContentListing(props: {
             title={item.title ?? ""}
             subtitle={`Updated ${formatUpdatedOn(item)}`}
             menuOptions={
-              isExternalResource ? [["Delete", startDelete(item)]] : undefined
+              isDeletable ? [["Delete", startDelete(item)]] : undefined
             }
           />
         ))}
