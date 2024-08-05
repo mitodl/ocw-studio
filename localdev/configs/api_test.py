@@ -37,7 +37,6 @@ def test_equivalent_example_configs(settings):
         with open(os.path.join(dirpath, filename)) as f:  # noqa: PTH118, PTH123
             raw_yaml_config = f.read().strip()
         parsed_config = yaml.load(raw_yaml_config, Loader=yaml.SafeLoader)
-        #
         js_config_path = os.path.join(  # noqa: PTH118
             settings.BASE_DIR, JS_CONFIG_DIRECTORY, f"{base_filename}.json"
         )

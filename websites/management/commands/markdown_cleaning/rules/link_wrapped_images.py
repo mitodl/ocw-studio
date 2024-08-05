@@ -138,7 +138,7 @@ class LinkWrappedImagesRule(PyparsingRule):
             fragment=fragment,
         )
 
-    def get_replacement(  # noqa: PLR0913
+    def get_replacement(
         self,
         page_content: WebsiteContent,
         linked_content: WebsiteContent,
