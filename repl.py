@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
         sys.exit(
             check_call(
-                [  # noqa: S603
+                [
                     os.path.join(base_dir, "manage.py"),  # noqa: PTH118
                     "shell",
                     *sys.argv[1:],
