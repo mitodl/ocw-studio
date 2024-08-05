@@ -27,7 +27,7 @@
     "@ckeditor/ckeditor5-markdown-gfm": "^35.4.0",
     "@ckeditor/ckeditor5-media-embed": "^35.4.0",
     "@ckeditor/ckeditor5-paragraph": "^35.4.0",
-    "@ckeditor/ckeditor5-react": "^3.0.3",
+    "@ckeditor/ckeditor5-react": "^8.0.0",
     "@ckeditor/ckeditor5-table": "^35.4.0",
     "@ckeditor/ckeditor5-theme-lark": "^35.4.0",
     "@ckeditor/ckeditor5-upload": "^35.4.0",

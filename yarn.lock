@@ -643,14 +643,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-react@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "@ckeditor/ckeditor5-react@npm:3.0.3"
+"@ckeditor/ckeditor5-react@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@ckeditor/ckeditor5-react@npm:8.0.0"
   dependencies:
     prop-types: ^15.7.2
   peerDependencies:
-    react: ^16.13.1 || ^17.0.0
-  checksum: afa61dc78fd3d6e96d12cd960e7e6bf12a2a12ffc7128bee2da93b73436c435f685e68c883638e7fda42dfba1ef00a1629e6423e52813760bdd7e7c8bbb83667
+    ckeditor5: ">=42.0.0 || ^0.0.0-nightly"
+    react: ^16.13.1 || ^17.0.0 || ^18.0.0
+  checksum: aa50949add8b3327094d8729b8a5a3cdac2b7d6596d702978b1d8fb85fc5c55246f97779021c0f89c604202ae30404d9b60265ea01c7bcabb019306712879708
   languageName: node
   linkType: hard
 
@@ -10934,7 +10935,7 @@ __metadata:
     "@ckeditor/ckeditor5-markdown-gfm": ^35.4.0
     "@ckeditor/ckeditor5-media-embed": ^35.4.0
     "@ckeditor/ckeditor5-paragraph": ^35.4.0
-    "@ckeditor/ckeditor5-react": ^3.0.3
+    "@ckeditor/ckeditor5-react": ^8.0.0
     "@ckeditor/ckeditor5-table": ^35.4.0
     "@ckeditor/ckeditor5-theme-lark": ^35.4.0
     "@ckeditor/ckeditor5-upload": ^35.4.0
