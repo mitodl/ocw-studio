@@ -33,6 +33,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     OcwStudioWebhookCurlStep,
+    SlackAlertStep,
 )
 from content_sync.utils import (
     get_cli_endpoint_url,
@@ -212,6 +213,11 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             ),
         ]
         job = Job(name=self._remove_unpublished_sites_job_identifier, serial=True)
+
+        job.on_failure = SlackAlertStep(
+            alert_type="failed",
+            text="Failed to remove unpublished site. Check the pipeline logs for more details.",  # noqa: E501
+        )
 
         job.plan = tasks
         base.__init__(resource_types=resource_types, jobs=[job], **kwargs)
