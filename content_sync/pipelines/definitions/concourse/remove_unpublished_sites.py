@@ -13,6 +13,7 @@ from ol_concourse.lib.models.pipeline import (
     TaskConfig,
     TaskStep,
 )
+from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -88,6 +89,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             HttpResourceType(),
             S3IamResourceType(),
         ]
+        resources = []
         unpublish_failed_webhook_across_step = OcwStudioWebhookCurlStep(
             site_name="((.:site.name))",
             data={"version": VERSION_LIVE, "status": "errored", "unpublished": True},
@@ -213,11 +215,14 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             ),
         ]
         job = Job(name=self._remove_unpublished_sites_job_identifier, serial=True)
-
-        job.on_failure = SlackAlertStep(
-            alert_type="failed",
-            text="Failed to remove unpublished site. Check the pipeline logs for more details.",  # noqa: E501
-        )
-
+        if not is_dev():
+            resource_types.append(slack_notification_resource())
+            resources.append(self._slack_resource)
+            job.on_failure = SlackAlertStep(
+                alert_type="failed",
+                text="Failed to remove unpublished site. Check the pipeline logs for more details.",  # noqa: E501
+            )
         job.plan = tasks
-        base.__init__(resource_types=resource_types, jobs=[job], **kwargs)
+        base.__init__(
+            resource_types=resource_types, resources=resources, jobs=[job], **kwargs
+        )
