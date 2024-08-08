@@ -28,6 +28,7 @@ from websites.api import (
     update_website_status,
 )
 from websites.constants import (
+    CONTENT_TYPE_WEBSITE,
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUSES_FINAL,
@@ -490,7 +491,7 @@ def update_websites_in_root_website():
                 bulk_update.queue(
                     WebsiteContent(
                         website=root_website,
-                        type="website",
+                        type=CONTENT_TYPE_WEBSITE,
                         title=website.title,
                         dirpath=WEBSITE_LISTING_DIRPATH,
                         filename=website.short_id,
@@ -499,7 +500,7 @@ def update_websites_in_root_website():
                     )
                 )
         website_content = WebsiteContent.objects.filter(
-            website=root_website, type="website"
+            website=root_website, type=CONTENT_TYPE_WEBSITE
         )
         with ContentSyncState.objects.bulk_update_or_create_context(
             ["content", "current_checksum"], match_field="content", batch_size=100
@@ -542,7 +543,7 @@ def update_website_in_root_website(website, version):
             filename=website.short_id,
             defaults={
                 "title": website.title,
-                "type": "website",
+                "type": CONTENT_TYPE_WEBSITE,
                 "is_page_content": True,
                 "metadata": get_website_in_root_website_metadata(website, version),
             },

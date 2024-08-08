@@ -1,8 +1,12 @@
-import React, { MouseEvent as ReactMouseEvent, useCallback } from "react"
+import React, {
+  MouseEvent as ReactMouseEvent,
+  useCallback,
+  useState,
+} from "react"
 import { Link, Route, useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
-import { requestAsync } from "redux-query"
+import { QueryConfig, requestAsync } from "redux-query"
 import useInterval from "@use-it/interval"
 import { isNil } from "ramda"
 
@@ -17,6 +21,7 @@ import {
   websiteContentListingRequest,
   WebsiteContentListingResponse,
   websiteStatusRequest,
+  deleteWebsiteContentMutation,
 } from "../query-configs/websites"
 import { getWebsiteContentListingCursor } from "../selectors/websites"
 
@@ -31,6 +36,7 @@ import { singular } from "pluralize"
 import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
+import Dialog from "./Dialog"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -38,6 +44,7 @@ export default function RepeatableContentListing(props: {
   const store = useStore()
   const { configItem } = props
   const isResource = configItem.name === "resource"
+  const isExternalResource = configItem.name === "external-resource"
   const website = useWebsite()
 
   const getListingParams = useCallback(
@@ -124,6 +131,41 @@ export default function RepeatableContentListing(props: {
 
   const pages = usePagination(listing.count ?? 0)
 
+  const [deleteModal, setDeleteModal] = useState(false)
+  const [selectedContent, setSelectedContent] =
+    useState<WebsiteContentListItem | null>(null)
+
+  const closeDeleteModal = useCallback(() => setDeleteModal(false), [])
+  const openDeleteModal = useCallback(() => setDeleteModal(true), [])
+
+  const startDelete =
+    (content: WebsiteContentListItem) =>
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault()
+      setSelectedContent(content)
+      openDeleteModal()
+    }
+
+  const [deleteQueryState, deleteContent] = useMutation((): QueryConfig => {
+    return deleteWebsiteContentMutation(
+      website.name,
+      selectedContent?.text_id as string,
+    )
+  })
+
+  const onDelete = async () => {
+    if (deleteQueryState.isPending) {
+      return
+    }
+    const response = await deleteContent()
+    if (!response) {
+      return
+    } else if (fetchWebsiteContentListing) {
+      fetchWebsiteContentListing()
+      await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+    }
+  }
+
   return (
     <>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
@@ -186,6 +228,9 @@ export default function RepeatableContentListing(props: {
               .toString()}
             title={item.title ?? ""}
             subtitle={`Updated ${formatUpdatedOn(item)}`}
+            menuOptions={
+              isExternalResource ? [["Delete", startDelete(item)]] : undefined
+            }
           />
         ))}
       </StudioList>
@@ -205,6 +250,21 @@ export default function RepeatableContentListing(props: {
           fetchWebsiteContentListing={fetchWebsiteContentListing}
         />
       </Route>
+      <Dialog
+        open={deleteModal}
+        onCancel={closeDeleteModal}
+        headerContent={`Remove ${labelSingular}`}
+        bodyContent={`Are you sure you want to remove ${
+          selectedContent && selectedContent.title
+            ? selectedContent.title
+            : "this content"
+        }?`}
+        acceptText="Delete"
+        onAccept={() => {
+          onDelete()
+          closeDeleteModal()
+        }}
+      />
     </>
   )
 }

@@ -11,7 +11,7 @@ on:
 jobs:
   # runs if CI workflow was successful OR if this was manually triggered
   on-success:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
@@ -27,7 +27,7 @@ jobs:
         branch: release-candidate
   # runs ONLY on a failure of the CI workflow
   on-failure:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'failure'

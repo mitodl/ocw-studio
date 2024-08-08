@@ -264,7 +264,7 @@ export const newInitialValues = (
       field.name,
       field.widget === WidgetVariant.Object
         ? newInitialValues(field.fields, website)
-        : field.default ?? defaultForField(field, website),
+        : (field.default ?? defaultForField(field, website)),
     ]),
   )
 

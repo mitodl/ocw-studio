@@ -384,7 +384,7 @@ export default function RelationField(props: Props): JSX.Element {
           cacheUniques={[focusedWebsite]}
           value={selectedIds.map((id) => {
             const content = contentMap.get(id)
-            const title = content ? content.title ?? id : id
+            const title = content ? (content.title ?? id) : id
 
             return {
               id,
