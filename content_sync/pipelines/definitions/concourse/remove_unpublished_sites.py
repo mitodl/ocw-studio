@@ -74,6 +74,8 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     def __init__(self, **kwargs):
         base = super()
         base.__init__(**kwargs)
+        namespace = ".:site."
+        short_id = f"(({namespace}short_id))"
         common_pipeline_vars = get_common_pipeline_vars()
         web_bucket = common_pipeline_vars["publish_bucket_name"]
         offline_bucket = common_pipeline_vars["offline_publish_bucket_name"]
@@ -220,7 +222,13 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             resources.append(self._slack_resource)
             job.on_failure = SlackAlertStep(
                 alert_type="failed",
-                text="Failed to remove unpublished site. Check the pipeline logs for more details.",  # noqa: E501
+                text="Failed to remove unpublished site {short_id}. Check the pipeline logs for more details.",  # noqa: E501
+            )
+            job.on_abort = SlackAlertStep(
+                alert_type="aborted",
+                text=f"""
+                User aborted the operation for site {short_id}.
+                """,
             )
         job.plan = tasks
         base.__init__(
