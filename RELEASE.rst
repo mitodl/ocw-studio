@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.124.0
+Version 0.124.0 (Released August 12, 2024)
 ---------------
 
 - chore(deps): update dependency tzinfo to v2 (#2247)
