@@ -76,7 +76,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
         base.__init__(**kwargs)
         namespace = ".:site."
         short_id = f"(({namespace}short_id))"
-        site_name = (f"(({namespace}site_name))",)
+        site_name = f"(({namespace}site_name))"
         common_pipeline_vars = get_common_pipeline_vars()
         web_bucket = common_pipeline_vars["publish_bucket_name"]
         offline_bucket = common_pipeline_vars["offline_publish_bucket_name"]
