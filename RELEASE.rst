@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.125.0
+Version 0.125.0 (Released August 20, 2024)
 ---------------
 
 - Add SlackAlertStep in remove_unpublished_sites pipeline (#2271)
