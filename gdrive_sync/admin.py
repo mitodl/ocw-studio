@@ -6,6 +6,7 @@ from mitol.common.admin import TimestampedModelAdmin
 from gdrive_sync.models import DriveApiQueryTracker, DriveFile
 
 
+@admin.register(DriveApiQueryTracker)
 class DriveApiQueryTrackerAdmin(TimestampedModelAdmin):
     """DriveApiQueryTracker Admin"""
 
@@ -17,6 +18,7 @@ class DriveApiQueryTrackerAdmin(TimestampedModelAdmin):
     )
 
 
+@admin.register(DriveFile)
 class DriveFileAdmin(TimestampedModelAdmin):
     """DriveFile Admin"""
 
@@ -45,7 +47,3 @@ class DriveFileAdmin(TimestampedModelAdmin):
         "created_time",
         "download_link",
     ]
-
-
-admin.site.register(DriveFile, DriveFileAdmin)
-admin.site.register(DriveApiQueryTracker, DriveApiQueryTrackerAdmin)

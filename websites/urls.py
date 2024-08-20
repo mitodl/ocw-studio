@@ -1,6 +1,6 @@
 """websites URL Configuration"""
 
-from django.urls import include, re_path
+from django.urls import include, path
 from rest_framework_extensions.routers import ExtendedSimpleRouter as SimpleRouter
 
 from websites import views
@@ -33,5 +33,5 @@ router.register(
 )
 
 urlpatterns = [
-    re_path(r"^api/", include(router.urls)),
+    path("api/", include(router.urls)),
 ]
