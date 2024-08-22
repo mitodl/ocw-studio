@@ -21,8 +21,7 @@ export default class CustomLinkUI extends Plugin {
   }
 
   init() {
-    const linkUI = this.editor.plugins.get(LinkUI)
-    const formView = linkUI.formView
+    const formView = this.editor.plugins.get(LinkUI).formView
 
     formView.delegate("submit").to(this, "saveLink")
 
@@ -31,7 +30,19 @@ export default class CustomLinkUI extends Plugin {
 
       // Access the href value from formView
       const href = formView.urlInputView.fieldView.element.value
-      const title = this.editor.model.selection.getSelectedText()
+
+      const ranges = this.editor.model.document.selection.getRanges()
+      let title = ""
+      for (const range of ranges) {
+        // Iterate over all items in the range
+        for (const item of range.getItems()) {
+          // Check if the item is a text node or text proxy
+          if (item.is("text") || item.is("textProxy")) {
+            title += item.data
+          }
+        }
+      }
+      console.log(title)
 
       customLinkHook(this.editor, href, siteName, title)
     })
@@ -72,5 +83,11 @@ async function customLinkHook(
     .then((data) => {
       // Handle successful API response
       resourceLink.createResourceLink(data.text_id, data.title)
+
+      const actionsView = editor.plugins.get(LinkUI).actionsView
+
+      actionsView.editButtonView.label = ""
+      actionsView.editButtonView.isEnabled = false
+      actionsView.editButtonView.isVisible = false
     })
 }
