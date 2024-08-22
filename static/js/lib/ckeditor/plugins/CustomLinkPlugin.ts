@@ -50,7 +50,7 @@ async function customLinkHook(
 
   const payload = {
     type: "external-resource",
-    title: title,
+    title: title || linkValue,
     metadata: {
       external_url: linkValue,
       license: "https://en.wikipedia.org/wiki/All_rights_reserved",
