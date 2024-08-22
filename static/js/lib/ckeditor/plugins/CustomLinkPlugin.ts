@@ -22,19 +22,17 @@ export default class CustomLinkUI extends Plugin {
 
   init() {
     const linkUI = this.editor.plugins.get(LinkUI)
-    // Extend the LinkUI actions to trigger custom logic on save
     const formView = linkUI.formView
 
     formView.delegate("submit").to(this, "saveLink")
+
     this.on("saveLink", () => {
-      console.log(linkUI)
       const siteName = formView.element.baseURI.split("/")[4]
 
       // Access the href value from formView
       const href = formView.urlInputView.fieldView.element.value
-      const title = this.editor.model.selected.getSelectedText().toString()
+      const title = this.editor.model.selection.getSelectedText()
 
-      // Trigger your custom hook
       customLinkHook(this.editor, href, siteName, title)
     })
 
@@ -49,8 +47,6 @@ async function customLinkHook(
   title: string,
 ) {
   const resourceLink = editor.plugins.get(ResourceLink)
-
-  console.log("Creating a new resource link for ", siteName, title)
 
   const payload = {
     type: "external-resource",
@@ -75,7 +71,6 @@ async function customLinkHook(
     .then((response) => response.json())
     .then((data) => {
       // Handle successful API response
-      console.log("Response: ", data)
       resourceLink.createResourceLink(data.text_id, data.title)
     })
 }
