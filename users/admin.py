@@ -8,6 +8,7 @@ from mitol.common.admin import TimestampedModelAdmin
 from users.models import User
 
 
+@admin.register(User)
 class UserAdmin(ContribUserAdmin, TimestampedModelAdmin):
     """Admin views for user"""
 
@@ -50,6 +51,3 @@ class UserAdmin(ContribUserAdmin, TimestampedModelAdmin):
     search_fields = ("username", "name", "email")
     ordering = ("email",)
     readonly_fields = ("last_login",)
-
-
-admin.site.register(User, UserAdmin)
