@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.125.1
+---------------
+
+- Refactoring Django code (#2277)
+- updated user agent header for external resource checking (#2280)
+
 Version 0.125.0 (Released August 20, 2024)
 ---------------
 
