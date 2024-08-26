@@ -23,7 +23,20 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
     log.debug("Making a HEAD request for url: %s", url)
 
     try:
-        response = requests.head(url, allow_redirects=True, timeout=30)
+        response = requests.head(
+            url,
+            allow_redirects=True,
+            timeout=30,
+            headers={
+                "Accept": "*/*",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/114.0.0.0 "
+                    "Safari/537.36"
+                ),
+            },
+        )
     except Exception as ex:
         log.debug(ex)
         raise CheckFailedError from ex
