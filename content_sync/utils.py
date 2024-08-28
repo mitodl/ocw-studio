@@ -158,7 +158,7 @@ def get_ocw_studio_api_url():
     return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
 
 
-def get_publishable_sites(version: str, *, is_offline: bool):
+def get_publishable_sites(version: str, *, is_offline: bool = False):
     """
     Get a QuerySet of Website objects that are eligible for publishing
 
