@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.125.1
+Version 0.125.1 (Released August 28, 2024)
 ---------------
 
 - Refactoring Django code (#2277)
