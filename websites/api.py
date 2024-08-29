@@ -339,7 +339,7 @@ def update_website_status(
         }
         if status in PUBLISH_STATUSES_FINAL:
             if status == PUBLISH_STATUS_SUCCEEDED:
-                update_kwargs["draft_publish_date"] = update_time
+                update_kwargs["draft_build_date"] = update_time
                 update_kwargs["draft_last_published_by"] = None
             else:
                 # Allow user to retry
@@ -363,7 +363,7 @@ def update_website_status(
             if status == PUBLISH_STATUS_SUCCEEDED:
                 if website.first_published_to_production is None:
                     update_kwargs["first_published_to_production"] = update_time
-                update_kwargs["publish_date"] = update_time
+                update_kwargs["live_build_date"] = update_time
                 update_kwargs["live_last_published_by"] = None
             else:
                 # Allow user to retry
