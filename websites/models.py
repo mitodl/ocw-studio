@@ -144,6 +144,8 @@ class Website(TimestampedModel):
         on_delete=models.SET_NULL,
         related_name="unpublisher",
     )
+    draft_build_date = models.DateTimeField(null=True, blank=True)
+    live_build_date = models.DateTimeField(null=True, blank=True)
 
     """
     URL path values should include the starter config prefix (ie "courses/") so that sites
