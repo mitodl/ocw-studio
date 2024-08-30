@@ -209,7 +209,7 @@ def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
 @pytest.mark.parametrize("trigger", [True, False])
-@pytest.mark.parametrize("publish_date", [None, now_in_utc()])
+@pytest.mark.parametrize("live_build_date", [None, now_in_utc()])
 def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments  # noqa: PLR0913
     settings,
     mocker,
@@ -220,11 +220,11 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     version,
     status,
     trigger,
-    publish_date,
+    live_build_date,
 ):
     """Verify that the appropriate backend calls are made by the publish_website function"""
     settings.PREPUBLISH_ACTIONS = prepublish_actions
-    website = WebsiteFactory.create(publish_date=publish_date)
+    website = WebsiteFactory.create(live_build_date=live_build_date)
     setattr(website, f"{version}_publish_status", status)
     setattr(website, f"has_unpublished_{version}", status == PUBLISH_STATUS_NOT_STARTED)
     if status:
@@ -253,7 +253,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         mock_api_funcs.mock_get_pipeline.assert_called_once_with(
             website, api=pipeline_api
         )
-        assert pipeline.upsert_pipeline.call_count == (0 if publish_date else 1)
+        assert pipeline.upsert_pipeline.call_count == (0 if live_build_date else 1)
         pipeline.trigger_pipeline_build.assert_called_once_with(version)
         pipeline.unpause_pipeline.assert_called_once_with(version)
         assert getattr(website, f"latest_build_id_{version}") == build_id
