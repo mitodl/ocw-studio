@@ -472,9 +472,7 @@ def test_update_unpublished_website_status(status, version):
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
 
-    publish_date_field = (
-        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
-    )
+    publish_date_field = f"{version}_build_date"
     if status == PUBLISH_STATUS_SUCCEEDED:
         assert getattr(website, publish_date_field) == now
         if version == VERSION_LIVE:
