@@ -20,7 +20,7 @@ import Dropdown from "../components/Dropdown"
 import UnpublishDialog from "../components/UnpublishDialog"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 import { usePermission } from "../hooks/permissions"
-import { Permission } from "../constants"
+import { Permission, PublishStatus } from "../constants"
 
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
@@ -95,8 +95,13 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {site.publish_date && !site.unpublished ? (
+                {site.live_publish_status === PublishStatus.Pending ||
+                site.live_publish_status === PublishStatus.Started ? (
+                  <div className="text-warning">In Progress...</div>
+                ) : site.publish_date && !site.unpublished ? (
                   <div className="text-success">Published</div>
+                ) : site.unpublished ? (
+                  <div className="text-danger">Unpublished</div>
                 ) : (
                   <div className="text-dark">Draft</div>
                 )}
