@@ -2,7 +2,7 @@ import * as React from "react"
 
 import { PublishStatus } from "../constants"
 
-const publishStatusMessage = (status: PublishStatus): string => {
+export const publishStatusMessage = (status: PublishStatus): string => {
   switch (status) {
     case PublishStatus.NotStarted:
       return "Not started"

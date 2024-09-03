@@ -4,6 +4,7 @@ import { useRequest } from "redux-query-react"
 import { Link } from "react-router-dom"
 
 import PaginationControls from "../components/PaginationControls"
+import { publishStatusMessage } from "../components/PublishStatusIndicator"
 
 import {
   WebsiteListingParams,
@@ -28,6 +29,23 @@ function getListingParams(search: string): WebsiteListingParams {
   const searchString = qsParams.get("q")
 
   return searchString ? { offset, search: searchString } : { offset }
+}
+
+export const publishStatusIndicatorClass = (status: PublishStatus): string => {
+  switch (status) {
+    case PublishStatus.NotStarted:
+      return "text-secondary"
+    case PublishStatus.Pending:
+    case PublishStatus.Started:
+      return "text-warning"
+    case PublishStatus.Aborted:
+    case PublishStatus.Errored:
+      return "text-danger"
+    case PublishStatus.Success:
+      return "text-success"
+    default:
+      return ""
+  }
 }
 
 export default function SitesDashboard(): JSX.Element {
@@ -95,15 +113,20 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {site.live_publish_status === PublishStatus.Pending ||
-                site.live_publish_status === PublishStatus.Started ? (
-                  <div className="text-warning">In Progress...</div>
-                ) : site.publish_date && !site.unpublished ? (
-                  <div className="text-success">Published</div>
-                ) : site.unpublished ? (
-                  <div className="text-danger">Unpublished</div>
-                ) : (
+                {!site.publish_date ? (
                   <div className="text-dark">Draft</div>
+                ) : site.unpublished ? (
+                  <div className="text-dark">Unpublished</div>
+                ) : PublishStatus.Success === site.live_publish_status ? (
+                  <div className="text-success">Published</div>
+                ) : (
+                  <div
+                    className={publishStatusIndicatorClass(
+                      site.live_publish_status,
+                    )}
+                  >
+                    {publishStatusMessage(site.live_publish_status)}
+                  </div>
                 )}
                 <Dropdown
                   website={{
@@ -115,7 +138,12 @@ export default function SitesDashboard(): JSX.Element {
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
                     site.publish_date && !site.unpublished
-                      ? websiteDropdownMenuList
+                      ? [
+                          PublishStatus.Errored,
+                          PublishStatus.Aborted,
+                          PublishStatus.Success,
+                        ].includes(site.live_publish_status) &&
+                        websiteDropdownMenuList
                       : websiteDropdownMenuList.filter(
                           (item) => item.id !== "1",
                         )
