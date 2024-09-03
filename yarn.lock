@@ -6883,6 +6883,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fflate@npm:^0.4.8":
+  version: 0.4.8
+  resolution: "fflate@npm:0.4.8"
+  checksum: 29d8cbe44d5e7f53e7f5a160ac7f9cc025480c7b3bfd85c5f898cbe20dfa2dad4732daa534982664bf30b35896a90af44ea33ede5d94c5ffd1b8b0c0a0a56ca2
+  languageName: node
+  linkType: hard
+
 "figures@npm:^1.3.5":
   version: 1.7.0
   resolution: "figures@npm:1.7.0"
@@ -11007,6 +11014,7 @@ __metadata:
     mini-css-extract-plugin: ^0.10.0
     pluralize: ^8.0.0
     postcss-loader: ^6.1.1
+    posthog-js: ^1.160.1
     prettier: ^3.0.3
     prettier-plugin-django-alpine: ^1.1.1
     prop-types: ^15.7.2
@@ -11995,6 +12003,24 @@ __metadata:
     picocolors: ^1.0.1
     source-map-js: ^1.2.0
   checksum: afd0cc49d2169dcd96c0f17e155c5d75de048956306a3017f1cfa6a7d66b941592245bed20f7796ceeccb2d8967749b623be2c7b010a74f67ea10fb5bdb8ba28
+  languageName: node
+  linkType: hard
+
+"posthog-js@npm:^1.160.1":
+  version: 1.160.1
+  resolution: "posthog-js@npm:1.160.1"
+  dependencies:
+    fflate: ^0.4.8
+    preact: ^10.19.3
+    web-vitals: ^4.0.1
+  checksum: c27e7a8cc3403c4980e00069859e827b76a1e0e5aeed9a5b1f136069d3f46a7a3db57f60357b5a44a0d0abc8b1c1dfaf4ba5e4280a96d8faa007260ce04ff76a
+  languageName: node
+  linkType: hard
+
+"preact@npm:^10.19.3":
+  version: 10.23.2
+  resolution: "preact@npm:10.23.2"
+  checksum: 1df6a9d72480c42b4985c1344941184422374c48af0f1e9df0de8d1c3f1f85c996d3a9e2850c8256abe39352d8fd174dd95e2f4177433022661baabfb6547f2c
   languageName: node
   linkType: hard
 
@@ -15427,6 +15453,13 @@ __metadata:
     glob-to-regexp: ^0.4.1
     graceful-fs: ^4.1.2
   checksum: 5b0179348655dcdf19cac7cb4ff923fdc024d630650c0bf6bec8899cf47c60e19d4f810a88dba692ed0e7f684cf0fcffea86efdbf6c35d81f031e328043b7fab
+  languageName: node
+  linkType: hard
+
+"web-vitals@npm:^4.0.1":
+  version: 4.2.3
+  resolution: "web-vitals@npm:4.2.3"
+  checksum: 6d916af95a93a7b12ef99e21fe6f6f914c23d6499e1389ceb197505e620e89faf7deaff1f2a3854a21e384d5fc9740a9cbfa7bba97902e184ddb95f54e3928c1
   languageName: node
   linkType: hard
 

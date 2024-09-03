@@ -447,6 +447,23 @@
     "PGBOUNCER_MIN_POOL_SIZE": {
       "value": "5"
     },
+    "POSTHOG_API_HOST": {
+      "description": "API host for PostHog",
+      "required": false
+    },
+    "POSTHOG_ENABLED": {
+      "description": "Whether PostHog is enabled",
+      "required": false
+    },
+    "POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS": {
+      "description": "Timeout (ms) for PostHog feature flag requests",
+      "required": false
+    },
+
+    "POSTHOG_PROJECT_API_KEY": {
+      "description": "API token for communicating with PostHog",
+      "required": false
+    },
     "PREPUBLISH_ACTIONS": {
       "description": "Actions to perform before publish",
       "required": false
