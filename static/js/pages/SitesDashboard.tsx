@@ -31,7 +31,9 @@ function getListingParams(search: string): WebsiteListingParams {
   return searchString ? { offset, search: searchString } : { offset }
 }
 
-export const publishStatusIndicatorClass = (status: PublishStatus): string => {
+export const publishStatusIndicatorClass = (
+  status: PublishStatus | null,
+): string => {
   switch (status) {
     case PublishStatus.NotStarted:
       return "text-secondary"
@@ -137,13 +139,15 @@ export default function SitesDashboard(): JSX.Element {
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
-                    site.publish_date && !site.unpublished
-                      ? [
-                          PublishStatus.Errored,
-                          PublishStatus.Aborted,
-                          PublishStatus.Success,
-                        ].includes(site.live_publish_status) &&
-                        websiteDropdownMenuList
+                    site.publish_date &&
+                    !site.unpublished &&
+                    site.live_publish_status !== null &&
+                    [
+                      PublishStatus.Errored,
+                      PublishStatus.Aborted,
+                      PublishStatus.Success,
+                    ].includes(site.live_publish_status)
+                      ? websiteDropdownMenuList
                       : websiteDropdownMenuList.filter(
                           (item) => item.id !== "1",
                         )
