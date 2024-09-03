@@ -1,6 +1,27 @@
 import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 import { SiteFormValue } from "../types/forms"
+import posthog from "posthog-js"
+
+if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
+  const environment = SETTINGS.environment
+  if (environment === "dev") {
+    posthog.debug()
+  }
+  posthog.init(SETTINGS.posthog_project_api_key, {
+    api_host: SETTINGS.posthog_api_host,
+    autocapture: false,
+    capture_pageview: false,
+    capture_pageleave: false,
+    cross_subdomain_cookie: false,
+    persistence: "localStorage+cookie",
+    loaded: function (posthog) {
+      posthog.setPersonPropertiesForFlags({
+        environment: environment,
+      })
+    },
+  })
+}
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
   statusCode >= 400
