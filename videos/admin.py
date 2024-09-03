@@ -27,6 +27,7 @@ class VideoJobsInline(admin.TabularInline):
         return False
 
 
+@admin.register(Video)
 class VideoAdmin(TimestampedModelAdmin):
     """Video Admin"""
 
@@ -48,6 +49,3 @@ class VideoAdmin(TimestampedModelAdmin):
     )
     list_filter = ("status",)
     ordering = ("-updated_on",)
-
-
-admin.site.register(Video, VideoAdmin)

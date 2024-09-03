@@ -13,6 +13,7 @@ from websites.config_schema.api import validate_parsed_site_config
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
+@admin.register(Website)
 class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
     """Website Admin"""
 
@@ -38,6 +39,7 @@ class WebsiteAdmin(TimestampedModelAdmin, GuardedModelAdmin):
     ordering = ("-created_on",)
 
 
+@admin.register(WebsiteContent)
 class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
     """WebsiteContent Admin"""
 
@@ -68,12 +70,13 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
     def get_queryset(self, request):  # noqa: ARG002
         return self.model.objects.get_queryset().select_related("website", "parent")
 
+    @admin.display(
+        description="Website",
+        ordering="website__title",
+    )
     def get_website_title(self, obj):
         """Returns the related Website title"""  # noqa: D401
         return obj.website.title
-
-    get_website_title.short_description = "Website"
-    get_website_title.admin_order_field = "website__title"
 
 
 class WebsiteStarterForm(forms.ModelForm):
@@ -100,6 +103,7 @@ class WebsiteStarterForm(forms.ModelForm):
         return config
 
 
+@admin.register(WebsiteStarter)
 class WebsiteStarterAdmin(TimestampedModelAdmin):
     """WebsiteStarter Admin"""
 
@@ -110,8 +114,3 @@ class WebsiteStarterAdmin(TimestampedModelAdmin):
     list_display = ("id", "name", "status", "source", "commit")
     list_filter = ("source",)
     search_fields = ("name", "path")
-
-
-admin.site.register(Website, WebsiteAdmin)
-admin.site.register(WebsiteContent, WebsiteContentAdmin)
-admin.site.register(WebsiteStarter, WebsiteStarterAdmin)

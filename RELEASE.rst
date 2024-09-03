@@ -1,6 +1,31 @@
 Release Notes
 =============
 
+Version 0.125.1 (Released August 28, 2024)
+---------------
+
+- Refactoring Django code (#2277)
+- updated user agent header for external resource checking (#2280)
+
+Version 0.125.0 (Released August 20, 2024)
+---------------
+
+- Add SlackAlertStep in remove_unpublished_sites pipeline (#2271)
+
+Version 0.124.0 (Released August 12, 2024)
+---------------
+
+- chore(deps): update dependency tzinfo to v2 (#2247)
+- chore(deps): update dependency ubuntu to v22 (#2251)
+- fix(deps): update dependency sentry-sdk to v2 [security] (#2248)
+- fix(deps): update dependency social-auth-app-django to v5.4.1 [security] (#2179)
+- fix(deps): update dependency django to v4.2.15 [security] (#2273)
+- Umar/4499 false warnings of missing metadata and has unpublished changes (#2263)
+- Remove and migrate dependency ckeditor5-dev-webpack-plugin (#2216)
+- Umar/4903 external resources false broken (#2249)
+- Allow external resources to be deleted (#2255)
+- Management command for gdrive file sync (#2257)
+
 Version 0.123.0 (Released July 30, 2024)
 ---------------
 

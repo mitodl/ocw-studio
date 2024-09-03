@@ -15,11 +15,10 @@ Including another URLconf
 """
 
 from django.conf import settings
-from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.views import LogoutView
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 
 from main.views import public_index, restricted_index
 
@@ -27,9 +26,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("robots.txt", include("robots.urls")),
     path("", include("social_django.urls", namespace="social")),
-    re_path(r"^hijack/", include("hijack.urls", namespace="hijack")),
+    path("hijack/", include("hijack.urls", namespace="hijack")),
     # Example view
-    re_path("^$", public_index, name="main-index"),
+    path("", public_index, name="main-index"),
     path("login/", public_index, name="login"),
     path("privacy-policy/", public_index, name="privacy-policy"),
     re_path(r"^sites/.*$", restricted_index, name="sites"),
