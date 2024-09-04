@@ -2,6 +2,7 @@ import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
   useState,
+  useEffect,
 } from "react"
 import { Link, Route, useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
@@ -37,6 +38,7 @@ import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
 import Dialog from "./Dialog"
+import posthog from "posthog-js"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -44,10 +46,24 @@ export default function RepeatableContentListing(props: {
   const store = useStore()
   const { configItem } = props
   const isResource = configItem.name === "resource"
-  const isDeletable = ["external-resource", "instructor"].includes(
-    configItem.name,
-  )
+
   const website = useWebsite()
+
+  const [isContentDeletable, setIsContentDeletable] = useState(false)
+
+  useEffect(() => {
+    const checkFeatureFlag = async () => {
+      const flagEnabled =
+        (await posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE")) ??
+        false
+      setIsContentDeletable(flagEnabled)
+    }
+    checkFeatureFlag()
+  }, [])
+
+  const isDeletable =
+    isContentDeletable &&
+    ["external-resource", "instructor"].includes(configItem.name)
 
   const getListingParams = useCallback(
     (search: string): ContentListingParams => {
