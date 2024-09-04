@@ -54,8 +54,7 @@ export default function RepeatableContentListing(props: {
   useEffect(() => {
     const checkFeatureFlag = async () => {
       const flagEnabled =
-        (await posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE")) ??
-        false
+        posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE") ?? false
       setIsContentDeletable(flagEnabled)
     }
     checkFeatureFlag()

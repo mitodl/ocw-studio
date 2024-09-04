@@ -55,6 +55,11 @@ jest.mock("@use-it/interval", () => ({
   default: jest.fn(),
 }))
 
+//mock the OCW_STUDIO_CONTENT_DELETABLE feature flag as set to true
+jest.mock("posthog-js", () => ({
+  isFeatureEnabled: jest.fn().mockReturnValue(true),
+}))
+
 describe("RepeatableContentListing", () => {
   let helper: IntegrationTestHelper,
     render: TestRenderer,
