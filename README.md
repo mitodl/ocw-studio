@@ -28,6 +28,8 @@ OCW Studio manages deployments for OCW courses.
 - [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding)
 - [Enabling 3Play integration](#enabling-3play-integration)
 - [Enabling Open Catalog Search Webhooks](#enabling-open-catalog-search-webhooks)
+- [Checking External Resource Availability](#checking-external-resource-availability)
+- [Enabling PostHog Integration](#enabling-posthog-integration)
 
 # Initial Setup
 
@@ -502,3 +504,22 @@ OPEN_CATALOG_WEBHOOK_KEY=secret key that will be used to confirm that webhook re
 # Checking External Resource Availability
 
 This feature sets up a cron job to validate external resource urls. The workflow for checking external resource availability is described [here](/external_resources/README.md).
+
+# Enabling PostHog Integration
+
+PostHog is used for dynamically testing and rolling out features that may not be ready for permanent deployment as part of OCW Studio. For example, we use the feature flag `OCW_STUDIO_CONTENT_DELETABLE` to control whether content can be deleted.
+
+These variables should be set in the `.env` file for PostHog integration:
+
+```
+POSTHOG_ENABLED=True
+POSTHOG_API_HOST=https://app.posthog.com
+POSTHOG_PROJECT_API_KEY=<obtain from the PostHog dashboard>
+```
+
+These variables can be optionally set:
+
+```
+POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS=<3000 by default>
+POSTHOG_MAX_RETRIES=<3 by default>
+```
