@@ -459,7 +459,6 @@
       "description": "Timeout (ms) for PostHog feature flag requests",
       "required": false
     },
-
     "POSTHOG_PROJECT_API_KEY": {
       "description": "API token for communicating with PostHog",
       "required": false

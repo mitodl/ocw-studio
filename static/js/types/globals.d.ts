@@ -12,8 +12,8 @@ interface SETTINGS {
   gdrive_enabled: boolean;
   features_default: boolean;
   features: {[key: string]: boolean};
-  posthog_project_api_key: string?;
   posthog_api_host: string?;
+  posthog_project_api_key: string?;
   /**
    * Settings.user does exist, but leaving it untyped to help encourage using
    * `store.user` instead.
