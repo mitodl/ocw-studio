@@ -7,7 +7,7 @@ readme = "README.md"
 version = "0.0.0"
 
 [tool.poetry.dependencies]
-python = "3.12.2"
+python = "3.12.5"
 
 beautifulsoup4 = "^4.12.2"
 boto3 = "1.34.143"
