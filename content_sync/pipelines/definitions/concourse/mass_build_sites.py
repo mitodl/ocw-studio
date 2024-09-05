@@ -173,7 +173,7 @@ class MassBuildSitesResources(list[Resource]):
             )
         )
         self.append(SlackAlertResource())
-        if not is_dev():
+        if not is_dev() and config.version == "live":
             self.extend(
                 [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
             )
@@ -315,6 +315,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     SitePipelineOnlineTasks(
                         pipeline_vars=site_pipeline_vars,
                         fastly_var=config.version,
+                        pipeline_name=config.version,
                         destructive_sync=False,
                         filter_videos=True,
                     )
@@ -322,7 +323,9 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             else:
                 site_build_tasks.extend(
                     SitePipelineOfflineTasks(
-                        pipeline_vars=site_pipeline_vars, fastly_var=config.version
+                        pipeline_vars=site_pipeline_vars,
+                        fastly_var=config.version,
+                        pipeline_name=config.version,
                     )
                 )
             if batch_number > 1:
