@@ -599,6 +599,8 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_offline_params["version"]
                 == config.vars["pipeline_name"]
             )
+        elif branch_vars["pipeline_name"] == VERSION_DRAFT:
+            assert "webhook_key" not in open_discussions_webhook_step_online_params
     expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
