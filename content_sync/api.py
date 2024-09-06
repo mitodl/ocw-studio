@@ -192,6 +192,7 @@ def publish_website(  # pylint: disable=too-many-arguments
             f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
             f"{version}_publish_status_updated_on": now_in_utc(),
             f"has_unpublished_{version}": False,
+            f"{version}_build_date": now_in_utc(),
             site_publish_date: now_in_utc(),
             **update_kwargs,
         }
