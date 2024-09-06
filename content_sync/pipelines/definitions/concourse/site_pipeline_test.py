@@ -412,7 +412,9 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         open_discussions_webhook_step_online_params = json.loads(
             clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
         )
-        if branch_vars["pipeline_name"] == VERSION_LIVE:
+        if branch_vars["pipeline_name"] == VERSION_DRAFT:
+            assert "webhook_key" not in open_discussions_webhook_step_online_params
+        elif branch_vars["pipeline_name"] == VERSION_LIVE:
             assert (
                 open_discussions_webhook_step_online_params["webhook_key"]
                 == settings.OPEN_CATALOG_WEBHOOK_KEY
@@ -425,8 +427,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_online_params["version"]
                 == config.vars["pipeline_name"]
             )
-        elif branch_vars["pipeline_name"] == VERSION_DRAFT:
-            assert "webhook_key" not in open_discussions_webhook_step_online_params
     assert (
         online_site_tasks[-1]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
@@ -583,10 +583,12 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
         ]["try"]["do"]
-        if branch_vars["pipeline_name"] == VERSION_LIVE:
-            open_discussions_webhook_step_offline_params = json.loads(
-                clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
-            )
+        open_discussions_webhook_step_offline_params = json.loads(
+            clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
+        )
+        if branch_vars["pipeline_name"] == VERSION_DRAFT:
+            assert "webhook_key" not in open_discussions_webhook_step_offline_params
+        elif branch_vars["pipeline_name"] == VERSION_LIVE:
             assert (
                 open_discussions_webhook_step_offline_params["webhook_key"]
                 == settings.OPEN_CATALOG_WEBHOOK_KEY
@@ -599,8 +601,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_offline_params["version"]
                 == config.vars["pipeline_name"]
             )
-        elif branch_vars["pipeline_name"] == VERSION_DRAFT:
-            assert "webhook_key" not in open_discussions_webhook_step_offline_params
     expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
