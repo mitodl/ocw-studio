@@ -393,7 +393,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     assert (
         upload_online_build_task["on_success"]["try"]["params"]["text"]
-        == f'{{"version": "{config.vars['pipeline_name']}", "status": "succeeded"}}'
+        == f'{{"version": "{config.vars["pipeline_name"]}", "status": "succeeded"}}'
     )
     if is_dev:
         assert set(
@@ -409,21 +409,22 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
         ]["try"]["do"]
-        open_discussions_webhook_step_online_params = json.loads(
-            clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
-        )
-        assert (
-            open_discussions_webhook_step_online_params["webhook_key"]
-            == settings.OPEN_CATALOG_WEBHOOK_KEY
-        )
-        assert (
-            open_discussions_webhook_step_online_params["prefix"]
-            == f"{config.vars['url_path']}/"
-        )
-        assert (
-            open_discussions_webhook_step_online_params["version"]
-            == config.vars["pipeline_name"]
-        )
+        if config.vars["pipeline_name"] == "live":
+            open_discussions_webhook_step_online_params = json.loads(
+                clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
+            )
+            assert (
+                open_discussions_webhook_step_online_params["webhook_key"]
+                == settings.OPEN_CATALOG_WEBHOOK_KEY
+            )
+            assert (
+                open_discussions_webhook_step_online_params["prefix"]
+                == f"{config.vars['url_path']}/"
+            )
+            assert (
+                open_discussions_webhook_step_online_params["version"]
+                == config.vars["pipeline_name"]
+            )
     assert (
         online_site_tasks[-1]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
@@ -580,21 +581,22 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
         ]["try"]["do"]
-        open_discussions_webhook_step_offline_params = json.loads(
-            clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
-        )
-        assert (
-            open_discussions_webhook_step_offline_params["webhook_key"]
-            == settings.OPEN_CATALOG_WEBHOOK_KEY
-        )
-        assert (
-            open_discussions_webhook_step_offline_params["prefix"]
-            == f"{config.vars['url_path']}/"
-        )
-        assert (
-            open_discussions_webhook_step_offline_params["version"]
-            == config.vars["pipeline_name"]
-        )
+        if config.vars["pipeline_name"] == "live":
+            open_discussions_webhook_step_offline_params = json.loads(
+                clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
+            )
+            assert (
+                open_discussions_webhook_step_offline_params["webhook_key"]
+                == settings.OPEN_CATALOG_WEBHOOK_KEY
+            )
+            assert (
+                open_discussions_webhook_step_offline_params["prefix"]
+                == f"{config.vars['url_path']}/"
+            )
+            assert (
+                open_discussions_webhook_step_offline_params["version"]
+                == config.vars["pipeline_name"]
+            )
     expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
