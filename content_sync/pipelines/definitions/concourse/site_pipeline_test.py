@@ -409,10 +409,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
         ]["try"]["do"]
+        open_discussions_webhook_step_online_params = json.loads(
+            clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
+        )
         if branch_vars["pipeline_name"] == VERSION_LIVE:
-            open_discussions_webhook_step_online_params = json.loads(
-                clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
-            )
             assert (
                 open_discussions_webhook_step_online_params["webhook_key"]
                 == settings.OPEN_CATALOG_WEBHOOK_KEY
@@ -425,6 +425,8 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_online_params["version"]
                 == config.vars["pipeline_name"]
             )
+        elif branch_vars["pipeline_name"] == VERSION_DRAFT:
+            assert "webhook_key" not in open_discussions_webhook_step_online_params
     assert (
         online_site_tasks[-1]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
