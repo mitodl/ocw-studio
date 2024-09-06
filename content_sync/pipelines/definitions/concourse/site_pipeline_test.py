@@ -409,7 +409,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
         ]["try"]["do"]
-        if config.vars["pipeline_name"] == "live":
+        if branch_vars["pipeline_name"] == VERSION_LIVE:
             open_discussions_webhook_step_online_params = json.loads(
                 clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
             )
@@ -581,7 +581,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
         ]["try"]["do"]
-        if config.vars["pipeline_name"] == "live":
+        if branch_vars["pipeline_name"] == VERSION_LIVE:
             open_discussions_webhook_step_offline_params = json.loads(
                 clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
             )
