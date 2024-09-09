@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.125.2
+---------------
+
+- Update to Python 3.12.5 (#2294)
+- fix(deps): update dependency boto3 to v1.35.12 (#2293)
+- chore(deps): update node.js to v20.17.0 (#2292)
+- fix(deps): update dependency webpack to v5.94.0 [security] (#2289)
+- fix(deps): update dependency social-auth-app-django to v5.4.2 (#2285)
+
 Version 0.125.1 (Released August 28, 2024)
 ---------------
 
