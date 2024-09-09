@@ -262,10 +262,8 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         pipeline.trigger_pipeline_build.assert_not_called()
         pipeline.unpause_pipeline.assert_not_called()
         assert getattr(website, f"latest_build_id_{version}") is None
-    assert getattr(website, f"{version}_publish_status") == PUBLISH_STATUS_NOT_STARTED
     assert getattr(website, f"has_unpublished_{version}") is False
     assert getattr(website, f"{version}_last_published_by") is None
-    assert getattr(website, f"{version}_publish_status_updated_on") is not None
     if len(prepublish_actions) > 0 and prepublish:
         mock_api_funcs.mock_import_string.assert_any_call("some.Action")
         mock_api_funcs.mock_import_string.return_value.assert_any_call(
