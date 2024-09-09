@@ -21,6 +21,7 @@ OCW Studio manages deployments for OCW courses.
 - [Enabling Concourse-CI integration](#enabling-concourse-ci-integration)
   - [Running a Local Concourse Docker Container](#running-a-local-concourse-docker-container)
   - [End to end testing of site pipelines](#end-to-end-testing-of-site-pipelines)
+  - [Publish And Build Dates](#publish-and-build-dates)
 - [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
 - [Video Workflow](#video-workflow)
 - [Enabling YouTube integration](#enabling-youtube-integration)
@@ -408,6 +409,11 @@ You should now have a pipeline in Concourse called `e2e-test-pipeline`. Run this
 - Build the test sites
 - Deploy them to Minio
 - Run Playwright tests against the output
+
+### Publish And Build Dates
+
+- Publishing site from Studio for live and draft versions, updates the website properties `(live_build_date, publish_date)` and `(draft_build_date, draft_publish_date)` respectively.
+- Mass build for live and draft versions only updates the website properties `live_build_date` and `draft_build_date` respectively.
 
 # Running OCW Studio on Apple Silicon
 
