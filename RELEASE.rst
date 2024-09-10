@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.126.0
+Version 0.126.0 (Released September 10, 2024)
 ---------------
 
 - Only send Learn webhook requests for live sites to update search index (#2295)
