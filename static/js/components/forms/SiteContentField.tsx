@@ -30,6 +30,7 @@ export default function SiteContentField({
   return (
     <div className="form-group">
       <label htmlFor={field.name}>{field.label}</label>
+      {field.help && <div className="help-text">{field.help}</div>}
       <Field
         as={component}
         name={field.name}
@@ -37,7 +38,6 @@ export default function SiteContentField({
         onChange={onChange}
         {...extraProps}
       />
-      {field.help && <span className="help-text">{field.help}</span>}
       <ErrorMessage name={field.name} component={FormError} />
     </div>
   )
