@@ -228,6 +228,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
             SitePipelineOnlineTasks(
                 pipeline_vars=site_pipeline_vars,
                 fastly_var="test",
+                pipeline_name=VERSION_LIVE,
                 skip_cache_clear=is_dev(),
                 skip_search_index_update=True,
             )

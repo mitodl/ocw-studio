@@ -313,7 +313,7 @@ class SitePipelineResources(list[Resource]):
                 SlackAlertResource(),
             ]
         )
-        if not is_dev():
+        if not is_dev() and config.values["pipeline_name"] == "live":
             self.extend(
                 [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
             )
@@ -459,6 +459,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
         fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
         destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
         filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
         skip_cache_clear(bool): (Optional) A boolean override for skipping the CDN cache clear step
@@ -469,6 +470,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         self,
         pipeline_vars: dict,
         fastly_var: str,
+        pipeline_name: str,
         *,
         destructive_sync: bool = True,
         filter_videos: bool = False,
@@ -586,7 +588,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             instance_vars=pipeline_vars["instance_vars"],
         )
         clear_cdn_cache_online_on_success_steps = []
-        if not skip_search_index_update:
+        if not skip_search_index_update and pipeline_name == "live":
             clear_cdn_cache_online_on_success_steps.extend(
                 [
                     *[
@@ -626,9 +628,10 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
         fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
     """  # noqa: E501
 
-    def __init__(self, pipeline_vars: dict, fastly_var: str):
+    def __init__(self, pipeline_vars: dict, fastly_var: str, pipeline_name: str):
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars
         )
@@ -777,23 +780,27 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
         )
-        clear_cdn_cache_offline_step.on_success = TryStep(
-            try_=DoStep(
-                do=[
-                    *[
-                        OpenCatalogWebhookStep(
-                            site_url=pipeline_vars["url_path"],
-                            pipeline_name=pipeline_vars["pipeline_name"],
-                            open_catalog_url=open_catalog_url,
-                        )
-                        for open_catalog_url in settings.OPEN_CATALOG_URLS
-                    ],
-                    OcwStudioWebhookStep(
+        clear_cdn_cache_offline_on_success_steps = []
+
+        if pipeline_name == "live":
+            clear_cdn_cache_offline_on_success_steps.extend(
+                [
+                    OpenCatalogWebhookStep(
+                        site_url=pipeline_vars["url_path"],
                         pipeline_name=pipeline_vars["pipeline_name"],
-                        status="succeeded",
-                    ),
+                        open_catalog_url=open_catalog_url,
+                    )
+                    for open_catalog_url in settings.OPEN_CATALOG_URLS
                 ]
             )
+        clear_cdn_cache_offline_on_success_steps.append(
+            OcwStudioWebhookStep(
+                pipeline_name=pipeline_vars["pipeline_name"],
+                status="succeeded",
+            )
+        )
+        clear_cdn_cache_offline_step.on_success = TryStep(
+            try_=DoStep(do=clear_cdn_cache_offline_on_success_steps)
         )
         self.extend(
             [
@@ -916,6 +923,7 @@ class SitePipelineDefinition(Pipeline):
         online_tasks = SitePipelineOnlineTasks(
             pipeline_vars=config.vars,
             fastly_var=config.pipeline_name,
+            pipeline_name=config.pipeline_name,
             skip_cache_clear=skip_cache_clear,
         )
         for task in online_tasks:
@@ -943,7 +951,9 @@ class SitePipelineDefinition(Pipeline):
         steps.append(FilterWebpackArtifactsStep(web_bucket=config.vars["web_bucket"]))
         steps.extend(
             SitePipelineOfflineTasks(
-                pipeline_vars=config.vars, fastly_var=config.pipeline_name
+                pipeline_vars=config.vars,
+                fastly_var=config.pipeline_name,
+                pipeline_name=config.pipeline_name,
             )
         )
         return Job(
