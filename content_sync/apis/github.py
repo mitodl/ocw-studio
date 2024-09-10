@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import requests
 import yaml
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -153,8 +152,7 @@ def get_token():
     if settings.GITHUB_APP_ID and settings.GITHUB_APP_PRIVATE_KEY:
         try:
             private_key = (
-                default_backend()
-                .load_pem_private_key(
+                serialization.load_pem_private_key(
                     settings.GITHUB_APP_PRIVATE_KEY,
                     None,
                     False,  # noqa: FBT003
