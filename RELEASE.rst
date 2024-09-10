@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.126.1
+---------------
+
+- Revert "fix(deps): update python to v3.12.6 (#2162)" (#2301)
+- Use label instead of name for Min and Max error in Studio (#2283)
+- fix(deps): update python to v3.12.6 (#2162)
+
 Version 0.126.0 (Released September 10, 2024)
 ---------------
 
