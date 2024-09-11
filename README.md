@@ -509,7 +509,7 @@ This feature sets up a cron job to validate external resource urls. The workflow
 
 PostHog is used for dynamically testing and rolling out features that may not be ready for permanent deployment as part of OCW Studio. For example, we use the feature flag `OCW_STUDIO_CONTENT_DELETABLE` to control whether content can be deleted.
 
-These variables should be set in the `.env` file for PostHog integration:
+The following variables should be set in the `.env` file for PostHog integration:
 
 ```
 POSTHOG_ENABLED=True
@@ -517,7 +517,7 @@ POSTHOG_API_HOST=https://app.posthog.com
 POSTHOG_PROJECT_API_KEY=<obtain from the PostHog dashboard>
 ```
 
-These variables can be optionally set:
+The following variables can be optionally set to configure PostHog requests:
 
 ```
 POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS=<3000 by default>
