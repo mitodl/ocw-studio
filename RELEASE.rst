@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.127.0
+---------------
+
+- fix(deps): update dependency express to v4.20.0 [security] (#2303)
+- Add PostHog Integration and Make Instructors Deletable (#2291)
+
 Version 0.126.1 (Released September 11, 2024)
 ---------------
 
