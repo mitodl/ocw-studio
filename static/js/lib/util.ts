@@ -21,6 +21,7 @@ if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
       })
     },
   })
+  posthog.identify(SETTINGS.user.email)
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
