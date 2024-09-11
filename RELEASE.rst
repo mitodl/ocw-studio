@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.126.1
+Version 0.126.1 (Released September 11, 2024)
 ---------------
 
 - Revert "fix(deps): update python to v3.12.6 (#2162)" (#2301)
