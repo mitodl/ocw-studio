@@ -21,6 +21,7 @@ if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
       })
     },
   })
+  // @ts-expect-error: SETTINGS.user is intentionally untyped
   posthog.identify(SETTINGS.user.email)
 }
 
