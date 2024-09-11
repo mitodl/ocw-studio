@@ -37,7 +37,7 @@ const minMax = (
   if (field.min) {
     schema = schema.min(
       field.min,
-      `${field.name} must have at least ${field.min} ${
+      `${field.label} must have at least ${field.min} ${
         field.min === 1 ? "entry" : "entries"
       }.`,
     )
@@ -45,7 +45,7 @@ const minMax = (
   if (field.max) {
     schema = schema.max(
       field.max,
-      `${field.name} may have at most ${field.max} entries.`,
+      `${field.label} may have at most ${field.max} entries.`,
     )
   }
   return schema
