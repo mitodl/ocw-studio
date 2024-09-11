@@ -1235,3 +1235,33 @@ ENV_NAME = get_string(
     description="Name of environment from Heroku or other deployment",
     required=False,
 )
+POSTHOG_API_HOST = get_string(
+    name="POSTHOG_API_HOST",
+    default=None,
+    description="API host for PostHog",
+    required=False,
+)
+POSTHOG_ENABLED = get_bool(
+    name="POSTHOG_ENABLED",
+    default=False,
+    description="Whether PostHog is enabled",
+    required=False,
+)
+POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS = get_int(
+    name="POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS",
+    default=3000,
+    description="Timeout (ms) for PostHog feature flag requests",
+    required=False,
+)
+POSTHOG_MAX_RETRIES = get_int(
+    name="POSTHOG_MAX_RETRIES",
+    default=3,
+    description="Number of times requests to PostHog are retried if failed",
+    required=False,
+)
+POSTHOG_PROJECT_API_KEY = get_string(
+    name="POSTHOG_PROJECT_API_KEY",
+    default=None,
+    description="API token for communicating with PostHog",
+    required=False,
+)

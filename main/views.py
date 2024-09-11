@@ -26,6 +26,8 @@ def _index(request):
         "gdrive_enabled": is_gdrive_enabled(),
         "features": settings.FEATURES,
         "features_default": settings.FEATURES_DEFAULT,
+        "posthog_api_host": settings.POSTHOG_API_HOST,
+        "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
     }
 
     user = request.user
