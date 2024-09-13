@@ -145,7 +145,6 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }`,
       },
     }
-
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLinkUI)
       FullEditorConfig.plugins.push(CustomLinkUI)

@@ -42,11 +42,8 @@ export default class CustomLinkUI extends Plugin {
           }
         }
       }
-      console.log(title)
-
       customLinkHook(this.editor, href, siteName, title)
     })
-
     console.log("CustomLinkUI Plugin is initialized")
   }
 }

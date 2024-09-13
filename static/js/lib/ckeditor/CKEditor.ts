@@ -29,7 +29,6 @@ import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 import LegacyShortcodes from "./plugins/LegacyShortcodes"
-import CustomLinkUI from "./plugins/CustomLinkUI"
 
 /**
  * Programming languages we support in CKEditor code blocks
@@ -74,7 +73,6 @@ export const FullEditorConfig = {
     ImageStylePlugin,
     ImageToolbarPlugin,
     LinkPlugin,
-    CustomLinkUI,
     ListPlugin,
     ParagraphPlugin,
     TablePlugin,
