@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import { Editor } from "@ckeditor/ckeditor5-core"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
@@ -27,6 +27,8 @@ import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
+import { checkFeatureFlag } from "../../lib/util"
+import CustomLinkUI from "../../lib/ckeditor/plugins/CustomLinkUI"
 
 export interface Props {
   value?: string
@@ -109,6 +111,15 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     [setResourcePickerMode, setIsResourcePickerOpen],
   )
 
+  const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
+
+  useEffect(() => {
+    checkFeatureFlag(
+      "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
+      setIsCustomLinkUIEnabled,
+    )
+  }, [])
+
   const editorConfig = useMemo(() => {
     const toolbarItemsFilter = (item: string): boolean => {
       if (item === ADD_RESOURCE_LINK) {
@@ -133,6 +144,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           }).pathname
         }`,
       },
+    }
+
+    if (isCustomLinkUIEnabled) {
+      MinimalEditorConfig.plugins.push(CustomLinkUI)
+      FullEditorConfig.plugins.push(CustomLinkUI)
     }
 
     if (minimal) {
