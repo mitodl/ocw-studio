@@ -1,8 +1,8 @@
 import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
-  useEffect,
   useState,
+  useEffect,
 } from "react"
 import { Link, Route, useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
@@ -38,7 +38,7 @@ import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
 import Dialog from "./Dialog"
-import { checkFeatureFlag } from "../lib/util"
+import posthog from "posthog-js"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -52,8 +52,14 @@ export default function RepeatableContentListing(props: {
   const [isContentDeletable, setIsContentDeletable] = useState(false)
 
   useEffect(() => {
-    checkFeatureFlag("OCW_STUDIO_CONTENT_DELETABLE", setIsContentDeletable)
+    const checkFeatureFlag = async () => {
+      const flagEnabled =
+        posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE") ?? false
+      setIsContentDeletable(flagEnabled)
+    }
+    checkFeatureFlag()
   }, [])
+
   const isDeletable =
     isContentDeletable &&
     ["external-resource", "instructor"].includes(configItem.name)
