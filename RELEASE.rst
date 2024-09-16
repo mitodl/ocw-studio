@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.127.0
+Version 0.127.0 (Released September 16, 2024)
 ---------------
 
 - Fix PostHog identify if user is not logged in (#2306)
