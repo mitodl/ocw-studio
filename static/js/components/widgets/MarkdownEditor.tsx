@@ -53,6 +53,15 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
 
+  const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
+
+  useEffect(() => {
+    checkFeatureFlag(
+      "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
+      setIsCustomLinkUIEnabled,
+    )
+  }, [])
+
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
     editor.current = editorInstance
@@ -110,15 +119,6 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     },
     [setResourcePickerMode, setIsResourcePickerOpen],
   )
-
-  const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
-
-  useEffect(() => {
-    checkFeatureFlag(
-      "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
-      setIsCustomLinkUIEnabled,
-    )
-  }, [])
 
   const editorConfig = useMemo(() => {
     const toolbarItemsFilter = (item: string): boolean => {
@@ -191,6 +191,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     embed,
     allowedHtml,
     website.name,
+    isCustomLinkUIEnabled,
   ])
 
   const onChangeCB = useCallback(
