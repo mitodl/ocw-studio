@@ -10,16 +10,14 @@ from websites.models import WebsiteContent
 class ExternalResourceState(TimestampedModel):
     """Data model for tracking the state of external resources"""
 
-    class Status(models.TextChoices):
-        """Choices for External Resource Status"""
+    class WaybackStatus(models.TextChoices):
+        """Choices for Wayback Machine Status"""
 
-        UNCHECKED = "unchecked", "Unchecked or pending check"
-        VALID = "valid", "Either URL or backup URL is valid"
-        BROKEN = "broken", "Both URL and backup URL are broken"
-        CHECK_FAILED = (
-            "check_failed",
-            "Last attempt to check the resource failed unexpectedly",
-        )
+        PENDING = "pending", "Pending"
+        SUCCESS = "success", "Success"
+        FAILED = "failed", "Failed"
+        ERROR = "error", "Error"
+        IN_PROGRESS = "in_progress", "In Progress"
 
     objects = BulkUpdateOrCreateQuerySet.as_manager()
 
@@ -29,32 +27,25 @@ class ExternalResourceState(TimestampedModel):
         related_name="external_resource_state",
     )
 
-    status = models.CharField(
+    wayback_status = models.CharField(
         max_length=16,
-        choices=Status.choices,
-        default=Status.UNCHECKED,
-        help_text="The status of this external resource.",
+        choices=WaybackStatus.choices,
+        default=WaybackStatus.PENDING,
+        help_text="The status of the Wayback Machine archiving job.",
+    )
+
+    wayback_job_id = models.CharField(
+        max_length=64,
+        blank=True,
+        help_text="The ID of the Wayback Machine job for archiving the resource.",
+    )
+
+    wayback_url = models.URLField(
+        blank=True,
+        help_text="The Wayback Machine URL for this resource.",
     )
 
     external_url_response_code = models.IntegerField(
-        default=None,
-        null=True,
-        blank=True,
-    )
-
-    backup_url_response_code = models.IntegerField(
-        default=None,
-        null=True,
-        blank=True,
-    )
-
-    is_external_url_broken = models.BooleanField(
-        default=None,
-        null=True,
-        blank=True,
-    )
-
-    is_backup_url_broken = models.BooleanField(
         default=None,
         null=True,
         blank=True,
