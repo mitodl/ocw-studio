@@ -665,6 +665,21 @@ CHECK_EXTERNAL_RESOURCE_TASK_ENABLE = get_bool(
     required=False,
 )
 
+# Wayback Machine API Credentials
+WAYBACK_MACHINE_ACCESS_KEY = get_string(
+    name="WAYBACK_MACHINE_ACCESS_KEY",
+    default=None,
+    description="Access key for the Wayback Machine API",
+    required=False,
+)
+
+WAYBACK_MACHINE_SECRET_KEY = get_string(
+    name="WAYBACK_MACHINE_SECRET_KEY",
+    default=None,
+    description="Secret key for the Wayback Machine API",
+    required=False,
+)
+
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
