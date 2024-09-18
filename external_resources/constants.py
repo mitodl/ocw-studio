@@ -26,6 +26,7 @@ RESOURCE_UNCHECKED_STATUSES = [
 EXTERNAL_RESOURCE_TASK_RATE_LIMIT = "100/s"
 EXTERNAL_RESOURCE_TASK_PRIORITY = 4  # Lowest priority from range (0 - 4)
 
+# constants for user agent
 USER_AGENT_STRING = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -34,3 +35,8 @@ USER_AGENT_STRING = (
 )
 
 USER_AGENT_TIMEOUT = 30
+
+# metadata fields
+METADATA_IS_BROKEN = "is_broken"
+METADATA_URL_STATUS_CODE = "url_status_code"
+METADATA_BACKUP_URL_STATUS_CODE = "backup_url_status_code"
