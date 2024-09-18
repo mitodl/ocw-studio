@@ -58,6 +58,10 @@ def check_external_resources(resources: list[int]):
             log.debug(ex)
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
+            # Update the metadata of the resource with the status codes
+            resource.metadata["url_status_code"] = url_status
+            resource.metadata["backup_url_status_code"] = backup_url_status
+            resource.save()
             # Status and flag should be updated if codes are not in ignored cases
             if (
                 url_status not in RESOURCE_UNCHECKED_STATUSES

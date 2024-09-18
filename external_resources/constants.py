@@ -25,3 +25,12 @@ RESOURCE_UNCHECKED_STATUSES = [
 # constants for Celery task
 EXTERNAL_RESOURCE_TASK_RATE_LIMIT = "100/s"
 EXTERNAL_RESOURCE_TASK_PRIORITY = 4  # Lowest priority from range (0 - 4)
+
+USER_AGENT_STRING = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/114.0.0.0 "
+    "Safari/537.36"
+)
+
+USER_AGENT_TIMEOUT = 30
