@@ -15,9 +15,7 @@ class ExternalResourceState(TimestampedModel):
 
         PENDING = "pending", "Pending"
         SUCCESS = "success", "Success"
-        FAILED = "failed", "Failed"
         ERROR = "error", "Error"
-        IN_PROGRESS = "in_progress", "In Progress"
 
     objects = BulkUpdateOrCreateQuerySet.as_manager()
 
@@ -27,22 +25,11 @@ class ExternalResourceState(TimestampedModel):
         related_name="external_resource_state",
     )
 
-    wayback_status = models.CharField(
-        max_length=16,
-        choices=WaybackStatus.choices,
-        default=WaybackStatus.PENDING,
-        help_text="The status of the Wayback Machine archiving job.",
-    )
-
-    wayback_job_id = models.CharField(
-        max_length=64,
+    is_external_url_broken = models.BooleanField(
+        default=None,
+        null=True,
         blank=True,
-        help_text="The ID of the Wayback Machine job for archiving the resource.",
-    )
-
-    wayback_url = models.URLField(
-        blank=True,
-        help_text="The Wayback Machine URL for this resource.",
+        help_text="Indicates if the external URL is broken.",
     )
 
     external_url_response_code = models.IntegerField(
@@ -56,6 +43,29 @@ class ExternalResourceState(TimestampedModel):
         null=True,
         blank=True,
         help_text="The last time when this resource was checked for breakages.",
+    )
+
+    wayback_job_id = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=(
+            "Job ID returned by Wayback Machine API when submitting URL for snapshot."
+        ),
+    )
+
+    wayback_status = models.CharField(
+        max_length=16,
+        choices=WaybackStatus.choices,
+        default=None,
+        blank=True,
+        help_text=(
+            "The status of the Wayback Machine snapshot taken from archiving job."
+        ),
+    )
+
+    wayback_url = models.URLField(
+        blank=True,
+        help_text="URL of the Wayback Machine snapshot.",
     )
 
     def __str__(self):
