@@ -53,11 +53,3 @@ def is_external_url_broken(
     """Check if external url of the provided WebsiteContent is broken"""
     url = external_resource.metadata.get("external_url", "")
     return is_url_broken(url)
-
-
-def is_backup_url_broken(
-    external_resource: WebsiteContent,
-) -> tuple[bool, Optional[int]]:
-    """Check if backup url of the provided WebsiteContent is broken"""
-    url = external_resource.metadata.get("backup_url", "")
-    return is_url_broken(url)
