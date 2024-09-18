@@ -10,6 +10,9 @@ from external_resources import api
 from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
+    METADATA_BACKUP_URL_STATUS_CODE,
+    METADATA_IS_BROKEN,
+    METADATA_URL_STATUS_CODE,
     RESOURCE_UNCHECKED_STATUSES,
 )
 from external_resources.exceptions import CheckFailedError
@@ -58,6 +61,10 @@ def check_external_resources(resources: list[int]):
             log.debug(ex)
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
+            # Update the metadata of the resource with the status codes
+            resource.metadata[METADATA_URL_STATUS_CODE] = url_status
+            resource.metadata[METADATA_BACKUP_URL_STATUS_CODE] = backup_url_status
+            resource.save()
             # Status and flag should be updated if codes are not in ignored cases
             if (
                 url_status not in RESOURCE_UNCHECKED_STATUSES
@@ -73,8 +80,8 @@ def check_external_resources(resources: list[int]):
                     # Either external_url or backup_url is valid.
                     state.status = ExternalResourceState.Status.VALID
 
-                if resource.metadata.get("is_broken") != is_broken:
-                    resource.metadata["is_broken"] = is_broken
+                if resource.metadata.get(METADATA_IS_BROKEN) != is_broken:
+                    resource.metadata[METADATA_IS_BROKEN] = is_broken
                     resource.save()
         finally:
             state.last_checked = timezone.now()

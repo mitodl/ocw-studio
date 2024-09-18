@@ -8,6 +8,8 @@ import requests
 from external_resources.constants import (
     RESOURCE_BROKEN_STATUS_END,
     RESOURCE_BROKEN_STATUS_START,
+    USER_AGENT_STRING,
+    USER_AGENT_TIMEOUT,
 )
 from external_resources.exceptions import CheckFailedError
 from websites.models import WebsiteContent
@@ -26,15 +28,10 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
         response = requests.head(
             url,
             allow_redirects=True,
-            timeout=30,
+            timeout=USER_AGENT_TIMEOUT,
             headers={
                 "Accept": "*/*",
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/114.0.0.0 "
-                    "Safari/537.36"
-                ),
+                "User-Agent": USER_AGENT_STRING,
             },
         )
     except Exception as ex:
