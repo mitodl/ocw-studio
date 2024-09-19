@@ -10,7 +10,6 @@ from external_resources import api
 from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
-    METADATA_BACKUP_URL_STATUS_CODE,
     METADATA_IS_BROKEN,
     METADATA_URL_STATUS_CODE,
     RESOURCE_UNCHECKED_STATUSES,
@@ -47,46 +46,39 @@ def check_external_resources(resources: list[int]):
             state = ExternalResourceState(
                 content=resource,
             )
-
         try:
             is_url_broken, url_status = api.is_external_url_broken(resource)
             state.external_url_response_code = url_status
             state.is_external_url_broken = is_url_broken
-
-            # If url is broken, check backup url for the resource
-            is_backup_url_broken, backup_url_status = api.is_backup_url_broken(resource)
-            state.backup_url_response_code = backup_url_status
-            state.is_backup_url_broken = is_backup_url_broken
         except CheckFailedError as ex:
             log.debug(ex)
             state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
             # Update the metadata of the resource with the status codes
             resource.metadata[METADATA_URL_STATUS_CODE] = url_status
-            resource.metadata[METADATA_BACKUP_URL_STATUS_CODE] = backup_url_status
-            resource.save()
-            # Status and flag should be updated if codes are not in ignored cases
-            if (
-                url_status not in RESOURCE_UNCHECKED_STATUSES
-                or backup_url_status not in RESOURCE_UNCHECKED_STATUSES
-            ):
-                is_broken = is_url_broken and (
-                    backup_url_status is None or is_backup_url_broken
-                )
-                if is_broken:
-                    # both external_url and backup_url are broken
+            resource.save(update_fields=["metadata"])
+            # Update the status based on whether the URL is broken
+            if url_status not in RESOURCE_UNCHECKED_STATUSES:
+                if is_url_broken:
+                    # The external URL is broken
                     state.status = ExternalResourceState.Status.BROKEN
                 else:
-                    # either external_url or backup_url is valid
+                    # The external URL is valid
                     state.status = ExternalResourceState.Status.VALID
-
-                if resource.metadata.get(METADATA_IS_BROKEN) != is_broken:
-                    resource.metadata[METADATA_IS_BROKEN] = is_broken
-                    resource.save()
+                # Update 'is_url_broken' in metadata if it has changed
+                if resource.metadata.get(METADATA_IS_BROKEN) != is_url_broken:
+                    resource.metadata[METADATA_IS_BROKEN] = is_url_broken
+                    resource.save(update_fields=["metadata"])
         finally:
             state.last_checked = timezone.now()
-
-        state.save()
+            state.save(
+                update_fields=[
+                    "external_url_response_code",
+                    "is_external_url_broken",
+                    "status",
+                    "last_checked",
+                ]
+            )
 
 
 @app.task(bind=True, acks_late=True)
