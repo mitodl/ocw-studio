@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.128.0
+Version 0.128.0 (Released September 19, 2024)
 ---------------
 
 - Renovate/python 3.x (#2300)
