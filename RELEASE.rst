@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.128.1 (Released September 19, 2024)
+---------------
+
+- Save status codes for external resource link checking (#2310)
+
+Version 0.128.0 (Released September 19, 2024)
+---------------
+
+- Renovate/python 3.x (#2300)
+
 Version 0.127.0 (Released September 16, 2024)
 ---------------
 
