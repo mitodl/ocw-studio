@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.128.1
+Version 0.128.1 (Released September 19, 2024)
 ---------------
 
 - Save status codes for external resource link checking (#2310)
