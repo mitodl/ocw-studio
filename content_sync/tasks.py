@@ -465,6 +465,10 @@ def update_websites_in_root_website():
         sites = get_publishable_sites(is_offline=True)
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+
+        # Remove the content for unpublished or not downloadable sites
+        WebsiteContent.objects.exclude(website__in=sites).delete()
+
         fields = [
             "website",
             "type",
