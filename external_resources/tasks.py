@@ -74,10 +74,10 @@ def check_external_resources(resources: list[int]):
                     backup_url_status is None or is_backup_url_broken
                 )
                 if is_broken:
-                    # both external_url and backup_url are broken.
+                    # both external_url and backup_url are broken
                     state.status = ExternalResourceState.Status.BROKEN
                 else:
-                    # Either external_url or backup_url is valid.
+                    # either external_url or backup_url is valid
                     state.status = ExternalResourceState.Status.VALID
 
                 if resource.metadata.get(METADATA_IS_BROKEN) != is_broken:
@@ -105,4 +105,6 @@ def check_external_resources_for_breakages(self):
         )
     ]
     if tasks:
-        raise self.replace(celery.group(tasks))
+        return self.replace(celery.group(tasks))
+
+    return None
