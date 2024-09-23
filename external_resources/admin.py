@@ -23,8 +23,13 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
         "get_content_title",
         "get_content_text_id",
         "get_website_name",
+        "wayback_status",
+        "is_broken",
     )
-    list_filter = ("status",)
+    list_filter = (
+        "wayback_status",
+        "is_broken",
+    )
     raw_id_fields = ("content",)
     ordering = ("-created_on",)
 
