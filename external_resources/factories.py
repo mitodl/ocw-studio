@@ -19,6 +19,6 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
     status = ExternalResourceState.Status.UNCHECKED
     external_url_response_code = factory.Faker("random_int", min=100, max=599)
     backup_url_response_code = factory.Faker("random_int", min=100, max=599)
-    is_external_url_broken = factory.Faker("boolean")
+    is_broken = factory.Faker("boolean")
     is_backup_url_broken = factory.Faker("boolean")
     last_checked = factory.Faker("date_time", tzinfo=pytz.utc)
