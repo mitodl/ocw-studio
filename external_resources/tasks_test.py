@@ -10,7 +10,6 @@ from rest_framework.status import (
     HTTP_401_UNAUTHORIZED,
 )
 
-from external_resources.constants import RESOURCE_UNCHECKED_STATUSES
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
 from external_resources.models import ExternalResourceState
@@ -73,63 +72,21 @@ def test_check_external_resources_for_breakages_zero_websites(
     (
         "url_status",
         "url_status_code",
-        "backup_url_status",
-        "backup_url_status_code",
-        "resource_status",
+        "expected_is_broken",
+        "expected_last_check_failed",
     ),
     [
-        (False, HTTP_200_OK, False, HTTP_200_OK, ExternalResourceState.Status.VALID),
-        (
-            False,
-            HTTP_200_OK,
-            True,
-            HTTP_400_BAD_REQUEST,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_400_BAD_REQUEST,
-            False,
-            HTTP_200_OK,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_400_BAD_REQUEST,
-            True,
-            HTTP_400_BAD_REQUEST,
-            ExternalResourceState.Status.BROKEN,
-        ),
-        (
-            False,
-            HTTP_200_OK,
-            True,
-            HTTP_401_UNAUTHORIZED,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_401_UNAUTHORIZED,
-            False,
-            HTTP_200_OK,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_401_UNAUTHORIZED,
-            True,
-            HTTP_401_UNAUTHORIZED,
-            ExternalResourceState.Status.UNCHECKED,
-        ),
+        (False, HTTP_200_OK, False, False),
+        (True, HTTP_400_BAD_REQUEST, True, False),
+        (True, HTTP_401_UNAUTHORIZED, False, False),
     ],
 )
-def test_check_external_resources(  # noqa: PLR0913
+def test_check_external_resources(
     mocker,
     url_status,
     url_status_code,
-    backup_url_status,
-    backup_url_status_code,
-    resource_status,
+    expected_is_broken,
+    expected_last_check_failed,
 ):
     """Create test data"""
     external_resource_state = ExternalResourceStateFactory()
@@ -138,11 +95,6 @@ def test_check_external_resources(  # noqa: PLR0913
         "external_resources.tasks.api.is_external_url_broken",
         return_value=(url_status, url_status_code),
     )
-    mocker.patch(
-        "external_resources.tasks.api.is_backup_url_broken",
-        return_value=(backup_url_status, backup_url_status_code),
-    )
-    assert external_resource_state.status == ExternalResourceState.Status.UNCHECKED
 
     # Run the task
     check_external_resources.delay((external_resource_state.content.id,))
@@ -150,22 +102,9 @@ def test_check_external_resources(  # noqa: PLR0913
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
     assert updated_state.last_checked is not None
-
-    assert updated_state.is_external_url_broken is url_status
-    assert updated_state.is_backup_url_broken is backup_url_status
-
+    assert updated_state.is_broken == expected_is_broken
+    assert updated_state.last_check_failed == expected_last_check_failed
     assert updated_state.external_url_response_code == url_status_code
-    assert updated_state.backup_url_response_code == backup_url_status_code
-
-    # Status and flag are updated if codes are not in ignored cases
-    if (
-        url_status_code not in RESOURCE_UNCHECKED_STATUSES
-        or backup_url_status_code not in RESOURCE_UNCHECKED_STATUSES
-    ):
-        assert updated_state.status == resource_status
-        assert updated_state.content.metadata.get("is_broken", False) == (
-            url_status and (backup_url_status_code is None or backup_url_status)
-        )
 
 
 @pytest.mark.django_db()
@@ -182,4 +121,5 @@ def test_check_external_resources_failed(mocker):
 
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
-    assert updated_state.status == ExternalResourceState.Status.CHECK_FAILED
+    assert updated_state.last_check_failed is True
+    assert updated_state.is_broken is True
