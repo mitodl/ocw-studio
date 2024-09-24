@@ -32,9 +32,16 @@ class ExternalResourceState(TimestampedModel):
         help_text="Indicates if the external resource is broken.",
     )
 
-    check_failed = models.BooleanField(
+    last_checked = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text="The last time when this resource was checked for breakages.",
+    )
+
+    last_check_failed = models.BooleanField(
         default=False,
-        help_text="Indicates if the last check failed.",
+        help_text="Indicates whether the last attempt to check for broken links failed.",  # noqa: E501
     )
 
     external_url_response_code = models.IntegerField(
@@ -43,19 +50,10 @@ class ExternalResourceState(TimestampedModel):
         blank=True,
     )
 
-    last_checked = models.DateTimeField(
-        default=None,
-        null=True,
-        blank=True,
-        help_text="The last time when this resource was checked for breakages.",
-    )
-
     wayback_job_id = models.CharField(
         max_length=255,
         blank=True,
-        help_text=(
-            "Job ID returned by Wayback Machine API when submitting URL for snapshot."
-        ),
+        help_text="Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
     )
 
     wayback_status = models.CharField(
@@ -63,9 +61,7 @@ class ExternalResourceState(TimestampedModel):
         choices=WaybackStatus.choices,
         default="",
         blank=True,
-        help_text=(
-            "The status of the Wayback Machine snapshot" "taken from archiving job."
-        ),
+        help_text="The status of the Wayback Machine snapshot taken from archiving job.",  # noqa: E501
     )
 
     wayback_url = models.URLField(
