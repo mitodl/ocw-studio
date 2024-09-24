@@ -54,14 +54,14 @@ class ExternalResourceState(TimestampedModel):
         max_length=255,
         blank=True,
         help_text=(
-            "Job ID returned by Wayback Machine API" "when submitting URL for snapshot."
+            "Job ID returned by Wayback Machine API when submitting URL for snapshot."
         ),
     )
 
     wayback_status = models.CharField(
         max_length=16,
         choices=WaybackStatus.choices,
-        default=None,
+        default="",
         blank=True,
         help_text=(
             "The status of the Wayback Machine snapshot" "taken from archiving job."

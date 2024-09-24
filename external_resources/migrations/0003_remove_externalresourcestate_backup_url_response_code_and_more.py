@@ -62,7 +62,7 @@ class Migration(migrations.Migration):
                     ("success", "Success"),
                     ("error", "Error"),
                 ],
-                default=None,
+                default="",
                 help_text=(
                     "The status of the Wayback Machine snapshot"
                     "taken from archiving job."
