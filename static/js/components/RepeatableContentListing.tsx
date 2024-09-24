@@ -62,7 +62,7 @@ export default function RepeatableContentListing(props: {
 
   const isDeletable =
     isContentDeletable &&
-    ["external-resource", "instructor"].includes(configItem.name)
+    ["external-resource", "instructor", "page"].includes(configItem.name)
 
   const getListingParams = useCallback(
     (search: string): ContentListingParams => {
