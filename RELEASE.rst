@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.129.0
+---------------
+
+- fix(deps): update dependency cryptography to v43 [security] (#2269)
+- Fix TypeError for external resources link checking task (#2313)
+
 Version 0.128.1 (Released September 19, 2024)
 ---------------
 
