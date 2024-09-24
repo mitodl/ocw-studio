@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.129.0
+Version 0.129.0 (Released September 24, 2024)
 ---------------
 
 - fix(deps): update dependency cryptography to v43 [security] (#2269)
