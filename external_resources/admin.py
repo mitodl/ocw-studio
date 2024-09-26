@@ -18,17 +18,19 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
         "content__title",
         "content__website__name",
         "content__website__title",
+        "status",
+        "wayback_status",
     )
     list_display = (
         "get_content_title",
         "get_content_text_id",
         "get_website_name",
+        "status",
         "wayback_status",
-        "is_broken",
     )
     list_filter = (
+        "status",
         "wayback_status",
-        "is_broken",
     )
     raw_id_fields = ("content",)
     ordering = ("-created_on",)
