@@ -10,7 +10,6 @@ from external_resources import api
 from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
-    METADATA_IS_BROKEN,
     METADATA_URL_STATUS_CODE,
     RESOURCE_UNCHECKED_STATUSES,
 )
@@ -49,11 +48,9 @@ def check_external_resources(resources: list[int]):
         try:
             is_url_broken, url_status = api.is_external_url_broken(resource)
             state.external_url_response_code = url_status
-            state.last_check_failed = False
         except CheckFailedError as ex:
             log.debug(ex)
-            state.last_check_failed = True
-            state.is_broken = True
+            state.status = ExternalResourceState.Status.CHECK_FAILED
         else:
             # Update the metadata of the resource with the status codes
             resource.metadata[METADATA_URL_STATUS_CODE] = url_status
@@ -62,21 +59,19 @@ def check_external_resources(resources: list[int]):
             if url_status not in RESOURCE_UNCHECKED_STATUSES:
                 if is_url_broken:
                     # The external URL is broken
-                    state.is_broken = True
+                    state.status = ExternalResourceState.Status.BROKEN
                 else:
                     # The external URL is valid
-                    state.is_broken = False
+                    state.status = ExternalResourceState.Status.VALID
                 # Update 'is_url_broken' in metadata if it has changed
-                if resource.metadata.get(METADATA_IS_BROKEN) != is_url_broken:
-                    resource.metadata[METADATA_IS_BROKEN] = is_url_broken
-                    resource.save(update_fields=["metadata"])
+            else:
+                state.status = ExternalResourceState.Status.UNCHECKED
         finally:
             state.last_checked = timezone.now()
             state.save(
                 update_fields=[
                     "external_url_response_code",
-                    "is_broken",
-                    "last_check_failed",
+                    "status",
                     "last_checked",
                 ]
             )
