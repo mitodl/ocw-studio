@@ -120,4 +120,4 @@ def test_check_external_resources_failed(mocker):
 
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
-    assert updated_state.status == ExternalResourceState.Status.LAST_CHECK_FAILED
+    assert updated_state.status == ExternalResourceState.Status.CHECK_FAILED

@@ -16,7 +16,7 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
         model = ExternalResourceState
 
     content = factory.SubFactory(WebsiteContentFactory)
-    status = factory.Iterator(["unchecked", "valid", "broken", "last_check_failed"])
+    status = factory.Iterator(["unchecked", "valid", "broken", "check_failed"])
     last_checked = factory.Faker("date_time", tzinfo=pytz.utc)
     external_url_response_code = factory.Faker("random_int", min=100, max=599)
     wayback_job_id = factory.Faker("uuid4")
