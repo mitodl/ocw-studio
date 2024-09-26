@@ -1911,8 +1911,6 @@
       "markdown": null,
       "metadata": {
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "is_broken": "",
-        "backup_url": "",
         "content_type": "external-resource",
         "external_url": "https://google.com",
         "has_external_license_warning": true
@@ -1942,8 +1940,6 @@
       "markdown": null,
       "metadata": {
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "is_broken": true,
-        "backup_url": "https://old.ocw.mit.edu",
         "content_type": "external-resource",
         "external_url": "https://ocw.mit.edu",
         "has_external_license_warning": true
@@ -2001,8 +1997,6 @@
       "markdown": null,
       "metadata": {
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
-        "is_broken": "",
-        "backup_url": "",
         "content_type": "external-resource",
         "external_url": "https://ocw.mit.edu",
         "has_external_license_warning": false
