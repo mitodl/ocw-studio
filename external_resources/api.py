@@ -12,7 +12,6 @@ from external_resources.constants import (
     USER_AGENT_TIMEOUT,
 )
 from external_resources.exceptions import CheckFailedError
-from external_resources.models import ExternalResourceState
 from main import settings
 from websites.models import WebsiteContent
 
@@ -58,12 +57,11 @@ def is_external_url_broken(
 
 
 def submit_url_to_wayback(
-    external_resource_state: ExternalResourceState,
+    url: str,
 ) -> Optional[str]:
     """
-    Submit the external URL to the Wayback Machine and return the job_id
+    Submit the external resource URL to the Wayback Machine and return the job_id
     """
-    url = external_resource_state.content.metadata.get("external_url", "")
     if not url:
         return None
 
@@ -81,30 +79,21 @@ def submit_url_to_wayback(
         response = requests.post(api_url, headers=headers, data=data, timeout=10)
         response.raise_for_status()
         result = response.json()
+        job_id = result.get("job_id")
+        if job_id:
+            return job_id
+        else:
+            log.error("No job_id returned from Wayback Machine for URL %s", url)
+            return None
     except Exception:
         log.exception("Failed to submit URL to Wayback Machine: %s", url)
-        external_resource_state.wayback_status = (
-            ExternalResourceState.WaybackStatus.ERROR
-        )
-        external_resource_state.save(update_fields=["wayback_status"])
         return None
-    else:
-        job_id = result.get("job_id")
-        external_resource_state.wayback_job_id = job_id
-        external_resource_state.wayback_status = (
-            ExternalResourceState.WaybackStatus.PENDING
-        )
-        external_resource_state.save(update_fields=["wayback_job_id", "wayback_status"])
-        return job_id
 
 
-def check_wayback_job_status(
-    external_resource_state: ExternalResourceState,
-) -> Optional[dict]:
+def check_external_resource_wayback_job_status(job_id: str) -> Optional[dict]:
     """
     Check the status of a Wayback Machine job and update the resource state accordingly
     """
-    job_id = external_resource_state.wayback_job_id
     if not job_id:
         return None
 
@@ -120,29 +109,8 @@ def check_wayback_job_status(
         response = requests.get(api_url, headers=headers, timeout=10)
         response.raise_for_status()
         result = response.json()
-        status = result.get("status")
     except Exception:
         log.exception("Failed to check Wayback Machine job status: %s", job_id)
-        external_resource_state.wayback_status = (
-            ExternalResourceState.WaybackStatus.ERROR
-        )
-        external_resource_state.save(update_fields=["wayback_status"])
         return None
     else:
-        if status == "success":
-            timestamp = result.get("timestamp")
-            original_url = result.get("original_url")
-            wayback_url = f"https://web.archive.org/web/{timestamp}/{original_url}"
-            external_resource_state.wayback_status = (
-                ExternalResourceState.WaybackStatus.SUCCESS
-            )
-            external_resource_state.wayback_url = wayback_url
-            external_resource_state.save(
-                update_fields=["wayback_status", "wayback_url"]
-            )
-        elif status == "error":
-            external_resource_state.wayback_status = (
-                ExternalResourceState.WaybackStatus.ERROR
-            )
-            external_resource_state.save(update_fields=["wayback_status"])
         return result
