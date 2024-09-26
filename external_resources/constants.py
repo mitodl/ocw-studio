@@ -37,6 +37,11 @@ USER_AGENT_STRING = (
 USER_AGENT_TIMEOUT = 30
 
 # metadata fields
-METADATA_IS_BROKEN = "is_broken"
 METADATA_URL_STATUS_CODE = "url_status_code"
-METADATA_BACKUP_URL_STATUS_CODE = "backup_url_status_code"
+
+# constants for Wayback Machine integration
+WAYBACK_API_URL = "https://web.archive.org/save"
+WAYBACK_CHECK_STATUS_URL_TEMPLATE = "https://web.archive.org/save/status/{job_id}"
+WAYBACK_PENDING_STATUS = "pending"
+WAYBACK_SUCCESS_STATUS = "success"
+WAYBACK_ERROR_STATUS = "error"

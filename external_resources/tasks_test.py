@@ -8,6 +8,8 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
 )
 
 from external_resources.exceptions import CheckFailedError
@@ -70,30 +72,28 @@ def test_check_external_resources_for_breakages_zero_websites(
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     (
-        "url_status",
         "url_status_code",
-        "expected_is_broken",
-        "expected_last_check_failed",
+        "expected_status",
     ),
     [
-        (False, HTTP_200_OK, False, False),
-        (True, HTTP_400_BAD_REQUEST, True, False),
-        (True, HTTP_401_UNAUTHORIZED, False, False),
+        (HTTP_200_OK, ExternalResourceState.Status.VALID),
+        (HTTP_400_BAD_REQUEST, ExternalResourceState.Status.BROKEN),
+        (HTTP_401_UNAUTHORIZED, ExternalResourceState.Status.UNCHECKED),
+        (HTTP_403_FORBIDDEN, ExternalResourceState.Status.UNCHECKED),
+        (HTTP_404_NOT_FOUND, ExternalResourceState.Status.BROKEN),
     ],
 )
 def test_check_external_resources(
     mocker,
-    url_status,
     url_status_code,
-    expected_is_broken,
-    expected_last_check_failed,
+    expected_status,
 ):
     """Create test data"""
     external_resource_state = ExternalResourceStateFactory()
 
     mocker.patch(
         "external_resources.tasks.api.is_external_url_broken",
-        return_value=(url_status, url_status_code),
+        return_value=(url_status_code >= 400, url_status_code),
     )
 
     # Run the task
@@ -102,8 +102,7 @@ def test_check_external_resources(
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
     assert updated_state.last_checked is not None
-    assert updated_state.is_broken == expected_is_broken
-    assert updated_state.last_check_failed == expected_last_check_failed
+    assert updated_state.status == expected_status
     assert updated_state.external_url_response_code == url_status_code
 
 
@@ -121,5 +120,4 @@ def test_check_external_resources_failed(mocker):
 
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
-    assert updated_state.last_check_failed is True
-    assert updated_state.is_broken is True
+    assert updated_state.status == ExternalResourceState.Status.LAST_CHECK_FAILED
