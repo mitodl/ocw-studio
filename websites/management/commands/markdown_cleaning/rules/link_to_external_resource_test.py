@@ -58,22 +58,6 @@ SAMPLE_SITE_CONFIG = {
                     "required": True,
                     "widget": "boolean",
                 },
-                {
-                    "default": None,
-                    "help": "Whether or not this link is broken.",
-                    "label": "Is Broken",
-                    "name": "is_broken",
-                    "required": True,
-                    "widget": "hidden",
-                },
-                {
-                    "default": None,
-                    "help": "URL to use when is_broken is true.",
-                    "label": "Internet Archive Backup URL",
-                    "name": "backup_url",
-                    "required": True,
-                    "widget": "hidden",
-                },
             ],
             "folder": "content/external-resources",
             "label": "External Resources",
@@ -129,8 +113,6 @@ def test_build_external_resource():
     assert external_resource.title == title
     assert external_resource.metadata["external_url"] == url
     assert external_resource.metadata["has_external_license_warning"] is True
-    assert not bool(external_resource.metadata["is_broken"])
-    assert not bool(external_resource.metadata["backup_url"])
 
 
 @pytest.mark.parametrize("content_exists", [True, False])
@@ -148,8 +130,6 @@ def test_get_or_build_external_resource(content_exists):
             metadata={
                 "external_url": url,
                 "has_external_license_warning": True,
-                "is_broken": False,
-                "backup_url": None,
             },
             dirpath=config_item.file_target,
             website=website,
@@ -167,8 +147,6 @@ def test_get_or_build_external_resource(content_exists):
     assert external_resource.title == title
     assert external_resource.metadata["external_url"] == url
     assert external_resource.metadata["has_external_license_warning"] is True
-    assert not bool(external_resource.metadata["is_broken"])
-    assert not bool(external_resource.metadata["backup_url"])
 
     if content_exists:
         assert existing_content.id == external_resource.id
