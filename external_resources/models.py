@@ -16,7 +16,7 @@ class ExternalResourceState(TimestampedModel):
         UNCHECKED = "unchecked", "Unchecked or pending check"
         VALID = "valid", "External Resource URL is valid"
         BROKEN = "broken", "External Resource URL is broken"
-        LAST_CHECK_FAILED = (
+        CHECK_FAILED = (
             "check_failed",
             "Last attempt to check the External Resource URL failed",
         )
