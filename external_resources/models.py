@@ -10,6 +10,17 @@ from websites.models import WebsiteContent
 class ExternalResourceState(TimestampedModel):
     """Data model for tracking the state of external resources"""
 
+    class Status(models.TextChoices):
+        """Choices for External Resource Status"""
+
+        UNCHECKED = "unchecked", "Unchecked or pending check"
+        VALID = "valid", "External Resource URL is valid"
+        BROKEN = "broken", "External Resource URL is broken"
+        LAST_CHECK_FAILED = (
+            "check_failed",
+            "Last attempt to check the External Resource URL failed",
+        )
+
     class WaybackStatus(models.TextChoices):
         """Choices for Wayback Machine Status"""
 
@@ -25,11 +36,11 @@ class ExternalResourceState(TimestampedModel):
         related_name="external_resource_state",
     )
 
-    is_broken = models.BooleanField(
-        default=False,
-        null=True,
-        blank=True,
-        help_text="Indicates if the external resource is broken.",
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.UNCHECKED,
+        help_text="Status of the external resource (valid, broken, etc.).",
     )
 
     last_checked = models.DateTimeField(
@@ -37,11 +48,6 @@ class ExternalResourceState(TimestampedModel):
         null=True,
         blank=True,
         help_text="The last time when this resource was checked for breakages.",
-    )
-
-    last_check_failed = models.BooleanField(
-        default=False,
-        help_text="Indicates whether the last attempt to check for broken links failed.",  # noqa: E501
     )
 
     external_url_response_code = models.IntegerField(
