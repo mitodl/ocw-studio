@@ -28,7 +28,7 @@ import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { checkFeatureFlag } from "../../lib/util"
-import CustomLinkUI from "../../lib/ckeditor/plugins/CustomLinkUI"
+import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
 
 export interface Props {
   value?: string
@@ -146,8 +146,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       },
     }
     if (isCustomLinkUIEnabled) {
-      MinimalEditorConfig.plugins.push(CustomLinkUI)
-      FullEditorConfig.plugins.push(CustomLinkUI)
+      MinimalEditorConfig.plugins.push(CustomLink)
+      FullEditorConfig.plugins.push(CustomLink)
     }
 
     if (minimal) {
