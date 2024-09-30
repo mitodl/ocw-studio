@@ -22,6 +22,7 @@ import {
   RESOURCE_LINK,
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
+  WEBSITE_NAME,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -144,6 +145,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           }).pathname
         }`,
       },
+      [WEBSITE_NAME]: website.name,
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)

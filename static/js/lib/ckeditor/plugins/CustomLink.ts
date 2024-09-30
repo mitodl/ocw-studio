@@ -7,12 +7,10 @@ import { siteApiContentUrl } from "../../urls"
 import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
+import { WEBSITE_NAME } from "./constants"
 
 class CustomLinkCommand extends LinkCommand {
   execute(href: string, _options = {}) {
-    const formView = this.editor.plugins.get(LinkUI).formView
-    const siteName = formView.element.baseURI.split("/")[4]
-
     const ranges = this.editor.model.document.selection.getRanges()
     let title = ""
     for (const range of ranges) {
@@ -22,7 +20,7 @@ class CustomLinkCommand extends LinkCommand {
         }
       }
     }
-    customLinkHook(this.editor, href, siteName, title, (customHref: string) =>
+    customLinkHook(this.editor, href, title, (customHref: string) =>
       super.execute(customHref),
     )
   }
@@ -46,7 +44,6 @@ export default class CustomLink extends Plugin {
 async function customLinkHook(
   editor: Editor,
   linkValue: string,
-  siteName: string,
   title: string,
   superExecute: { (customHref: string): void },
 ) {
@@ -64,22 +61,28 @@ async function customLinkHook(
 
   console.log("payload", payload)
 
-  fetch(siteApiContentUrl.param({ name: siteName }).toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFTOKEN": getCookie("csrftoken") || "",
+  fetch(
+    siteApiContentUrl
+      .param({ name: editor.config.get(WEBSITE_NAME) })
+      .toString(),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFTOKEN": getCookie("csrftoken") || "",
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  })
+  )
     .then((response) => response.json())
     .then((data) => {
       // Handle successful API response
-      // resourceLink.createResourceLink(data.text_id, data.title)
       console.log("response", data)
+
       const syntax = editor.plugins.get(
         ResourceLinkMarkdownSyntax,
       ).makeResourceLinkHref
+
       if (editor.model.document.selection.isCollapsed) {
         /**
          * If the selection is collapsed, nothing is highlighted. See
@@ -100,14 +103,10 @@ async function customLinkHook(
         })
       } else {
         /**
-         * If the selection is not collapsed, we apply the original link to the selected
-         * text.
+         * If the selection is not collapsed, we apply the original link command to the
+         * selected text.
          */
-        superExecute(
-          editor.plugins
-            .get(ResourceLinkMarkdownSyntax)
-            .makeResourceLinkHref(data.text_id),
-        )
+        superExecute(syntax(data.text_id))
       }
 
       const actionsView = editor.plugins.get(LinkUI).actionsView
