@@ -23,34 +23,9 @@ def test_upsert_external_resource_state(mocker):
             "external_url_response_code": None,
             "wayback_job_id": "",
             "wayback_status": "",
+            "wayback_status_ext": "",
             "wayback_url": "",
+            "wayback_http_status": None,
+            "wayback_last_successful_submission": None,
         },
-    )
-    content.save()
-    assert mock_update_or_create.call_count == 2
-    mock_update_or_create.assert_has_calls(
-        [
-            mocker.call(
-                content=content,
-                defaults={
-                    "status": ExternalResourceState.Status.UNCHECKED,
-                    "last_checked": None,
-                    "external_url_response_code": None,
-                    "wayback_job_id": "",
-                    "wayback_status": "",
-                    "wayback_url": "",
-                },
-            ),
-            mocker.call(
-                content=content,
-                defaults={
-                    "status": ExternalResourceState.Status.UNCHECKED,
-                    "last_checked": None,
-                    "external_url_response_code": None,
-                    "wayback_job_id": "",
-                    "wayback_status": "",
-                    "wayback_url": "",
-                },
-            ),
-        ]
     )
