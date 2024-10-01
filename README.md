@@ -412,7 +412,7 @@ You should now have a pipeline in Concourse called `e2e-test-pipeline`. Run this
 
 ### Publish And Build Dates
 
-- Publishing site from Studio for live and draft versions, updates the website properties `(live_build_date, publish_date)` and `(draft_build_date, draft_publish_date)` respectively.
+- Publishing the site from Studio for live and draft versions updates the website properties `(live_build_date, publish_date)` and `(draft_build_date, draft_publish_date)`, respectively.
 - Running the mass build for live and draft versions only updates the website properties `live_build_date` and `draft_build_date`, respectively.
 
 # Running OCW Studio on Apple Silicon
