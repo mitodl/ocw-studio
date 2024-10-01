@@ -9,7 +9,8 @@ import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
 import { WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
-
+import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
+import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
 class CustomLinkCommand extends LinkCommand {
   execute(href: string, _options = {}) {
     const ranges = this.editor.model.document.selection.getRanges()
@@ -55,7 +56,7 @@ export default class CustomLink extends Plugin {
     this.editor.model.document.on("change:data", () => {
       const changes = Array.from(this.editor.model.document.differ.getChanges())
 
-      for (const entry of changes) {
+      for (const entry of changes as [DiffItem]) {
         if (entry.type === "attribute" && entry.attributeKey === "linkHref") {
           this._modifyHref(entry.range)
         }
@@ -81,7 +82,7 @@ export default class CustomLink extends Plugin {
         ).then((externalResource) => {
           if (externalResource) {
             // Update the href attribute with the custom value
-            this.editor.model.change((writer) => {
+            this.editor.model.change((writer: Writer) => {
               writer.setAttribute(
                 "linkHref",
                 this._getResourceLink(externalResource.textId || ""),
