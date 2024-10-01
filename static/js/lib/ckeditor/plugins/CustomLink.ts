@@ -52,7 +52,7 @@ export default class CustomLink extends Plugin {
     this.editor.commands.add("link", new CustomLinkCommand(this.editor))
     console.log("CustomLink Plugin is initialized")
 
-    // Intercept and modify linkHref only if triggered by AutoLink
+    // Intercept change in document
     this.editor.model.document.on("change:data", () => {
       const changes = Array.from(this.editor.model.document.differ.getChanges())
 
@@ -64,24 +64,24 @@ export default class CustomLink extends Plugin {
     })
   }
 
-  // Custom method to modify the href before it is applied
+  // Custom method to modify the href
   _modifyHref(range: Range) {
     // Get the link element in the given range
     for (const item of range.getItems()) {
+      // Modify href only if its not a ResourceLink
       if (
         item.hasAttribute("linkHref") &&
         !this.syntax.isResourceLinkHref(item.getAttribute("linkHref"))
       ) {
         const originalHref = item.getAttribute("linkHref")
 
-        // Modify the href as per your custom logic
         getExternalResource(
           this.editor.config.get(WEBSITE_NAME),
           String(originalHref),
           "",
         ).then((externalResource) => {
           if (externalResource) {
-            // Update the href attribute with the custom value
+            // Update the href attribute with the resourceLink
             this.editor.model.change((writer: Writer) => {
               writer.setAttribute(
                 "linkHref",
@@ -107,14 +107,20 @@ async function getExternalResource(
   linkValue: string,
   title: string,
 ): Promise<{ title: string; textId: string } | null> {
+  let hasWarning = true
+  try {
+    hasWarning = new URL(linkValue).hostname !== SETTINGS.sitemapDomain
+  } catch (error) {
+    console.log("Invalid URL provided!")
+  }
+
   const payload = {
     type: "external-resource",
     title: title || linkValue,
     metadata: {
       external_url: linkValue,
       license: "https://en.wikipedia.org/wiki/All_rights_reserved",
-      has_external_license_warning:
-        new URL(linkValue).hostname !== SETTINGS.sitemapDomain,
+      has_external_license_warning: hasWarning,
       is_broken: "",
       backup_url: "",
     },
@@ -136,7 +142,7 @@ async function getExternalResource(
     )
 
     const data = await response.json()
-    return { title: data.title, textId: data.textId }
+    return { title: data.title, textId: data.text_id }
   } catch (error) {
     console.error("Error updating link:", error)
     return null
