@@ -8,6 +8,7 @@ import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
 import { WEBSITE_NAME } from "./constants"
+import { Range } from "@ckeditor/ckeditor5-engine"
 
 class CustomLinkCommand extends LinkCommand {
   execute(href: string, _options = {}) {
@@ -20,8 +21,15 @@ class CustomLinkCommand extends LinkCommand {
         }
       }
     }
-    customLinkHook(this.editor, href, title, (customHref: string) =>
-      super.execute(customHref),
+
+    getExternalResource(this.editor.config.get(WEBSITE_NAME), href, title).then(
+      (externalResource) => {
+        if (externalResource) {
+          updateHref(externalResource, this.editor, (href) =>
+            super.execute(href),
+          )
+        }
+      },
     )
   }
 }
@@ -32,28 +40,81 @@ export default class CustomLink extends Plugin {
   }
 
   static get requires() {
-    return [Link, LinkUI]
+    return [Link, LinkUI, ResourceLinkMarkdownSyntax]
+  }
+
+  private get syntax() {
+    return this.editor.plugins.get(ResourceLinkMarkdownSyntax)
   }
 
   init() {
     this.editor.commands.add("link", new CustomLinkCommand(this.editor))
     console.log("CustomLink Plugin is initialized")
+
+    // Intercept and modify linkHref only if triggered by AutoLink
+    this.editor.model.document.on("change:data", () => {
+      const changes = Array.from(this.editor.model.document.differ.getChanges())
+
+      for (const entry of changes) {
+        if (entry.type === "attribute" && entry.attributeKey === "linkHref") {
+          this._modifyHref(entry.range)
+        }
+      }
+    })
+  }
+
+  // Custom method to modify the href before it is applied
+  _modifyHref(range: Range) {
+    // Get the link element in the given range
+    for (const item of range.getItems()) {
+      if (
+        item.hasAttribute("linkHref") &&
+        !this.syntax.isResourceLinkHref(item.getAttribute("linkHref"))
+      ) {
+        const originalHref = item.getAttribute("linkHref")
+
+        // Modify the href as per your custom logic
+        getExternalResource(
+          this.editor.config.get(WEBSITE_NAME),
+          String(originalHref),
+          "",
+        ).then((externalResource) => {
+          if (externalResource) {
+            // Update the href attribute with the custom value
+            this.editor.model.change((writer) => {
+              writer.setAttribute(
+                "linkHref",
+                this._getResourceLink(externalResource.textId || ""),
+                item,
+              )
+            })
+          }
+        })
+      }
+    }
+  }
+
+  // This function can contain your custom logic to generate a new href
+  _getResourceLink(resourceID: string): string {
+    // Example: Appending a query parameter to the original href
+    return this.syntax.makeResourceLinkHref(resourceID)
   }
 }
 
-async function customLinkHook(
-  editor: Editor,
+async function getExternalResource(
+  siteName: string,
   linkValue: string,
   title: string,
-  superExecute: { (customHref: string): void },
-) {
+): Promise<{ title: string; textId: string } | null> {
   const payload = {
     type: "external-resource",
     title: title || linkValue,
     metadata: {
       external_url: linkValue,
       license: "https://en.wikipedia.org/wiki/All_rights_reserved",
-      has_external_license_warning: true,
+      has_external_license_warning: !(
+        new URL(linkValue).hostname === "ocw.mit.edu"
+      ),
       is_broken: "",
       backup_url: "",
     },
@@ -61,58 +122,59 @@ async function customLinkHook(
 
   console.log("payload", payload)
 
-  fetch(
-    siteApiContentUrl
-      .param({ name: editor.config.get(WEBSITE_NAME) })
-      .toString(),
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFTOKEN": getCookie("csrftoken") || "",
+  try {
+    const response = await fetch(
+      siteApiContentUrl.param({ name: siteName }).toString(),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFTOKEN": getCookie("csrftoken") || "",
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    },
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      // Handle successful API response
-      console.log("response", data)
+    )
 
-      const syntax = editor.plugins.get(
-        ResourceLinkMarkdownSyntax,
-      ).makeResourceLinkHref
+    const data = await response.json()
+    return { title: data.title, textId: data.textId }
+  } catch (error) {
+    console.error("Error updating link:", error)
+    return null
+  }
+}
 
-      if (editor.model.document.selection.isCollapsed) {
-        /**
-         * If the selection is collapsed, nothing is highlighted. See
-         *  - [selection.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_view_selection-Selection.html#member-isCollapsed)
-         *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
-         */
-        editor.model.change((writer) => {
-          const insertPosition =
-            editor.model.document.selection.getFirstPosition()
-          console.log("insert position", insertPosition)
-          writer.insertText(
-            data.title,
-            {
-              linkHref: syntax(data.text_id),
-            },
-            insertPosition,
-          )
-        })
-      } else {
-        /**
-         * If the selection is not collapsed, we apply the original link command to the
-         * selected text.
-         */
-        superExecute(syntax(data.text_id))
-      }
+function updateHref(
+  externalResource: { title?: string; textId?: string },
+  editor: Editor,
+  superExecute: { (customHref: string): void },
+) {
+  // Handle successful API response
 
-      const actionsView = editor.plugins.get(LinkUI).actionsView
+  const syntax = editor.plugins.get(
+    ResourceLinkMarkdownSyntax,
+  ).makeResourceLinkHref
 
-      actionsView.editButtonView.label = ""
-      actionsView.editButtonView.isEnabled = false
-      actionsView.editButtonView.isVisible = false
+  if (editor.model.document.selection.isCollapsed) {
+    /**
+     * If the selection is collapsed, nothing is highlighted. See
+     *  - [selection.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_view_selection-Selection.html#member-isCollapsed)
+     *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
+     */
+    editor.model.change((writer) => {
+      const insertPosition = editor.model.document.selection.getFirstPosition()
+      writer.insertText(
+        externalResource.title || "",
+        {
+          linkHref: syntax(externalResource.textId || ""),
+        },
+        insertPosition,
+      )
     })
+  } else {
+    /**
+     * If the selection is not collapsed, we apply the original link command to the
+     * selected text.
+     */
+    superExecute(syntax(externalResource.textId || ""))
+  }
 }
