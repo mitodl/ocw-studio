@@ -28,6 +28,7 @@ def _index(request):
         "features_default": settings.FEATURES_DEFAULT,
         "posthog_api_host": settings.POSTHOG_API_HOST,
         "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
+        "sitemapDomain": settings.SITEMAP_DOMAIN,
     }
 
     user = request.user

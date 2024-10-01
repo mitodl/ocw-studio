@@ -113,9 +113,8 @@ async function getExternalResource(
     metadata: {
       external_url: linkValue,
       license: "https://en.wikipedia.org/wiki/All_rights_reserved",
-      has_external_license_warning: !(
-        new URL(linkValue).hostname === "ocw.mit.edu"
-      ),
+      has_external_license_warning:
+        new URL(linkValue).hostname !== SETTINGS.sitemapDomain,
       is_broken: "",
       backup_url: "",
     },

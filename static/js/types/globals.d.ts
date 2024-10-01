@@ -14,6 +14,7 @@ interface SETTINGS {
   features: {[key: string]: boolean};
   posthog_api_host: string?;
   posthog_project_api_key: string?;
+  sitemapDomain: string?;
   /**
    * Settings.user does exist, but leaving it untyped to help encourage using
    * `store.user` instead.
