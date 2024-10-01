@@ -73,7 +73,7 @@ class ExternalResourceState(TimestampedModel):
     wayback_status_ext = models.CharField(
         max_length=128,
         blank=True,
-        help_text="Extended status of the Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
+        help_text="Extended status of the last Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
     )
 
     wayback_url = models.URLField(
