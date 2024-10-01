@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from external_resources.models import ExternalResourceState
+from external_resources.tasks import submit_url_to_wayback_task
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.models import WebsiteContent
 
@@ -30,11 +31,19 @@ def upsert_external_resource_state(
                 "last_checked": None,
                 "external_url_response_code": None,
                 "wayback_job_id": "",
-                "wayback_status": "",
                 "wayback_url": "",
+                "wayback_status": "",
+                "wayback_status_ext": "",
+                "wayback_http_status": None,
+                "wayback_last_successful_submission": None,
             }
             ExternalResourceState.objects.update_or_create(
                 content=instance, defaults=defaults
+            )
+            submit_url_to_wayback_task.delay(instance.id)
+            log.info(
+                "New external resource created: %s. Submitting to Wayback Machine.",
+                instance.title,
             )
             log.debug(
                 "Created ExternalResourceState for WebsiteContent id=%s",
