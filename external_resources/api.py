@@ -60,8 +60,12 @@ def submit_url_to_wayback(
     url: str,
 ) -> Optional[str]:
     """
-    Submit the external resource URL to the Wayback Machine and return the job_id
+    Submit the external resource URL to the Wayback Machine and
+    return the job_id or status_ext
     """
+    job_id = None
+    status_ext = None
+
     if not url:
         return None
 
@@ -73,31 +77,35 @@ def submit_url_to_wayback(
             f"{settings.WAYBACK_MACHINE_SECRET_KEY}"
         ),
     }
-    data = {"url": url}
+    params = {
+        "url": url,
+        "skip_first_archive": "1",
+        "capture_outlinks": "0",
+    }
 
     try:
-        response = requests.post(api_url, headers=headers, data=data, timeout=10)
+        response = requests.post(api_url, headers=headers, data=params, timeout=30)
         response.raise_for_status()
         result = response.json()
         job_id = result.get("job_id")
-        if job_id:
-            return job_id
-        else:
+
+        if not job_id:
+            status_ext = result.get("status_ext")
             log.error("No job_id returned from Wayback Machine for URL %s", url)
-            return None
     except Exception:
         log.exception("Failed to submit URL to Wayback Machine: %s", url)
-        return None
+
+    return {"job_id": job_id, "status_ext": status_ext}
 
 
-def check_external_resource_wayback_job_status(job_id: str) -> Optional[dict]:
+def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
     """
-    Check the status of a Wayback Machine job and update the resource state accordingly
+    Check the status of multiple Wayback Machine jobs in batch.
     """
-    if not job_id:
-        return None
+    if not job_ids:
+        return []
 
-    api_url = f"https://web.archive.org/save/status/{job_id}"
+    api_url = "https://web.archive.org/save/status"
     headers = {
         "Accept": "application/json",
         "Authorization": (
@@ -105,12 +113,17 @@ def check_external_resource_wayback_job_status(job_id: str) -> Optional[dict]:
             f"{settings.WAYBACK_MACHINE_SECRET_KEY}"
         ),
     }
+    params = {
+        "job_ids": ",".join(job_ids),
+    }
     try:
-        response = requests.get(api_url, headers=headers, timeout=10)
+        response = requests.post(api_url, headers=headers, data=params, timeout=30)
         response.raise_for_status()
         result = response.json()
     except Exception:
-        log.exception("Failed to check Wayback Machine job status: %s", job_id)
-        return None
+        log.exception(
+            "Failed to check Wayback Machine job statuses for job IDs: %s", job_ids
+        )
+        return []
     else:
         return result
