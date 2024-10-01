@@ -680,6 +680,13 @@ WAYBACK_MACHINE_SECRET_KEY = get_string(
     required=False,
 )
 
+# Frequency setting for Wayback Machine job status checks.
+CHECK_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
+    name="CHECK_WAYBACK_JOBS_STATUS_FREQUENCY",
+    default=21600,  # 6 hours in seconds
+    description="Frequency (in seconds) to check the status of Wayback Machine jobs",
+    required=False,
+)
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
@@ -744,6 +751,10 @@ CELERY_BEAT_SCHEDULE = {
     "check_incomplete_publish_build_statuses": {
         "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
+    },
+    "check-wayback-jobs-status-every-12-hours": {
+        "task": "external_resources.tasks.check_wayback_jobs_status_batch",
+        "schedule": CHECK_WAYBACK_JOBS_STATUS_FREQUENCY,
     },
 }
 
