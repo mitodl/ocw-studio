@@ -95,6 +95,7 @@ def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             "features_default": settings.FEATURES_DEFAULT,
             "posthog_api_host": settings.POSTHOG_API_HOST,
             "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
+            "sitemapDomain": settings.SITEMAP_DOMAIN,
         }
     else:
         assert response.status_code == HTTP_302_FOUND
