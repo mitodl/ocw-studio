@@ -95,6 +95,7 @@ class Website(TimestampedModel):
     publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=False)
     latest_build_id_live = models.IntegerField(null=True, blank=True)
+    live_build_date = models.DateTimeField(null=True, blank=True)
     live_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         blank=True,
@@ -114,6 +115,7 @@ class Website(TimestampedModel):
     has_unpublished_draft = models.BooleanField(default=False)
     latest_build_id_draft = models.IntegerField(null=True, blank=True)
     live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
+    draft_build_date = models.DateTimeField(null=True, blank=True)
     draft_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         null=True,
