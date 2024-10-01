@@ -10,6 +10,8 @@ from external_resources.constants import (
     RESOURCE_BROKEN_STATUS_START,
     USER_AGENT_STRING,
     USER_AGENT_TIMEOUT,
+    WAYBACK_API_URL,
+    WAYBACK_CHECK_STATUS_URL,
 )
 from external_resources.exceptions import CheckFailedError
 from main import settings
@@ -69,7 +71,6 @@ def submit_url_to_wayback(
     if not url:
         return None
 
-    api_url = "https://web.archive.org/save"
     headers = {
         "Accept": "application/json",
         "Authorization": (
@@ -83,7 +84,9 @@ def submit_url_to_wayback(
     }
 
     try:
-        response = requests.post(api_url, headers=headers, data=params, timeout=30)
+        response = requests.post(
+            WAYBACK_API_URL, headers=headers, data=params, timeout=30
+        )
         response.raise_for_status()
         result = response.json()
         job_id = result.get("job_id")
@@ -104,7 +107,6 @@ def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
     if not job_ids:
         return []
 
-    api_url = "https://web.archive.org/save/status"
     headers = {
         "Accept": "application/json",
         "Authorization": (
@@ -116,7 +118,9 @@ def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
         "job_ids": ",".join(job_ids),
     }
     try:
-        response = requests.post(api_url, headers=headers, data=params, timeout=30)
+        response = requests.post(
+            WAYBACK_CHECK_STATUS_URL, headers=headers, data=params, timeout=30
+        )
         response.raise_for_status()
         result = response.json()
     except Exception:
