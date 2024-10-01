@@ -20,6 +20,8 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
         "content__website__title",
         "status",
         "wayback_status",
+        "wayback_http_status",
+        "wayback_status_ext",
     )
     list_display = (
         "get_content_title",
@@ -27,10 +29,13 @@ class ExternalResourceStateAdmin(TimestampedModelAdmin):
         "get_website_name",
         "status",
         "wayback_status",
+        "wayback_http_status",
+        "wayback_last_successful_submission",
     )
     list_filter = (
         "status",
         "wayback_status",
+        "wayback_http_status",
     )
     raw_id_fields = ("content",)
     ordering = ("-created_on",)
