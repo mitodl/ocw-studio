@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from external_resources.models import ExternalResourceState
 from external_resources.tasks import submit_url_to_wayback_task
+from main import settings
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.models import WebsiteContent
 
@@ -40,17 +41,18 @@ def upsert_external_resource_state(
             ExternalResourceState.objects.update_or_create(
                 content=instance, defaults=defaults
             )
-            submit_url_to_wayback_task.delay(instance.id)
-            log.info(
-                "New external resource created: %s. Submitting to Wayback Machine.",
-                instance.title,
-            )
-            log.debug(
-                "Created ExternalResourceState for WebsiteContent id=%s",
-                instance.id,
-            )
-        else:
-            log.debug(
-                "ExternalResourceState already exists for WebsiteContent id=%s",
-                instance.id,
-            )
+            if settings.ENABLE_WAYBACK_TASKS:
+                submit_url_to_wayback_task.delay(instance.id)
+                log.info(
+                    "New external resource created: %s. Submitting to Wayback Machine.",
+                    instance.title,
+                )
+                log.debug(
+                    "Created ExternalResourceState for WebsiteContent id=%s",
+                    instance.id,
+                )
+            else:
+                log.debug(
+                    "ExternalResourceState already exists for WebsiteContent id=%s",
+                    instance.id,
+                )
