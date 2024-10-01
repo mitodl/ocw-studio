@@ -80,7 +80,6 @@ def submit_url_to_wayback(
     params = {
         "url": url,
         "skip_first_archive": "1",
-        "capture_outlinks": "0",
     }
 
     try:
