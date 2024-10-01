@@ -22,3 +22,6 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
     wayback_job_id = factory.Faker("uuid4")
     wayback_status = factory.Iterator(ExternalResourceState.WaybackStatus.values)
     wayback_url = factory.Faker("url")
+    wayback_status_ext = factory.Faker("sentence")
+    wayback_http_status = factory.Faker("random_int", min=100, max=599)
+    wayback_last_successful_submission = factory.Faker("date_time", tzinfo=pytz.utc)

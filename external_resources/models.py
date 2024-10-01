@@ -59,7 +59,7 @@ class ExternalResourceState(TimestampedModel):
     wayback_job_id = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
+        help_text="Last Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
     )
 
     wayback_status = models.CharField(
@@ -67,12 +67,32 @@ class ExternalResourceState(TimestampedModel):
         choices=WaybackStatus.choices,
         default="",
         blank=True,
-        help_text="The status of the Wayback Machine snapshot taken from archiving job.",  # noqa: E501
+        help_text="The status of the Wayback Machine snapshot taken from the last archiving job.",  # noqa: E501
+    )
+
+    wayback_status_ext = models.CharField(
+        max_length=128,
+        blank=True,
+        help_text="Extended status of the Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
     )
 
     wayback_url = models.URLField(
         blank=True,
-        help_text="URL of the Wayback Machine snapshot.",
+        help_text="Last working Wayback Machine snapshot URL for the External Resource.",  # noqa: E501
+    )
+
+    wayback_http_status = models.IntegerField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text="HTTP status code received when accessing the last Wayback Machine snapshot.",  # noqa: E501
+    )
+
+    wayback_last_successful_submission = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text="The last time when the URL was successfully submitted to the Wayback Machine.",  # noqa: E501
     )
 
     def __str__(self):
