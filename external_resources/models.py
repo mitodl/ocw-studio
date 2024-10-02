@@ -77,6 +77,7 @@ class ExternalResourceState(TimestampedModel):
     )
 
     wayback_url = models.URLField(
+        max_length=500,
         blank=True,
         help_text="Last working Wayback Machine snapshot URL for the External Resource.",  # noqa: E501
     )
