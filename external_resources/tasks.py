@@ -143,16 +143,6 @@ def submit_website_resources_to_wayback_task(self, website_name):
 def submit_url_to_wayback_task(self, resource_id):
     """Submit an External Resource URL to the Wayback Machine."""
 
-    # Skip in dev or if Wayback Machine API credentials are not set
-    if settings.ENVIRONMENT == "dev" or not (
-        settings.WAYBACK_MACHINE_ACCESS_KEY and settings.WAYBACK_MACHINE_SECRET_KEY
-    ):
-        log.info(
-            "Skipping Wayback Machine submission task for resource ID %s. Reason: Environment is 'dev' or API credentials are missing.",  # noqa: E501
-            resource_id,
-        )
-        return
-
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
         if state.wayback_last_successful_submission:
