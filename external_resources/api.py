@@ -65,9 +65,6 @@ def submit_url_to_wayback(
     Submit the external resource URL to the Wayback Machine and
     return the job_id or status_ext
     """
-    job_id = None
-    status_ext = None
-
     if not url:
         return None
 
@@ -83,21 +80,9 @@ def submit_url_to_wayback(
         "skip_first_archive": "1",
     }
 
-    try:
-        response = requests.post(
-            WAYBACK_API_URL, headers=headers, data=params, timeout=30
-        )
-        response.raise_for_status()
-        result = response.json()
-        job_id = result.get("job_id")
-
-        if not job_id:
-            status_ext = result.get("status_ext")
-            log.error("No job_id returned from Wayback Machine for URL %s", url)
-    except Exception:
-        log.exception("Failed to submit URL to Wayback Machine: %s", url)
-
-    return {"job_id": job_id, "status_ext": status_ext}
+    response = requests.post(WAYBACK_API_URL, headers=headers, data=params, timeout=30)
+    response.raise_for_status()
+    return response.json()
 
 
 def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
@@ -117,16 +102,8 @@ def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
     params = {
         "job_ids": ",".join(job_ids),
     }
-    try:
-        response = requests.post(
-            WAYBACK_CHECK_STATUS_URL, headers=headers, data=params, timeout=30
-        )
-        response.raise_for_status()
-        result = response.json()
-    except Exception:
-        log.exception(
-            "Failed to check Wayback Machine job statuses for job IDs: %s", job_ids
-        )
-        return []
-    else:
-        return result
+    response = requests.post(
+        WAYBACK_CHECK_STATUS_URL, headers=headers, data=params, timeout=30
+    )
+    response.raise_for_status()
+    return response.json()
