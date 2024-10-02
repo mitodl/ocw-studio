@@ -6,6 +6,7 @@ from datetime import timedelta
 import celery
 from django.utils import timezone
 from mitol.common.utils import chunks
+from requests.exceptions import ConnectionError, HTTPError, Timeout
 
 from content_sync.decorators import single_task
 from external_resources import api
@@ -13,7 +14,7 @@ from external_resources.constants import (
     BATCH_SIZE_WAYBACK_STATUS_CHECK,
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
-    MAX_WAYBACK_SUBMISSION_RETRIES,
+    HTTP_TOO_MANY_REQUESTS,
     METADATA_URL_STATUS_CODE,
     RESOURCE_UNCHECKED_STATUSES,
     WAYBACK_ERROR_STATUS,
@@ -135,9 +136,10 @@ def submit_website_resources_to_wayback_task(self, website_name):
     bind=True,
     acks_late=True,
     rate_limit=WAYBACK_MACHINE_TASK_RATE_LIMIT,
-    queue="batch",
-    autoretry_for=(BlockingIOError,),
+    autoretry_for=(BlockingIOError, ConnectionError, Timeout),
     retry_backoff=True,
+    retry_backoff_max=128,
+    max_retries=7,
 )
 @single_task(7)
 def submit_url_to_wayback_task(self, resource_id):
@@ -189,15 +191,30 @@ def submit_url_to_wayback_task(self, resource_id):
         log.exception(
             "ExternalResourceState does not exist for resource ID %s", resource_id
         )
+    except HTTPError as exc:
+        if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
+            log.warning(
+                "HTTP 429 Too Many Requests for resource ID %s."
+                "Retrying after 30 seconds.",
+                resource_id,
+            )
+            raise self.retry(exc=exc, countdown=30) from exc
     except Exception as exc:
         log.exception(
             "Error submitting URL to Wayback Machine for resource ID: %s", resource_id
         )
-        if self.request.retries < MAX_WAYBACK_SUBMISSION_RETRIES:
-            raise self.retry(exc=exc) from exc
+        raise self.retry(exc=exc) from exc
 
 
-@app.task(bind=True)
+@app.task(
+    bind=True,
+    acks_late=True,
+    autoretry_for=(BlockingIOError, ConnectionError, Timeout),
+    retry_backoff=30,
+    retry_backoff_max=240,
+    max_retries=5,
+)
+@single_task(10)
 def check_wayback_jobs_status_batch(self):
     """Batch check the status of Wayback Machine jobs."""
     try:
@@ -228,6 +245,13 @@ def check_wayback_jobs_status_batch(self):
                     continue
                 update_state_fields(state, status, http_status, status_ext, result)
                 update_metadata(state, status)
+    except HTTPError as exc:
+        if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
+            log.warning(
+                "HTTP 429 Too Many Requests when checking Wayback Machine job statuses."
+                "Retrying after 30 seconds."
+            )
+            raise self.retry(exc=exc, countdown=30) from exc
     except Exception as exc:
         log.exception("Error during batch status check of Wayback Machine jobs")
         raise self.retry(exc=exc) from exc
