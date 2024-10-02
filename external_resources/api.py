@@ -63,7 +63,7 @@ def submit_url_to_wayback(
 ) -> Optional[str]:
     """
     Submit the external resource URL to the Wayback Machine and
-    return the job_id or status_ext
+    return the response
     """
     if not url:
         return None
