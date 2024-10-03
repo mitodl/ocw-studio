@@ -11,6 +11,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
@@ -115,6 +116,45 @@ class OcwStudioWebhookResource(Resource):
                 "url": api_url,
                 "method": "POST",
                 "out_only": True,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_token}",
+                },
+            },
+            **kwargs,
+        )
+
+
+class OcwStudioOfflineGateResource(Resource):
+    """
+    A Resource for making API calls to ocw-studio to check if a Website's
+    offline version is downloadable.
+
+    args:
+        site_name(str): The name of the site the status is in reference to
+        api_token(str): The ocw-studio API token
+    """
+
+    def __init__(
+        self,
+        site_name: str,
+        api_token: str,
+        **kwargs,
+    ):
+        ocw_studio_url = get_ocw_studio_api_url()
+        api_path = os.path.join(  # noqa: PTH118
+            "api", "websites", site_name, "allow_offline_build"
+        )
+        api_url = f"{urljoin(ocw_studio_url, api_path)}/"
+        super().__init__(
+            name=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
+            icon="language-python",
+            type=HTTP_RESOURCE_TYPE_IDENTIFIER,
+            check_every="never",
+            source={
+                "url": api_url,
+                "method": "GET",
+                "sensitive": True,
                 "headers": {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {api_token}",
