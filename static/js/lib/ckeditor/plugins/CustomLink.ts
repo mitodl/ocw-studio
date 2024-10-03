@@ -116,7 +116,7 @@ async function getExternalResource(
 
   const payload = {
     type: "external-resource",
-    title: title || linkValue,
+    title: title || linkValue.slice(0, SETTINGS.maxTitle),
     metadata: {
       external_url: linkValue,
       license: "https://en.wikipedia.org/wiki/All_rights_reserved",
@@ -125,8 +125,6 @@ async function getExternalResource(
       backup_url: "",
     },
   }
-
-  console.log("payload", payload)
 
   try {
     const response = await fetch(

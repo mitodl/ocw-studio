@@ -29,6 +29,7 @@ def _index(request):
         "posthog_api_host": settings.POSTHOG_API_HOST,
         "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
         "sitemapDomain": settings.SITEMAP_DOMAIN,
+        "maxTitle": constants.CONTENT_FILENAME_MAX_LEN,
     }
 
     user = request.user
