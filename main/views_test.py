@@ -9,6 +9,7 @@ from django.urls import reverse
 from rest_framework.status import HTTP_200_OK, HTTP_302_FOUND
 
 from users.factories import UserFactory
+from websites.constants import CONTENT_FILENAME_MAX_LEN
 
 pytestmark = [
     pytest.mark.django_db,
@@ -95,6 +96,8 @@ def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             "features_default": settings.FEATURES_DEFAULT,
             "posthog_api_host": settings.POSTHOG_API_HOST,
             "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
+            "sitemapDomain": settings.SITEMAP_DOMAIN,
+            "maxTitle": CONTENT_FILENAME_MAX_LEN,
         }
     else:
         assert response.status_code == HTTP_302_FOUND

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import { Editor } from "@ckeditor/ckeditor5-core"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
@@ -22,11 +22,14 @@ import {
   RESOURCE_LINK,
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
+  WEBSITE_NAME,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
+import { checkFeatureFlag } from "../../lib/util"
+import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
 
 export interface Props {
   value?: string
@@ -50,6 +53,15 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
+
+  const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
+
+  useEffect(() => {
+    checkFeatureFlag(
+      "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
+      setIsCustomLinkUIEnabled,
+    )
+  }, [])
 
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
@@ -133,6 +145,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           }).pathname
         }`,
       },
+      [WEBSITE_NAME]: website.name,
+    }
+    if (isCustomLinkUIEnabled) {
+      MinimalEditorConfig.plugins.push(CustomLink)
+      FullEditorConfig.plugins.push(CustomLink)
     }
 
     if (minimal) {
@@ -176,6 +193,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     embed,
     allowedHtml,
     website.name,
+    isCustomLinkUIEnabled,
   ])
 
   const onChangeCB = useCallback(
