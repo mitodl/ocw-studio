@@ -28,6 +28,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -45,6 +46,7 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
 from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
+    OcwStudioOfflineGateResource,
     OcwStudioWebhookResource,
     OpenCatalogResource,
     SiteContentGitResource,
@@ -53,6 +55,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
+    OcwStudioOfflineGateWebhookStep,
     OcwStudioWebhookStep,
     OpenCatalogWebhookStep,
     add_error_handling,
@@ -303,6 +306,10 @@ class SitePipelineResources(list[Resource]):
             site_name=config.vars["site_name"],
             api_token=settings.API_BEARER_TOKEN or "",
         )
+        ocw_studio_webhook_offline_gate_resource = OcwStudioOfflineGateResource(
+            site_name=config.vars["site_name"],
+            api_token=settings.API_BEARER_TOKEN or "",
+        )
         self.extend(
             [
                 webpack_manifest_resource,
@@ -310,6 +317,7 @@ class SitePipelineResources(list[Resource]):
                 ocw_hugo_themes_resource,
                 ocw_hugo_projects_resource,
                 ocw_studio_webhook_resource,
+                ocw_studio_webhook_offline_gate_resource,
                 SlackAlertResource(),
             ]
         )
@@ -853,7 +861,61 @@ class SitePipelineDefinition(Pipeline):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
         )
-        online_job.plan.append(offline_build_gate_put_step)
+
+        offline_build_gate = add_error_handling(
+            step=TaskStep(
+                task="Conditional-Put",
+                timeout="10s",
+                attempts=3,
+                params={
+                    "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
+                    "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+                    "OCW_STUDIO_BASE_URL": config.values["ocw_studio_url"],
+                    "STATIC_API_BASE_URL": config.values["static_api_url"],
+                    "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                    "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
+                    "RESOURCE_BASE_URL": config.values["resource_base_url"],
+                    "SITEMAP_DOMAIN": config.values["sitemap_domain"],
+                    "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
+                    "NOINDEX": config.values["noindex"],
+                },
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
+                    inputs=[
+                        Input(name=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER),
+                    ],
+                    outputs=[],
+                    run=Command(
+                        dir=SITE_CONTENT_GIT_IDENTIFIER,
+                        path="",
+                        args=[
+                            "-exc",
+                            f"""
+                            cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
+                            hugo {config.values['hugo_args_online']}
+                            cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{config.values['static_resources_subdirectory']}
+                            """,  # noqa: E501
+                            f"""
+                            RESPONSE=$(jq -r '.is_offline' < {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/response)
+                            echo "$RESPONSE"
+                            exit 1
+                            """,  # noqa: E501
+                        ],
+                    ),
+                ),
+            ),
+            step_description=f"{OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}",
+            pipeline_name=config.values["pipeline_name"],
+            short_id=config.values["short_id"],
+            instance_vars=config.values["instance_vars"],
+        )
+
+        offline_build_gate.on_success = offline_build_gate_put_step
+
+        online_job.plan.append(OcwStudioOfflineGateWebhookStep())
+
+        online_job.plan.append(offline_build_gate)
         offline_job = self.get_offline_build_job(config=config)
         offline_build_gate_get_step = add_error_handling(
             step=GetStep(
