@@ -18,6 +18,7 @@ import {
   RESOURCE_EMBED,
   RESOURCE_LINK,
   RESOURCE_LINK_CONFIG_KEY,
+  WEBSITE_NAME,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
 import { getMockEditor } from "../../test_util"
@@ -103,6 +104,7 @@ describe("MarkdownEditor", () => {
           CKEDITOR_RESOURCE_UTILS,
           MARKDOWN_CONFIG_KEY,
           RESOURCE_LINK_CONFIG_KEY,
+          WEBSITE_NAME,
         ],
         ckWrapper.prop("config"),
       )

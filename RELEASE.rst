@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.130.0
+---------------
+
+- Umar/5124 create external resource with add links (#2279)
+- Umar/2168 separately track publish date and build date (#2284)
+
 Version 0.129.0 (Released September 24, 2024)
 ---------------
 

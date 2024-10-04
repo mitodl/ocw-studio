@@ -17,7 +17,7 @@ from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
 from content_sync.pipelines.base import BasePipeline
-from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
+from websites.constants import PUBLISH_STATUS_ERRORED
 from websites.models import Website, WebsiteContent
 
 log = logging.getLogger()
@@ -186,9 +186,8 @@ def publish_website(  # pylint: disable=too-many-arguments
             update_kwargs = {}
         # Need to update additional fields
         update_kwargs = {
-            f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
-            f"{version}_publish_status_updated_on": now_in_utc(),
             f"has_unpublished_{version}": False,
+            f"{version}_build_date": now_in_utc(),
             **update_kwargs,
         }
     except:  # pylint:disable=bare-except

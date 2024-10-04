@@ -14,6 +14,8 @@ export const MARKDOWN_CONFIG_KEY = "markdown-config"
 
 export const RESOURCE_LINK_CONFIG_KEY = "resource-link-config"
 
+export const WEBSITE_NAME = "website-name"
+
 import TurndownService from "turndown"
 
 /**

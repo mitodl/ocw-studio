@@ -670,6 +670,35 @@ class WebsiteContentViewSet(
         update_website_backend(instance.website)
         return instance
 
+    def create(self, request, *args, **kwargs):  # noqa: ARG002
+        """
+        Override the create method to implement 'create_or_get' functionality.
+        """
+        parent_lookup_website = self.kwargs.get("parent_lookup_website")
+
+        # Extract the data from the request
+        types = _get_value_list_from_query_params(request.data, "type")
+        metadata = request.data.get("metadata")
+
+        # Criteria for checking duplicates in external resources only
+        if constants.CONTENT_TYPE_EXTERNAL_RESOURCE in types:
+            queryset = WebsiteContent.objects.filter(
+                website__name=parent_lookup_website
+            )
+            queryset = queryset.filter(metadata__external_url=metadata["external_url"])
+            content = queryset.first()
+
+            if content:
+                # If the content already exists, return it instead of creating a new one
+                serializer = self.get_serializer(content)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Proceed with creation if no existing content is found
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=self.request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     @action(
         detail=False,
         methods=["post"],
