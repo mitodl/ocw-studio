@@ -11,7 +11,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
-    OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
@@ -147,14 +147,14 @@ class OcwStudioOfflineGateResource(Resource):
         )
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
-            name=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
+            name=OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER,
             icon="language-python",
             type=HTTP_RESOURCE_TYPE_IDENTIFIER,
             check_every="never",
             source={
                 "url": api_url,
                 "method": "GET",
-                "sensitive": True,
+                "version": {"jq": ".version.created_at", "default": None},
                 "headers": {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {api_token}",

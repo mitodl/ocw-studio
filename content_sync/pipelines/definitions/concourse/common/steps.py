@@ -7,7 +7,6 @@ from ol_concourse.lib.models.pipeline import (
     AnonymousResource,
     Command,
     DoStep,
-    GetStep,
     Identifier,
     Output,
     PutStep,
@@ -19,7 +18,6 @@ from ol_concourse.lib.models.pipeline import (
 )
 
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
@@ -202,26 +200,6 @@ class OcwStudioWebhookStep(TryStep):
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
                 inputs=[],
-            ),
-            **kwargs,
-        )
-
-
-class OcwStudioOfflineGateWebhookStep(TryStep):
-    """
-    A PutStep to the ocw-studio api resource that sets a status on a given pipeline
-
-    Args:
-        pipeline_name(str): The name of the pipeline to set the status on
-        status: (str): The status to set on the pipeline (failed, errored, succeeded)
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(
-            try_=GetStep(
-                get=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
-                timeout="1m",
-                attempts=3,
             ),
             **kwargs,
         )

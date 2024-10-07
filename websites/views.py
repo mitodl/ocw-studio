@@ -324,7 +324,12 @@ class WebsiteViewSet(
         )
         allow_offline = content.metadata["hide_download"]
         return Response(
-            status=200, data={"allow_offline": allow_offline, "timestamp": now_in_utc()}
+            status=200,
+            data={
+                "version": {"created_at": str(now_in_utc().timestamp())}
+                if allow_offline
+                else {}
+            },
         )
 
 

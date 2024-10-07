@@ -11,7 +11,6 @@ from ol_concourse.lib.models.pipeline import (
     Identifier,
     Input,
     Job,
-    LoadVarStep,
     Output,
     Pipeline,
     PutStep,
@@ -26,10 +25,9 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_TEST_URL, TARGET_OFFLINE, TARGET_ONLINE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
-    OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -56,7 +54,6 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
-    OcwStudioOfflineGateWebhookStep,
     OcwStudioWebhookStep,
     OpenCatalogWebhookStep,
     add_error_handling,
@@ -830,10 +827,11 @@ class SitePipelineDefinition(Pipeline):
         config(SitePipelineDefinitionConfig): The site pipeline configuration object
     """
 
-    _offline_build_gate_identifier = Identifier("offline-build-gate").root
+    _offline_build_gate_identifier = Identifier(
+        OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER
+    ).root
     _online_site_job_identifier = Identifier("online-site-job").root
     _offline_site_job_identifier = Identifier("offline-site-job").root
-    _online_conditional_put_identifier = Identifier("conditional-put").root
 
     class Config:
         arbitrary_types_allowed = True
@@ -844,76 +842,18 @@ class SitePipelineDefinition(Pipeline):
         resource_types = SitePipelineResourceTypes()
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
-        offline_build_gate_resource = Resource(
-            name=self._offline_build_gate_identifier,
-            type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
-            icon="gate",
-            check_every="never",
-            source={"initial_mapping": "timestamp = now()"},
-        )
-        resources.append(offline_build_gate_resource)
         online_job = self.get_online_build_job(config=config)
         offline_build_gate_put_step = add_error_handling(
             step=PutStep(
                 put=self._offline_build_gate_identifier,
-                params={
-                    "version": "((.:conditional_version.timestamp))",
-                },
-                inputs=[],
+                timeout="1m",
+                attempts=3,
             ),
-            step_description=f"{self._offline_build_gate_identifier} task step",
+            step_description=f"{self._offline_build_gate_identifier} put step",
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
         )
-
-        offline_build_gate = add_error_handling(
-            step=TaskStep(
-                task=self._online_conditional_put_identifier,
-                timeout="10s",
-                params={
-                    "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-                },
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                    inputs=[
-                        Input(name=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER),
-                    ],
-                    outputs=[
-                        Output(name=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER)
-                    ],
-                    run=Command(
-                        path="sh",
-                        args=[
-                            "-exc",
-                            f"""
-                            RESPONSE=$(jq -r '.allow_offline' < {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/body)
-                            if [ $RESPONSE = true ]; then
-                                cp {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/body {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
-                            else
-                                echo '{{"timestamp": ""}}' > {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
-                            fi
-                            cat {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
-                            """,  # noqa: E501
-                        ],
-                    ),
-                ),
-            ),
-            step_description=f"{OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}",
-            pipeline_name=config.values["pipeline_name"],
-            short_id=config.values["short_id"],
-            instance_vars=config.values["instance_vars"],
-        )
-        lv_step = LoadVarStep(
-            format="json",
-            load_var="conditional_version",
-            file=f"{OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json",
-        )
-
-        online_job.plan.append(OcwStudioOfflineGateWebhookStep())
-        online_job.plan.append(offline_build_gate)
-        online_job.plan.append(lv_step)
         online_job.plan.append(offline_build_gate_put_step)
         offline_job = self.get_offline_build_job(config=config)
         offline_build_gate_get_step = add_error_handling(
