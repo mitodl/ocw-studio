@@ -849,7 +849,7 @@ class SitePipelineDefinition(Pipeline):
             type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
             icon="gate",
             check_every="never",
-            source={"initial_mapping": ""},
+            source={"initial_mapping": "timestamp = now()"},
         )
         resources.append(offline_build_gate_resource)
         online_job = self.get_online_build_job(config=config)
@@ -857,7 +857,7 @@ class SitePipelineDefinition(Pipeline):
             step=PutStep(
                 put=self._offline_build_gate_identifier,
                 params={
-                    "mapping": "((.:conditional_version.timestamp))",
+                    "version": "((.:conditional_version.timestamp))",
                 },
                 inputs=[],
             ),
@@ -892,7 +892,7 @@ class SitePipelineDefinition(Pipeline):
                             if [ $RESPONSE = true ]; then
                                 cp {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/body {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
                             else
-                                echo "{{}}" > {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
+                                echo '{{"timestamp": ""}}' > {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
                             fi
                             cat {OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER}/version.json
                             """,  # noqa: E501
