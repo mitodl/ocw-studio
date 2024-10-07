@@ -7,6 +7,7 @@ from ol_concourse.lib.models.pipeline import (
     AnonymousResource,
     Command,
     DoStep,
+    GetStep,
     Identifier,
     Output,
     PutStep,
@@ -217,11 +218,10 @@ class OcwStudioOfflineGateWebhookStep(TryStep):
 
     def __init__(self, **kwargs):
         super().__init__(
-            try_=PutStep(
-                put=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
+            try_=GetStep(
+                get=OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER,
                 timeout="1m",
                 attempts=3,
-                get_params={"response": True},
             ),
             **kwargs,
         )

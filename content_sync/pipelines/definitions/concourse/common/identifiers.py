@@ -10,7 +10,7 @@ S3_IAM_RESOURCE_TYPE_IDENTIFIER = Identifier("s3-resource-iam").root
 OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER = Identifier("ocw-studio-webhook").root
 OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER = Identifier("ocw-studio-webhook-curl").root
 OCW_STUDIO_WEBHOOK_ALLOW_OFFLINE_BUILD_IDENTIFIER = Identifier(
-    "ocw-studio-webhook-allow-offline"
+    "ocw-studio-webhook-build-offline"
 ).root
 SLACK_ALERT_RESOURCE_IDENTIFIER = Identifier("slack-alert").root
 WEBPACK_MANIFEST_S3_IDENTIFIER = Identifier("webpack-manifest-s3").root
