@@ -154,7 +154,7 @@ class OcwStudioOfflineGateResource(Resource):
             source={
                 "url": api_url,
                 "method": "GET",
-                "version": {"jq": ".version.created_at", "default": None},
+                "version": {"jq": ".version.created_at", "default": "null"},
                 "headers": {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {api_token}",
