@@ -33,7 +33,7 @@ class ExternalResourceState(TimestampedModel):
         max_length=16,
         choices=Status.choices,
         default=Status.UNCHECKED,
-        help_text="The status of this external resource.",
+        help_text="The status of this external resource",
     )
 
     external_url_response_code = models.IntegerField(
@@ -64,7 +64,14 @@ class ExternalResourceState(TimestampedModel):
         default=None,
         null=True,
         blank=True,
-        help_text="The last time when this resource was checked for breakages.",
+        help_text="Last time when this resource was checked for breakages",
+    )
+
+    referencing_pages = models.ManyToManyField(
+        WebsiteContent,
+        related_name="referenced_external_resources",
+        blank=True,
+        help_text="Pages that reference this external resource",
     )
 
     def __str__(self):
