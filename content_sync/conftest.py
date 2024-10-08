@@ -32,7 +32,7 @@ def mock_concourse_hard_purge(settings, request):  # noqa: PT004
     settings.CONCOURSE_HARD_PURGE = request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_branches(settings, mocker):
     """Return mock github branches with names"""
     mocked_branches = []
@@ -47,7 +47,7 @@ def mock_branches(settings, mocker):
     return mocked_branches
 
 
-@pytest.fixture()
+@pytest.fixture
 def github_content_file(mocker):
     """Fixture that returns a mocked Github ContentFile object with some related properties"""  # noqa: E501
     content_str = "my file content"
