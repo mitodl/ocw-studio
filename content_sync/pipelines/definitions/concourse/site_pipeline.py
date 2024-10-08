@@ -862,7 +862,6 @@ class SitePipelineDefinition(Pipeline):
                 get=self._offline_build_gate_identifier,
                 passed=[self._online_site_job_identifier],
                 trigger=True,
-                params={"strict": True},
             ),
             step_description=f"{self._offline_build_gate_identifier} get step",
             pipeline_name=config.vars["pipeline_name"],
