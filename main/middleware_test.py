@@ -12,7 +12,7 @@ FEATURE_FLAG_COOKIE_NAME = "TEST_COOKIE"
 FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS = 60
 
 
-@pytest.fixture()
+@pytest.fixture
 def middleware_settings(settings):  # noqa: PT004
     """Default settings for middleware"""  # noqa: D401
     settings.MIDDLEWARE_FEATURE_FLAG_QS_PREFIX = "ZZ"
@@ -22,13 +22,13 @@ def middleware_settings(settings):  # noqa: PT004
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def qs_middleware(mocker, middleware_settings):  # pylint: disable=unused-argument
     """Mocked middleware for QueryStringFeatureFlagMiddleware"""  # noqa: D401
     return QueryStringFeatureFlagMiddleware(mocker.Mock())
 
 
-@pytest.fixture()
+@pytest.fixture
 def cookie_middleware(mocker, middleware_settings):  # pylint: disable=unused-argument
     """Mocked middleware for QueryStringFeatureFlagMiddleware"""  # noqa: D401
     return CookieFeatureFlagMiddleware(mocker.Mock())
