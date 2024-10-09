@@ -117,7 +117,9 @@ def check_external_resources_for_breakages(self):
 
 
 @app.task(bind=True)
-def submit_website_resources_to_wayback_task(self, website_name):
+def submit_website_resources_to_wayback_task(
+    self, website_name, ignore_last_submission=None
+):
     """Submit all external resources of a website to the Wayback Machine."""
     external_resources = WebsiteContent.objects.filter(
         website__name=website_name,
@@ -125,7 +127,8 @@ def submit_website_resources_to_wayback_task(self, website_name):
     ).select_related("external_resource_state")
 
     tasks = [
-        submit_url_to_wayback_task.s(resource.id) for resource in external_resources
+        submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
+        for resource in external_resources
     ]
     if tasks:
         return self.replace(celery.group(tasks))
@@ -162,7 +165,7 @@ def should_skip_wayback_submission(state):
     priority=WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
 )
 @single_task(7)
-def submit_url_to_wayback_task(self, resource_id):
+def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
 
     try:
@@ -243,14 +246,19 @@ def submit_url_to_wayback_task(self, resource_id):
     max_retries=5,
 )
 @single_task(10)
-def update_wayback_jobs_status_batch(self):
-    """Batch update the status of Wayback Machine jobs."""
+def update_wayback_jobs_status_batch(self, job_ids=None):
+    """Batch check the status of Wayback Machine jobs."""
     try:
-        pending_states = ExternalResourceState.objects.filter(
-            wayback_status=WAYBACK_PENDING_STATUS,
-            wayback_job_id__isnull=False,
-        )
-
+        if job_ids:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__in=job_ids,
+            )
+        else:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__isnull=False,
+            )
         if not pending_states.exists():
             log.info("No pending Wayback Machine jobs to update.")
             return
