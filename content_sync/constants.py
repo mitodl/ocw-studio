@@ -19,3 +19,8 @@ WEBSITE_LISTING_DIRPATH = "content/websites"
 DEV_DRAFT_URL = "http://10.1.0.102:8044"
 DEV_LIVE_URL = "http://10.1.0.102:8045"
 DEV_TEST_URL = "http://10.1.0.102:8046"
+
+
+# Publish Date Constants
+PUBLISH_DATE_LIVE = "publish_date"
+PUBLISH_DATE_DRAFT = "draft_publish_date"

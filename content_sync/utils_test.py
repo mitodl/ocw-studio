@@ -40,6 +40,7 @@ from content_sync.utils import (
 )
 from main.s3_utils import get_boto3_client
 from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
+from websites.constants import CONTENT_TYPE_METADATA
 from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
 from websites.site_config_api import ConfigItem, SiteConfig
 
@@ -257,7 +258,8 @@ def test_get_ocw_studio_api_url(settings, mocker, is_dev):
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_get_publishable_sites(settings, mocker, mass_build_websites, version):
+@pytest.mark.parametrize("offline", [False, True])
+def test_get_publishable_sites(settings, mocker, mass_build_websites, version, offline):
     """get_publishable_sites should return a queryset of sites that have been published before"""
     unpublished_site = mass_build_websites[0]
     if version == VERSION_DRAFT:
@@ -270,8 +272,19 @@ def test_get_publishable_sites(settings, mocker, mass_build_websites, version):
         test_site.name = test_site_slug
         test_site.save()
     assert len(mass_build_websites) == 7
-    publishable_sites = get_publishable_sites(version)
-    assert publishable_sites.count() == 4
+
+    publishable_sites_count = 4
+
+    if offline:
+        WebsiteContentFactory.create(
+            type=CONTENT_TYPE_METADATA,
+            metadata={"hide_download": True},
+            website=mass_build_websites[4],
+        )
+        publishable_sites_count = 3
+
+    publishable_sites = get_publishable_sites(version, is_offline=offline)
+    assert publishable_sites.count() == publishable_sites_count
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
