@@ -72,19 +72,20 @@ def test_check_external_resources_for_breakages_zero_websites(
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     (
-        "url_status_code",
+        "url_status" "url_status_code",
         "expected_status",
     ),
     [
-        (HTTP_200_OK, ExternalResourceState.Status.VALID),
-        (HTTP_400_BAD_REQUEST, ExternalResourceState.Status.BROKEN),
-        (HTTP_401_UNAUTHORIZED, ExternalResourceState.Status.UNCHECKED),
-        (HTTP_403_FORBIDDEN, ExternalResourceState.Status.UNCHECKED),
-        (HTTP_404_NOT_FOUND, ExternalResourceState.Status.BROKEN),
+        (False, HTTP_200_OK, ExternalResourceState.Status.VALID),
+        (True, HTTP_400_BAD_REQUEST, ExternalResourceState.Status.BROKEN),
+        (True, HTTP_401_UNAUTHORIZED, ExternalResourceState.Status.UNCHECKED),
+        (True, HTTP_403_FORBIDDEN, ExternalResourceState.Status.UNCHECKED),
+        (True, HTTP_404_NOT_FOUND, ExternalResourceState.Status.BROKEN),
     ],
 )
 def test_check_external_resources(
     mocker,
+    url_status,
     url_status_code,
     expected_status,
 ):
@@ -93,7 +94,7 @@ def test_check_external_resources(
 
     mocker.patch(
         "external_resources.tasks.api.is_external_url_broken",
-        return_value=(url_status_code >= 400, url_status_code),
+        return_value=(url_status, url_status_code),
     )
 
     # Run the task
