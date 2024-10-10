@@ -72,7 +72,8 @@ def test_check_external_resources_for_breakages_zero_websites(
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     (
-        "url_status" "url_status_code",
+        "url_status",
+        "url_status_code",
         "expected_status",
     ),
     [
