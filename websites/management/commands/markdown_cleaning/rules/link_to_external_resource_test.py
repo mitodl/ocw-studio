@@ -1,7 +1,8 @@
 """Tests for link_resolveuid.py"""
 
+from unittest.mock import patch
+
 import pytest
-from django.test import override_settings
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.factories import (
@@ -117,35 +118,35 @@ def test_build_external_resource():
 
 
 @pytest.mark.django_db()
-@override_settings(ENABLE_WAYBACK_TASKS=False)
 @pytest.mark.parametrize("content_exists", [True, False])
 def test_get_or_build_external_resource(content_exists):
     """Test get_or_build_external_resource builds or gets depending on content existence."""
-    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
-    website = WebsiteFactory.create(starter=starter)
-    title = "title"
-    url = "https://google.com"
-    site_config = SiteConfig(SAMPLE_SITE_CONFIG)
-    config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        title = "title"
+        url = "https://google.com"
+        site_config = SiteConfig(SAMPLE_SITE_CONFIG)
+        config_item = site_config.find_item_by_name(CONTENT_TYPE_EXTERNAL_RESOURCE)
 
-    if content_exists:
-        existing_content = WebsiteContentFactory.create(
-            metadata={
-                "external_url": url,
-                "has_external_license_warning": True,
-            },
-            dirpath=config_item.file_target,
+        if content_exists:
+            existing_content = WebsiteContentFactory.create(
+                metadata={
+                    "external_url": url,
+                    "has_external_license_warning": True,
+                },
+                dirpath=config_item.file_target,
+                website=website,
+                type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+                title=title,
+            )
+
+        external_resource = get_or_build_external_resource(
             website=website,
-            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+            site_config=SiteConfig(SAMPLE_SITE_CONFIG),
             title=title,
+            url=url,
         )
-
-    external_resource = get_or_build_external_resource(
-        website=website,
-        site_config=SiteConfig(SAMPLE_SITE_CONFIG),
-        title=title,
-        url=url,
-    )
 
     assert external_resource.title == title
     assert external_resource.metadata["external_url"] == url
@@ -183,27 +184,30 @@ def test_link_to_external_resources(settings, content, expected_content_template
     Test link_to_external_resources correctly replaces links
     with resource_link shortcode.
     """
-    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
-    website = WebsiteFactory.create(starter=starter)
-    settings.OCW_COURSE_STARTER_SLUG = starter.slug
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
 
-    target_content = WebsiteContentFactory.create(
-        markdown=content,
-        website=website,
-        metadata={
-            "description": content,
-            "related_resources_text": content,
-            "optional_text": content,
-            "course_description": content,
-            "image_metadata": {
-                "caption": content,
-                "credit": content,
+        target_content = WebsiteContentFactory.create(
+            markdown=content,
+            website=website,
+            metadata={
+                "description": content,
+                "related_resources_text": content,
+                "optional_text": content,
+                "course_description": content,
+                "image_metadata": {
+                    "caption": content,
+                    "credit": content,
+                },
             },
-        },
-    )
+        )
 
-    cleaner = get_cleaner("markdown")
-    cleaner.update_website_content(target_content)
+        cleaner = get_cleaner("markdown")
+        cleaner.update_website_content(target_content)
 
     wc_ocw = WebsiteContent.objects.get(title="OCW")
     wc_ocw_2 = WebsiteContent.objects.get(title="OCW same but not so")
@@ -295,18 +299,21 @@ def test_link_to_external_resources(settings, content, expected_content_template
 )
 def test_nav_item_to_external_resources(content, expected_content_template):
     """Test nav_item_to_external_resource correctly converts external links to external resources."""
-    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
-    website = WebsiteFactory.create(starter=starter)
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
 
-    target_content = WebsiteContentFactory.create(
-        website=website,
-        metadata={
-            "leftnav": content,
-        },
-    )
+        target_content = WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "leftnav": content,
+            },
+        )
 
-    cleaner = get_cleaner("nav_item")
-    cleaner.update_website_content(target_content)
+        cleaner = get_cleaner("nav_item")
+        cleaner.update_website_content(target_content)
 
     content_ids = {
         "nest-id": WebsiteContent.objects.get(title="Nest").text_id,
