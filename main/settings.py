@@ -651,6 +651,13 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
 )
 
 # Wayback Machine Settings
+ENABLE_WAYBACK_TASKS = get_bool(
+    name="ENABLE_WAYBACK_TASKS",
+    default=True,
+    description="Enables tasks related to Wayback Machine submissions and status checks",  # noqa: E501
+    required=False,
+)
+
 CHECK_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
     name="CHECK_WAYBACK_JOBS_STATUS_FREQUENCY",
     default=21600,  # 6 hours in seconds
@@ -658,11 +665,10 @@ CHECK_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
-ENABLE_WAYBACK_TASKS = get_bool(
-    name="ENABLE_WAYBACK_TASKS",
-    default=True,
-    description="Enables tasks related to Wayback Machine submissions and status checks",  # noqa: E501
-    required=False,
+WAYBACK_SUBMISSION_INTERVAL_DAYS = get_int(
+    name="WAYBACK_SUBMISSION_INTERVAL_DAYS",
+    default=30,
+    description="Number of days between Wayback submissions",
 )
 
 # Check External Resources settings
