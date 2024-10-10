@@ -18,6 +18,7 @@ from external_resources.constants import (
     METADATA_URL_STATUS_CODE,
     RESOURCE_UNCHECKED_STATUSES,
     WAYBACK_ERROR_STATUS,
+    WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
     WAYBACK_MACHINE_TASK_RATE_LIMIT,
     WAYBACK_PENDING_STATUS,
     WAYBACK_SUCCESS_STATUS,
@@ -140,6 +141,7 @@ def submit_website_resources_to_wayback_task(self, website_name):
     retry_backoff=True,
     retry_backoff_max=128,
     max_retries=7,
+    priority=WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
 )
 @single_task(7)
 def submit_url_to_wayback_task(self, resource_id):
