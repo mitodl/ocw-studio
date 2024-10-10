@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Literal
 
 import pytest
+from django.test import override_settings
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -69,6 +70,7 @@ def test_check_external_resources_for_breakages_zero_websites(
     assert mocked_celery.replace.call_count == 0
 
 
+@override_settings(ENABLE_WAYBACK_TASKS=False)
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     (
