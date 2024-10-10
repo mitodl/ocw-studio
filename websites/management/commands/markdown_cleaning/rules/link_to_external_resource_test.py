@@ -1,6 +1,7 @@
 """Tests for link_resolveuid.py"""
 
 import pytest
+from django.test import override_settings
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.factories import (
@@ -115,6 +116,8 @@ def test_build_external_resource():
     assert external_resource.metadata["has_external_license_warning"] is True
 
 
+@pytest.mark.django_db()
+@override_settings(ENABLE_WAYBACK_TASKS=False)
 @pytest.mark.parametrize("content_exists", [True, False])
 def test_get_or_build_external_resource(content_exists):
     """Test get_or_build_external_resource builds or gets depending on content existence."""
