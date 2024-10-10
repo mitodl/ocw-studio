@@ -116,7 +116,9 @@ def check_external_resources_for_breakages(self):
 
 
 @app.task(bind=True)
-def submit_website_resources_to_wayback_task(self, website_name):
+def submit_website_resources_to_wayback_task(
+    self, website_name, ignore_last_submission=None
+):
     """Submit all external resources of a website to the Wayback Machine."""
     external_resources = WebsiteContent.objects.filter(
         website__name=website_name,
@@ -124,7 +126,8 @@ def submit_website_resources_to_wayback_task(self, website_name):
     ).select_related("external_resource_state")
 
     tasks = [
-        submit_url_to_wayback_task.s(resource.id) for resource in external_resources
+        submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
+        for resource in external_resources
     ]
     if tasks:
         return self.replace(celery.group(tasks))
@@ -142,14 +145,17 @@ def submit_website_resources_to_wayback_task(self, website_name):
     max_retries=7,
 )
 @single_task(7)
-def submit_url_to_wayback_task(self, resource_id):
+def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
 
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
         if state.wayback_last_successful_submission:
             one_month_ago = timezone.now() - timedelta(days=30)
-            if state.wayback_last_successful_submission > one_month_ago:
+            if (
+                not ignore_last_submission
+                and state.wayback_last_successful_submission > one_month_ago
+            ):
                 log.info(
                     "Skipping submission for resource %s (ID: %s) because it was submitted less than a month ago.",  # noqa: E501
                     state.content.title,
@@ -215,14 +221,19 @@ def submit_url_to_wayback_task(self, resource_id):
     max_retries=5,
 )
 @single_task(10)
-def check_wayback_jobs_status_batch(self):
+def check_wayback_jobs_status_batch(self, job_ids=None):
     """Batch check the status of Wayback Machine jobs."""
     try:
-        pending_states = ExternalResourceState.objects.filter(
-            wayback_status=WAYBACK_PENDING_STATUS,
-            wayback_job_id__isnull=False,
-        )
-
+        if job_ids:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__in=job_ids,
+            )
+        else:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__isnull=False,
+            )
         if not pending_states.exists():
             log.info("No pending Wayback Machine jobs to check.")
             return
