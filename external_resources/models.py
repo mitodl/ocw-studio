@@ -58,6 +58,7 @@ class ExternalResourceState(TimestampedModel):
 
     wayback_job_id = models.CharField(
         max_length=255,
+        default="",
         blank=True,
         help_text="Last Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
     )
@@ -72,12 +73,14 @@ class ExternalResourceState(TimestampedModel):
 
     wayback_status_ext = models.CharField(
         max_length=128,
+        default="",
         blank=True,
         help_text="Extended status of the last Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
     )
 
     wayback_url = models.URLField(
-        max_length=500,
+        max_length=800,
+        default="",
         blank=True,
         help_text="Last working Wayback Machine snapshot URL for the External Resource.",  # noqa: E501
     )
