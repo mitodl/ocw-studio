@@ -8,9 +8,10 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
     HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
 )
 
-from external_resources.constants import RESOURCE_UNCHECKED_STATUSES
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
 from external_resources.models import ExternalResourceState
@@ -73,63 +74,21 @@ def test_check_external_resources_for_breakages_zero_websites(
     (
         "url_status",
         "url_status_code",
-        "backup_url_status",
-        "backup_url_status_code",
-        "resource_status",
+        "expected_status",
     ),
     [
-        (False, HTTP_200_OK, False, HTTP_200_OK, ExternalResourceState.Status.VALID),
-        (
-            False,
-            HTTP_200_OK,
-            True,
-            HTTP_400_BAD_REQUEST,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_400_BAD_REQUEST,
-            False,
-            HTTP_200_OK,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_400_BAD_REQUEST,
-            True,
-            HTTP_400_BAD_REQUEST,
-            ExternalResourceState.Status.BROKEN,
-        ),
-        (
-            False,
-            HTTP_200_OK,
-            True,
-            HTTP_401_UNAUTHORIZED,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_401_UNAUTHORIZED,
-            False,
-            HTTP_200_OK,
-            ExternalResourceState.Status.VALID,
-        ),
-        (
-            True,
-            HTTP_401_UNAUTHORIZED,
-            True,
-            HTTP_401_UNAUTHORIZED,
-            ExternalResourceState.Status.UNCHECKED,
-        ),
+        (False, HTTP_200_OK, ExternalResourceState.Status.VALID),
+        (True, HTTP_400_BAD_REQUEST, ExternalResourceState.Status.BROKEN),
+        (True, HTTP_401_UNAUTHORIZED, ExternalResourceState.Status.UNCHECKED),
+        (True, HTTP_403_FORBIDDEN, ExternalResourceState.Status.UNCHECKED),
+        (True, HTTP_404_NOT_FOUND, ExternalResourceState.Status.BROKEN),
     ],
 )
-def test_check_external_resources(  # noqa: PLR0913
+def test_check_external_resources(
     mocker,
     url_status,
     url_status_code,
-    backup_url_status,
-    backup_url_status_code,
-    resource_status,
+    expected_status,
 ):
     """Create test data"""
     external_resource_state = ExternalResourceStateFactory()
@@ -138,11 +97,6 @@ def test_check_external_resources(  # noqa: PLR0913
         "external_resources.tasks.api.is_external_url_broken",
         return_value=(url_status, url_status_code),
     )
-    mocker.patch(
-        "external_resources.tasks.api.is_backup_url_broken",
-        return_value=(backup_url_status, backup_url_status_code),
-    )
-    assert external_resource_state.status == ExternalResourceState.Status.UNCHECKED
 
     # Run the task
     check_external_resources.delay((external_resource_state.content.id,))
@@ -150,22 +104,8 @@ def test_check_external_resources(  # noqa: PLR0913
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
     assert updated_state.last_checked is not None
-
-    assert updated_state.is_external_url_broken is url_status
-    assert updated_state.is_backup_url_broken is backup_url_status
-
+    assert updated_state.status == expected_status
     assert updated_state.external_url_response_code == url_status_code
-    assert updated_state.backup_url_response_code == backup_url_status_code
-
-    # Status and flag are updated if codes are not in ignored cases
-    if (
-        url_status_code not in RESOURCE_UNCHECKED_STATUSES
-        or backup_url_status_code not in RESOURCE_UNCHECKED_STATUSES
-    ):
-        assert updated_state.status == resource_status
-        assert updated_state.content.metadata.get("is_broken", False) == (
-            url_status and (backup_url_status_code is None or backup_url_status)
-        )
 
 
 @pytest.mark.django_db()

@@ -650,6 +650,27 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
+# Wayback Machine Settings
+ENABLE_WAYBACK_TASKS = get_bool(
+    name="ENABLE_WAYBACK_TASKS",
+    default=True,
+    description="Enables tasks related to Wayback Machine submissions and status checks",  # noqa: E501
+    required=False,
+)
+
+CHECK_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
+    name="CHECK_WAYBACK_JOBS_STATUS_FREQUENCY",
+    default=21600,  # 6 hours in seconds
+    description="Frequency (in seconds) to check the status of Wayback Machine jobs",
+    required=False,
+)
+
+WAYBACK_SUBMISSION_INTERVAL_DAYS = get_int(
+    name="WAYBACK_SUBMISSION_INTERVAL_DAYS",
+    default=30,
+    description="Number of days between Wayback submissions",
+)
+
 # Check External Resources settings
 CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
     name="CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY",
@@ -662,6 +683,21 @@ CHECK_EXTERNAL_RESOURCE_TASK_ENABLE = get_bool(
     name="CHECK_EXTERNAL_RESOURCE_TASK_STATUS",
     default=True,
     description="Enables celery task to check potentially broken external urls",
+    required=False,
+)
+
+# Wayback Machine API Credentials
+WAYBACK_MACHINE_ACCESS_KEY = get_string(
+    name="WAYBACK_MACHINE_ACCESS_KEY",
+    default=None,
+    description="Access key for the Wayback Machine API",
+    required=False,
+)
+
+WAYBACK_MACHINE_SECRET_KEY = get_string(
+    name="WAYBACK_MACHINE_SECRET_KEY",
+    default=None,
+    description="Secret key for the Wayback Machine API",
     required=False,
 )
 
@@ -731,6 +767,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
 }
+
+if ENABLE_WAYBACK_TASKS:
+    CELERY_BEAT_SCHEDULE["check-wayback-jobs-status"] = {
+        "task": "external_resources.tasks.check_wayback_jobs_status_batch",
+        "schedule": CHECK_WAYBACK_JOBS_STATUS_FREQUENCY,
+    }
 
 if CHECK_EXTERNAL_RESOURCE_TASK_ENABLE:
     CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
