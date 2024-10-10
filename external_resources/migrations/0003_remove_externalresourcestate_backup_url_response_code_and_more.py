@@ -14,16 +14,16 @@ def migrate_metadata_forward(apps, schema_editor):
     """
 
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    ExternalResourceState = apps.get_model(
+        "external_resources", "ExternalResourceState"
+    )
 
     # Get all external resources with an associated ExternalResourceState
-    contents = WebsiteContent.objects.filter(
-        type="external-resource", external_resource_state__isnull=False
-    )
+    contents = WebsiteContent.objects.filter(type="external-resource")
 
     with transaction.atomic():
         for content in contents:
-            state = content.external_resource_state
-
+            state, _ = ExternalResourceState.objects.get_or_create(content=content)
             # Remove 'backup_url', 'is_broken' and 'backup_url_status_code'
             # fields from metadata
             content.metadata.pop("backup_url", None)
@@ -83,6 +83,7 @@ class Migration(migrations.Migration):
             name="wayback_job_id",
             field=models.CharField(
                 blank=True,
+                default="",
                 help_text="Last Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
                 max_length=255,
             ),
@@ -117,6 +118,7 @@ class Migration(migrations.Migration):
             name="wayback_status_ext",
             field=models.CharField(
                 blank=True,
+                default="",
                 help_text="Extended status of the last Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
                 max_length=128,
             ),
@@ -125,8 +127,9 @@ class Migration(migrations.Migration):
             model_name="externalresourcestate",
             name="wayback_url",
             field=models.URLField(
-                max_length=500,
+                max_length=800,
                 blank=True,
+                default="",
                 help_text="Last working Wayback Machine snapshot URL for the External Resource.",  # noqa: E501
             ),
         ),
