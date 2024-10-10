@@ -148,8 +148,10 @@ def submit_url_to_wayback_task(self, resource_id):
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
         if state.wayback_last_successful_submission:
-            one_month_ago = timezone.now() - timedelta(days=30)
-            if state.wayback_last_successful_submission > one_month_ago:
+            retry_period = timezone.now() - timedelta(
+                days=settings.WAYBACK_SUBMISSION_INTERVAL_DAYS
+            )
+            if state.wayback_last_successful_submission > retry_period:
                 log.info(
                     "Skipping submission for resource %s (ID: %s) because it was submitted less than a month ago.",  # noqa: E501
                     state.content.title,
