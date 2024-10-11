@@ -6,7 +6,7 @@ from datetime import timedelta
 import celery
 from django.utils import timezone
 from mitol.common.utils import chunks
-from requests.exceptions import ConnectionError, HTTPError, Timeout
+from requests.exceptions import ConnectionError, ConnectTimeout, HTTPError, Timeout
 
 from content_sync.decorators import single_task
 from external_resources import api
@@ -133,6 +133,24 @@ def submit_website_resources_to_wayback_task(self, website_name):
     return None
 
 
+def should_skip_wayback_submission(state):
+    """Check if we should skip submission based on the last successful submission."""
+    if state.wayback_last_successful_submission:
+        retry_period = timezone.now() - timedelta(
+            days=settings.WAYBACK_SUBMISSION_INTERVAL_DAYS
+        )
+        if state.wayback_last_successful_submission > retry_period:
+            log.info(
+                "Skipping submission for resource %s (ID: %s) "
+                "because it was submitted less than %s days ago.",
+                state.content.title,
+                state.content.id,
+                settings.WAYBACK_SUBMISSION_INTERVAL_DAYS,
+            )
+            return True
+    return False
+
+
 @app.task(
     bind=True,
     acks_late=True,
@@ -149,17 +167,8 @@ def submit_url_to_wayback_task(self, resource_id):
 
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
-        if state.wayback_last_successful_submission:
-            retry_period = timezone.now() - timedelta(
-                days=settings.WAYBACK_SUBMISSION_INTERVAL_DAYS
-            )
-            if state.wayback_last_successful_submission > retry_period:
-                log.info(
-                    "Skipping submission for resource %s (ID: %s) because it was submitted less than a month ago.",  # noqa: E501
-                    state.content.title,
-                    resource_id,
-                )
-                return
+        if should_skip_wayback_submission(state):
+            return
         url = state.content.metadata.get("external_url", "")
         if not url:
             log.warning(
@@ -198,14 +207,27 @@ def submit_url_to_wayback_task(self, resource_id):
     except HTTPError as exc:
         if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
             log.warning(
-                "HTTP 429 Too Many Requests for resource ID %s."
+                "HTTP 429 Too Many Requests for resource '%s' (ID: %s)."
                 "Retrying after 30 seconds.",
+                state.content.title,
                 resource_id,
             )
             raise self.retry(exc=exc, countdown=30) from exc
+    except ConnectTimeout:
+        log.exception(
+            "Connection timed out while submitting URL to Wayback Machine "
+            "for resource '%s' (ID: %s).",
+            state.content.title,
+            resource_id,
+        )
+        state.wayback_status = WAYBACK_ERROR_STATUS
+        state.wayback_status_ext = "error:connect-timeout"
+        state.save(update_fields=["wayback_status", "wayback_status_ext"])
     except Exception as exc:
         log.exception(
-            "Error submitting URL to Wayback Machine for resource ID: %s", resource_id
+            "Error submitting URL to Wayback Machine for resource '%s' (ID: %s)",
+            state.content.title,
+            resource_id,
         )
         raise self.retry(exc=exc) from exc
 
@@ -256,20 +278,26 @@ def update_wayback_jobs_status_batch(self):
                 "Wayback Machine job statuses. Retrying after 30 seconds."
             )
             raise self.retry(exc=exc, countdown=30) from exc
+    except ConnectTimeout:
+        log.exception(
+            "Connection timed out while updating Wayback Machine job statuses."
+        )
     except Exception as exc:
         log.exception("Error during batch status update of Wayback Machine jobs")
         raise self.retry(exc=exc) from exc
 
 
-def update_state_fields(state, status, http_status, status_ext, result):
+def update_state_fields(
+    state, wayback_status, http_status=None, status_ext=None, result=None
+):
     """Update state fields based on Wayback Machine result."""
-    state.wayback_status = status
+    state.wayback_status = wayback_status
     state_update_fields = ["wayback_status"]
 
     state.wayback_http_status = http_status
     state_update_fields.append("wayback_http_status")
 
-    if status == WAYBACK_SUCCESS_STATUS:
+    if wayback_status == WAYBACK_SUCCESS_STATUS:
         state.wayback_url = generate_wayback_url(result)
         state.wayback_last_successful_submission = timezone.now()
         state_update_fields.extend(
@@ -282,7 +310,7 @@ def update_state_fields(state, status, http_status, status_ext, result):
             state.content_id,
         )
 
-    elif status == WAYBACK_ERROR_STATUS:
+    elif wayback_status == WAYBACK_ERROR_STATUS:
         state.wayback_status_ext = status_ext
         state_update_fields.append("wayback_status_ext")
         log.error(
@@ -292,7 +320,7 @@ def update_state_fields(state, status, http_status, status_ext, result):
             state.content_id,
             status_ext,
         )
-    elif status == WAYBACK_PENDING_STATUS:
+    elif wayback_status == WAYBACK_PENDING_STATUS:
         log.info(
             "Wayback Machine job %s is still pending for resource %s (ID: %s)",
             state.wayback_job_id,
@@ -303,9 +331,9 @@ def update_state_fields(state, status, http_status, status_ext, result):
     state.save(update_fields=state_update_fields)
 
 
-def update_metadata(state, status):
+def update_metadata(state, wayback_status):
     """Update metadata for the resource if applicable."""
-    if status == WAYBACK_SUCCESS_STATUS:
+    if wayback_status == WAYBACK_SUCCESS_STATUS:
         resource = state.content
         resource.metadata["wayback_url"] = state.wayback_url
         resource.save(update_fields=["metadata"])
