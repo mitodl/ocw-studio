@@ -769,8 +769,8 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 if ENABLE_WAYBACK_TASKS:
-    CELERY_BEAT_SCHEDULE["check-wayback-jobs-status"] = {
-        "task": "external_resources.tasks.check_wayback_jobs_status_batch",
+    CELERY_BEAT_SCHEDULE["update-wayback-jobs-status"] = {
+        "task": "external_resources.tasks.update_wayback_jobs_status_batch",
         "schedule": CHECK_WAYBACK_JOBS_STATUS_FREQUENCY,
     }
 

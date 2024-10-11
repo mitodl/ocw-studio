@@ -219,7 +219,7 @@ def submit_url_to_wayback_task(self, resource_id):
     max_retries=5,
 )
 @single_task(10)
-def check_wayback_jobs_status_batch(self):
+def update_wayback_jobs_status_batch(self):
     """Batch check the status of Wayback Machine jobs."""
     try:
         pending_states = ExternalResourceState.objects.filter(
