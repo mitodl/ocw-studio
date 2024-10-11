@@ -658,8 +658,8 @@ ENABLE_WAYBACK_TASKS = get_bool(
     required=False,
 )
 
-CHECK_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
-    name="CHECK_WAYBACK_JOBS_STATUS_FREQUENCY",
+UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
+    name="UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY",
     default=21600,  # 6 hours in seconds
     description="Frequency (in seconds) to check the status of Wayback Machine jobs",
     required=False,
@@ -771,7 +771,7 @@ CELERY_BEAT_SCHEDULE = {
 if ENABLE_WAYBACK_TASKS:
     CELERY_BEAT_SCHEDULE["update-wayback-jobs-status"] = {
         "task": "external_resources.tasks.update_wayback_jobs_status_batch",
-        "schedule": CHECK_WAYBACK_JOBS_STATUS_FREQUENCY,
+        "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
     }
 
 if CHECK_EXTERNAL_RESOURCE_TASK_ENABLE:
