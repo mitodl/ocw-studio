@@ -57,17 +57,15 @@ class Command(WebsiteFilterCommand):
 
         job_ids = list(pending_states.values_list("wayback_job_id", flat=True))
 
-        if job_ids:
-            update_wayback_jobs_status_batch.delay(job_ids=job_ids)
-            self.stdout.write(
-                "Enqueued task to update Wayback Machine job statuses "
-                "for filtered websites."
-            )
+        if sync_execution:
+            self.stdout.write("Running updates synchronously...")
+            update_wayback_jobs_status_batch.apply(job_ids=job_ids)
+            self.stdout.write("Wayback Machine job statuses updated synchronously.")
         else:
-            update_wayback_jobs_status_batch.delay()
             self.stdout.write(
-                "No specific job IDs found. "
-                "Enqueued task to update all pending Wayback Machine jobs."
+                "Enqueuing tasks to update job statuses asynchronously..."
             )
+            update_wayback_jobs_status_batch.delay(job_ids=job_ids)
+            self.stdout.write("Tasks enqueued to update Wayback Machine job statuses.")
 
-        self.stdout.write("Enqueued task to check Wayback Machine job statuses.")
+        self.stdout.write("Command execution completed.")
