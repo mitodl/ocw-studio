@@ -60,12 +60,10 @@ class Command(WebsiteFilterCommand):
         if sync_execution:
             self.stdout.write("Running updates synchronously...")
             update_wayback_jobs_status_batch.apply(job_ids=job_ids)
-            self.stdout.write("Wayback Machine job statuses updated synchronously.")
         else:
             self.stdout.write(
                 "Enqueuing tasks to update job statuses asynchronously..."
             )
             update_wayback_jobs_status_batch.delay(job_ids=job_ids)
-            self.stdout.write("Tasks enqueued to update Wayback Machine job statuses.")
 
         self.stdout.write("Command execution completed.")
