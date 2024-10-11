@@ -229,6 +229,8 @@ def submit_url_to_wayback_task(self, resource_id):
             state.content.title,
             resource_id,
         )
+        state.wayback_status = WAYBACK_ERROR_STATUS
+        state.save(update_fields=["wayback_status"])
         raise self.retry(exc=exc) from exc
 
 
