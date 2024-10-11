@@ -11,7 +11,7 @@ from requests.exceptions import ConnectionError, HTTPError, Timeout
 from content_sync.decorators import single_task
 from external_resources import api
 from external_resources.constants import (
-    BATCH_SIZE_WAYBACK_STATUS_CHECK,
+    BATCH_SIZE_WAYBACK_STATUS_UPDATE,
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
@@ -235,7 +235,7 @@ def update_wayback_jobs_status_batch(self):
 
         job_ids = list(job_id_to_state.keys())
 
-        for batch in chunks(job_ids, chunk_size=BATCH_SIZE_WAYBACK_STATUS_CHECK):
+        for batch in chunks(job_ids, chunk_size=BATCH_SIZE_WAYBACK_STATUS_UPDATE):
             results = api.check_wayback_jobs_status_batch(batch)
 
             for result in results:
