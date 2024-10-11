@@ -10,6 +10,14 @@ class Command(WebsiteFilterCommand):
 
     help = __doc__
 
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Force submission even if resources were submitted recently.",
+        )
+
     def handle(self, *args, **options):
         super().handle(*args, **options)
         force_submission = options.get("force", False)
