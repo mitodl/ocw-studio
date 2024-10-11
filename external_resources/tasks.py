@@ -220,7 +220,7 @@ def submit_url_to_wayback_task(self, resource_id):
 )
 @single_task(10)
 def update_wayback_jobs_status_batch(self):
-    """Batch check the status of Wayback Machine jobs."""
+    """Batch update the status of Wayback Machine jobs."""
     try:
         pending_states = ExternalResourceState.objects.filter(
             wayback_status=WAYBACK_PENDING_STATUS,
@@ -228,7 +228,7 @@ def update_wayback_jobs_status_batch(self):
         )
 
         if not pending_states.exists():
-            log.info("No pending Wayback Machine jobs to check.")
+            log.info("No pending Wayback Machine jobs to update.")
             return
 
         job_id_to_state = {state.wayback_job_id: state for state in pending_states}
@@ -252,12 +252,12 @@ def update_wayback_jobs_status_batch(self):
     except HTTPError as exc:
         if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
             log.warning(
-                "HTTP 429 Too Many Requests when checking Wayback Machine job statuses."
-                "Retrying after 30 seconds."
+                "HTTP 429 Too Many Requests when trying to update "
+                "Wayback Machine job statuses. Retrying after 30 seconds."
             )
             raise self.retry(exc=exc, countdown=30) from exc
     except Exception as exc:
-        log.exception("Error during batch status check of Wayback Machine jobs")
+        log.exception("Error during batch status update of Wayback Machine jobs")
         raise self.retry(exc=exc) from exc
 
 
