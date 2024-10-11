@@ -287,9 +287,7 @@ def update_wayback_jobs_status_batch(self):
         raise self.retry(exc=exc) from exc
 
 
-def update_state_fields(
-    state, wayback_status, http_status=None, status_ext=None, result=None
-):
+def update_state_fields(state, wayback_status, http_status, status_ext, result):
     """Update state fields based on Wayback Machine result."""
     state.wayback_status = wayback_status
     state_update_fields = ["wayback_status"]
