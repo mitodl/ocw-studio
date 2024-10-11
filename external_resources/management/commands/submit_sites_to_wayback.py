@@ -1,4 +1,4 @@
-"""Management command to submit external resources of websites to the Wayback Machine"""
+"""Management command to submit external resources to the Wayback Machine"""
 
 from external_resources.tasks import submit_website_resources_to_wayback_task
 from main.management.commands.filter import WebsiteFilterCommand
@@ -6,7 +6,7 @@ from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """Submit external resources of websites to the Wayback Machine"""
+    """Submit external resources to the Wayback Machine"""
 
     help = __doc__
 
