@@ -136,8 +136,10 @@ def submit_website_resources_to_wayback_task(
     return None
 
 
-def should_skip_wayback_submission(state):
+def should_skip_wayback_submission(state, ignore_last_submission=None):
     """Check if we should skip submission based on the last successful submission."""
+    if ignore_last_submission:
+        return False
     if state.wayback_last_successful_submission:
         retry_period = timezone.now() - timedelta(
             days=settings.WAYBACK_SUBMISSION_INTERVAL_DAYS
@@ -170,7 +172,7 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
 
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
-        if should_skip_wayback_submission(state):
+        if should_skip_wayback_submission(state, ignore_last_submission):
             return
         url = state.content.metadata.get("external_url", "")
         if not url:
