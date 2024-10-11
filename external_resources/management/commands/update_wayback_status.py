@@ -1,14 +1,14 @@
-"""Management command to check the status of Wayback Machine jobs"""
+"""Management command to update the status of Wayback Machine jobs"""
 
 from external_resources.constants import WAYBACK_PENDING_STATUS
 from external_resources.models import ExternalResourceState
-from external_resources.tasks import check_wayback_jobs_status_batch
+from external_resources.tasks import update_wayback_jobs_status_batch
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
 
 
 class Command(WebsiteFilterCommand):
-    """Check status of Wayback Machine jobs for websites' external resources"""
+    """Update status of Wayback Machine pending jobs"""
 
     help = __doc__
 
@@ -23,7 +23,7 @@ class Command(WebsiteFilterCommand):
             return
 
         self.stdout.write(
-            f"Checking Wayback Machine job statuses for {websites.count()} websites."
+            f"Updating Wayback Machine job statuses for {websites.count()} websites."
         )
 
         # Get ExternalResourceState objects with pending Wayback jobs
@@ -42,16 +42,16 @@ class Command(WebsiteFilterCommand):
         job_ids = list(pending_states.values_list("wayback_job_id", flat=True))
 
         if job_ids:
-            check_wayback_jobs_status_batch.delay(job_ids=job_ids)
+            update_wayback_jobs_status_batch.delay(job_ids=job_ids)
             self.stdout.write(
-                "Enqueued task to check Wayback Machine job statuses "
+                "Enqueued task to update Wayback Machine job statuses "
                 "for filtered websites."
             )
         else:
-            check_wayback_jobs_status_batch.delay()
+            update_wayback_jobs_status_batch.delay()
             self.stdout.write(
                 "No specific job IDs found. "
-                "Enqueued task to check all pending Wayback Machine jobs."
+                "Enqueued task to update all pending Wayback Machine jobs."
             )
 
         self.stdout.write("Enqueued task to check Wayback Machine job statuses.")
