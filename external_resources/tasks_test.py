@@ -3,9 +3,12 @@
 from datetime import timedelta
 from types import SimpleNamespace
 from typing import Literal
+from unittest.mock import Mock
 
 import pytest
+from celery.exceptions import Retry
 from django.utils import timezone
+from requests.exceptions import HTTPError
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -14,6 +17,7 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
 )
 
+from external_resources.constants import HTTP_TOO_MANY_REQUESTS
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
 from external_resources.models import ExternalResourceState
@@ -195,3 +199,38 @@ def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, set
     # wayback_status and wayback_job_id should remain unchanged
     assert updated_state.wayback_status == external_resource_state.wayback_status
     assert updated_state.wayback_job_id == external_resource_state.wayback_job_id
+
+
+@pytest.mark.django_db()
+def test_submit_url_to_wayback_task_http_error_429(mocker):
+    """
+    Test that submit_url_to_wayback_task retries on HTTPError 429 (Too Many Requests).
+    """
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+    external_url = "http://example.com"
+    resource.metadata["external_url"] = external_url
+    resource.save()
+
+    mock_response = Mock()
+    mock_response.status_code = HTTP_TOO_MANY_REQUESTS
+    http_error_429 = HTTPError(response=mock_response)
+
+    mock_submit = mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        side_effect=http_error_429,
+    )
+
+    mock_retry = mocker.patch.object(
+        submit_url_to_wayback_task, "retry", side_effect=Retry()
+    )
+
+    # Run the task synchronously and expect a Retry exception
+    with pytest.raises(Retry):
+        submit_url_to_wayback_task.run(resource.id)
+
+    # Check that api.submit_url_to_wayback was called
+    mock_submit.assert_called_once_with(external_url)
+
+    # Check that self.retry was called with countdown=30
+    mock_retry.assert_called_once_with(exc=http_error_429, countdown=30)
