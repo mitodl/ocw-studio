@@ -367,8 +367,9 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     referencing_pages = models.ManyToManyField(
         "self",
         blank=True,
+        null=True,
         related_name="referenced_by",
-        help_text="Pages that reference this content",
+        help_text="Pages that reference this content.",
     )
 
     def calculate_checksum(self) -> str:

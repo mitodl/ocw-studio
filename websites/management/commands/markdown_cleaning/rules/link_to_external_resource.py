@@ -197,6 +197,9 @@ class LinkToExternalResourceRule(PyparsingRule):
         if self.options.get("commit", True):
             resource.save()
 
+        resource.referencing_pages.add(website_content)
+        resource.save()
+
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
         return shortcode.to_hugo(), self.ReplacementNotes(
