@@ -290,6 +290,9 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         if self.options.get("commit", True):
             resource.save()
 
+        resource.referencing_pages.add(website_content)
+        resource.save()
+
         item_replacement = {
             **item,
             "identifier": str(resource.text_id),

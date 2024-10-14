@@ -367,7 +367,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     referencing_pages = models.ManyToManyField(
         "self",
         blank=True,
-        null=True,
+        symmetrical=False,
         related_name="referenced_by",
         help_text="Pages that reference this content.",
     )

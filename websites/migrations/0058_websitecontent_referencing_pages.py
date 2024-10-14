@@ -14,6 +14,7 @@ class Migration(migrations.Migration):
             name="referencing_pages",
             field=models.ManyToManyField(
                 blank=True,
+                symmetrical=False,
                 help_text="Pages that reference this content.",
                 related_name="referenced_by",
                 to="websites.websitecontent",
