@@ -25,6 +25,7 @@ from external_resources.tasks import (
     check_external_resources,
     check_external_resources_for_breakages,
     submit_url_to_wayback_task,
+    update_wayback_jobs_status_batch,
 )
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
@@ -234,3 +235,66 @@ def test_submit_url_to_wayback_task_http_error_429(mocker):
 
     # Check that self.retry was called with countdown=30
     mock_retry.assert_called_once_with(exc=http_error_429, countdown=30)
+
+
+@pytest.mark.django_db()
+def test_update_wayback_jobs_status_batch_success(mocker):
+    """
+    Test that update_wayback_jobs_status_batch updates statuses of pending jobs successfully.
+    """
+    # Create ExternalResourceState objects with pending Wayback Machine jobs
+    state1 = ExternalResourceStateFactory(
+        wayback_job_id="job_1",
+        wayback_status="pending",
+    )
+    state2 = ExternalResourceStateFactory(
+        wayback_job_id="job_2",
+        wayback_status="pending",
+    )
+
+    # Mock api.check_wayback_jobs_status_batch to return fake results
+    fake_results = [
+        {
+            "job_id": "job_1",
+            "status": "success",
+            "timestamp": "20230101000000",
+            "original_url": "http://example.com/page1",
+            "http_status": 200,
+        },
+        {
+            "job_id": "job_2",
+            "status": "error",
+            "status_ext": "error:404",
+            "http_status": 404,
+        },
+    ]
+    mock_check = mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch",
+        return_value=fake_results,
+    )
+
+    # Run the task
+    update_wayback_jobs_status_batch.run()
+
+    # Check that api.check_wayback_jobs_status_batch was called with correct job_ids
+    expected_job_ids = ["job_1", "job_2"]
+    mock_check.assert_called()
+    call_args = mock_check.call_args[0][0]
+    assert set(call_args) == set(expected_job_ids)
+
+    # Fetch updated states
+    updated_state1 = ExternalResourceState.objects.get(id=state1.id)
+    updated_state2 = ExternalResourceState.objects.get(id=state2.id)
+
+    # Verify that state1 was updated to success
+    assert updated_state1.wayback_status == "success"
+    assert (
+        updated_state1.wayback_url
+        == "https://web.archive.org/web/20230101000000/http://example.com/page1"
+    )
+    assert updated_state1.wayback_last_successful_submission is not None
+
+    # Verify that state2 was updated to error with correct status_ext
+    assert updated_state2.wayback_status == "error"
+    assert updated_state2.wayback_status_ext == "error:404"
+    assert updated_state2.wayback_http_status == 404
