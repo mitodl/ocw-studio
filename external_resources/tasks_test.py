@@ -18,6 +18,7 @@ from external_resources.models import ExternalResourceState
 from external_resources.tasks import (
     check_external_resources,
     check_external_resources_for_breakages,
+    submit_url_to_wayback_task,
 )
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
@@ -123,3 +124,34 @@ def test_check_external_resources_failed(mocker):
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
     assert updated_state.status == ExternalResourceState.Status.CHECK_FAILED
+
+
+@pytest.mark.django_db()
+def test_submit_url_to_wayback_task_success(mocker):
+    """
+    Test that submit_url_to_wayback_task successfully submits a URL to the Wayback Machine
+    and updates the ExternalResourceState accordingly.
+    """
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+
+    external_url = "http://example.com"
+    resource.metadata["external_url"] = external_url
+    resource.save()
+
+    fake_job_id = "job_12345"
+    mock_submit = mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        return_value={"job_id": fake_job_id},
+    )
+
+    # Run the task synchronously
+    submit_url_to_wayback_task.run(resource.id)
+
+    mock_submit.assert_called_once_with(external_url)
+
+    updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
+    # Check that the state was updated correctly
+    assert updated_state.wayback_status == "pending"
+    assert updated_state.wayback_job_id == fake_job_id
+    assert updated_state.wayback_http_status is None
