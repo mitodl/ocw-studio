@@ -1,9 +1,11 @@
 """Tests for External Resources Tasks"""
 
+from datetime import timedelta
 from types import SimpleNamespace
 from typing import Literal
 
 import pytest
+from django.utils import timezone
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -155,3 +157,41 @@ def test_submit_url_to_wayback_task_success(mocker):
     assert updated_state.wayback_status == "pending"
     assert updated_state.wayback_job_id == fake_job_id
     assert updated_state.wayback_http_status is None
+
+
+@pytest.mark.django_db()
+def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, settings):
+    """
+    Test that submit_url_to_wayback_task skips submission when the URL was recently submitted.
+    """
+    settings.WAYBACK_SUBMISSION_INTERVAL_DAYS = 7
+
+    # Create an ExternalResourceState with a recent wayback_last_successful_submission
+    recent_submission_time = timezone.now() - timedelta(days=1)  # 1 day ago
+    external_resource_state = ExternalResourceStateFactory(
+        wayback_last_successful_submission=recent_submission_time,
+    )
+    resource = external_resource_state.content
+    external_url = "http://example.com"
+    resource.metadata["external_url"] = external_url
+    resource.save()
+
+    mock_submit = mocker.patch("external_resources.tasks.api.submit_url_to_wayback")
+
+    # Mock the logger to capture log messages
+    mock_log = mocker.patch("external_resources.tasks.log")
+
+    # Run the task synchronously
+    submit_url_to_wayback_task.run(resource.id)
+
+    mock_submit.assert_not_called()
+
+    # Check that a log message was made about skipping submission
+    mock_log.info.assert_called_once()
+    log_call_args = mock_log.info.call_args[0]
+    assert "Skipping submission for resource" in log_call_args[0]
+
+    updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
+    # wayback_status and wayback_job_id should remain unchanged
+    assert updated_state.wayback_status == external_resource_state.wayback_status
+    assert updated_state.wayback_job_id == external_resource_state.wayback_job_id
