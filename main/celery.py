@@ -43,6 +43,8 @@ app.conf.task_routes = {
     "content_sync.tasks.publish_website_batch": {"queue": "batch"},
     "content_sync.tasks.publish_websites": {"queue": "batch"},
     "external_resources.tasks.check_external_resources": {"queue": "batch"},
+    "external_resources.tasks.submit_url_to_wayback_task": {"queue": "batch"},
+    "external_resources.tasks.update_wayback_jobs_status_batch": {"queue": "batch"},
 }
 
 
