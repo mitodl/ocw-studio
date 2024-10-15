@@ -9,11 +9,11 @@ client = WebClient(token=settings.SLACK_NOTIFICATION_BOT)
 log = logging.getLogger()
 
 
-def post_message(channel: str, body: str):
+def post_message(channel_id: str, body: str):
+    """Post message to provided channel ID."""
+
     try:
-        client.chat_postMessage(
-            channel=channel if channel.startswith("#") else f"#{channel}", text=body
-        )
+        client.chat_postMessage(channel=channel_id, text=body)
 
     except SlackApiError as error:
         log.exception(error.response["error"])
