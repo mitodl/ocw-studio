@@ -22,14 +22,15 @@ from content_sync.constants import (
     OFFLINE_START,
     ONLINE_END,
     ONLINE_START,
+    PUBLISH_DATE_DRAFT,
+    PUBLISH_DATE_LIVE,
     START_TAG_PREFIX,
     TARGET_OFFLINE,
     VERSION_DRAFT,
-    VERSION_LIVE,
 )
 from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
-from websites.constants import WEBSITE_CONTENT_FILETYPE
+from websites.constants import CONTENT_TYPE_METADATA, WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 
@@ -158,24 +159,42 @@ def get_ocw_studio_api_url():
     return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
 
 
-def get_publishable_sites(version: str):
+def get_publishable_sites(version: str = "", *, is_offline: bool = False):
     """
     Get a QuerySet of Website objects that are eligible for publishing
 
     Args:
         version(str): The version (draft/live) to check publish eligibility with
+        is_offline(bool): Is the build type offline or not
     """
-    publish_date_field = (
-        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
-    )
+    publish_date_field_filter = {
+        f"{PUBLISH_DATE_DRAFT}__isnull": True,
+        f"{PUBLISH_DATE_LIVE}__isnull": True,
+    }
+
+    if version:
+        publish_date_field_filter.pop(
+            f"{PUBLISH_DATE_LIVE}__isnull"
+            if version == VERSION_DRAFT
+            else f"{PUBLISH_DATE_DRAFT}__isnull"
+        )
+
     # Get all sites, minus any sites that have never been successfully published and test sites  # noqa: E501
     sites = (
         Website.objects.exclude(
-            Q(**{f"{publish_date_field}__isnull": True}) | Q(url_path__isnull=True)
+            Q(**publish_date_field_filter) | Q(url_path__isnull=True)
         )
         .exclude(unpublish_status__isnull=False)
         .exclude(name__in=settings.OCW_TEST_SITE_SLUGS)
     )
+
+    if is_offline:
+        # filter sites with download disabled
+        download_disabled_sites = WebsiteContent.objects.filter(
+            type=CONTENT_TYPE_METADATA, metadata__hide_download=True
+        ).values_list("website__short_id", flat=True)
+        sites = sites.exclude(short_id__in=download_disabled_sites)
+
     return sites.prefetch_related("starter")
 
 

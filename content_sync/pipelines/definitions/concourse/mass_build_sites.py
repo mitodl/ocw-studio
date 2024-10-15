@@ -90,7 +90,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         hugo_arg_overrides: Optional[str] = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
-        sites = list(get_publishable_sites(version))
+        sites = list(get_publishable_sites(version, is_offline=offline))
         shuffle(sites)
         self.sites = sites
         self.version = version
