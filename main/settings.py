@@ -701,6 +701,20 @@ WAYBACK_MACHINE_SECRET_KEY = get_string(
     required=False,
 )
 
+SLACK_NOTIFICATION_BOT_TOKEN = get_string(
+    name="SLACK_NOTIFICATION_BOT_TOKEN",
+    default=None,
+    description="Slack bot to post notifications in channels",
+    required=False,
+)
+
+SLACK_WAYBACK_NOTIFICATION_CHANNEL = get_string(
+    name="SLACK_WAYBACK_NOTIFICATION_CHANNEL",
+    default=None,
+    description="Slack channel to post Wayback task notifications",
+    required=False,
+)
+
 # Celery
 REDISCLOUD_URL = get_string(
     name="REDISCLOUD_URL", default=None, description="RedisCloud connection url"
