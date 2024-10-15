@@ -273,7 +273,6 @@ def test_update_wayback_jobs_status_batch_success(mocker):
         return_value=fake_results,
     )
 
-    # Run the task
     update_wayback_jobs_status_batch.run()
 
     # Check that api.check_wayback_jobs_status_batch was called with correct job_ids
@@ -294,7 +293,25 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     )
     assert updated_state1.wayback_last_successful_submission is not None
 
-    # Verify that state2 was updated to error with correct status_ext
+    # Verify that state2 was updated to error
     assert updated_state2.wayback_status == "error"
     assert updated_state2.wayback_status_ext == "error:404"
     assert updated_state2.wayback_http_status == 404
+
+
+@pytest.mark.django_db()
+def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
+    """
+    Test that update_wayback_jobs_status_batch handles no pending jobs gracefully.
+    """
+    # Ensure there are no ExternalResourceState instances with wayback_status "pending"
+    ExternalResourceState.objects.filter(wayback_status="pending").delete()
+
+    mock_check = mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch"
+    )
+    mock_log = mocker.patch("external_resources.tasks.log")
+
+    update_wayback_jobs_status_batch.run()
+    mock_check.assert_not_called()
+    mock_log.info.assert_called_once_with("No pending Wayback Machine jobs to update.")
