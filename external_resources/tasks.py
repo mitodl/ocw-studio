@@ -27,6 +27,7 @@ from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
 from main import settings
 from main.celery import app
+from main.slack import post_message
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -206,29 +207,32 @@ def submit_url_to_wayback_task(self, resource_id):
         )
     except HTTPError as exc:
         if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
-            log.warning(
-                "HTTP 429 Too Many Requests for resource '%s' (ID: %s)."
-                "Retrying after 30 seconds.",
-                state.content.title,
-                resource_id,
+            message = (
+                "HTTP 429 Too Many Requests for resource '{state.content.title}' "
+                "(ID: {resource_id}). Retrying after 30 seconds."
+            )
+            log.warning(message)
+            post_message(
+                channel=settings.SLACK_WAYBACK_NOTIFICATION_CHANNEL, body=message
             )
             raise self.retry(exc=exc, countdown=30) from exc
     except ConnectTimeout:
-        log.exception(
+        message = (
             "Connection timed out while submitting URL to Wayback Machine "
-            "for resource '%s' (ID: %s).",
-            state.content.title,
-            resource_id,
+            f"for resource '{state.content.title}' (ID: {resource_id})."
         )
+        log.exception(message)
+        post_message(channel=settings.SLACK_WAYBACK_NOTIFICATION_CHANNEL, body=message)
         state.wayback_status = WAYBACK_ERROR_STATUS
         state.wayback_status_ext = "error:connect-timeout"
         state.save(update_fields=["wayback_status", "wayback_status_ext"])
     except Exception as exc:
-        log.exception(
-            "Error submitting URL to Wayback Machine for resource '%s' (ID: %s)",
-            state.content.title,
-            resource_id,
+        message = (
+            "Error submitting URL to Wayback Machine for resource "
+            f"'{state.content.title}' (ID: {resource_id})"
         )
+        log.exception(message)
+        post_message(channel=settings.SLACK_WAYBACK_NOTIFICATION_CHANNEL, body=message)
         state.wayback_status = WAYBACK_ERROR_STATUS
         state.save(update_fields=["wayback_status"])
         raise self.retry(exc=exc) from exc
@@ -313,13 +317,13 @@ def update_state_fields(state, wayback_status, http_status, status_ext, result):
     elif wayback_status == WAYBACK_ERROR_STATUS:
         state.wayback_status_ext = status_ext
         state_update_fields.append("wayback_status_ext")
-        log.error(
-            "Wayback Machine job %s failed for resource %s (ID: %s) with status_ext %s",
-            state.wayback_job_id,
-            state.content.title,
-            state.content_id,
-            status_ext,
+        message = (
+            f"Wayback Machine job {state.wayback_job_id} failed for resource "
+            f"{state.content.title} (ID: {state.content_id}) with status_ext "
+            f"{status_ext}"
         )
+        log.error(message)
+        post_message(channel=settings.SLACK_WAYBACK_NOTIFICATION_CHANNEL, body=message)
     elif wayback_status == WAYBACK_PENDING_STATUS:
         log.info(
             "Wayback Machine job %s is still pending for resource %s (ID: %s)",
