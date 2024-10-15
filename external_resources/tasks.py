@@ -4,6 +4,7 @@ import logging
 from datetime import timedelta
 
 import celery
+from django.conf import settings
 from django.utils import timezone
 from mitol.common.utils import chunks
 from requests.exceptions import ConnectionError, ConnectTimeout, HTTPError, Timeout
@@ -25,7 +26,6 @@ from external_resources.constants import (
 )
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
-from main import settings
 from main.celery import app
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
