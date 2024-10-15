@@ -5,7 +5,7 @@ from slack_sdk.errors import SlackApiError
 
 from main import settings
 
-client = WebClient(token=settings.SLACK_NOTIFICATION_BOT)
+client = WebClient(token=settings.SLACK_NOTIFICATION_BOT_TOKEN)
 log = logging.getLogger()
 
 
