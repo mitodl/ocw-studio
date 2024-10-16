@@ -80,10 +80,43 @@ When Wayback Machine tasks are enabled, the system performs the following action
 
 # Rate Limiting
 
-The rate-limit for the external resource batch-tasks is set using `EXTERNAL_RESOURCE_TASK_RATE_LIMIT` in [here](constants.py). The assigned value for the rate-limiter is set to `100/s`.
+- **External Resource Checking:**
+
+  - The rate limit for the external resource checking tasks is set using EXTERNAL_RESOURCE_TASK_RATE_LIMIT in [here](constants.py).
+  - The assigned rate limit value is `100/s`
+
+- **Wayback Machine Tasks:**
+  - The rate limit for Wayback Machine submission tasks is set using WAYBACK_MACHINE_TASK_RATE_LIMIT in [here](constants.py).
+  - The assigned rate limit value is `0.11/s`.
 
 # Task Priority
 
-Batch-task priority is set using the `EXTERNAL_RESOURCE_TASK_PRIORITY` in [here](constants.py). The default priority for each celery task has been preconfigured to `2` out of range `0(lowest) - 4(highest)`. External resource tasks have lowest (`0`) priority by default.
+- **External Resource Checking:**
 
-Priority levels and celery default task priority can be configured by `PRIORITY_STEPS` and `DEFAULT_PRIORITY`, respectively, in [here](/main/constants.py).
+  - Batch-task priority is set using the `EXTERNAL_RESOURCE_TASK_PRIORITY` in [here](constants.py).
+  - The default priority for each celery task has been preconfigured to `2` out of range `0(lowest) - 4(highest)`. External resource tasks have lowest (`0`) priority by default.
+
+- **Wayback Machine Tasks:**
+  - The priority for Wayback Machine submission tasks is set using `WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY` in [here](constants.py).
+  - The assigned priority value is currently set to `3`.
+
+**Note**: Priority levels and celery default task priority can be configured by `PRIORITY_STEPS` and `DEFAULT_PRIORITY`, respectively, in [here](/main/constants.py).
+
+# Management Commands
+
+Two management commands are available to interact the external resources with wayback machine functionality:
+
+- **Submitting Resources to Wayback Machine:**
+  - Command: `submit_sites_to_wayback`
+  - Usage:
+    - Submits all external resources of specified websites to the Wayback Machine.
+    - Supports website filtering via options (e.g., --filter `course-name`).
+    - Use the `--force` flag to force submission even if resources were submitted recently (bypassing `WAYBACK_SUBMISSION_INTERVAL_DAYS` logic).
+  - ## Example Usage:
+- **Submitting Resources to Wayback Machine:**
+  - Command: `update_wayback_status `
+  - Usage:
+    - Updates the status of pending Wayback Machine jobs for specified websites.
+    - Supports website filtering via options.
+    - Use the `--sync` flag to run updates synchronously (requires website filters).
+  - Example Usage:
