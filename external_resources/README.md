@@ -120,3 +120,12 @@ Two management commands are available to interact the external resources with wa
     - Supports website filtering via options.
     - Use the `--sync` flag to run updates synchronously (requires website filters).
   - Example Usage:
+
+# Code References
+
+- **Models:**
+  - `ExternalResourceState`: Stores the state and Wayback Machine information for external resources.
+- **Tasks:**
+  - `check_external_resources`: Checks external resources for broken links.
+  - `submit_url_to_wayback_task`: Submits external resource URLs to the Wayback Machine. Linked with `check_external_resources`, it will only send the valid external resources.
+  - `update_wayback_jobs_status_batch`: Updates the status of Wayback Machine archiving jobs.
