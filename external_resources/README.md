@@ -112,7 +112,13 @@ Two management commands are available to interact the external resources with wa
     - Submits all external resources of specified websites to the Wayback Machine.
     - Supports website filtering via options (e.g., --filter `course-name`).
     - Use the `--force` flag to force submission even if resources were submitted recently (bypassing `WAYBACK_SUBMISSION_INTERVAL_DAYS` logic).
-  - ## Example Usage:
+  - Example Usage:
+
+```
+    ./manage.py submit_sites_to_wayback --filter "example-site"
+    ./manage.py submit_sites_to_wayback --filter "example-site" --force
+```
+
 - **Submitting Resources to Wayback Machine:**
   - Command: `update_wayback_status `
   - Usage:
@@ -120,6 +126,12 @@ Two management commands are available to interact the external resources with wa
     - Supports website filtering via options.
     - Use the `--sync` flag to run updates synchronously (requires website filters).
   - Example Usage:
+
+```
+    ./manage.py update_wayback_status --filter "example-site" --sync
+    ./manage.py update_wayback_status --filter "example-site"
+    ./manage.py update_wayback_status
+```
 
 # Code References
 
@@ -129,3 +141,10 @@ Two management commands are available to interact the external resources with wa
   - `check_external_resources`: Checks external resources for broken links.
   - `submit_url_to_wayback_task`: Submits external resource URLs to the Wayback Machine. Linked with `check_external_resources`, it will only send the valid external resources.
   - `update_wayback_jobs_status_batch`: Updates the status of Wayback Machine archiving jobs.
+- **API:**
+  - `api.py`: Contains functions for checking URLs and interacting with the Wayback Machine API.
+- **Signals:**
+  - `signals.py`: Creates ExternalResourceState for the External Resource (WebsiteContent), and submits the link to the Wayback Machine upon creation.
+- **Constants and Settings:**
+  - `constants.py`: Defines constants used in tasks and API interactions.
+  - Settings in `main/settings.py` control tasks enabling (used in `tasks.py`), frequency, and other configurations.
