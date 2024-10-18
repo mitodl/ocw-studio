@@ -364,12 +364,12 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
     )
-    referencing_pages = models.ManyToManyField(
+    referencing_content = models.ManyToManyField(
         "self",
         blank=True,
         symmetrical=False,
         related_name="referenced_by",
-        help_text="Pages that reference this content.",
+        help_text="WebsiteContent that reference this content.",
     )
 
     def calculate_checksum(self) -> str:

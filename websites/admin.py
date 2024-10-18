@@ -66,7 +66,7 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
     list_filter = ("type", *SafeDeleteAdmin.list_filter)
     raw_id_fields = ("website", "parent")
     ordering = ("-created_on",)
-    autocomplete_fields = ["referencing_pages"]
+    autocomplete_fields = ["referencing_content"]
 
     def get_queryset(self, request):  # noqa: ARG002
         return self.model.objects.get_queryset().select_related("website", "parent")
@@ -80,11 +80,11 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
         return obj.website.title
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == "referencing_pages":
+        if db_field.name == "referencing_content":
             if request.resolver_match.kwargs.get("object_id"):
                 obj_id = request.resolver_match.kwargs["object_id"]
                 website_content = WebsiteContent.objects.get(id=obj_id)
-                kwargs["queryset"] = website_content.referencing_pages.all()
+                kwargs["queryset"] = website_content.referencing_content.all()
             else:
                 kwargs["queryset"] = WebsiteContent.objects.none()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
