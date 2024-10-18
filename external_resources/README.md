@@ -1,48 +1,153 @@
 # External Resource Availability Workflow
 
-This document describes the workflow for the external resources validation tasks.
+This document describes the workflow for validating external resources and integrating with the Wayback Machine.
 
 **SECTIONS**
 
 1. [Overview](#overview)
-1. [Enabling Task](#enabling-task)
+1. [Enabling Tasks](#enabling-tasks)
+1. [Wayback Machine Integration](#wayback-machine-integration-1)
 1. [Frequency Control](#frequency-control)
 1. [Rate Limiting](#rate-limiting)
 1. [Task Priority](#task-priority)
-
+1. [Management Commands](#management-commands)
 
 # Overview
 
-This assumes that celery beat scheduler is installed and enabled, which is required for the task scheduling.
+This assumes that **Celery beat scheduler** is installed and enabled, which is required for the task scheduling.
 
-Frequency for the task is set to `1/week`. After each week, all external resources, new or existing, will be validated regardless of their last status.
+The frequency for **external resource checking** is set to once per week (`1/week`). All external resources, both new and existing, are validated weekly, regardless of their last status.
 
-The high-level description of the process is below, and each subsequent section contains additional details, including links to the relevant code.
+Additionally, **Wayback Machine integration** is enabled by default. Valid external resources are submitted for archiving as part of the external resource validation task. The system monitors the submission status and avoids resubmitting resources within a specified interval. The status of Wayback Machine archiving jobs is updated every 6 hours to track the progress of pending jobs.
 
-* Task is automatically added in scheduler on system start.
-* On execution, all available external resources are retrieved from DB.
-* Gathered data is divided into preconfigured batch sizes.
-* All batches are grouped into a single celery task and executed.
-* Each batch-task iterates over batch to validate availability of each resource and its backup resource if available.
-* The status of resource is then added to DB.
-* Batch tasks have a preconfigured rate-limiter and lower priority by default.
+Here’s a high-level description of the process:
 
+### External Resource Validation:
 
-## Enabling Task
-The task for external resource checking can be enabled/disabled using the `CHECK_EXTERNAL_RESOURCE_TASK_ENABLE` defined in [here](/main/settings.py). However, once scheduled, the task can be removed only if `Celery` is restarted along with toggling `CHECK_EXTERNAL_RESOURCE_TASK_ENABLE` to `False`.
+- Task is automatically added in scheduler on system start.
+- On execution, all available external resources are retrieved from DB.
+- Gathered data is divided into preconfigured batch sizes, defined by `BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK` in [websites/constants.py](/websites/constants.py), which is currently set to `100`.
+- All batches are grouped into a single Celery task and executed.
+- Each batch-task iterates over batch to validate availability of each resource and its backup resource if available.
+- The status of resource is then added to DB.
+- Batch tasks have a preconfigured rate limiter and lower priority by default.
 
-## Frequency Control
+### Wayback Machine Integration:
 
-The task frequency (in seconds) is set using the `CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY` in [here](/main/settings.py). Default value for the frequency is set to `604800 seconds -> 1 week`.
+- Valid external resources are submitted to the Wayback Machine for archiving after external resource validation.
+- The status of Wayback Machine archiving jobs is tracked and updated periodically (currently, every 6 hours).
+- New external resources are automatically submitted to the Wayback Machine upon creation.
 
+# Enabling Tasks
 
-## Rate Limiting
+### External Resource Checking:
 
-The rate-limit for the external resource batch-tasks is set using `EXTERNAL_RESOURCE_TASK_RATE_LIMIT` in [here](constants.py). The assigned value for the rate-limiter is set to `100/s`.
+The task for external resource checking can be enabled/disabled using the `CHECK_EXTERNAL_RESOURCE_TASK_ENABLE` defined in [settings.py](/main/settings.py). By default, this task is enabled.
 
+### Wayback Machine Tasks:
 
-## Task Priority
+Wayback Machine tasks can be enabled or disabled using the `ENABLE_WAYBACK_TASKS` defined in [settings.py](/main/settings.py) This task is also enabled by default.
+Note: Changes to these settings require restarting Celery workers to take effect.
 
-Batch-task priority is set using the `EXTERNAL_RESOURCE_TASK_PRIORITY` in [here](constants.py). The default priority for each celery task has been preconfigured to `2` out of range `0(lowest) - 4(highest)`. External resource tasks have lowest (`0`) priority by default.
+# Wayback Machine Integration
 
-Priority levels and celery default task priority can be configured by `PRIORITY_STEPS` and `DEFAULT_PRIORITY`, respectively, in [here](/main/constants.py).
+When Wayback Machine tasks are enabled, the system performs the following actions:
+
+- **Submit Valid URLs:**
+  - After an external resource URL is validated and found to be valid, it is submitted to the Wayback Machine for archiving.
+  - The submission is handled by the `submit_url_to_wayback_task` task.
+- **Automatically Submit on Creation:**
+  - When a new external resource is created, it is automatically submitted to the Wayback Machine via the Django signal in [signals.py](/external_resources/signals.py)
+- **Track Job Statuses:**
+  - The status of Wayback Machine archiving jobs is tracked using the `wayback_status` field in the `ExternalResourceState` model.
+  - The system periodically updates the status of pending jobs using the `update_wayback_jobs_status_batch` task by the interval set by `UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY` in [settings.py](/main/settings.py). Currently, it is set to `6` hours (21600 seconds).
+- **Control Resubmissions:**
+  - The system avoids resubmitting the same URL to the Wayback Machine within a specified interval, defined by `WAYBACK_SUBMISSION_INTERVAL_DAYS` in [settings.py](/main/settings.py).
+  - This interval can be overridden using the management command if needed (shared below).
+
+# Frequency Control
+
+- **External Resource Checking:**
+
+  - The frequency of the external resource checking task is set using `CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY` in [settings.py](/main/settings.py).
+  - The default value is 604800 seconds (1 week).
+  - The task checks all external resources for availability regardless of their last status.
+
+- **Wayback Machine Status Updates:**
+  - The frequency of updating Wayback Machine job statuses in the task `update_wayback_jobs_status_batch` is controlled by `UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY` in [settings.py](/main/settings.py).
+  - The default value is 21600 seconds (6 hours).
+  - The task only checks external resources with wayback_status of `pending`.
+  - The chunk size is provided by `BATCH_SIZE_WAYBACK_STATUS_UPDATE` in [constants.py](/external_resources/constants.py) Currently, it is set to `50`.
+
+# Rate Limiting
+
+- **External Resource Checking:**
+
+  - The rate limit for the external resource checking tasks is set using EXTERNAL_RESOURCE_TASK_RATE_LIMIT in [constants.py](constants.py).
+  - The assigned rate limit value is `100/s`.
+
+- **Wayback Machine Tasks:**
+  - The rate limit for Wayback Machine submission tasks is set using WAYBACK_MACHINE_TASK_RATE_LIMIT in [constants.py](/external_resources/constants.py).
+  - The assigned rate limit value is `0.11/s`.
+
+# Task Priority
+
+- **External Resource Checking:**
+
+  - Batch-task priority is set using the `EXTERNAL_RESOURCE_TASK_PRIORITY` in [constants.py](/external_resources/constants.py).
+  - The default priority for each Celery task has been preconfigured to `2` out of range `0(lowest) - 4(highest)`. External resource tasks have lowest (`4`) priority by default.
+
+- **Wayback Machine Tasks:**
+  - The priority for Wayback Machine submission tasks is set using `WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY` in [constants.py](/external_resources/constants.py).
+  - The assigned priority value is currently set to `3`.
+
+**Note**: Priority levels and Celery default task priority can be configured by `PRIORITY_STEPS` and `DEFAULT_PRIORITY`, respectively, in [main/constants.py](/main/constants.py).
+
+# Management Commands
+
+Two management commands are available to interact the external resources with wayback machine functionality:
+
+- **Submitting Resources to Wayback Machine:**
+  - Command: `submit_sites_to_wayback`.
+  - Usage:
+    - Submits all external resources for specified websites to the Wayback Machine.
+    - Supports website filtering via options (e.g., `--filter course-name`).
+    - Use the `--force` flag to force submission even if resources were submitted recently (bypassing `WAYBACK_SUBMISSION_INTERVAL_DAYS` logic).
+  - Example Usage:
+
+```
+    ./manage.py submit_sites_to_wayback --filter "example-site"
+    ./manage.py submit_sites_to_wayback --filter "example-site" --force
+```
+
+- **Submitting Resources to Wayback Machine:**
+  - Command: `update_wayback_status`.
+  - Usage:
+    - Updates the status of pending Wayback Machine jobs for specified websites.
+    - Supports website filtering via the options.
+    - Use the `--sync` flag to run updates synchronously (requires website filters).
+  - Example Usage:
+
+```
+    ./manage.py update_wayback_status --filter "example-site" --sync
+    ./manage.py update_wayback_status --filter "example-site"
+    ./manage.py update_wayback_status
+```
+
+# Code References
+
+- **Models:**
+  - `ExternalResourceState`: Stores the state and Wayback Machine information for external resources.
+- **Tasks:**
+  - `check_external_resources`: Checks external resources for broken links.
+  - `submit_url_to_wayback_task`: Submits external resource URLs to the Wayback Machine. Linked with `check_external_resources`, it will only send the valid external resources.
+  - `update_wayback_jobs_status_batch`: Updates the status of Wayback Machine archiving jobs.
+- **API:**
+  - `api.py`: Contains functions for checking URLs and interacting with the Wayback Machine API.
+- **Signals:**
+  - `signals.py`: Creates `ExternalResourceState` for the External Resource (WebsiteContent), and submits the link to the Wayback Machine upon creation.
+- **Celery Configuration:**
+  - `celery.py`: Configures the Celery app with task routing, priority, and other settings for handling external resource validation and Wayback Machine integration.
+- **Constants and Settings:**
+  - `external_resources/constants.py`, `websites/constants.py`: Defines constants used in tasks and API interactions.
+  - Settings in `main/settings.py` control tasks enabling (used in `tasks.py`), frequency, and other configurations.
