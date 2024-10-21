@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4
       with:
         ref: release
-    - uses: akhileshns/heroku-deploy@9fd0f9faae4aa93a38d6f5e25b9128589f1371b0
+    - uses: akhileshns/heroku-deploy@e86b991436e126ff9d78399b801a6610a64881c9
       with:
         heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
         heroku_app_name: "ocw-studio"
