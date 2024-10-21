@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.130.0
+---------------
+
+- fix(deps): update dependency pypdf to v5 (#2329)
+- chore(deps): update akhileshns/heroku-deploy digest to e86b991 (#2150)
+- chore(deps): update actions/checkout digest to eef6144 (#2187)
+- fix(deps): update dependency webpack-cli to v5 (#2039)
+- Add referencing_pages to external resources (#2322)
+- chore(deps): update dependency pytest to v8 (#2321)
+- fix(deps): update dependency django to v4.2.16 [security] (#2319)
+- Umar/5124 create external resource with add links (#2279)
+- Umar/2168 separately track publish date and build date (#2284)
+
 Version 0.129.0 (Released September 24, 2024)
 ---------------
 
