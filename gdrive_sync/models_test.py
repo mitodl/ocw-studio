@@ -11,7 +11,7 @@ from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_get_valid_s3_key():
     """get_valid_s3_key avoids dupe s3 keys"""
     site = WebsiteFactory.create()
@@ -46,7 +46,7 @@ def test_get_valid_s3_key():
     assert file_5.s3_key == f"{site_prefix}/{site.name}/テストファイル.png"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_get_content_dependencies():
     """get_content_dependencies should return content that uses `drive_file.resource`."""
     for starter, item, field in all_starters_items_fields():
@@ -79,7 +79,7 @@ def test_get_content_dependencies():
             assert len(dependencies) == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_drivefile_allows_large_files():
     """
     Ensure database column can store large file sizes, e.g., bigger than int4.

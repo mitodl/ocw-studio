@@ -55,13 +55,13 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_service(mocker):
     """Mock google drive service"""
     return mocker.patch("gdrive_sync.api.get_drive_service")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_s3_content_type(mocker):  # noqa: PT004
     """Mock gdrive_sync.api.get_s3_content_type"""
     mocker.patch(
@@ -173,7 +173,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     assert drive_file.s3_key == expected_key
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("num_errors", [2, 3, 4])
 def test_stream_to_s3_error(settings, mocker, num_errors):
     """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
@@ -200,7 +200,7 @@ def test_stream_to_s3_error(settings, mocker, num_errors):
     )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("parent_folder", "parent_folder_in_ancestors"),
     [(None, False), ("correct_parent", False), ("correct_parent", True)],
@@ -536,7 +536,7 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_gdrive_pdf(mocker):  # noqa: PT004
     """Mock reading the metadata of a PDF file with blank metadata"""
     mocker.patch(
