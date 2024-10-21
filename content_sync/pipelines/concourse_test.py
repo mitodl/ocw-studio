@@ -105,7 +105,7 @@ PIPELINES_LIST = [
 ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_auth(mocker):  # noqa: PT004
     """Mock the concourse api auth method"""
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")

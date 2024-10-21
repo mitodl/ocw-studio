@@ -42,13 +42,13 @@ pytestmark = pytest.mark.django_db
 # pylint: disable=redefined-outer-name,unused-argument,no-value-for-parameter,unused-variable
 
 
-@pytest.fixture()
+@pytest.fixture
 def youtube_mocker(mocker):
     """Return a mock youtube api client"""
     return mocker.patch("videos.youtube.build")
 
 
-@pytest.fixture()
+@pytest.fixture
 def youtube_website(mocker):
     """Return a website with youtube resources"""
     website = WebsiteFactory.create()
@@ -71,7 +71,7 @@ def youtube_website(mocker):
     return website
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_mail(mocker):
     """Objects and mocked functions for mail tests"""
     mock_get_message_sender = mocker.patch("videos.youtube.get_message_sender")
