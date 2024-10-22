@@ -848,7 +848,7 @@ class SitePipelineDefinition(Pipeline):
                 put=self._offline_build_gate_identifier,
                 timeout="1m",
                 attempts=3,
-                params={"strict": True},
+                get_params={"out_only": True, "strict": True},
             ),
             step_description=f"{self._offline_build_gate_identifier} put step",
             pipeline_name=config.vars["pipeline_name"],
