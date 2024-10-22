@@ -11,6 +11,7 @@ This document describes the workflow for validating external resources and integ
 1. [Rate Limiting](#rate-limiting)
 1. [Task Priority](#task-priority)
 1. [Management Commands](#management-commands)
+1. [Code References](#code-references)
 
 # Overview
 
