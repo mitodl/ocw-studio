@@ -327,7 +327,7 @@ class WebsiteViewSet(
             status=200,
             data={
                 "version": {"created_at": str(now_in_utc().timestamp())}
-                if allow_offline
+                if not allow_offline
                 else {}
             },
         )
