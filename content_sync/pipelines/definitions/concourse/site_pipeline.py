@@ -843,17 +843,13 @@ class SitePipelineDefinition(Pipeline):
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
         online_job = self.get_online_build_job(config=config)
-        offline_build_gate_put_step = add_error_handling(
-            step=PutStep(
+        offline_build_gate_put_step = TryStep(
+            try_=PutStep(
                 put=self._offline_build_gate_identifier,
                 timeout="1m",
-                attempts=3,
-                get_params={"out_only": True, "strict": True},
-            ),
-            step_description=f"{self._offline_build_gate_identifier} put step",
-            pipeline_name=config.vars["pipeline_name"],
-            short_id=config.vars["short_id"],
-            instance_vars=config.vars["instance_vars"],
+                attempts=1,
+                get_params={"no_get": True, "strict": True},
+            )
         )
         online_job.plan.append(offline_build_gate_put_step)
         offline_job = self.get_offline_build_job(config=config)
