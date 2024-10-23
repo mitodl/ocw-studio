@@ -428,7 +428,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 == config.vars["pipeline_name"]
             )
     assert (
-        online_site_tasks[-1]["put"]
+        online_site_tasks[-1]["try"]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     offline_site_job = get_dict_list_item_by_field(
