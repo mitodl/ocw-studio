@@ -191,7 +191,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         field="name",
         value=pipeline_definition._offline_build_gate_identifier,  # noqa: SLF001
     )
-    assert offline_build_gate_resource["type"] == "keyval"
+    assert offline_build_gate_resource["type"] == "http-resource"
     site_content_git_resource = get_dict_list_item_by_field(
         items=resources, field="name", value=SITE_CONTENT_GIT_IDENTIFIER
     )
