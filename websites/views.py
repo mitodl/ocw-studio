@@ -683,6 +683,27 @@ class WebsiteContentViewSet(
         update_website_backend(instance.website)
         return instance
 
+    # Override the destroy method
+    def destroy(self, *args, **kwargs):  # noqa: ARG002
+        """Delete instances only if they are not referenced."""
+        instance = self.get_object()
+
+        if instance.referencing_content.exists():
+            return Response(
+                {
+                    "error": (
+                        "Cannot delete this content. "
+                        "It is referenced in other content instances"
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Proceed with default deletion
+        self.perform_destroy(instance)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def create(self, request, *args, **kwargs):  # noqa: ARG002
         """
         Override the create method to implement 'create_or_get' functionality.
