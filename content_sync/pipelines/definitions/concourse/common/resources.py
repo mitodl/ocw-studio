@@ -143,7 +143,7 @@ class OcwStudioOfflineGateResource(Resource):
     ):
         ocw_studio_url = get_ocw_studio_api_url()
         api_path = os.path.join(  # noqa: PTH118
-            "api", "websites", site_name, "allow_offline_build"
+            "api", "websites", site_name, "hide_download"
         )
         api_url = f"{urljoin(ocw_studio_url, api_path)}/"
         super().__init__(
