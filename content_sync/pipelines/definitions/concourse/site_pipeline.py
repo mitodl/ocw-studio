@@ -25,9 +25,9 @@ from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_TEST_URL, TARGET_OFFLINE, TARGET_ONLINE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -45,6 +45,7 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
 from content_sync.pipelines.definitions.concourse.common.resources import (
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
+    OcwStudioOfflineGateResource,
     OcwStudioWebhookResource,
     OpenCatalogResource,
     SiteContentGitResource,
@@ -303,6 +304,10 @@ class SitePipelineResources(list[Resource]):
             site_name=config.vars["site_name"],
             api_token=settings.API_BEARER_TOKEN or "",
         )
+        ocw_studio_webhook_offline_gate_resource = OcwStudioOfflineGateResource(
+            site_name=config.vars["site_name"],
+            api_token=settings.API_BEARER_TOKEN or "",
+        )
         self.extend(
             [
                 webpack_manifest_resource,
@@ -310,6 +315,7 @@ class SitePipelineResources(list[Resource]):
                 ocw_hugo_themes_resource,
                 ocw_hugo_projects_resource,
                 ocw_studio_webhook_resource,
+                ocw_studio_webhook_offline_gate_resource,
                 SlackAlertResource(),
             ]
         )
@@ -821,7 +827,9 @@ class SitePipelineDefinition(Pipeline):
         config(SitePipelineDefinitionConfig): The site pipeline configuration object
     """
 
-    _offline_build_gate_identifier = Identifier("offline-build-gate").root
+    _offline_build_gate_identifier = Identifier(
+        OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER
+    ).root
     _online_site_job_identifier = Identifier("online-site-job").root
     _offline_site_job_identifier = Identifier("offline-site-job").root
 
@@ -834,24 +842,14 @@ class SitePipelineDefinition(Pipeline):
         resource_types = SitePipelineResourceTypes()
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
-        offline_build_gate_resource = Resource(
-            name=self._offline_build_gate_identifier,
-            type=KEYVAL_RESOURCE_TYPE_IDENTIFIER,
-            icon="gate",
-            check_every="never",
-        )
-        resources.append(offline_build_gate_resource)
         online_job = self.get_online_build_job(config=config)
-        offline_build_gate_put_step = add_error_handling(
-            step=PutStep(
+        offline_build_gate_put_step = TryStep(
+            try_=PutStep(
                 put=self._offline_build_gate_identifier,
-                params={"mapping": "timestamp = now()"},
-                inputs=[],
-            ),
-            step_description=f"{self._offline_build_gate_identifier} task step",
-            pipeline_name=config.vars["pipeline_name"],
-            short_id=config.vars["short_id"],
-            instance_vars=config.vars["instance_vars"],
+                timeout="1m",
+                attempts=1,
+                get_params={"no_get": True, "strict": True},
+            )
         )
         online_job.plan.append(offline_build_gate_put_step)
         offline_job = self.get_offline_build_job(config=config)

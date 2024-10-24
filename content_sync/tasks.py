@@ -20,6 +20,7 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
+from content_sync.utils import get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
 from websites.api import (
@@ -460,13 +461,14 @@ def update_websites_in_root_website():
     if settings.CONTENT_SYNC_BACKEND:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         # Get all sites, minus any sites that have never been successfully published
-        sites = Website.objects.exclude(
-            Q(**{"draft_publish_date__isnull": True})
-            & Q(**{"publish_date__isnull": True})
-        )
-        sites = sites.exclude(Q(url_path__isnull=True))
+        # and have downloading disabled
+        sites = get_publishable_sites(is_offline=True)
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+
+        # Remove the content for unpublished or not downloadable sites
+        WebsiteContent.objects.exclude(website__in=sites).delete()
+
         fields = [
             "website",
             "type",
