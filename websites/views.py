@@ -316,20 +316,16 @@ class WebsiteViewSet(
         return Response(status=200)
 
     @action(detail=True, methods=["get"], permission_classes=[BearerTokenPermission])
-    def allow_offline_build(self, request, name=None):  # noqa: ARG002
+    def hide_download(self, request, name=None):  # noqa: ARG002
         """Process webhook requests from concourse pipeline runs"""
         website = get_object_or_404(Website, name=name)
         content = WebsiteContent.objects.get(
             website=website, type=CONTENT_TYPE_METADATA
         )
-        allow_offline = content.metadata["hide_download"]
+        hide_download = content and content.metadata.get("hide_download")
         return Response(
             status=200,
-            data={
-                "version": {"created_at": str(now_in_utc().timestamp())}
-                if not allow_offline
-                else {}
-            },
+            data={} if hide_download else {"version": str(now_in_utc().timestamp())},
         )
 
 
