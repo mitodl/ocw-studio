@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.130.0
+Version 0.130.0 (Released October 24, 2024)
 ---------------
 
 - fix(deps): update dependency pypdf to v5 (#2329)
