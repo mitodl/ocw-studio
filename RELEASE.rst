@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.131.0
+---------------
+
+- Exclude courses which have the download button disabled from mirror drives (#2282)
+
 Version 0.130.0 (Released October 24, 2024)
 ---------------
 
