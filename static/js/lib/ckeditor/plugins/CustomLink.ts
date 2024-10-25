@@ -7,7 +7,7 @@ import { siteApiContentUrl } from "../../urls"
 import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
-import { WEBSITE_NAME } from "./constants"
+import { WEBSITE_CONTENT_ID, WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
 import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
@@ -23,15 +23,16 @@ class CustomLinkCommand extends LinkCommand {
       }
     }
 
-    getExternalResource(this.editor.config.get(WEBSITE_NAME), href, title).then(
-      (externalResource) => {
-        if (externalResource) {
-          updateHref(externalResource, this.editor, (href) =>
-            super.execute(href),
-          )
-        }
-      },
-    )
+    getExternalResource(
+      this.editor.config.get(WEBSITE_NAME),
+      this.editor.config.get(WEBSITE_CONTENT_ID),
+      href,
+      title,
+    ).then((externalResource) => {
+      if (externalResource) {
+        updateHref(externalResource, this.editor, (href) => super.execute(href))
+      }
+    })
   }
 }
 
@@ -77,6 +78,7 @@ export default class CustomLink extends Plugin {
 
         getExternalResource(
           this.editor.config.get(WEBSITE_NAME),
+          this.editor.config.get(WEBSITE_CONTENT_ID),
           String(originalHref),
           "",
         ).then((externalResource) => {
@@ -104,6 +106,7 @@ export default class CustomLink extends Plugin {
 
 async function getExternalResource(
   siteName: string,
+  contentId: string,
   linkValue: string,
   title: string,
 ): Promise<{ title: string; textId: string } | null> {
@@ -124,6 +127,7 @@ async function getExternalResource(
       is_broken: "",
       backup_url: "",
     },
+    referencing_content: [contentId],
   }
 
   try {

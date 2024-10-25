@@ -23,6 +23,7 @@ import {
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
+  WEBSITE_CONTENT_ID,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -30,6 +31,7 @@ import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { checkFeatureFlag } from "../../lib/util"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
+import { useParams } from "react-router"
 
 export interface Props {
   value?: string
@@ -53,6 +55,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
+  const { uuid } = useParams<{ uuid: string }>()
 
   const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
 
@@ -146,6 +149,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }`,
       },
       [WEBSITE_NAME]: website.name,
+      [WEBSITE_CONTENT_ID]: uuid,
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)
