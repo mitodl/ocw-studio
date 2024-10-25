@@ -20,6 +20,12 @@ import {
 import { WebsiteContent } from "../../types/websites"
 import { useWebsite } from "../../context/Website"
 import _, { keyBy } from "lodash"
+import { useParams } from "react-router-dom"
+import { useMutation } from "redux-query-react"
+import {
+  editWebsiteContentMutation,
+  EditWebsiteContentPayload,
+} from "../../query-configs/websites"
 
 interface Props {
   mode: ResourceDialogMode
@@ -159,6 +165,13 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     null,
   )
 
+  const [, editWebsiteContent] = useMutation(
+    (payload: EditWebsiteContentPayload | FormData, name: string, id: string) =>
+      editWebsiteContentMutation({ name: name, textId: id }, payload),
+  )
+
+  const { uuid } = useParams<{ uuid: string }>()
+
   const addResource = useCallback(() => {
     if (focusedResource && isOpen) {
       insertEmbed(
@@ -167,6 +180,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
         mode,
       )
       closeDialog()
+      editWebsiteContent(
+        { referencingContent: uuid },
+        website.name,
+        focusedResource.text_id,
+      )
     }
   }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
 

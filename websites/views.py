@@ -699,6 +699,17 @@ class WebsiteContentViewSet(
         serializer.save(updated_by=self.request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    def perform_update(self, serializer):
+        """
+        Override the update request for content
+        """
+        instance = serializer.save()
+
+        if content_id := self.request.data.get("referencingContent"):
+            content = WebsiteContent.objects.get(text_id=content_id)
+            instance.referencing_content.add(content)
+            instance.save()
+
     @action(
         detail=False,
         methods=["post"],
