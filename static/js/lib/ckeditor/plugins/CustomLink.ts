@@ -127,7 +127,7 @@ async function getExternalResource(
       is_broken: "",
       backup_url: "",
     },
-    referencing_content: [contentId],
+    referencing_content: contentId,
   }
 
   try {

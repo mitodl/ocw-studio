@@ -691,13 +691,26 @@ class WebsiteContentViewSet(
             if content:
                 # If the content already exists, return it instead of creating a new one
                 serializer = self.get_serializer(content)
+                self._add_referencing_content(content)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         # Proceed with creation if no existing content is found
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(updated_by=self.request.user)
+        instance = serializer.save(updated_by=self.request.user)
+        self._add_referencing_content(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _add_referencing_content(self, instance):
+        """
+        Add referencing content to the instance if `referencing_content` is provided.
+        """
+        content_id = self.request.data.get("referencing_content")
+        if content_id:
+            log.info("Adding referencing content.")
+            content = WebsiteContent.objects.get(text_id=content_id)
+            instance.referencing_content.add(content)
+            instance.save()
 
     def perform_update(self, serializer):
         """
