@@ -175,18 +175,38 @@ export default function RepeatableContentListing(props: {
     if (deleteQueryState.isPending) {
       return
     }
+
     const response = await deleteContent()
-    if (response && response.status >= 400) {
-      setDeleteError("An error occurred while deleting. Please try again.")
+
+    if (response?.status >= 400) {
+      setDeleteError(
+        "This item is referenced by other items and cannot be deleted. Please visit the resource page for more details.",
+      )
     } else {
       setDeleteError(null)
       closeDeleteModal()
-      if (fetchWebsiteContentListing) {
-        fetchWebsiteContentListing()
-        await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
-      }
+      fetchWebsiteContentListing && fetchWebsiteContentListing()
+      await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
     }
   }
+
+  const getDialogBodyContent = () => (
+    <>
+      {`Are you sure you want to remove ${
+        selectedContent && selectedContent.title
+          ? selectedContent.title
+          : "this content"
+      }?`}
+      {deleteError && (
+        <div
+          className="error-message"
+          style={{ color: "red", marginTop: "10px" }}
+        >
+          {deleteError}
+        </div>
+      )}
+    </>
+  )
 
   return (
     <>
@@ -279,21 +299,9 @@ export default function RepeatableContentListing(props: {
           setDeleteError(null)
         }}
         headerContent={`Remove ${labelSingular}`}
-        bodyContent={
-          <>
-            {`Are you sure you want to remove ${
-              selectedContent && selectedContent.title
-                ? selectedContent.title
-                : "this content"
-            }?`}
-            {deleteError && <div className="error-message">{deleteError}</div>}
-          </>
-        }
+        bodyContent={getDialogBodyContent()}
         acceptText="Delete"
-        onAccept={() => {
-          onDelete()
-          closeDeleteModal()
-        }}
+        onAccept={onDelete}
       />
     </>
   )
