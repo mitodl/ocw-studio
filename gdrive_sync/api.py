@@ -487,7 +487,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             )
         else:
             resource.file = drive_file.s3_key
-            if resource.metadata["file_size"] != drive_file.size:
+            if resource.metadata.get("file_size") != drive_file.size:
                 resource.metadata["file_size"] = drive_file.size
             if extension.lower() == ".pdf":
                 # update resource title if PDF metadata contains title
