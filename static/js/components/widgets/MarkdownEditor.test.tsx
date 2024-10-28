@@ -26,6 +26,7 @@ import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
+import { useParams } from "react-router"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
   const originalModule = jest.requireActual("../../lib/ckeditor/CKEditor")
@@ -51,6 +52,11 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />,
 }))
 
+jest.mock("react-router", () => ({
+  ...jest.requireActual("react-router"),
+  useParams: jest.fn(),
+}))
+
 const render = (props = {}) => {
   return shallow(
     <MarkdownEditor allowedHtml={[]} link={[]} embed={[]} {...props} />,
@@ -58,6 +64,7 @@ const render = (props = {}) => {
 }
 
 const mocUseWebsite = jest.mocked(useWebsite)
+const useParamsMock = jest.mocked(useParams)
 
 describe("MarkdownEditor", () => {
   let sandbox: SinonSandbox
@@ -66,6 +73,7 @@ describe("MarkdownEditor", () => {
     sandbox = sinon.createSandbox()
     const website = makeWebsiteDetail()
     mocUseWebsite.mockReturnValue(website)
+    useParamsMock.mockReturnValue({ uuid: "test-uuid" })
   })
 
   afterEach(() => {

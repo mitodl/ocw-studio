@@ -197,6 +197,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     embed,
     allowedHtml,
     website.name,
+    uuid,
     isCustomLinkUIEnabled,
   ])
 
