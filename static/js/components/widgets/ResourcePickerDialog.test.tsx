@@ -65,7 +65,13 @@ describe("ResourcePickerDialog", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
 
-    mockedUseMutation.mockReturnValue([{}, jest.fn()])
+    mockedUseMutation.mockReturnValue([
+      {
+        isFinished: false,
+        isPending: false,
+      },
+      jest.fn(),
+    ])
 
     insertEmbedStub = helper.sandbox.stub()
     closeDialogStub = helper.sandbox.stub()
