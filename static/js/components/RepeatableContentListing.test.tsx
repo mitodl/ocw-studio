@@ -301,7 +301,7 @@ describe("RepeatableContentListing", () => {
       wrapper.update()
       let dialog = wrapper.find("Dialog")
       expect(dialog.prop("open")).toBe(true)
-      expect(dialog.prop("bodyContent")).toContain(contentItemToDelete.title)
+      expect(dialog.text()).toContain(contentItemToDelete.title)
 
       // Confirm the deletion in the dialog
       await act(async () => {

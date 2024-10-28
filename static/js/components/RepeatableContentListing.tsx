@@ -180,7 +180,8 @@ export default function RepeatableContentListing(props: {
 
     if (response?.status >= 400) {
       setDeleteError(
-        "This item is referenced by other items and cannot be deleted. Please visit the resource page for more details.",
+        "This item is referenced by other items and cannot be deleted." +
+          " Please visit the resource page for more details.",
       )
     } else {
       setDeleteError(null)
