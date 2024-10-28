@@ -223,6 +223,7 @@ describe("RepeatableContentListing", () => {
   const deletableTestCases = [
     { name: "external resource", configName: "external-resource" },
     { name: "instructor", configName: "instructor" },
+    { name: "page", configName: "page" },
   ]
   deletableTestCases.forEach(({ name, configName }) => {
     it(`should delete ${name}`, async () => {
