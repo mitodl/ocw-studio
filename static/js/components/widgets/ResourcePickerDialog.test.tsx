@@ -24,6 +24,7 @@ import WebsiteContext from "../../context/Website"
 import { Website } from "../../types/websites"
 import origResourcePickerListing from "./ResourcePickerListing"
 import { assertNotNil } from "../../test_util"
+import { useMutation } from "redux-query-react"
 
 jest.mock("../../hooks/state")
 const useDebouncedState = jest.mocked(hooksState.useDebouncedState)
@@ -37,6 +38,12 @@ jest.mock("./ResourcePickerListing", () => {
   }
 })
 const ResourcePickerListing = jest.mocked(origResourcePickerListing)
+
+jest.mock("redux-query-react", () => ({
+  ...jest.requireActual("redux-query-react"),
+  useMutation: jest.fn(),
+}))
+const mockedUseMutation = jest.mocked(useMutation)
 
 const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
   act(() => {
@@ -57,6 +64,8 @@ describe("ResourcePickerDialog", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
+
+    mockedUseMutation.mockReturnValue([{}, jest.fn()])
 
     insertEmbedStub = helper.sandbox.stub()
     closeDialogStub = helper.sandbox.stub()
