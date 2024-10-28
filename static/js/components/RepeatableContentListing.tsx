@@ -169,17 +169,22 @@ export default function RepeatableContentListing(props: {
       selectedContent?.text_id as string,
     )
   })
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const onDelete = async () => {
     if (deleteQueryState.isPending) {
       return
     }
     const response = await deleteContent()
-    if (!response) {
-      return
-    } else if (fetchWebsiteContentListing) {
-      fetchWebsiteContentListing()
-      await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+    if (response && response.status >= 400) {
+      setDeleteError("An error occurred while deleting. Please try again.")
+    } else {
+      setDeleteError(null)
+      closeDeleteModal()
+      if (fetchWebsiteContentListing) {
+        fetchWebsiteContentListing()
+        await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
+      }
     }
   }
 
@@ -269,13 +274,21 @@ export default function RepeatableContentListing(props: {
       </Route>
       <Dialog
         open={deleteModal}
-        onCancel={closeDeleteModal}
+        onCancel={() => {
+          closeDeleteModal()
+          setDeleteError(null)
+        }}
         headerContent={`Remove ${labelSingular}`}
-        bodyContent={`Are you sure you want to remove ${
-          selectedContent && selectedContent.title
-            ? selectedContent.title
-            : "this content"
-        }?`}
+        bodyContent={
+          <>
+            {`Are you sure you want to remove ${
+              selectedContent && selectedContent.title
+                ? selectedContent.title
+                : "this content"
+            }?`}
+            {deleteError && <div className="error-message">{deleteError}</div>}
+          </>
+        }
         acceptText="Delete"
         onAccept={() => {
           onDelete()
