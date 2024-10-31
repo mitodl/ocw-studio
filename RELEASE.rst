@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.132.0
+Version 0.132.0 (Released October 31, 2024)
 ---------------
 
 - Add environment to PostHog feature flags (#2335)
