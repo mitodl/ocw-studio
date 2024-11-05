@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.132.1
+---------------
+
+- Fix file size metadata mismatch when replacing Google Drive image in Studio (#2334)
+
 Version 0.132.0 (Released October 31, 2024)
 ---------------
 
