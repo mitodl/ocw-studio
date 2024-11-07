@@ -7,10 +7,8 @@ from main.settings import (
     POSTHOG_PROJECT_API_KEY,
 )
 
-posthog = Posthog(POSTHOG_PROJECT_API_KEY, host=POSTHOG_API_HOST)
+if POSTHOG_ENABLED:
+    posthog = Posthog(POSTHOG_PROJECT_API_KEY, host=POSTHOG_API_HOST)
 
-if not POSTHOG_ENABLED:
-    posthog.disabled = True
-
-if ENVIRONMENT == "dev":
-    posthog.debug = True
+    if ENVIRONMENT == "dev":
+        posthog.debug = True
