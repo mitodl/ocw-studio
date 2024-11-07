@@ -1,4 +1,4 @@
-from posthog import Posthog
+from posthog import Posthog, feature_enabled
 
 from main.settings import (
     ENVIRONMENT,
@@ -12,3 +12,8 @@ if POSTHOG_ENABLED:
 
     if ENVIRONMENT == "dev":
         posthog.debug = True
+
+
+def is_feature_enable(feature_key, user_id):
+    """Check for Feature flag"""
+    return POSTHOG_ENABLED and feature_enabled(feature_key, user_id)
