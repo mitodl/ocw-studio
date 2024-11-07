@@ -15,5 +15,5 @@ if POSTHOG_ENABLED:
 
 
 def is_feature_enable(feature_key, user_id):
-    """Check for Feature flag"""
+    """Check wether Feature flag is enabled"""
     return POSTHOG_ENABLED and feature_enabled(feature_key, user_id)
