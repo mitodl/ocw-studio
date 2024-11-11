@@ -1,4 +1,4 @@
-from posthog import Posthog, feature_enabled
+from posthog import Posthog
 
 from main.settings import (
     ENVIRONMENT,
@@ -16,4 +16,4 @@ if POSTHOG_ENABLED:
 
 def is_feature_enable(feature_key, user_id):
     """Check wether Feature flag is enabled"""
-    return POSTHOG_ENABLED and feature_enabled(feature_key, user_id)
+    return POSTHOG_ENABLED and posthog.feature_enabled(feature_key, user_id)
