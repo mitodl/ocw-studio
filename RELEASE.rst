@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.133.0
+---------------
+
+- added page type in deletable items (#2316)
+
 Version 0.132.1 (Released November 05, 2024)
 ---------------
 
