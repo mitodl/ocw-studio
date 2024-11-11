@@ -62,7 +62,7 @@ export default function RepeatableContentListing(props: {
 
   const isDeletable =
     isContentDeletable &&
-    ["external-resource", "instructor"].includes(configItem.name)
+    ["external-resource", "instructor", "page"].includes(configItem.name)
 
   const getListingParams = useCallback(
     (search: string): ContentListingParams => {
@@ -169,19 +169,45 @@ export default function RepeatableContentListing(props: {
       selectedContent?.text_id as string,
     )
   })
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const onDelete = async () => {
     if (deleteQueryState.isPending) {
       return
     }
+
     const response = await deleteContent()
-    if (!response) {
-      return
-    } else if (fetchWebsiteContentListing) {
-      fetchWebsiteContentListing()
+
+    if (response?.status >= 400) {
+      setDeleteError(
+        "This item is referenced by other items and cannot be deleted." +
+          " Please visit the resource page for more details.",
+      )
+    } else {
+      setDeleteError(null)
+      closeDeleteModal()
+      fetchWebsiteContentListing && fetchWebsiteContentListing()
       await store.dispatch(requestAsync(websiteStatusRequest(website.name)))
     }
   }
+
+  const getDialogBodyContent = () => (
+    <>
+      {`Are you sure you want to remove ${
+        selectedContent && selectedContent.title
+          ? selectedContent.title
+          : "this content"
+      }?`}
+      {deleteError && (
+        <div
+          className="error-message"
+          style={{ color: "red", marginTop: "10px" }}
+        >
+          {deleteError}
+        </div>
+      )}
+    </>
+  )
 
   return (
     <>
@@ -269,18 +295,14 @@ export default function RepeatableContentListing(props: {
       </Route>
       <Dialog
         open={deleteModal}
-        onCancel={closeDeleteModal}
-        headerContent={`Remove ${labelSingular}`}
-        bodyContent={`Are you sure you want to remove ${
-          selectedContent && selectedContent.title
-            ? selectedContent.title
-            : "this content"
-        }?`}
-        acceptText="Delete"
-        onAccept={() => {
-          onDelete()
+        onCancel={() => {
           closeDeleteModal()
+          setDeleteError(null)
         }}
+        headerContent={`Remove ${labelSingular}`}
+        bodyContent={getDialogBodyContent()}
+        acceptText="Delete"
+        onAccept={onDelete}
       />
     </>
   )
