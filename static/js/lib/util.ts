@@ -29,7 +29,7 @@ if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   }
 }
 
-const isFeatureFlagEnabled = async (flag: string): Promise<boolean> => {
+const isFeatureFlagEnabled = (flag: string): boolean => {
   return posthog.isFeatureEnabled(flag) ?? false
 }
 
@@ -37,9 +37,8 @@ export const checkFeatureFlag = (
   flag: string,
   setFlag: Dispatch<SetStateAction<boolean>>,
 ) => {
-  isFeatureFlagEnabled(flag).then((isFlagEnabled) => {
-    setFlag(isFlagEnabled)
-  })
+  const isFlagEnabled = isFeatureFlagEnabled(flag)
+  setFlag(isFlagEnabled)
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>

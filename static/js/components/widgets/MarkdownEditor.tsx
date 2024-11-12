@@ -196,6 +196,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     isCustomLinkUIEnabled,
   ])
 
+  const configKey = useMemo(() => JSON.stringify(editorConfig), [editorConfig])
+
   const onChangeCB = useCallback(
     (_event: any, editor: any) => {
       const data = editor.getData()
@@ -224,14 +226,16 @@ export default function MarkdownEditor(props: Props): JSX.Element {
 
   return (
     <>
-      <CKEditor
-        editor={ClassicEditor}
-        config={editorConfig}
-        data={value ?? ""}
-        onReady={onReady}
-        onChange={onChangeCB}
-        onError={throwSynchronously}
-      />
+      <div key={configKey}>
+        <CKEditor
+          editor={ClassicEditor}
+          config={editorConfig}
+          data={value ?? ""}
+          onReady={onReady}
+          onChange={onChangeCB}
+          onError={throwSynchronously}
+        />
+      </div>
       {(link.length > 0 || embed.length > 0) && (
         <ResourcePickerDialog
           isOpen={isResourcePickerOpen}
