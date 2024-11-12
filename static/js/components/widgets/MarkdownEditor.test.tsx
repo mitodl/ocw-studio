@@ -216,7 +216,16 @@ describe("MarkdownEditor", () => {
     },
   )
 
-  //
+  it("recreates CKEditor when editorConfig changes", () => {
+    const wrapper = shallow(
+      <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
+    )
+    const initialKey = wrapper.find("div").first()
+    wrapper.setProps({ embed: ["resource"] })
+    wrapper.update()
+    const newKey = wrapper.find("div").first().key()
+    expect(newKey).not.toEqual(initialKey)
+  })
   ;[RESOURCE_EMBED, RESOURCE_LINK].forEach((resourceNodeType) => {
     it(`should open the resource picker for ${resourceNodeType}`, () => {
       const wrapper = render({
