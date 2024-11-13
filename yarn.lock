@@ -6629,10 +6629,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expect-type@npm:^0.13.0":
-  version: 0.13.0
-  resolution: "expect-type@npm:0.13.0"
-  checksum: 484f58fa8b256ee7316c3667874011e100307792d4494cc67b0781a501101af2e3fa6e05310320a6fb678ca5d4f5987751fefc4e5d8733836044edae3695c4dd
+"expect-type@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "expect-type@npm:1.1.0"
+  checksum: 65d25ec10bca32bcf650dcfe734532acc4b7a73677c656f299a7cbed273b5c4d6a3dab11af76f452645d54a95c4ef39fc73772f2c8eb6684ba35672958d6f3b3
   languageName: node
   linkType: hard
 
@@ -10998,7 +10998,7 @@ __metadata:
     eslint-plugin-jest: ^27.2.1
     eslint-plugin-react: ^7.24.0
     eslint-plugin-react-hooks: ^4.2.0
-    expect-type: ^0.13.0
+    expect-type: ^1.0.0
     express: ^4.17.1
     fetch-mock: ^9.10.6
     formik: ^2.2.9
