@@ -3343,12 +3343,12 @@ files = [
 
 [[package]]
 name = "uwsgitop"
-version = "0.11"
+version = "0.12"
 description = "uWSGI top-like interface"
 optional = false
 python-versions = "*"
 files = [
-    {file = "uwsgitop-0.11.tar.gz", hash = "sha256:99ca245119e4a0600840a62b7b4e020c9870fe90952b24eecfff0c9090c75d14"},
+    {file = "uwsgitop-0.12.tar.gz", hash = "sha256:4f9330951f0fb9633226de36cf0c28c04dcf323efab608834aa81f638b6019b2"},
 ]
 
 [[package]]
@@ -3570,4 +3570,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.6"
-content-hash = "2dea07c2f35c11073a2c338e4c8960a9d19ac09fce2f963b79e18c5a955d6db8"
+content-hash = "441293232c9f3a45dbe4ff4180193a7a57a20d52302e04fda5aab1db048d48f2"
