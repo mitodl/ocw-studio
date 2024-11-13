@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.133.0
+---------------
+
+- fix(deps): update dependency uwsgitop to ^0.12 (#2341)
+- chore(deps): update dependency pytest-env to v1 (#2250)
+- fix(deps): update dependency expect-type to v1 (#2342)
+- Fix Feature Flags Impacting CKEditor (#2339)
+- added page type in deletable items (#2316)
+
 Version 0.132.1 (Released November 05, 2024)
 ---------------
 
