@@ -30,7 +30,7 @@ from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
-from main.posthog import is_feature_enable
+from main.posthog import is_feature_enabled
 from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
@@ -689,7 +689,7 @@ class WebsiteContentViewSet(
         """Delete instances only if they are not referenced."""
         instance = self.get_object()
 
-        check_references = is_feature_enable(
+        check_references = is_feature_enabled(
             "OCW_STUDIO_CONTENT_DELETABLE_REFERENCES", self.request.user.email
         )
         if check_references and instance.referencing_content.exists():

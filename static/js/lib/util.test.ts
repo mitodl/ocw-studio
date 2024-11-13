@@ -1,5 +1,7 @@
 import casual from "casual"
 import { ActionPromiseValue } from "redux-query"
+import posthog from "posthog-js"
+import { checkFeatureFlag } from "./util"
 
 import {
   filenameFromPath,
@@ -128,5 +130,46 @@ describe("util", () => {
   it("generateHashCode should produce a numeric hash code for some string value", () => {
     expect(generateHashCode("abcdefg")).toEqual("-1206291356")
     expect(generateHashCode("http://example.com")).toEqual("-631280213")
+  })
+
+  describe("checkFeatureFlag", () => {
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    it("calls setFlag synchronously with the feature flag status true", () => {
+      const setFlagMock = jest.fn()
+
+      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
+
+      const result = checkFeatureFlag("test_flag", setFlagMock)
+
+      expect(setFlagMock).toHaveBeenCalledWith(true)
+      expect(result).toBeUndefined()
+    })
+
+    it("calls setFlag synchronously with the feature flag status false", () => {
+      const setFlagMock = jest.fn()
+
+      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(false)
+
+      const result = checkFeatureFlag("test_flag", setFlagMock)
+
+      expect(setFlagMock).toHaveBeenCalledWith(false)
+      expect(result).toBeUndefined()
+    })
+
+    it("calls setFlag before any asynchronous code", async () => {
+      expect.assertions(2)
+      const setFlagMock = jest.fn()
+      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
+
+      checkFeatureFlag("test_flag", setFlagMock)
+
+      expect(setFlagMock).toHaveBeenCalledWith(true)
+
+      await Promise.resolve()
+      expect(setFlagMock).toHaveBeenCalledTimes(1)
+    })
   })
 })
