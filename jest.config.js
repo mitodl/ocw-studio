@@ -1,4 +1,5 @@
 module.exports = {
+  setupFiles: ["<rootDir>/jest.setup.js"],
   setupFilesAfterEnv: [
     // see https://github.com/ricardo-ch/jest-fail-on-console/issues/4
     "@testing-library/react-hooks/disable-error-filtering.js",
