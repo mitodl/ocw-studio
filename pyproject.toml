@@ -10,7 +10,7 @@ version = "0.0.0"
 python = "3.12.6"
 
 beautifulsoup4 = "^4.12.2"
-boto3 = "1.35.12"
+boto3 = "1.35.62"
 celery = "^5.3.0"
 cryptography = "^43.0.0"
 dj-database-url = "2.2.0"
