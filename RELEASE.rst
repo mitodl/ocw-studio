@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.133.0
+Version 0.133.0 (Released November 18, 2024)
 ---------------
 
 - fix(deps): update dependency uwsgitop to ^0.12 (#2341)
