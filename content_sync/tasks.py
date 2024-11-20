@@ -173,7 +173,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 hugo_args=hugo_args,
             )
         )
-    raise self.replace(celery.group(tasks))
+    return self.replace(celery.group(tasks))
 
 
 @app.task(acks_late=True)
@@ -345,7 +345,7 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        return
+        return None
     no_mass_build = no_mass_build or api.get_mass_build_sites_pipeline(version) is None
     site_tasks = [
         publish_website_batch.s(
@@ -357,9 +357,9 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         for name_subset in chunks(sorted(website_names), chunk_size=chunk_size)
     ]
     if no_mass_build:
-        raise self.replace(celery.group(site_tasks))
+        return self.replace(celery.group(site_tasks))
     workflow = celery.chain(celery.group(site_tasks), trigger_mass_build.si(version))
-    raise self.replace(celery.group(workflow))
+    return self.replace(celery.group(workflow))
 
 
 @app.task(acks_late=True)
@@ -676,4 +676,4 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
                 website_subset,
             )
         )
-    raise self.replace(celery.group(tasks))
+    return self.replace(celery.group(tasks))

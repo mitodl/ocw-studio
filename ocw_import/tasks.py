@@ -108,7 +108,7 @@ def import_ocw2hugo_courses(  # noqa: PLR0913
         for paths in chunks(course_paths, chunk_size=chunk_size)
     ]
     import_steps = celery.chord(celery.group(course_tasks), chord_finisher.si())
-    raise self.replace(celery.group(import_steps))
+    return self.replace(celery.group(import_steps))
 
 
 @app.task(bind=True)
@@ -156,4 +156,4 @@ def update_ocw_resource_data(  # noqa: PLR0913
         for paths in chunks(course_paths, chunk_size=chunk_size)
     ]
 
-    raise self.replace(celery.group(course_tasks))
+    return self.replace(celery.group(course_tasks))

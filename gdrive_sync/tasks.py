@@ -131,7 +131,7 @@ def _get_gdrive_files(website: Website) -> tuple[dict[str, list[dict]], list[str
 def import_website_files(self, name: str):
     """Query the Drive API for all children of a website folder and import the files"""
     if not api.is_gdrive_enabled():
-        return
+        return None
     website = Website.objects.get(name=name)
     website.sync_status = WebsiteSyncStatus.PROCESSING
     website.synced_on = now_in_utc()
@@ -188,9 +188,11 @@ def import_website_files(self, name: str):
         workflow_steps.append(sync_website_content.si(name))
         workflow = chain(*workflow_steps)
 
-        raise self.replace(celery.group(workflow))
+        return self.replace(celery.group(workflow))
 
     update_website_status(website.pk, website.synced_on)
+
+    return None
 
 
 @app.task()
@@ -222,7 +224,7 @@ def create_gdrive_folders_chunked(self, short_ids: list[str], chunk_size=500):
         chunk_size=chunk_size,
     ):
         tasks.append(create_gdrive_folders_batch.s(website_subset))  # noqa: PERF401
-    raise self.replace(celery.group(tasks))
+    return self.replace(celery.group(tasks))
 
 
 @app.task
@@ -310,4 +312,4 @@ def populate_file_sizes_bulk(
         populate_file_sizes.si(name, override_existing) for name in website_names
     ]
     task_chain = chain(*sub_tasks)
-    raise self.replace(task_chain)
+    return self.replace(task_chain)
