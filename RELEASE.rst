@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.134.0
+---------------
+
+- Use return Task.replace instead of raise Task.replace for Celery tasks (#2350)
+- fix(deps): update dependency sentry-sdk to v2.18.0 (#2348)
+- chore(deps): update node.js to v20.18.0 (#2346)
+- fix(deps): update dependency boto3 to v1.35.62 (#2345)
+- chore(deps): lock file maintenance (#2340)
+
 Version 0.133.0 (Released November 18, 2024)
 ---------------
 
