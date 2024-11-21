@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.134.0
+Version 0.134.0 (Released November 21, 2024)
 ---------------
 
 - Use return Task.replace instead of raise Task.replace for Celery tasks (#2350)
