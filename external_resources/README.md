@@ -70,6 +70,10 @@ When Wayback Machine tasks are enabled, the system performs the following action
   - The system avoids resubmitting the same URL to the Wayback Machine within a specified interval, defined by `WAYBACK_SUBMISSION_INTERVAL_DAYS` in [settings.py](/main/settings.py).
   - This interval can be overridden using the `submit_sites_to_wayback` management command with `--force` flag (as detailed below).
 
+# Wayback Machine Removal Requests
+
+To request removal of a URL from the Wayback Machine, email info@archive.org with the URL(s), time period for exclusion, your control period of the site or account (if applicable), and any relevant details. Archive.org reviews requests but does not guarantee outcomes.
+
 # Frequency Control
 
 - **External Resource Checking:**
