@@ -129,6 +129,7 @@ def submit_website_resources_to_wayback_task(
     tasks = [
         submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
         for resource in external_resources
+        if ExternalResourceState.objects.get_or_create(content=resource)
     ]
     if tasks:
         return self.replace(celery.group(tasks))
@@ -182,7 +183,11 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
                 resource_id,
             )
             return
-
+        log.info(
+            "Submitting URL to Wayback Machine for resource '%s' (ID: %s)",
+            state.content.title,
+            resource_id,
+        )
         response = api.submit_url_to_wayback(url)
         job_id = response.get("job_id")
         status_ext = response.get("status_ext")

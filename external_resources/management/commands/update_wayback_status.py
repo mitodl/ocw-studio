@@ -59,7 +59,7 @@ class Command(WebsiteFilterCommand):
 
         if sync_execution:
             self.stdout.write("Running updates synchronously...")
-            update_wayback_jobs_status_batch.apply(job_ids=job_ids)
+            update_wayback_jobs_status_batch.run(job_ids=job_ids)
         else:
             self.stdout.write(
                 "Enqueuing tasks to update job statuses asynchronously..."
