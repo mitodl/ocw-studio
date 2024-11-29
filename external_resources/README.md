@@ -72,7 +72,7 @@ When Wayback Machine tasks are enabled, the system performs the following action
 
 # Wayback Machine Removal Requests
 
-To request removal of a URL from the Wayback Machine, email info@archive.org with the URL(s), time period for exclusion, your control period of the site or account (if applicable), and any relevant details. Archive.org reviews requests but does not guarantee outcomes.
+To request removal of a URL from the Wayback Machine, email info@archive.org with the details mentioned in [this guide](https://help.archive.org/help/how-do-i-request-to-remove-something-from-archive-org/).
 
 # Frequency Control
 
