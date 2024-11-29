@@ -7,6 +7,7 @@ This document describes the workflow for validating external resources and integ
 1. [Overview](#overview)
 1. [Enabling Tasks](#enabling-tasks)
 1. [Wayback Machine Integration](#wayback-machine-integration-1)
+1. [Wayback Machine Removal Requests](#wayback-machine-removal-requests)
 1. [Frequency Control](#frequency-control)
 1. [Rate Limiting](#rate-limiting)
 1. [Task Priority](#task-priority)
