@@ -56,10 +56,17 @@ export default function SiteContentEditor(
 
   const [references, setReferences] = useState({ link: [], unlink: [] })
 
-  function addReferences(key, item) {
+  function addReferences(item) {
     setReferences((prev) => ({
       ...prev,
-      [key]: [...(prev[key] || []), item],
+      link: [...(prev.link || []), item],
+    }))
+  }
+
+  function removeReferences(item) {
+    setReferences((prev) => ({
+      ...prev,
+      unlink: (prev.unlink || []).filter((value) => value !== item),
     }))
   }
 
@@ -179,7 +186,9 @@ export default function SiteContentEditor(
 
   return (
     <ErrorBoundary>
-      <ReferencesContext.Provider value={{ references, addReferences }}>
+      <ReferencesContext.Provider
+        value={{ references, addReferences, removeReferences }}
+      >
         <SiteContentForm
           onSubmit={onSubmitForm}
           configItem={configItem}
