@@ -27,6 +27,7 @@ import {
   EditableConfigItem,
   WebsiteContentModalState,
   WebsiteContent,
+  ReferencedContent,
 } from "../types/websites"
 import { SiteFormValues } from "../types/forms"
 import ErrorBoundary from "./ErrorBoundary"
@@ -54,19 +55,22 @@ export default function SiteContentEditor(
     setDirty,
   } = props
 
-  const [references, setReferences] = useState({ link: [], unlink: [] })
+  const [references, setReferences] = useState<ReferencedContent>({
+    link: [],
+    unlink: [],
+  })
 
-  function addReferences(item) {
+  function addReferences(item: string) {
     setReferences((prev) => ({
       ...prev,
       link: [...(prev.link || []), item],
     }))
   }
 
-  function removeReferences(item) {
+  function removeReferences(item: string) {
     setReferences((prev) => ({
-      ...prev,
-      unlink: (prev.unlink || []).filter((value) => value !== item),
+      link: (prev.link || []).filter((value) => value !== item),
+      unlink: [...(prev.unlink || []), item],
     }))
   }
 
@@ -136,11 +140,10 @@ export default function SiteContentEditor(
       payload["text_id"] = configItem.name
     }
 
+    const references = values.references as ReferencedContent
     if (
-      (Array.isArray(values.references?.link) &&
-        values.references.link.length > 0) ||
-      (Array.isArray(values.references?.unlink) &&
-        values.references.unlink.length > 0)
+      (Array.isArray(references?.link) && references.link.length > 0) ||
+      (Array.isArray(references?.unlink) && references.unlink.length > 0)
     ) {
       payload["references"] = values.references
     }

@@ -33,7 +33,7 @@ class CustomLinkCommand extends LinkCommand {
 
           // Add the updated Resource Link ID in references context
           const referencedContent = this.editor.config.get("referencedContent")
-          referencedContent.add("link", externalResource.textId)
+          referencedContent.add(externalResource.textId)
         }
       },
     )
@@ -43,16 +43,15 @@ class CustomLinkCommand extends LinkCommand {
 class CustomUnlinkCommand extends UnlinkCommand {
   execute() {
     // Add the updated Resource Link ID in references context
-    const element = this.editor.model.document.selection.getSelectedElement()
-
-    if (element && element.is("element", "a")) {
-      const href = element.getAttribute("href")
+    const href = this.editor.model.document.selection.getAttribute("linkHref")
+    if (href) {
       console.log("Unlinking this URL:", href)
 
       const resourceID = this.editor.plugins
         .get(ResourceLinkMarkdownSyntax)
         .getResourceLinkID(href)
       if (resourceID) {
+        console.log("element: ", resourceID)
         const referencedContent = this.editor.config.get("referencedContent")
         referencedContent.remove(resourceID)
       }
