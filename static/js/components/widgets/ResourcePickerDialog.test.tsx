@@ -24,7 +24,7 @@ import WebsiteContext from "../../context/Website"
 import { Website } from "../../types/websites"
 import origResourcePickerListing from "./ResourcePickerListing"
 import { assertNotNil } from "../../test_util"
-import { useMutation } from "redux-query-react"
+import { useReferences } from "../../context/References"
 
 jest.mock("../../hooks/state")
 const useDebouncedState = jest.mocked(hooksState.useDebouncedState)
@@ -39,11 +39,11 @@ jest.mock("./ResourcePickerListing", () => {
 })
 const ResourcePickerListing = jest.mocked(origResourcePickerListing)
 
-jest.mock("redux-query-react", () => ({
-  ...jest.requireActual("redux-query-react"),
-  useMutation: jest.fn(),
+jest.mock("../../context/References", () => ({
+  ...jest.requireActual("../../context/References"),
+  useReferences: jest.fn(),
 }))
-const mockedUseMutation = jest.mocked(useMutation)
+const mockedUseReferences = jest.mocked(useReferences)
 
 const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
   act(() => {
@@ -65,13 +65,11 @@ describe("ResourcePickerDialog", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
 
-    mockedUseMutation.mockReturnValue([
-      {
-        isFinished: false,
-        isPending: false,
-      },
-      jest.fn(),
-    ])
+    mockedUseReferences.mockReturnValue({
+      references: {},
+      addReferences: jest.fn(),
+      removerefernces: jest.fn(),
+    })
 
     insertEmbedStub = helper.sandbox.stub()
     closeDialogStub = helper.sandbox.stub()

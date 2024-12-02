@@ -63,14 +63,14 @@ export default function SiteContentEditor(
   function addReferences(item: string) {
     setReferences((prev) => ({
       ...prev,
-      link: [...(prev.link || []), item],
+      link: [...prev.link, item],
     }))
   }
 
   function removeReferences(item: string) {
     setReferences((prev) => ({
-      link: (prev.link || []).filter((value) => value !== item),
-      unlink: [...(prev.unlink || []), item],
+      link: prev.link.filter((value) => value !== item),
+      unlink: prev.link.includes(item) ? prev.unlink : [...prev.unlink, item],
     }))
   }
 

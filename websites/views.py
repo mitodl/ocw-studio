@@ -691,25 +691,33 @@ class WebsiteContentViewSet(
             if content:
                 # If the content already exists, return it instead of creating a new one
                 serializer = self.get_serializer(content)
-                self._add_referencing_content(content)
+                self._referencing_content(content)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         # Proceed with creation if no existing content is found
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(updated_by=self.request.user)
-        self._add_referencing_content(instance)
+        self._referencing_content(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _add_referencing_content(self, instance):
+    def _referencing_content(self, instance):
         """
         Add referencing content to the instance if `referencing_content` is provided.
         """
-        if references := self.request.data.get("references"):
-            if references := references.get("link"):
-                referred_content = WebsiteContent.objects.filter(text_id__in=references)
-                for content in referred_content:
+        if references_data := self.request.data.get("references"):
+            if references := references_data.get("link"):
+                referenced_content = WebsiteContent.objects.filter(
+                    text_id__in=references
+                )
+                for content in referenced_content:
                     content.referencing_content.add(instance)
+            if dereferences := references_data.get("unlink"):
+                dereferenced_content = WebsiteContent.objects.filter(
+                    text_id__in=dereferences
+                )
+                for content in dereferenced_content:
+                    content.referencing_content.remove(instance)
             instance.save()
 
     def perform_update(self, serializer):
@@ -717,7 +725,7 @@ class WebsiteContentViewSet(
         Override the update request for content
         """
         instance = serializer.save(updated_by=self.request.user)
-        self._add_referencing_content(instance)
+        self._referencing_content(instance)
 
     @action(
         detail=False,
