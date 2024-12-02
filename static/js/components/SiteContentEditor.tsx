@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -30,6 +30,7 @@ import {
 } from "../types/websites"
 import { SiteFormValues } from "../types/forms"
 import ErrorBoundary from "./ErrorBoundary"
+import ReferencesContext from "../context/References"
 
 export interface SiteContentEditorProps {
   content?: WebsiteContent | null
@@ -52,6 +53,15 @@ export default function SiteContentEditor(
     editorState,
     setDirty,
   } = props
+
+  const [references, setReferences] = useState({ link: [], unlink: [] })
+
+  function addReferences(key, item) {
+    setReferences((prev) => ({
+      ...prev,
+      [key]: [...(prev[key] || []), item],
+    }))
+  }
 
   const site = useWebsite()
   const store = useStore()
@@ -119,6 +129,16 @@ export default function SiteContentEditor(
       payload["text_id"] = configItem.name
     }
 
+    if (
+      (Array.isArray(values.references?.link) &&
+        values.references.link.length > 0) ||
+      (Array.isArray(values.references?.unlink) &&
+        values.references.unlink.length > 0)
+    ) {
+      payload["references"] = values.references
+    }
+
+    console.log(payload, values)
     const response = editorState.editing()
       ? await editWebsiteContent(payload, editorState.wrapped)
       : await addWebsiteContent(payload as NewWebsiteContentPayload)
@@ -159,13 +179,15 @@ export default function SiteContentEditor(
 
   return (
     <ErrorBoundary>
-      <SiteContentForm
-        onSubmit={onSubmitForm}
-        configItem={configItem}
-        content={content}
-        editorState={editorState}
-        setDirty={setDirty}
-      />
+      <ReferencesContext.Provider value={{ references, addReferences }}>
+        <SiteContentForm
+          onSubmit={onSubmitForm}
+          configItem={configItem}
+          content={content}
+          editorState={editorState}
+          setDirty={setDirty}
+        />
+      </ReferencesContext.Provider>
     </ErrorBoundary>
   )
 }

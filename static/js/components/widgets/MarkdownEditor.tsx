@@ -32,6 +32,7 @@ import { siteContentRerouteUrl } from "../../lib/urls"
 import { checkFeatureFlag } from "../../lib/util"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
 import { useParams } from "react-router"
+import { useReferences } from "../../context/References"
 
 export interface Props {
   value?: string
@@ -56,8 +57,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
   const { uuid } = useParams<{ uuid: string }>()
-
   const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
+  const { addReferences } = useReferences()
+
+  console.log("check this", addReferences)
 
   useEffect(() => {
     checkFeatureFlag(
@@ -150,6 +153,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       },
       [WEBSITE_NAME]: website.name,
       [WEBSITE_CONTENT_ID]: uuid,
+      ["addReferences"]: addReferences,
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)

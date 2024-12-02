@@ -31,6 +31,11 @@ class CustomLinkCommand extends LinkCommand {
     ).then((externalResource) => {
       if (externalResource) {
         updateHref(externalResource, this.editor, (href) => super.execute(href))
+
+        // Add the updated Resource Link ID in references context
+        const addReferences = this.editor.config.get("addReferences")
+        console.log("type of ", addReferences)
+        addReferences(externalResource.textId)
       }
     })
   }
@@ -91,6 +96,11 @@ export default class CustomLink extends Plugin {
                 item,
               )
             })
+
+            // Add the updated Resource Link ID in references context
+            const addReferences = this.editor.config.get("addReferences")
+            console.log("type of ", addReferences)
+            addReferences(externalResource.textId)
           }
         })
       }
