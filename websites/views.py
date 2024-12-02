@@ -705,23 +705,19 @@ class WebsiteContentViewSet(
         """
         Add referencing content to the instance if `referencing_content` is provided.
         """
-        content_id = self.request.data.get("referencing_content")
-        if content_id:
-            log.info("Adding referencing content.")
-            content = WebsiteContent.objects.get(text_id=content_id)
-            instance.referencing_content.add(content)
+        if references := self.request.data.get("references"):
+            if references := references.get("link"):
+                referred_content = WebsiteContent.objects.filter(text_id__in=references)
+                for content in referred_content:
+                    content.referencing_content.add(instance)
             instance.save()
 
     def perform_update(self, serializer):
         """
         Override the update request for content
         """
-        instance = serializer.save()
-
-        if content_id := self.request.data.get("referencingContent"):
-            content = WebsiteContent.objects.get(text_id=content_id)
-            instance.referencing_content.add(content)
-            instance.save()
+        instance = serializer.save(updated_by=self.request.user)
+        self._add_referencing_content(instance)
 
     @action(
         detail=False,

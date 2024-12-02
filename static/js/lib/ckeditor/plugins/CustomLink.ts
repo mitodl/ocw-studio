@@ -6,8 +6,9 @@ import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 import { siteApiContentUrl } from "../../urls"
 import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
+import UnlinkCommand from "@ckeditor/ckeditor5-link/src/unlinkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
-import { WEBSITE_CONTENT_ID, WEBSITE_NAME } from "./constants"
+import { WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
 import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
@@ -23,21 +24,42 @@ class CustomLinkCommand extends LinkCommand {
       }
     }
 
-    getExternalResource(
-      this.editor.config.get(WEBSITE_NAME),
-      this.editor.config.get(WEBSITE_CONTENT_ID),
-      href,
-      title,
-    ).then((externalResource) => {
-      if (externalResource) {
-        updateHref(externalResource, this.editor, (href) => super.execute(href))
+    getExternalResource(this.editor.config.get(WEBSITE_NAME), href, title).then(
+      (externalResource) => {
+        if (externalResource) {
+          updateHref(externalResource, this.editor, (href) =>
+            super.execute(href),
+          )
 
-        // Add the updated Resource Link ID in references context
-        const addReferences = this.editor.config.get("addReferences")
-        console.log("type of ", addReferences)
-        addReferences(externalResource.textId)
+          // Add the updated Resource Link ID in references context
+          const referencedContent = this.editor.config.get("referencedContent")
+          referencedContent.add("link", externalResource.textId)
+        }
+      },
+    )
+  }
+}
+
+class CustomUnlinkCommand extends UnlinkCommand {
+  execute() {
+    // Add the updated Resource Link ID in references context
+    const element = this.editor.model.document.selection.getSelectedElement()
+
+    if (element && element.is("element", "a")) {
+      const href = element.getAttribute("href")
+      console.log("Unlinking this URL:", href)
+
+      const resourceID = this.editor.plugins
+        .get(ResourceLinkMarkdownSyntax)
+        .getResourceLinkID(href)
+      if (resourceID) {
+        const referencedContent = this.editor.config.get("referencedContent")
+        referencedContent.remove(resourceID)
       }
-    })
+    }
+
+    // Call the original unlink logic
+    super.execute()
   }
 }
 
@@ -56,6 +78,7 @@ export default class CustomLink extends Plugin {
 
   init() {
     this.editor.commands.add("link", new CustomLinkCommand(this.editor))
+    this.editor.commands.add("unlink", new CustomUnlinkCommand(this.editor))
     console.log("CustomLink Plugin is initialized")
 
     // Intercept change in document
@@ -83,7 +106,6 @@ export default class CustomLink extends Plugin {
 
         getExternalResource(
           this.editor.config.get(WEBSITE_NAME),
-          this.editor.config.get(WEBSITE_CONTENT_ID),
           String(originalHref),
           "",
         ).then((externalResource) => {
@@ -98,9 +120,9 @@ export default class CustomLink extends Plugin {
             })
 
             // Add the updated Resource Link ID in references context
-            const addReferences = this.editor.config.get("addReferences")
-            console.log("type of ", addReferences)
-            addReferences(externalResource.textId)
+            const referencedContent =
+              this.editor.config.get("referencedContent")
+            referencedContent.add(externalResource.textId)
           }
         })
       }
@@ -116,7 +138,6 @@ export default class CustomLink extends Plugin {
 
 async function getExternalResource(
   siteName: string,
-  contentId: string,
   linkValue: string,
   title: string,
 ): Promise<{ title: string; textId: string } | null> {
@@ -137,7 +158,6 @@ async function getExternalResource(
       is_broken: "",
       backup_url: "",
     },
-    referencing_content: contentId,
   }
 
   try {

@@ -58,9 +58,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const website = useWebsite()
   const { uuid } = useParams<{ uuid: string }>()
   const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
-  const { addReferences } = useReferences()
-
-  console.log("check this", addReferences)
+  const { addReferences, removeReferences } = useReferences()
 
   useEffect(() => {
     checkFeatureFlag(
@@ -153,7 +151,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       },
       [WEBSITE_NAME]: website.name,
       [WEBSITE_CONTENT_ID]: uuid,
-      ["addReferences"]: addReferences,
+      // Function cannot be directly passed in config
+      referencedContent: { add: addReferences, remove: removeReferences },
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)
