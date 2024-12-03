@@ -68,7 +68,7 @@ def test_check_external_resources_for_breakages_zero_websites(
     assert mocked_celery.replace.call_count == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     (
         "url_status",
@@ -168,7 +168,7 @@ def test_check_external_resources(  # noqa: PLR0913
         )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_check_external_resources_failed(mocker):
     """Test for failed api check"""
     external_resource_state = ExternalResourceStateFactory()
