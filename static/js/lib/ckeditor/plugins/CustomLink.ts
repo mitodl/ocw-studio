@@ -8,7 +8,7 @@ import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
 import UnlinkCommand from "@ckeditor/ckeditor5-link/src/unlinkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
-import { WEBSITE_NAME } from "./constants"
+import { REFERENCED_CONTENT, WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
 import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
@@ -32,7 +32,7 @@ class CustomLinkCommand extends LinkCommand {
           )
 
           // Add the updated Resource Link ID in references context
-          const referencedContent = this.editor.config.get("referencedContent")
+          const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
           referencedContent.add(externalResource.textId)
         }
       },
@@ -52,7 +52,7 @@ class CustomUnlinkCommand extends UnlinkCommand {
         .getResourceLinkID(String(href))
       if (resourceID) {
         console.log("element: ", resourceID)
-        const referencedContent = this.editor.config.get("referencedContent")
+        const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
         referencedContent.remove(resourceID)
       }
     }
@@ -119,8 +119,7 @@ export default class CustomLink extends Plugin {
             })
 
             // Add the updated Resource Link ID in references context
-            const referencedContent =
-              this.editor.config.get("referencedContent")
+            const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
             referencedContent.add(externalResource.textId)
           }
         })

@@ -151,7 +151,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       [WEBSITE_NAME]: website.name,
 
       // Function cannot be directly passed in config
-      referencedContent: { add: addReferences, remove: removeReferences },
+      REFERENCED_CONTENT: { add: addReferences, remove: removeReferences },
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)
