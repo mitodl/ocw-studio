@@ -23,6 +23,7 @@ import {
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
+  REFERENCED_CONTENT,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -151,7 +152,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       [WEBSITE_NAME]: website.name,
 
       // Function cannot be directly passed in config
-      REFERENCED_CONTENT: { add: addReferences, remove: removeReferences },
+      [REFERENCED_CONTENT]: { add: addReferences, remove: removeReferences },
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)
