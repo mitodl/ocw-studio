@@ -49,7 +49,7 @@ class CustomUnlinkCommand extends UnlinkCommand {
 
       const resourceID = this.editor.plugins
         .get(ResourceLinkMarkdownSyntax)
-        .getResourceLinkID(href)
+        .getResourceLinkID(String(href))
       if (resourceID) {
         console.log("element: ", resourceID)
         const referencedContent = this.editor.config.get("referencedContent")

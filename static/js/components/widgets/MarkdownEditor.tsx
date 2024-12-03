@@ -23,7 +23,6 @@ import {
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
-  WEBSITE_CONTENT_ID,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -150,7 +149,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }`,
       },
       [WEBSITE_NAME]: website.name,
-      [WEBSITE_CONTENT_ID]: uuid,
+
       // Function cannot be directly passed in config
       referencedContent: { add: addReferences, remove: removeReferences },
     }
