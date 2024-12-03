@@ -424,7 +424,6 @@ export type EditWebsiteContentPayload = {
   body?: string
   metadata?: any
   file?: File
-  referencingContent?: any
 }
 
 export const editWebsiteContentMutation = (
