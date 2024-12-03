@@ -66,9 +66,9 @@ describe("ResourcePickerDialog", () => {
     website = makeWebsiteDetail()
 
     mockedUseReferences.mockReturnValue({
-      references: {},
+      references: { link: [], unlink: [] },
       addReferences: jest.fn(),
-      removerefernces: jest.fn(),
+      removeReferences: jest.fn(),
     })
 
     insertEmbedStub = helper.sandbox.stub()

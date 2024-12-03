@@ -1,4 +1,5 @@
 import React, { useContext } from "react"
+import { ReferencesContextType } from "../types/websites"
 
 /**
  * This allows us to set references context for a whole component
@@ -15,7 +16,9 @@ import React, { useContext } from "react"
  * const references = useReferences()
  * ```
  **/
-const ReferencesContext = React.createContext<null>(null)
+const ReferencesContext = React.createContext<ReferencesContextType | null>(
+  null,
+)
 export default ReferencesContext
 
 /**
