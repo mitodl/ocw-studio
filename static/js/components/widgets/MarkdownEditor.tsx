@@ -23,6 +23,7 @@ import {
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
+  REFERENCED_CONTENT,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -30,6 +31,7 @@ import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { checkFeatureFlag } from "../../lib/util"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
+import { useReferences } from "../../context/References"
 
 export interface Props {
   value?: string
@@ -53,8 +55,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
-
   const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
+  const { addReferences, removeReferences } = useReferences()
 
   useEffect(() => {
     checkFeatureFlag(
@@ -146,6 +148,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         }`,
       },
       [WEBSITE_NAME]: website.name,
+
+      // Function cannot be directly passed in config
+      [REFERENCED_CONTENT]: { add: addReferences, remove: removeReferences },
     }
     if (isCustomLinkUIEnabled) {
       MinimalEditorConfig.plugins.push(CustomLink)
@@ -194,6 +199,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     allowedHtml,
     website.name,
     isCustomLinkUIEnabled,
+    addReferences,
+    removeReferences,
   ])
 
   const configKey = useMemo(() => JSON.stringify(editorConfig), [editorConfig])
