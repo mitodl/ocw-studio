@@ -18,6 +18,7 @@ import {
   RESOURCE_EMBED,
   RESOURCE_LINK,
   RESOURCE_LINK_CONFIG_KEY,
+  WEBSITE_NAME,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
 import { getMockEditor } from "../../test_util"
@@ -103,6 +104,7 @@ describe("MarkdownEditor", () => {
           CKEDITOR_RESOURCE_UTILS,
           MARKDOWN_CONFIG_KEY,
           RESOURCE_LINK_CONFIG_KEY,
+          WEBSITE_NAME,
         ],
         ckWrapper.prop("config"),
       )
@@ -214,7 +216,16 @@ describe("MarkdownEditor", () => {
     },
   )
 
-  //
+  it("recreates CKEditor when editorConfig changes", () => {
+    const wrapper = shallow(
+      <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
+    )
+    const initialKey = wrapper.find("div").first()
+    wrapper.setProps({ embed: ["resource"] })
+    wrapper.update()
+    const newKey = wrapper.find("div").first().key()
+    expect(newKey).not.toEqual(initialKey)
+  })
   ;[RESOURCE_EMBED, RESOURCE_LINK].forEach((resourceNodeType) => {
     it(`should open the resource picker for ${resourceNodeType}`, () => {
       const wrapper = render({

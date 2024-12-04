@@ -2,6 +2,7 @@ import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 import { SiteFormValue } from "../types/forms"
 import posthog from "posthog-js"
+import { Dispatch, SetStateAction } from "react"
 
 if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   const environment = SETTINGS.environment
@@ -24,8 +25,20 @@ if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   // @ts-expect-error: SETTINGS.user is intentionally untyped
   if (SETTINGS.user) {
     // @ts-expect-error: SETTINGS.user is intentionally untyped
-    posthog.identify(SETTINGS.user.email)
+    posthog.identify(SETTINGS.user.email, { environment: SETTINGS.environment })
   }
+}
+
+const isFeatureFlagEnabled = (flag: string): boolean => {
+  return posthog.isFeatureEnabled(flag) ?? false
+}
+
+export const checkFeatureFlag = (
+  flag: string,
+  setFlag: Dispatch<SetStateAction<boolean>>,
+) => {
+  const isFlagEnabled = isFeatureFlagEnabled(flag)
+  setFlag(isFlagEnabled)
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>

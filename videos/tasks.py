@@ -154,12 +154,12 @@ def update_youtube_statuses(self):  # noqa: C901
     Update the status of recently uploaded YouTube videos if complete
     """
     if not is_youtube_enabled():
-        return
+        return None
     videos_processing = VideoFile.objects.filter(
         Q(status=VideoFileStatus.UPLOADED) & Q(destination=DESTINATION_YOUTUBE)
     )
     if videos_processing.count() == 0:
-        return
+        return None
     youtube = YouTubeApi()
     group_tasks = []
     for video_file in videos_processing:
@@ -211,7 +211,8 @@ def update_youtube_statuses(self):  # noqa: C901
             mail_youtube_upload_failure(video_file)
 
     if group_tasks:
-        raise self.replace(celery.group(group_tasks))
+        return self.replace(celery.group(group_tasks))
+    return None
 
 
 @app.task(acks_late=True)

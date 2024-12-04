@@ -84,7 +84,7 @@
     "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
-    "expect-type": "^0.13.0",
+    "expect-type": "^1.0.0",
     "express": "^4.17.1",
     "fetch-mock": "^9.10.6",
     "formik": "^2.2.9",
@@ -145,13 +145,13 @@
     "waait": "^1.0.5",
     "webpack": "^5.76.0",
     "webpack-bundle-tracker": "^1.2.0",
-    "webpack-cli": "^4.8.0",
+    "webpack-cli": "^5.0.0",
     "webpack-dev-middleware": "^5.0.0",
     "webpack-hot-middleware": "^2.25.0",
     "yup": "^0.32.9"
   },
   "engines": {
-    "node": "20.17.0",
+    "node": "20.18.0",
     "yarn": "3.x"
   },
   "scripts": {

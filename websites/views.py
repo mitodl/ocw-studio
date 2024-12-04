@@ -30,6 +30,7 @@ from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
+from main.posthog import is_feature_enabled
 from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
@@ -314,6 +315,19 @@ class WebsiteViewSet(
             website, version, publish_status, now_in_utc(), unpublished=unpublished
         )
         return Response(status=200)
+
+    @action(detail=True, methods=["get"], permission_classes=[BearerTokenPermission])
+    def hide_download(self, request, name=None):  # noqa: ARG002
+        """Process webhook requests from concourse pipeline runs"""
+        website = get_object_or_404(Website, name=name)
+        content = WebsiteContent.objects.get(
+            website=website, type=CONTENT_TYPE_METADATA
+        )
+        hide_download = content and content.metadata.get("hide_download")
+        return Response(
+            status=200,
+            data={} if hide_download else {"version": str(now_in_utc().timestamp())},
+        )
 
 
 class WebsiteMassBuildViewSet(viewsets.ViewSet):
@@ -669,6 +683,59 @@ class WebsiteContentViewSet(
         )  # this actually performs a save() because it's a soft delete
         update_website_backend(instance.website)
         return instance
+
+    # Override the destroy method
+    def destroy(self, *args, **kwargs):  # noqa: ARG002
+        """Delete instances only if they are not referenced."""
+        instance = self.get_object()
+
+        check_references = is_feature_enabled(
+            "OCW_STUDIO_CONTENT_DELETABLE_REFERENCES", self.request.user.email
+        )
+        if check_references and instance.referencing_content.exists():
+            return Response(
+                {
+                    "error": (
+                        "Cannot delete this content. "
+                        "It is referenced in other content instances"
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Proceed with default deletion
+        self.perform_destroy(instance)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def create(self, request, *args, **kwargs):  # noqa: ARG002
+        """
+        Override the create method to implement 'create_or_get' functionality.
+        """
+        parent_lookup_website = self.kwargs.get("parent_lookup_website")
+
+        # Extract the data from the request
+        types = _get_value_list_from_query_params(request.data, "type")
+        metadata = request.data.get("metadata")
+
+        # Criteria for checking duplicates in external resources only
+        if constants.CONTENT_TYPE_EXTERNAL_RESOURCE in types:
+            queryset = WebsiteContent.objects.filter(
+                website__name=parent_lookup_website
+            )
+            queryset = queryset.filter(metadata__external_url=metadata["external_url"])
+            content = queryset.first()
+
+            if content:
+                # If the content already exists, return it instead of creating a new one
+                serializer = self.get_serializer(content)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Proceed with creation if no existing content is found
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=self.request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=False,

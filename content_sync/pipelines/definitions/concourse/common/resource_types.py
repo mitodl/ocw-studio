@@ -17,7 +17,7 @@ class HttpResourceType(ResourceType):
         super().__init__(
             name=HTTP_RESOURCE_TYPE_IDENTIFIER,
             type=REGISTRY_IMAGE,
-            source={"repository": "jgriff/http-resource", "tag": "latest"},
+            source={"repository": "umar8hassan/http-resource", "tag": "latest"},
             **kwargs,
         )
 

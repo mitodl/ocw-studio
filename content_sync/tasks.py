@@ -20,6 +20,7 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
+from content_sync.utils import get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
 from websites.api import (
@@ -172,7 +173,7 @@ def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 hugo_args=hugo_args,
             )
         )
-    raise self.replace(celery.group(tasks))
+    return self.replace(celery.group(tasks))
 
 
 @app.task(acks_late=True)
@@ -344,7 +345,7 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        return
+        return None
     no_mass_build = no_mass_build or api.get_mass_build_sites_pipeline(version) is None
     site_tasks = [
         publish_website_batch.s(
@@ -356,9 +357,9 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         for name_subset in chunks(sorted(website_names), chunk_size=chunk_size)
     ]
     if no_mass_build:
-        raise self.replace(celery.group(site_tasks))
+        return self.replace(celery.group(site_tasks))
     workflow = celery.chain(celery.group(site_tasks), trigger_mass_build.si(version))
-    raise self.replace(celery.group(workflow))
+    return self.replace(celery.group(workflow))
 
 
 @app.task(acks_late=True)
@@ -460,13 +461,14 @@ def update_websites_in_root_website():
     if settings.CONTENT_SYNC_BACKEND:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         # Get all sites, minus any sites that have never been successfully published
-        sites = Website.objects.exclude(
-            Q(**{"draft_publish_date__isnull": True})
-            & Q(**{"publish_date__isnull": True})
-        )
-        sites = sites.exclude(Q(url_path__isnull=True))
+        # and have downloading disabled
+        sites = get_publishable_sites(is_offline=True)
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
+
+        # Remove the content for unpublished or not downloadable sites
+        WebsiteContent.objects.exclude(website__in=sites).delete()
+
         fields = [
             "website",
             "type",
@@ -674,4 +676,4 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
                 website_subset,
             )
         )
-    raise self.replace(celery.group(tasks))
+    return self.replace(celery.group(tasks))

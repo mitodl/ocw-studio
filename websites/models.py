@@ -95,6 +95,7 @@ class Website(TimestampedModel):
     publish_date = models.DateTimeField(null=True, blank=True)
     has_unpublished_live = models.BooleanField(default=False)
     latest_build_id_live = models.IntegerField(null=True, blank=True)
+    live_build_date = models.DateTimeField(null=True, blank=True)
     live_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         blank=True,
@@ -114,6 +115,7 @@ class Website(TimestampedModel):
     has_unpublished_draft = models.BooleanField(default=False)
     latest_build_id_draft = models.IntegerField(null=True, blank=True)
     live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
+    draft_build_date = models.DateTimeField(null=True, blank=True)
     draft_publish_status = models.CharField(  # noqa: DJ001
         max_length=20,
         null=True,
@@ -361,6 +363,13 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
     )
     file = models.FileField(
         upload_to=upload_file_to, editable=True, null=True, blank=True, max_length=2048
+    )
+    referencing_content = models.ManyToManyField(
+        "self",
+        blank=True,
+        symmetrical=False,
+        related_name="referenced_by",
+        help_text="WebsiteContent that reference this content.",
     )
 
     def calculate_checksum(self) -> str:
