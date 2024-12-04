@@ -12,9 +12,9 @@ from external_resources.constants import (
     USER_AGENT_TIMEOUT,
     WAYBACK_API_URL,
     WAYBACK_CHECK_STATUS_URL,
+    WAYBACK_HEADERS,
 )
 from external_resources.exceptions import CheckFailedError
-from main import settings
 from websites.models import WebsiteContent
 
 log = logging.getLogger()
@@ -65,22 +65,13 @@ def submit_url_to_wayback(
     Submit the external resource URL to the Wayback Machine and
     return the response
     """
-    if not url:
-        return None
-
-    headers = {
-        "Accept": "application/json",
-        "Authorization": (
-            f"LOW {settings.WAYBACK_MACHINE_ACCESS_KEY}:"
-            f"{settings.WAYBACK_MACHINE_SECRET_KEY}"
-        ),
-    }
     params = {
         "url": url,
         "skip_first_archive": "1",
     }
-
-    response = requests.post(WAYBACK_API_URL, headers=headers, data=params, timeout=30)
+    response = requests.post(
+        WAYBACK_API_URL, headers=WAYBACK_HEADERS, data=params, timeout=30
+    )
     response.raise_for_status()
     return response.json()
 
@@ -92,18 +83,11 @@ def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
     if not job_ids:
         return []
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": (
-            f"LOW {settings.WAYBACK_MACHINE_ACCESS_KEY}:"
-            f"{settings.WAYBACK_MACHINE_SECRET_KEY}"
-        ),
-    }
     params = {
         "job_ids": ",".join(job_ids),
     }
     response = requests.post(
-        WAYBACK_CHECK_STATUS_URL, headers=headers, data=params, timeout=30
+        WAYBACK_CHECK_STATUS_URL, headers=WAYBACK_HEADERS, data=params, timeout=30
     )
     response.raise_for_status()
     return response.json()
