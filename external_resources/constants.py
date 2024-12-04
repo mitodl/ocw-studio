@@ -10,6 +10,8 @@ from rest_framework.status import (
     HTTP_503_SERVICE_UNAVAILABLE,
 )
 
+from main import settings
+
 # constants for external resources
 RESOURCE_BROKEN_STATUS_START = HTTP_400_BAD_REQUEST
 RESOURCE_BROKEN_STATUS_END = 600
@@ -38,6 +40,14 @@ USER_AGENT_STRING = (
 )
 
 USER_AGENT_TIMEOUT = 30
+
+WAYBACK_HEADERS = {
+    "Accept": "application/json",
+    "Authorization": (
+        f"LOW {settings.WAYBACK_MACHINE_ACCESS_KEY}:"
+        f"{settings.WAYBACK_MACHINE_SECRET_KEY}"
+    ),
+}
 
 # metadata fields
 METADATA_URL_STATUS_CODE = "url_status_code"

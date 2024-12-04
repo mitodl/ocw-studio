@@ -51,8 +51,3 @@ def upsert_external_resource_state(
                     "Created ExternalResourceState for WebsiteContent id=%s",
                     instance.id,
                 )
-            else:
-                log.debug(
-                    "ExternalResourceState already exists for WebsiteContent id=%s",
-                    instance.id,
-                )
