@@ -31,7 +31,6 @@ import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { checkFeatureFlag } from "../../lib/util"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
-import { useParams } from "react-router"
 import { useReferences } from "../../context/References"
 
 export interface Props {
@@ -56,7 +55,6 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const { link, embed, value, name, onChange, minimal, allowedHtml } = props
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
-  const { uuid } = useParams<{ uuid: string }>()
   const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
   const { addReferences, removeReferences } = useReferences()
 
@@ -200,8 +198,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     embed,
     allowedHtml,
     website.name,
-    uuid,
     isCustomLinkUIEnabled,
+    addReferences,
+    removeReferences,
   ])
 
   const onChangeCB = useCallback(

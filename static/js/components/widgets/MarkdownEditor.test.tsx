@@ -26,7 +26,6 @@ import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
-import { useParams } from "react-router"
 import { useReferences } from "../../context/References"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
@@ -65,7 +64,6 @@ const render = (props = {}) => {
 }
 
 const mocUseWebsite = jest.mocked(useWebsite)
-const useParamsMock = jest.mocked(useParams)
 
 jest.mock("../../context/References", () => ({
   ...jest.requireActual("../../context/References"),
@@ -80,7 +78,6 @@ describe("MarkdownEditor", () => {
     sandbox = sinon.createSandbox()
     const website = makeWebsiteDetail()
     mocUseWebsite.mockReturnValue(website)
-    useParamsMock.mockReturnValue({ uuid: "test-uuid" })
     mockedUseReferences.mockReturnValue({
       references: { link: [], unlink: [] },
       addReferences: jest.fn(),
