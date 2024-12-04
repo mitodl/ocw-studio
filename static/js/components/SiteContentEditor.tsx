@@ -148,7 +148,6 @@ export default function SiteContentEditor(
       payload["references"] = values.references
     }
 
-    console.log(payload, values)
     const response = editorState.editing()
       ? await editWebsiteContent(payload, editorState.wrapped)
       : await addWebsiteContent(payload as NewWebsiteContentPayload)

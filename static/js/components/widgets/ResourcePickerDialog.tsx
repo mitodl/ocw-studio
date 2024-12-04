@@ -172,7 +172,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
       closeDialog()
       addReferences(focusedResource.text_id)
     }
-  }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
+  }, [insertEmbed, focusedResource, closeDialog, isOpen, mode, addReferences])
 
   const { acceptText, title } = modeText[mode]
 

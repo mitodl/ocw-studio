@@ -180,7 +180,6 @@ export function FormFields(props: InnerFormProps): JSX.Element {
           Save
         </button>
       </div>
-      {console.log("Formik values:", values)}
       {status && (
         // Status is being used to store non-field errors
         <div className="form-error">{status}</div>

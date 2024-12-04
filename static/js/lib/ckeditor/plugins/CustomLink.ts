@@ -45,13 +45,10 @@ class CustomUnlinkCommand extends UnlinkCommand {
     // Add the updated Resource Link ID in references context
     const href = this.editor.model.document.selection.getAttribute("linkHref")
     if (href) {
-      console.log("Unlinking this URL:", href)
-
       const resourceID = this.editor.plugins
         .get(ResourceLinkMarkdownSyntax)
         .getResourceLinkID(String(href))
       if (resourceID) {
-        console.log("element: ", resourceID)
         const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
         referencedContent.remove(resourceID)
       }
@@ -78,7 +75,6 @@ export default class CustomLink extends Plugin {
   init() {
     this.editor.commands.add("link", new CustomLinkCommand(this.editor))
     this.editor.commands.add("unlink", new CustomUnlinkCommand(this.editor))
-    console.log("CustomLink Plugin is initialized")
 
     // Intercept change in document
     this.editor.model.document.on("change:data", () => {
@@ -143,7 +139,7 @@ async function getExternalResource(
   try {
     hasWarning = new URL(linkValue).hostname !== SETTINGS.sitemapDomain
   } catch (error) {
-    console.log("Invalid URL provided!")
+    //Invalid URL provided! Ignored as this could be due to a missing scheme.
   }
 
   const payload = {
