@@ -12,6 +12,7 @@ from content_sync.decorators import single_task
 from external_resources import api
 from external_resources.constants import (
     BATCH_SIZE_WAYBACK_STATUS_UPDATE,
+    ENABLE_WAYBACK_TASKS,
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
@@ -27,6 +28,7 @@ from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
 from main import settings
 from main.celery import app
+from main.posthog import is_feature_enabled
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -77,7 +79,7 @@ def check_external_resources(resources: list[int]):
                     resource.metadata["status"] = ExternalResourceState.Status.VALID
 
                     # Submit the valid URL to Wayback Machine
-                    if settings.ENABLE_WAYBACK_TASKS:
+                    if is_feature_enabled(ENABLE_WAYBACK_TASKS):
                         submit_url_to_wayback_task.delay(resource.id)
 
             else:
