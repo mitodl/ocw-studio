@@ -13,6 +13,7 @@ from content_sync.decorators import single_task
 from external_resources import api
 from external_resources.constants import (
     BATCH_SIZE_WAYBACK_STATUS_UPDATE,
+    ENABLE_WAYBACK_TASKS,
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
@@ -27,6 +28,7 @@ from external_resources.constants import (
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
 from main.celery import app
+from main.posthog import is_feature_enabled
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -77,8 +79,7 @@ def check_external_resources(resources: list[int]):
                     resource.metadata["status"] = ExternalResourceState.Status.VALID
 
                     # Submit the valid URL to Wayback Machine
-                    if settings.ENABLE_WAYBACK_TASKS:
-                        submit_url_to_wayback_task.delay(resource.id)
+                    submit_url_to_wayback_task.delay(resource.id)
 
             else:
                 state.status = ExternalResourceState.Status.UNCHECKED
@@ -121,6 +122,9 @@ def submit_website_resources_to_wayback_task(
     self, website_name, ignore_last_submission=None
 ):
     """Submit all external resources of a website to the Wayback Machine."""
+    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
+        return None
     external_resources = WebsiteContent.objects.filter(
         website__name=website_name,
         type=CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -157,6 +161,17 @@ def should_skip_wayback_submission(state, ignore_last_submission=None):
     return False
 
 
+def get_external_resource_state(resource_id):
+    """Get External Resource State for a given Resource ID."""
+    try:
+        return ExternalResourceState.objects.get(content_id=resource_id)
+    except ExternalResourceState.DoesNotExist:
+        log.exception(
+            "ExternalResourceState does not exist for resource ID %s", resource_id
+        )
+        return None
+
+
 @app.task(
     bind=True,
     acks_late=True,
@@ -170,9 +185,11 @@ def should_skip_wayback_submission(state, ignore_last_submission=None):
 @single_task(7)
 def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
-
+    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
+        return
     try:
-        state = ExternalResourceState.objects.get(content_id=resource_id)
+        state = get_external_resource_state(resource_id)
         if should_skip_wayback_submission(state, ignore_last_submission):
             return
         url = state.content.metadata.get("external_url", "")
@@ -210,10 +227,6 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
                 status_ext,
             )
         state.save(update_fields=state_update_fields)
-    except ExternalResourceState.DoesNotExist:
-        log.exception(
-            "ExternalResourceState does not exist for resource ID %s", resource_id
-        )
     except HTTPError as exc:
         if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
             log.warning(
@@ -244,6 +257,19 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
         raise self.retry(exc=exc) from exc
 
 
+def _get_pending_states(job_ids=None):
+    """Retrieve pending states for Wayback Machine jobs."""
+    if job_ids:
+        return ExternalResourceState.objects.filter(
+            wayback_status=WAYBACK_PENDING_STATUS,
+            wayback_job_id__in=job_ids,
+        )
+    return ExternalResourceState.objects.filter(
+        wayback_status=WAYBACK_PENDING_STATUS,
+        wayback_job_id__isnull=False,
+    )
+
+
 @app.task(
     bind=True,
     acks_late=True,
@@ -255,17 +281,11 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
 @single_task(10)
 def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
+    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
+        return
     try:
-        if job_ids:
-            pending_states = ExternalResourceState.objects.filter(
-                wayback_status=WAYBACK_PENDING_STATUS,
-                wayback_job_id__in=job_ids,
-            )
-        else:
-            pending_states = ExternalResourceState.objects.filter(
-                wayback_status=WAYBACK_PENDING_STATUS,
-                wayback_job_id__isnull=False,
-            )
+        pending_states = _get_pending_states(job_ids)
         if not pending_states.exists():
             log.info("No pending Wayback Machine jobs to update.")
             return

@@ -17,7 +17,12 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
 )
 
-from external_resources.constants import HTTP_TOO_MANY_REQUESTS
+from external_resources.constants import (
+    HTTP_TOO_MANY_REQUESTS,
+    WAYBACK_ERROR_STATUS,
+    WAYBACK_PENDING_STATUS,
+    WAYBACK_SUCCESS_STATUS,
+)
 from external_resources.exceptions import CheckFailedError
 from external_resources.factories import ExternalResourceStateFactory
 from external_resources.models import ExternalResourceState
@@ -139,6 +144,8 @@ def test_submit_url_to_wayback_task_success(mocker):
     Test that submit_url_to_wayback_task successfully submits a URL to the Wayback Machine
     and updates the ExternalResourceState accordingly.
     """
+    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
+
     external_resource_state = ExternalResourceStateFactory()
     resource = external_resource_state.content
 
@@ -159,7 +166,7 @@ def test_submit_url_to_wayback_task_success(mocker):
 
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
     # Check that the state was updated correctly
-    assert updated_state.wayback_status == "pending"
+    assert updated_state.wayback_status == WAYBACK_PENDING_STATUS
     assert updated_state.wayback_job_id == fake_job_id
     assert updated_state.wayback_http_status is None
 
@@ -169,6 +176,8 @@ def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, set
     """
     Test that submit_url_to_wayback_task skips submission when the URL was recently submitted.
     """
+    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
+
     settings.WAYBACK_SUBMISSION_INTERVAL_DAYS = 7
 
     # Create an ExternalResourceState with a recent wayback_last_successful_submission
@@ -207,6 +216,8 @@ def test_submit_url_to_wayback_task_http_error_429(mocker):
     """
     Test that submit_url_to_wayback_task retries on HTTPError 429 (Too Many Requests).
     """
+    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
+
     external_resource_state = ExternalResourceStateFactory()
     resource = external_resource_state.content
     external_url = "http://example.com"
@@ -242,28 +253,30 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     """
     Test that update_wayback_jobs_status_batch updates statuses of pending jobs successfully.
     """
+    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
+
     # Create ExternalResourceState objects with pending Wayback Machine jobs
     state1 = ExternalResourceStateFactory(
         wayback_job_id="job_1",
-        wayback_status="pending",
+        wayback_status=WAYBACK_PENDING_STATUS,
     )
     state2 = ExternalResourceStateFactory(
         wayback_job_id="job_2",
-        wayback_status="pending",
+        wayback_status=WAYBACK_PENDING_STATUS,
     )
 
     # Mock api.check_wayback_jobs_status_batch to return fake results
     fake_results = [
         {
             "job_id": "job_1",
-            "status": "success",
+            "status": WAYBACK_SUCCESS_STATUS,
             "timestamp": "20230101000000",
             "original_url": "http://example.com/page1",
             "http_status": 200,
         },
         {
             "job_id": "job_2",
-            "status": "error",
+            "status": WAYBACK_ERROR_STATUS,
             "status_ext": "error:404",
             "http_status": 404,
         },
@@ -286,7 +299,7 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     updated_state2 = ExternalResourceState.objects.get(id=state2.id)
 
     # Verify that state1 was updated to success
-    assert updated_state1.wayback_status == "success"
+    assert updated_state1.wayback_status == WAYBACK_SUCCESS_STATUS
     assert (
         updated_state1.wayback_url
         == "https://web.archive.org/web/20230101000000/http://example.com/page1"
@@ -294,7 +307,7 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     assert updated_state1.wayback_last_successful_submission is not None
 
     # Verify that state2 was updated to error
-    assert updated_state2.wayback_status == "error"
+    assert updated_state2.wayback_status == WAYBACK_ERROR_STATUS
     assert updated_state2.wayback_status_ext == "error:404"
     assert updated_state2.wayback_http_status == 404
 
@@ -305,7 +318,7 @@ def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
     Test that update_wayback_jobs_status_batch handles no pending jobs gracefully.
     """
     # Ensure there are no ExternalResourceState instances with wayback_status "pending"
-    ExternalResourceState.objects.filter(wayback_status="pending").delete()
+    ExternalResourceState.objects.filter(wayback_status=WAYBACK_PENDING_STATUS).delete()
 
     mock_check = mocker.patch(
         "external_resources.tasks.api.check_wayback_jobs_status_batch"

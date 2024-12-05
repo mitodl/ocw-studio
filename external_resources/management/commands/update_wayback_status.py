@@ -2,10 +2,11 @@
 
 from django.core.management.base import CommandError
 
-from external_resources.constants import WAYBACK_PENDING_STATUS
+from external_resources.constants import ENABLE_WAYBACK_TASKS, WAYBACK_PENDING_STATUS
 from external_resources.models import ExternalResourceState
 from external_resources.tasks import update_wayback_jobs_status_batch
 from main.management.commands.filter import WebsiteFilterCommand
+from main.posthog import is_feature_enabled
 from websites.models import Website
 
 
@@ -25,6 +26,11 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
+        if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+            self.stdout.write(
+                "Wayback Machine tasks are disabled via PostHog feature flag."
+            )
+            return
         sync_execution = options.get("sync", False)
 
         websites = Website.objects.all()

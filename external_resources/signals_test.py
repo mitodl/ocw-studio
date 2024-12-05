@@ -10,6 +10,8 @@ from websites.factories import WebsiteContentFactory
 @pytest.mark.django_db()
 def test_upsert_external_resource_state(mocker):
     """Test that the upsert_external_resource_state signal makes the correct call"""
+    mocker.patch("external_resources.signals.is_feature_enabled", return_value=True)
+
     mock_update_or_create = mocker.patch(
         "external_resources.signals.ExternalResourceState.objects.update_or_create",
         autospec=True,

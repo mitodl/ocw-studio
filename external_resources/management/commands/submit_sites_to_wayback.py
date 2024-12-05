@@ -1,7 +1,9 @@
 """Management command to submit external resources to the Wayback Machine"""
 
+from external_resources.constants import ENABLE_WAYBACK_TASKS
 from external_resources.tasks import submit_website_resources_to_wayback_task
 from main.management.commands.filter import WebsiteFilterCommand
+from main.posthog import is_feature_enabled
 from websites.models import Website
 
 
@@ -20,6 +22,12 @@ class Command(WebsiteFilterCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
+
+        if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+            self.stdout.write(
+                "Wayback Machine tasks are disabled via PostHog feature flag."
+            )
+            return
         force_submission = options.get("force", False)
 
         websites = Website.objects.all()
