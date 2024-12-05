@@ -58,6 +58,25 @@ def is_external_url_broken(
     return is_url_broken(url)
 
 
+def make_wayback_request(url: str, params: dict, headers: dict) -> dict:
+    """
+    Make an API request to the Wayback Machine and return the response data.
+    """
+    try:
+        response = requests.post(url, headers=headers, data=params, timeout=30)
+        response_data = response.json()
+        if "message" in response_data:
+            log.warning(
+                "Wayback Machine response message: %s", response_data["message"]
+            )
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        log.exception("Error during Wayback Machine request to %s", url)
+        raise
+    else:
+        return response_data
+
+
 def submit_url_to_wayback(
     url: str,
 ) -> Optional[str]:
@@ -69,11 +88,7 @@ def submit_url_to_wayback(
         "url": url,
         "skip_first_archive": "1",
     }
-    response = requests.post(
-        WAYBACK_API_URL, headers=WAYBACK_HEADERS, data=params, timeout=30
-    )
-    response.raise_for_status()
-    return response.json()
+    return make_wayback_request(WAYBACK_API_URL, params, WAYBACK_HEADERS)
 
 
 def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
@@ -86,8 +101,4 @@ def check_wayback_jobs_status_batch(job_ids: list[str]) -> list[dict]:
     params = {
         "job_ids": ",".join(job_ids),
     }
-    response = requests.post(
-        WAYBACK_CHECK_STATUS_URL, headers=WAYBACK_HEADERS, data=params, timeout=30
-    )
-    response.raise_for_status()
-    return response.json()
+    return make_wayback_request(WAYBACK_CHECK_STATUS_URL, params, WAYBACK_HEADERS)
