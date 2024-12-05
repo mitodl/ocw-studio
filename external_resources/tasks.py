@@ -117,7 +117,9 @@ def check_external_resources_for_breakages(self):
 
 
 @app.task(bind=True)
-def submit_website_resources_to_wayback_task(self, website_name):
+def submit_website_resources_to_wayback_task(
+    self, website_name, ignore_last_submission=None
+):
     """Submit all external resources of a website to the Wayback Machine."""
     external_resources = WebsiteContent.objects.filter(
         website__name=website_name,
@@ -125,7 +127,9 @@ def submit_website_resources_to_wayback_task(self, website_name):
     ).select_related("external_resource_state")
 
     tasks = [
-        submit_url_to_wayback_task.s(resource.id) for resource in external_resources
+        submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
+        for resource in external_resources
+        if ExternalResourceState.objects.get_or_create(content=resource)
     ]
     if tasks:
         return self.replace(celery.group(tasks))
@@ -133,8 +137,10 @@ def submit_website_resources_to_wayback_task(self, website_name):
     return None
 
 
-def should_skip_wayback_submission(state):
+def should_skip_wayback_submission(state, ignore_last_submission=None):
     """Check if we should skip submission based on the last successful submission."""
+    if ignore_last_submission:
+        return False
     if state.wayback_last_successful_submission:
         retry_period = timezone.now() - timedelta(
             days=settings.WAYBACK_SUBMISSION_INTERVAL_DAYS
@@ -162,12 +168,12 @@ def should_skip_wayback_submission(state):
     priority=WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
 )
 @single_task(7)
-def submit_url_to_wayback_task(self, resource_id):
+def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
 
     try:
         state = ExternalResourceState.objects.get(content_id=resource_id)
-        if should_skip_wayback_submission(state):
+        if should_skip_wayback_submission(state, ignore_last_submission):
             return
         url = state.content.metadata.get("external_url", "")
         if not url:
@@ -177,7 +183,11 @@ def submit_url_to_wayback_task(self, resource_id):
                 resource_id,
             )
             return
-
+        log.info(
+            "Submitting URL to Wayback Machine for resource '%s' (ID: %s)",
+            state.content.title,
+            resource_id,
+        )
         response = api.submit_url_to_wayback(url)
         job_id = response.get("job_id")
         status_ext = response.get("status_ext")
@@ -243,14 +253,19 @@ def submit_url_to_wayback_task(self, resource_id):
     max_retries=5,
 )
 @single_task(10)
-def update_wayback_jobs_status_batch(self):
+def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
     try:
-        pending_states = ExternalResourceState.objects.filter(
-            wayback_status=WAYBACK_PENDING_STATUS,
-            wayback_job_id__isnull=False,
-        )
-
+        if job_ids:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__in=job_ids,
+            )
+        else:
+            pending_states = ExternalResourceState.objects.filter(
+                wayback_status=WAYBACK_PENDING_STATUS,
+                wayback_job_id__isnull=False,
+            )
         if not pending_states.exists():
             log.info("No pending Wayback Machine jobs to update.")
             return
