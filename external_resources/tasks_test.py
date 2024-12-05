@@ -317,6 +317,8 @@ def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
     """
     Test that update_wayback_jobs_status_batch handles no pending jobs gracefully.
     """
+    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
+
     # Ensure there are no ExternalResourceState instances with wayback_status "pending"
     ExternalResourceState.objects.filter(wayback_status=WAYBACK_PENDING_STATUS).delete()
 
