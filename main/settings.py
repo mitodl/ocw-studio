@@ -679,7 +679,7 @@ CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
     required=False,
 )
 
-CHECK_EXTERNAL_RESOURCE_TASK_ENABLE = get_bool(
+ENABLE_CHECK_EXTERNAL_RESOURCE_TASK = get_bool(
     name="CHECK_EXTERNAL_RESOURCE_TASK_STATUS",
     default=True,
     description="Enables celery task to check potentially broken external urls",
@@ -774,7 +774,7 @@ if ENABLE_WAYBACK_TASKS:
         "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
     }
 
-if CHECK_EXTERNAL_RESOURCE_TASK_ENABLE:
+if ENABLE_CHECK_EXTERNAL_RESOURCE_TASK:
     CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
         "task": "external_resources.tasks.check_external_resources_for_breakages",
         "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
