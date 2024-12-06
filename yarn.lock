@@ -11181,7 +11181,7 @@ __metadata:
     react-select-async-paginate: ^0.7.3
     react-test-renderer: ^16.13.1
     reactstrap: ^8.9.0
-    redux: ^4.0.5
+    redux: ^5.0.0
     redux-query: ^3.4.2
     redux-query-interface-superagent: ^3.4.2
     redux-query-react: ^3.4.2
@@ -13021,7 +13021,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux@npm:^4.0.0, redux@npm:^4.0.5, redux@npm:^4.2.1":
+"redux@npm:^4.0.0, redux@npm:^4.2.1":
   version: 4.2.1
   resolution: "redux@npm:4.2.1"
   dependencies:
