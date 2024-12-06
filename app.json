@@ -640,6 +640,19 @@
       "description": "Name of MediaConvert queue to use for transcoding",
       "required": false
     },
+    "WAYBACK_MACHINE_ACCESS_KEY": {
+      "description": "Access key for the Wayback Machine API",
+      "required": false
+    },
+    "WAYBACK_MACHINE_SECRET_KEY": {
+      "description": "Secret key for the Wayback Machine API",
+      "required": false
+    },
+    "WAYBACK_SUBMISSION_INTERVAL_DAYS": {
+      "description": "Number of days between Wayback submissions",
+      "required": false,
+      "value": "30"
+    },
     "YT_ACCESS_TOKEN": {
       "description": "Youtube access token",
       "required": false
