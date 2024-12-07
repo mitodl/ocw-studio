@@ -341,6 +341,57 @@ class YouTubeApi:
         """
         return self.client.videos().delete(id=video_id).execute()
 
+    @classmethod
+    def get_all_video_captions(cls) -> list[dict]:
+        """
+        Get caption tracks for all YouTube videos in database
+
+        Returns:
+            list[dict]: List of dicts containing video info and caption tracks
+        """
+        youtube = cls()
+        video_captions = []
+
+        video_files = VideoFile.objects.filter(
+            destination=DESTINATION_YOUTUBE, destination_id__isnull=False
+        ).select_related("video", "video__website")
+
+        video_files = video_files[:20]
+
+        for video_file in video_files:
+            try:
+                captions_response = (
+                    youtube.client.captions()
+                    .list(part="snippet", videoId=video_file.destination_id)
+                    .execute()
+                )
+
+                video_info = {
+                    "video_id": video_file.destination_id,
+                    "filename": video_file.video.source_key.split("/")[-1],
+                    "website": video_file.video.website.name,
+                    "captions": [],
+                }
+
+                for caption in captions_response.get("items", []):
+                    caption_info = {
+                        "id": caption["id"],
+                        "language": caption["snippet"]["language"],
+                        "name": caption["snippet"].get("name", ""),
+                        "last_updated": caption["snippet"].get("lastUpdated", ""),
+                    }
+                    video_info["captions"].append(caption_info)
+
+                video_captions.append(video_info)
+
+            except HttpError:
+                log.exception(
+                    "Failed to get captions for video %s", video_file.destination_id
+                )
+                continue
+
+        return video_captions
+
 
 def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
     """Update YouTube video metadata via the API"""
