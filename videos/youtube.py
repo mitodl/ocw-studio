@@ -356,8 +356,6 @@ class YouTubeApi:
             destination=DESTINATION_YOUTUBE, destination_id__isnull=False
         ).select_related("video", "video__website")
 
-        video_files = video_files[:20]
-
         for video_file in video_files:
             try:
                 captions_response = (
