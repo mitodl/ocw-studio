@@ -77,6 +77,15 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
     }
   }
 
+  getResourceLinkID = (href: string): string | null => {
+    if (this.isResourceLinkHref(href)) {
+      const url = new URL(href)
+      return url.searchParams.get(queryKeys.uuid)
+    } else {
+      return ""
+    }
+  }
+
   makeResourceLinkHref = (uuid: string, suffix = "") => {
     const href = new URL(this.hrefTemplate.replace(/:uuid/g, uuid))
     href.searchParams.set(queryKeys.uuid, uuid)

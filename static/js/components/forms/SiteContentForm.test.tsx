@@ -23,6 +23,7 @@ import ObjectField from "../widgets/ObjectField"
 
 import * as Website from "../../context/Website"
 import Label from "../widgets/Label"
+import { useReferences } from "../../context/References"
 const { useWebsite: mockUseWebsite } = Website as jest.Mocked<typeof Website>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
@@ -42,6 +43,18 @@ jest.mock("../widgets/SelectField", () => ({
 
 jest.mock("../../context/Website")
 jest.mock("../../util/dom")
+
+jest.mock("../../context/References", () => ({
+  ...jest.requireActual("../../context/References"),
+  useReferences: jest.fn(),
+}))
+
+const mockedUseReferences = jest.mocked(useReferences)
+mockedUseReferences.mockReturnValue({
+  references: { link: [], unlink: [] },
+  addReferences: jest.fn(),
+  removeReferences: jest.fn(),
+})
 
 const { contentInitialValues, renameNestedFields } = siteContent as jest.Mocked<
   typeof siteContent
@@ -284,6 +297,7 @@ test("SiteContentField creates new values", () => {
   ]
   const { form } = setup(data)
   expect(form.find(FormFields).prop("values")).toEqual({
+    references: {},
     "test-name": "test-default",
   })
 })
@@ -294,7 +308,8 @@ test("SiteContentField uses existing values when editing", () => {
     ...data,
     editorState: createModalState("editing", "id"),
   })
-  expect(form.find(FormFields).prop("values")).toEqual(
-    contentInitialValues(data.content, data.configItem.fields, data.website),
-  )
+  expect(form.find(FormFields).prop("values")).toEqual({
+    references: {},
+    ...contentInitialValues(data.content, data.configItem.fields, data.website),
+  })
 })
