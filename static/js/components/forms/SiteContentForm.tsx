@@ -9,6 +9,7 @@ import {
   validateYupSchema,
   yupToFormErrors,
   FormikErrors,
+  useFormikContext,
 } from "formik"
 
 import SiteContentField from "./SiteContentField"
@@ -33,6 +34,7 @@ import {
 import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
 import { useWebsite } from "../../context/Website"
+import { useReferences } from "../../context/References"
 
 export interface FormProps {
   onSubmit: (
@@ -51,14 +53,16 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
   const website = useWebsite()
 
   const initialValues: SiteFormValues = useMemo(
-    () =>
-      editorState.adding()
+    () => ({
+      ...(editorState.adding()
         ? newInitialValues(configItem.fields, website)
         : contentInitialValues(
             content as WebsiteContent,
             configItem.fields,
             website,
-          ),
+          )),
+      references: {}, // Add this to ensure Formik tracks the `references` field
+    }),
     [configItem.fields, editorState, content, website],
   )
 
@@ -114,6 +118,9 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     [configItem],
   )
 
+  const { setFieldValue } = useFormikContext()
+  const { references } = useReferences()
+
   useEffect(() => {
     setDirty(dirty)
   }, [setDirty, dirty])
@@ -168,6 +175,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
           type="submit"
           disabled={isSubmitting}
           className="px-5 btn cyan-button"
+          onClick={() => setFieldValue("references", references)}
         >
           Save
         </button>

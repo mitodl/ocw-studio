@@ -15,6 +15,7 @@ import {
   ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
   MARKDOWN_CONFIG_KEY,
+  REFERENCED_CONTENT,
   RESOURCE_EMBED,
   RESOURCE_LINK,
   RESOURCE_LINK_CONFIG_KEY,
@@ -25,6 +26,7 @@ import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
+import { useReferences } from "../../context/References"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
   const originalModule = jest.requireActual("../../lib/ckeditor/CKEditor")
@@ -50,6 +52,11 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />,
 }))
 
+jest.mock("react-router", () => ({
+  ...jest.requireActual("react-router"),
+  useParams: jest.fn(),
+}))
+
 const render = (props = {}) => {
   return shallow(
     <MarkdownEditor allowedHtml={[]} link={[]} embed={[]} {...props} />,
@@ -58,6 +65,12 @@ const render = (props = {}) => {
 
 const mocUseWebsite = jest.mocked(useWebsite)
 
+jest.mock("../../context/References", () => ({
+  ...jest.requireActual("../../context/References"),
+  useReferences: jest.fn(),
+}))
+const mockedUseReferences = jest.mocked(useReferences)
+
 describe("MarkdownEditor", () => {
   let sandbox: SinonSandbox
 
@@ -65,6 +78,11 @@ describe("MarkdownEditor", () => {
     sandbox = sinon.createSandbox()
     const website = makeWebsiteDetail()
     mocUseWebsite.mockReturnValue(website)
+    mockedUseReferences.mockReturnValue({
+      references: { link: [], unlink: [] },
+      addReferences: jest.fn(),
+      removeReferences: jest.fn(),
+    })
   })
 
   afterEach(() => {
@@ -105,6 +123,7 @@ describe("MarkdownEditor", () => {
           MARKDOWN_CONFIG_KEY,
           RESOURCE_LINK_CONFIG_KEY,
           WEBSITE_NAME,
+          REFERENCED_CONTENT,
         ],
         ckWrapper.prop("config"),
       )
