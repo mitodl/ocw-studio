@@ -14,6 +14,8 @@ if POSTHOG_ENABLED:
         posthog.debug = True
 
 
-def is_feature_enabled(feature_key, user_id):
+def is_feature_enabled(feature_key, distinct_id=ENVIRONMENT):
     """Check whether feature flag is enabled"""
-    return POSTHOG_ENABLED and posthog.feature_enabled(feature_key, user_id)
+    return POSTHOG_ENABLED and posthog.feature_enabled(
+        feature_key, distinct_id, person_properties={"environment": ENVIRONMENT}
+    )
