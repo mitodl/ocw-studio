@@ -1,5 +1,5 @@
 {
-  "addons": ["heroku-postgresql:hobby-dev", "newrelic:wayne", "rediscloud:30"],
+  "addons": ["heroku-postgresql:hobby-dev", "rediscloud:30"],
   "buildpacks": [
     {
       "url": "https://github.com/heroku/heroku-buildpack-apt"
