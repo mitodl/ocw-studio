@@ -4,6 +4,7 @@ import http
 import logging
 import re
 import time
+from collections import Counter
 from io import BytesIO
 from urllib.parse import urljoin
 
@@ -340,6 +341,78 @@ class YouTubeApi:
             int: 204 status code if successful
         """
         return self.client.videos().delete(id=video_id).execute()
+
+    @classmethod
+    def get_all_video_captions(
+        cls,
+        website_ids: list[str] | None = None,
+        video_ids: list[int] | None = None,
+        *,
+        only_dups: bool = False,
+    ) -> list[dict]:
+        """
+        Get caption tracks for all YouTube videos in database, with optional filtering
+        and duplicate detection.
+
+        Args:
+            website_ids (list[int], optional): Filter videos by website short_ids
+            video_ids (list[int], optional): Filter videos by video IDs
+            only_dups (bool, optional): Only return videos with duplicate captions
+                in any language. Defaults to False.
+
+        Returns:
+            list[dict]: List of dicts containing video info and caption tracks
+        """
+        youtube = cls()
+        video_captions = []
+
+        video_files = VideoFile.objects.filter(
+            destination=DESTINATION_YOUTUBE, destination_id__isnull=False
+        ).select_related("video", "video__website")
+
+        if website_ids:
+            video_files = video_files.filter(video__website__short_id__in=website_ids)
+        if video_ids:
+            video_files = video_files.filter(video_id__in=video_ids)
+
+        for video_file in video_files:
+            try:
+                captions_response = (
+                    youtube.client.captions()
+                    .list(part="snippet", videoId=video_file.destination_id)
+                    .execute()
+                )
+
+                video_info = {
+                    "video_id": video_file.destination_id,
+                    "filename": video_file.video.source_key.split("/")[-1],
+                    "website": video_file.video.website.name,
+                    "captions": [],
+                }
+
+                language_counter = Counter()
+                for caption in captions_response.get("items", []):
+                    caption_info = {
+                        "id": caption["id"],
+                        "language": caption["snippet"]["language"],
+                        "name": caption["snippet"].get("name", ""),
+                        "last_updated": caption["snippet"].get("lastUpdated", ""),
+                    }
+                    language_counter[caption_info["language"]] += 1
+                    video_info["captions"].append(caption_info)
+
+                video_info["language_counts"] = dict(language_counter)
+                has_duplicates = any(count > 1 for count in language_counter.values())
+                if not only_dups or has_duplicates:
+                    video_captions.append(video_info)
+
+            except HttpError:
+                log.exception(
+                    "Failed to get captions for video %s", video_file.destination_id
+                )
+                continue
+
+        return video_captions
 
 
 def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
