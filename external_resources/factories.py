@@ -16,9 +16,12 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
         model = ExternalResourceState
 
     content = factory.SubFactory(WebsiteContentFactory)
-    status = ExternalResourceState.Status.UNCHECKED
-    external_url_response_code = factory.Faker("random_int", min=100, max=599)
-    backup_url_response_code = factory.Faker("random_int", min=100, max=599)
-    is_external_url_broken = factory.Faker("boolean")
-    is_backup_url_broken = factory.Faker("boolean")
+    status = factory.Iterator(["unchecked", "valid", "broken", "check_failed"])
     last_checked = factory.Faker("date_time", tzinfo=pytz.utc)
+    external_url_response_code = factory.Faker("random_int", min=100, max=599)
+    wayback_job_id = factory.Faker("uuid4")
+    wayback_status = factory.Iterator(ExternalResourceState.WaybackStatus.values)
+    wayback_url = factory.Faker("url")
+    wayback_status_ext = factory.Faker("sentence")
+    wayback_http_status = factory.Faker("random_int", min=100, max=599)
+    wayback_last_successful_submission = factory.Faker("date_time", tzinfo=pytz.utc)

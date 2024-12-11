@@ -14,12 +14,19 @@ class ExternalResourceState(TimestampedModel):
         """Choices for External Resource Status"""
 
         UNCHECKED = "unchecked", "Unchecked or pending check"
-        VALID = "valid", "Either URL or backup URL is valid"
-        BROKEN = "broken", "Both URL and backup URL are broken"
+        VALID = "valid", "External Resource URL is valid"
+        BROKEN = "broken", "External Resource URL is broken"
         CHECK_FAILED = (
             "check_failed",
-            "Last attempt to check the resource failed unexpectedly",
+            "Last attempt to check the External Resource URL failed",
         )
+
+    class WaybackStatus(models.TextChoices):
+        """Choices for Wayback Machine Status"""
+
+        PENDING = "pending", "Pending"
+        SUCCESS = "success", "Success"
+        ERROR = "error", "Error"
 
     objects = BulkUpdateOrCreateQuerySet.as_manager()
 
@@ -33,7 +40,14 @@ class ExternalResourceState(TimestampedModel):
         max_length=16,
         choices=Status.choices,
         default=Status.UNCHECKED,
-        help_text="The status of this external resource.",
+        help_text="Status of the external resource (valid, broken, etc.).",
+    )
+
+    last_checked = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text="The last time when this resource was checked for breakages.",
     )
 
     external_url_response_code = models.IntegerField(
@@ -42,29 +56,47 @@ class ExternalResourceState(TimestampedModel):
         blank=True,
     )
 
-    backup_url_response_code = models.IntegerField(
-        default=None,
-        null=True,
+    wayback_job_id = models.CharField(
+        max_length=255,
+        default="",
         blank=True,
+        help_text="Last Job ID returned by Wayback Machine API when submitting URL for snapshot.",  # noqa: E501
     )
 
-    is_external_url_broken = models.BooleanField(
-        default=None,
-        null=True,
+    wayback_status = models.CharField(
+        max_length=16,
+        choices=WaybackStatus.choices,
+        default="",
         blank=True,
+        help_text="The status of the Wayback Machine snapshot taken from the last archiving job.",  # noqa: E501
     )
 
-    is_backup_url_broken = models.BooleanField(
-        default=None,
-        null=True,
+    wayback_status_ext = models.CharField(
+        max_length=128,
+        default="",
         blank=True,
+        help_text="Extended status of the last Wayback Machine snapshot for detailed error tracking.",  # noqa: E501
     )
 
-    last_checked = models.DateTimeField(
+    wayback_url = models.URLField(
+        max_length=800,
+        default="",
+        blank=True,
+        help_text="Last working Wayback Machine snapshot URL for the External Resource.",  # noqa: E501
+    )
+
+    wayback_http_status = models.IntegerField(
         default=None,
         null=True,
         blank=True,
-        help_text="The last time when this resource was checked for breakages.",
+        help_text="HTTP status code received when accessing the last Wayback Machine snapshot.",  # noqa: E501
+    )
+
+    wayback_last_successful_submission = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        help_text="The last time when the URL was successfully submitted to the Wayback Machine.",  # noqa: E501
     )
 
     def __str__(self):

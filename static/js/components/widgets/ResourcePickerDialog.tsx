@@ -20,6 +20,7 @@ import {
 import { WebsiteContent } from "../../types/websites"
 import { useWebsite } from "../../context/Website"
 import _, { keyBy } from "lodash"
+import { useReferences } from "../../context/References"
 
 interface Props {
   mode: ResourceDialogMode
@@ -159,6 +160,8 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     null,
   )
 
+  const { addReferences } = useReferences()
+
   const addResource = useCallback(() => {
     if (focusedResource && isOpen) {
       insertEmbed(
@@ -167,8 +170,9 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
         mode,
       )
       closeDialog()
+      addReferences(focusedResource.text_id)
     }
-  }, [insertEmbed, focusedResource, closeDialog, isOpen, mode])
+  }, [insertEmbed, focusedResource, closeDialog, isOpen, mode, addReferences])
 
   const { acceptText, title } = modeText[mode]
 
