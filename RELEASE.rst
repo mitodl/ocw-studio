@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.135.0
+---------------
+
+- Attempt to fix 502 Bad Gateway by updating dependencies (#2359)
+- fix(deps): update dependency newrelic to v10 (#2357)
+- Add Wayback Machine integration: Update external_resources model and tasks (#2308)
+- populated referencing content field for the website content (#2332)
+- fix(deps): update dependency django to v4.2.17 [security] (#2352)
+
 Version 0.134.0 (Released November 21, 2024)
 ---------------
 
