@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.135.0
+Version 0.135.0 (Released December 12, 2024)
 ---------------
 
 - Revert "Remove newrelic to try to fix 502 bad gateway error" (#2364)
