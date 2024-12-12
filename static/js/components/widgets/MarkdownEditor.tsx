@@ -152,14 +152,19 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // Function cannot be directly passed in config
       [REFERENCED_CONTENT]: { add: addReferences, remove: removeReferences },
     }
+
+    // Create a copy of plugins to avoid mutating the original
+    const plugins = minimal
+      ? [...MinimalEditorConfig.plugins]
+      : [...FullEditorConfig.plugins]
     if (isCustomLinkUIEnabled) {
-      MinimalEditorConfig.plugins.push(CustomLink)
-      FullEditorConfig.plugins.push(CustomLink)
+      plugins.push(CustomLink)
     }
 
     if (minimal) {
       return {
         ...MinimalEditorConfig,
+        plugins,
         [CKEDITOR_RESOURCE_UTILS]: {
           renderResource,
           openResourcePicker,
@@ -176,6 +181,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       // and then use it to render resources within the editor.
       return {
         ...FullEditorConfig,
+        plugins,
         [CKEDITOR_RESOURCE_UTILS]: {
           renderResource,
           openResourcePicker,
