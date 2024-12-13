@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.135.1
+---------------
+
+- Release date for 0.135.0
+- Add function for listing YouTube caption tracks (#2353)
+
 Version 0.135.0 (Released December 12, 2024)
 ---------------
 
