@@ -105,14 +105,14 @@ PIPELINES_LIST = [
 ]
 
 
-@pytest.fixture()
-def mock_auth(mocker):  # noqa: PT004
+@pytest.fixture
+def mock_auth(mocker):
     """Mock the concourse api auth method"""
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
 @pytest.fixture(params=["test", "dev"])
-def pipeline_settings(settings, request):  # noqa: PT004
+def pipeline_settings(settings, request):
     """Default settings for pipelines"""  # noqa: D401
     env = request.param
     settings.ENVIRONMENT = env
