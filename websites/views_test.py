@@ -56,7 +56,7 @@ MOCK_GITHUB_DATA = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def websites(course_starter):
     """Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
@@ -75,7 +75,7 @@ def websites(course_starter):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def file_upload():
     """File upload for tests"""
     return SimpleUploadedFile("exam.pdf", b"sample pdf", content_type="application/pdf")
