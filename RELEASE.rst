@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.136.0
+Version 0.136.0 (Released December 17, 2024)
 ---------------
 
 - removed duplication of custom plugin in config (#2366)
