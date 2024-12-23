@@ -651,8 +651,8 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
 )
 
 # Wayback Machine Settings
-UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
-    name="UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY",
+WAYBACK_UPDATE_JOBS_STATUS_FREQUENCY = get_int(
+    name="WAYBACK_UPDATE_JOBS_STATUS_FREQUENCY",
     default=21600,  # 6 hours in seconds
     description="Frequency (in seconds) to check the status of Wayback Machine jobs",
     required=False,
@@ -758,7 +758,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "update-wayback-jobs-status": {
         "task": "external_resources.tasks.update_wayback_jobs_status_batch",
-        "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
+        "schedule": WAYBACK_UPDATE_JOBS_STATUS_FREQUENCY,
     },
 }
 

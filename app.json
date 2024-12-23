@@ -656,7 +656,7 @@
       "description": "Number of days between Wayback submissions",
       "required": false
     },
-    "UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY": {
+    "WAYBACK_UPDATE_JOBS_STATUS_FREQUENCY": {
       "description": "Frequency (in seconds) to check the status of Wayback Machine jobs",
       "required": false
     },
