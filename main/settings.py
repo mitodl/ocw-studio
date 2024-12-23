@@ -651,13 +651,6 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
 )
 
 # Wayback Machine Settings
-ENABLE_WAYBACK_TASKS = get_bool(
-    name="ENABLE_WAYBACK_TASKS",
-    default=True,
-    description="Enables tasks related to Wayback Machine submissions and status checks",  # noqa: E501
-    required=False,
-)
-
 UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY = get_int(
     name="UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY",
     default=21600,  # 6 hours in seconds
@@ -676,13 +669,6 @@ CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY = get_int(
     name="CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY",
     default=604800,
     description="Frequency (in seconds) to check potentially broken external urls",
-    required=False,
-)
-
-ENABLE_CHECK_EXTERNAL_RESOURCE_TASK = get_bool(
-    name="CHECK_EXTERNAL_RESOURCE_TASK_STATUS",
-    default=True,
-    description="Enables celery task to check potentially broken external urls",
     required=False,
 )
 
@@ -768,17 +754,15 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-if ENABLE_WAYBACK_TASKS:
-    CELERY_BEAT_SCHEDULE["update-wayback-jobs-status"] = {
-        "task": "external_resources.tasks.update_wayback_jobs_status_batch",
-        "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
-    }
+CELERY_BEAT_SCHEDULE["update-wayback-jobs-status"] = {
+    "task": "external_resources.tasks.update_wayback_jobs_status_batch",
+    "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
+}
 
-if ENABLE_CHECK_EXTERNAL_RESOURCE_TASK:
-    CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
-        "task": "external_resources.tasks.check_external_resources_for_breakages",
-        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
-    }
+CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
+    "task": "external_resources.tasks.check_external_resources_for_breakages",
+    "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
+}
 
 # django cache back-ends
 CACHES = {

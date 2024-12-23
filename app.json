@@ -640,6 +640,10 @@
       "description": "Name of MediaConvert queue to use for transcoding",
       "required": false
     },
+    "CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY": {
+      "description": "Frequency (in seconds) to check potentially broken external urls",
+      "required": false
+    },
     "WAYBACK_MACHINE_ACCESS_KEY": {
       "description": "Access key for the Wayback Machine API",
       "required": false
@@ -650,8 +654,11 @@
     },
     "WAYBACK_SUBMISSION_INTERVAL_DAYS": {
       "description": "Number of days between Wayback submissions",
-      "required": false,
-      "value": "30"
+      "required": false
+    },
+    "UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY": {
+      "description": "Frequency (in seconds) to check the status of Wayback Machine jobs",
+      "required": false
     },
     "YT_ACCESS_TOKEN": {
       "description": "Youtube access token",
