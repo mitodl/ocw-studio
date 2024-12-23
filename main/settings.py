@@ -752,17 +752,16 @@ CELERY_BEAT_SCHEDULE = {
         "task": "content_sync.tasks.check_incomplete_publish_build_statuses",
         "schedule": PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY,
     },
+    "check-broken-external-urls": {
+        "task": "external_resources.tasks.check_external_resources_for_breakages",
+        "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
+    },
+    "update-wayback-jobs-status": {
+        "task": "external_resources.tasks.update_wayback_jobs_status_batch",
+        "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
+    },
 }
 
-CELERY_BEAT_SCHEDULE["update-wayback-jobs-status"] = {
-    "task": "external_resources.tasks.update_wayback_jobs_status_batch",
-    "schedule": UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY,
-}
-
-CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
-    "task": "external_resources.tasks.check_external_resources_for_breakages",
-    "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
-}
 
 # django cache back-ends
 CACHES = {
