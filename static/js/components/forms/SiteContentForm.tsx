@@ -50,15 +50,40 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
 
   const website = useWebsite()
 
-  const initialValues: SiteFormValues = useMemo(
-    () =>
-      editorState.adding()
-        ? newInitialValues(configItem.fields, website)
-        : contentInitialValues(
+  const initialValues: SiteFormValues = useMemo(() => ({
+    ...(editorState.adding()
+    ? {
+      ...newInitialValues(configItem.fields, website),
+      ...(configItem.name === "resource"
+        ? { resourcetype: "Video" }
+        : {}),
+    }
+    : contentInitialValues(
+      content as WebsiteContent,
+      configItem.fields,
+      website,
+    )),
+    if (!editorState.adding() && configItem.name === "resource") {
+      return {
+        ...contentInitialValues(
+          content as WebsiteContent,
+          configItem.fields,
+          website,
+        ),
+      }
+    }
+
+    return editorState.adding()
+      ? {
+          ...newInitialValues(configItem.fields, website),
+        }
+      : {
+          ...contentInitialValues(
             content as WebsiteContent,
             configItem.fields,
             website,
-          ),
+          )),
+    }),
     [configItem.fields, editorState, content, website],
   )
 
@@ -66,7 +91,6 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
     values: FormikValues,
   ): Promise<FormikErrors<SiteFormValues>> => {
     const schema = getContentSchema(configItem, values)
-
     try {
       await validateYupSchema(values, schema)
     } catch (e) {
@@ -122,7 +146,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     <Form
       onSubmit={async (event) => {
         handleSubmit(event)
-        const { target } = event // get target before the await; https://reactjs.org/docs/legacy-event-pooling.html
+        const { target } = event
         const errors = await validate(values)
         if (Object.keys(errors).length > 0) {
           scrollToElement(target as HTMLElement, ".form-error")
@@ -172,6 +196,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
           Save
         </button>
       </div>
+
       {status && (
         // Status is being used to store non-field errors
         <div className="form-error">{status}</div>
