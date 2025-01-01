@@ -146,7 +146,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     <Form
       onSubmit={async (event) => {
         handleSubmit(event)
-        const { target } = event
+        const { target } = event // get target before the await; https://reactjs.org/docs/legacy-event-pooling.html
         const errors = await validate(values)
         if (Object.keys(errors).length > 0) {
           scrollToElement(target as HTMLElement, ".form-error")
@@ -196,7 +196,6 @@ export function FormFields(props: InnerFormProps): JSX.Element {
           Save
         </button>
       </div>
-
       {status && (
         // Status is being used to store non-field errors
         <div className="form-error">{status}</div>
