@@ -213,49 +213,46 @@ export default function RepeatableContentListing(props: {
     <>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
-        <div className="d-flex flex-direction-row align-items-top">
+        <div className="d-flex flex-direction-row align-items-baseline">
           <input
             placeholder={`Search for a ${labelSingular}`}
             className="site-search-input mr-3 form-control"
             value={searchInput}
             onChange={setSearchInput}
           />
-          {SETTINGS.gdrive_enabled && isResource ? (
-            website.gdrive_url ? (
-              <div className="d-flex flex-column">
-                <div className="d-flex">
-                  <button
-                    className="btn cyan-button sync ml-2 text-nowrap"
-                    onClick={onSubmitContentSync}
-                  >
-                    Sync w/Google Drive
-                  </button>
-                  <a
-                    className="view"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    href={website.gdrive_url}
-                  >
-                    <i className="material-icons gdrive-link">open_in_new</i>
-                  </a>
-                </div>
-                <DriveSyncStatusIndicator website={website} />
+          <Link
+            className="btn cyan-button text-nowrap"
+            to={siteContentNewUrl
+              .param({
+                name: website.name,
+                contentType: configItem.name,
+              })
+              .query(searchParams)
+              .toString()}
+          >
+            {isResource ? "Add Video Resource" : `Add ${labelSingular}`}
+          </Link>
+          {SETTINGS.gdrive_enabled && isResource && website.gdrive_url ? (
+            <div className="d-flex flex-column">
+              <div className="d-flex">
+                <button
+                  className="btn cyan-button sync ml-2 text-nowrap"
+                  onClick={onSubmitContentSync}
+                >
+                  Sync w/Google Drive
+                </button>
+                <a
+                  className="view"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={website.gdrive_url}
+                >
+                  <i className="material-icons gdrive-link">open_in_new</i>
+                </a>
               </div>
-            ) : null
-          ) : (
-            <Link
-              className="btn cyan-button add flex-shrink-0"
-              to={siteContentNewUrl
-                .param({
-                  name: website.name,
-                  contentType: configItem.name,
-                })
-                .query(searchParams)
-                .toString()}
-            >
-              Add {labelSingular}
-            </Link>
-          )}
+              <DriveSyncStatusIndicator website={website} />
+            </div>
+          ) : null}
         </div>
       </div>
       <StudioList>
