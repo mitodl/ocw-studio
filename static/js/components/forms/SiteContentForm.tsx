@@ -84,13 +84,14 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
           )),
       references: {}, // Add this to ensure Formik tracks the `references` field
     }),
-    [configItem.fields, editorState, content, website],
+    [configItem.fields, configItem.name, editorState, content, website],
   )
 
   const validate = async (
     values: FormikValues,
   ): Promise<FormikErrors<SiteFormValues>> => {
     const schema = getContentSchema(configItem, values)
+
     try {
       await validateYupSchema(values, schema)
     } catch (e) {
@@ -176,7 +177,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
         {renamedFields
           .filter((field) => fieldIsVisible(field, values))
           .map((field) => {
-            // Hide `resourcetype` and `file` in case of Add Video Resource (using YouTube ID)
+            // Hide `resourcetype` and `file` in case of adding Video Resource (using YouTube ID)
             if (
               configItem.name === "resource" &&
               (field.name === "resourcetype" || field.name === "file") &&
