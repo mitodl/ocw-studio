@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React from "react"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -27,11 +27,9 @@ import {
   EditableConfigItem,
   WebsiteContentModalState,
   WebsiteContent,
-  ReferencedContent,
 } from "../types/websites"
 import { SiteFormValues } from "../types/forms"
 import ErrorBoundary from "./ErrorBoundary"
-import ReferencesContext from "../context/References"
 
 export interface SiteContentEditorProps {
   content?: WebsiteContent | null
@@ -54,25 +52,6 @@ export default function SiteContentEditor(
     editorState,
     setDirty,
   } = props
-
-  const [references, setReferences] = useState<ReferencedContent>({
-    link: [],
-    unlink: [],
-  })
-
-  function addReferences(item: string) {
-    setReferences((prev) => ({
-      ...prev,
-      link: [...prev.link, item],
-    }))
-  }
-
-  function removeReferences(item: string) {
-    setReferences((prev) => ({
-      link: prev.link.filter((value) => value !== item),
-      unlink: prev.link.includes(item) ? prev.unlink : [...prev.unlink, item],
-    }))
-  }
 
   const site = useWebsite()
   const store = useStore()
@@ -140,14 +119,6 @@ export default function SiteContentEditor(
       payload["text_id"] = configItem.name
     }
 
-    const references = values.references as ReferencedContent
-    if (
-      (Array.isArray(references?.link) && references.link.length > 0) ||
-      (Array.isArray(references?.unlink) && references.unlink.length > 0)
-    ) {
-      payload["references"] = values.references
-    }
-
     const response = editorState.editing()
       ? await editWebsiteContent(payload, editorState.wrapped)
       : await addWebsiteContent(payload as NewWebsiteContentPayload)
@@ -188,17 +159,13 @@ export default function SiteContentEditor(
 
   return (
     <ErrorBoundary>
-      <ReferencesContext.Provider
-        value={{ references, addReferences, removeReferences }}
-      >
-        <SiteContentForm
-          onSubmit={onSubmitForm}
-          configItem={configItem}
-          content={content}
-          editorState={editorState}
-          setDirty={setDirty}
-        />
-      </ReferencesContext.Provider>
+      <SiteContentForm
+        onSubmit={onSubmitForm}
+        configItem={configItem}
+        content={content}
+        editorState={editorState}
+        setDirty={setDirty}
+      />
     </ErrorBoundary>
   )
 }

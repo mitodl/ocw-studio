@@ -16,8 +16,6 @@ export const RESOURCE_LINK_CONFIG_KEY = "resource-link-config"
 
 export const WEBSITE_NAME = "website-name"
 
-export const REFERENCED_CONTENT = "referenced-content"
-
 import TurndownService from "turndown"
 
 /**

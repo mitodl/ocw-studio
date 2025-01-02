@@ -6,9 +6,8 @@ import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 import { siteApiContentUrl } from "../../urls"
 import { getCookie } from "../../api/util"
 import LinkCommand from "@ckeditor/ckeditor5-link/src/linkcommand"
-import UnlinkCommand from "@ckeditor/ckeditor5-link/src/unlinkcommand"
 import { Link } from "@ckeditor/ckeditor5-link"
-import { REFERENCED_CONTENT, WEBSITE_NAME } from "./constants"
+import { WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
 import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
@@ -30,32 +29,9 @@ class CustomLinkCommand extends LinkCommand {
           updateHref(externalResource, this.editor, (href) =>
             super.execute(href),
           )
-
-          // Add the updated Resource Link ID in references context
-          const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
-          referencedContent.add(externalResource.textId)
         }
       },
     )
-  }
-}
-
-class CustomUnlinkCommand extends UnlinkCommand {
-  execute() {
-    // Add the updated Resource Link ID in references context
-    const href = this.editor.model.document.selection.getAttribute("linkHref")
-    if (href) {
-      const resourceID = this.editor.plugins
-        .get(ResourceLinkMarkdownSyntax)
-        .getResourceLinkID(String(href))
-      if (resourceID) {
-        const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
-        referencedContent.remove(resourceID)
-      }
-    }
-
-    // Call the original unlink logic
-    super.execute()
   }
 }
 
@@ -74,7 +50,7 @@ export default class CustomLink extends Plugin {
 
   init() {
     this.editor.commands.add("link", new CustomLinkCommand(this.editor))
-    this.editor.commands.add("unlink", new CustomUnlinkCommand(this.editor))
+    console.log("CustomLink Plugin is initialized")
 
     // Intercept change in document
     this.editor.model.document.on("change:data", () => {
@@ -113,10 +89,6 @@ export default class CustomLink extends Plugin {
                 item,
               )
             })
-
-            // Add the updated Resource Link ID in references context
-            const referencedContent = this.editor.config.get(REFERENCED_CONTENT)
-            referencedContent.add(externalResource.textId)
           }
         })
       }
@@ -139,7 +111,7 @@ async function getExternalResource(
   try {
     hasWarning = new URL(linkValue).hostname !== SETTINGS.sitemapDomain
   } catch (error) {
-    //Invalid URL provided! Ignored as this could be due to a missing scheme.
+    console.log("Invalid URL provided!")
   }
 
   const payload = {
