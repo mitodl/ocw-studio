@@ -768,6 +768,7 @@ class WebsiteContentViewSet(
                 references += [
                     parse_string(instance.metadata[content_key])
                     for content_key in content_keys
+                    if instance.metadata.get(content_key)
                 ]
 
         if references:
