@@ -50,14 +50,19 @@ export default function RepeatableContentListing(props: {
   const website = useWebsite()
 
   const [isContentDeletable, setIsContentDeletable] = useState(false)
+  const [isAddVideoEnabled, setIsAddVideoEnabled] = useState(false)
 
   useEffect(() => {
-    const checkFeatureFlag = async () => {
-      const flagEnabled =
+    const checkFeatureFlags = async () => {
+      const deletableFlag =
         posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE") ?? false
-      setIsContentDeletable(flagEnabled)
+      setIsContentDeletable(deletableFlag)
+
+      const addVideoResourceFlag =
+        posthog.isFeatureEnabled("OCW_STUDIO_ADD_VIDEO_RESOURCE") ?? false
+      setIsAddVideoEnabled(addVideoResourceFlag)
     }
-    checkFeatureFlag()
+    checkFeatureFlags()
   }, [])
 
   const isDeletable =
@@ -220,18 +225,20 @@ export default function RepeatableContentListing(props: {
             value={searchInput}
             onChange={setSearchInput}
           />
-          <Link
-            className="btn add cyan-button text-nowrap"
-            to={siteContentNewUrl
-              .param({
-                name: website.name,
-                contentType: configItem.name,
-              })
-              .query(searchParams)
-              .toString()}
-          >
-            {isResource ? "Add Video Resource" : `Add ${labelSingular}`}
-          </Link>
+          {((isResource && isAddVideoEnabled) || !isResource) && (
+            <Link
+              className="btn add cyan-button text-nowrap"
+              to={siteContentNewUrl
+                .param({
+                  name: website.name,
+                  contentType: configItem.name,
+                })
+                .query(searchParams)
+                .toString()}
+            >
+              {isResource ? "Add Video Resource" : `Add ${labelSingular}`}
+            </Link>
+          )}
           {SETTINGS.gdrive_enabled && isResource && website.gdrive_url ? (
             <div className="d-flex flex-column">
               <div className="d-flex">
