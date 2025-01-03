@@ -221,7 +221,7 @@ export default function RepeatableContentListing(props: {
             onChange={setSearchInput}
           />
           <Link
-            className="btn cyan-button text-nowrap"
+            className="btn add cyan-button text-nowrap"
             to={siteContentNewUrl
               .param({
                 name: website.name,
