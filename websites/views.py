@@ -772,11 +772,9 @@ class WebsiteContentViewSet(
                 ]
 
         if references:
-            referenced_content = WebsiteContent.objects.filter(
-                text_id__in=references
-            ).all()
-            instance.referenced_by.set(referenced_content)
+            references = WebsiteContent.objects.filter(text_id__in=references).all()
 
+        instance.referenced_by.set(references)
         instance.save()
 
     def perform_update(self, serializer):
