@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.136.1
+---------------
+
+- Documentation for Wayback Machine integration (#2326)
+
 Version 0.136.0 (Released December 17, 2024)
 ---------------
 
