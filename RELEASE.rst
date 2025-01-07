@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.136.1
+Version 0.136.1 (Released January 07, 2025)
 ---------------
 
 - Remove "name" field from the metadata of stories in WebsiteContent (#2373)
