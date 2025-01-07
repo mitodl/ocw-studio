@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.136.1
+---------------
+
+- Remove "name" field from the metadata of stories in WebsiteContent (#2373)
+- Documentation for Wayback Machine integration (#2326)
+
 Version 0.136.0 (Released December 17, 2024)
 ---------------
 
