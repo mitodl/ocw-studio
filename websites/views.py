@@ -47,6 +47,7 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
+    WEBSITE_CONTENT_LEFTNAV,
     WebsiteStarterStatus,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
@@ -76,7 +77,12 @@ from websites.serializers import (
     WebsiteWriteSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_valid_base_filename, permissions_group_name_for_role
+from websites.utils import (
+    get_metadata_content_key,
+    get_valid_base_filename,
+    parse_string,
+    permissions_group_name_for_role,
+)
 
 log = logging.getLogger(__name__)
 
@@ -739,24 +745,37 @@ class WebsiteContentViewSet(
         self._referencing_content(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _referencing_content(self, instance):
+    def _referencing_content(self, instance: WebsiteContent):
         """
         Add referencing content to the instance if `referencing_content` is provided.
         """
-        if references_data := self.request.data.get("references"):
-            if references := references_data.get("link"):
-                referenced_content = WebsiteContent.objects.filter(
-                    text_id__in=references
-                )
-                for content in referenced_content:
-                    content.referencing_content.add(instance)
-            if dereferences := references_data.get("unlink"):
-                dereferenced_content = WebsiteContent.objects.filter(
-                    text_id__in=dereferences
-                )
-                for content in dereferenced_content:
-                    content.referencing_content.remove(instance)
-            instance.save()
+        references = []
+
+        log.info("Referencing content for %s", instance.markdown)
+        log.info("Referencing content for %s", instance.metadata)
+
+        if instance.type == constants.CONTENT_TYPE_NAVMENU:
+            references = [
+                item["identifier"]
+                for item in instance.metadata.get(WEBSITE_CONTENT_LEFTNAV, [])
+            ]
+        else:
+            if instance.markdown:
+                references += parse_string(instance.markdown)
+
+            if instance.metadata:
+                content_keys = get_metadata_content_key(instance)
+                references += [
+                    parse_string(instance.metadata[content_key])
+                    for content_key in content_keys
+                    if instance.metadata.get(content_key)
+                ]
+
+        if references:
+            references = WebsiteContent.objects.filter(text_id__in=references).all()
+
+        instance.referenced_by.set(references)
+        instance.save()
 
     def perform_update(self, serializer):
         """

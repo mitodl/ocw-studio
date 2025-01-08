@@ -328,14 +328,3 @@ export interface WebsiteInitials {
   title: string
   short_id: string
 }
-
-export type ReferencedContent = {
-  link: string[]
-  unlink: string[]
-}
-
-export type ReferencesContextType = {
-  references: ReferencedContent
-  addReferences: (item: string) => void
-  removeReferences: (item: string) => void
-}

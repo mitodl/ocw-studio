@@ -132,3 +132,5 @@ WEBSITE_STARTER_STATUS_CHOICES = Choices(
     (WebsiteStarterStatus.ACTIVE, "Active"),
     (WebsiteStarterStatus.INACTIVE, "Inactive"),
 )
+
+WEBSITE_CONTENT_LEFTNAV = "leftnav"

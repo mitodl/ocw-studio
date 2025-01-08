@@ -1,5 +1,6 @@
 """Websites utils"""
 
+import re
 from typing import Any, Optional
 
 from django.conf import settings
@@ -96,3 +97,46 @@ def resource_reference_field_filter(
 
 def is_test_site(site_name: str) -> bool:
     return site_name in settings.OCW_TEST_SITE_SLUGS
+
+
+def get_metadata_content_key(content) -> list:
+    content_type = content.type
+    match content_type:
+        case (
+            constants.CONTENT_TYPE_RESOURCE_LIST,
+            constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+        ):
+            content_keys = ["description"]
+        case constants.CONTENT_TYPE_METADATA:
+            content_keys = ["course_description"]
+        case _:
+            content_keys = []
+
+    return content_keys
+
+
+def parse_string(text: str) -> str:
+    """
+    Parse the input text to extract UUIDs from resource links.
+
+    Args:
+        text (str): The input text containing resource links.
+
+    Returns:
+        str: A list of extracted UUIDs.
+    """
+    pattern = r"""
+    \{\{%\s+resource_link\s+"([a-f0-9-]{36})"\s+"([^"]+)"\s+%\}\}
+    |
+    \{\{<\s+resource\s+uuid="([a-f0-9-]{36})"\+s>\}\}
+    """
+
+    regex = re.compile(pattern, re.VERBOSE)
+    matches = regex.findall(text)
+
+    # Extract UUIDs by checking which group captured the value
+    return [
+        _match[0]
+        or _match[2]  # match[0] for first group UUID, match[2] for second group UUID
+        for _match in matches
+    ]
