@@ -36,6 +36,7 @@ from websites.constants import (
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
+from websites.utils import set_dict_field
 
 pytestmark = pytest.mark.django_db
 
@@ -352,6 +353,9 @@ def test_mail_youtube_upload_success(settings, mock_mail):
         )
 
 
+@pytest.mark.parametrize(
+    ("res_draft", "expected_privacy"), [(True, None), (False, "public")]
+)
 @pytest.mark.parametrize("video_file_exists", [True, False])
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
@@ -368,6 +372,8 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
     is_ocw,
     version,
     privacy,
+    res_draft,
+    expected_privacy,
 ):
     """Check that youtube.update_video is called for appropriate resources and not others"""
     mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
@@ -381,6 +387,12 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
                 destination=DESTINATION_YOUTUBE,
                 destination_id=youtube_id,
             )
+            content = WebsiteContent.objects.get(
+                website=youtube_website,
+                metadata__video_metadata__youtube_id=youtube_id,
+            )
+            set_dict_field(content.metadata, "draft", res_draft)
+            content.save()
     update_youtube_metadata(youtube_website, version=version)
     if youtube_enabled and is_ocw:
         mock_youtube.assert_called_once()
@@ -388,12 +400,13 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
         if video_file_exists:
             assert mock_update_video.call_count == 2
             for youtube_id in ["abc123", "def456"]:
+                final_privacy = expected_privacy if version == VERSION_LIVE else None
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
                         website=youtube_website,
                         metadata__video_metadata__youtube_id=youtube_id,
                     ),
-                    privacy=privacy,
+                    privacy=final_privacy,
                 )
         else:
             mock_update_video.assert_not_called()
