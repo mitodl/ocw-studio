@@ -48,42 +48,20 @@ export interface FormProps {
 export default function SiteContentForm(props: FormProps): JSX.Element {
   const { onSubmit, configItem, content, editorState } = props
   const website = useWebsite()
-
-  const initialValues: SiteFormValues = useMemo(() => ({
-    ...(editorState.adding()
-    ? {
-      ...newInitialValues(configItem.fields, website),
-      ...(configItem.name === "resource"
-        ? { resourcetype: "Video" }
-        : {}),
-    }
-    : contentInitialValues(
-      content as WebsiteContent,
-      configItem.fields,
-      website,
-    )),
-    if (!editorState.adding() && configItem.name === "resource") {
-      return {
-        ...contentInitialValues(
-          content as WebsiteContent,
-          configItem.fields,
-          website,
-        ),
-      }
-    }
-
-    return editorState.adding()
-      ? {
-          ...newInitialValues(configItem.fields, website),
-        }
-      : {
-          ...contentInitialValues(
+  const initialValues: SiteFormValues = useMemo(
+    () =>
+      editorState.adding()
+        ? {
+            ...newInitialValues(configItem.fields, website),
+            ...(configItem.name === "resource"
+              ? { resourcetype: "Video" }
+              : {}),
+          }
+        : contentInitialValues(
             content as WebsiteContent,
             configItem.fields,
             website,
-          )),
-      references: {}, // Add this to ensure Formik tracks the `references` field
-    }),
+          ),
     [configItem.fields, configItem.name, editorState, content, website],
   )
 
