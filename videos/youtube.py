@@ -437,7 +437,9 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
                 youtube.update_video(
                     video_resource,
                     privacy=(
-                        "public" if version == VERSION_LIVE and not is_draft else None
+                        "public"
+                        if version == VERSION_LIVE and not is_draft
+                        else "unlisted"
                     ),
                 )
             except:  # pylint:disable=bare-except  # noqa: E722
