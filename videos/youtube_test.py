@@ -400,7 +400,9 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
         if video_file_exists:
             assert mock_update_video.call_count == 2
             for youtube_id in ["abc123", "def456"]:
-                final_privacy = expected_privacy if version == VERSION_LIVE else None
+                final_privacy = (
+                    expected_privacy if version == VERSION_LIVE else "unlisted"
+                )
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
                         website=youtube_website,
