@@ -361,7 +361,7 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 @pytest.mark.parametrize("is_ocw", [True, False])
 @pytest.mark.parametrize(
     ("version", "privacy"),
-    [[VERSION_DRAFT, None], [VERSION_LIVE, "public"]],  # noqa: PT007
+    [[VERSION_DRAFT, "unlisted"], [VERSION_LIVE, "public"]],  # noqa: PT007
 )
 def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     mocker,
@@ -401,7 +401,9 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
             assert mock_update_video.call_count == 2
             for youtube_id in ["abc123", "def456"]:
                 final_privacy = (
-                    expected_privacy if version == VERSION_LIVE else "unlisted"
+                    expected_privacy
+                    if (version == VERSION_LIVE and not res_draft)
+                    else "unlisted"
                 )
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
