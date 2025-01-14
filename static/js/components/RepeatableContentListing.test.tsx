@@ -164,7 +164,7 @@ describe("RepeatableContentListing", () => {
       const addLink = wrapper.find("a.add")
       expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
       expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
-      expect(addLink.exists()).toBe(!isGdriveEnabled || !isResource)
+      expect(addLink.exists()).toBe(true)
     },
   )
 
@@ -489,8 +489,12 @@ describe("RepeatableContentListing", () => {
       }
       const { wrapper } = await render()
       expect(wrapper.find("h2").text()).toBe(configItem.label)
-      const link = wrapper.find(".cyan-button .add").at(1)
-      expect(link.text()).toBe(`Add ${expectedLabel}`)
+      const link = wrapper.find(".cyan-button .add").at(0)
+      if (configItem.name === "resource") {
+        expect(link.text()).toBe("Add Video Resource")
+      } else {
+        expect(link.text()).toBe(`Add ${expectedLabel}`)
+      }
       expect(link.prop("href")).toBe(
         siteContentNewUrl
           .param({
@@ -581,5 +585,28 @@ describe("RepeatableContentListing", () => {
         name: website.name,
       }).pathname,
     ])
+  })
+  it('should display "Add Video Resource" link if configItem is "resource"', async () => {
+    configItem = makeRepeatableConfigItem("resource")
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({
+          name: website.name,
+        })
+        .query({ offset: 0, type: configItem.name })
+        .toString(),
+      apiResponse,
+    )
+    const { wrapper } = await render({ configItem })
+    const addLink = wrapper.find("a.add")
+    expect(addLink.text()).toBe("Add Video Resource")
+    expect(addLink.prop("href")).toBe(
+      siteContentNewUrl
+        .param({
+          name: website.name,
+          contentType: configItem.name,
+        })
+        .toString(),
+    )
   })
 })

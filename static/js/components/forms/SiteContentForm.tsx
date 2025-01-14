@@ -47,19 +47,22 @@ export interface FormProps {
 
 export default function SiteContentForm(props: FormProps): JSX.Element {
   const { onSubmit, configItem, content, editorState } = props
-
   const website = useWebsite()
-
   const initialValues: SiteFormValues = useMemo(
     () =>
       editorState.adding()
-        ? newInitialValues(configItem.fields, website)
+        ? {
+            ...newInitialValues(configItem.fields, website),
+            ...(configItem.name === "resource"
+              ? { resourcetype: "Video" }
+              : {}),
+          }
         : contentInitialValues(
             content as WebsiteContent,
             configItem.fields,
             website,
           ),
-    [configItem.fields, editorState, content, website],
+    [configItem.fields, configItem.name, editorState, content, website],
   )
 
   const validate = async (
@@ -75,9 +78,28 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
     return {}
   }
 
+  // Auto-populate thumbnail for Video Resource on Save
+  const handleSubmit = async (
+    values: FormikValues,
+    formikHelpers: FormikHelpers<any>,
+  ) => {
+    if (values.resourcetype === "Video") {
+      const youtubeId = values?.video_metadata?.youtube_id
+      if (youtubeId) {
+        if (!values.video_files) {
+          values.video_files = {}
+        }
+        if (!values.video_files.video_thumbnail_file) {
+          values.video_files.video_thumbnail_file = `https://img.youtube.com/vi/${youtubeId}/default.jpg`
+        }
+      }
+    }
+    return onSubmit(values, formikHelpers)
+  }
+
   return (
     <Formik
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       validate={validate}
       initialValues={initialValues}
       enableReinitialize={true}
@@ -105,10 +127,10 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     setDirty,
     handleSubmit,
     validate,
+    editorState,
   } = props
 
   const contentContext = content?.content_context ?? null
-
   const renamedFields: ConfigField[] = useMemo(
     () => renameNestedFields(configItem.fields),
     [configItem],
@@ -132,8 +154,16 @@ export function FormFields(props: InnerFormProps): JSX.Element {
       <div>
         {renamedFields
           .filter((field) => fieldIsVisible(field, values))
-          .map((field) =>
-            field.widget === WidgetVariant.Object ? (
+          .map((field) => {
+            // Hide `resourcetype` and `file` in case of adding Video Resource (using YouTube ID)
+            if (
+              configItem.name === "resource" &&
+              (field.name === "resourcetype" || field.name === "file") &&
+              editorState.adding()
+            ) {
+              return null
+            }
+            return field.widget === WidgetVariant.Object ? (
               <ObjectField
                 field={field}
                 key={field.name}
@@ -160,8 +190,8 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                 contentContext={contentContext}
                 onChange={handleChange}
               />
-            ),
-          )}
+            )
+          })}
       </div>
       <div className="form-group d-flex w-100 justify-content-end">
         <button

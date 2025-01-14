@@ -50,14 +50,19 @@ export default function RepeatableContentListing(props: {
   const website = useWebsite()
 
   const [isContentDeletable, setIsContentDeletable] = useState(false)
+  const [isAddVideoEnabled, setIsAddVideoEnabled] = useState(false)
 
   useEffect(() => {
-    const checkFeatureFlag = async () => {
-      const flagEnabled =
+    const checkFeatureFlags = async () => {
+      const deletableFlag =
         posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE") ?? false
-      setIsContentDeletable(flagEnabled)
+      setIsContentDeletable(deletableFlag)
+
+      const addVideoResourceFlag =
+        posthog.isFeatureEnabled("OCW_STUDIO_ADD_VIDEO_RESOURCE") ?? false
+      setIsAddVideoEnabled(addVideoResourceFlag)
     }
-    checkFeatureFlag()
+    checkFeatureFlags()
   }, [])
 
   const isDeletable =
@@ -213,38 +218,16 @@ export default function RepeatableContentListing(props: {
     <>
       <div className="d-flex flex-direction-row align-items-center justify-content-between py-3">
         <h2 className="m-0 p-0">{configItem.label}</h2>
-        <div className="d-flex flex-direction-row align-items-top">
+        <div className="d-flex flex-direction-row align-items-baseline">
           <input
             placeholder={`Search for a ${labelSingular}`}
             className="site-search-input mr-3 form-control"
             value={searchInput}
             onChange={setSearchInput}
           />
-          {SETTINGS.gdrive_enabled && isResource ? (
-            website.gdrive_url ? (
-              <div className="d-flex flex-column">
-                <div className="d-flex">
-                  <button
-                    className="btn cyan-button sync ml-2 text-nowrap"
-                    onClick={onSubmitContentSync}
-                  >
-                    Sync w/Google Drive
-                  </button>
-                  <a
-                    className="view"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    href={website.gdrive_url}
-                  >
-                    <i className="material-icons gdrive-link">open_in_new</i>
-                  </a>
-                </div>
-                <DriveSyncStatusIndicator website={website} />
-              </div>
-            ) : null
-          ) : (
+          {((isResource && isAddVideoEnabled) || !isResource) && (
             <Link
-              className="btn cyan-button add flex-shrink-0"
+              className="btn add cyan-button text-nowrap"
               to={siteContentNewUrl
                 .param({
                   name: website.name,
@@ -253,9 +236,30 @@ export default function RepeatableContentListing(props: {
                 .query(searchParams)
                 .toString()}
             >
-              Add {labelSingular}
+              {isResource ? "Add Video Resource" : `Add ${labelSingular}`}
             </Link>
           )}
+          {SETTINGS.gdrive_enabled && isResource && website.gdrive_url ? (
+            <div className="d-flex flex-column">
+              <div className="d-flex">
+                <button
+                  className="btn cyan-button sync ml-2 text-nowrap"
+                  onClick={onSubmitContentSync}
+                >
+                  Sync w/Google Drive
+                </button>
+                <a
+                  className="view"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={website.gdrive_url}
+                >
+                  <i className="material-icons gdrive-link">open_in_new</i>
+                </a>
+              </div>
+              <DriveSyncStatusIndicator website={website} />
+            </div>
+          ) : null}
         </div>
       </div>
       <StudioList>
