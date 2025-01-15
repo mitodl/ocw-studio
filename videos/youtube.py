@@ -427,6 +427,7 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
         return
     youtube = YouTubeApi()
     for video_resource in video_resources:
+        is_draft = get_dict_field(video_resource.metadata, "draft") is True
         youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
         # do not run this for any old imported videos
         if VideoFile.objects.filter(
@@ -435,7 +436,11 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
             try:
                 youtube.update_video(
                     video_resource,
-                    privacy=("public" if version == VERSION_LIVE else None),
+                    privacy=(
+                        "public"
+                        if version == VERSION_LIVE and not is_draft
+                        else "unlisted"
+                    ),
                 )
             except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception(
