@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.137.0
+---------------
+
+- Add Video Resource Functionality (#2370)
+- Fix issues related to referencing content (#2371)
+
 Version 0.136.1 (Released January 07, 2025)
 ---------------
 
