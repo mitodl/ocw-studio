@@ -63,21 +63,21 @@ class Command(WebsiteFilterCommand):
                 unrelated_files[website.name] = unrelated_website_files
 
         if unrelated_files:
+            self.style.SUCCESS("Unrelated content found in the bucket!")
             content = json.dumps(unrelated_files, indent=4)
 
-            with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
-                tmp_file_path = tmp_file.name
             if total_files > self.UNRELATED_FILES_THRESHOLD:
+                with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
+                    tmp_file_path = tmp_file.name
+                    tmp_file.write(content.encode("utf-8"))
                 self.stdout.write(
                     self.style.SUCCESS(
                         "Unrelated content found in the bucket!"
                         "And the content has been written to a "
-                        "temporary file located at: ",
-                        tmp_file_path,
+                        f"temporary file located at: {tmp_file_path}"
                     )
                 )
             else:
-                self.style.SUCCESS("Unrelated content found in the bucket!")
                 self.stdout.write(content)
 
         else:
