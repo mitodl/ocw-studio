@@ -13,7 +13,6 @@ from content_sync.decorators import single_task
 from external_resources import api
 from external_resources.constants import (
     BATCH_SIZE_WAYBACK_STATUS_UPDATE,
-    ENABLE_WAYBACK_TASKS,
     EXTERNAL_RESOURCE_TASK_PRIORITY,
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
@@ -24,6 +23,9 @@ from external_resources.constants import (
     WAYBACK_MACHINE_TASK_RATE_LIMIT,
     WAYBACK_PENDING_STATUS,
     WAYBACK_SUCCESS_STATUS,
+)
+from external_resources.constants import (
+    ENABLE_WAYBACK_TASKS as POSTHOG_ENABLE_WAYBACK_TASKS,
 )
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
@@ -122,7 +124,7 @@ def submit_website_resources_to_wayback_task(
     self, website_name, ignore_last_submission=None
 ):
     """Submit all external resources of a website to the Wayback Machine."""
-    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+    if not is_feature_enabled(POSTHOG_ENABLE_WAYBACK_TASKS):
         log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
         return None
     external_resources = WebsiteContent.objects.filter(
@@ -185,76 +187,79 @@ def get_external_resource_state(resource_id):
 @single_task(7)
 def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
-    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
-        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
-        return
-    try:
-        state = get_external_resource_state(resource_id)
-        if should_skip_wayback_submission(state, ignore_last_submission):
-            return
-        url = state.content.metadata.get("external_url", "")
-        if not url:
-            log.warning(
-                "No external URL found for resource %s (ID: %s)",
+    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
+        POSTHOG_ENABLE_WAYBACK_TASKS
+    ):
+        try:
+            state = get_external_resource_state(resource_id)
+            if should_skip_wayback_submission(state, ignore_last_submission):
+                return
+            url = state.content.metadata.get("external_url", "")
+            if not url:
+                log.warning(
+                    "No external URL found for resource %s (ID: %s)",
+                    state.content.title,
+                    resource_id,
+                )
+                return
+            log.info(
+                "Submitting URL to Wayback Machine for resource '%s' (ID: %s)",
                 state.content.title,
                 resource_id,
             )
-            return
-        log.info(
-            "Submitting URL to Wayback Machine for resource '%s' (ID: %s)",
-            state.content.title,
-            resource_id,
-        )
-        response = api.submit_url_to_wayback(url)
-        job_id = response.get("job_id")
-        status_ext = response.get("status_ext")
-        state_update_fields = ["wayback_status", "wayback_http_status"]
-        state.wayback_http_status = None
+            response = api.submit_url_to_wayback(url)
+            job_id = response.get("job_id")
+            status_ext = response.get("status_ext")
+            state_update_fields = ["wayback_status", "wayback_http_status"]
+            state.wayback_http_status = None
 
-        if job_id:
-            state.wayback_job_id = job_id
-            state.wayback_status = WAYBACK_PENDING_STATUS
-            state_update_fields.append("wayback_job_id")
-        else:
+            if job_id:
+                state.wayback_job_id = job_id
+                state.wayback_status = WAYBACK_PENDING_STATUS
+                state_update_fields.append("wayback_job_id")
+            else:
+                state.wayback_status = WAYBACK_ERROR_STATUS
+                if status_ext:
+                    state.wayback_status_ext = status_ext
+                    state_update_fields.append("wayback_status_ext")
+                log.error(
+                    "Failed to get job ID for resource %s (ID: %s). Status: %s",
+                    state.content.title,
+                    resource_id,
+                    status_ext,
+                )
+            state.save(update_fields=state_update_fields)
+        except HTTPError as exc:
+            if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
+                log.warning(
+                    "HTTP 429 Too Many Requests for resource '%s' (ID: %s)."
+                    "Retrying after 30 seconds.",
+                    state.content.title,
+                    resource_id,
+                )
+                raise self.retry(exc=exc, countdown=30) from exc
+        except ConnectTimeout:
+            log.exception(
+                "Connection timed out while submitting URL to Wayback Machine "
+                "for resource '%s' (ID: %s).",
+                state.content.title,
+                resource_id,
+            )
             state.wayback_status = WAYBACK_ERROR_STATUS
-            if status_ext:
-                state.wayback_status_ext = status_ext
-                state_update_fields.append("wayback_status_ext")
-            log.error(
-                "Failed to get job ID for resource %s (ID: %s). Status: %s",
-                state.content.title,
-                resource_id,
-                status_ext,
-            )
-        state.save(update_fields=state_update_fields)
-    except HTTPError as exc:
-        if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
-            log.warning(
-                "HTTP 429 Too Many Requests for resource '%s' (ID: %s)."
-                "Retrying after 30 seconds.",
+            state.wayback_status_ext = "error:connect-timeout"
+            state.save(update_fields=["wayback_status", "wayback_status_ext"])
+        except Exception as exc:
+            log.exception(
+                "Error submitting URL to Wayback Machine for resource '%s' (ID: %s)",
                 state.content.title,
                 resource_id,
             )
-            raise self.retry(exc=exc, countdown=30) from exc
-    except ConnectTimeout:
-        log.exception(
-            "Connection timed out while submitting URL to Wayback Machine "
-            "for resource '%s' (ID: %s).",
-            state.content.title,
-            resource_id,
-        )
-        state.wayback_status = WAYBACK_ERROR_STATUS
-        state.wayback_status_ext = "error:connect-timeout"
-        state.save(update_fields=["wayback_status", "wayback_status_ext"])
-    except Exception as exc:
-        log.exception(
-            "Error submitting URL to Wayback Machine for resource '%s' (ID: %s)",
-            state.content.title,
-            resource_id,
-        )
-        state.wayback_status = WAYBACK_ERROR_STATUS
-        state.save(update_fields=["wayback_status"])
-        raise self.retry(exc=exc) from exc
+            state.wayback_status = WAYBACK_ERROR_STATUS
+            state.save(update_fields=["wayback_status"])
+            raise self.retry(exc=exc) from exc
+    else:
+        log.info("Wayback Machine tasks are disabled.")
+        return
 
 
 def _get_pending_states(job_ids=None):
@@ -281,7 +286,7 @@ def _get_pending_states(job_ids=None):
 @single_task(10)
 def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
-    if not is_feature_enabled(ENABLE_WAYBACK_TASKS):
+    if not is_feature_enabled(POSTHOG_ENABLE_WAYBACK_TASKS):
         log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
         return
     try:
