@@ -17,15 +17,13 @@ from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
     METADATA_URL_STATUS_CODE,
+    POSTHOG_ENABLE_WAYBACK_TASKS,
     RESOURCE_UNCHECKED_STATUSES,
     WAYBACK_ERROR_STATUS,
     WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
     WAYBACK_MACHINE_TASK_RATE_LIMIT,
     WAYBACK_PENDING_STATUS,
     WAYBACK_SUCCESS_STATUS,
-)
-from external_resources.constants import (
-    ENABLE_WAYBACK_TASKS as POSTHOG_ENABLE_WAYBACK_TASKS,
 )
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
@@ -124,23 +122,28 @@ def submit_website_resources_to_wayback_task(
     self, website_name, ignore_last_submission=None
 ):
     """Submit all external resources of a website to the Wayback Machine."""
-    if not is_feature_enabled(POSTHOG_ENABLE_WAYBACK_TASKS):
-        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
+    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
+        POSTHOG_ENABLE_WAYBACK_TASKS
+    ):
+        external_resources = WebsiteContent.objects.filter(
+            website__name=website_name,
+            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        ).select_related("external_resource_state")
+
+        tasks = [
+            submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
+            for resource in external_resources
+            if ExternalResourceState.objects.get_or_create(content=resource)
+        ]
+        if tasks:
+            return self.replace(celery.group(tasks))
         return None
-    external_resources = WebsiteContent.objects.filter(
-        website__name=website_name,
-        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-    ).select_related("external_resource_state")
-
-    tasks = [
-        submit_url_to_wayback_task.s(resource.id, ignore_last_submission)
-        for resource in external_resources
-        if ExternalResourceState.objects.get_or_create(content=resource)
-    ]
-    if tasks:
-        return self.replace(celery.group(tasks))
-
-    return None
+    else:
+        log.info(
+            "Wayback Machine tasks are disabled via environment settings "
+            "or PostHog feature flag."
+        )
+        return None
 
 
 def should_skip_wayback_submission(state, ignore_last_submission=None):
@@ -258,7 +261,6 @@ def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
             state.save(update_fields=["wayback_status"])
             raise self.retry(exc=exc) from exc
     else:
-        log.info("Wayback Machine tasks are disabled.")
         return
 
 
@@ -286,47 +288,53 @@ def _get_pending_states(job_ids=None):
 @single_task(10)
 def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
-    if not is_feature_enabled(POSTHOG_ENABLE_WAYBACK_TASKS):
-        log.info("Wayback Machine tasks are disabled via PostHog feature flag.")
-        return
-    try:
-        pending_states = _get_pending_states(job_ids)
-        if not pending_states.exists():
-            log.info("No pending Wayback Machine jobs to update.")
-            return
+    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
+        POSTHOG_ENABLE_WAYBACK_TASKS
+    ):
+        try:
+            pending_states = _get_pending_states(job_ids)
+            if not pending_states.exists():
+                log.info("No pending Wayback Machine jobs to update.")
+                return
 
-        job_id_to_state = {state.wayback_job_id: state for state in pending_states}
+            job_id_to_state = {state.wayback_job_id: state for state in pending_states}
 
-        job_ids = list(job_id_to_state.keys())
+            job_ids = list(job_id_to_state.keys())
 
-        for batch in chunks(job_ids, chunk_size=BATCH_SIZE_WAYBACK_STATUS_UPDATE):
-            results = api.check_wayback_jobs_status_batch(batch)
+            for batch in chunks(job_ids, chunk_size=BATCH_SIZE_WAYBACK_STATUS_UPDATE):
+                results = api.check_wayback_jobs_status_batch(batch)
 
-            for result in results:
-                job_id = result.get("job_id")
-                status = result.get("status")
-                http_status = result.get("http_status")
-                status_ext = result.get("status_ext", "")
-                state = job_id_to_state.get(job_id)
-                if not state:
-                    log.warning("No state found for job_id: %s", job_id)
-                    continue
-                update_state_fields(state, status, http_status, status_ext, result)
-                update_metadata(state, status)
-    except HTTPError as exc:
-        if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
-            log.warning(
-                "HTTP 429 Too Many Requests when trying to update "
-                "Wayback Machine job statuses. Retrying after 30 seconds."
+                for result in results:
+                    job_id = result.get("job_id")
+                    status = result.get("status")
+                    http_status = result.get("http_status")
+                    status_ext = result.get("status_ext", "")
+                    state = job_id_to_state.get(job_id)
+                    if not state:
+                        log.warning("No state found for job_id: %s", job_id)
+                        continue
+                    update_state_fields(state, status, http_status, status_ext, result)
+                    update_metadata(state, status)
+        except HTTPError as exc:
+            if exc.response.status_code == HTTP_TOO_MANY_REQUESTS:
+                log.warning(
+                    "HTTP 429 Too Many Requests when trying to update "
+                    "Wayback Machine job statuses. Retrying after 30 seconds."
+                )
+                raise self.retry(exc=exc, countdown=30) from exc
+        except ConnectTimeout:
+            log.exception(
+                "Connection timed out while updating Wayback Machine job statuses."
             )
-            raise self.retry(exc=exc, countdown=30) from exc
-    except ConnectTimeout:
-        log.exception(
-            "Connection timed out while updating Wayback Machine job statuses."
+        except Exception as exc:
+            log.exception("Error during batch status update of Wayback Machine jobs")
+            raise self.retry(exc=exc) from exc
+    else:
+        log.info(
+            "Wayback Machine tasks are disabled via environment settings "
+            "or PostHog feature flag."
         )
-    except Exception as exc:
-        log.exception("Error during batch status update of Wayback Machine jobs")
-        raise self.retry(exc=exc) from exc
+        return
 
 
 def update_state_fields(state, wayback_status, http_status, status_ext, result):

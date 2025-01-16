@@ -653,7 +653,7 @@ PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY = get_int(
 # Wayback Machine Settings
 ENABLE_WAYBACK_TASKS = get_bool(
     name="ENABLE_WAYBACK_TASKS",
-    default=True,
+    default=False,
     description="Enables tasks related to Wayback Machine submissions and status checks",  # noqa: E501
     required=False,
 )
