@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.137.0
+Version 0.137.0 (Released January 16, 2025)
 ---------------
 
 - Add Video Resource Functionality (#2370)
