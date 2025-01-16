@@ -1,3 +1,12 @@
+"""
+This script defines a Django management command to detect unrelated content in an AWS S3
+ bucket for courses.
+
+Usage:
+    This command can be run using Django's manage.py:
+    `python manage.py detect_unrelated_content`
+"""  # noqa: INP001
+
 import json
 from tempfile import NamedTemporaryFile
 
