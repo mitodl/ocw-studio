@@ -56,7 +56,7 @@ The task for external resource checking can be enabled/disabled using the `ENABL
 
 Wayback Machine tasks are controlled by two main checks:
 
-1. The `ENABLE_WAYBACK_TASKS` envrionment setting in [settings.py](/main/settings.py), which can be overridden through your `.env` file.
+1. The `ENABLE_WAYBACK_TASKS` envrionment setting in [settings.py](/main/settings.py), which is `False` by default. It can be overridden through your `.env` file.
 2. The PostHog feature flag with the feature flag key `OCW_STUDIO_WAYBACK_MACHINE_TASKS` defined in `POSTHOG_ENABLE_WAYBACK_TASKS` in [constants.py](/external_resources/constants.py).
 
 If **both** the `ENABLE_WAYBACK_TASKS` setting is `True` and the PosthHog feature flag `OCW_STUDIO_WAYBACK_MACHINE_TASKS` is enabled (referenced in the code as `POSTHOG_ENABLE_WAYBACK_TASKS`), Wayback Machine tasks are executed.
