@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.138.0
+Version 0.138.0 (Released January 17, 2025)
 ---------------
 
 - Prevent draft video resources from going live on YouTube (#2376)
