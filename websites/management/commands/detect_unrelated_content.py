@@ -47,7 +47,7 @@ class Command(WebsiteFilterCommand):
             files_in_s3 = (
                 {content["Key"] for content in files.get("Contents", [])}
                 if files.get("KeyCount")
-                else {}
+                else set()
             )
 
             website_content_files = set(
