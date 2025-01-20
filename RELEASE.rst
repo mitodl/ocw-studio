@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.138.1
+---------------
+
+- Introduce Environment Variable to Control Wayback Machine Tasks (#2379)
+
 Version 0.138.0 (Released January 17, 2025)
 ---------------
 
