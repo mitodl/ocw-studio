@@ -50,17 +50,18 @@ class Command(WebsiteFilterCommand):
                 else set()
             )
 
-            website_content_files = set(
-                WebsiteContent.objects.filter(
-                    website=website, file__in=files_in_s3
-                ).values_list("file", flat=True)
-            )
+            if files_in_s3:
+                website_content_files = set(
+                    WebsiteContent.objects.filter(
+                        website=website, file__in=files_in_s3
+                    ).values_list("file", flat=True)
+                )
 
-            unrelated_website_files = list(files_in_s3 - website_content_files)
+                unrelated_website_files = list(files_in_s3 - website_content_files)
 
-            if unrelated_website_files:
-                total_files += len(unrelated_website_files)
-                unrelated_files[website.name] = unrelated_website_files
+                if unrelated_website_files:
+                    total_files += len(unrelated_website_files)
+                    unrelated_files[website.name] = unrelated_website_files
 
         if unrelated_files:
             self.stdout.write(
