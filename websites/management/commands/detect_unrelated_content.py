@@ -45,7 +45,7 @@ class Command(WebsiteFilterCommand):
                 Prefix=f"courses/{website.name}/",
             )
             files_in_s3 = (
-                {content["Key"] for content in files.get("Contents", [])}
+                {("/" + content["Key"]) for content in files.get("Contents", [])}
                 if files.get("KeyCount")
                 else set()
             )
