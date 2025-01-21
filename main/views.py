@@ -30,6 +30,7 @@ def _index(request):
         "posthog_project_api_key": settings.POSTHOG_PROJECT_API_KEY,
         "sitemapDomain": settings.SITEMAP_DOMAIN,
         "maxTitle": constants.CONTENT_FILENAME_MAX_LEN,
+        "deletableContentTypes": settings.OCW_STUDIO_DELETABLE_CONTENT_TYPES,
     }
 
     user = request.user
