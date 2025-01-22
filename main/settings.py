@@ -1307,3 +1307,8 @@ POSTHOG_PROJECT_API_KEY = get_string(
     description="API token for communicating with PostHog",
     required=False,
 )
+OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
+    name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
+    default=[],
+    description="List of content types that can be deleted",
+)
