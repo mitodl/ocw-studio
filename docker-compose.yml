@@ -101,7 +101,7 @@ services:
     - django_media:/var/media
 
   watch:
-    image: node:20.17.0
+    image: node:20.18.1
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'
@@ -168,7 +168,7 @@ services:
     - concourse-keys:/concourse-keys
 
   concourse:
-    image: concourse/concourse:7.11
+    image: concourse/concourse:7.12
     command: web
     privileged: true
     depends_on:
@@ -217,7 +217,7 @@ services:
         ipv4_address: 10.1.0.101
 
   concourse-worker:
-    image: concourse/concourse:7.11
+    image: concourse/concourse:7.12
     command: worker
     privileged: true
     depends_on:

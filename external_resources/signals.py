@@ -42,7 +42,7 @@ def upsert_external_resource_state(
             )
             submit_url_to_wayback_task.delay(instance.id)
             log.info(
-                "New external resource created: %s. Submitting to Wayback Machine.",
+                "New external resource created: %s.",
                 instance.title,
             )
             log.debug(
