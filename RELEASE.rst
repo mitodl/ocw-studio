@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+Version 0.139.0
+---------------
+
+- Revert "Update Node.js to v20.18.2 (#2390)" (#2392)
+- added management command to detect unrelated files in a website (#2378)
+- Update dependency pygithub to v2.5.0 (#2389)
+- Update dependency boto3 to v1.36.3 (#2388)
+- Update Node.js to v20.18.2 (#2390)
+- Update concourse/concourse Docker tag to v7.12 (#2387)
+- Update Node.js to v20.18.1 (#2386)
+- Update actions/checkout digest to 11bd719 (#2354)
+- Update Yarn to v3.8.7 (#2385)
+- Update dependency django to v4.2.18 [SECURITY] (#2361)
+- Remove submitting to wayback machine logging when task is not executed (#2382)
+- Introduce Environment Variable to Control Wayback Machine Tasks (#2379)
+
 Version 0.138.0 (Released January 17, 2025)
 ---------------
 
