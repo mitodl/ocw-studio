@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 # Quota errors should contain the following
 API_QUOTA_ERROR_MSG = "quota"
-CAPTION_UPLOAD_NAME = "ocw_captions_upload"
+CAPTION_UPLOAD_NAME = "CC (English)"
 
 
 class YouTubeUploadException(Exception):  # noqa: N818
