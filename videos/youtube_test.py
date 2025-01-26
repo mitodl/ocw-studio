@@ -4,7 +4,6 @@ Tests for youtube api
 
 import random
 import string
-from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
@@ -552,16 +551,6 @@ def test_update_captions_name(mocker, youtube_mocker, existing_name, expected_me
         "dummy.vtt", b"some vtt", content_type="text/vtt"
     )
     video_file.video.save()
-
-    mocker.patch.object(
-        video_file.video.webvtt_transcript_file,
-        "open",
-        return_value=BytesIO(b"some vtt"),
-    )
-    mocker.patch(
-        "videos.models.VideoFile.objects.filter",
-        return_value=mocker.MagicMock(last=mocker.MagicMock(return_value=video_file)),
-    )
 
     YouTubeApi().update_captions(resource, "dummy_video_id")
 
