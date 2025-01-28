@@ -3592,3 +3592,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.8"
+content-hash = "1e1cb1edb4fe92c900b25cd8408a32bbe89e56d83269d6815daac8e648c7ae9d"
