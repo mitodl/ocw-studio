@@ -52,7 +52,7 @@ social-auth-core = {version = "^4", extras = ["saml"]}
 tqdm = "^4.65.0"
 uwsgi = "^2.0.24"
 uwsgitop = "^0.12"
-yamale = "4.0.4"
+yamale = "6.0.0"
 xmlsec = "1.3.13"
 posthog = "^3.7.0"
 
