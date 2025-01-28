@@ -357,6 +357,10 @@
       "description": "Disables Postgres server side cursors",
       "required": false
     },
+    "OCW_STUDIO_DELETABLE_CONTENT_TYPES": {
+      "description": "List of content types that can be deleted",
+      "required": false
+    },
     "OCW_STUDIO_DRAFT_URL": {
       "description": "The base url of the preview site",
       "required": false

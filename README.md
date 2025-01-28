@@ -515,6 +515,12 @@ This feature sets up a cron job to validate external resource urls. The workflow
 
 PostHog is used for dynamically testing and rolling out features that may not be ready for permanent deployment as part of OCW Studio. For example, we use the feature flag `OCW_STUDIO_CONTENT_DELETABLE` to control whether content can be deleted.
 
+The following delimited list should be set in `.env` file to allow which type of content can be deleted:
+
+```
+OCW_STUDIO_DELETABLE_CONTENT_TYPES=external-resource,instructor,page
+```
+
 The following variables should be set in the `.env` file for PostHog integration:
 
 ```
