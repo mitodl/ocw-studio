@@ -69,7 +69,7 @@
     "@types/url-assembler": "^2.1.1",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@use-it/interval": "^1.0.0",
-    "autoprefixer": "9",
+    "autoprefixer": "10",
     "bootstrap": "4",
     "casual": "^1.6.2",
     "ckeditor5-math": "35.4.0",
