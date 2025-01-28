@@ -3577,19 +3577,22 @@ files = [
 
 [[package]]
 name = "yamale"
-version = "4.0.4"
+version = "6.0.0"
 description = "A schema and validator for YAML."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "yamale-4.0.4-py3-none-any.whl", hash = "sha256:04f914c0886bda03ac20f8468272cfd9374a634a062549490eff2beedeb30497"},
-    {file = "yamale-4.0.4.tar.gz", hash = "sha256:e524caf71cbbbd15aa295e8bdda01688ac4b5edaf38dd60851ddff6baef383ba"},
+    {file = "yamale-6.0.0-py3-none-any.whl", hash = "sha256:828c6cf2023101ec97d2759dfdc507e04ecfc0c6d39d500c00c37ec895ada53b"},
+    {file = "yamale-6.0.0.tar.gz", hash = "sha256:60be681f35e4939320b89de0d6f187ee0e5479ae7f7286b7f17f0859ddee4a66"},
 ]
 
 [package.dependencies]
 pyyaml = "*"
 
+[package.extras]
+ruamel = ["ruamel.yaml"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.5"
-content-hash = "a44c23990ede94d6bd79985487c0d4a150c263c34add18a8c02ac134228c0948"
+content-hash = "89e1c74368cc26e03f6c231c117b8140f0c37ce1707b8a798af8e4f73f84e962"
