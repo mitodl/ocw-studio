@@ -1171,17 +1171,18 @@ doc = ["Sphinx", "sphinx-rtd-theme", "sphinxcontrib-spelling"]
 
 [[package]]
 name = "faker"
-version = "19.13.0"
+version = "35.0.0"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-19.13.0-py3-none-any.whl", hash = "sha256:da880a76322db7a879c848a0771e129338e0a680a9f695fd9a3e7a6ac82b45e1"},
-    {file = "Faker-19.13.0.tar.gz", hash = "sha256:14ccb0aec342d33aa3889a864a56e5b3c2d56bce1b89f9189f4fbc128b9afc1e"},
+    {file = "Faker-35.0.0-py3-none-any.whl", hash = "sha256:926d2301787220e0554c2e39afc4dc535ce4b0a8d0a089657137999f66334ef4"},
+    {file = "faker-35.0.0.tar.gz", hash = "sha256:42f2da8cf561e38c72b25e9891168b1e25fec42b6b0b5b0b6cd6041da54af885"},
 ]
 
 [package.dependencies]
 python-dateutil = ">=2.4"
+typing-extensions = "*"
 
 [[package]]
 name = "fancycompleter"
@@ -3592,4 +3593,4 @@ pyyaml = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.5"
-content-hash = "a44c23990ede94d6bd79985487c0d4a150c263c34add18a8c02ac134228c0948"
+content-hash = "d69b367bdb93aa6acc485cdcf330d3e46434c6cf22d65e2e5c24e6c7552523e4"
