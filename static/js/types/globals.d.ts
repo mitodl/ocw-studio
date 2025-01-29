@@ -16,6 +16,7 @@ interface SETTINGS {
   posthog_project_api_key: string?;
   sitemapDomain: string;
   maxTitle: number;
+  deletableContentTypes: string[];
   /**
    * Settings.user does exist, but leaving it untyped to help encourage using
    * `store.user` instead.

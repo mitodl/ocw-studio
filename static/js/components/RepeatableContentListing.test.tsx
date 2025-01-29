@@ -70,6 +70,8 @@ describe("RepeatableContentListing", () => {
     websiteContentDetailsLookup: Record<string, WebsiteContentListItem>
 
   beforeEach(() => {
+    SETTINGS.deletableContentTypes = []
+
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     configItem = makeRepeatableConfigItem("resource")
@@ -227,6 +229,7 @@ describe("RepeatableContentListing", () => {
   ]
   deletableTestCases.forEach(({ name, configName }) => {
     it(`should delete ${name}`, async () => {
+      SETTINGS.deletableContentTypes = [configName]
       const configItem = makeRepeatableConfigItem(configName)
       const contentItem = makeWebsiteContentListItem()
       websiteContentDetailsLookup = {
