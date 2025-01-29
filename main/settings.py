@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.139.0"
+VERSION = "0.139.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -1306,4 +1306,9 @@ POSTHOG_PROJECT_API_KEY = get_string(
     default=None,
     description="API token for communicating with PostHog",
     required=False,
+)
+OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
+    name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
+    default=[],
+    description="List of content types that can be deleted",
 )
