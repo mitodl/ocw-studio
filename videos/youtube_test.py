@@ -519,3 +519,48 @@ def test_update_captions(settings, mocker, youtube_mocker, existing_captions):
             },
             media_body=mock_media_upload.return_value,
         )
+
+
+@pytest.mark.parametrize(
+    ("existing_name", "expected_method"),
+    [
+        ("", "insert"),
+        ("ocw_captions_upload", "insert"),
+        ("CC (English)", "update"),
+    ],
+)
+def test_update_captions_name(mocker, youtube_mocker, existing_name, expected_method):
+    """Verify that the caption name used is CC (English)"""
+    mock_captions = youtube_mocker().captions
+    mock_captions().list().execute.return_value = {
+        "items": [{"id": "test_id", "snippet": {"name": existing_name}}]
+        if existing_name
+        else []
+    }
+
+    website = WebsiteFactory.create()
+    resource = WebsiteContentFactory.create(website=website)
+
+    video_file = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE,
+        destination_id="dummy_video_id",
+        video__website=website,
+    )
+
+    video_file.video.webvtt_transcript_file = SimpleUploadedFile(
+        "dummy.vtt", b"some vtt", content_type="text/vtt"
+    )
+    video_file.video.save()
+
+    YouTubeApi().update_captions(resource, "dummy_video_id")
+
+    if expected_method == "insert":
+        mock_captions().insert.assert_called_once()
+        mock_captions().update.assert_not_called()
+        assert (
+            mock_captions().insert.call_args[1]["body"]["snippet"]["name"]
+            == "CC (English)"
+        )
+    else:
+        mock_captions().update.assert_called_once()
+        mock_captions().insert.assert_not_called()
