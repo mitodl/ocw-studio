@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.139.0
+Version 0.139.0 (Released January 29, 2025)
 ---------------
 
 - Revert "Update Node.js to v20.18.2 (#2390)" (#2392)
