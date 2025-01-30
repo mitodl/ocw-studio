@@ -115,10 +115,7 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {!site.publish_date &&
-                !site.draft_publish_date &&
-                !site.live_publish_status &&
-                !site.draft_publish_status ? (
+                {!site.publish_date && !site.live_publish_status ? (
                   <div className="text-danger">Never Published</div>
                 ) : site.unpublished ? (
                   <div className="text-dark">Unpublished from Production</div>
@@ -127,7 +124,7 @@ export default function SitesDashboard(): JSX.Element {
                 ) : PublishStatus.Success === site.live_publish_status ? (
                   <div
                     className="text-success"
-                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on}`}
+                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on.slice()}`}
                   >
                     Published
                   </div>
@@ -136,7 +133,7 @@ export default function SitesDashboard(): JSX.Element {
                     className={publishStatusIndicatorClass(
                       site.live_publish_status,
                     )}
-                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on}`}
+                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on.slice()}`}
                   >
                     {publishStatusMessage(site.live_publish_status)}
                   </div>
