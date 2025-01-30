@@ -258,6 +258,7 @@ export type Website = WebsiteStatus & {
   url_path: string | null
   url_suggestion: string
   s3_path: string | null
+  live_publish_status: PublishStatus | null
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR
