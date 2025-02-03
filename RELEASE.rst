@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.140.0
+---------------
+
+- Update English captions track name on YouTube (#2394)
+
 Version 0.139.1 (Released February 03, 2025)
 ---------------
 
