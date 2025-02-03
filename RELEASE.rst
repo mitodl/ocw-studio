@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.139.1 (Released February 03, 2025)
+---------------
+
+- Added deletable content type list in environment (#2384)
+- Update dependency boto3 to v1.36.7 (#2405)
+- Update dependency @types/jest-when to v3 (#2396)
+- Update dependency @types/sinon to v17 (#2400)
+- Resolve conflicts (#2401)
+- Update dependency django-webpack-loader to v3 (#2288)
+- Update dependency autoprefixer to v10 (#2398)
+
 Version 0.139.0 (Released January 29, 2025)
 ---------------
 
