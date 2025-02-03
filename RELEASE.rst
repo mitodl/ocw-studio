@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.139.1
+Version 0.139.1 (Released February 03, 2025)
 ---------------
 
 - Added deletable content type list in environment (#2384)
