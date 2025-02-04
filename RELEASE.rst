@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.140.0
+Version 0.140.0 (Released February 04, 2025)
 ---------------
 
 - Update English captions track name on YouTube (#2394)
