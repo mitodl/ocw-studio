@@ -10,6 +10,7 @@ This document describes the components of the video workflow for OCW.
 1. [Captioning and 3Play Transcript Request](#captioning-and-3play-transcript-request)
 1. [Completing the Workflow](#completing-the-workflow)
 1. [Management Commands](#management-commands)
+1. [Testing PRs with Transcoding](#testing-prs-with-transcoding)
 
 # Overview
 
@@ -41,7 +42,7 @@ Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/you
 
 # Captioning and 3Play Transcript Request
 
-If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](videos/threeplay_api.py).
+If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](/videos/threeplay_api.py).
 
 # Completing the Workflow
 
@@ -55,3 +56,9 @@ In cases where something may have gone wrong with the data, often due to legacy 
 - [clear_webvtt_files](/videos/management/commands/clear_webvtt_files.py) Some captions were initially saved without an extension; this management command deletes them from S3 and clears the resource metadata, allowing them to be re-created.
 - [sync_missing_captions](/videos/management/commands/sync_missing_captions.py) This management command syncs captions and transcripts from 3Play to course videos missing them.
 - [sync_transcripts](/videos/management/commands/sync_transcripts.py). This management command syncs captions and transcripts for any videos missing them from one course (`from_course`) to another (`to_course`).
+
+# Testing PRs with Transcoding
+
+When working on or reviewing a PR that requires a video to be uploaded to YouTube, the transcode request needs to be simulated. To do that, first set `API_BEARER_TOKEN` in the `.env` file to some string. Then, use Postman or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with authorization set to the `API_BEARER_TOEN` and with the body as in [this example](/test_videos_webhook/cloudwatch_sns_complete.json), updated to match the relevant environment variables, course name, and video name.
+
+Make sure that AWS buckets (instead of local Minio storage) are being used for testing. If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
