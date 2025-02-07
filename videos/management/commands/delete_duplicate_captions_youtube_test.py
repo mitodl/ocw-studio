@@ -19,8 +19,9 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture()
 def mock_youtube_api(mocker):
     """Mock the YouTube API client"""
-    mocker.resetall()
-    mock_api_cls = mocker.patch("videos.youtube.YouTubeApi")
+    mock_api_cls = mocker.patch(
+        "videos.management.commands.delete_duplicate_captions_youtube.YouTubeApi"
+    )
     mock_api = mock_api_cls.return_value
     mock_api.client.captions.return_value.list.return_value.execute.return_value = {
         "items": [
@@ -78,7 +79,9 @@ def mock_youtube_api_cc_english_newest(mocker):
     Alternate fixture: newest track is 'CC (English)'
     and older track is 'ocw_studio_upload'.
     """
-    mock_api_cls = mocker.patch("videos.youtube.YouTubeApi")
+    mock_api_cls = mocker.patch(
+        "videos.management.commands.delete_duplicate_captions_youtube.YouTubeApi"
+    )
     mock_api = mock_api_cls.return_value
 
     mock_api.client.captions.return_value.list.return_value.execute.return_value = {
