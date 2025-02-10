@@ -20,7 +20,7 @@ from websites.factories import WebsiteFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def video_group(settings):
     """Collection of model objects for testing video views"""  # noqa: D401
     drive_file_id = "abc123"
