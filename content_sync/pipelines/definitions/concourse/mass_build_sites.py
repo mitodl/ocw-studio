@@ -331,7 +331,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number > 1:
                 tasks.append(
                     GetStep(
-                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number -1}",  # noqa: E501
+                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number - 1}",  # noqa: E501
                         passed=[
                             f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"  # noqa: E501
                         ],
