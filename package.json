@@ -130,7 +130,7 @@
     "sass-loader": "^12.1.0",
     "sentry-testkit": "^4.0.3",
     "showdown": "^1.9.1",
-    "sinon": "^11.1.2",
+    "sinon": "^19.0.0",
     "style-loader": "^3.2.1",
     "stylelint": "^15.10.3",
     "stylelint-config-standard-scss": "^10.0.0",
