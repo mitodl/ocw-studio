@@ -59,6 +59,21 @@ In cases where something may have gone wrong with the data, often due to legacy 
 
 # Testing PRs with Transcoding
 
-When working on or reviewing a PR that requires a video to be uploaded to YouTube, the transcode request needs to be simulated. To do that, first set `API_BEARER_TOKEN` in the `.env` file to some string. Then, use Postman or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with authorization set to the `API_BEARER_TOEN` and with the body as in [this example](/test_videos_webhook/cloudwatch_sns_complete.json), updated to match the relevant environment variables, course name, and video name.
+Before working on, testing, or reviewing any PR that requires a video to be uploaded to YouTube, make sure that AWS buckets (instead of local Minio storage) are being used for testing. Set the following variables to the same values as for RC:
 
-Make sure that AWS buckets (instead of local Minio storage) are being used for testing. If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
+```
+DRIVE_SERVICE_ACCOUNT_CREDS
+DRIVE_SHARED_ID
+AWS_STORAGE_BUCKET_NAME
+AWS_ACCOUNT_ID
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+Upload the video to the course's Google Drive folder, as described in the [Google Drive Sync and AWS Transcoding](#google-drive-sync-and-aws-transcoding) section above. Wait for the video transcoding job to complete, which requires an amount of time proportional to the length of the video; for a very short video, this should only take a few minutes.
+
+Next, the response to the transcode request needs to be simulated. This is because the AWS MediaConvert service will not send a webhook notification to the local OCW Studio instance, but rather to the RC URL.
+
+To simulate the response, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in [this example](/test_videos_webhook/cloudwatch_sns_complete.json), updated to match the relevant environment variables, course name, and video name.
+
+If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
