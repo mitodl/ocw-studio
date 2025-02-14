@@ -10,6 +10,7 @@ This document describes the components of the video workflow for OCW.
 1. [Captioning and 3Play Transcript Request](#captioning-and-3play-transcript-request)
 1. [Completing the Workflow](#completing-the-workflow)
 1. [Management Commands](#management-commands)
+1. [Testing PRs with Transcoding](#testing-prs-with-transcoding)
 
 # Overview
 
@@ -41,7 +42,7 @@ Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/you
 
 # Captioning and 3Play Transcript Request
 
-If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](videos/threeplay_api.py).
+If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](/videos/threeplay_api.py).
 
 # Completing the Workflow
 
@@ -55,3 +56,24 @@ In cases where something may have gone wrong with the data, often due to legacy 
 - [clear_webvtt_files](/videos/management/commands/clear_webvtt_files.py) Some captions were initially saved without an extension; this management command deletes them from S3 and clears the resource metadata, allowing them to be re-created.
 - [sync_missing_captions](/videos/management/commands/sync_missing_captions.py) This management command syncs captions and transcripts from 3Play to course videos missing them.
 - [sync_transcripts](/videos/management/commands/sync_transcripts.py). This management command syncs captions and transcripts for any videos missing them from one course (`from_course`) to another (`to_course`).
+
+# Testing PRs with Transcoding
+
+Before working on, testing, or reviewing any PR that requires a video to be uploaded to YouTube, make sure that AWS buckets (instead of local Minio storage) are being used for testing. Set the following variables to the same values as for RC:
+
+```
+DRIVE_SERVICE_ACCOUNT_CREDS
+DRIVE_SHARED_ID
+AWS_STORAGE_BUCKET_NAME
+AWS_ACCOUNT_ID
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+Upload the video to the course's Google Drive folder, as described in the [Google Drive Sync and AWS Transcoding](#google-drive-sync-and-aws-transcoding) section above. Wait for the video transcoding job to complete, which requires an amount of time proportional to the length of the video; for a very short video, this should only take a few minutes.
+
+Next, the response to the transcode request needs to be simulated. This is because the AWS MediaConvert service will not send a webhook notification to the local OCW Studio instance, but rather to the RC URL.
+
+To simulate the response, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in [this example](/test_videos_webhook/cloudwatch_sns_complete.json), updated to match the relevant environment variables, course name, and video name.
+
+If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
