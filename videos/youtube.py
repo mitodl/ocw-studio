@@ -330,18 +330,6 @@ class YouTubeApi:
         if privacy:
             self.update_privacy(youtube_id, privacy=privacy)
 
-    def delete_video(self, video_id):
-        """
-        Delete a video from YouTube
-
-        Args:
-            video_id(str): YouTube video id
-
-        Returns:
-            int: 204 status code if successful
-        """
-        return self.client.videos().delete(id=video_id).execute()
-
     @classmethod
     def get_all_video_captions(
         cls,

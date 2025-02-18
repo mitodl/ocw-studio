@@ -195,15 +195,6 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     assert called_kwargs["notifySubscribers"] is notify
 
 
-def test_delete_video(youtube_mocker):
-    """
-    Test that the 'delete_video' method executes a YouTube API deletion request and returns the status code
-    """
-    youtube_mocker().videos.return_value.delete.return_value.execute.return_value = 204
-    assert YouTubeApi().delete_video("foo") == 204
-    youtube_mocker().videos.return_value.delete.assert_called_with(id="foo")
-
-
 @pytest.mark.parametrize("privacy", [None, "public"])
 def test_update_video(settings, mocker, youtube_mocker, privacy):
     """update_video should send the correct data in a request to update youtube metadata"""

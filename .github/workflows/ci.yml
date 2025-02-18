@@ -53,14 +53,14 @@ jobs:
       run: cat Aptfile | sudo xargs apt-get install
 
     - name: Install poetry
-      uses: snok/install-poetry@93ada01c735cc8a383ce0ce2ae205a21c415379b # v1
+      uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1
       with:
         version: 1.5.1
         virtualenvs-create: true
         virtualenvs-in-project: true
 
     - name: Set up Python
-      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d   # v5
+      uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38   # v5
       with:
         python-version: "3.12.5"
         cache: "poetry"
@@ -109,7 +109,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
     - name: Setup NodeJS
-      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8   # v4
+      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a   # v4
       with:
         node-version: 20
         cache: yarn

@@ -216,22 +216,6 @@ def update_youtube_statuses(self):  # noqa: C901
 
 
 @app.task(acks_late=True)
-def remove_youtube_video(video_id):
-    """
-    Delete a video from Youtube
-    """
-    if not is_youtube_enabled():
-        return
-    try:
-        YouTubeApi().delete_video(video_id)
-    except HttpError as error:
-        if error.resp.status == 404:  # noqa: PLR2004
-            log.info("Not found on Youtube, already deleted?", video_id=video_id)
-        else:
-            raise
-
-
-@app.task(acks_late=True)
 def delete_s3_objects(
     key: str,
     as_filter: bool = False,  # noqa: FBT001, FBT002

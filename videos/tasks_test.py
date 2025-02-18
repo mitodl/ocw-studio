@@ -44,7 +44,6 @@ from videos.tasks import (
     create_drivefile,
     delete_s3_objects,
     mail_transcripts_complete_notification,
-    remove_youtube_video,
     start_transcript_job,
     update_transcript_and_captions,
     update_transcripts_for_updated_videos,
@@ -496,47 +495,6 @@ def test_mail_youtube_upload_success_trigger(mocker, youtube_status, file_status
     )
 
     assert mock_mail_success.call_count == (1 if should_email else 0)
-
-
-@pytest.mark.parametrize("is_enabled", [True, False])
-def test_remove_youtube_video(
-    settings, mocker, youtube_video_files_processing, is_enabled
-):
-    """Verify that remove_youtube_video makes the appropriate api call to delete a video"""
-    if not is_enabled:
-        settings.YT_CLIENT_ID = None
-    mock_delete = mocker.patch("videos.tasks.YouTubeApi.delete_video")
-    video_file = youtube_video_files_processing[0]
-    remove_youtube_video(video_file.destination_id)
-    if is_enabled:
-        mock_delete.assert_called_once_with(video_file.destination_id)
-    else:
-        mock_delete.assert_not_called()
-
-
-def test_remove_youtube_video_404_error(mocker, youtube_video_files_processing):
-    """Test that a 404 http error is handled appropriately and logged"""
-    mock_log = mocker.patch("videos.tasks.log.info")
-    mocker.patch(
-        "videos.tasks.YouTubeApi.delete_video",
-        side_effect=HttpError(MockHttpErrorResponse(404), b"error"),
-    )
-    video_file = youtube_video_files_processing[0]
-    remove_youtube_video(video_file.destination_id)
-    mock_log.assert_called_once_with(
-        "Not found on Youtube, already deleted?", video_id=video_file.destination_id
-    )
-
-
-def test_remove_youtube_video_other_http_error(mocker, youtube_video_files_processing):
-    """Test that a non-404 http error is raised"""
-    mocker.patch(
-        "videos.tasks.YouTubeApi.delete_video",
-        side_effect=HttpError(MockHttpErrorResponse(500), b"error"),
-    )
-    video_file = youtube_video_files_processing[0]
-    with pytest.raises(HttpError):
-        remove_youtube_video(video_file.destination_id)
 
 
 @mock_s3
