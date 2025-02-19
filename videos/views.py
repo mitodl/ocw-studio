@@ -1,60 +1,21 @@
 """Video sync views"""
 
-import json
 import logging
 from urllib.parse import urljoin
 
-import requests
 from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import reverse
 from google_auth_oauthlib.flow import InstalledAppFlow
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
-from videos.api import update_video_job
-from videos.constants import BAD_REQUEST_MSG, VideoStatus
-from videos.exceptions import BadRequest
-from videos.models import Video, VideoJob
+from videos.constants import VideoStatus
+from videos.models import Video
 from videos.tasks import update_transcripts_for_video
-from videos.utils import get_subscribe_url
 
 log = logging.getLogger()
-
-
-class TranscodeJobView(GenericAPIView):
-    """Webhook endpoint for MediaConvert transcode job notifications from Cloudwatch"""
-
-    permission_classes = (AllowAny,)
-
-    def post(
-        self,
-        request,
-        *args,  # noqa: ARG002
-        **kwargs,  # noqa: ARG002
-    ):  # pylint: disable=unused-argument
-        """Update Video and VideoFile objects based on request body"""
-        message = json.loads(request.body)
-        if message.get("SubscribeURL"):
-            # Confirm the subscription
-            if settings.AWS_ACCOUNT_ID not in message.get("TopicArn", ""):
-                raise PermissionDenied
-
-            token = message.get("Token", "")
-            if not token:
-                raise BadRequest(BAD_REQUEST_MSG)
-
-            subscribe_url = get_subscribe_url(token)
-            requests.get(subscribe_url, timeout=60)
-        else:
-            if message.get("account", "") != settings.AWS_ACCOUNT_ID:
-                raise PermissionDenied
-            detail = message.get("detail", {})
-            video_job = VideoJob.objects.get(job_id=detail.get("jobId"))
-            update_video_job(video_job, detail)
-        return Response(status=200, data={})
 
 
 class TranscriptJobView(GenericAPIView):
