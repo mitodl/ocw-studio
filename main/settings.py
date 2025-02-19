@@ -69,6 +69,7 @@ import_settings_modules(
     "mitol.common.settings.webpack",
     "mitol.mail.settings.email",
     "mitol.authentication.settings.touchstone",
+    "mitol.transcoding.settings.job",
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
