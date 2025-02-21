@@ -59,15 +59,21 @@ In cases where something may have gone wrong with the data, often due to legacy 
 
 # Testing PRs with Transcoding
 
-Before working on, testing, or reviewing any PR that requires a video to be uploaded to YouTube, make sure that AWS buckets (instead of local Minio storage) are being used for testing. Set the following variables to the same values as for RC:
+Before working on, testing, or reviewing any PR that requires a video to be uploaded to YouTube, make sure that AWS buckets (instead of local Minio storage) are being used for testing. To do that, set `OCW_STUDIO_ENVIRONMENT` to any value other than `dev`.
+
+Set the following variables to the same values as for RC:
 
 ```
-DRIVE_SERVICE_ACCOUNT_CREDS
-DRIVE_SHARED_ID
-AWS_STORAGE_BUCKET_NAME
 AWS_ACCOUNT_ID
 AWS_ACCESS_KEY_ID
+AWS_REGION
+AWS_ROLE_NAME
 AWS_SECRET_ACCESS_KEY
+AWS_STORAGE_BUCKET_NAME
+DRIVE_SERVICE_ACCOUNT_CREDS
+DRIVE_SHARED_ID
+VIDEO_S3_TRANSCODE_ENDPOINT
+VIDEO_S3_TRANSCODE_PREFIX
 ```
 
 Upload the video to the course's Google Drive folder, as described in the [Google Drive Sync and AWS Transcoding](#google-drive-sync-and-aws-transcoding) section above. Wait for the video transcoding job to complete, which requires an amount of time proportional to the length of the video; for a very short video, this should only take a few minutes.
