@@ -80,6 +80,71 @@ Upload the video to the course's Google Drive folder, as described in the [Googl
 
 Next, the response to the transcode request needs to be simulated. This is because the AWS MediaConvert service will not send a webhook notification to the local OCW Studio instance, but rather to the RC URL.
 
-To simulate the response, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in [this example](/test_videos_webhook/cloudwatch_sns_complete.json), updated to match the relevant environment variables, course name, and video name.
+To simulate the response, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in the example below, updated to match the relevant environment variables, course name, and video name.
+
+```json
+{
+  "version": "0",
+  "id": "c120fe11-87db-c292-b3e5-1cc90740f6e1",
+  "detail-type": "MediaConvert Job State Change",
+  "source": "aws.mediaconvert",
+  "account": "<settings.AWS_ACCOUNT_ID>",
+  "detail": {
+    "timestamp": 1629911639065,
+    "accountId": "<settings.AWS_ACCOUNT_ID>",
+    "queue": "arn:aws:mediaconvert:us-east-1:919801701561:queues/Default",
+    "jobId": "<VideoJob.job_id>",
+    "status": "COMPLETE",
+    "userMetadata": {},
+    "outputGroupDetails": [
+      {
+        "outputDetails": [
+          {
+            "outputFilePaths": [
+              "s3://<settings.AWS_STORAGE_BUCKET_NAME>/aws_mediaconvert_transcodes/<Website.short_id>/<DriveFile.file_id>/<original_video_filename_base>_youtube.mp4"
+            ],
+            "durationInMs": 45466,
+            "videoDetails": {
+              "widthInPx": 320,
+              "heightInPx": 176
+            }
+          },
+          {
+            "outputFilePaths": [
+              "s3://<settings.AWS_STORAGE_BUCKET_NAME>/aws_mediaconvert_transcodes/<Website.short_id>/<DriveFile.file_id>/<original_video_filename_base>_360p_16_9.mp4"
+            ],
+            "durationInMs": 45466,
+            "videoDetails": {
+              "widthInPx": 640,
+              "heightInPx": 360
+            }
+          },
+          {
+            "outputFilePaths": [
+              "s3://<settings.AWS_STORAGE_BUCKET_NAME>/aws_mediaconvert_transcodes/<Website.short_id>/<DriveFile.file_id>/<original_video_filename_base>_360p_4_3.mp4"
+            ],
+            "durationInMs": 45466,
+            "videoDetails": {
+              "widthInPx": 480,
+              "heightInPx": 360
+            }
+          }
+        ],
+        "type": "FILE_GROUP"
+      }
+    ]
+  }
+}
+```
+
+making sure to set the values in `<>`. In particular, set
+
+```
+<settings.AWS_ACCOUNT_ID>
+<VideoJob.job_id>
+<settings.AWS_STORAGE_BUCKET_NAME>/aws_mediaconvert_transcodes/<Website.short_id>/<DriveFile.file_id>/<original_video_filename_base>
+```
+
+The `DriveFile` will be the one associated with the video: http://localhost:8043/admin/gdrive_sync/drivefile/.
 
 If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
