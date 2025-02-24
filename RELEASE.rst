@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.140.1
+Version 0.140.1 (Released February 24, 2025)
 ---------------
 
 - Don't delete video from YouTube (#2419)
