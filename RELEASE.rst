@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.140.1 (Released February 24, 2025)
+---------------
+
+- Don't delete video from YouTube (#2419)
+- Update dependency dj-database-url to v2.3.0 (#2418)
+- Update dependency boto3 to v1.36.22 (#2417)
+- Update dependency yamale to v6 (#2404)
+- Update dependency sinon to v19 (#2403)
+- Update snok/install-poetry digest to 76e04a9 (#2416)
+- Update actions/setup-python digest to 4237552 (#2414)
+- Update akhileshns/heroku-deploy digest to c3187cb (#2415)
+- Update actions/setup-node digest to 1d0ff46 (#2413)
+- Update dependency cryptography to v44.0.1 [SECURITY] (#2412)
+- Update dependency boto3 to v1.36.13 (#2410)
+
 Version 0.140.0 (Released February 04, 2025)
 ---------------
 
