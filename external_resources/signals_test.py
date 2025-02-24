@@ -7,7 +7,7 @@ from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.factories import WebsiteContentFactory
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upsert_external_resource_state(mocker):
     """Test that the upsert_external_resource_state signal makes the correct call"""
     mock_update_or_create = mocker.patch(

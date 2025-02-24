@@ -19,7 +19,7 @@ def pytest_keyboard_interrupt(excinfo):  # noqa: ARG001
 
 
 @pytest.fixture(params=["dev", "not_dev"])
-def mock_environments(settings, request):  # noqa: PT004
+def mock_environments(settings, request):
     """Fixture that tests with dev vs non-dev environment"""
     settings.OCW_STUDIO_ENVIRONMENT = request.param
     settings.ENV_NAME = request.param
@@ -27,12 +27,12 @@ def mock_environments(settings, request):  # noqa: PT004
 
 
 @pytest.fixture(params=[True, False])
-def mock_concourse_hard_purge(settings, request):  # noqa: PT004
+def mock_concourse_hard_purge(settings, request):
     """Fixture that tests with True and False for settings.CONCOURSE_HARD_PURGE"""
     settings.CONCOURSE_HARD_PURGE = request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_branches(settings, mocker):
     """Return mock github branches with names"""
     mocked_branches = []
@@ -47,7 +47,7 @@ def mock_branches(settings, mocker):
     return mocked_branches
 
 
-@pytest.fixture()
+@pytest.fixture
 def github_content_file(mocker):
     """Fixture that returns a mocked Github ContentFile object with some related properties"""  # noqa: E501
     content_str = "my file content"
