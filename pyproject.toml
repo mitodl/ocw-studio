@@ -56,6 +56,7 @@ uwsgitop = "^0.12"
 yamale = "6.0.0"
 xmlsec = "1.3.13"
 posthog = "^3.7.0"
+mitol-django-transcoding = "2025.2.25"
 
 [tool.poetry.group.dev.dependencies]
 bpython = "^0.25"
