@@ -3,9 +3,9 @@ Tests for the delete_duplicate_captions_youtube management command.
 
 Verifies that the command:
 - Properly inspects YouTube caption tracks for each VideoFile
-- Handles 'ocw_studio_upload' vs. 'CC (English)' tracks appropriately:
-  - Copies content from 'ocw_studio_upload' to 'CC (English)' when the former is newer
-  - Only deletes 'ocw_studio_upload' when 'CC (English)' is newer
+- Handles 'ocw_captions_upload' vs. 'CC (English)' tracks appropriately:
+  - Copies content from 'ocw_captions_upload' to 'CC (English)' when the former is newer
+  - Only deletes 'ocw_captions_upload' when 'CC (English)' is newer
 - Ignores auto-generated caption tracks in any language
 - Takes no action when only auto-generated captions exist
 """
@@ -33,7 +33,7 @@ def mock_youtube_api(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_studio_upload",
+                    "name": "ocw_captions_upload",
                     "lastUpdated": "2023-10-01T12:00:00.000Z",
                 },
             },
@@ -55,7 +55,7 @@ def mock_youtube_api(mocker):
 def test_delete_duplicate_captions_youtube_command(mock_youtube_api):
     """
     Tests that the command finds VideoFile objects, checks if the newest
-    caption name is 'ocw_studio_upload', and copies it to 'CC (English)' before deleting it.
+    caption name is 'ocw_captions_upload', and copies it to 'CC (English)' before deleting it.
     """
     website = WebsiteFactory.create(name="Test Site", short_id="test-site")
 
@@ -82,7 +82,7 @@ def test_delete_duplicate_captions_youtube_command(mock_youtube_api):
 def mock_youtube_api_cc_english_newest(mocker):
     """
     Alternate fixture: newest track is 'CC (English)'
-    and older track is 'ocw_studio_upload'.
+    and older track is 'ocw_captions_upload'.
     """
     mock_api_cls = mocker.patch(
         "videos.management.commands.delete_duplicate_captions_youtube.YouTubeApi"
@@ -94,7 +94,7 @@ def mock_youtube_api_cc_english_newest(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_studio_upload",
+                    "name": "ocw_captions_upload",
                     "lastUpdated": "2023-09-30T12:00:00.000Z",
                 },
             },
@@ -117,7 +117,7 @@ def test_delete_duplicate_captions_youtube_command_cc_english_newest(
     mock_youtube_api_cc_english_newest,
 ):
     """
-    If 'ocw_studio_upload' is not the newest track, we do not download/update it
+    If 'ocw_captions_upload' is not the newest track, we do not download/update it
     to the 'CC (English)' track. Instead, if the newest is 'CC (English)' and there
     is a legacy track, we delete the legacy track without copying from it.
     """
@@ -169,7 +169,7 @@ def mock_youtube_api_with_auto_captions(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_studio_upload",
+                    "name": "ocw_captions_upload",
                     "lastUpdated": "2023-09-30T12:00:00.000Z",
                     "language": "en",
                 },
