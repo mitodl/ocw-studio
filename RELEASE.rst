@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.141.0
+---------------
+
+- Add management command for deleting duplicate captions from YouTube (#2409)
+- Update Node.js to v20.18.3 (#2424)
+- Update video README with transcoding (#2411)
+- Update akhileshns/heroku-deploy digest to e3eb99d (#2423)
+
 Version 0.140.1 (Released February 24, 2025)
 ---------------
 
