@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.141.0
+Version 0.141.0 (Released February 27, 2025)
 ---------------
 
 - Add management command for deleting duplicate captions from YouTube (#2409)
