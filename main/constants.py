@@ -1,6 +1,6 @@
 """Constants for ocw-studio"""
 
-ISO_8601_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+ISO_8601_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 STATUS_CREATED = "Created"
 STATUS_COMPLETE = "Complete"
