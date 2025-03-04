@@ -11,6 +11,7 @@ Verifies that the command:
 """
 
 import pytest
+from delete_duplicate_captions_youtube import LEGACY_CAPTIONS_NAME
 from django.core.management import call_command
 
 from videos.constants import DESTINATION_YOUTUBE
@@ -33,7 +34,7 @@ def mock_youtube_api(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_captions_upload",
+                    "name": LEGACY_CAPTIONS_NAME,
                     "lastUpdated": "2023-10-01T12:00:00.000Z",
                 },
             },
@@ -94,7 +95,7 @@ def mock_youtube_api_cc_english_newest(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_captions_upload",
+                    "name": LEGACY_CAPTIONS_NAME,
                     "lastUpdated": "2023-09-30T12:00:00.000Z",
                 },
             },
@@ -169,7 +170,7 @@ def mock_youtube_api_with_auto_captions(mocker):
             {
                 "id": "caption_id_legacy",
                 "snippet": {
-                    "name": "ocw_captions_upload",
+                    "name": LEGACY_CAPTIONS_NAME,
                     "lastUpdated": "2023-09-30T12:00:00.000Z",
                     "language": "en",
                 },
