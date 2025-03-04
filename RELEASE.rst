@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.141.1
+---------------
+
+- Fix legacy captions name in management command (#2427)
+- Update dependency fetch-mock to v12 (#2436)
+- Update dependency django-hijack to v3.7.1 (#2434)
+- Update dependency bpython to ^0.25 (#2430)
+- Update dependency social-auth-app-django to v5.4.3 (#2433)
+- Update dependency boto3 to v1.37.4 (#2429)
+- Update dependency django-storages to v1.14.5 (#2432)
+- Update dependency django to v4.2.19 (#2431)
+- Use latest tag for ocw-course-publisher (#2426)
+
 Version 0.141.0 (Released February 27, 2025)
 ---------------
 

@@ -1,6 +1,6 @@
 """
 Management command to standardize caption tracks for YouTube videos by
-consolidating 'ocw_studio_upload' tracks into 'CC (English)' and removing duplicates.
+consolidating 'ocw_captions_upload' tracks into 'CC (English)' and removing duplicates.
 """
 
 import logging
@@ -17,17 +17,17 @@ from videos.youtube import CAPTION_UPLOAD_NAME, YouTubeApi
 from websites.models import Website
 
 log = logging.getLogger(__name__)
-LEGACY_CAPTIONS_NAME = "ocw_studio_upload"
+LEGACY_CAPTIONS_NAME = "ocw_captions_upload"
 ERROR_NO_WEBSITES = "No matching websites found."
 
 
 class Command(WebsiteFilterCommand):
     """
     Checks if the most recently updated captions track is 'CC (English)'.
-    If it's 'ocw_studio_upload', copy into 'CC (English)' and remove the
-    'ocw_studio_upload' track.
-    If it's 'CC (English)' and there is a track named 'ocw_studio_upload',
-    remove the 'ocw_studio_upload' track.
+    If it's 'ocw_captions_upload', copy into 'CC (English)' and remove the
+    'ocw_captions_upload' track.
+    If it's 'CC (English)' and there is a track named 'ocw_captions_upload',
+    remove the 'ocw_captions_upload' track.
     All other captions tracks, including auto-generated captions, are ignored.
     """
 

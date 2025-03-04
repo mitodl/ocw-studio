@@ -156,17 +156,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.36.22"
+version = "1.37.4"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.36.22-py3-none-any.whl", hash = "sha256:39957eabdce009353d72d131046489fbbfa15891865d5f069f1e8bfa414e6b81"},
-    {file = "boto3-1.36.22.tar.gz", hash = "sha256:768c8a4d4a6227fe2258105efa086f1424cba5ca915a5eb2305b2cd979306ad1"},
+    {file = "boto3-1.37.4-py3-none-any.whl", hash = "sha256:1bbf8bbacb3932956b7020d9a2c49d72c64e21bae9397ba6d3aadffab5e192eb"},
+    {file = "boto3-1.37.4.tar.gz", hash = "sha256:024c37c2f85f4b907f5fc817d0db6fda7fd6ab3c6148ee4ed35fe7cecdf7db0c"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.22,<1.37.0"
+botocore = ">=1.37.4,<1.38.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -175,13 +175,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.22"
+version = "1.37.4"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.36.22-py3-none-any.whl", hash = "sha256:75d6b34acb0686ee4d54ff6eb285e78ccfe318407428769d1e3e13351714d890"},
-    {file = "botocore-1.36.22.tar.gz", hash = "sha256:59520247d5a479731724f97c995d5a1c2aae3b303b324f39d99efcfad1d3019e"},
+    {file = "botocore-1.37.4-py3-none-any.whl", hash = "sha256:89130998c82d53f875a42646b692da507c9871b580fd1aea0f861bf9da36e41a"},
+    {file = "botocore-1.37.4.tar.gz", hash = "sha256:7e15cd487617440e9eac3144044b6a2bd833d7f3e2bed6a2865693cc11489cc3"},
 ]
 
 [package.dependencies]
@@ -194,13 +194,13 @@ crt = ["awscrt (==0.23.8)"]
 
 [[package]]
 name = "bpython"
-version = "0.24"
+version = "0.25"
 description = ""
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 files = [
-    {file = "bpython-0.24-py3-none-any.whl", hash = "sha256:0d196ae3d1ce3dcd559a3fb89ed2c468dfbd1504af0d680b906dd65a9c7a32eb"},
-    {file = "bpython-0.24.tar.gz", hash = "sha256:98736ffd7a8c48fd2bfb53d898a475f4241bde0b672125706af04d9d08fd3dbd"},
+    {file = "bpython-0.25-py3-none-any.whl", hash = "sha256:28fd86008ca5ef6100ead407c9743aa60c51293a18ba5b18fcacea7f5b7f2257"},
+    {file = "bpython-0.25.tar.gz", hash = "sha256:c246fc909ef6dcc26e9d8cb4615b0e6b1613f3543d12269b19ffd0782166c65b"},
 ]
 
 [package.dependencies]
@@ -867,13 +867,13 @@ typing_extensions = ">=3.10.0.0"
 
 [[package]]
 name = "django"
-version = "4.2.18"
+version = "4.2.19"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Django-4.2.18-py3-none-any.whl", hash = "sha256:ba52eff7e228f1c775d5b0db2ba53d8c49d2f8bfe6ca0234df6b7dd12fb25b19"},
-    {file = "Django-4.2.18.tar.gz", hash = "sha256:52ae8eacf635617c0f13b44f749e5ea13dc34262819b2cc8c8636abb08d82c4b"},
+    {file = "Django-4.2.19-py3-none-any.whl", hash = "sha256:a104e13f219fc55996a4e416ef7d18ab4eeb44e0aa95174c192f16cda9f94e75"},
+    {file = "Django-4.2.19.tar.gz", hash = "sha256:6c833be4b0ca614f0a919472a1028a3bbdeb6f056fa04023aeb923346ba2c306"},
 ]
 
 [package.dependencies]
@@ -951,21 +951,21 @@ Django = ">=2.2"
 
 [[package]]
 name = "django-hijack"
-version = "3.6.0"
+version = "3.7.1"
 description = "Enable users to hijack (=login as) and work on behalf of another user."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "django_hijack-3.6.0-py3-none-any.whl", hash = "sha256:698bbe2bcc95c240e4706d465c3ea6c78c66cdcef357802d171ba7036079b075"},
-    {file = "django_hijack-3.6.0.tar.gz", hash = "sha256:4554f7ceb1a5b39aecacd06fee08933a90a357a9c7eeb018d9483d25938dc637"},
+    {file = "django_hijack-3.7.1-py3-none-any.whl", hash = "sha256:6a08a07dfe9b9b8c7a2118473f8bf50bcc5686d60b5577b9961b7e913a645f20"},
+    {file = "django_hijack-3.7.1.tar.gz", hash = "sha256:e2cbbe130d7ff90cec214326d151a2a7fc645bf7efdfba89c057161faf39436c"},
 ]
 
 [package.dependencies]
 django = ">=4.2"
 
 [package.extras]
-docs = ["mkdocs (==1.6.0)"]
-lint = ["msgcheck (==4.0.0)", "ruff (==0.5.0)"]
+docs = ["mkdocs (==1.6.1)"]
+lint = ["msgcheck (==4.1.0)", "ruff (==0.8.4)"]
 test = ["pytest", "pytest-cov", "pytest-django"]
 
 [[package]]
@@ -1025,13 +1025,13 @@ packaging = "*"
 
 [[package]]
 name = "django-storages"
-version = "1.14.4"
+version = "1.14.5"
 description = "Support for many storage backends in Django"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "django-storages-1.14.4.tar.gz", hash = "sha256:69aca94d26e6714d14ad63f33d13619e697508ee33ede184e462ed766dc2a73f"},
-    {file = "django_storages-1.14.4-py3-none-any.whl", hash = "sha256:d61930acb4a25e3aebebc6addaf946a3b1df31c803a6bf1af2f31c9047febaa3"},
+    {file = "django_storages-1.14.5-py3-none-any.whl", hash = "sha256:5ce9c69426f24f379821fd688442314e4aa03de87ae43183c4e16915f4c165d4"},
+    {file = "django_storages-1.14.5.tar.gz", hash = "sha256:ace80dbee311258453e30cd5cfd91096b834180ccf09bc1f4d2cb6d38d68571a"},
 ]
 
 [package.dependencies]
@@ -1041,7 +1041,7 @@ Django = ">=3.2"
 azure = ["azure-core (>=1.13)", "azure-storage-blob (>=12)"]
 boto3 = ["boto3 (>=1.4.4)"]
 dropbox = ["dropbox (>=7.2.1)"]
-google = ["google-cloud-storage (>=1.27)"]
+google = ["google-cloud-storage (>=1.32)"]
 libcloud = ["apache-libcloud"]
 s3 = ["boto3 (>=1.4.4)"]
 sftp = ["paramiko (>=1.15)"]
@@ -3169,18 +3169,21 @@ webhdfs = ["requests"]
 
 [[package]]
 name = "social-auth-app-django"
-version = "5.4.2"
+version = "5.4.3"
 description = "Python Social Authentication, Django integration."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "social-auth-app-django-5.4.2.tar.gz", hash = "sha256:c8832c6cf13da6ad76f5613bcda2647d89ae7cfbc5217fadd13477a3406feaa8"},
-    {file = "social_auth_app_django-5.4.2-py3-none-any.whl", hash = "sha256:0c041a31707921aef9a930f143183c65d8c7b364381364a50f3f7c6fcc9d62f6"},
+    {file = "social_auth_app_django-5.4.3-py3-none-any.whl", hash = "sha256:db70b972faeb10ee1ec83d0dc7dbd0558d5f5830417bba317b712b10ff58d031"},
+    {file = "social_auth_app_django-5.4.3.tar.gz", hash = "sha256:d1f4286d5ca1e512c9b2f686e7ecb2a0128148f1a33d853b69dc07b58508362e"},
 ]
 
 [package.dependencies]
 Django = ">=3.2"
-social-auth-core = ">=4.4.1"
+social-auth-core = ">=4.4,<5.0"
+
+[package.extras]
+dev = ["coverage (>=3.6)"]
 
 [[package]]
 name = "social-auth-core"
@@ -3599,4 +3602,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.5"
-content-hash = "08053baca8c52cf182f27d8e37241fdedb09c84f65f9e7eacd2ab29207f8991e"
+content-hash = "0f8c6376c0c4fad1114c3c08b8d490e859a978701158ce4f93c4a250aaa5928a"
