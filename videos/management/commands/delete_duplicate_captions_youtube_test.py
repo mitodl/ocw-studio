@@ -11,11 +11,13 @@ Verifies that the command:
 """
 
 import pytest
-from delete_duplicate_captions_youtube import LEGACY_CAPTIONS_NAME
 from django.core.management import call_command
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFactory, VideoFileFactory
+from videos.management.commands.delete_duplicate_captions_youtube import (
+    LEGACY_CAPTIONS_NAME,
+)
 from videos.youtube import CAPTION_UPLOAD_NAME
 from websites.factories import WebsiteFactory
 
