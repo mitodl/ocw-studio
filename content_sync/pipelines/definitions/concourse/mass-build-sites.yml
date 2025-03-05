@@ -101,7 +101,7 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: {repository: mitodl/ocw-course-publisher, tag: 0.8}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
       inputs:
       - name: ocw-hugo-themes
       outputs:
@@ -114,7 +114,6 @@ jobs:
         - -exc
         - |
           cd ocw-hugo-themes
-          export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
           yarn install --immutable
           npm run build:webpack
           npm run build:githash
@@ -162,7 +161,7 @@ jobs:
       platform: linux
       image_resource:
         type: registry-image
-        source: {repository: mitodl/ocw-course-publisher, tag: 0.8}
+        source: {repository: mitodl/ocw-course-publisher, tag: 0.6}
       inputs:
         - name: publishable_sites
         - name: ocw-hugo-projects
