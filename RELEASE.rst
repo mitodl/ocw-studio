@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.142.0
+---------------
+
+- Revert ocw course publisher tag temporarily (#2438)
+
 Version 0.141.1 (Released March 05, 2025)
 ---------------
 
