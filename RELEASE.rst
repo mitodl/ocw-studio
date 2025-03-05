@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.141.1
+Version 0.141.1 (Released March 05, 2025)
 ---------------
 
 - Fix legacy captions name in management command (#2427)
