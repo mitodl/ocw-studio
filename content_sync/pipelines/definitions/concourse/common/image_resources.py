@@ -8,7 +8,7 @@ https://github.com/mitodl/ol-infrastructure/tree/main/dockerfiles/ocw/node-hugo
 """
 OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
-    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.6"),
+    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.8"),
 )
 
 AWS_CLI_REGISTRY_IMAGE = AnonymousResource(

@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.143.0
+---------------
+
+- Use new tag (0.8) for ocw-course-publisher (#2440)
+
 Version 0.142.0 (Released March 05, 2025)
 ---------------
 
