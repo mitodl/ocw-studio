@@ -114,7 +114,6 @@ jobs:
         - -exc
         - |
           cd ocw-hugo-themes
-          export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
           yarn install --immutable
           npm run build:webpack
           npm run build:githash
