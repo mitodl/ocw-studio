@@ -182,7 +182,6 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
                 "middle_initial": "",
                 "last_name": "Ulm",
                 "salutation": "Prof.",
-                "headless": True,
             },
         },
         {
@@ -194,7 +193,6 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
                 "middle_initial": "",
                 "last_name": "Buehler",
                 "salutation": "Prof.",
-                "headless": True,
             },
         },
     ]

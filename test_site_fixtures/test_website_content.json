@@ -1328,7 +1328,6 @@
       "markdown": null,
       "metadata": {
         "draft": false,
-        "headless": true,
         "last_name": "Two",
         "first_name": "Tester",
         "salutation": "",
@@ -1360,7 +1359,6 @@
       "markdown": null,
       "metadata": {
         "draft": false,
-        "headless": true,
         "last_name": "One",
         "first_name": "Tester",
         "salutation": "Prof.",
@@ -1392,7 +1390,6 @@
       "markdown": null,
       "metadata": {
         "draft": false,
-        "headless": true,
         "last_name": "Three",
         "first_name": "Another",
         "salutation": "",

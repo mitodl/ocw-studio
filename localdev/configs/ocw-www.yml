@@ -130,10 +130,12 @@ collections:
     widget: markdown
     minimal: true
 
-  - label: Headless
-    name: headless
+  - label: Build
+    name: _build
     widget: hidden
-    default: true
+    default:
+      render: "never"
+      list: "always"
 
 - category: Content
   folder: content/testimonials
@@ -246,10 +248,6 @@ collections:
     widget: string
     required: false
 
-  - label: Headless
-    name: headless
-    widget: hidden
-    default: true
 
 - category: Settings
   label: Menu
