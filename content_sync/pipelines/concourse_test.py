@@ -105,14 +105,14 @@ PIPELINES_LIST = [
 ]
 
 
-@pytest.fixture()
-def mock_auth(mocker):  # noqa: PT004
+@pytest.fixture
+def mock_auth(mocker):
     """Mock the concourse api auth method"""
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
 
 
 @pytest.fixture(params=["test", "dev"])
-def pipeline_settings(settings, request):  # noqa: PT004
+def pipeline_settings(settings, request):
     """Default settings for pipelines"""  # noqa: D401
     env = request.param
     settings.ENVIRONMENT = env
@@ -267,7 +267,7 @@ def test_delete_pipelines(settings, mocker, mock_auth, names):
     for idx, site_pipeline in enumerate(PIPELINES_LIST):
         if idx < 4 or names is None:
             pipe_name = site_pipeline["name"]
-            pipe_vars = f'?vars={quote(json.dumps(site_pipeline["instance_vars"]))}'
+            pipe_vars = f"?vars={quote(json.dumps(site_pipeline['instance_vars']))}"
             mock_api_delete.assert_any_call(
                 f"/api/v1/teams/team1/pipelines/{pipe_name}{pipe_vars}"
             )
@@ -384,7 +384,7 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
         expected_noindex = "true"
     else:
         expected_noindex = "false"
-    expected_instance_vars = f'?vars={quote(json.dumps({"site": website.name}))}'
+    expected_instance_vars = f"?vars={quote(json.dumps({'site': website.name}))}"
     starter_slug = starter.slug
     base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
     base_online_args = base_hugo_args.copy()
