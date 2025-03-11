@@ -98,6 +98,14 @@
       "description": "Early executed tasks propagate exceptions",
       "required": false
     },
+    "CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY": {
+      "description": "Frequency (in seconds) to check potentially broken external urls",
+      "required": false
+    },
+    "CHECK_EXTERNAL_RESOURCE_TASK_STATUS": {
+      "description": "Enables celery task to check potentially broken external urls",
+      "required": false
+    },
     "CONCOURSE_HARD_PURGE": {
       "description": "Perform a hard purge of the fastly cache",
       "required": false
@@ -122,6 +130,10 @@
       "description": "The concourse-ci login username",
       "required": false
     },
+    "CONTENT_FILE_SEARCH_API_URL": {
+      "description": "The URL to open discussions content file search to inject into the theme assets build",
+      "required": false
+    },
     "CONTENT_SYNC_BACKEND": {
       "description": "The backend to sync websites/content with",
       "required": false
@@ -132,6 +144,10 @@
     },
     "CONTENT_SYNC_RETRIES": {
       "description": "Number of times to retry backend sync attempts",
+      "required": false
+    },
+    "COURSE_SEARCH_API_URL": {
+      "description": "The URL to open discussions learning resource search to inject into the theme assets build",
       "required": false
     },
     "DISABLE_WEBPACK_LOADER_STATS": {
@@ -158,24 +174,12 @@
       "description": "Gdrive folder for video uploads",
       "required": false
     },
+    "ENABLE_WAYBACK_TASKS": {
+      "description": "Enables tasks related to Wayback Machine submissions and status checks",
+      "required": false
+    },
     "ENV_NAME": {
       "description": "Name of environment from Heroku or other deployment",
-      "required": false
-    },
-    "FEATURE_SORTABLE_SELECT_PRESERVE_SEARCH_TEXT": {
-      "description": "Feature flag sortable select preserves search text",
-      "required": false
-    },
-    "FEATURE_SORTABLE_SELECT_HIDE_SELECTED": {
-      "description": "Feature flag sortable select hides selected items",
-      "required": false
-    },
-    "FEATURE_SORTABLE_SELECT_QUICK_ADD": {
-      "description": "Feature flag sortable select adds item on selection",
-      "required": false
-    },
-    "FEATURE_SELECT_FIELD_INFINITE_SCROLL": {
-      "description": "Feature flag select field allows infinite scroll",
       "required": false
     },
     "FIELD_METADATA_TITLE": {
@@ -302,6 +306,14 @@
       "description": "E-mail to use for reply-to address of emails",
       "required": false
     },
+    "MIT_LEARN_API_BASE_URL": {
+      "description": "URL to an instance of the MIT Learn API",
+      "required": "False"
+    },
+    "MIT_LEARN_BASE_URL": {
+      "description": "URL to an instance of MIT Learn",
+      "required": "False"
+    },
     "NEW_RELIC_APP_NAME": {
       "description": "Application identifier in New Relic."
     },
@@ -331,10 +343,6 @@
     },
     "OCW_MASS_BUILD_MAX_IN_FLIGHT": {
       "description": "The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",
-      "required": false
-    },
-    "OPEN_CATALOG_WEBHOOK_KEY": {
-      "description": "Open catalog webhook key",
       "required": false
     },
     "OCW_STUDIO_ADMIN_EMAIL": {
@@ -429,20 +437,20 @@
       "description": "Email address listed for customer support",
       "required": false
     },
+    "OCW_STUDIO_TEST_URL": {
+      "description": "The base url of the test site",
+      "required": false
+    },
     "OCW_STUDIO_USE_S3": {
       "description": "Use S3 for storage backend (required on Heroku)",
       "required": false
     },
-    "OCW_TEST_COURSE_STARTER_SLUG": {
-      "description": "The slug of the course Website used to run end to end tests",
-      "required": false
-    },
-    "OCW_TEST_WWW_STARTER_SLUG": {
-      "description": "The slug of the root Website used to run end to end tests",
-      "required": false
-    },
     "OPEN_CATALOG_URLS": {
-      "description": "List of open catalog urls",
+      "description": "Open catalog urls",
+      "required": false
+    },
+    "OPEN_CATALOG_WEBHOOK_KEY": {
+      "description": "Open discussions webhook key",
       "required": false
     },
     "PGBOUNCER_DEFAULT_POOL_SIZE": {
@@ -461,6 +469,10 @@
     },
     "POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS": {
       "description": "Timeout (ms) for PostHog feature flag requests",
+      "required": false
+    },
+    "POSTHOG_MAX_RETRIES": {
+      "description": "Number of times requests to PostHog are retried if failed",
       "required": false
     },
     "POSTHOG_PROJECT_API_KEY": {
@@ -513,14 +525,6 @@
     },
     "SEARCH_API_URL": {
       "description": "The URL to open discussions search to inject into the theme assets build",
-      "required": false
-    },
-    "COURSE_SEARCH_API_URL": {
-      "description": "The URL to open discussions learning resource search to inject into the theme assets build",
-      "required": false
-    },
-    "CONTENT_FILE_SEARCH_API_URL": {
-      "description": "The URL to open discussions content file search to inject into the theme assets build",
       "required": false
     },
     "SECRET_KEY": {
@@ -604,6 +608,10 @@
       "description": "Token to access the status API.",
       "required": false
     },
+    "TEST_ROOT_WEBSITE_NAME": {
+      "description": "The Website name for the site at the root of the test domain",
+      "required": false
+    },
     "THREEPLAY_API_KEY": {
       "description": "3play api key",
       "required": false
@@ -622,6 +630,10 @@
     },
     "UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY": {
       "description": "The frequency to check for videos tagged as updated in 3play",
+      "required": false
+    },
+    "UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY": {
+      "description": "Frequency (in seconds) to check the status of Wayback Machine jobs",
       "required": false
     },
     "USE_X_FORWARDED_HOST": {
@@ -652,17 +664,8 @@
       "description": "Secret key for the Wayback Machine API",
       "required": false
     },
-    "UPDATE_WAYBACK_JOBS_STATUS_FREQUENCY": {
-      "description": "Frequency (in seconds) to check the status of Wayback Machine jobs",
-      "required": false
-    },
     "WAYBACK_SUBMISSION_INTERVAL_DAYS": {
       "description": "Number of days between Wayback submissions",
-      "required": false,
-      "value": "30"
-    },
-    "ENABLE_WAYBACK_TASKS": {
-      "description": "Enables tasks related to Wayback Machine submissions and status checks",
       "required": false
     },
     "YT_ACCESS_TOKEN": {
