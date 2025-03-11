@@ -308,11 +308,11 @@
     },
     "MIT_LEARN_API_BASE_URL": {
       "description": "URL to an instance of the MIT Learn API",
-      "required": "False"
+      "required": false
     },
     "MIT_LEARN_BASE_URL": {
       "description": "URL to an instance of MIT Learn",
-      "required": "False"
+      "required": false
     },
     "NEW_RELIC_APP_NAME": {
       "description": "Application identifier in New Relic."

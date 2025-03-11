@@ -1316,11 +1316,11 @@ MIT_LEARN_BASE_URL = get_string(
     name="MIT_LEARN_BASE_URL",
     default=None,
     description="URL to an instance of MIT Learn",
-    required="False",
+    required=False,
 )
 MIT_LEARN_API_BASE_URL = get_string(
     name="MIT_LEARN_API_BASE_URL",
     default=None,
     description="URL to an instance of the MIT Learn API",
-    required="False",
+    required=False,
 )
