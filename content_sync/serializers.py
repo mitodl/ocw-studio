@@ -72,14 +72,16 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
 
     def serialize(self, website_content: WebsiteContent) -> str:
         file_path = Path(
-            "/", website_content.website.get_url_path(), website_content.filename
+            "/",
+            website_content.website.get_url_path(),
+            Path(website_content.file.name).name,
         )
         front_matter = {
             **(website_content.full_metadata or {}),
             "uid": website_content.text_id,
             "title": website_content.title,
             "content_type": website_content.type,
-            "file": f"{file_path}",
+            "file": file_path.as_posix(),
         }
         # NOTE: yaml.dump adds a newline to the end of its output by default
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"
