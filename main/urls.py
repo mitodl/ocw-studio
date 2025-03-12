@@ -41,6 +41,7 @@ urlpatterns = [
     path("", include("mitol.authentication.urls.saml")),
     path("", include("mitol.mail.urls")),
     path("", include("videos.urls")),
+    path("api/", include("mitol.transcoding.urls")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
