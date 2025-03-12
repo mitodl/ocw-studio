@@ -161,9 +161,12 @@
           "widget": "markdown"
         },
         {
-          "default": true,
-          "label": "Headless",
-          "name": "headless",
+          "default": {
+            "list": "always",
+            "render": "never"
+          },
+          "label": "Build",
+          "name": "_build",
           "widget": "hidden"
         }
       ],
@@ -309,12 +312,6 @@
           "name": "salutation",
           "required": false,
           "widget": "string"
-        },
-        {
-          "default": true,
-          "label": "Headless",
-          "name": "headless",
-          "widget": "hidden"
         }
       ],
       "folder": "content/instructors",

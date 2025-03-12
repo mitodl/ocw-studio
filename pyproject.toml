@@ -14,7 +14,7 @@ boto3 = "1.37.4"
 celery = "^5.3.0"
 cryptography = "^44.0.0"
 dj-database-url = "2.3.0"
-django = "4.2.19"
+django = "4.2.20"
 django-anymail = {version = "10.3", extras = ["mailgun"]}
 django-bulk-update-or-create = "0.3.0"
 django-guardian = "2.4.0"

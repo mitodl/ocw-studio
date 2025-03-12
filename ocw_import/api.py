@@ -442,7 +442,6 @@ def import_ocw2hugo_sitemetadata(course_data, website):  # pylint:disable=too-ma
             text_id=text_id,
             defaults={
                 "metadata": {
-                    "headless": True,
                     "first_name": first_name,
                     "last_name": last_name,
                     "middle_initial": middle_initial,
