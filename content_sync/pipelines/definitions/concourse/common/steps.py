@@ -137,6 +137,7 @@ class SlackAlertStep(TryStep):
                         timeout="1m",
                         params={"alert_type": alert_type, "text": text},
                         inputs=[],
+                        no_get=True,
                     )
                 ]
             ),
@@ -200,6 +201,7 @@ class OcwStudioWebhookStep(TryStep):
                     "text": json.dumps({"version": pipeline_name, "status": status})
                 },
                 inputs=[],
+                no_get=True,
             ),
             **kwargs,
         )
@@ -271,6 +273,7 @@ class OpenCatalogWebhookStep(TryStep):
                     )
                 },
                 inputs=[],
+                no_get=True,
             ),
             **kwargs,
         )
