@@ -848,7 +848,8 @@ class SitePipelineDefinition(Pipeline):
                 put=self._offline_build_gate_identifier,
                 timeout="1m",
                 attempts=1,
-                get_params={"no_get": True, "strict": True},
+                get_params={"strict": True},
+                no_get=True,
             )
         )
         online_job.plan.append(offline_build_gate_put_step)
