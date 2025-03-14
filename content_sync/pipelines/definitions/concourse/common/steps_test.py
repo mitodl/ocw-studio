@@ -162,3 +162,22 @@ def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
         f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
         in rendered_args
     )
+
+
+def test_no_get_property_on_put_steps():
+    """Ensure that the no_get property is set on every class that extends PutStep"""
+    slack_alert_step = SlackAlertStep(alert_type="test_alert", text="test alert")
+    ocw_studio_webhook_step = OcwStudioWebhookStep(
+        pipeline_name="test_pipeline", status="test_status"
+    )
+    open_catalog_webhook_step = OpenCatalogWebhookStep(
+        site_url="http://ocw.mit.edu/courses/test_course",
+        pipeline_name="test_pipeline",
+        open_catalog_url="http://test_open_catalog/api/v0/ocw_next_webhook/",
+    )
+    slack_json = json.loads(slack_alert_step.model_dump_json())
+    ocw_studio_json = json.loads(ocw_studio_webhook_step.model_dump_json())
+    open_catalog_json = json.loads(open_catalog_webhook_step.model_dump_json())
+    assert slack_json["try_"]["do"][0]["no_get"] is True
+    assert ocw_studio_json["try_"]["no_get"] is True
+    assert open_catalog_json["try_"]["no_get"] is True
