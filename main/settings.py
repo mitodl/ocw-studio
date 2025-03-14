@@ -1279,7 +1279,7 @@ ENV_NAME = get_string(
 )
 POSTHOG_API_HOST = get_string(
     name="POSTHOG_API_HOST",
-    default=None,
+    default="https://app.posthog.com",
     description="API host for PostHog",
     required=False,
 )
