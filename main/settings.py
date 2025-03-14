@@ -1279,7 +1279,7 @@ ENV_NAME = get_string(
 )
 POSTHOG_API_HOST = get_string(
     name="POSTHOG_API_HOST",
-    default=None,
+    default="https://app.posthog.com",
     description="API host for PostHog",
     required=False,
 )
@@ -1311,4 +1311,16 @@ OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
     name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
     default=[],
     description="List of content types that can be deleted",
+)
+MIT_LEARN_BASE_URL = get_string(
+    name="MIT_LEARN_BASE_URL",
+    default=None,
+    description="URL to an instance of MIT Learn",
+    required=False,
+)
+MIT_LEARN_API_BASE_URL = get_string(
+    name="MIT_LEARN_API_BASE_URL",
+    default=None,
+    description="URL to an instance of the MIT Learn API",
+    required=False,
 )

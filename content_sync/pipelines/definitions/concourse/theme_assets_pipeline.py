@@ -95,8 +95,14 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         "SEARCH_API_URL": settings.SEARCH_API_URL,
                         "COURSE_SEARCH_API_URL": settings.COURSE_SEARCH_API_URL,
                         "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,  # noqa:E501
+                        "POSTHOG_API_HOST": settings.POSTHOG_API_HOST,
+                        "POSTHOG_ENABLED": str(settings.POSTHOG_ENABLED).lower(),
+                        "POSTHOG_PROJECT_API_KEY": settings.POSTHOG_PROJECT_API_KEY,
+                        "POSTHOG_ENV": settings.ENVIRONMENT,
                         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                         "SENTRY_ENV": settings.ENVIRONMENT,
+                        "MIT_LEARN_BASE_URL": settings.MIT_LEARN_BASE_URL,
+                        "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
                     },
                     run=Command(
                         path="sh",
