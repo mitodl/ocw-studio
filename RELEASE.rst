@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.143.0
+Version 0.143.0 (Released March 17, 2025)
 ---------------
 
 - Cleanup headless code (#2443)
