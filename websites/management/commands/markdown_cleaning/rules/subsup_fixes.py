@@ -69,7 +69,7 @@ class SubSupFixes(PyparsingRule):
         escaped_bullet = re.compile(r"\\\\(?P<bullet>[\-\+\*])")
 
         def replacer(match: re.Match):
-            return f'\\{match.group("bullet")}'
+            return f"\\{match.group('bullet')}"
 
         new_text = escaped_bullet.sub(replacer, text)
 
