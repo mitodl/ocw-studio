@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.144.0
+---------------
+
+- set posthog env vars in the themes assets pipeline (#2447)
+
 Version 0.143.0 (Released March 17, 2025)
 ---------------
 
