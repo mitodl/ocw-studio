@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.144.1
+---------------
+
+- skip implicit get (#2448)
+
 Version 0.144.0 (Released March 17, 2025)
 ---------------
 
