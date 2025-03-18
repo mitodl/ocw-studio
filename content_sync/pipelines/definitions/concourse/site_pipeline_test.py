@@ -432,7 +432,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         offline_build_gate_put_task["try"]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
-    assert online_site_tasks[-1]["try"]["no_get"] is True
+    assert offline_build_gate_put_task["try"]["no_get"] is True
     offline_site_job = get_dict_list_item_by_field(
         jobs,
         "name",
