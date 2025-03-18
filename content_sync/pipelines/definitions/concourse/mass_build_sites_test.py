@@ -319,12 +319,11 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                 ].join("\n")
                 assert "--delete" not in upload_online_build_command
         if batch_number < batch_count:
-            assert (
-                get_dict_list_item_by_field(
-                    items=steps,
-                    field="put",
-                    value=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
-                )
-                is not None
+            batch_gate = get_dict_list_item_by_field(
+                items=steps,
+                field="put",
+                value=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number}",
             )
+            assert batch_gate is not None
+            assert batch_gate["no_get"] is True
         batch_number += 1

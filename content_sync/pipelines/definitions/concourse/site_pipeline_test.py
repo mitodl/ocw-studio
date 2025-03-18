@@ -427,10 +427,12 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_online_params["version"]
                 == config.vars["pipeline_name"]
             )
+    offline_build_gate_put_task = online_site_tasks[-1]
     assert (
-        online_site_tasks[-1]["try"]["put"]
+        offline_build_gate_put_task["try"]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
+    assert offline_build_gate_put_task["try"]["no_get"] is True
     offline_site_job = get_dict_list_item_by_field(
         jobs,
         "name",
