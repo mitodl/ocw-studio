@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.144.1 (Released March 19, 2025)
+---------------
+
+- use latest python 3.12 and poetry 2.1.1 (#2451)
+- skip implicit get (#2448)
+
 Version 0.144.0 (Released March 17, 2025)
 ---------------
 
