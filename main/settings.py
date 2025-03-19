@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.144.1"
+VERSION = "0.144.2"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -1311,4 +1311,16 @@ OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
     name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
     default=[],
     description="List of content types that can be deleted",
+)
+MIT_LEARN_BASE_URL = get_string(
+    name="MIT_LEARN_BASE_URL",
+    default=None,
+    description="URL to an instance of MIT Learn",
+    required=False,
+)
+MIT_LEARN_API_BASE_URL = get_string(
+    name="MIT_LEARN_API_BASE_URL",
+    default=None,
+    description="URL to an instance of the MIT Learn API",
+    required=False,
 )
