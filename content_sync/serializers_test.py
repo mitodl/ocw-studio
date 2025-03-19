@@ -2,6 +2,7 @@
 
 import json
 import re
+from pathlib import Path
 
 import pytest
 import yaml
@@ -122,6 +123,7 @@ def test_hugo_file_serialize(settings, markdown, exp_sections):
         file=SimpleUploadedFile("mysite/test.pdf", b"content"),
         website=WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2025"),
     )
+    file_path = Path("/", content.website.get_url_path(), Path(content.file.name).name)
     site_config = SiteConfig(content.website.starter.config)
 
     file_content = HugoMarkdownFileSerializer(site_config).serialize(
@@ -142,6 +144,7 @@ def test_hugo_file_serialize(settings, markdown, exp_sections):
             f"title: {content.title}",
             f"content_type: {content.type}",
             f"uid: {content.text_id}",
+            f"file: {file_path}",
         ]
         + [f"{k}: {v}" for k, v in metadata.items()]
     )
