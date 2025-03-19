@@ -9135,12 +9135,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-fail-on-console@npm:^2.0.4":
-  version: 2.5.0
-  resolution: "jest-fail-on-console@npm:2.5.0"
-  dependencies:
-    chalk: ^4.1.0
-  checksum: 6bec70cde8a57aa9d61d882a7636c6407dea8e07130521eaf46150d622f8ea162b54eceb2273f25f82cdb6ebefc2994c97ea71fd5ce59288623433406f6444cb
+"jest-fail-on-console@npm:^3.0.0":
+  version: 3.3.1
+  resolution: "jest-fail-on-console@npm:3.3.1"
+  checksum: ca83aaf623e3772ec612e639fefca54472d38a7f4ea8119de8f12dcdb5e425e9f09d803ffd3b7db7b78fdc4edcffea3340f1ea7d160007da32f03d6ec569686b
   languageName: node
   linkType: hard
 
@@ -11174,7 +11172,7 @@ __metadata:
     formik: ^2.2.9
     history: ^4.10.1
     jest: ^27.2.5
-    jest-fail-on-console: ^2.0.4
+    jest-fail-on-console: ^3.0.0
     jest-watch-typeahead: ^2.2.0
     jest-when: ^3.5.1
     js-beautify: ^1.14.0
