@@ -26,6 +26,7 @@ module.exports = {
       "|ckeditor5/*" +
       "|ckeditor5-math/*" +
       "|lodash-es" +
+      "|sinon" +
       ")/)",
   ],
   testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
