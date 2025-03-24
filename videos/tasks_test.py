@@ -125,7 +125,7 @@ def updated_transctipts_reponse():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def youtube_video_files_new():
     """Return 3 Youtube video files"""
     return VideoFileFactory.create_batch(
@@ -136,7 +136,7 @@ def youtube_video_files_new():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def youtube_video_files_processing():
     """Return 3 Youtube video files"""
     return VideoFileFactory.create_batch(
