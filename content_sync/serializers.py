@@ -3,7 +3,6 @@
 import abc
 import json
 import re
-from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -71,17 +70,11 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
     """Serializer/deserializer class for Hugo Markdown content and files"""
 
     def serialize(self, website_content: WebsiteContent) -> str:
-        file_path = Path(
-            "/",
-            website_content.website.get_url_path(),
-            Path(website_content.file.name).name,
-        )
         front_matter = {
             **(website_content.full_metadata or {}),
             "uid": website_content.text_id,
             "title": website_content.title,
             "content_type": website_content.type,
-            "file": file_path.as_posix(),
         }
         # NOTE: yaml.dump adds a newline to the end of its output by default
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"

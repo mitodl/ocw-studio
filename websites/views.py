@@ -326,12 +326,10 @@ class WebsiteViewSet(
     def hide_download(self, request, name=None):  # noqa: ARG002
         """Process webhook requests from concourse pipeline runs"""
         website = get_object_or_404(Website, name=name)
-        hide_download = False
-        if website.name != settings.ROOT_WEBSITE_NAME:
-            content = WebsiteContent.objects.get(
-                website=website, type=CONTENT_TYPE_METADATA
-            )
-            hide_download = content and content.metadata.get("hide_download")
+        content = WebsiteContent.objects.get(
+            website=website, type=CONTENT_TYPE_METADATA
+        )
+        hide_download = content and content.metadata.get("hide_download")
         return Response(
             status=200,
             data={} if hide_download else {"version": str(now_in_utc().timestamp())},

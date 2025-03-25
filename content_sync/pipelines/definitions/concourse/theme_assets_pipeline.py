@@ -101,8 +101,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         "POSTHOG_ENV": settings.ENVIRONMENT,
                         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                         "SENTRY_ENV": settings.ENVIRONMENT,
-                        "MIT_LEARN_BASE_URL": settings.MIT_LEARN_BASE_URL,
-                        "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
                     },
                     run=Command(
                         path="sh",
