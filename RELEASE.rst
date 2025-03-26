@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.145.0
+---------------
+
+- add new settings, regenerate app.json and clean up cruft from it not being regenerated properly in a long time (#2462)
+- Update dependency @sentry/react to v8 (#2399)
+- Revert "env variables for MIT Learn in theme assets pipeline (#2445)" (#2461)
+- set POSTHOG_ENV on playwright tests (#2460)
+- Update jest monorepo to v29 (major) (#2458)
+- env variables for MIT Learn in theme assets pipeline (#2445)
+- Update dependency jest-fail-on-console to v3 (#2453)
+- Update dependency pytest-cov to v6 (#2454)
+- Update actions/setup-node digest to cdca736 (#2455)
+- Update Node.js to v22 (#2457)
+- Update Node.js to v20.19.0 (#2456)
+
 Version 0.144.1 (Released March 19, 2025)
 ---------------
 
