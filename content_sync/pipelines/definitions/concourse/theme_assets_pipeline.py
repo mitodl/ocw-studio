@@ -95,6 +95,8 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         "SEARCH_API_URL": settings.SEARCH_API_URL,
                         "COURSE_SEARCH_API_URL": settings.COURSE_SEARCH_API_URL,
                         "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,  # noqa:E501
+                        "MIT_LEARN_BASE_URL": settings.MIT_LEARN_BASE_URL,
+                        "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
                         "POSTHOG_API_HOST": settings.POSTHOG_API_HOST,
                         "POSTHOG_ENABLED": str(settings.POSTHOG_ENABLED).lower(),
                         "POSTHOG_PROJECT_API_KEY": settings.POSTHOG_PROJECT_API_KEY,
