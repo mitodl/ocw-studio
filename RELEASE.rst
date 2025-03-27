@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.145.0
+Version 0.145.0 (Released March 27, 2025)
 ---------------
 
 - add new settings, regenerate app.json and clean up cruft from it not being regenerated properly in a long time (#2462)
