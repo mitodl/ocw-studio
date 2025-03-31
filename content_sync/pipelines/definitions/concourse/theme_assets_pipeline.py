@@ -79,6 +79,26 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         )
         resource_types = []
         resources = [ocw_hugo_themes_resource]
+        themes_env = {
+            "SEARCH_API_URL": settings.SEARCH_API_URL,
+            "COURSE_SEARCH_API_URL": settings.COURSE_SEARCH_API_URL,
+            "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,
+            "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
+            "SENTRY_ENV": settings.ENVIRONMENT,
+            "POSTHOG_ENV": settings.ENVIRONMENT,
+        }
+        if (
+            settings.PUBLISH_POSTHOG_ENABLED
+            and settings.PUBLISH_POSTHOG_API_HOST
+            and settings.PUBLISH_POSTHOG_PROJECT_API_KEY
+        ):
+            themes_env["POSTHOG_API_HOST"] = settings.PUBLISH_POSTHOG_API_HOST
+            themes_env["POSTHOG_ENABLED"] = str(
+                settings.PUBLISH_POSTHOG_ENABLED
+            ).lower()
+            themes_env["POSTHOG_PROJECT_API_KEY"] = (
+                settings.PUBLISH_POSTHOG_PROJECT_API_KEY
+            )
         tasks = [
             GetStep(
                 get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -91,17 +111,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                     image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
                     inputs=[Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
                     outputs=[Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER)],
-                    params={
-                        "SEARCH_API_URL": settings.SEARCH_API_URL,
-                        "COURSE_SEARCH_API_URL": settings.COURSE_SEARCH_API_URL,
-                        "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,  # noqa:E501
-                        "POSTHOG_API_HOST": settings.POSTHOG_API_HOST,
-                        "POSTHOG_ENABLED": str(settings.POSTHOG_ENABLED).lower(),
-                        "POSTHOG_PROJECT_API_KEY": settings.POSTHOG_PROJECT_API_KEY,
-                        "POSTHOG_ENV": settings.ENVIRONMENT,
-                        "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                        "SENTRY_ENV": settings.ENVIRONMENT,
-                    },
+                    params=themes_env,
                     run=Command(
                         path="sh",
                         args=[
