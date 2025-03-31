@@ -85,14 +85,13 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,
             "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
             "SENTRY_ENV": settings.ENVIRONMENT,
+            "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
         }
         if (
             settings.PUBLISH_POSTHOG_ENABLED
-            and settings.PUBLISH_POSTHOG_API_HOST
             and settings.PUBLISH_POSTHOG_PROJECT_API_KEY
         ):
-            themes_env["POSTHOG_API_HOST"] = settings.PUBLISH_POSTHOG_API_HOST
             themes_env["POSTHOG_ENABLED"] = str(
                 settings.PUBLISH_POSTHOG_ENABLED
             ).lower()
