@@ -6,4 +6,4 @@ from websites.management.commands.markdown_cleaning.cleanup_rule import (
     MarkdownCleanupRule,
 )
 
-__all__ = ["WebsiteContentMarkdownCleaner", "MarkdownCleanupRule", "rules"]
+__all__ = ["MarkdownCleanupRule", "WebsiteContentMarkdownCleaner", "rules"]
