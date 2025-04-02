@@ -960,3 +960,9 @@ class SitePipelineDefinition(Pipeline):
             serial=True,
             plan=steps,
         )
+
+
+models = [FilterWebpackArtifactsStep, StaticResourcesTaskStep]
+
+for model in models:
+    model.model_rebuild()

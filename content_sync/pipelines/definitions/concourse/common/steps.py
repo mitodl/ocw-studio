@@ -330,10 +330,15 @@ class SiteContentGitTaskStep(TaskStep):
         )
 
 
-ClearCdnCacheStep.model_rebuild()
-ErrorHandlingStep.model_rebuild()
-OcwStudioWebhookStep.model_rebuild()
-OcwStudioWebhookCurlStep.model_rebuild()
-OpenCatalogWebhookStep.model_rebuild()
-SiteContentGitTaskStep.model_rebuild()
-SlackAlertStep.model_rebuild()
+models = [
+    ClearCdnCacheStep,
+    ErrorHandlingStep,
+    OcwStudioWebhookStep,
+    OcwStudioWebhookCurlStep,
+    OpenCatalogWebhookStep,
+    SiteContentGitTaskStep,
+    SlackAlertStep,
+]
+
+for model in models:
+    model.model_rebuild()
