@@ -1,9 +1,11 @@
 import json
+from typing import Optional  # noqa: F401
 from urllib.parse import urljoin
 
 from django.conf import settings
 from ol_concourse.lib.constants import REGISTRY_IMAGE
 from ol_concourse.lib.models.pipeline import (
+    AcrossVar,  # noqa: F401
     AnonymousResource,
     Command,
     DoStep,
@@ -117,6 +119,7 @@ class ErrorHandlingStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class SlackAlertStep(TryStep):
@@ -143,6 +146,7 @@ class SlackAlertStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class ClearCdnCacheStep(TaskStep):
@@ -180,6 +184,7 @@ class ClearCdnCacheStep(TaskStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OcwStudioWebhookStep(TryStep):
@@ -205,6 +210,7 @@ class OcwStudioWebhookStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OcwStudioWebhookCurlStep(TryStep):
@@ -244,6 +250,7 @@ class OcwStudioWebhookCurlStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OpenCatalogWebhookStep(TryStep):
@@ -277,6 +284,7 @@ class OpenCatalogWebhookStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class SiteContentGitTaskStep(TaskStep):
@@ -326,3 +334,4 @@ class SiteContentGitTaskStep(TaskStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
