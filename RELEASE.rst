@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.145.1
+---------------
+
+- fix: Add necessary context for Pydantic subclasses with custom init (#2472)
+- Update dependency ruff to ^0.11 (#2471)
+
 Version 0.145.0 (Released March 27, 2025)
 ---------------
 
