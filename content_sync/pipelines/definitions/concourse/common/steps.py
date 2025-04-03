@@ -119,6 +119,7 @@ class ErrorHandlingStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class SlackAlertStep(TryStep):
@@ -145,6 +146,7 @@ class SlackAlertStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class ClearCdnCacheStep(TaskStep):
@@ -182,6 +184,7 @@ class ClearCdnCacheStep(TaskStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OcwStudioWebhookStep(TryStep):
@@ -207,6 +210,7 @@ class OcwStudioWebhookStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OcwStudioWebhookCurlStep(TryStep):
@@ -246,6 +250,7 @@ class OcwStudioWebhookCurlStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class OpenCatalogWebhookStep(TryStep):
@@ -279,6 +284,7 @@ class OpenCatalogWebhookStep(TryStep):
             ),
             **kwargs,
         )
+        self.model_rebuild()
 
 
 class SiteContentGitTaskStep(TaskStep):
@@ -328,17 +334,4 @@ class SiteContentGitTaskStep(TaskStep):
             ),
             **kwargs,
         )
-
-
-models = [
-    ClearCdnCacheStep,
-    ErrorHandlingStep,
-    OcwStudioWebhookStep,
-    OcwStudioWebhookCurlStep,
-    OpenCatalogWebhookStep,
-    SiteContentGitTaskStep,
-    SlackAlertStep,
-]
-
-for model in models:
-    model.model_rebuild()
+        self.model_rebuild()
