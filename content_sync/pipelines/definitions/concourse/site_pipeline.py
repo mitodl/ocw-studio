@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
+    AcrossVar,  # noqa: F401
     Command,
     DoStep,
     DummyConfig,
@@ -416,6 +417,7 @@ class FilterWebpackArtifactsStep(TaskStep):
         if is_dev():
             self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID
             self.params["AWS_SECRET_ACCESS_KEY"] = settings.AWS_SECRET_ACCESS_KEY
+        self.model_rebuild()
 
 
 class StaticResourcesTaskStep(TaskStep):
@@ -456,6 +458,7 @@ class StaticResourcesTaskStep(TaskStep):
         if is_dev():
             self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
             self.params["AWS_SECRET_ACCESS_KEY"] = settings.AWS_SECRET_ACCESS_KEY or ""
+        self.model_rebuild()
 
 
 class SitePipelineOnlineTasks(list[StepModifierMixin]):
