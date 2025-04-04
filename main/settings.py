@@ -1307,6 +1307,41 @@ POSTHOG_PROJECT_API_KEY = get_string(
     description="API token for communicating with PostHog",
     required=False,
 )
+PUBLISH_POSTHOG_API_HOST = get_string(
+    name="PUBLISH_POSTHOG_API_HOST",
+    default="https://app.posthog.com",
+    description="API host for PostHog, published to pipelines",
+    required=False,
+)
+PUBLISH_POSTHOG_ENABLED = get_bool(
+    name="PUBLISH_POSTHOG_ENABLED",
+    default=False,
+    description="Whether PostHog is enabled, published to pipelines",
+    required=False,
+)
+PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS = get_int(
+    name="PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS",
+    default=3000,
+    description=(
+        "Timeout (ms) for PostHog feature flag requests, " "published to pipelines"
+    ),
+    required=False,
+)
+PUBLISH_POSTHOG_MAX_RETRIES = get_int(
+    name="PUBLISH_POSTHOG_MAX_RETRIES",
+    default=3,
+    description=(
+        "Number of times requests to PostHog are retried if failed, "
+        "published to pipelines"
+    ),
+    required=False,
+)
+PUBLISH_POSTHOG_PROJECT_API_KEY = get_string(
+    name="PUBLISH_POSTHOG_PROJECT_API_KEY",
+    default=None,
+    description="API token for communicating with PostHog, published to pipelines",
+    required=False,
+)
 OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
     name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
     default=[],
