@@ -45,19 +45,26 @@ class Command(WebsiteFilterCommand):
                 Prefix=f"courses/{website.name}/",
             )
             files_in_s3 = (
-                {("/" + content["Key"]) for content in files.get("Contents", [])}
+                {(content["Key"]) for content in files.get("Contents", [])}
                 if files.get("KeyCount")
                 else set()
             )
 
             if files_in_s3:
-                website_content_files = set(
-                    WebsiteContent.objects.filter(
-                        website=website, file__in=files_in_s3
-                    ).values_list("file", flat=True)
-                )
+                website_content_files = WebsiteContent.objects.filter(
+                    website=website, file__isnull=False
+                ).values_list("file", flat=True)
+                normalized_website_content_files = {
+                    f.lstrip("/") for f in website_content_files
+                }
+                # flake8: noqa: T201
+                print("\nWebsite:", website.name)
+                print("S3 Files:", files_in_s3)
+                print("DB Files:", normalized_website_content_files)
 
-                unrelated_website_files = list(files_in_s3 - website_content_files)
+                unrelated_website_files = list(
+                    files_in_s3 - normalized_website_content_files
+                )
 
                 if unrelated_website_files:
                     total_files += len(unrelated_website_files)
