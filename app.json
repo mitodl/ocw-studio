@@ -487,6 +487,26 @@
       "description": "Frequency (in seconds) to run a check on potentially stalled publish builds",
       "required": false
     },
+    "PUBLISH_POSTHOG_API_HOST": {
+      "description": "API host for PostHog, published to pipelines",
+      "required": false
+    },
+    "PUBLISH_POSTHOG_ENABLED": {
+      "description": "Whether PostHog is enabled, published to pipelines",
+      "required": false
+    },
+    "PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS": {
+      "description": "Timeout (ms) for PostHog feature flag requests, published to pipelines",
+      "required": false
+    },
+    "PUBLISH_POSTHOG_MAX_RETRIES": {
+      "description": "Number of times requests to PostHog are retried if failed, published to pipelines",
+      "required": false
+    },
+    "PUBLISH_POSTHOG_PROJECT_API_KEY": {
+      "description": "API token for communicating with PostHog, published to pipelines",
+      "required": false
+    },
     "PUBLISH_STATUS_CUTOFF": {
       "description": "Number of seconds to wait for a publish build to fail/succeed before assuming it's stuck",
       "required": false
