@@ -301,7 +301,7 @@ def test_import_ocw2hugo_content_log_exception(mocker, settings):
     )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("course_num", "term", "year", "expected_id"),
     [
