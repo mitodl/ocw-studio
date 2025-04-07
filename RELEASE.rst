@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.145.1
+Version 0.145.1 (Released April 07, 2025)
 ---------------
 
 - fix: Add necessary context for Pydantic subclasses with custom init (#2472)
