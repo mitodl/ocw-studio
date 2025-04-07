@@ -87,7 +87,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
             "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
             "SENTRY_ENV": settings.ENVIRONMENT,
-            "POSTHOG_ENABLED": str(settings.POSTHOG_ENABLED).lower(),
+            "POSTHOG_ENABLED": str(settings.PUBLISH_POSTHOG_ENABLED).lower(),
             "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
         }
