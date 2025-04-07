@@ -55,7 +55,7 @@ class Command(WebsiteFilterCommand):
                     website=website, file__isnull=False
                 ).values_list("file", flat=True)
                 normalized_website_content_files = {
-                    f.lstrip("/") for f in website_content_files
+                    wc.removeprefix("/") for wc in website_content_files if wc
                 }
                 # flake8: noqa: T201
                 print("\nWebsite:", website.name)
