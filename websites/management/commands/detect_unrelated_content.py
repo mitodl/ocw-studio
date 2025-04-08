@@ -1,6 +1,6 @@
 """
 This script defines a Django management command to detect unrelated content in an AWS S3
- bucket for courses.
+bucket for courses.
 
 Usage:
     This command can be run using Django's manage.py:
@@ -81,34 +81,47 @@ class Command(WebsiteFilterCommand):
                 self.style.SUCCESS("Unrelated content found in the bucket!")
             )
             if options.get("delete"):
-                deleted_files_count = 0
-                for _, files in unrelated_files.values():
-                    for file in files:
-                        key = file
-                        s3.meta.client.delete_object(
-                            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
-                        )
-                        deleted_files_count += 1
+                deleted_files_count = self._delete_unrelated_files(s3, unrelated_files)
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"Deleted {deleted_files_count} unrelated files from S3."
                     )
                 )
+                action = "deleted"
             else:
-                content = json.dumps(unrelated_files, indent=4)
-                if total_files > self.UNRELATED_FILES_THRESHOLD:
-                    with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
-                        tmp_file_path = tmp_file.name
-                        tmp_file.write(content.encode("utf-8"))
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            "The content has been written to a "
-                            f"temporary file located at: {tmp_file_path}"
-                        )
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Detected {total_files} unrelated files from S3."
                     )
-                else:
-                    self.stdout.write(content)
+                )
+                action = "detected"
+            self._output_unrelated_files(unrelated_files, total_files, action)
         else:
             self.stdout.write(
                 self.style.WARNING("No unrelated content found in the bucket")
             )
+
+    def _delete_unrelated_files(self, s3, unrelated_files):
+        deleted_files_count = 0
+        for s3_keys in unrelated_files.values():
+            for key in s3_keys:
+                s3.meta.client.delete_object(
+                    Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
+                )
+                deleted_files_count += 1
+        return deleted_files_count
+
+    def _output_unrelated_files(self, unrelated_files, total_files, action):
+        content = json.dumps(unrelated_files, indent=4)
+        if total_files > self.UNRELATED_FILES_THRESHOLD:
+            with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
+                tmp_file_path = tmp_file.name
+                tmp_file.write(content.encode("utf-8"))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"The list of {action} files has been written to "
+                    f"a temporary file located at: {tmp_file_path}"
+                )
+            )
+        else:
+            self.stdout.write(content)
