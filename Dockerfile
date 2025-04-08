@@ -14,6 +14,7 @@ RUN curl --silent --location https://bootstrap.pypa.io/get-pip.py | python3 -
 
 # Add, and run as, non-root user.
 RUN mkdir /src
+COPY mitol_django_transcoding-2025.3.17.tar.gz /src/mitol_django_transcoding-2025.3.17.tar.gz
 RUN adduser --disabled-password --gecos "" mitodl
 RUN mkdir /var/media && chown -R mitodl:mitodl /var/media
 

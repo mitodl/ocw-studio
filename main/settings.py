@@ -518,13 +518,6 @@ OPEN_CATALOG_URLS = get_delimited_list(
     description="Open catalog urls",
     required=False,
 )
-VIDEO_S3_TRANSCODE_PREFIX = get_string(
-    name="VIDEO_S3_TRANSCODE_PREFIX",
-    default="aws_mediaconvert_transcodes",
-    description=(
-        "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
-    ),
-)
 YT_ACCESS_TOKEN = get_string(
     name="YT_ACCESS_TOKEN", default="", description="Youtube access token"
 )
