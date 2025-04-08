@@ -63,10 +63,6 @@ class Command(WebsiteFilterCommand):
                 normalized_website_content_files = {
                     wc.removeprefix("/") for wc in website_content_files if wc
                 }
-                # flake8: noqa: T201
-                print("\nWebsite:", website.name)
-                print("S3 Files:", files_in_s3)
-                print("DB Files:", normalized_website_content_files)
 
                 unrelated_website_files = list(
                     files_in_s3 - normalized_website_content_files
