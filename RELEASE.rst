@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.145.2
+---------------
+
+- set mit learn base urls on the theme assets pipeline (#2469)
+- separate Posthog env vars between studio and published OCW (#2470)
+
 Version 0.145.1 (Released April 07, 2025)
 ---------------
 
