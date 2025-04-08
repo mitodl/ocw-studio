@@ -18,11 +18,17 @@ from websites.models import Website, WebsiteContent
 
 
 class Command(WebsiteFilterCommand):
-    """Detect unrelated content in AWS S3 bucket for courses"""
+    """Detect and optionally delete unrelated content in AWS S3 bucket for courses"""
 
     help = __doc__
 
     UNRELATED_FILES_THRESHOLD = 100
+
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        parser.add_argument(
+            "--delete", action="store_true", help="Delete unrelated resources from S3"
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -74,21 +80,34 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(
                 self.style.SUCCESS("Unrelated content found in the bucket!")
             )
-            content = json.dumps(unrelated_files, indent=4)
-
-            if total_files > self.UNRELATED_FILES_THRESHOLD:
-                with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
-                    tmp_file_path = tmp_file.name
-                    tmp_file.write(content.encode("utf-8"))
+            if options.get("delete"):
+                deleted_files_count = 0
+                for _, files in unrelated_files.values():
+                    for file in files:
+                        key = file  # Remove the leading slash for the actual S3 key
+                        s3.meta.client.delete_object(
+                            Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
+                        )
+                        deleted_files_count += 1
                 self.stdout.write(
                     self.style.SUCCESS(
-                        "The content has been written to a "
-                        f"temporary file located at: {tmp_file_path}"
+                        f"Deleted {deleted_files_count} unrelated files from S3."
                     )
                 )
             else:
-                self.stdout.write(content)
-
+                content = json.dumps(unrelated_files, indent=4)
+                if total_files > self.UNRELATED_FILES_THRESHOLD:
+                    with NamedTemporaryFile(delete=False, suffix=".json") as tmp_file:
+                        tmp_file_path = tmp_file.name
+                        tmp_file.write(content.encode("utf-8"))
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "The content has been written to a "
+                            f"temporary file located at: {tmp_file_path}"
+                        )
+                    )
+                else:
+                    self.stdout.write(content)
         else:
             self.stdout.write(
                 self.style.WARNING("No unrelated content found in the bucket")
