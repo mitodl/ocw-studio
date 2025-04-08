@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.145.2
+Version 0.145.2 (Released April 08, 2025)
 ---------------
 
 - set mit learn base urls on the theme assets pipeline (#2469)
