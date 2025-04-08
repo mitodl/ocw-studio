@@ -84,7 +84,7 @@ class Command(WebsiteFilterCommand):
                 deleted_files_count = 0
                 for _, files in unrelated_files.values():
                     for file in files:
-                        key = file  # Remove the leading slash for the actual S3 key
+                        key = file
                         s3.meta.client.delete_object(
                             Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=key
                         )
