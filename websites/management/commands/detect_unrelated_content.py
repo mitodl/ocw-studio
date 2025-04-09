@@ -17,6 +17,25 @@ from main.s3_utils import get_boto3_resource
 from websites.models import Website, WebsiteContent
 
 
+def list_all_s3_keys(s3_client, bucket, prefix):
+    """
+    Retrieve all object keys from an S3 bucket using pagination.
+    """
+    all_keys = set()
+    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    while True:
+        if response.get("Contents"):
+            all_keys.update(item["Key"] for item in response["Contents"])
+        if response.get("IsTruncated"):
+            token = response.get("NextContinuationToken")
+            response = s3_client.list_objects_v2(
+                Bucket=bucket, Prefix=prefix, ContinuationToken=token
+            )
+        else:
+            break
+    return all_keys
+
+
 class Command(WebsiteFilterCommand):
     """Detect and optionally delete unrelated content in AWS S3 bucket for courses"""
 
@@ -45,16 +64,10 @@ class Command(WebsiteFilterCommand):
 
         unrelated_files_count = 0
         for website in websites:
-            files = s3.meta.client.list_objects_v2(
-                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                Prefix=f"courses/{website.name}/",
+            prefix = f"courses/{website.name}/"
+            s3_file_keys = list_all_s3_keys(
+                s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
             )
-            s3_file_keys = (
-                {content["Key"] for content in files.get("Contents", [])}
-                if files.get("KeyCount")
-                else set()
-            )
-
             if s3_file_keys:
                 website_content_files = WebsiteContent.objects.filter(
                     website=website, file__isnull=False
