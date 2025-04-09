@@ -248,7 +248,7 @@ services:
         ipv4_address: 10.1.0.104
 
   s3:
-    image: minio/minio
+    image: minio/minio:latest
     ports:
     - "9000:9000"
     - "9001:9001"
