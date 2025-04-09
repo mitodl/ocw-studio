@@ -56,7 +56,7 @@ uwsgitop = "^0.12"
 yamale = "6.0.0"
 xmlsec = "1.3.13"
 posthog = "^3.7.0"
-mitol-django-transcoding = {path = "mitol_django_transcoding-2025.3.17.tar.gz"}
+mitol-django-transcoding = "2025.4.8"
 
 [tool.poetry.group.dev.dependencies]
 bpython = "^0.25"
