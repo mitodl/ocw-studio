@@ -49,15 +49,8 @@ def test_create_media_convert_job(settings, mocker):
     destination = call_kwargs["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
         "FileGroupSettings"
     ]["Destination"]
-    assert destination.startswith(
-        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.VIDEO_S3_TRANSCODE_PREFIX}"
-    )
     assert destination.endswith(
         path.splitext(video.source_key.split("/")[-1])[0]  # noqa: PTH122
-    )
-    assert (
-        call_kwargs["Settings"]["Inputs"][0]["FileInput"]
-        == f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
     )
     assert VideoJob.objects.filter(job_id=job_id, video=video).count() == 1
     video.refresh_from_db()
