@@ -58,7 +58,7 @@ class Command(WebsiteFilterCommand):
         unrelated_files_by_site = {}
         self.stdout.write(
             self.style.SUCCESS(
-                f"Checking for unrelated content in {websites.count()} " "websites."
+                f"Checking for unrelated content in {websites.count()} websites."
             )
         )
 
