@@ -24,6 +24,9 @@ def valid_settings(settings):  # noqa: PT004
     settings.AWS_STORAGE_BUCKET_NAME = "test_bucket"
     settings.DRIVE_S3_UPLOAD_PREFIX = "test-upload"
     settings.VIDEO_S3_TRANSCODE_PREFIX = "test-transcode"
+    settings.VIDEO_TRANSCODE_QUEUE = "test-queue"
+    settings.TRANSCODE_JOB_TEMPLATE = "./videos/config/mediaconvert.json"
+    settings.POST_TRANSCODE_ACTIONS = ["videos.api.update_video_job"]
 
 
 @pytest.fixture(autouse=True)

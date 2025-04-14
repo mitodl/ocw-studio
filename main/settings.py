@@ -69,6 +69,7 @@ import_settings_modules(
     "mitol.common.settings.webpack",
     "mitol.mail.settings.email",
     "mitol.authentication.settings.touchstone",
+    "mitol.transcoding.settings.job",
 )
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -516,23 +517,6 @@ OPEN_CATALOG_URLS = get_delimited_list(
     default="",
     description="Open catalog urls",
     required=False,
-)
-VIDEO_S3_TRANSCODE_PREFIX = get_string(
-    name="VIDEO_S3_TRANSCODE_PREFIX",
-    default="aws_mediaconvert_transcodes",
-    description=(
-        "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert"
-    ),
-)
-VIDEO_S3_TRANSCODE_ENDPOINT = get_string(
-    name="VIDEO_S3_TRANSCODE_ENDPOINT",
-    default="aws_mediaconvert_transcodes",
-    description=("Endpoint to be used for AWS MediaConvert"),
-)
-VIDEO_TRANSCODE_QUEUE = get_string(
-    name="VIDEO_TRANSCODE_QUEUE",
-    default="Default",
-    description=("Name of MediaConvert queue to use for transcoding"),
 )
 YT_ACCESS_TOKEN = get_string(
     name="YT_ACCESS_TOKEN", default="", description="Youtube access token"

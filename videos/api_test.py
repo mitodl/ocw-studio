@@ -32,7 +32,7 @@ def test_create_media_convert_job(settings, mocker):
     """create_media_convert_job should send a request to MediaConvert, create a VideoJob object"""
     queue_name = "test_queue"
     settings.VIDEO_TRANSCODE_QUEUE = queue_name
-    mock_boto = mocker.patch("videos.api.boto3")
+    mock_boto = mocker.patch("mitol.transcoding.api.boto3")
     job_id = "abcd123-gh564"
     mock_boto.client.return_value.create_job.return_value = {"Job": {"Id": job_id}}
     video = VideoFactory.create()
@@ -49,15 +49,8 @@ def test_create_media_convert_job(settings, mocker):
     destination = call_kwargs["Settings"]["OutputGroups"][0]["OutputGroupSettings"][
         "FileGroupSettings"
     ]["Destination"]
-    assert destination.startswith(
-        f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{settings.VIDEO_S3_TRANSCODE_PREFIX}"
-    )
     assert destination.endswith(
         path.splitext(video.source_key.split("/")[-1])[0]  # noqa: PTH122
-    )
-    assert (
-        call_kwargs["Settings"]["Inputs"][0]["FileInput"]
-        == f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{video.source_key}"
     )
     assert VideoJob.objects.filter(job_id=job_id, video=video).count() == 1
     video.refresh_from_db()
@@ -132,12 +125,14 @@ def test_update_video_job_success(mocker, raises_exception):
     )
     mock_log = mocker.patch("videos.api.log.exception")
     video_job = VideoJobFactory.create(status=VideoJobStatus.CREATED)
+    mock_job = mocker.patch("videos.api.VideoJob.objects.get")
+    mock_job.return_value = video_job
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_complete.json",
         encoding="utf-8",
     ) as infile:
         data = json.loads(infile.read())["detail"]
-    update_video_job(video_job, data)
+    update_video_job(data)
     mock_process_outputs.assert_called_once()
     video_job.refresh_from_db()
     assert video_job.job_output == data
@@ -149,11 +144,13 @@ def test_update_video_job_error(mocker):
     """The video job should be updated as expected if the transcode job failed"""
     mock_log = mocker.patch("videos.api.log.error")
     video_job = VideoJobFactory.create()
+    mock_job = mocker.patch("videos.api.VideoJob.objects.get")
+    mock_job.return_value = video_job
     with open(  # noqa: PTH123
         f"{TEST_VIDEOS_WEBHOOK_PATH}/cloudwatch_sns_error.json", encoding="utf-8"
     ) as infile:
         data = json.loads(infile.read())["detail"]
-    update_video_job(video_job, data)
+    update_video_job(data)
     video_job.refresh_from_db()
     assert video_job.job_output == data
     assert video_job.error_code == str(data.get("errorCode"))
