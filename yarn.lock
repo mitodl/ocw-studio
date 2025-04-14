@@ -4263,13 +4263,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bootstrap@npm:4":
-  version: 4.6.2
-  resolution: "bootstrap@npm:4.6.2"
+"bootstrap@npm:5":
+  version: 5.3.5
+  resolution: "bootstrap@npm:5.3.5"
   peerDependencies:
-    jquery: 1.9.1 - 3
-    popper.js: ^1.16.1
-  checksum: 3f4e7768ff7d618c49d4bf4f02aa54a9bfb679d4eecb0f3854fa4af1a17b9114b147009c435946432cdd1572efffc71d88ec385c55943a12fa66253cde0876b0
+    "@popperjs/core": ^2.11.8
+  checksum: 2e10f709ae7dc26a28dafb57f29e005b4fbfe8f49878d0d178332993a658cf147df2bac0d0b8ca346e29798ef537ea2f4b176e14fe345198a05a5908022540fb
   languageName: node
   linkType: hard
 
@@ -11172,7 +11171,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^5.59.8
     "@use-it/interval": ^1.0.0
     autoprefixer: 10
-    bootstrap: 4
+    bootstrap: 5
     casual: ^1.6.2
     ckeditor5-math: 35.4.0
     classnames: ^2.3.1
