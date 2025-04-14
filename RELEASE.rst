@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.145.3
+---------------
+
+- Update the detect_unrelated_content management command to add delete option (#2474)
+
 Version 0.145.2 (Released April 08, 2025)
 ---------------
 
