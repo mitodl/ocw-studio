@@ -548,12 +548,23 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY
             )
 
-        online_sync_command = f"""
+        base_urls = []
+        if pipeline_vars["prefix"] != "":
+            base_urls.append(pipeline_vars["prefix"])
+        if pipeline_vars["base_url"] != "":
+            base_urls.append(pipeline_vars["base_url"])
+        base_url = "/".join(base_urls) if len(base_urls) > 0 else ""
+        online_sync_command = rf"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --recursive --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            # Sync directories with --delete, excluding the static_shared directory
+            for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars['web_bucket']}{base_url}$(basename "$dir")" --delete --metadata site-id={pipeline_vars['site_name']}
+            done
+            # Copy only files at the root (exclude directories)
+            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars['web_bucket']}{base_url}" --metadata site-id={pipeline_vars['site_name']} \;
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars['web_bucket']}{base_url}" --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -659,7 +670,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         MP4_COUNT="$(ls -1 ./content/static_resources/*.mp4 2>/dev/null | wc -l)"
         if [ $MP4_COUNT != 0 ];
         then
-        mv ./content/static_resources/*.mp4 ../videos
+        mv ../videos/* ./content/static_resources
         fi
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
