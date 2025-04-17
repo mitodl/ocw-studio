@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.146.0
+---------------
+
+- added transcoding app from mitol and removed transcoding job code (#2421)
+- Update the detect_unrelated_content management command to add delete option (#2474)
+
 Version 0.145.2 (Released April 08, 2025)
 ---------------
 
