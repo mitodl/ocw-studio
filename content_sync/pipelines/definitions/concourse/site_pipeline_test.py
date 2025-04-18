@@ -376,12 +376,30 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     upload_online_build_command = "\n".join(
         upload_online_build_task["config"]["run"]["args"]
     )
+
+    base_url = "/".join(
+        (
+            config.vars["prefix"],
+            config.vars["base_url"],
+        )
+    )
+    # root-website: sync each subdirectory (excluding static_shared) with --delete
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f'for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do'
         in upload_online_build_command
     )
     assert (
-        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f'aws s3{cli_endpoint_url} sync "$dir" "s3://{config.vars["web_bucket"]}{base_url}$(basename "$dir")" --delete --metadata site-id={config.vars["site_name"]}'
+        in upload_online_build_command
+    )
+    # root-website: copy only root-level files
+    assert (
+        f'find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{cli_endpoint_url} cp {{}} "s3://{config.vars["web_bucket"]}{base_url}" --metadata site-id={config.vars["site_name"]} \\;'
+        in upload_online_build_command
+    )
+    # non-root: fallback to a single sync
+    assert (
+        f'aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{config.vars["web_bucket"]}{base_url}"'
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
