@@ -3356,28 +3356,30 @@ files = [
 
 [[package]]
 name = "smart-open"
-version = "6.4.0"
+version = "7.1.0"
 description = "Utils for streaming large files (S3, HDFS, GCS, Azure Blob Storage, gzip, bz2...)"
 optional = false
-python-versions = ">=3.6,<4.0"
+python-versions = "<4.0,>=3.7"
 groups = ["main"]
 files = [
-    {file = "smart_open-6.4.0-py3-none-any.whl", hash = "sha256:8d3ef7e6997e8e42dd55c74166ed21e6ac70664caa32dd940b26d54a8f6b4142"},
-    {file = "smart_open-6.4.0.tar.gz", hash = "sha256:be3c92c246fbe80ebce8fbacb180494a481a77fcdcb7c1aadb2ea5b9c2bee8b9"},
+    {file = "smart_open-7.1.0-py3-none-any.whl", hash = "sha256:4b8489bb6058196258bafe901730c7db0dcf4f083f316e97269c66f45502055b"},
+    {file = "smart_open-7.1.0.tar.gz", hash = "sha256:a4f09f84f0f6d3637c6543aca7b5487438877a21360e7368ccf1f704789752ba"},
 ]
 
 [package.dependencies]
 boto3 = {version = "*", optional = true, markers = "extra == \"s3\""}
+wrapt = "*"
 
 [package.extras]
-all = ["azure-common", "azure-core", "azure-storage-blob", "boto3", "google-cloud-storage (>=2.6.0)", "paramiko", "requests"]
+all = ["azure-common", "azure-core", "azure-storage-blob", "boto3", "google-cloud-storage (>=2.6.0)", "paramiko", "requests", "zstandard"]
 azure = ["azure-common", "azure-core", "azure-storage-blob"]
 gcs = ["google-cloud-storage (>=2.6.0)"]
 http = ["requests"]
 s3 = ["boto3"]
 ssh = ["paramiko"]
-test = ["azure-common", "azure-core", "azure-storage-blob", "boto3", "google-cloud-storage (>=2.6.0)", "moto[server]", "paramiko", "pytest", "pytest-rerunfailures", "requests", "responses"]
+test = ["awscli", "azure-common", "azure-core", "azure-storage-blob", "boto3", "google-cloud-storage (>=2.6.0)", "moto[server]", "numpy", "paramiko", "pyopenssl", "pytest", "pytest-benchmark", "pytest-rerunfailures", "requests", "responses", "zstandard"]
 webhdfs = ["requests"]
+zst = ["zstandard"]
 
 [[package]]
 name = "social-auth-app-django"
@@ -3852,4 +3854,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "07908feccb864cfaff5a4643137e65abab7e3e6958cc04453e5bfb7b0e298665"
+content-hash = "295b469f8b2034b15f2e8e393876ffae427361d7959ebd56a41f61a6418e5c52"
