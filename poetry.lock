@@ -2080,14 +2080,14 @@ toolz = ">=0.10.0"
 
 [[package]]
 name = "mitol-django-transcoding"
-version = "2025.4.8"
+version = "2025.4.10"
 description = "MIT Open Learning Django app extension for Transcoding jobs"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mitol_django_transcoding-2025.4.8-py3-none-any.whl", hash = "sha256:8718de2aa68fd2a1bf87bcb5769b0bfb6d9a1c441f583b805e3c61768b3065c5"},
-    {file = "mitol_django_transcoding-2025.4.8.tar.gz", hash = "sha256:ce339d92d5d308f4356b40450c8871cfd54a42c3b1c708a43b2d90d3e64237b9"},
+    {file = "mitol_django_transcoding-2025.4.10-py3-none-any.whl", hash = "sha256:728921f0508f59a4d7277a9cf3a9d6bb1231aa7ffb37f29b30197c8aa2b062d1"},
+    {file = "mitol_django_transcoding-2025.4.10.tar.gz", hash = "sha256:a0daa465e54dfd6fd6128255343fe680f7dfc43d523e1b27dce086061aa493a1"},
 ]
 
 [package.dependencies]
@@ -3854,4 +3854,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "295b469f8b2034b15f2e8e393876ffae427361d7959ebd56a41f61a6418e5c52"
+content-hash = "f54fc15fb4423c3d4eba5f2eb98a1436e12631e48a989baf1730349e85727614"
