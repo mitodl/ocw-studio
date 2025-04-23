@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.146.0
+Version 0.146.0 (Released April 23, 2025)
 ---------------
 
 - added transcoding app from mitol and removed transcoding job code (#2421)
