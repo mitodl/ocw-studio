@@ -121,8 +121,8 @@ class Command(WebsiteFilterCommand):
                 site_pipeline = api.get_site_pipeline(website)
                 site_pipeline.pause_pipeline(VERSION_LIVE)
                 remove_website_in_root_website(website)
-                update_mass_build_pipelines_on_publish(
-                    version=VERSION_LIVE, website=website
+                update_mass_build_pipelines_on_publish.delay(
+                    version=VERSION_LIVE, website_pk=website.pk
                 )
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
