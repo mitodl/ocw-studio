@@ -1059,14 +1059,14 @@ files = [
 
 [[package]]
 name = "django-safedelete"
-version = "1.4.0"
+version = "1.4.1"
 description = "Mask your objects instead of deleting them from your database."
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "django_safedelete-1.4.0-py3-none-any.whl", hash = "sha256:f722845088c00398711fad8961f044cf18badfecaf541bcc616102f46339adda"},
-    {file = "django_safedelete-1.4.0.tar.gz", hash = "sha256:ce63f2dd101fec303837ef624592628e022691c3ade2a0893c9fc4c7796e8288"},
+    {file = "django_safedelete-1.4.1-py3-none-any.whl", hash = "sha256:c4232445e4ec3a2b72ac9002130377088c8e541bba5a5af4cf8936ec3ff0afde"},
+    {file = "django_safedelete-1.4.1.tar.gz", hash = "sha256:f5919d627519fd6d766a3616ee15554a19e13edcb5f7fb9d86503cd71a6986d0"},
 ]
 
 [package.dependencies]
@@ -3853,4 +3853,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "be9020c32150bc96e79a7fa463d794c63d4a7075924411999f91082c15d2c638"
+content-hash = "8673b93d9466f39680b7838f0e80dca265ad20ac7b25aa54029215079d805766"
