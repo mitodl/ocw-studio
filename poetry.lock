@@ -1205,18 +1205,20 @@ webauthn = ["webauthn (<1.0)"]
 
 [[package]]
 name = "drf-extensions"
-version = "0.7.1"
+version = "0.8.0"
 description = "Extensions for Django REST Framework"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "drf-extensions-0.7.1.tar.gz", hash = "sha256:90abfc11a2221e8daf4cd54457e41ed38cd71134678de9622e806193db027db1"},
-    {file = "drf_extensions-0.7.1-py2.py3-none-any.whl", hash = "sha256:007910437e64aa1d5ad6fc47266a4ac4280e31761e6458eb30fcac7494ac7d4e"},
+    {file = "drf_extensions-0.8.0-py2.py3-none-any.whl", hash = "sha256:ab7bd854c9061c27ab55233b66d758001e5c2d81aaa9d117cbbe1c9ea49c77ab"},
+    {file = "drf_extensions-0.8.0.tar.gz", hash = "sha256:c3f27bca74a2def53e8454a5c7b327595195df51e121743120b2f51ef5a52aaa"},
 ]
 
 [package.dependencies]
-djangorestframework = ">=3.9.3"
+Django = ">=2.2,<6.0"
+djangorestframework = ">=3.10.3"
+packaging = ">=24.1"
 
 [[package]]
 name = "executing"
@@ -3826,4 +3828,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "b953d0d5f135def4557142e4037a4da69024d79e7d184f27000d7a8d075d087c"
+content-hash = "dcb9b2a92272fe6b1322f7bc51c7661502a599f5287b53d114e4c708b8d64113"
