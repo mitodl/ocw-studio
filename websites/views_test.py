@@ -406,7 +406,7 @@ def test_websites_endpoint_publish_with_url_blank_error(drf_client, action):
     assert response.json() == {"url_path": ["The URL path cannot be blank"]}
 
 
-def test_websites_endpoint_unpublish(mocker, drf_client):
+def test_websites_endpoint_unpublish(drf_client, mocker):
     """A user with admin permissions should be able to request a website unpublish"""
     mock_unpublished_removal = mocker.patch(
         "websites.views.trigger_unpublished_removal"
@@ -414,6 +414,7 @@ def test_websites_endpoint_unpublish(mocker, drf_client):
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
+    mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
@@ -429,9 +430,10 @@ def test_websites_endpoint_unpublish(mocker, drf_client):
     assert website.last_unpublished_by == admin
 
 
-def test_websites_endpoint_unpublish_denied(drf_client):
+def test_websites_endpoint_unpublish_denied(drf_client, mocker):
     """A user with edit permissions should not be able to request a website unpublish"""
     website = WebsiteFactory.create()
+    mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
     editor = UserFactory.create()
     editor.groups.add(website.editor_group)
     drf_client.force_login(editor)
@@ -444,13 +446,14 @@ def test_websites_endpoint_unpublish_denied(drf_client):
     }
 
 
-def test_websites_endpoint_unpublish_error(mocker, drf_client):
+def test_websites_endpoint_unpublish_error(drf_client, mocker):
     """An exception raised by the api publish call should be handled gracefully"""
     mocker.patch(
         "websites.views.trigger_unpublished_removal",
         side_effect=[HTTPError("oops")],
     )
     website = WebsiteFactory.create()
+    mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
