@@ -113,9 +113,10 @@ def test_sync_website_content_not_exists(api_mock, log_mock):
     api_mock.get_sync_backend.assert_not_called()
 
 
-def test_update_mass_build_pipelines(api_mock):
+def test_update_mass_build_pipelines(api_mock, mocker):
     """Verify that mass_build_sites pipelines are upserted under the proper conditions"""
     website = WebsiteFactory.create()
+    mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
     fake_date = factory.Faker("date_time", tzinfo=pytz.utc)
     website.draft_publish_date = None
     website.publish_date = None
