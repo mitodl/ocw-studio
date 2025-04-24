@@ -460,7 +460,6 @@ def test_websites_endpoint_unpublish_error(drf_client, mocker):
     resp = drf_client.post(
         reverse("websites_api-unpublish", kwargs={"name": website.name})
     )
-    assert True
     assert resp.status_code == 500
     assert resp.data == {"details": "oops"}
 
