@@ -10457,9 +10457,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mini-css-extract-plugin@npm:^0.10.0":
-  version: 0.10.1
-  resolution: "mini-css-extract-plugin@npm:0.10.1"
+"mini-css-extract-plugin@npm:^0.12.0":
+  version: 0.12.0
+  resolution: "mini-css-extract-plugin@npm:0.12.0"
   dependencies:
     loader-utils: ^1.1.0
     normalize-url: 1.9.1
@@ -10467,7 +10467,7 @@ __metadata:
     webpack-sources: ^1.1.0
   peerDependencies:
     webpack: ^4.4.0 || ^5.0.0
-  checksum: 302b9a6f287f415dacf26dd8375f11b8293cbebd03861133f482cbfa01111f1ecf3d298a96e5fa3d13a775469311739bf08d5b4965285b5c4d2bd3a82432f54a
+  checksum: 0a7744667c5a85423b7e335418299e6ac5cbd855fe37048fb487a5b1af46c7d41b85bfee0e20d1dd59598396ede8bd87da75a6f1758ae6fd4e8b65d58cc52732
   languageName: node
   linkType: hard
 
@@ -11157,7 +11157,7 @@ __metadata:
     lodash: ^4.17.21
     luxon: ^3.2.1
     mathjax: ^3.2.2
-    mini-css-extract-plugin: ^0.10.0
+    mini-css-extract-plugin: ^0.12.0
     pluralize: ^8.0.0
     postcss-loader: ^6.1.1
     posthog-js: ^1.160.1
