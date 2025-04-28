@@ -670,7 +670,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         MP4_COUNT="$(ls -1 ./content/static_resources/*.mp4 2>/dev/null | wc -l)"
         if [ $MP4_COUNT != 0 ];
         then
-        mv ../videos/* ./content/static_resources
+        mv ./content/static_resources/*.mp4 ../videos
         fi
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
