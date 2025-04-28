@@ -1,6 +1,32 @@
 Release Notes
 =============
 
+Version 0.146.1
+---------------
+
+- extract MP4s from static_resources before Hugo build (#2553)
+- fix(deps): update dependency sentry-sdk to v2.27.0 (#2507)
+- fix(deps): update dependency pygithub to v2.6.1 (#2505)
+- fix(deps): update dependency mini-css-extract-plugin to ^0.12.0 (#2504)
+- fix(deps): update dependency drf-extensions to ^0.8.0 (#2503)
+- fix(deps): update dependency djangorestframework to v3.16.0 (#2502)
+- chore(deps): update postgres docker tag to v16.8 (#2500)
+- Add S3 sync to enable content deletion for root website (#2479)
+- chore(deps): update node.js to v22.15.0 (#2499)
+- chore(deps): update dependency pdbpp to ^0.11.0 (#2497)
+- fix(deps): update dependency django-storages to v1.14.6 (#2494)
+- fix(deps): update dependency django-safedelete to v1.4.1 (#2493)
+- chore(deps): update concourse/concourse docker tag to v7.13 (#2496)
+- fix(deps): update dependency eslint to v8 (#2225)
+- chore(deps): update dependency faker to v37 (#2486)
+- fix(deps): update dependency mitol-django-transcoding to v2025.4.10 (#2485)
+- chore(deps): update actions/setup-python digest to 8d9ed9a (#2481)
+- chore(deps): update actions/setup-node digest to 49933ea (#2480)
+- fix(deps): update dependency smart-open to v7 (#2463)
+- chore(deps): update redis docker tag to v6.2.17 (#2483)
+- chore(deps): update nginx docker tag to v1.27.5 (#2482)
+- fix(deps): update dependency sinon to v20 (#2484)
+
 Version 0.146.0 (Released April 23, 2025)
 ---------------
 
