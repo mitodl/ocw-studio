@@ -199,7 +199,9 @@ def publish_website(  # pylint: disable=too-many-arguments
         raise
     finally:
         Website.objects.filter(name=name).update(**update_kwargs)
-        tasks.update_mass_build_pipelines_on_publish(version=version, website=website)
+        tasks.update_mass_build_pipelines_on_publish.delay(
+            version=version, website_pk=website.pk
+        )
 
 
 def throttle_git_backend_calls(backend: object, min_delay: Optional[int] = None):

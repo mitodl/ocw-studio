@@ -26,6 +26,7 @@ from content_sync.api import (
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.tasks import update_mass_build_pipelines_on_publish
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
@@ -296,11 +297,13 @@ class WebsiteViewSet(
                     },
                 )
             else:
-                Website.objects.filter(pk=website.pk).update(
-                    unpublish_status=PUBLISH_STATUS_NOT_STARTED,
-                    last_unpublished_by=request.user,
-                )
+                website.unpublish_status = PUBLISH_STATUS_NOT_STARTED
+                website.last_unpublished_by = request.user
+                website.save()
                 trigger_unpublished_removal(website)
+                update_mass_build_pipelines_on_publish.delay(
+                    version=VERSION_LIVE, website_pk=website.pk
+                )
                 return Response(
                     status=200,
                     data="The site has been submitted for unpublishing.",
