@@ -6,7 +6,7 @@ import re
 import pytest
 import yaml
 from django.core.files.uploadedfile import SimpleUploadedFile
-from moto import mock_s3
+from moto import mock_aws
 
 from content_sync.serializers import (
     BaseContentFileSerializer,
@@ -103,7 +103,7 @@ def get_example_menu_data():
     ]
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     ("markdown", "exp_sections"),
@@ -240,7 +240,7 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
     }
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.django_db()
 def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""

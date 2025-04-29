@@ -9,7 +9,7 @@ import pytest
 import pytz
 from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
-from moto import mock_s3
+from moto import mock_aws
 
 from gdrive_sync.api import create_gdrive_resource_content
 from gdrive_sync.constants import (
@@ -497,7 +497,7 @@ def test_mail_youtube_upload_success_trigger(mocker, youtube_status, file_status
     assert mock_mail_success.call_count == (1 if should_email else 0)
 
 
-@mock_s3
+@mock_aws
 def test_delete_s3_objects(settings):
     """Test that s3 objects are deleted"""
     settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME

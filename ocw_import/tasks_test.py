@@ -1,7 +1,7 @@
 """Tests for ocw_import.tasks"""
 
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 
 from ocw_import.conftest import MOCK_BUCKET_NAME, TEST_OCW2HUGO_PREFIX, setup_s3
 from ocw_import.tasks import (
@@ -79,7 +79,7 @@ def test_update_ocw2hugo_course_paths(mocker, paths, create_new_content):
             )
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize(
     ("chunk_size", "filter_list", "limit", "call_count"),
     [
@@ -113,7 +113,7 @@ def test_import_ocw2hugo_courses(  # noqa: PLR0913
     assert mock_import_paths.call_count == call_count
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_courses_no_bucket(settings, mocker):
     """import_ocw2hugo_courses should throw an error if a bucket is not specified"""
     setup_s3(settings)
@@ -145,7 +145,7 @@ def test_import_ocw2hugo_courses_no_filter(mocker):
     assert mock_import_paths.call_count == 0
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize(
     ("chunk_size", "filter_list", "limit", "call_count"),
     [

@@ -2,7 +2,7 @@
 
 import pytest
 from django.core.files import File
-from moto import mock_s3
+from moto import mock_aws
 
 from gdrive_sync.conftest import setup_s3_test_file_bucket
 from gdrive_sync.factories import DriveFileFactory
@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
-@mock_s3
+@mock_aws
 def test_fetch_drive_file_size_with_key(settings):
     """fetch_drive_file_size should return file size on s3."""
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"
@@ -34,7 +34,7 @@ def test_fetch_drive_file_size_without_key(mocker):
     assert result is None
 
 
-@mock_s3
+@mock_aws
 def test_fetch_content_file_size_from_s3(settings):
     """fetch_content_file_size should return file size on s3 for content."""
     settings.AWS_STORAGE_BUCKET_NAME = "storage_bucket"

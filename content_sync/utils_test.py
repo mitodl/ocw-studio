@@ -4,7 +4,7 @@ import os
 
 import pytest
 from botocore.exceptions import ClientError
-from moto import mock_s3
+from moto import mock_aws
 
 from content_sync.constants import (
     DEV_END,
@@ -165,7 +165,7 @@ def test_get_destination_filepath(is_page_content, dirpath, filename, expected):
     )
 
 
-@mock_s3
+@mock_aws
 def test_move_s3_object(settings):
     """S3 key for a moved object should be changed as expected"""
     settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME

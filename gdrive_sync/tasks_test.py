@@ -2,7 +2,7 @@
 
 import pytest
 from mitol.common.utils import now_in_utc
-from moto import mock_s3
+from moto import mock_aws
 
 from gdrive_sync import tasks
 from gdrive_sync.conftest import LIST_FILE_RESPONSES
@@ -276,7 +276,7 @@ def test_delete_drive_file(mocker):
     )
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize("override_existing", [True, False])
 def test_populate_file_sizes_for_content(settings, mocker, override_existing):
     """populate_file_sizes should populate file sizes for website's content."""
@@ -313,7 +313,7 @@ def test_populate_file_sizes_for_content(settings, mocker, override_existing):
         )
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize("override_existing", [True, False])
 def test_populate_file_sizes_for_drive_file(settings, mocker, override_existing):
     """populate_file_sizes should populate file sizes for drive files associated with content."""

@@ -5,7 +5,7 @@ import re
 from unittest.mock import Mock, patch
 
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 
 from ocw_import.api import (
     get_learning_resource_types,
@@ -41,7 +41,7 @@ pytestmark = pytest.mark.django_db
 TEST_OCW2HUGO_PATH = get_ocw2hugo_path("./test_ocw2hugo")
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_course_content(mocker, settings):
     """import_ocw2hugo_course should create a new website plus content"""
     setup_s3(settings)
@@ -128,7 +128,7 @@ def test_import_ocw2hugo_course_content(mocker, settings):
     ).exists()
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_sitemetadata_legacy(settings, root_website):
     """Make sure we handle importing levels, term, and year in a legacy format"""
     setup_s3(settings)
@@ -152,7 +152,7 @@ def test_import_ocw2hugo_sitemetadata_legacy(settings, root_website):
     )  # this was added later but we should not break on older legacy course JSON files
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_course_metadata(settings, root_website):
     """import_ocw2hugo_course should also populate site metadata"""
     setup_s3(settings)
@@ -233,7 +233,7 @@ def test_import_ocw2hugo_course_metadata(settings, root_website):
     }
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize("gdrive_enabled", [True, False])
 def test_import_ocw2hugo_course_gdrive(mocker, settings, gdrive_enabled):
     """Google drive folders should be created if integration is enabled"""
@@ -252,7 +252,7 @@ def test_import_ocw2hugo_course_gdrive(mocker, settings, gdrive_enabled):
         mock_sync_gdrive.assert_not_called()
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_course_bad_date(mocker, settings):
     """Website publish date should be null if the JSON date can't be parsed"""
     setup_s3(settings)
@@ -264,7 +264,7 @@ def test_import_ocw2hugo_course_bad_date(mocker, settings):
     assert website.publish_date is None
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_course_noncourse(settings):
     """Website should not be created for a non-course"""
     setup_s3(settings)
@@ -274,7 +274,7 @@ def test_import_ocw2hugo_course_noncourse(settings):
     assert Website.objects.filter(name=name).count() == 0
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_course_log_exception(mocker, settings):
     """Log an exception if the website cannot be saved/updated"""
     setup_s3(settings)
@@ -287,7 +287,7 @@ def test_import_ocw2hugo_course_log_exception(mocker, settings):
     mock_log.assert_called_once_with("Error saving website %s", s3_key)
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_content_log_exception(mocker, settings):
     """Log an exception if the website content cannot be saved/updated"""
     setup_s3(settings)
@@ -338,7 +338,7 @@ def test_get_short_id(course_num, term, year, expected_id):
             get_short_id("random-name", metadata)
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_menu(settings, mocker):
     """Website publish date should be null if the JSON date can't be parsed"""
     uuid4_hex = "a" * 32
@@ -390,7 +390,7 @@ def test_import_ocw2hugo_menu(settings, mocker):
     }
 
 
-@mock_s3
+@mock_aws
 def test_import_ocw2hugo_video_gallery(mocker, settings):
     """Website publish date should be null if the JSON date can't be parsed"""
     setup_s3(settings)
@@ -404,7 +404,7 @@ def test_import_ocw2hugo_video_gallery(mocker, settings):
     assert video_lectures.type == "video_gallery"
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize("website_exists", [True, False])
 def test_update_ocw2hugo_course(mocker, website_exists):
     """Test update_ocw2hugo_course"""
@@ -481,7 +481,7 @@ def test_get_learning_resource_types(content_json, resource_types):
     assert result == resource_types
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize("content_exists", [True, False])
 @pytest.mark.parametrize(
     "update_field",
