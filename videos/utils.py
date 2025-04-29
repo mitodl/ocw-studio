@@ -45,7 +45,7 @@ def fetch_and_update_content(
 ):
     """
     Fetch captions/transcripts via 3play and either attach them to the video
-    metadata or record them as missing. Mutates `summary` and `missing_results_cont`.
+    metadata or record them as missing.
     """
     youtube_id = video.metadata["video_metadata"]["youtube_id"]
     threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
