@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.146.1
+Version 0.146.1 (Released April 29, 2025)
 ---------------
 
 - extract MP4s from static_resources before Hugo build (#2553)
