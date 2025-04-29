@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.146.2
+---------------
+
+- chore(deps): update dependency moto to v5 (#2487)
+- regenerate mass build pipeline on site unpublish from UI (#2550)
+
 Version 0.146.1 (Released April 29, 2025)
 ---------------
 
