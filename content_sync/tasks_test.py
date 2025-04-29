@@ -10,7 +10,7 @@ from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import now_in_utc
-from moto import mock_s3
+from moto import mock_aws
 from pytest import fixture  # noqa: PT013
 from requests import HTTPError
 
@@ -840,7 +840,7 @@ def test_remove_website_in_root_website(api_mock):
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_any_call()
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize(
     "prefix", ["a/prefix", "a/prefix/", "/a/prefix", "/a/prefix/", ""]
 )

@@ -7,7 +7,7 @@ import pytest
 from botocore.exceptions import ClientError
 from googleapiclient.http import MediaDownloadProgress
 from mitol.common.utils import now_in_utc
-from moto import mock_s3
+from moto import mock_aws
 from requests import HTTPError
 
 from gdrive_sync import api
@@ -301,7 +301,7 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
         )
 
 
-@mock_s3
+@mock_aws
 @pytest.mark.parametrize(
     ("filename", "in_file_dir", "mimetype", "expected_type"),
     [
