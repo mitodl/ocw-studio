@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.146.2
+Version 0.146.2 (Released April 29, 2025)
 ---------------
 
 - chore(deps): update dependency moto to v5 (#2487)
