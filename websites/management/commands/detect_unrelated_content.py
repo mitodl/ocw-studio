@@ -52,8 +52,9 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         """
         Handle the command execution
-        :param args: Positional arguments
-        :param options: Keyword arguments
+        Args:
+            *args: Positional arguments
+            **options: Keyword arguments
         """
 
         super().handle(*args, **options)
