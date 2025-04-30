@@ -50,6 +50,12 @@ class Command(WebsiteFilterCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        Handle the command execution
+        :param args: Positional arguments
+        :param options: Keyword arguments
+        """
+
         super().handle(*args, **options)
 
         websites = self.filter_websites(websites=Website.objects.all())
@@ -76,10 +82,14 @@ class Command(WebsiteFilterCommand):
                     wc.removeprefix("/") for wc in website_content_files if wc
                 }
 
+                # Include files referenced in video metadata
+                self._add_video_metadata_files(
+                    website, normalized_website_content_files
+                )
+
                 unrelated_website_files = list(
                     s3_file_keys - normalized_website_content_files
                 )
-
                 if unrelated_website_files:
                     unrelated_files_count += len(unrelated_website_files)
                     unrelated_files_by_site[website.name] = unrelated_website_files
@@ -151,3 +161,31 @@ class Command(WebsiteFilterCommand):
             )
         else:
             self.stdout.write(content)
+
+    def _add_video_metadata_files(self, website, normalized_files):
+        """
+        Add files referenced in video_files metadata to the set of known files.
+
+        Args:
+            website: The website to check for video metadata
+            normalized_files: Set of normalized file paths to add to
+        """
+
+        video_metadata_fields = [
+            "video_thumbnail_file",
+            "video_captions_file",
+            "video_transcript_file",
+        ]
+
+        video_entries = WebsiteContent.objects.filter(
+            website=website, metadata__video_files__isnull=False
+        ).values_list("metadata__video_files", flat=True)
+
+        for entry in video_entries:
+            if not entry:
+                continue
+
+            for field in video_metadata_fields:
+                file_path = entry.get(field)
+                if file_path and not file_path.startswith("http"):
+                    normalized_files.add(file_path.removeprefix("/"))
