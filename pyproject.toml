@@ -61,7 +61,7 @@ mitol-django-transcoding = "2025.4.23"
 [tool.poetry.group.dev.dependencies]
 bpython = "^0.25"
 ddt = "^1.6.0"
-django-debug-toolbar = "^4.1.0"
+django-debug-toolbar = "^5.0.0"
 factory-boy = "^3.3.0"
 faker = "^37.0.0"
 ipdb = "^0.13.13"
