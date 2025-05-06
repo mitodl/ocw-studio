@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.147.0
+---------------
+
+- chore(deps): update dependency django-debug-toolbar to v5 (#2508)
+- chore(deps): update actions/setup-python digest to a26af69 (#2557)
+- fix(deps): update dependency mitol-django-transcoding to v2025.4.23 (#2558)
+- fix(deps): update dependency eslint-config-prettier to v10 (#2523)
+- fix(deps): update dependency mitol-django-authentication to v2025 (#2529)
+- fix(deps): update dependency mini-css-extract-plugin to v2 (#2528)
+- fix(deps): update dependency django-anymail to v13 (#2491)
+- fix(deps): update dependency eslint-config-mitodl to v2 (#2522)
+- fix(deps): update dependency postcss-loader to v7 (#2531)
+
 Version 0.146.2 (Released April 29, 2025)
 ---------------
 
