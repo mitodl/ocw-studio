@@ -437,7 +437,7 @@ def test_upsert_content_files_for_user_update_checksum(
     ("field", "value"),
     [
         ["markdown", "NEW"],  # noqa: PT007
-        ["metadata", '{"foo": 2}'],  # noqa: PT007
+        ["metadata", {"foo": 2}],  # noqa: PT007
         ["dirpath", "brand/new/dirpath"],  # noqa: PT007
         ["filename", "brand-new-test-case-filename"],  # noqa: PT007
     ],
