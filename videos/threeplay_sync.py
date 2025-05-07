@@ -109,7 +109,7 @@ def sync_video_captions_and_transcripts(
         or len(threeplay_transcript_json.get("data")) == 0
         or threeplay_transcript_json.get("data")[0].get("status") != "complete"
     ):
-        if missing_results is not None:
+        if missing_results:
             missing_results["count"] += 1
         stdout_write(
             "Captions and transcripts not found for video %s, course %s",
