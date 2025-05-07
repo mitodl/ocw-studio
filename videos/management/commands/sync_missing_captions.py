@@ -3,9 +3,7 @@
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
-from videos.utils import (
-    fetch_and_update_content,
-)
+from videos.threeplay_sync import sync_video_captions_and_transcripts
 from websites.models import WebsiteContent
 
 
@@ -54,7 +52,7 @@ class Command(WebsiteFilterCommand):
 
         for video in content_videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
-            fetch_and_update_content(
+            sync_video_captions_and_transcripts(
                 video,
                 self.transcript_base_url,
                 self.summary,
