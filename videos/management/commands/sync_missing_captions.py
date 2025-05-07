@@ -34,6 +34,9 @@ class Command(WebsiteFilterCommand):
         }
 
     def handle(self, *args, **options):
+        def write_stdout(msg: str, *args) -> None:
+            self.stdout.write(msg % args)
+
         super().handle(*args, **options)
 
         content_videos = WebsiteContent.objects.filter(
@@ -56,7 +59,7 @@ class Command(WebsiteFilterCommand):
                 self.transcript_base_url,
                 self.summary,
                 self.missing_results,
-                self.stdout.write,
+                stdout_write=write_stdout,
             )
 
         for item_type, details in self.summary.items():

@@ -3,6 +3,7 @@ A collection of helper functions for generating s3 file paths and filenames.
 This module provides several utility functions that simplify the task of working with file path and name generation
 """  # noqa: E501
 
+import logging
 import os
 import re
 from copy import deepcopy
@@ -16,6 +17,8 @@ from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from websites.models import Website, WebsiteContent, WebsiteStarter
+
+log = logging.getLogger()
 
 extension_map = {
     "vtt": {
@@ -36,12 +39,69 @@ extension_map = {
 }
 
 
+def _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_write):
+    if video.metadata["video_files"].get("video_transcript_file"):
+        return
+
+    pdf_url = base_url + f"&format_id={PDF_FORMAT_ID}"
+    pdf_response = fetch_file(pdf_url)
+
+    if summary:
+        summary["transcripts"]["total"] += 1
+
+    if pdf_response:
+        pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
+        filepath = _create_new_content(pdf_file, video)
+        video.metadata["video_files"]["video_transcript_file"] = filepath
+
+        if summary:
+            summary["transcripts"]["updated"] += 1
+
+        stdout_write(
+            "Transcript updated for video, %s and course %s",
+            video.title,
+            video.website.short_id,
+        )
+    elif summary:
+        summary["transcripts"]["missing"] += 1
+        summary["transcripts"]["missing_details"].append(
+            (youtube_id, video.website.short_id)
+        )
+
+
+def _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_write):
+    if video.metadata["video_files"].get("video_captions_file"):
+        return
+
+    webvtt_url = base_url + f"&format_id={WEBVTT_FORMAT_ID}"
+    webvtt_response = fetch_file(webvtt_url)
+    if summary:
+        summary["captions"]["total"] += 1
+
+    if webvtt_response:
+        vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
+        new_filepath = _create_new_content(vtt_file, video)
+        video.metadata["video_files"]["video_captions_file"] = new_filepath
+        if summary:
+            summary["captions"]["updated"] += 1
+        stdout_write(
+            "Captions updated for video, %s and course %s",
+            video.title,
+            video.website.short_id,
+        )
+    elif summary:
+        summary["captions"]["missing"] += 1
+        summary["captions"]["missing_details"].append(
+            (youtube_id, video.website.short_id)
+        )
+
+
 def fetch_and_update_content(
     video,
     transcript_base_url: str,
-    summary: dict,
-    missing_results: dict,
-    stdout_write: callable,
+    summary: dict | None = None,
+    missing_results: dict | None = None,
+    stdout_write=None,
 ):
     """
     Fetch captions/transcripts via 3play and either attach them to the video
@@ -49,70 +109,34 @@ def fetch_and_update_content(
     """
     youtube_id = video.metadata["video_metadata"]["youtube_id"]
     threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
-
+    if stdout_write is None:
+        stdout_write = log.info
     if (
         not threeplay_transcript_json.get("data")
         or len(threeplay_transcript_json.get("data")) == 0
         or threeplay_transcript_json.get("data")[0].get("status") != "complete"
     ):
-        missing_results["count"] += 1
+        if missing_results is not None:
+            missing_results["count"] += 1
         stdout_write(
-            f"Captions and transcripts not found in 3play for video, {video.title} and course {video.website.short_id}"  # noqa: E501
+            "Captions and transcripts not found for video %s, course %s",
+            video.title,
+            video.website.short_id,
         )
         return
 
     transcript_id = threeplay_transcript_json["data"][0].get("id")
     media_file_id = threeplay_transcript_json["data"][0].get("media_file_id")
-
+    base_url = transcript_base_url.format(
+        media_file_id=media_file_id,
+        transcript_id=transcript_id,
+        project_id=settings.THREEPLAY_PROJECT_ID,
+    )
     # If transcript does not exist
-    if not video.metadata["video_files"]["video_transcript_file"]:
-        url = transcript_base_url.format(
-            media_file_id=media_file_id,
-            transcript_id=transcript_id,
-            project_id=settings.THREEPLAY_PROJECT_ID,
-        )
-        pdf_url = url + f"&format_id={PDF_FORMAT_ID}"
-        pdf_response = fetch_file(pdf_url)
-        summary["transcripts"]["total"] += 1
-
-        if pdf_response:
-            pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-            new_filepath = _create_new_content(pdf_file, video)
-            video.metadata["video_files"]["video_transcript_file"] = new_filepath
-            summary["transcripts"]["updated"] += 1
-            stdout_write(
-                f"Transcript updated for video, {video.title} and course {video.website.short_id}"  # noqa: E501
-            )
-        else:
-            summary["transcripts"]["missing"] += 1
-            summary["transcripts"]["missing_details"].append(
-                (youtube_id, video.website.short_id)
-            )
+    _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_write)
 
     # If captions does not exist
-    if not video.metadata["video_files"]["video_captions_file"]:
-        url = transcript_base_url.format(
-            media_file_id=media_file_id,
-            transcript_id=transcript_id,
-            project_id=settings.THREEPLAY_PROJECT_ID,
-        )
-        webvtt_url = url + f"&format_id={WEBVTT_FORMAT_ID}"
-        webvtt_response = fetch_file(webvtt_url)
-        summary["captions"]["total"] += 1
-
-        if webvtt_response:
-            vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-            new_filepath = _create_new_content(vtt_file, video)
-            video.metadata["video_files"]["video_captions_file"] = new_filepath
-            summary["captions"]["updated"] += 1
-            stdout_write(
-                f"Captions updated for video, {video.title} and course {video.website.short_id}"  # noqa: E501
-            )
-        else:
-            summary["captions"]["missing"] += 1
-            summary["captions"]["missing_details"].append(
-                (youtube_id, video.website.short_id)
-            )
+    _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_write)
     video.save()
 
 
