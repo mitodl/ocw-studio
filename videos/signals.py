@@ -5,7 +5,7 @@ from django.dispatch import receiver
 
 from videos.models import Video, VideoFile
 from videos.tasks import delete_s3_objects
-from videos.utils import fetch_and_update_content
+from videos.threeplay_sync import sync_video_captions_and_transcripts
 from websites.models import WebsiteContent
 
 
@@ -65,4 +65,4 @@ def sync_missing_caption(
             "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
             "{transcript_id}?project_id={project_id}"
         )
-        fetch_and_update_content(instance, transcript_base_url)
+        sync_video_captions_and_transcripts(instance, transcript_base_url)
