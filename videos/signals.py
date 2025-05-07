@@ -61,8 +61,4 @@ def sync_missing_caption(
         and video_metadata.get("source") == "youtube"
     ):
         _ALREADY_PROCESSED.add(instance.pk)
-        transcript_base_url = (
-            "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
-            "{transcript_id}?project_id={project_id}"
-        )
-        sync_video_captions_and_transcripts(instance, transcript_base_url)
+        sync_video_captions_and_transcripts(instance)

@@ -14,10 +14,6 @@ class Command(WebsiteFilterCommand):
 
     def __init__(self):
         super().__init__()
-        self.transcript_base_url = (
-            "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
-            "{transcript_id}?project_id={project_id}"
-        )
 
         self.missing_results = {"count": 0}
         summary_boilerplate = {
@@ -54,7 +50,6 @@ class Command(WebsiteFilterCommand):
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             sync_video_captions_and_transcripts(
                 video,
-                self.transcript_base_url,
                 self.summary,
                 self.missing_results,
                 stdout_write=write_stdout,

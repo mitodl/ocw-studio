@@ -13,6 +13,11 @@ from websites.models import WebsiteContent
 
 log = logging.getLogger()
 
+transcript_base_url = (
+    "https://static.3playmedia.com/p/files/{media_file_id}/threeplay_transcripts/"
+    "{transcript_id}?project_id={project_id}"
+)
+
 extension_map = {
     "vtt": {
         "ext": "captions",
@@ -91,7 +96,6 @@ def _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_wri
 
 def sync_video_captions_and_transcripts(
     video,
-    transcript_base_url: str,
     summary: dict | None = None,
     missing_results: dict | None = None,
     stdout_write=None,
