@@ -50,6 +50,13 @@ class Command(WebsiteFilterCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        Handle the command execution
+        Args:
+            *args: Positional arguments
+            **options: Keyword arguments
+        """
+
         super().handle(*args, **options)
 
         websites = self.filter_websites(websites=Website.objects.all())
@@ -69,17 +76,11 @@ class Command(WebsiteFilterCommand):
                 s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
             )
             if s3_file_keys:
-                website_content_files = WebsiteContent.objects.filter(
-                    website=website, file__isnull=False
-                ).values_list("file", flat=True)
-                normalized_website_content_files = {
-                    wc.removeprefix("/") for wc in website_content_files if wc
-                }
+                normalized_website_content_files = self._filter_unrelated_files(website)
 
                 unrelated_website_files = list(
                     s3_file_keys - normalized_website_content_files
                 )
-
                 if unrelated_website_files:
                     unrelated_files_count += len(unrelated_website_files)
                     unrelated_files_by_site[website.name] = unrelated_website_files
@@ -151,3 +152,39 @@ class Command(WebsiteFilterCommand):
             )
         else:
             self.stdout.write(content)
+
+    def _filter_unrelated_files(self, website):
+        """
+        Get all files referenced in content and video metadata.
+
+        Args:
+            website: The website to check for content
+
+        Returns:
+            normalized_files: Set of normalized file paths
+        """
+        video_metadata_fields = [
+            "video_thumbnail_file",
+            "video_captions_file",
+            "video_transcript_file",
+        ]
+
+        website_contents = WebsiteContent.objects.filter(
+            website=website, file__isnull=False
+        ).values_list("file", "metadata__video_files")
+
+        normalized_files = set()
+
+        for file, video_files in website_contents:
+            if file:
+                normalized_files.add(file.removeprefix("/"))
+
+            if video_files:
+                paths = {
+                    video_files[field].removeprefix("/")
+                    for field in video_metadata_fields
+                    if video_files.get(field)
+                }
+                normalized_files.update(paths)
+
+        return normalized_files
