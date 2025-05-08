@@ -62,6 +62,28 @@ const formatDateTime = (dateTimeString: string): string => {
   })
 }
 
+const StatusWithDateHover = ({
+  statusText,
+  dateTime,
+  className,
+}: {
+  statusText: string
+  dateTime: string
+  className: string
+}) => {
+  const [showDate, setShowDate] = useState(false)
+
+  return (
+    <div
+      className={className}
+      onMouseEnter={() => setShowDate(true)}
+      onMouseLeave={() => setShowDate(false)}
+    >
+      {showDate ? `${statusText} at (${formatDateTime(dateTime)})` : statusText}
+    </div>
+  )
+}
+
 export default function SitesDashboard(): JSX.Element {
   const [websiteToUnpublish, setWebsiteToUnpublish] =
     useState<WebsiteInitials | null>(null)
@@ -130,42 +152,27 @@ export default function SitesDashboard(): JSX.Element {
                 {!site.publish_date && !site.live_publish_status ? (
                   <div className="text-danger">Never Published</div>
                 ) : site.unpublished ? (
-                  <div
+                  <StatusWithDateHover
+                    statusText="Unpublished from Production"
+                    dateTime={site.updated_on}
                     className="text-dark"
-                    title={`Unpublished from Production at ${formatDateTime(
-                      site.updated_on,
-                    )}`}
-                  >
-                    Unpublished from Production
-                  </div>
+                  />
                 ) : site.draft_publish_date && !site.publish_date ? (
                   <div className="text-secondary">Draft</div>
                 ) : PublishStatus.Success === site.live_publish_status ? (
-                  <div
+                  <StatusWithDateHover
+                    statusText="Published"
+                    dateTime={site.updated_on}
                     className="text-success"
-                    title={`${publishStatusMessage(
-                      site.live_publish_status?.replace(
-                        "...",
-                        "",
-                      ) as PublishStatus,
-                    )} at ${formatDateTime(site.updated_on)}`}
-                  >
-                    Published
-                  </div>
+                  />
                 ) : (
-                  <div
+                  <StatusWithDateHover
+                    statusText={publishStatusMessage(site.live_publish_status)}
+                    dateTime={site.updated_on}
                     className={publishStatusIndicatorClass(
                       site.live_publish_status,
                     )}
-                    title={`${publishStatusMessage(
-                      site.live_publish_status?.replace(
-                        "...",
-                        "",
-                      ) as PublishStatus,
-                    )} at ${formatDateTime(site.updated_on)}`}
-                  >
-                    {publishStatusMessage(site.live_publish_status)}
-                  </div>
+                  />
                 )}
                 <Dropdown
                   website={{
