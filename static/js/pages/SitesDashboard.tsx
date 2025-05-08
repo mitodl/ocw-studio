@@ -118,7 +118,12 @@ export default function SitesDashboard(): JSX.Element {
                 {!site.publish_date && !site.live_publish_status ? (
                   <div className="text-danger">Never Published</div>
                 ) : site.unpublished ? (
-                  <div className="text-dark">Unpublished from Production</div>
+                  <div
+                    className="text-dark"
+                    title={`Unpublished from Production at ${site.updated_on.slice()}`}
+                  >
+                    Unpublished from Production
+                  </div>
                 ) : site.draft_publish_date && !site.publish_date ? (
                   <div className="text-secondary">Draft</div>
                 ) : PublishStatus.Success === site.live_publish_status ? (
