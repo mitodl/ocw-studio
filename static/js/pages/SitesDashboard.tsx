@@ -50,6 +50,18 @@ export const publishStatusIndicatorClass = (
   }
 }
 
+const formatDateTime = (dateTimeString: string): string => {
+  const date = new Date(dateTimeString)
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
 export default function SitesDashboard(): JSX.Element {
   const [websiteToUnpublish, setWebsiteToUnpublish] =
     useState<WebsiteInitials | null>(null)
@@ -120,7 +132,9 @@ export default function SitesDashboard(): JSX.Element {
                 ) : site.unpublished ? (
                   <div
                     className="text-dark"
-                    title={`Unpublished from Production at ${site.updated_on.slice()}`}
+                    title={`Unpublished from Production at ${formatDateTime(
+                      site.updated_on,
+                    )}`}
                   >
                     Unpublished from Production
                   </div>
@@ -129,7 +143,12 @@ export default function SitesDashboard(): JSX.Element {
                 ) : PublishStatus.Success === site.live_publish_status ? (
                   <div
                     className="text-success"
-                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on.slice()}`}
+                    title={`${publishStatusMessage(
+                      site.live_publish_status?.replace(
+                        "...",
+                        "",
+                      ) as PublishStatus,
+                    )} at ${formatDateTime(site.updated_on)}`}
                   >
                     Published
                   </div>
@@ -138,7 +157,12 @@ export default function SitesDashboard(): JSX.Element {
                     className={publishStatusIndicatorClass(
                       site.live_publish_status,
                     )}
-                    title={`${publishStatusMessage(site.live_publish_status?.replace("...", "") as PublishStatus)} at ${site.updated_on.slice()}`}
+                    title={`${publishStatusMessage(
+                      site.live_publish_status?.replace(
+                        "...",
+                        "",
+                      ) as PublishStatus,
+                    )} at ${formatDateTime(site.updated_on)}`}
                   >
                     {publishStatusMessage(site.live_publish_status)}
                   </div>
