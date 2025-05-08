@@ -196,7 +196,7 @@ describe("StatusWithDateHover component", () => {
       />,
     )
 
-    const element = container.firstChild
+    const element = container.firstChild as HTMLElement
     fireEvent.mouseEnter(element)
 
     expect(getByText(/Published at \(Jan 15, 2023/)).toBeInTheDocument()
@@ -211,7 +211,7 @@ describe("StatusWithDateHover component", () => {
       />,
     )
 
-    const element = container.firstChild
+    const element = container.firstChild as HTMLElement
 
     // Hover
     fireEvent.mouseEnter(element)
@@ -236,7 +236,7 @@ describe("StatusWithDateHover component", () => {
 })
 
 describe("formatDateTime function", () => {
-  it("formats date strings correctly", () => {
+  it("formats date strings", () => {
     const result = formatDateTime("2023-01-15T12:30:45Z")
 
     expect(result).toContain("2023")
@@ -246,7 +246,7 @@ describe("formatDateTime function", () => {
 })
 
 describe("Site status indicators", () => {
-  it("shows correct status for different site states", async () => {
+  it("shows status for different site states", async () => {
     const testHelper = new IntegrationTestHelper()
     const testWebsites = makeWebsites(5)
 
@@ -269,18 +269,20 @@ describe("Site status indicators", () => {
         unpublished: true,
         updated_on: "2023-01-15T12:30:45Z",
       },
-      // Draft site - has only draft_publish_date and draft_publish_status
+      // Draft site - has draft_publish_status and draft_publish_date
+      // but no publish_date and unpublished is false
       draftSite = {
         ...testWebsites[2],
         name: "draft-site",
         uuid: "test-uuid-3",
         draft_publish_date: "2023-01-15T12:30:45Z",
-        draft_publish_status: "draft",
+        draft_publish_status: PublishStatus.Success,
         publish_date: null,
         live_publish_status: null,
         unpublished: false,
         updated_on: "2023-01-15T12:30:45Z",
       },
+      // Published site - has publish_date and live_publish_status
       publishedSite = {
         ...testWebsites[3],
         name: "published-site",
@@ -290,6 +292,7 @@ describe("Site status indicators", () => {
         unpublished: false,
         updated_on: "2023-01-15T12:30:45Z",
       },
+      // Failed site - has live_publish_status marked as errored
       failedSite = {
         ...testWebsites[4],
         name: "failed-site",
