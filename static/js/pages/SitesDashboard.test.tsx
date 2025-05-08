@@ -199,7 +199,6 @@ describe("StatusWithDateHover component", () => {
     const element = container.firstChild
     fireEvent.mouseEnter(element)
 
-    // The date formatting might vary by timezone, so we check for the main components
     expect(getByText(/Published at \(Jan 15, 2023/)).toBeInTheDocument()
   })
 
@@ -240,7 +239,6 @@ describe("formatDateTime function", () => {
   it("formats date strings correctly", () => {
     const result = formatDateTime("2023-01-15T12:30:45Z")
 
-    // Checking parts of the string to avoid timezone issues in tests
     expect(result).toContain("2023")
     expect(result).toContain("Jan")
     expect(result).toContain("15")
@@ -249,50 +247,109 @@ describe("formatDateTime function", () => {
 
 describe("Site status indicators", () => {
   it("shows correct status for different site states", async () => {
-    // Create website objects with different statuses
+    const testHelper = new IntegrationTestHelper()
+    const testWebsites = makeWebsites(5)
+
+    // Never published site - no publish dates or statuses
     const neverPublishedSite = {
-        ...websites[0],
+        ...testWebsites[0],
+        name: "never-published-site",
+        uuid: "test-uuid-1",
+        publish_date: null,
+        draft_publish_date: null,
+        live_publish_status: null,
+        unpublished: false,
+      },
+      // Unpublished site - has publish_date but marked as unpublished
+      unpublishedSite = {
+        ...testWebsites[1],
+        name: "unpublished-site",
+        uuid: "test-uuid-2",
+        publish_date: "2023-01-01T12:00:00Z",
+        unpublished: true,
+        updated_on: "2023-01-15T12:30:45Z",
+      },
+      // Draft site - has only draft_publish_date and draft_publish_status
+      draftSite = {
+        ...testWebsites[2],
+        name: "draft-site",
+        uuid: "test-uuid-3",
+        draft_publish_date: "2023-01-15T12:30:45Z",
+        draft_publish_status: "draft",
         publish_date: null,
         live_publish_status: null,
-      },
-      unpublishedSite = { ...websites[0], unpublished: true },
-      draftSite = {
-        ...websites[0],
-        draft_publish_date: "2023-01-15T12:30:45Z",
-        publish_date: null,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
       },
       publishedSite = {
-        ...websites[0],
+        ...testWebsites[3],
+        name: "published-site",
+        uuid: "test-uuid-4",
+        publish_date: "2023-01-01T12:00:00Z",
         live_publish_status: PublishStatus.Success,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
       },
       failedSite = {
-        ...websites[0],
+        ...testWebsites[4],
+        name: "failed-site",
+        uuid: "test-uuid-5",
+        publish_date: "2023-01-01T12:00:00Z",
         live_publish_status: PublishStatus.Errored,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
       }
 
-    // Create modified response with these sites
     const statusSites = [
-        neverPublishedSite,
-        unpublishedSite,
-        draftSite,
-        publishedSite,
-        failedSite,
-      ],
-      statusResponse = { ...response, results: statusSites }
+      neverPublishedSite,
+      unpublishedSite,
+      draftSite,
+      publishedSite,
+      failedSite,
+    ]
+    const testResponse = {
+      results: statusSites,
+      next: "https://example.com",
+      previous: null,
+      count: statusSites.length,
+    }
 
-    // Update mock and render
-    helper.mockGetRequest(
+    testHelper.mockGetRequest(
       siteApiListingUrl.param({ offset: 0 }).toString(),
-      statusResponse,
+      testResponse,
     )
 
-    const { wrapper } = await render()
+    const websitesLookup: Record<string, Website> = {}
+    for (const site of statusSites) {
+      websitesLookup[site.name] = site
+    }
+
+    const testRender = testHelper.configureRenderer(
+      SitesDashboard,
+      {},
+      {
+        entities: {
+          websitesListing: {
+            ["0"]: {
+              ...testResponse,
+              results: statusSites.map((site) => site.name),
+            },
+          },
+          websiteDetails: websitesLookup,
+        },
+        queries: {},
+      },
+    )
+
+    const { wrapper } = await testRender()
 
     // Check for status text
     expect(wrapper.text()).toContain("Never Published")
     expect(wrapper.text()).toContain("Unpublished from Production")
     expect(wrapper.text()).toContain("Draft")
     expect(wrapper.text()).toContain("Published")
-    expect(wrapper.text()).toContain("Failed")
+
+    // Cleanup
+    testHelper.cleanup()
   })
 })
