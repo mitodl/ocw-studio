@@ -11,6 +11,10 @@ import IntegrationTestHelper, {
 import { Website } from "../types/websites"
 import PaginationControls from "../components/PaginationControls"
 import * as searchHooks from "../hooks/search"
+import React from "react"
+import { render, fireEvent } from "@testing-library/react"
+import { StatusWithDateHover, formatDateTime } from "./SitesDashboard"
+import { PublishStatus } from "../constants"
 
 jest.mock("../hooks/search", () => {
   return {
@@ -167,5 +171,128 @@ describe("SitesDashboard", () => {
     const { next, previous } = usePagination.mock.results[1].value
     expect(paginationControls.prop("next")).toBe(next)
     expect(paginationControls.prop("previous")).toBe(previous)
+  })
+})
+
+describe("StatusWithDateHover component", () => {
+  it("displays status text by default", () => {
+    const { getByText } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    expect(getByText("Published")).toBeInTheDocument()
+  })
+
+  it("shows formatted date on hover", () => {
+    const { getByText, container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    const element = container.firstChild
+    fireEvent.mouseEnter(element)
+
+    // The date formatting might vary by timezone, so we check for the main components
+    expect(getByText(/Published at \(Jan 15, 2023/)).toBeInTheDocument()
+  })
+
+  it("reverts to status text when mouse leaves", () => {
+    const { getByText, container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    const element = container.firstChild
+
+    // Hover
+    fireEvent.mouseEnter(element)
+    expect(getByText(/Published at \(/)).toBeInTheDocument()
+
+    // Un-hover
+    fireEvent.mouseLeave(element)
+    expect(getByText("Published")).toBeInTheDocument()
+  })
+
+  it("applies the provided className", () => {
+    const { container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    expect(container.firstChild).toHaveClass("text-success")
+  })
+})
+
+describe("formatDateTime function", () => {
+  it("formats date strings correctly", () => {
+    const result = formatDateTime("2023-01-15T12:30:45Z")
+
+    // Checking parts of the string to avoid timezone issues in tests
+    expect(result).toContain("2023")
+    expect(result).toContain("Jan")
+    expect(result).toContain("15")
+  })
+})
+
+describe("Site status indicators", () => {
+  it("shows correct status for different site states", async () => {
+    // Create website objects with different statuses
+    const neverPublishedSite = {
+        ...websites[0],
+        publish_date: null,
+        live_publish_status: null,
+      },
+      unpublishedSite = { ...websites[0], unpublished: true },
+      draftSite = {
+        ...websites[0],
+        draft_publish_date: "2023-01-15T12:30:45Z",
+        publish_date: null,
+      },
+      publishedSite = {
+        ...websites[0],
+        live_publish_status: PublishStatus.Success,
+      },
+      failedSite = {
+        ...websites[0],
+        live_publish_status: PublishStatus.Errored,
+      }
+
+    // Create modified response with these sites
+    const statusSites = [
+        neverPublishedSite,
+        unpublishedSite,
+        draftSite,
+        publishedSite,
+        failedSite,
+      ],
+      statusResponse = { ...response, results: statusSites }
+
+    // Update mock and render
+    helper.mockGetRequest(
+      siteApiListingUrl.param({ offset: 0 }).toString(),
+      statusResponse,
+    )
+
+    const { wrapper } = await render()
+
+    // Check for status text
+    expect(wrapper.text()).toContain("Never Published")
+    expect(wrapper.text()).toContain("Unpublished from Production")
+    expect(wrapper.text()).toContain("Draft")
+    expect(wrapper.text()).toContain("Published")
+    expect(wrapper.text()).toContain("Failed")
   })
 })

@@ -50,7 +50,7 @@ export const publishStatusIndicatorClass = (
   }
 }
 
-const formatDateTime = (dateTimeString: string): string => {
+export const formatDateTime = (dateTimeString: string): string => {
   const date = new Date(dateTimeString)
   return date.toLocaleString("en-US", {
     year: "numeric",
@@ -62,7 +62,7 @@ const formatDateTime = (dateTimeString: string): string => {
   })
 }
 
-const StatusWithDateHover = ({
+export const StatusWithDateHover = ({
   statusText,
   dateTime,
   className,
