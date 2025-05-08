@@ -149,7 +149,9 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {!site.publish_date && !site.live_publish_status ? (
+                {!site.publish_date &&
+                !site.live_publish_status &&
+                !site.draft_publish_date ? (
                   <div className="text-danger">Never Published</div>
                 ) : site.unpublished ? (
                   <StatusWithDateHover
