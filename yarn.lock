@@ -4271,7 +4271,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"body-parser@npm:1.20.3, body-parser@npm:^1.20.3":
+"body-parser@npm:1.20.3, body-parser@npm:^1.20.1":
   version: 1.20.3
   resolution: "body-parser@npm:1.20.3"
   dependencies:
@@ -11364,7 +11364,7 @@ __metadata:
     sass: ^1.38.1
     sass-lint: ^1.13.1
     sass-loader: ^12.1.0
-    sentry-testkit: ^6.0.0
+    sentry-testkit: ^5.0.0
     showdown: ^1.9.1
     sinon: ^20.0.0
     style-loader: ^3.2.1
@@ -13792,13 +13792,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sentry-testkit@npm:^6.0.0":
-  version: 6.2.2
-  resolution: "sentry-testkit@npm:6.2.2"
+"sentry-testkit@npm:^5.0.0":
+  version: 5.0.10
+  resolution: "sentry-testkit@npm:5.0.10"
   dependencies:
-    body-parser: ^1.20.3
+    body-parser: ^1.20.1
     express: ^4.21.2
-  checksum: 62cf202543b79fc369eea089d1aa49c91ab3f1c5f971826d2b6d3b5da53107630cb8ad9ef088aa5f782d1375f2d370cb638844f44ba357427ebb7cac9f7e6aec
+  checksum: e1deeff218178ce29337428ec7ec1088e5f2eb51f0c9e8fbc06c8bb9e8fac8e82ac93bdc886395441307e472677a41986b9f0201092a7ea42ff89016050dea2a
   languageName: node
   linkType: hard
 
