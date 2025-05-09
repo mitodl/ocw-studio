@@ -4,6 +4,7 @@ import { useRequest } from "redux-query-react"
 import { Link } from "react-router-dom"
 
 import PaginationControls from "../components/PaginationControls"
+import { publishStatusMessage } from "../components/PublishStatusIndicator"
 
 import {
   WebsiteListingParams,
@@ -20,7 +21,7 @@ import Dropdown from "../components/Dropdown"
 import UnpublishDialog from "../components/UnpublishDialog"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 import { usePermission } from "../hooks/permissions"
-import { Permission } from "../constants"
+import { Permission, PublishStatus } from "../constants"
 
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
@@ -28,6 +29,59 @@ function getListingParams(search: string): WebsiteListingParams {
   const searchString = qsParams.get("q")
 
   return searchString ? { offset, search: searchString } : { offset }
+}
+
+export const publishStatusIndicatorClass = (
+  status: PublishStatus | null,
+): string => {
+  switch (status) {
+    case PublishStatus.NotStarted:
+      return "text-secondary"
+    case PublishStatus.Pending:
+    case PublishStatus.Started:
+      return "text-warning"
+    case PublishStatus.Aborted:
+    case PublishStatus.Errored:
+      return "text-danger"
+    case PublishStatus.Success:
+      return "text-success"
+    default:
+      return ""
+  }
+}
+
+export const formatDateTime = (dateTimeString: string): string => {
+  const date = new Date(dateTimeString)
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
+export const StatusWithDateHover = ({
+  statusText,
+  dateTime,
+  className,
+}: {
+  statusText: string
+  dateTime: string
+  className: string
+}) => {
+  const [showDate, setShowDate] = useState(false)
+
+  return (
+    <div
+      className={className}
+      onMouseEnter={() => setShowDate(true)}
+      onMouseLeave={() => setShowDate(false)}
+    >
+      {showDate ? `${statusText} at (${formatDateTime(dateTime)})` : statusText}
+    </div>
+  )
 }
 
 export default function SitesDashboard(): JSX.Element {
@@ -95,10 +149,32 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {site.publish_date && !site.unpublished ? (
-                  <div className="text-success">Published</div>
+                {!site.publish_date &&
+                !site.live_publish_status &&
+                !site.draft_publish_date ? (
+                  <div className="text-danger">Never Published</div>
+                ) : site.unpublished ? (
+                  <StatusWithDateHover
+                    statusText="Unpublished from Production"
+                    dateTime={site.updated_on}
+                    className="text-dark"
+                  />
+                ) : site.draft_publish_date && !site.publish_date ? (
+                  <div className="text-secondary">Draft</div>
+                ) : PublishStatus.Success === site.live_publish_status ? (
+                  <StatusWithDateHover
+                    statusText="Published"
+                    dateTime={site.updated_on}
+                    className="text-success"
+                  />
                 ) : (
-                  <div className="text-dark">Draft</div>
+                  <StatusWithDateHover
+                    statusText={publishStatusMessage(site.live_publish_status)}
+                    dateTime={site.updated_on}
+                    className={publishStatusIndicatorClass(
+                      site.live_publish_status,
+                    )}
+                  />
                 )}
                 <Dropdown
                   website={{
@@ -109,7 +185,14 @@ export default function SitesDashboard(): JSX.Element {
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
-                    site.publish_date && !site.unpublished
+                    site.publish_date &&
+                    !site.unpublished &&
+                    site.live_publish_status !== null &&
+                    [
+                      PublishStatus.Errored,
+                      PublishStatus.Aborted,
+                      PublishStatus.Success,
+                    ].includes(site.live_publish_status)
                       ? websiteDropdownMenuList
                       : websiteDropdownMenuList.filter(
                           (item) => item.id !== "1",
