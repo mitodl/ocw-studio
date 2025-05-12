@@ -56,7 +56,7 @@ MOCK_GITHUB_DATA = {
 }
 
 
-@pytest.fixture()
+@pytest.fixture
 def websites(course_starter):
     """Create some websites for tests, with all but one having a sitemetadata WebsiteContent object"""
     courses = WebsiteFactory.create_batch(3, published=True, starter=course_starter)
@@ -75,7 +75,7 @@ def websites(course_starter):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def file_upload():
     """File upload for tests"""
     return SimpleUploadedFile("exam.pdf", b"sample pdf", content_type="application/pdf")
@@ -202,7 +202,7 @@ def test_websites_endpoint_status(drf_client):
     website = WebsiteFactory.create()
     drf_client.force_login(website.owner)
     resp = drf_client.get(
-        f'{reverse("websites_api-detail", kwargs={"name": website.name})}?only_status=true'
+        f"{reverse('websites_api-detail', kwargs={'name': website.name})}?only_status=true"
     )
     response_data = resp.json()
     serialized_data = WebsiteStatusSerializer(instance=website).data
@@ -723,7 +723,7 @@ def test_websites_content_list(  # pylint: disable=too-many-locals  # noqa: PLR0
             website=website,
             title=f"some TEXT{num} here for a case insensitive search",
             metadata={"resourcetype": "Image" if num % 2 == 0 else "Video"},
-            file=f"courses/my-test-site/myFile{num+1}.png",
+            file=f"courses/my-test-site/myFile{num + 1}.png",
         )
         for num in range(5)
     ]
@@ -1290,7 +1290,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
     expected_sites = draft_published if version == VERSION_DRAFT else live_published
     settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={version}')
+    resp = drf_client.get(f"{reverse('mass_build_api-list')}?version={version}")
     assert resp.status_code == 200
     site_dict = {site["name"]: site for site in resp.data["sites"]}
     if not unpublished or version == VERSION_DRAFT:
@@ -1307,7 +1307,7 @@ def test_mass_build_endpoint_list_bad_version(settings, drf_client):
     """The WebsiteMassBuildView endpoint should return a 400 if the version parameter is invalid"""
     settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version=null')
+    resp = drf_client.get(f"{reverse('mass_build_api-list')}?version=null")
     assert resp.status_code == 400
 
 
@@ -1317,7 +1317,7 @@ def test_mass_build_endpoint_list_bad_token(settings, drf_client, bad_token):
     settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
-    resp = drf_client.get(f'{reverse("mass_build_api-list")}?version={VERSION_LIVE}')
+    resp = drf_client.get(f"{reverse('mass_build_api-list')}?version={VERSION_LIVE}")
     assert resp.status_code == 403
 
 
@@ -1342,7 +1342,7 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
         )
     settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
-    resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
+    resp = drf_client.get(f"{reverse('unpublished_removal_api-list')}")
     assert resp.status_code == 200
     site_dict = {site["name"]: site for site in resp.data["sites"]}
     assert len(site_dict.keys()) == 2
@@ -1359,5 +1359,5 @@ def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_t
     settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
     if bad_token:
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
-    resp = drf_client.get(f'{reverse("unpublished_removal_api-list")}')
+    resp = drf_client.get(f"{reverse('unpublished_removal_api-list')}")
     assert resp.status_code == 403
