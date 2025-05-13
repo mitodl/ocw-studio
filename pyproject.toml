@@ -11,7 +11,7 @@ package-mode = false
 python = "~3.12"
 
 beautifulsoup4 = "^4.12.2"
-boto3 = "1.38.13"
+boto3 = "1.38.14"
 celery = "^5.3.0"
 cryptography = "^44.0.0"
 dj-database-url = "2.3.0"
