@@ -98,7 +98,7 @@ def sync_video_captions_and_transcripts(
     video,
     summary: dict | None = None,
     missing_results: dict | None = None,
-    stdout_write=None,
+    stdout_write=log.info,
 ):
     """
     Fetch captions/transcripts via 3play and either attach them to the video
@@ -106,8 +106,6 @@ def sync_video_captions_and_transcripts(
     """
     youtube_id = video.metadata["video_metadata"]["youtube_id"]
     threeplay_transcript_json = threeplay_transcript_api_request(youtube_id)
-    if stdout_write is None:
-        stdout_write = log.info
     if (
         not threeplay_transcript_json.get("data")
         or len(threeplay_transcript_json.get("data")) == 0
