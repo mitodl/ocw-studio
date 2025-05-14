@@ -69,21 +69,12 @@ class Command(WebsiteFilterCommand):
             )
         )
 
-        unrelated_files_count = 0
-        for website in websites:
-            prefix = f"courses/{website.name}/"
-            s3_file_keys = list_all_s3_keys(
-                s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
-            )
-            if s3_file_keys:
-                normalized_website_content_files = self._filter_unrelated_files(website)
+        self.unrelated_files_count = 0
 
-                unrelated_website_files = list(
-                    s3_file_keys - normalized_website_content_files
-                )
-                if unrelated_website_files:
-                    unrelated_files_count += len(unrelated_website_files)
-                    unrelated_files_by_site[website.name] = unrelated_website_files
+        for website in websites:
+            for prefix in (f"courses/{website.name}/", website.url_path):
+                if prefix:
+                    self._process_files(prefix, website, s3, unrelated_files_by_site)
 
         if unrelated_files_by_site:
             self.stdout.write(
@@ -98,7 +89,7 @@ class Command(WebsiteFilterCommand):
             else:
                 action = "detected"
                 result_data = unrelated_files_by_site
-                count = unrelated_files_count
+                count = self.unrelated_files_count
             self.stdout.write(
                 self.style.SUCCESS(
                     f"{action.capitalize()} {count} unrelated files from S3."
@@ -109,6 +100,36 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(
                 self.style.WARNING("No unrelated content found in the bucket.")
             )
+
+    def _process_files(self, prefix, website, s3, unrelated_files_by_site):
+        """
+        Process files in the S3 bucket for a given website.
+        This function retrieves all S3 keys for the specified prefix and
+        compares them with the files associated with the website.
+        Args:
+            prefix (str): The S3 prefix for the website.
+            website (Website): The website object.
+            s3: The S3 resource object.
+            unrelated_files_by_site (dict): A dictionary to store unrelated files.
+        """
+        s3_file_keys = list_all_s3_keys(
+            s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
+        )
+        if s3_file_keys:
+            website_content_files = WebsiteContent.objects.filter(
+                website=website, file__isnull=False
+            ).values_list("file", flat=True)
+            normalized_website_content_files = {
+                wc.removeprefix("/") for wc in website_content_files if wc
+            }
+
+            unrelated_website_files = list(
+                s3_file_keys - normalized_website_content_files
+            )
+
+            if unrelated_website_files:
+                self.unrelated_files_count += len(unrelated_website_files)
+                unrelated_files_by_site[website.name] = unrelated_website_files
 
     def _delete_unrelated_files(self, s3, unrelated_files_by_site):
         """
