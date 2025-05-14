@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from uuid import uuid4
 
 from django.conf import settings
@@ -37,7 +38,17 @@ extension_map = {
 }
 
 
-def _attach_transcript_if_missing(video, base_url, youtube_id, summary, write_output):
+def _attach_transcript_if_missing(
+    video: WebsiteContent,
+    base_url: str,
+    youtube_id: str,
+    summary: dict | None = None,
+    write_output: Callable[..., None] = log.info,
+) -> None:
+    """
+    Attach transcript to video if it does not exist.
+    Fetches from 3Play API and updates the video metadata.
+    """
     if video.metadata["video_files"].get("video_transcript_file"):
         return
 
@@ -67,7 +78,17 @@ def _attach_transcript_if_missing(video, base_url, youtube_id, summary, write_ou
         )
 
 
-def _attach_captions_if_missing(video, base_url, youtube_id, summary, write_output):
+def _attach_captions_if_missing(
+    video: WebsiteContent,
+    base_url: str,
+    youtube_id: str,
+    summary: dict | None = None,
+    write_output: Callable[..., None] = log.info,
+) -> None:
+    """
+    Attach captions to video if it does not exist.
+    Fetches from 3Play API and updates the video metadata.
+    """
     if video.metadata["video_files"].get("video_captions_file"):
         return
 
@@ -95,11 +116,11 @@ def _attach_captions_if_missing(video, base_url, youtube_id, summary, write_outp
 
 
 def sync_video_captions_and_transcripts(
-    video,
+    video: WebsiteContent,
     summary: dict | None = None,
     missing_results: dict | None = None,
-    write_output=log.info,
-):
+    write_output: Callable[..., None] = log.info,
+) -> None:
     """
     Fetch captions/transcripts via 3play and either attach them to the video
     metadata or record them as missing.
@@ -132,10 +153,11 @@ def sync_video_captions_and_transcripts(
 
     # If captions does not exist
     _attach_captions_if_missing(video, base_url, youtube_id, summary, write_output)
+    video.skip_sync = True
     video.save()
 
 
-def upload_to_s3(file_content, video):
+def upload_to_s3(file_content: File, video: WebsiteContent) -> str:
     """Uploads the captions/transcript file to the S3 bucket"""  # noqa: D401
     s3 = get_boto3_resource("s3")
     new_s3_loc = generate_s3_path(file_content, video.website)
@@ -144,7 +166,9 @@ def upload_to_s3(file_content, video):
     return f"/{new_s3_loc}"
 
 
-def generate_metadata(new_uid, new_s3_path, file_content, video):
+def generate_metadata(
+    new_uid: str, new_s3_path: str, file_content: File, video: WebsiteContent
+) -> tuple[str, dict]:
     """Generate new metadata for new VTT WebsiteContent object"""
     file_ext = extension_map[get_file_extension(str(file_content))]
     title = f"{video.title} {file_ext['ext']}"
@@ -168,8 +192,11 @@ def generate_metadata(new_uid, new_s3_path, file_content, video):
     )
 
 
-def _create_new_content(file_content, video):
-    """Create new WebsiteContent object for caption or transcript using 3play response"""  # noqa: E501
+def _create_new_content(file_content: File, video: WebsiteContent) -> str:
+    """
+    Create and save a new WebsiteContent object
+    for a caption or transcript file.
+    """
     new_text_id = str(uuid4())
     new_s3_loc = upload_to_s3(file_content, video)
     title, new_obj_metadata = generate_metadata(
