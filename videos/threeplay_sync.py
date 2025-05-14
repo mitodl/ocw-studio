@@ -37,7 +37,7 @@ extension_map = {
 }
 
 
-def _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_write):
+def _attach_transcript_if_missing(video, base_url, youtube_id, summary, write_output):
     if video.metadata["video_files"].get("video_transcript_file"):
         return
 
@@ -55,7 +55,7 @@ def _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_w
         if summary:
             summary["transcripts"]["updated"] += 1
 
-        stdout_write(
+        write_output(
             "Transcript updated for video, %s and course %s",
             video.title,
             video.website.short_id,
@@ -67,7 +67,7 @@ def _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_w
         )
 
 
-def _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_write):
+def _attach_captions_if_missing(video, base_url, youtube_id, summary, write_output):
     if video.metadata["video_files"].get("video_captions_file"):
         return
 
@@ -82,7 +82,7 @@ def _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_wri
         video.metadata["video_files"]["video_captions_file"] = new_filepath
         if summary:
             summary["captions"]["updated"] += 1
-        stdout_write(
+        write_output(
             "Captions updated for video, %s and course %s",
             video.title,
             video.website.short_id,
@@ -98,7 +98,7 @@ def sync_video_captions_and_transcripts(
     video,
     summary: dict | None = None,
     missing_results: dict | None = None,
-    stdout_write=log.info,
+    write_output=log.info,
 ):
     """
     Fetch captions/transcripts via 3play and either attach them to the video
@@ -113,7 +113,7 @@ def sync_video_captions_and_transcripts(
     ):
         if missing_results:
             missing_results["count"] += 1
-        stdout_write(
+        write_output(
             "Captions and transcripts not found for video %s, course %s",
             video.title,
             video.website.short_id,
@@ -128,10 +128,10 @@ def sync_video_captions_and_transcripts(
         project_id=settings.THREEPLAY_PROJECT_ID,
     )
     # If transcript does not exist
-    _attach_transcript_if_missing(video, base_url, youtube_id, summary, stdout_write)
+    _attach_transcript_if_missing(video, base_url, youtube_id, summary, write_output)
 
     # If captions does not exist
-    _attach_captions_if_missing(video, base_url, youtube_id, summary, stdout_write)
+    _attach_captions_if_missing(video, base_url, youtube_id, summary, write_output)
     video.save()
 
 

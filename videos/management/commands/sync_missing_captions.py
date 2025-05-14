@@ -52,7 +52,7 @@ class Command(WebsiteFilterCommand):
                 video,
                 self.summary,
                 self.missing_results,
-                stdout_write=write_stdout,
+                write_output=write_stdout,
             )
 
         for item_type, details in self.summary.items():
