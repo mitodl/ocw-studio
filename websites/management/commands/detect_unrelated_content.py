@@ -116,17 +116,11 @@ class Command(WebsiteFilterCommand):
             s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
         )
         if s3_file_keys:
-            website_content_files = WebsiteContent.objects.filter(
-                website=website, file__isnull=False
-            ).values_list("file", flat=True)
-            normalized_website_content_files = {
-                wc.removeprefix("/") for wc in website_content_files if wc
-            }
+            normalized_website_content_files = self._filter_unrelated_files(website)
 
             unrelated_website_files = list(
                 s3_file_keys - normalized_website_content_files
             )
-
             if unrelated_website_files:
                 self.unrelated_files_count += len(unrelated_website_files)
                 unrelated_files_by_site[website.name] = unrelated_website_files
