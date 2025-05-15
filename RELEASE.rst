@@ -1,6 +1,29 @@
 Release Notes
 =============
 
+Version 0.146.3
+---------------
+
+- Sync missing captions for a newly created video resource (#2489)
+- fix(deps): update dependency sentry-sdk to v2.28.0 (#2564)
+- fix(deps): update dependency boto3 to v1.38.14 (#2501)
+- Upgrade mitol-django-transcoding and boto3 libraries (#2562)
+- fix(deps): update dependency express to v5 (#2525)
+- chore(deps): update dependency pre-commit to v4 (#2509)
+- fix(deps): update dependency reactstrap to v9 (#2535)
+- fix(deps): update dependency webpack-cli to v6 (#2545)
+- fix(deps): update dependency django to v4.2.21 [security] (#2561)
+- Umar/6380 unrelated resources in offline course (#2556)
+- chore(deps): update dependency django-debug-toolbar to v5 (#2508)
+- chore(deps): update actions/setup-python digest to a26af69 (#2557)
+- fix(deps): update dependency mitol-django-transcoding to v2025.4.23 (#2558)
+- fix(deps): update dependency eslint-config-prettier to v10 (#2523)
+- fix(deps): update dependency mitol-django-authentication to v2025 (#2529)
+- fix(deps): update dependency mini-css-extract-plugin to v2 (#2528)
+- fix(deps): update dependency django-anymail to v13 (#2491)
+- fix(deps): update dependency eslint-config-mitodl to v2 (#2522)
+- fix(deps): update dependency postcss-loader to v7 (#2531)
+
 Version 0.146.2 (Released April 29, 2025)
 ---------------
 
