@@ -61,6 +61,9 @@ from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("boto3").setLevel(logging.DEBUG)
+logging.getLogger("botocore").setLevel(logging.DEBUG)
 
 
 class GDriveStreamReader:
