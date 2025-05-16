@@ -53,5 +53,4 @@ class YouTubeStatus:
     PROCESSED = "processed"
     REJECTED = "rejected"
     FAILED = "failed"
-    SUCCEEDED = "succeeded"
     RETRY = "retry"
