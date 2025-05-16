@@ -100,7 +100,7 @@
     "mathjax": "^3.2.2",
     "mini-css-extract-plugin": "^2.0.0",
     "pluralize": "^8.0.0",
-    "postcss-loader": "^7.0.0",
+    "postcss-loader": "^8.0.0",
     "posthog-js": "^1.160.1",
     "prettier": "^3.0.3",
     "prettier-plugin-django-alpine": "^1.1.1",
