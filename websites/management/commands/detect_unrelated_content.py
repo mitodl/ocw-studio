@@ -8,6 +8,7 @@ Usage:
 """  # noqa: INP001
 
 import json
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from django.conf import settings
@@ -72,9 +73,7 @@ class Command(WebsiteFilterCommand):
         self.unrelated_files_count = 0
 
         for website in websites:
-            for prefix in (f"courses/{website.name}/", website.url_path):
-                if prefix:
-                    self._process_files(prefix, website, s3, unrelated_files_by_site)
+            self._process_files(website.s3_path, website, s3, unrelated_files_by_site)
 
         if unrelated_files_by_site:
             self.stdout.write(
@@ -195,11 +194,24 @@ class Command(WebsiteFilterCommand):
                 normalized_files.add(file.removeprefix("/"))
 
             if video_files:
-                paths = {
-                    video_files[field].removeprefix("/")
-                    for field in video_metadata_fields
-                    if video_files.get(field)
-                }
+                paths = set()
+                for field in video_metadata_fields:
+                    if video_files.get(field) and not video_files[field].startswith(
+                        "http"
+                    ):
+                        video_resource_file = video_files[field].removeprefix("/")
+
+                        # It has been observed that the file paths in video metadata
+                        # are not always prefixed with the website's S3 path.
+                        # This ensures that the file paths are normalized to the S3
+                        # path. This is a workaround for the issue.
+                        if not video_resource_file.startswith(website.s3_path):
+                            video_resource_file = Path(
+                                website.s3_path, Path(video_resource_file).name
+                            ).as_posix()
+
+                        paths.add(video_resource_file)
+
                 normalized_files.update(paths)
 
         return normalized_files
