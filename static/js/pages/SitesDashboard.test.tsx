@@ -199,7 +199,7 @@ describe("StatusWithDateHover component", () => {
     const element = container.firstChild as HTMLElement
     fireEvent.mouseEnter(element)
 
-    expect(getByText(/Published at \(Jan 15, 2023/)).toBeInTheDocument()
+    expect(getByText(/Published on Jan 15, 2023/)).toBeInTheDocument()
   })
 
   it("reverts to status text when mouse leaves", () => {
@@ -215,7 +215,7 @@ describe("StatusWithDateHover component", () => {
 
     // Hover
     fireEvent.mouseEnter(element)
-    expect(getByText(/Published at \(/)).toBeInTheDocument()
+    expect(getByText(/Published on Jan 15, 2023/)).toBeInTheDocument()
 
     // Un-hover
     fireEvent.mouseLeave(element)
