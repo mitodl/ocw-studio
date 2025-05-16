@@ -11,8 +11,7 @@ from django.conf import settings
 
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
-from videos.models import WebsiteContent
-from websites.models import Website, WebsiteStarter
+from websites.models import Website, WebsiteContent, WebsiteStarter
 
 
 def generate_s3_path(file_or_webcontent, website):
