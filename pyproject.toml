@@ -20,7 +20,7 @@ django-anymail = {version = "13.0", extras = ["mailgun"]}
 django-bulk-update-or-create = "0.3.0"
 django-guardian = "3.0.0"
 django-hijack = "3.7.1"
-django-model-utils = "4.5.1"
+django-model-utils = "5.0.0"
 django-redis = "5.0.0"
 django-robots = "7.0b0"
 django-safedelete = "1.4.1"
