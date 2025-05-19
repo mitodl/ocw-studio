@@ -26,7 +26,7 @@ def migrate_field(apps, forward):
                 content.markdown = (
                     content.metadata["description"]
                     if content.markdown == "" or content.markdown is None
-                    else f'{content.markdown}\n\n{content.metadata["description"]}'
+                    else f"{content.markdown}\n\n{content.metadata['description']}"
                 )
                 content.metadata["description"] = ""
             else:
