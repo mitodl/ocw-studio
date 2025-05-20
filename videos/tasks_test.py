@@ -477,14 +477,20 @@ def test_mail_youtube_upload_success_trigger(mocker, youtube_status, file_status
     mock_mail_success = mocker.patch("videos.tasks.mail_youtube_upload_success")
     mock_video_status = mocker.patch("videos.tasks.YouTubeApi.video_status")
     mock_video_status.return_value = youtube_status
+    mocker.patch("videos.tasks.start_transcript_job.s")
+    mocker.patch.object(update_youtube_statuses, "replace")
 
-    VideoFileFactory.create(
+    video_file = VideoFileFactory.create(
         id=1,
         status=file_status,
         destination_status=youtube_status,
         destination=DESTINATION_YOUTUBE,
     )
-
+    drive_file = DriveFileFactory.create(video=video_file.video)
+    resource = WebsiteContentFactory.create(website=drive_file.website)
+    resource.save()
+    drive_file.resource = resource
+    drive_file.save()
     update_youtube_statuses.delay()
 
     # The following is the combination of statuses that moves the VideoFile
