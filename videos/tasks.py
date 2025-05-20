@@ -189,6 +189,7 @@ def update_youtube_statuses(self):
                     )
                     resource.save()
                     video_file.status = VideoFileStatus.COMPLETE
+                    video_file.save()
                     group_tasks.append(start_transcript_job.s(video_file.video.id))
                     mail_youtube_upload_success(video_file)
 
