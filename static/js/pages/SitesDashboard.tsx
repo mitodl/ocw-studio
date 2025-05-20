@@ -81,7 +81,7 @@ export const StatusWithDateHover = ({
       onMouseEnter={() => setShowDate(true)}
       onMouseLeave={() => setShowDate(false)}
     >
-      {showDate
+      {showDate && dateTime
         ? `${hoverText || statusText} on ${formatDateTime(dateTime)}`
         : statusText}
     </div>
@@ -160,7 +160,7 @@ export default function SitesDashboard(): JSX.Element {
                 ) : site.unpublished ? (
                   <StatusWithDateHover
                     statusText="Unpublished from Production"
-                    dateTime={site.updated_on}
+                    dateTime={site.unpublish_status_updated_on}
                     className="text-dark"
                   />
                 ) : site.draft_publish_date && !site.publish_date ? (
@@ -174,13 +174,13 @@ export default function SitesDashboard(): JSX.Element {
                 ) : PublishStatus.Success === site.live_publish_status ? (
                   <StatusWithDateHover
                     statusText="Published"
-                    dateTime={site.publish_date ?? site.updated_on}
+                    dateTime={site.publish_date}
                     className="text-success"
                   />
                 ) : (
                   <StatusWithDateHover
                     statusText={publishStatusMessage(site.live_publish_status)}
-                    dateTime={site.updated_on}
+                    dateTime={site.publish_date}
                     className={publishStatusIndicatorClass(
                       site.live_publish_status,
                     )}
