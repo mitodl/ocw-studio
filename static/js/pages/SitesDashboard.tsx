@@ -130,7 +130,7 @@ export const getMostRecentStatus = (
       dateTime: site.unpublish_status_updated_on,
     },
     {
-      type: "other",
+      type: "publish not complete",
       active:
         site.live_publish_status &&
         site.live_publish_status !== PublishStatus.Success,
