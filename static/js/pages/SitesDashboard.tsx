@@ -70,7 +70,7 @@ export const StatusWithDateHover = ({
 }: {
   statusText: string
   hoverText?: string
-  dateTime: string
+  dateTime: string | null
   className: string
 }) => {
   const [showDate, setShowDate] = useState(false)
@@ -86,6 +86,84 @@ export const StatusWithDateHover = ({
         : statusText}
     </div>
   )
+}
+
+export const getMostRecentStatus = (
+  site: Website,
+): {
+  status: string
+  statusClass: string
+  dateTime: string | null
+  hoverText?: string
+} => {
+  // Create an array of status objects with their timestamps
+  const statuses = [
+    {
+      type: "draft",
+      active: site.draft_publish_date && !site.publish_date,
+      statusText: "Draft",
+      hoverText: "Draft updated",
+      className: "text-secondary",
+      dateTime: site.draft_publish_date,
+    },
+    {
+      type: "published",
+      active: PublishStatus.Success === site.live_publish_status,
+      statusText: "Published",
+      className: "text-success",
+      dateTime: site.publish_date,
+    },
+    {
+      type: "unpublished",
+      active:
+        site.unpublished && site.unpublish_status === PublishStatus.Success,
+      statusText: "Unpublished from Production",
+      className: "text-dark",
+      dateTime: site.unpublish_status_updated_on,
+    },
+    {
+      type: "unpublish not complete",
+      active:
+        site.unpublished && site.unpublish_status !== PublishStatus.Success,
+      statusText: `Unpublish: ${publishStatusMessage(site.unpublish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.unpublish_status),
+      dateTime: site.unpublish_status_updated_on,
+    },
+    {
+      type: "other",
+      active:
+        site.live_publish_status &&
+        site.live_publish_status !== PublishStatus.Success,
+      statusText: `Publish: ${publishStatusMessage(site.live_publish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.live_publish_status),
+      dateTime: site.publish_date,
+    },
+  ]
+
+  const activeStatuses = statuses
+    .filter((s) => s.active && s.dateTime)
+    .sort(
+      (a, b) =>
+        new Date(b.dateTime!).getTime() - new Date(a.dateTime!).getTime(),
+    )
+
+  // Return the most recent status
+  if (activeStatuses.length > 0) {
+    const mostRecent = activeStatuses[0]
+    return {
+      status: mostRecent.statusText,
+      statusClass: mostRecent.className,
+      dateTime: mostRecent.dateTime,
+      hoverText: mostRecent.hoverText,
+    }
+  }
+
+  // No active statuses - never published
+  return {
+    status: "Never Published",
+    statusClass: "text-danger",
+    dateTime: null,
+  }
 }
 
 export default function SitesDashboard(): JSX.Element {
@@ -153,39 +231,30 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {!site.publish_date &&
-                !site.live_publish_status &&
-                !site.draft_publish_date ? (
-                  <div className="text-danger">Never Published</div>
-                ) : site.unpublished ? (
-                  <StatusWithDateHover
-                    statusText="Unpublished from Production"
-                    dateTime={site.unpublish_status_updated_on}
-                    className="text-dark"
-                  />
-                ) : site.draft_publish_date && !site.publish_date ? (
-                  // <div className="text-secondary">Draft</div>
-                  <StatusWithDateHover
-                    statusText="Draft"
-                    hoverText="Draft updated"
-                    dateTime={site.draft_publish_date}
-                    className="text-secondary"
-                  />
-                ) : PublishStatus.Success === site.live_publish_status ? (
-                  <StatusWithDateHover
-                    statusText="Published"
-                    dateTime={site.publish_date}
-                    className="text-success"
-                  />
-                ) : (
-                  <StatusWithDateHover
-                    statusText={publishStatusMessage(site.live_publish_status)}
-                    dateTime={site.publish_date}
-                    className={publishStatusIndicatorClass(
-                      site.live_publish_status,
-                    )}
-                  />
-                )}
+                {(() => {
+                  if (
+                    !site.publish_date &&
+                    !site.live_publish_status &&
+                    !site.draft_publish_date
+                  ) {
+                    return <div className="text-danger">Never Published</div>
+                  }
+
+                  const statusInfo = getMostRecentStatus(site)
+
+                  return statusInfo.dateTime ? (
+                    <StatusWithDateHover
+                      statusText={statusInfo.status}
+                      hoverText={statusInfo.hoverText}
+                      dateTime={statusInfo.dateTime}
+                      className={statusInfo.statusClass}
+                    />
+                  ) : (
+                    <div className={statusInfo.statusClass}>
+                      {statusInfo.status}
+                    </div>
+                  )
+                })()}
                 <Dropdown
                   website={{
                     name: site.name,
