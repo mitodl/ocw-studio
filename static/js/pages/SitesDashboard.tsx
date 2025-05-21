@@ -136,7 +136,7 @@ export const getMostRecentStatus = (
         site.live_publish_status !== PublishStatus.Success,
       statusText: `Publish: ${publishStatusMessage(site.live_publish_status).toLowerCase().replace("...", "")}`,
       className: publishStatusIndicatorClass(site.live_publish_status),
-      dateTime: site.publish_date,
+      dateTime: site.live_publish_status_updated_on,
     },
   ]
 

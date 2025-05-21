@@ -267,6 +267,8 @@ describe("Site status indicators", () => {
         uuid: "test-uuid-2",
         publish_date: "2023-01-01T12:00:00Z",
         unpublished: true,
+        unpublish_status: PublishStatus.Success,
+        unpublish_status_updated_on: "2023-01-15T12:30:45Z",
         updated_on: "2023-01-15T12:30:45Z",
       },
       // Draft site - has draft_publish_status and draft_publish_date
