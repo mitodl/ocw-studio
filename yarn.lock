@@ -597,9 +597,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-dev-translations@npm:^32.0.0":
-  version: 32.1.2
-  resolution: "@ckeditor/ckeditor5-dev-translations@npm:32.1.2"
+"@ckeditor/ckeditor5-dev-translations@npm:^43.0.0":
+  version: 43.0.1
+  resolution: "@ckeditor/ckeditor5-dev-translations@npm:43.0.1"
   dependencies:
     "@babel/parser": ^7.18.9
     "@babel/traverse": ^7.18.9
@@ -607,7 +607,7 @@ __metadata:
     pofile: ^1.0.9
     rimraf: ^3.0.2
     webpack-sources: ^2.0.1
-  checksum: e472680e159c9bb84d3c23c0cbf4a7858f260859ca247a4999e1f1353e40bebe822300cd966572e30c35af319493a435c8ff6ebe5bf7353d8ec1251961e41cb5
+  checksum: 2ab3cf0700c1392436db4cd94426f687c44fac929697a71c3182ee90eaa584ab89592ea5f4ccbd99c91884b0329e46d28953efd33bc48ed7549ca1d9fe3a3599
   languageName: node
   linkType: hard
 
@@ -11356,7 +11356,7 @@ __metadata:
     "@ckeditor/ckeditor5-block-quote": ^35.4.0
     "@ckeditor/ckeditor5-code-block": 35.4.0
     "@ckeditor/ckeditor5-core": ^35.4.0
-    "@ckeditor/ckeditor5-dev-translations": ^32.0.0
+    "@ckeditor/ckeditor5-dev-translations": ^43.0.0
     "@ckeditor/ckeditor5-dev-utils": ^26.1.0
     "@ckeditor/ckeditor5-easy-image": ^35.4.0
     "@ckeditor/ckeditor5-editor-classic": ^35.4.0
