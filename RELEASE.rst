@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.146.3
+Version 0.146.3 (Released May 22, 2025)
 ---------------
 
 - Remove succeeded YouTubeStatus - its not a valid status at this time nor used in the codebase
