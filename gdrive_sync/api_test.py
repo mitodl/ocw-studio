@@ -166,6 +166,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
         Fileobj=mocker.ANY,
         Key=expected_key,
         ExtraArgs=expected_extra_args,
+        Config=mocker.ANY,
     )
     mock_download.assert_called_once_with(drive_file)
     drive_file.refresh_from_db()

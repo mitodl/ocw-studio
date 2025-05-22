@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -294,10 +295,15 @@ def stream_to_s3(drive_file: DriveFile):
         if drive_file.mime_type.startswith("video/"):
             extra_args["ContentDisposition"] = "attachment"
 
+        config = TransferConfig(
+            multipart_chunksize=64 * 1024 * 1024,  # 64 MB chunks
+            max_concurrency=5,
+        )
         bucket.upload_fileobj(
             Fileobj=GDriveStreamReader(drive_file),
             Key=drive_file.s3_key,
             ExtraArgs=extra_args,
+            Config=config,
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except:  # pylint:disable=bare-except
