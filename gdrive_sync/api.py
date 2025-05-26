@@ -457,7 +457,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             resource_type_fields = {
                 "file_type": drive_file.mime_type,
                 "file_size": drive_file.size,
-                **{field: resource_type for field in settings.RESOURCE_TYPE_FIELDS},
+                **dict.fromkeys(settings.RESOURCE_TYPE_FIELDS, resource_type),
             }
 
             resource_title = (
