@@ -156,7 +156,7 @@ class RootRelativeUrlRule(PyparsingRule):
             match = self.legacy_file_lookup.find(site.uuid, site_rel_path)
             return match, "unique file match"  # noqa: TRY300
         except self.legacy_file_lookup.MultipleMatchError as error:
-            raise self.NotFoundError(error)  # noqa: B904, TRY200
+            raise self.NotFoundError(error)  # noqa: B904
         except KeyError as error:
             if "." in site_rel_path[-8:]:
                 msg = "Content not found. Perhaps unmigrated file"

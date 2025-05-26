@@ -50,7 +50,7 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_website_funcs(mocker):
     """Mocked website-related functions"""  # noqa: D401
     return SimpleNamespace(

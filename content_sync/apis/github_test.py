@@ -77,7 +77,7 @@ GITHUB_APP_INSTALLATIONS = """[
 
 
 @pytest.fixture(autouse=True)
-def mock_github_integration(mocker):  # noqa: PT004
+def mock_github_integration(mocker):
     """Mock the github app request"""
     mock_get = mocker.patch("content_sync.apis.github.requests.get")
     mock_get.return_value.status_code = 200
@@ -86,7 +86,7 @@ def mock_github_integration(mocker):  # noqa: PT004
     mock_integration.return_value.get_access_token.return_value.token = "gh_token"  # noqa: S105
 
 
-@pytest.fixture()
+@pytest.fixture
 def db_data():
     """Fixture that seeds the database with data needed for this test suite"""
     users = UserFactory.create_batch(2)
@@ -106,7 +106,7 @@ def db_data():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_rsa_key():
     """Generate a test key"""
     private_key = rsa.generate_private_key(
@@ -119,7 +119,7 @@ def mock_rsa_key():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_api_wrapper(settings, mocker, db_data):
     """Create a GithubApiWrapper with a mock Github object"""
     settings.GIT_TOKEN = "faketoken"  # noqa: S105
@@ -132,13 +132,13 @@ def mock_api_wrapper(settings, mocker, db_data):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_github(mocker):
     """Return a mock Github class"""
     return mocker.patch("content_sync.apis.github.Github")
 
 
-@pytest.fixture()
+@pytest.fixture
 def patched_file_serialize(mocker):
     """Patches function that serializes website content to file contents"""
     return mocker.patch(
@@ -151,7 +151,7 @@ def fake_destination_filepath(website_content: WebsiteContent, *args) -> str:
     return f"path/to/{website_content.filename}.md"
 
 
-@pytest.fixture()
+@pytest.fixture
 def patched_destination_filepath(mocker):
     """Patches the get_destination_filepath API function"""
     return mocker.patch(
