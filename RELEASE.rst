@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.146.4
+---------------
+
+- fix(deps): update dependency django-hijack to v3.7.2 (#2574)
+- fix(deps): update dependency sentry-sdk to v2.29.1 (#2571)
+- fix(deps): update dependency posthog to v4 (#2573)
+- fix(deps): update dependency postcss-loader to v8 (#2566)
+- included website url_path in prefix to detect unrelated files (#2563)
+- fix(deps): update dependency eslint-plugin-jest to v28 (#2524)
+- fix(deps): update dependency ipython to v9 (#2527)
+- fix(deps): update dependency django-model-utils to v5 (#2520)
+- fix(deps): update dependency django-guardian to v3 (#2565)
+
 Version 0.146.3 (Released May 22, 2025)
 ---------------
 
