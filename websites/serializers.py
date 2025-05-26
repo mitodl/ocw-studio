@@ -471,7 +471,10 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
     is_deletable = serializers.SerializerMethodField()
 
     def get_is_deletable(self, obj):
-        return len(obj.prefetched_referencing_content) == 0
+        refs = getattr(obj, "prefetched_referencing_content", None)
+        if refs is not None:
+            return len(refs) == 0
+        return True
 
     class Meta:
         model = WebsiteContent
