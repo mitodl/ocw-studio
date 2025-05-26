@@ -19,6 +19,7 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
+from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
@@ -468,10 +469,31 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
     """Serializes WebsiteContent for the list view"""
 
     website_name = serializers.CharField(source="website.name")
+    is_deletable = serializers.SerializerMethodField()
+
+    def get_is_deletable(self, obj):
+        refs = getattr(obj, "prefetched_refs", None)
+        if refs is not None:
+            return len(refs) == 0
+        request = self.context.get("request")
+        user_email = request.user.email if request and request.user else ""
+        check_references = is_feature_enabled(
+            "OCW_STUDIO_CONTENT_DELETABLE_REFERENCES", user_email
+        )
+        if not check_references:
+            return True
+        return not obj.referencing_content.exists()
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "website_name", "title", "type", "updated_on"]
+        read_only_fields = [
+            "text_id",
+            "website_name",
+            "title",
+            "type",
+            "updated_on",
+            "is_deletable",
+        ]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects  # noqa: E501
         fields = read_only_fields
 

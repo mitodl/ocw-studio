@@ -7,7 +7,7 @@ import os
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.postgres.search import SearchQuery, SearchVector
-from django.db.models import Case, CharField, F, OuterRef, Q, Value, When
+from django.db.models import Case, CharField, F, OuterRef, Prefetch, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
@@ -603,9 +603,17 @@ class WebsiteContentViewSet(
         types = _get_value_list_from_query_params(self.request.query_params, "type")
         published = self.request.query_params.get("published", None)
 
-        queryset = WebsiteContent.objects.filter(
+        base = WebsiteContent.objects.filter(
             website__name=parent_lookup_website
         ).select_related("website", "website__starter")
+
+        queryset = base.prefetch_related(
+            Prefetch(
+                "referencing_content",
+                queryset=WebsiteContent.objects.only("pk"),
+                to_attr="prefetched_refs",
+            )
+        )
         if types:
             queryset = queryset.filter(type__in=types)
         if search:
