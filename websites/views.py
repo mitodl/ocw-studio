@@ -611,7 +611,7 @@ class WebsiteContentViewSet(
             Prefetch(
                 "referencing_content",
                 queryset=WebsiteContent.objects.only("pk"),
-                to_attr="prefetched_refs",
+                to_attr="prefetched_referencing_content",
             )
         )
         if types:
