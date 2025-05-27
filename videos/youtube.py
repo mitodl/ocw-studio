@@ -403,7 +403,7 @@ class YouTubeApi:
         return video_captions
 
 
-def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
+def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
     """Update YouTube video metadata via the API"""
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
@@ -413,7 +413,10 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
     ).exclude(Q(**{query_id_field: None}) | Q(**{query_id_field: ""}))
     if video_resources.count() == 0:
         return
-    youtube = YouTubeApi()
+    previously_published: bool = (
+        website.publish_date is not None and not website.unpublished
+    )
+    youtube: YouTubeApi = YouTubeApi()
     for video_resource in video_resources:
         is_draft = get_dict_field(video_resource.metadata, "draft") is True
         youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
@@ -422,14 +425,13 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT):
             video__website=website, destination_id=youtube_id
         ).exists():
             try:
-                youtube.update_video(
-                    video_resource,
-                    privacy=(
-                        "public"
-                        if version == VERSION_LIVE and not is_draft
-                        else "unlisted"
-                    ),
-                )
+                if version == VERSION_LIVE and not is_draft:
+                    privacy = "public"
+                elif not previously_published or is_draft:
+                    privacy = "unlisted"
+                else:
+                    privacy = None
+                youtube.update_video(video_resource, privacy=privacy)
             except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception(
                     "Unexpected error updating metadata for video resource %d",
