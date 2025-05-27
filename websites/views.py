@@ -31,7 +31,6 @@ from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
-from main.posthog import is_feature_enabled
 from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
@@ -700,30 +699,6 @@ class WebsiteContentViewSet(
         )  # this actually performs a save() because it's a soft delete
         update_website_backend(instance.website)
         return instance
-
-    # Override the destroy method
-    def destroy(self, *args, **kwargs):  # noqa: ARG002
-        """Delete instances only if they are not referenced."""
-        instance = self.get_object()
-
-        check_references = is_feature_enabled(
-            "OCW_STUDIO_CONTENT_DELETABLE_REFERENCES", self.request.user.email
-        )
-        if check_references and instance.referencing_content.exists():
-            return Response(
-                {
-                    "error": (
-                        "Cannot delete this content. "
-                        "It is referenced in other content instances"
-                    )
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Proceed with default deletion
-        self.perform_destroy(instance)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def create(self, request, *args, **kwargs):  # noqa: ARG002
         """
