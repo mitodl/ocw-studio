@@ -299,6 +299,7 @@ export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
   title: casual.title,
   type: casual.word,
   updated_on: randomISO8601(),
+  is_deletable: true,
 })
 
 export const makeWebsiteContentDetail = (): WebsiteContent => ({
