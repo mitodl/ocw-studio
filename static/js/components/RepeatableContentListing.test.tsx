@@ -360,10 +360,8 @@ describe("RepeatableContentListing", () => {
     )
 
     const websiteContentDetailsLookup = {
-      [contentDetailKey({
-        name: website.name,
-        textId: nonDeletableItem.text_id,
-      })]: nonDeletableItem,
+      [contentDetailKey({ name: website.name, textId: contentItem.text_id })]:
+        contentItem,
     }
 
     render = helper.configureRenderer(
