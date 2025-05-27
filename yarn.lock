@@ -710,10 +710,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-inspector@npm:^3.0.0, @ckeditor/ckeditor5-inspector@npm:^3.1.1":
+"@ckeditor/ckeditor5-inspector@npm:^3.0.0":
   version: 3.1.1
   resolution: "@ckeditor/ckeditor5-inspector@npm:3.1.1"
   checksum: 88586be562f2840e18a2380d264e302c9c676f5f0dc8e3750b1472df8b12c44f38076b63f1298030e8a9224da7dea0a1feb62c91527fa7862772debd3945fec6
+  languageName: node
+  linkType: hard
+
+"@ckeditor/ckeditor5-inspector@npm:^4.0.0":
+  version: 4.1.0
+  resolution: "@ckeditor/ckeditor5-inspector@npm:4.1.0"
+  checksum: ec1fc59c0be1d80a12dc09c1e7311a21522c815b7ff79a4692dce53a40ba6465d8b94ffa9f9250a09c411818ba72aa9ff1ba5fad8b863d2e1b454f7ed8558344
   languageName: node
   linkType: hard
 
@@ -11024,7 +11031,7 @@ __metadata:
     "@ckeditor/ckeditor5-essentials": ^35.4.0
     "@ckeditor/ckeditor5-heading": ^35.4.0
     "@ckeditor/ckeditor5-image": ^35.4.0
-    "@ckeditor/ckeditor5-inspector": ^3.1.1
+    "@ckeditor/ckeditor5-inspector": ^4.0.0
     "@ckeditor/ckeditor5-link": ^35.4.0
     "@ckeditor/ckeditor5-list": ^35.4.0
     "@ckeditor/ckeditor5-markdown-gfm": ^35.4.0
