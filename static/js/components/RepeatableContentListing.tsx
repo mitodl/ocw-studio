@@ -167,7 +167,7 @@ export default function RepeatableContentListing(props: {
       setSelectedContent(content)
       if (content.is_deletable === false) {
         setDeleteError(
-          "This item is hehe referenced by other items and cannot be deleted.",
+          "This item is referenced by other items and cannot be deleted.",
         )
       } else {
         setDeleteError(null)

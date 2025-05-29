@@ -19,6 +19,7 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
 from gdrive_sync.tasks import create_gdrive_folders
+from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
 from websites import constants
@@ -471,8 +472,13 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
     is_deletable = serializers.SerializerMethodField()
 
     def get_is_deletable(self, obj):
+        request = self.context.get("request", None)
+        user_email = getattr(request.user, "email", None) if request else None
+        check_references = is_feature_enabled(
+            "OCW_STUDIO_CONTENT_DELETABLE_REFERENCES", user_email
+        )
         refs = getattr(obj, "prefetched_referencing_content", None)
-        if refs is not None:
+        if check_references and refs is not None:
             return len(refs) == 0
         return True
 
