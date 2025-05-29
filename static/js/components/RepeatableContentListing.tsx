@@ -165,6 +165,13 @@ export default function RepeatableContentListing(props: {
     (event: ReactMouseEvent<HTMLButtonElement>) => {
       event.preventDefault()
       setSelectedContent(content)
+      if (content.is_deletable === false) {
+        setDeleteError(
+          "This item is referenced by other items and cannot be deleted.",
+        )
+      } else {
+        setDeleteError(null)
+      }
       openDeleteModal()
     }
 
@@ -305,8 +312,10 @@ export default function RepeatableContentListing(props: {
         }}
         headerContent={`Remove ${labelSingular}`}
         bodyContent={getDialogBodyContent()}
-        acceptText="Delete"
-        onAccept={onDelete}
+        {...(selectedContent?.is_deletable && {
+          acceptText: "Delete",
+          onAccept: onDelete,
+        })}
       />
     </>
   )
