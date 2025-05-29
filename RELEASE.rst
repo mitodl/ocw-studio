@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.146.4
+Version 0.146.4 (Released May 29, 2025)
 ---------------
 
 - fix(deps): update dependency django-hijack to v3.7.2 (#2574)
