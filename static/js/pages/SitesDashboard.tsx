@@ -100,7 +100,7 @@ export const getMostRecentStatus = (
   const statuses = [
     {
       type: "draft",
-      active: site.draft_publish_date && !site.publish_date,
+      active: !site.publish_date,
       statusText: "Draft",
       hoverText: "Draft updated",
       className: "text-secondary",
@@ -116,7 +116,8 @@ export const getMostRecentStatus = (
     {
       type: "unpublished",
       active:
-        site.unpublished && site.unpublish_status === PublishStatus.Success,
+        site.unpublish_status &&
+        site.unpublish_status === PublishStatus.Success,
       statusText: "Unpublished from Production",
       className: "text-dark",
       dateTime: site.unpublish_status_updated_on,
@@ -124,7 +125,8 @@ export const getMostRecentStatus = (
     {
       type: "unpublish not complete",
       active:
-        site.unpublished && site.unpublish_status !== PublishStatus.Success,
+        site.unpublish_status &&
+        site.unpublish_status !== PublishStatus.Success,
       statusText: `Unpublish: ${publishStatusMessage(site.unpublish_status).toLowerCase().replace("...", "")}`,
       className: publishStatusIndicatorClass(site.unpublish_status),
       dateTime: site.unpublish_status_updated_on,
