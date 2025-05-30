@@ -6,6 +6,7 @@ import re
 import time
 from collections import Counter
 from io import BytesIO
+from typing import Literal
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -403,6 +404,29 @@ class YouTubeApi:
         return video_captions
 
 
+def get_video_privacy_status(
+    *, version, is_draft, previously_published
+) -> Literal["public", "unlisted"] | None:
+    """
+    Determine the appropriate YouTube privacy status for a video.
+
+    Args:
+        version: The version being published (VERSION_LIVE or VERSION_DRAFT)
+        is_draft: Whether the video is marked as draft content
+        previously_published: Whether the site has been published before
+        and not unpublished
+
+    Returns:
+        "public", "unlisted", or None (to maintain current privacy)
+    """
+    if version == VERSION_LIVE and not is_draft:
+        return "public"
+    elif not previously_published or is_draft:
+        return "unlisted"
+    else:
+        return None
+
+
 def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
     """Update YouTube video metadata via the API"""
     if not is_youtube_enabled() or not is_ocw_site(website):
@@ -425,12 +449,11 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
             video__website=website, destination_id=youtube_id
         ).exists():
             try:
-                if version == VERSION_LIVE and not is_draft:
-                    privacy = "public"
-                elif not previously_published or is_draft:
-                    privacy = "unlisted"
-                else:
-                    privacy = None
+                privacy = get_video_privacy_status(
+                    version=version,
+                    is_draft=is_draft,
+                    previously_published=previously_published,
+                )
                 youtube.update_video(video_resource, privacy=privacy)
             except:  # pylint:disable=bare-except  # noqa: E722
                 log.exception(

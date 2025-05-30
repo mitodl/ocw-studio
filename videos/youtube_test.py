@@ -25,6 +25,7 @@ from videos.youtube import (
     CAPTION_UPLOAD_NAME,
     YouTubeApi,
     YouTubeUploadException,
+    get_video_privacy_status,
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
     strip_bad_chars,
@@ -217,8 +218,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         },
     )
 
-    expected_title = f'{" ".join([title.replace(">", "") for _ in range(9)])}...'
-    expected_desc = f'{" ".join([description.replace(">", "") for _ in range(499)])}...'
+    expected_title = f"{' '.join([title.replace('>', '') for _ in range(9)])}..."
+    expected_desc = f"{' '.join([description.replace('>', '') for _ in range(499)])}..."
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
     assert (
@@ -398,12 +399,11 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
         if video_file_exists:
             assert mock_update_video.call_count == 2
             for youtube_id in ["abc123", "def456"]:
-                if version == VERSION_LIVE and not res_draft:
-                    final_privacy = "public"
-                elif not previously_published or res_draft:
-                    final_privacy = "unlisted"
-                else:
-                    final_privacy = None
+                final_privacy = get_video_privacy_status(
+                    version=version,
+                    is_draft=res_draft,
+                    previously_published=previously_published,
+                )
 
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
