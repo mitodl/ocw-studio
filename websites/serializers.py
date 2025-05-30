@@ -106,6 +106,10 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "owner",
             "url_path",
             "unpublished",
+            "unpublish_status",
+            "unpublish_status_updated_on",
+            "live_publish_status",
+            "live_publish_status_updated_on",
         ]
         extra_kwargs = {"owner": {"write_only": True}}
 
