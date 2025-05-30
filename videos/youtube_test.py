@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from googleapiclient.errors import HttpError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -24,6 +25,7 @@ from videos.youtube import (
     CAPTION_UPLOAD_NAME,
     YouTubeApi,
     YouTubeUploadException,
+    get_video_privacy_status,
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
     strip_bad_chars,
@@ -45,13 +47,13 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture()
 def youtube_mocker(mocker):
-    """Return a mock youtube api client"""
+    """Return a mock YouTube api client"""
     return mocker.patch("videos.youtube.build")
 
 
 @pytest.fixture()
 def youtube_website(mocker):
-    """Return a website with youtube resources"""
+    """Return a website with YouTube resources"""
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
         type=CONTENT_TYPE_RESOURCE,
@@ -93,7 +95,7 @@ def mock_mail(mocker):
 
 def test_youtube_settings(mocker, settings):
     """
-    Test that Youtube object creation uses YT_* settings for credentials
+    Test that YouTube object creation uses YT_* settings for credentials
     """
     settings.YT_ACCESS_TOKEN = "yt_access_token"  # noqa: S105
     settings.YT_CLIENT_ID = "yt_client_id"
@@ -197,7 +199,7 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
 
 @pytest.mark.parametrize("privacy", [None, "public"])
 def test_update_video(settings, mocker, youtube_mocker, privacy):
-    """update_video should send the correct data in a request to update youtube metadata"""
+    """update_video should send the correct data in a request to update YouTube metadata"""
     speakers = "speaker1, speaker2"
     tags = "tag1, tag2"
     youtube_id = "test video description"
@@ -216,8 +218,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         },
     )
 
-    expected_title = f'{" ".join([title.replace(">", "") for _ in range(9)])}...'
-    expected_desc = f'{" ".join([description.replace(">", "") for _ in range(499)])}...'
+    expected_title = f"{' '.join([title.replace('>', '') for _ in range(9)])}..."
+    expected_desc = f"{' '.join([description.replace('>', '') for _ in range(499)])}..."
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
     assert (
@@ -350,6 +352,7 @@ def test_mail_youtube_upload_success(settings, mock_mail):
 @pytest.mark.parametrize("video_file_exists", [True, False])
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
+@pytest.mark.parametrize("previously_published", [True, False])
 @pytest.mark.parametrize(
     ("version", "privacy"),
     [[VERSION_DRAFT, "unlisted"], [VERSION_LIVE, "public"]],  # noqa: PT007
@@ -365,12 +368,17 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
     privacy,
     res_draft,
     expected_privacy,
+    previously_published,
 ):
     """Check that youtube.update_video is called for appropriate resources and not others"""
     mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
+    youtube_website.publish_date = timezone.now() if previously_published else None
+    youtube_website.unpublish_status = None
+    youtube_website.save()
+
     for youtube_id in ["", None, "abc123", "def456"]:
         if video_file_exists:
             VideoFileFactory.create(
@@ -391,11 +399,12 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
         if video_file_exists:
             assert mock_update_video.call_count == 2
             for youtube_id in ["abc123", "def456"]:
-                final_privacy = (
-                    expected_privacy
-                    if (version == VERSION_LIVE and not res_draft)
-                    else "unlisted"
+                final_privacy = get_video_privacy_status(
+                    version=version,
+                    is_draft=res_draft,
+                    previously_published=previously_published,
                 )
+
                 mock_update_video.assert_any_call(
                     WebsiteContent.objects.get(
                         website=youtube_website,
