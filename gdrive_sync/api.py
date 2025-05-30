@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
@@ -23,7 +24,6 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 from content_sync.api import get_sync_backend
-from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
@@ -279,9 +279,14 @@ def process_file_result(
     return None
 
 
-@retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """Stream a Google Drive file to S3"""
+    if drive_file.status in (
+        DriveFileStatus.UPLOAD_COMPLETE,
+        DriveFileStatus.TRANSCODING,
+        DriveFileStatus.COMPLETE,
+    ):
+        return
     try:
         s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -294,10 +299,15 @@ def stream_to_s3(drive_file: DriveFile):
         if drive_file.mime_type.startswith("video/"):
             extra_args["ContentDisposition"] = "attachment"
 
+        config = TransferConfig(
+            multipart_chunksize=64 * 1024 * 1024,  # 64 MB chunks
+            max_concurrency=5,
+        )
         bucket.upload_fileobj(
             Fileobj=GDriveStreamReader(drive_file),
             Key=drive_file.s3_key,
             ExtraArgs=extra_args,
+            Config=config,
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except:  # pylint:disable=bare-except
