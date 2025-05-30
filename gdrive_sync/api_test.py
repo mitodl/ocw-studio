@@ -176,30 +176,23 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
 
 
 @pytest.mark.django_db()
-@pytest.mark.parametrize("num_errors", [2, 3, 4])
-def test_stream_to_s3_error(settings, mocker, num_errors):
-    """Task should mark DriveFile status as failed if an s3 upload error occurs more often than retries"""
+@pytest.mark.parametrize("fail_at", ["bucket", "upload"])
+def test_stream_to_s3_error_marks_failed(settings, mocker, fail_at):
+    """Task should mark DriveFile status as UPLOAD_FAILED and raise if S3 upload errors occur."""
     settings.ENVIRONMENT = "test"
-    settings.CONTENT_SYNC_RETRIES = 3
-    should_raise = num_errors >= 3
     mocker.patch("gdrive_sync.api.GDriveStreamReader")
     mock_boto3 = mocker.patch("main.s3_utils.boto3")
-    mock_boto3.resource.return_value.Bucket.side_effect = [
-        *[HTTPError() for _ in range(num_errors)],
-        mocker.Mock(),
-    ]
-    drive_file = DriveFileFactory.create(status=DriveFileStatus.CREATED)
-    if should_raise:
-        with pytest.raises(HTTPError):
-            api.stream_to_s3(drive_file)
+    if fail_at == "bucket":
+        mock_boto3.resource.return_value.Bucket.side_effect = HTTPError()
     else:
+        mock_bucket = mock_boto3.resource.return_value.Bucket.return_value
+        mock_bucket.upload_fileobj.side_effect = HTTPError()
+    drive_file = DriveFileFactory.create(status=DriveFileStatus.CREATED)
+    with pytest.raises(HTTPError):
         api.stream_to_s3(drive_file)
+
     drive_file.refresh_from_db()
-    assert drive_file.status == (
-        DriveFileStatus.UPLOAD_FAILED
-        if should_raise
-        else DriveFileStatus.UPLOAD_COMPLETE
-    )
+    assert drive_file.status == DriveFileStatus.UPLOAD_FAILED
 
 
 @pytest.mark.django_db()
