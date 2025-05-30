@@ -24,7 +24,6 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 from content_sync.api import get_sync_backend
-from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
@@ -280,9 +279,14 @@ def process_file_result(
     return None
 
 
-@retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """Stream a Google Drive file to S3"""
+    if drive_file.status in (
+        DriveFileStatus.UPLOAD_COMPLETE,
+        DriveFileStatus.TRANSCODING,
+        DriveFileStatus.COMPLETE,
+    ):
+        return
     try:
         s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
