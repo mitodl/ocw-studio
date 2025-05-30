@@ -139,6 +139,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
         s3_key=current_s3_key,
         mime_type="video/mp4" if is_video else "application/pdf",
         drive_path=f"website/{DRIVE_FOLDER_VIDEOS_FINAL if is_video else DRIVE_FOLDER_FILES_FINAL}",
+        status=DriveFileStatus.CREATED,
     )
     api.stream_to_s3(drive_file)
     if current_s3_key:
@@ -187,7 +188,7 @@ def test_stream_to_s3_error(settings, mocker, num_errors):
         *[HTTPError() for _ in range(num_errors)],
         mocker.Mock(),
     ]
-    drive_file = DriveFileFactory.create()
+    drive_file = DriveFileFactory.create(status=DriveFileStatus.CREATED)
     if should_raise:
         with pytest.raises(HTTPError):
             api.stream_to_s3(drive_file)
@@ -199,6 +200,15 @@ def test_stream_to_s3_error(settings, mocker, num_errors):
         if should_raise
         else DriveFileStatus.UPLOAD_COMPLETE
     )
+
+
+@pytest.mark.django_db()
+def test_stream_to_s3_skips_if_already_uploaded(mocker):
+    """stream_to_s3 should skip if the file status is UPLOAD_COMPLETE"""
+    mock_boto3 = mocker.patch("main.s3_utils.boto3")
+    drive_file = DriveFileFactory.create(status=DriveFileStatus.UPLOAD_COMPLETE)
+    api.stream_to_s3(drive_file)
+    mock_boto3.resource.return_value.Bucket.return_value.upload_fileobj.assert_not_called()
 
 
 @pytest.mark.django_db()
