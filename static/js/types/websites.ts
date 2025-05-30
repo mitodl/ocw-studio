@@ -261,6 +261,7 @@ export type Website = WebsiteStatus & {
   url_suggestion: string
   s3_path: string | null
   live_publish_status: PublishStatus | null
+  live_publish_status_updated_on: string | null
   unpublish_status: PublishStatus | null
   unpublish_status_updated_on: string | null
 }
