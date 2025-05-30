@@ -13,15 +13,15 @@
     "@ckeditor/ckeditor5-block-quote": "^35.4.0",
     "@ckeditor/ckeditor5-code-block": "35.4.0",
     "@ckeditor/ckeditor5-core": "^35.4.0",
-    "@ckeditor/ckeditor5-dev-translations": "^32.0.0",
-    "@ckeditor/ckeditor5-dev-utils": "^26.1.0",
+    "@ckeditor/ckeditor5-dev-translations": "^43.0.0",
+    "@ckeditor/ckeditor5-dev-utils": "^43.0.0",
     "@ckeditor/ckeditor5-easy-image": "^35.4.0",
     "@ckeditor/ckeditor5-editor-classic": "^35.4.0",
     "@ckeditor/ckeditor5-engine": "^35.4.0",
     "@ckeditor/ckeditor5-essentials": "^35.4.0",
     "@ckeditor/ckeditor5-heading": "^35.4.0",
     "@ckeditor/ckeditor5-image": "^35.4.0",
-    "@ckeditor/ckeditor5-inspector": "^3.1.1",
+    "@ckeditor/ckeditor5-inspector": "^4.0.0",
     "@ckeditor/ckeditor5-link": "^35.4.0",
     "@ckeditor/ckeditor5-list": "^35.4.0",
     "@ckeditor/ckeditor5-markdown-gfm": "^35.4.0",
@@ -152,7 +152,7 @@
     "yup": "^0.32.9"
   },
   "engines": {
-    "node": "22.15.0",
+    "node": "22.16.0",
     "yarn": "3.x"
   },
   "scripts": {

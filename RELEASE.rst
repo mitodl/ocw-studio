@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.147.0
+---------------
+
+- chore(deps): update node.js to v22.16.0 (#2579)
+- added latest version for transcoding app (#2575)
+- fix(deps): update dependency @ckeditor/ckeditor5-inspector to v4 (#2515)
+- fix(deps): update dependency @ckeditor/ckeditor5-dev-utils to v43 (#2514)
+- fix(deps): update dependency @ckeditor/ckeditor5-dev-translations to v43 (#2513)
+- fix(deps): update dependency boto3 to v1.38.23 (#2577)
+
 Version 0.146.4 (Released May 29, 2025)
 ---------------
 
