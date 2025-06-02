@@ -325,6 +325,78 @@ describe("RepeatableContentListing", () => {
     })
   })
 
+  it("should not show Delete for referenced content items", async () => {
+    SETTINGS.deletableContentTypes = ["external-resource"]
+    const configItem = makeRepeatableConfigItem("external-resource")
+    const contentItem = {
+      ...makeWebsiteContentListItem(),
+      is_deletable: false,
+    }
+
+    const apiResponse = {
+      results: [contentItem],
+      count: 1,
+      next: null,
+      previous: null,
+    }
+
+    const contentListingLookup = {
+      [contentListingKey({
+        name: website.name,
+        type: configItem.name,
+        offset: 0,
+      })]: {
+        ...apiResponse,
+        results: apiResponse.results.map((item) => item.text_id),
+      },
+    }
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({ name: website.name })
+        .query({ offset: 0, type: configItem.name })
+        .toString(),
+      apiResponse,
+    )
+
+    const websiteContentDetailsLookup = {
+      [contentDetailKey({ name: website.name, textId: contentItem.text_id })]:
+        contentItem,
+    }
+
+    render = helper.configureRenderer(
+      (props) => (
+        <WebsiteContext.Provider value={website}>
+          <RepeatableContentListing {...props} />
+        </WebsiteContext.Provider>
+      ),
+      { configItem },
+      {
+        entities: {
+          websiteDetails: { [website.name]: website },
+          websiteContentListing: contentListingLookup,
+          websiteContentDetails: websiteContentDetailsLookup,
+        },
+        queries: {},
+      },
+    )
+
+    const { wrapper } = await render()
+    wrapper.find(".transparent-button").at(0).simulate("click") // open dropdown
+    act(() => {
+      wrapper.find("button.dropdown-item").at(0).simulate("click") // open delete modal
+    })
+    wrapper.update()
+
+    const dialog = wrapper.find("Dialog")
+    expect(dialog.prop("open")).toBe(true)
+
+    // Assert that the dialog has no "Delete" button (only Cancel)
+    const footerButtons = dialog.find("ModalFooter").find("button")
+    expect(footerButtons.length).toBe(1)
+    expect(footerButtons.at(0).text()).toContain("Cancel")
+  })
+
   it("should show each content item with edit links", async () => {
     const { wrapper } = await render()
 
