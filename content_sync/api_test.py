@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_api_funcs(settings, mocker):
     """Mock functions used in publish_websites"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
