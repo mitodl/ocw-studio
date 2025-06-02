@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.147.0
+Version 0.147.0 (Released June 02, 2025)
 ---------------
 
 - Refactor referenced items Delete Dialog (#2578)
