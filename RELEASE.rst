@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.147.1
+Version 0.147.1 (Released June 02, 2025)
 ---------------
 
 - Only unlist YouTube videos if not previously published (#2580)
