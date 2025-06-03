@@ -312,6 +312,10 @@ def stream_to_s3(drive_file: DriveFile):
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
     except Exception as exc:
+        log.exception(
+            "An error occurred uploading Google Drive file %s to S3",
+            drive_file.name,
+        )
         drive_file.sync_error = f"An error occurred uploading Google Drive file {drive_file.name} to S3: {exc}"  # noqa: E501
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
