@@ -264,6 +264,8 @@ export type Website = WebsiteStatus & {
   live_publish_status_updated_on: string | null
   unpublish_status: PublishStatus | null
   unpublish_status_updated_on: string | null
+  draft_publish_status: PublishStatus | null
+  draft_publish_status_updated_on: string | null
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

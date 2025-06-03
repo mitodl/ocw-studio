@@ -100,7 +100,10 @@ export const getMostRecentStatus = (
   const statuses = [
     {
       type: "draft",
-      active: !site.publish_date,
+      active:
+        !site.publish_date &&
+        site.draft_publish_status &&
+        site.draft_publish_status === PublishStatus.Success,
       statusText: "Draft",
       hoverText: "Draft updated",
       className: "text-secondary",
@@ -139,6 +142,16 @@ export const getMostRecentStatus = (
       statusText: `Publish: ${publishStatusMessage(site.live_publish_status).toLowerCase().replace("...", "")}`,
       className: publishStatusIndicatorClass(site.live_publish_status),
       dateTime: site.live_publish_status_updated_on,
+    },
+    {
+      type: "draft not complete",
+      active:
+        !site.publish_date &&
+        site.draft_publish_status &&
+        site.draft_publish_status !== PublishStatus.Success,
+      statusText: `Draft: ${publishStatusMessage(site.draft_publish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.draft_publish_status),
+      dateTime: site.draft_publish_status_updated_on,
     },
   ]
 
