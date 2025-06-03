@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Optional
 
 from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
@@ -312,10 +311,8 @@ def stream_to_s3(drive_file: DriveFile):
             Config=config,
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
-    except:  # pylint:disable=bare-except
-        drive_file.sync_error = (
-            f"An error occurred uploading Google Drive file {drive_file.name} to S3"
-        )
+    except Exception as exc:
+        drive_file.sync_error = f"An error occurred uploading Google Drive file {drive_file.name} to S3: {exc}"  # noqa: E501
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
 
@@ -546,11 +543,11 @@ def transcode_gdrive_video(drive_file: DriveFile):
             drive_file.save()
             create_media_convert_job(video)
             drive_file.update_status(DriveFileStatus.TRANSCODING)
-        except ClientError:
+        except Exception as exc:
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
             video.save()
-            drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"  # noqa: E501
+            drive_file.sync_error = f"Error transcoding video {drive_file.name}: {exc}"
             drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
             raise
 
