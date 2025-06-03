@@ -24,6 +24,7 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 from content_sync.api import get_sync_backend
+from content_sync.decorators import retry_on_failure
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
     DRIVE_FILE_DOWNLOAD_LINK,
@@ -279,6 +280,7 @@ def process_file_result(
     return None
 
 
+@retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """Stream a Google Drive file to S3"""
     if drive_file.status in (
@@ -522,6 +524,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.FAILED)
 
 
+@retry_on_failure
 def transcode_gdrive_video(drive_file: DriveFile):
     """Create a MediaConvert transcode job and Video object for the given drive file id if one doesn't already exist"""  # noqa: E501
     if settings.AWS_ACCOUNT_ID and settings.AWS_REGION and settings.AWS_ROLE_NAME:
@@ -538,9 +541,9 @@ def transcode_gdrive_video(drive_file: DriveFile):
         if prior_job:
             # Don't start another transcode job if there's a prior one that hasn't failed/completed yet  # noqa: E501
             return
-        drive_file.video = video
-        drive_file.save()
         try:
+            drive_file.video = video
+            drive_file.save()
             create_media_convert_job(video)
             drive_file.update_status(DriveFileStatus.TRANSCODING)
         except ClientError:
