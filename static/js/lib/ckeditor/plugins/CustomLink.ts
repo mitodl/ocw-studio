@@ -13,6 +13,7 @@ import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
 class CustomLinkCommand extends LinkCommand {
   execute(href: string, _options = {}) {
+    const syntax = this.editor.plugins.get(ResourceLinkMarkdownSyntax)
     const ranges = this.editor.model.document.selection.getRanges()
     let title = ""
     for (const range of ranges) {
@@ -23,15 +24,21 @@ class CustomLinkCommand extends LinkCommand {
       }
     }
 
-    getExternalResource(this.editor.config.get(WEBSITE_NAME), href, title).then(
-      (externalResource) => {
+    if (syntax.isResourceLinkHref(href)) {
+      super.execute(href)
+    } else {
+      getExternalResource(
+        this.editor.config.get(WEBSITE_NAME),
+        href,
+        title,
+      ).then((externalResource) => {
         if (externalResource) {
           updateHref(externalResource, this.editor, (href) =>
             super.execute(href),
           )
         }
-      },
-    )
+      })
+    }
   }
 }
 
