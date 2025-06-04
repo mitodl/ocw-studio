@@ -155,7 +155,6 @@ def get_token():
                 serialization.load_pem_private_key(
                     settings.GITHUB_APP_PRIVATE_KEY,
                     None,
-                    False,  # noqa: FBT003
                 )
                 .private_bytes(
                     serialization.Encoding.PEM,
