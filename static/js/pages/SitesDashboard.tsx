@@ -247,14 +247,6 @@ export default function SitesDashboard(): JSX.Element {
             >
               <div className="d-flex flex-row">
                 {(() => {
-                  if (
-                    !site.publish_date &&
-                    !site.live_publish_status &&
-                    !site.draft_publish_date
-                  ) {
-                    return <div className="text-danger">Never Published</div>
-                  }
-
                   const statusInfo = getMostRecentStatus(site)
 
                   return statusInfo.dateTime ? (
