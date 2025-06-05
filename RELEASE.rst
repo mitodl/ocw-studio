@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.148.0
+---------------
+
+- added hover message and new statuses for the site listing page (#2407)
+- fix(deps): update dependency @sentry/react to v9 (#2490)
+
 Version 0.147.1 (Released June 02, 2025)
 ---------------
 

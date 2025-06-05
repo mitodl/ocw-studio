@@ -297,6 +297,7 @@ class WebsiteViewSet(
                 )
             else:
                 website.unpublish_status = PUBLISH_STATUS_NOT_STARTED
+                website.unpublish_status_updated_on = now_in_utc()
                 website.last_unpublished_by = request.user
                 website.save()
                 trigger_unpublished_removal(website)
