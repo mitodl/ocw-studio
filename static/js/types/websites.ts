@@ -236,6 +236,8 @@ export interface WebsiteStatus {
   synced_on: string | null
   sync_errors: Array<string> | null
   unpublished: boolean
+  unpublish_status_updated_on: string | null
+  unpublish_status: PublishStatus | null
 }
 
 export type Website = WebsiteStatus & {
@@ -258,6 +260,12 @@ export type Website = WebsiteStatus & {
   url_path: string | null
   url_suggestion: string
   s3_path: string | null
+  live_publish_status: PublishStatus | null
+  live_publish_status_updated_on: string | null
+  unpublish_status: PublishStatus | null
+  unpublish_status_updated_on: string | null
+  draft_publish_status: PublishStatus | null
+  draft_publish_status_updated_on: string | null
 }
 
 type WebsiteRoleEditable = typeof ROLE_ADMIN | typeof ROLE_EDITOR

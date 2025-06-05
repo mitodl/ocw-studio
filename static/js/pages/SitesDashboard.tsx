@@ -4,6 +4,7 @@ import { useRequest } from "redux-query-react"
 import { Link } from "react-router-dom"
 
 import PaginationControls from "../components/PaginationControls"
+import { publishStatusMessage } from "../components/PublishStatusIndicator"
 
 import {
   WebsiteListingParams,
@@ -20,7 +21,7 @@ import Dropdown from "../components/Dropdown"
 import UnpublishDialog from "../components/UnpublishDialog"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 import { usePermission } from "../hooks/permissions"
-import { Permission } from "../constants"
+import { Permission, PublishStatus } from "../constants"
 
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
@@ -28,6 +29,156 @@ function getListingParams(search: string): WebsiteListingParams {
   const searchString = qsParams.get("q")
 
   return searchString ? { offset, search: searchString } : { offset }
+}
+
+export const publishStatusIndicatorClass = (
+  status: PublishStatus | null,
+): string => {
+  switch (status) {
+    case PublishStatus.NotStarted:
+      return "text-secondary"
+    case PublishStatus.Pending:
+    case PublishStatus.Started:
+      return "text-warning"
+    case PublishStatus.Aborted:
+    case PublishStatus.Errored:
+      return "text-danger"
+    case PublishStatus.Success:
+      return "text-success"
+    default:
+      return ""
+  }
+}
+
+export const formatDateTime = (dateTimeString: string): string => {
+  const date = new Date(dateTimeString)
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}
+
+export const StatusWithDateHover = ({
+  statusText,
+  hoverText,
+  dateTime,
+  className,
+}: {
+  statusText: string
+  hoverText?: string
+  dateTime: string | null
+  className: string
+}) => {
+  const [showDate, setShowDate] = useState(false)
+
+  return (
+    <div
+      className={className}
+      onMouseEnter={() => setShowDate(true)}
+      onMouseLeave={() => setShowDate(false)}
+    >
+      {showDate && dateTime
+        ? `${hoverText || statusText} on ${formatDateTime(dateTime)}`
+        : statusText}
+    </div>
+  )
+}
+
+export const getMostRecentStatus = (
+  site: Website,
+): {
+  status: string
+  statusClass: string
+  dateTime: string | null
+  hoverText?: string
+} => {
+  // Create an array of status objects with their timestamps
+  const statuses = [
+    {
+      type: "draft",
+      active:
+        !site.publish_date &&
+        site.draft_publish_status &&
+        site.draft_publish_status === PublishStatus.Success,
+      statusText: "Draft",
+      hoverText: "Draft updated",
+      className: "text-secondary",
+      dateTime: site.draft_publish_date,
+    },
+    {
+      type: "published",
+      active: PublishStatus.Success === site.live_publish_status,
+      statusText: "Published",
+      className: "text-success",
+      dateTime: site.publish_date,
+    },
+    {
+      type: "unpublished",
+      active:
+        site.unpublish_status &&
+        site.unpublish_status === PublishStatus.Success,
+      statusText: "Unpublished from Production",
+      className: "text-dark",
+      dateTime: site.unpublish_status_updated_on,
+    },
+    {
+      type: "unpublish not complete",
+      active:
+        site.unpublish_status &&
+        site.unpublish_status !== PublishStatus.Success,
+      statusText: `Unpublish: ${publishStatusMessage(site.unpublish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.unpublish_status),
+      dateTime: site.unpublish_status_updated_on,
+    },
+    {
+      type: "publish not complete",
+      active:
+        site.live_publish_status &&
+        site.live_publish_status !== PublishStatus.Success,
+      statusText: `Publish: ${publishStatusMessage(site.live_publish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.live_publish_status),
+      dateTime: site.live_publish_status_updated_on,
+    },
+    {
+      type: "draft not complete",
+      active:
+        !site.publish_date &&
+        site.draft_publish_status &&
+        site.draft_publish_status !== PublishStatus.Success,
+      statusText: `Draft: ${publishStatusMessage(site.draft_publish_status).toLowerCase().replace("...", "")}`,
+      className: publishStatusIndicatorClass(site.draft_publish_status),
+      dateTime: site.draft_publish_status_updated_on,
+    },
+  ]
+
+  const activeStatuses = statuses
+    .filter((s) => s.active && s.dateTime)
+    .sort(
+      (a, b) =>
+        new Date(b.dateTime!).getTime() - new Date(a.dateTime!).getTime(),
+    )
+
+  // Return the most recent status
+  if (activeStatuses.length > 0) {
+    const mostRecent = activeStatuses[0]
+    return {
+      status: mostRecent.statusText,
+      statusClass: mostRecent.className,
+      dateTime: mostRecent.dateTime,
+      hoverText: mostRecent.hoverText,
+    }
+  }
+
+  // No active statuses - never published
+  return {
+    status: "Never Published",
+    statusClass: "text-danger",
+    dateTime: null,
+  }
 }
 
 export default function SitesDashboard(): JSX.Element {
@@ -95,11 +246,22 @@ export default function SitesDashboard(): JSX.Element {
               key={site.uuid}
             >
               <div className="d-flex flex-row">
-                {site.publish_date && !site.unpublished ? (
-                  <div className="text-success">Published</div>
-                ) : (
-                  <div className="text-dark">Draft</div>
-                )}
+                {(() => {
+                  const statusInfo = getMostRecentStatus(site)
+
+                  return statusInfo.dateTime ? (
+                    <StatusWithDateHover
+                      statusText={statusInfo.status}
+                      hoverText={statusInfo.hoverText}
+                      dateTime={statusInfo.dateTime}
+                      className={statusInfo.statusClass}
+                    />
+                  ) : (
+                    <div className={statusInfo.statusClass}>
+                      {statusInfo.status}
+                    </div>
+                  )
+                })()}
                 <Dropdown
                   website={{
                     name: site.name,
@@ -109,7 +271,14 @@ export default function SitesDashboard(): JSX.Element {
                   dropdownBtnID={`${site.uuid}_DropdownMenuButton`}
                   materialIcon={MaterialIcons.MoreVert}
                   dropdownMenu={
-                    site.publish_date && !site.unpublished
+                    site.publish_date &&
+                    !site.unpublished &&
+                    site.live_publish_status !== null &&
+                    [
+                      PublishStatus.Errored,
+                      PublishStatus.Aborted,
+                      PublishStatus.Success,
+                    ].includes(site.live_publish_status)
                       ? websiteDropdownMenuList
                       : websiteDropdownMenuList.filter(
                           (item) => item.id !== "1",

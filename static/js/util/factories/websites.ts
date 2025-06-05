@@ -227,6 +227,8 @@ export const makeWebsiteDetail = (
   url_suggestion: "[sitemetadata:primary_course_number]-[sitemetdata:title]",
   s3_path: `courses/${casual.word}`,
   unpublished: false,
+  unpublish_status: null,
+  unpublish_status_updated_on: null,
   ...overrides,
 })
 
@@ -249,6 +251,8 @@ export const makeWebsiteStatus = (
     synced_on: null,
     sync_errors: null,
     unpublished: false,
+    unpublish_status: website.unpublish_status || null,
+    unpublish_status_updated_on: website.unpublish_status_updated_on || null,
   }
 }
 
