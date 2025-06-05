@@ -34,8 +34,8 @@ from websites.models import Website, WebsiteContent
 log = logging.getLogger(__name__)
 
 
-@app.task()
-def process_drive_file(drive_file_id: str):
+@app.task(bind=True, acks_late=True, retry_backoff=60, max_retries=3)
+def process_drive_file(self, drive_file_id: str):
     """
     Run the necessary functions for processing a drive file
 
@@ -49,10 +49,12 @@ def process_drive_file(drive_file_id: str):
         if drive_file.is_video():
             api.transcode_gdrive_video(drive_file)
         return drive_file_id  # noqa: TRY300
-    except:  # pylint:disable=bare-except  # noqa: E722
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         log.exception("Error processing DriveFile %s", drive_file_id)
-
-    return None
+        try:
+            raise self.retry(exc=exc) from exc
+        except self.MaxRetriesExceededError:
+            return None
 
 
 @app.task()

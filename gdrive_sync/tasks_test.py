@@ -1,6 +1,7 @@
 """Tests for gdrive_sync tasks"""
 
 import pytest
+from celery.exceptions import Retry
 from mitol.common.utils import now_in_utc
 from moto import mock_aws
 
@@ -241,7 +242,11 @@ def test_process_drive_file(mocker, is_video, has_error):
     mock_transcode = mocker.patch("gdrive_sync.tasks.api.transcode_gdrive_video")
 
     mock_log = mocker.patch("gdrive_sync.tasks.log.exception")
-    process_drive_file.delay(drive_file.file_id)
+    if has_error:
+        with pytest.raises(Retry):
+            process_drive_file.delay(drive_file.file_id)
+    else:
+        process_drive_file.delay(drive_file.file_id)
     assert mock_stream_s3.call_count == 1
     assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
     assert mock_log.call_count == (1 if has_error else 0)
