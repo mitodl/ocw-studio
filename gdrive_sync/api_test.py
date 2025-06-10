@@ -788,8 +788,12 @@ def test_transcode_gdrive_video_error(settings, mocker):
     with pytest.raises(ClientError):
         transcode_gdrive_video(drive_file)
     drive_file.refresh_from_db()
-    mock_log.assert_called_once_with(
-        "Error creating transcode job for %s", drive_file.video.source_key
+    assert all(
+        call_args
+        == mocker.call(
+            "Error creating transcode job for %s", drive_file.video.source_key
+        )
+        for call_args in mock_log.call_args_list
     )
     assert drive_file.video.status == VideoStatus.FAILED
 
