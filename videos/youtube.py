@@ -345,7 +345,7 @@ class YouTubeApi:
         and duplicate detection.
 
         Args:
-            website_ids (list[int], optional): Filter videos by website short_ids
+            website_ids (list[str], optional): Filter videos by website short_ids
             video_ids (list[int], optional): Filter videos by video IDs
             youtube_ids (list[str], optional): Filter videos by YouTube IDs
             only_dups (bool, optional): Only return videos with duplicate captions

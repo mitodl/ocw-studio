@@ -29,8 +29,8 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
         website_ids = self.filter_list if self.filter_list else None
-        video_ids = options["video_ids"] if options["video_ids"] else None
-        youtube_ids = options["youtube_ids"] if options["youtube_ids"] else None
+        video_ids = options["video_ids"] or None
+        youtube_ids = options["youtube_ids"] or None
 
         captions = YouTubeApi.get_all_video_captions(
             website_ids=website_ids,
