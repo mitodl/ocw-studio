@@ -336,6 +336,7 @@ class YouTubeApi:
         cls,
         website_ids: list[str] | None = None,
         video_ids: list[int] | None = None,
+        youtube_ids: list[str] | None = None,
         *,
         only_dups: bool = False,
     ) -> list[dict]:
@@ -346,6 +347,7 @@ class YouTubeApi:
         Args:
             website_ids (list[int], optional): Filter videos by website short_ids
             video_ids (list[int], optional): Filter videos by video IDs
+            youtube_ids (list[str], optional): Filter videos by YouTube IDs
             only_dups (bool, optional): Only return videos with duplicate captions
                 in any language. Defaults to False.
 
@@ -363,6 +365,8 @@ class YouTubeApi:
             video_files = video_files.filter(video__website__short_id__in=website_ids)
         if video_ids:
             video_files = video_files.filter(video_id__in=video_ids)
+        if youtube_ids:
+            video_files = video_files.filter(destination_id__in=youtube_ids)
 
         for video_file in video_files:
             try:
