@@ -120,7 +120,7 @@
     "react-select": "^4.3.0",
     "react-select-async-paginate": "^0.7.3",
     "react-test-renderer": "^16.13.1",
-    "reactstrap": "^8.9.0",
+    "reactstrap": "8.10.1",
     "redux": "^4.0.5",
     "redux-query": "^3.4.2",
     "redux-query-interface-superagent": "^3.4.2",
