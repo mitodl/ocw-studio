@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+from django.conf import settings
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.factories import (
@@ -333,3 +334,162 @@ def test_nav_item_to_external_resources(content, expected_content_template):
             item["parent"] = content_ids[item["parent"]]
 
     assert target_content.metadata["leftnav"] == expected_content
+
+
+def test_rules_default_commit_value():
+    """Test that both rules properly handle options when set."""
+    link_rule = LinkToExternalResourceRule()
+    nav_rule = NavItemToExternalResourceRule()
+
+    # Set options using the inherited method
+    link_rule.set_options({"commit": True})
+    nav_rule.set_options({"commit": True})
+
+    # Verify options are set correctly
+    assert link_rule.options.get("commit", False) is True
+    assert nav_rule.options.get("commit", False) is True
+
+    # Test with False
+    link_rule.set_options({"commit": False})
+    nav_rule.set_options({"commit": False})
+
+    assert link_rule.options.get("commit", True) is False
+    assert nav_rule.options.get("commit", True) is False
+
+
+def test_link_to_external_resource_no_save_when_commit_false(mocker):
+    """Test that external resource is not saved when commit is False."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.get_or_build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = LinkToExternalResourceRule()
+    rule.set_options({"commit": False})
+
+    mock_starter = mocker.Mock()
+    mock_starter.slug = settings.OCW_COURSE_STARTER_SLUG
+    rule.starter_lookup.get_starter = mocker.Mock(return_value=mock_starter)
+
+    mock_toks = mocker.Mock()
+    mock_toks.link.destination = "https://example.com"
+    mock_toks.link.text = "Example Link"
+    mock_toks.link.is_image = False
+    mock_toks.original_text = "[Example Link](https://example.com)"
+
+    # Call replace_match
+    rule.replace_match("", 0, mock_toks, website_content)
+
+    # Verify save was not called
+    mock_resource.save.assert_not_called()
+    mock_resource.referencing_content.add.assert_not_called()
+
+
+def test_link_to_external_resource_no_save_when_commit_true(mocker):
+    """Test that external resource is not saved when commit is True."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.get_or_build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = LinkToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    mock_starter = mocker.Mock()
+    mock_starter.slug = settings.OCW_COURSE_STARTER_SLUG
+    rule.starter_lookup.get_starter = mocker.Mock(return_value=mock_starter)
+
+    mock_toks = mocker.Mock()
+    mock_toks.link.destination = "https://example.com"
+    mock_toks.link.text = "Example Link"
+    mock_toks.link.is_image = False
+    mock_toks.original_text = "[Example Link](https://example.com)"
+
+    # Call replace_match
+    rule.replace_match("", 0, mock_toks, website_content)
+
+    # Verify save was called
+    mock_resource.save.assert_called_once()
+    mock_resource.referencing_content.add.assert_called_once_with(website_content)
+
+
+def test_navitem_to_external_resource_no_save_when_commit_false(mocker):
+    """Test that external resource is not saved when commit is False."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"  # Valid UUID
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": False})
+
+    nav_item = {
+        "name": "Example Nav Item",
+        "url": "https://example.com",
+        "identifier": "external--123456789",
+        "weight": 10,
+    }
+
+    # Call generate_item_replacement
+    rule.generate_item_replacement(website_content, nav_item)
+
+    # Verify save was not called
+    mock_resource.save.assert_not_called()
+    mock_resource.referencing_content.add.assert_not_called()
+
+
+def test_navitem_to_external_resource_no_save_when_commit_true(mocker):
+    """Test that external resource is saved when commit is True."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"  # Valid UUID
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    nav_item = {
+        "name": "Example Nav Item",
+        "url": "https://example.com",
+        "identifier": "external--123456789",
+        "weight": 10,
+    }
+
+    # Call generate_item_replacement
+    rule.generate_item_replacement(website_content, nav_item)
+
+    # Verify save was called
+    mock_resource.save.assert_called_once()
+    mock_resource.referencing_content.add.assert_called_once_with(website_content)

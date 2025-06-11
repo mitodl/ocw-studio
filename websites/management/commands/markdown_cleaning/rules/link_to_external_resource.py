@@ -194,11 +194,9 @@ class LinkToExternalResourceRule(PyparsingRule):
             title=link_text,
         )
 
-        if self.options.get("commit", True):
+        if self.options.get("commit", False):
             resource.save()
-
-        resource.referencing_content.add(website_content)
-        resource.save()
+            resource.referencing_content.add(website_content)
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
 
@@ -287,11 +285,9 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
             title=link_text,
         )
 
-        if self.options.get("commit", True):
+        if self.options.get("commit", False):
             resource.save()
-
-        resource.referencing_content.add(website_content)
-        resource.save()
+            resource.referencing_content.add(website_content)
 
         item_replacement = {
             **item,
