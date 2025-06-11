@@ -278,7 +278,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         starter_id = website_content.website.starter_id
         site_config = self.starter_lookup.get_config(starter_id)
 
-        resource = build_external_resource(
+        resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=site_config,
             url=url,
@@ -307,6 +307,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         nav_items = text
         transformed_items = []
         id_replacements = {}
+        references = []
 
         for item in nav_items:
             if item.get("identifier", "").startswith("external") and item.get("url"):
@@ -328,6 +329,15 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
                 id_replacements[item["identifier"]] = item_replacement["identifier"]
             else:
                 transformed_items.append(item)
+                if item.get("identifier"):
+                    references.append(item["identifier"])
+
+        if references and self.options.get("commit", False):
+            referenced_content = WebsiteContent.objects.filter(
+                text_id__in=references
+            ).all()
+            for content in referenced_content:
+                content.referencing_content.add(website_content)
 
         # when external links are changed into external resources,
         # their `identifier` property changes.
