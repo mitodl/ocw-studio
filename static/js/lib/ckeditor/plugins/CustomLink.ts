@@ -92,7 +92,7 @@ export default class CustomLink extends Plugin {
             this.editor.model.change((writer: Writer) => {
               writer.setAttribute(
                 "linkHref",
-                this._getResourceLink(externalResource.textId!),
+                this._getResourceLink(externalResource.textId),
                 item,
               )
             })
