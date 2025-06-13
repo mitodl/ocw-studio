@@ -65,13 +65,10 @@ class MockURL {
       }
     } catch (error) {
       // Fallback for invalid URLs
-      if (url.includes("external.com")) {
-        this.hostname = "external.com"
-      } else if (url.includes("ocw.mit.edu")) {
-        this.hostname = "ocw.mit.edu"
-      } else if (url.includes("fake.mit.edu")) {
-        this.hostname = "fake.mit.edu"
-      } else {
+      try {
+        const realUrl = new NodeURL(url)
+        this.hostname = realUrl.hostname
+      } catch (error) {
         this.hostname = "example.com"
       }
 
