@@ -13,6 +13,7 @@ import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
 class CustomLinkCommand extends LinkCommand {
   execute(href: string, _options = {}) {
+    const syntax = this.editor.plugins.get(ResourceLinkMarkdownSyntax)
     const ranges = this.editor.model.document.selection.getRanges()
     let title = ""
     for (const range of ranges) {
@@ -23,15 +24,21 @@ class CustomLinkCommand extends LinkCommand {
       }
     }
 
-    getExternalResource(this.editor.config.get(WEBSITE_NAME), href, title).then(
-      (externalResource) => {
+    if (syntax.isResourceLinkHref(href)) {
+      super.execute(href)
+    } else {
+      getExternalResource(
+        this.editor.config.get(WEBSITE_NAME),
+        href,
+        title,
+      ).then((externalResource) => {
         if (externalResource) {
           updateHref(externalResource, this.editor, (href) =>
             super.execute(href),
           )
         }
-      },
-    )
+      })
+    }
   }
 }
 
@@ -80,12 +87,12 @@ export default class CustomLink extends Plugin {
           String(originalHref),
           "",
         ).then((externalResource) => {
-          if (externalResource) {
+          if (externalResource && externalResource.textId) {
             // Update the href attribute with the resourceLink
             this.editor.model.change((writer: Writer) => {
               writer.setAttribute(
                 "linkHref",
-                this._getResourceLink(externalResource.textId || ""),
+                this._getResourceLink(externalResource.textId),
                 item,
               )
             })
@@ -102,7 +109,7 @@ export default class CustomLink extends Plugin {
   }
 }
 
-async function getExternalResource(
+export async function getExternalResource(
   siteName: string,
   linkValue: string,
   title: string,
@@ -140,6 +147,9 @@ async function getExternalResource(
     )
 
     const data = await response.json()
+    if (!data.title || !data.text_id) {
+      return null
+    }
     return { title: data.title, textId: data.text_id }
   } catch (error) {
     console.error("Error updating link:", error)
@@ -147,12 +157,22 @@ async function getExternalResource(
   }
 }
 
-function updateHref(
+export function updateHref(
   externalResource: { title?: string; textId?: string },
   editor: Editor,
   superExecute: { (customHref: string): void },
 ) {
+  // Validate inputs
+  if (!externalResource.title || !externalResource.textId) {
+    console.warn("Missing title or textId, skipping updateHref.")
+    return
+  }
+
   // Handle successful API response
+  const { title, textId } = externalResource as {
+    title: string
+    textId: string
+  }
 
   const syntax = editor.plugins.get(
     ResourceLinkMarkdownSyntax,
@@ -167,9 +187,9 @@ function updateHref(
     editor.model.change((writer) => {
       const insertPosition = editor.model.document.selection.getFirstPosition()
       writer.insertText(
-        externalResource.title || "",
+        title,
         {
-          linkHref: syntax(externalResource.textId || ""),
+          linkHref: syntax(textId),
         },
         insertPosition,
       )
@@ -179,6 +199,6 @@ function updateHref(
      * If the selection is not collapsed, we apply the original link command to the
      * selected text.
      */
-    superExecute(syntax(externalResource.textId || ""))
+    superExecute(syntax(textId))
   }
 }
