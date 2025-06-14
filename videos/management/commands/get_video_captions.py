@@ -27,6 +27,8 @@ class Command(WebsiteFilterCommand):
         )
 
     def handle(self, *args, **options):
+        self.stdout.write("WARNING: This command processes transcoded videos only.")
+        self.stdout.write("Videos added directly via YouTube ID are not included.")
         super().handle(*args, **options)
         website_ids = self.filter_list if self.filter_list else None
         video_ids = options["video_ids"] or None
