@@ -11191,7 +11191,7 @@ __metadata:
     url-loader: ^4.1.1
     waait: ^1.0.5
     webpack: ^5.76.0
-    webpack-bundle-tracker: ^1.2.0
+    webpack-bundle-tracker: ^3.0.0
     webpack-cli: ^6.0.0
     webpack-dev-middleware: ^5.0.0
     webpack-hot-middleware: ^2.25.0
@@ -15398,18 +15398,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack-bundle-tracker@npm:^1.2.0":
-  version: 1.8.1
-  resolution: "webpack-bundle-tracker@npm:1.8.1"
+"webpack-bundle-tracker@npm:^3.0.0":
+  version: 3.2.0
+  resolution: "webpack-bundle-tracker@npm:3.2.0"
   dependencies:
     lodash.assign: ^4.2.0
     lodash.defaults: ^4.2.0
     lodash.foreach: ^4.5.0
     lodash.frompairs: ^4.0.1
-    lodash.get: ^4.4.2
     lodash.topairs: ^4.3.0
-    strip-ansi: ^6.0.0
-  checksum: c2f83d42a825c071d058e24b2da3a5938899c21aa10e4a65211cbc5c92a6906917de94c957dcc9cc63158d0c1c8af6da95863284446a09c31271caf327d55c54
+  checksum: 2d8f86a4bd99d552d5b3acce2dc1e6db39c89fafe9a220a28a46e9d626ba1253f1688f4f75a6bad7354da953d89894a6c9c0be46b8862d3adf7716bc86dd32fd
   languageName: node
   linkType: hard
 
