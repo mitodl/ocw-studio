@@ -29,7 +29,11 @@ def handle_website_save(
 
 
 @receiver(pre_save, sender=WebsiteContent)
-def update_page_url_on_title_change(_sender, instance, **_kwargs):
+def update_page_url_on_title_change(
+    sender,  # noqa: ARG001
+    instance,
+    **kwargs,  # noqa: ARG001
+):
     """Update page URL when title changes for page content"""
 
     if instance.is_page_content and instance.title:
