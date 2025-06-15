@@ -1,8 +1,9 @@
-"""Tests for link_resolveuid.py"""
+"""Tests for link_to_external_resource.py"""
 
 from unittest.mock import patch
 
 import pytest
+from django.conf import settings
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.factories import (
@@ -315,21 +316,416 @@ def test_nav_item_to_external_resources(content, expected_content_template):
         cleaner = get_cleaner("nav_item")
         cleaner.update_website_content(target_content)
 
-    content_ids = {
-        "nest-id": WebsiteContent.objects.get(title="Nest").text_id,
-        "bird-1-id": WebsiteContent.objects.get(title="Bird 1").text_id,
-        "bird-2-id": WebsiteContent.objects.get(title="Bird 2").text_id,
-        "egg-id": WebsiteContent.objects.get(title="Egg").text_id,
-    }
+    # Get all external resource content created by the rule
+    external_resources = WebsiteContent.objects.filter(
+        website=website, type=CONTENT_TYPE_EXTERNAL_RESOURCE
+    ).order_by("title")
 
-    # replace placeholders in the templates with new ids.
+    # Since all nav items point to the same URL, they should all reference the same external resource
+    # The rule creates only one external resource per unique URL
+    assert external_resources.count() == 1
+    shared_resource = external_resources.first()
+
+    # All 4 nav items should now reference the same external resource
     expected_content = expected_content_template
     for item in expected_content:
         if item["name"] == "Control":
             continue
-
-        item["identifier"] = content_ids[item["identifier"]]
-        if item.get("parent"):
-            item["parent"] = content_ids[item["parent"]]
+        # All external nav items should now use the same resource identifier
+        item["identifier"] = shared_resource.text_id
+        # Update parent references to also use the shared resource identifier
+        if (
+            item.get("parent")
+            and item["parent"] != "f3d0ebae-7083-4524-9b93-f688537a0317"
+        ):
+            item["parent"] = shared_resource.text_id
 
     assert target_content.metadata["leftnav"] == expected_content
+
+
+def test_rules_default_commit_value():
+    """Test that both rules properly handle options when set."""
+    link_rule = LinkToExternalResourceRule()
+    nav_rule = NavItemToExternalResourceRule()
+
+    # Set options using the inherited method
+    link_rule.set_options({"commit": True})
+    nav_rule.set_options({"commit": True})
+
+    # Verify options are set correctly
+    assert hasattr(link_rule, "options")
+    assert link_rule.options is not None
+    assert hasattr(nav_rule, "options")
+    assert nav_rule.options is not None
+    assert link_rule.options.get("commit", False) is True
+    assert nav_rule.options.get("commit", False) is True
+
+    # Test with False
+    link_rule.set_options({"commit": False})
+    nav_rule.set_options({"commit": False})
+
+    assert link_rule.options.get("commit", True) is False
+    assert nav_rule.options.get("commit", True) is False
+
+
+def test_link_to_external_resource_no_save_when_commit_false(mocker):
+    """Test that external resource is not saved when commit is False."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.get_or_build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = LinkToExternalResourceRule()
+    rule.set_options({"commit": False})
+
+    mock_starter = mocker.Mock()
+    mock_starter.slug = settings.OCW_COURSE_STARTER_SLUG
+    rule.starter_lookup.get_starter = mocker.Mock(return_value=mock_starter)
+
+    mock_toks = mocker.Mock()
+    mock_toks.link.destination = "https://example.com"
+    mock_toks.link.text = "Example Link"
+    mock_toks.link.is_image = False
+    mock_toks.original_text = "[Example Link](https://example.com)"
+
+    # Call replace_match
+    rule.replace_match("", 0, mock_toks, website_content)
+
+    # Verify save was not called
+    mock_resource.save.assert_not_called()
+    mock_resource.referencing_content.add.assert_not_called()
+
+
+def test_link_to_external_resource_no_save_when_commit_true(mocker):
+    """Test that external resource is not saved when commit is True."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.get_or_build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = LinkToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    mock_starter = mocker.Mock()
+    mock_starter.slug = settings.OCW_COURSE_STARTER_SLUG
+    rule.starter_lookup.get_starter = mocker.Mock(return_value=mock_starter)
+
+    mock_toks = mocker.Mock()
+    mock_toks.link.destination = "https://example.com"
+    mock_toks.link.text = "Example Link"
+    mock_toks.link.is_image = False
+    mock_toks.original_text = "[Example Link](https://example.com)"
+
+    # Call replace_match
+    rule.replace_match("", 0, mock_toks, website_content)
+
+    # Verify save was called
+    mock_resource.save.assert_called_once()
+    mock_resource.referencing_content.add.assert_called_once_with(website_content)
+
+
+def test_navitem_to_external_resource_no_save_when_commit_false(mocker):
+    """Test that external resource is not saved when commit is False."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"  # Valid UUID
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": False})
+
+    nav_item = {
+        "name": "Example Nav Item",
+        "url": "https://example.com",
+        "identifier": "external--123456789",
+        "weight": 10,
+    }
+
+    # Call generate_item_replacement
+    rule.generate_item_replacement(website_content, nav_item)
+
+    # Verify save was not called
+    mock_resource.save.assert_not_called()
+    mock_resource.referencing_content.add.assert_not_called()
+
+
+def test_navitem_to_external_resource_no_save_when_commit_true(mocker):
+    """Test that external resource is saved when commit is True."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    mock_resource = mocker.Mock(spec=WebsiteContent)
+    mock_resource.text_id = "f3d0ebae-7083-4524-9b93-f688537a0317"  # Valid UUID
+    mock_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch(
+        "websites.management.commands.markdown_cleaning.rules.link_to_external_resource.build_external_resource",
+        return_value=mock_resource,
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    nav_item = {
+        "name": "Example Nav Item",
+        "url": "https://example.com",
+        "identifier": "external--123456789",
+        "weight": 10,
+    }
+
+    # Call generate_item_replacement
+    rule.generate_item_replacement(website_content, nav_item)
+
+    # Verify save was called
+    mock_resource.save.assert_called_once()
+    mock_resource.referencing_content.add.assert_called_once_with(website_content)
+
+
+def test_navitem_transform_text_handles_internal_references_commit_true(mocker):
+    """Test that transform_text properly handles internal nav item references when commit=True."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    # Create actual referenced content objects
+    WebsiteContentFactory.create(
+        website=website,
+        text_id="f3d0ebae-7083-4524-9b93-f688537a0317",
+        title="Referenced Page 1",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        text_id="a1b2c3d4-5678-9012-3456-789012345678",
+        title="Referenced Page 2",
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    # Test data with only internal references (no external links)
+    nav_items = [
+        {
+            "name": "Internal Reference 1",
+            "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317",
+            "weight": 20,
+        },
+        {
+            "name": "Internal Reference 2",
+            "identifier": "a1b2c3d4-5678-9012-3456-789012345678",
+            "weight": 30,
+        },
+        {
+            "name": "No Identifier",
+            "weight": 40,
+        },
+    ]
+
+    # Mock on_match callback
+    mock_on_match = mocker.Mock()
+
+    # Call transform_text
+    result = rule.transform_text(website_content, nav_items, mock_on_match)
+
+    # Verify the result structure - nav items should be unchanged
+    assert isinstance(result, list)
+    assert len(result) == 3
+    # Cast to dict for type checking
+    result_items = [item for item in result if isinstance(item, dict)]
+    assert len(result_items) == 3
+    assert result_items[0].get("identifier") == "f3d0ebae-7083-4524-9b93-f688537a0317"
+    assert result_items[1].get("identifier") == "a1b2c3d4-5678-9012-3456-789012345678"
+    assert "identifier" not in result_items[2]
+
+
+def test_navitem_transform_text_handles_internal_references_commit_false(mocker):
+    """Test that transform_text does not set references when commit=False."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": False})
+
+    # Test data with internal references
+    nav_items = [
+        {
+            "name": "Internal Reference 1",
+            "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317",
+            "weight": 20,
+        },
+        {
+            "name": "Internal Reference 2",
+            "identifier": "a1b2c3d4-5678-9012-3456-789012345678",
+            "weight": 30,
+        },
+    ]
+
+    # Mock on_match callback
+    mock_on_match = mocker.Mock()
+
+    # Call transform_text
+    result = rule.transform_text(website_content, nav_items, mock_on_match)
+
+    # Verify the nav items are returned unchanged
+    assert result == nav_items
+
+
+def test_navitem_transform_text_mixed_external_and_internal_references(mocker):
+    """Test transform_text with mix of external links and internal references."""
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    website_content = WebsiteContentFactory.create(website=website)
+
+    # Create actual referenced content
+    WebsiteContentFactory.create(
+        website=website,
+        text_id="f3d0ebae-7083-4524-9b93-f688537a0317",
+        title="Referenced Page",
+    )
+
+    rule = NavItemToExternalResourceRule()
+    rule.set_options({"commit": True})
+
+    # Test data with mix of external and internal
+    nav_items = [
+        {
+            "name": "External Link",
+            "url": "https://example.com",
+            "identifier": "external--123456789",
+            "weight": 10,
+        },
+        {
+            "name": "Internal Reference",
+            "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317",
+            "weight": 20,
+        },
+    ]
+
+    # Mock the external resource creation
+    mock_external_resource = mocker.Mock(spec=WebsiteContent)
+    mock_external_resource.text_id = "b2c3d4e5-6789-0123-4567-890123456789"
+    mock_external_resource.metadata = {"has_external_license_warning": True}
+
+    mocker.patch.object(
+        rule,
+        "generate_item_replacement",
+        return_value=(
+            {
+                "name": "External Link",
+                "identifier": "b2c3d4e5-6789-0123-4567-890123456789",
+                "weight": 10,
+            },
+            mock_external_resource,
+        ),
+    )
+
+    # Mock on_match callback
+    mock_on_match = mocker.Mock()
+
+    result = rule.transform_text(website_content, nav_items, mock_on_match)
+
+    assert isinstance(result, list)
+    assert len(result) == 2
+
+    result_items = [item for item in result if isinstance(item, dict)]
+    assert len(result_items) == 2
+
+    # First item should be the transformed external link
+    assert result_items[0].get("identifier") == "b2c3d4e5-6789-0123-4567-890123456789"
+    # Second item should be unchanged internal reference
+    assert result_items[1].get("identifier") == "f3d0ebae-7083-4524-9b93-f688537a0317"
+
+
+def test_navitem_internal_references_functionality():
+    """Test that internal nav item references properly set the referenced_by relationship."""
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+
+        main_content = WebsiteContentFactory.create(website=website)
+
+        referenced_content_1 = WebsiteContentFactory.create(
+            website=website,
+            text_id="f3d0ebae-7083-4524-9b93-f688537a0317",
+            title="Referenced Page 1",
+        )
+        referenced_content_2 = WebsiteContentFactory.create(
+            website=website,
+            text_id="a1b2c3d4-5678-9012-3456-789012345678",
+            title="Referenced Page 2",
+        )
+
+        # Create nav items that reference these content objects
+        nav_items = [
+            {
+                "name": "Link to Page 1",
+                "identifier": "f3d0ebae-7083-4524-9b93-f688537a0317",
+                "weight": 10,
+            },
+            {
+                "name": "Link to Page 2",
+                "identifier": "a1b2c3d4-5678-9012-3456-789012345678",
+                "weight": 20,
+            },
+            {
+                "name": "External Link",
+                "url": "https://example.com",
+                "identifier": "external--123456789",
+                "weight": 30,
+            },
+        ]
+
+        # Set the nav items on the main content
+        main_content.metadata = {"leftnav": nav_items}
+        main_content.save()
+
+        # Use the cleaner to process the nav items
+        cleaner = get_cleaner("nav_item")
+        cleaner.update_website_content(main_content)
+
+        # Refresh from database to get updated relationships
+        main_content.refresh_from_db()
+        referenced_content_1.refresh_from_db()
+        referenced_content_2.refresh_from_db()
+
+        # Verify that the referenced content objects now have main_content in their referencing_content
+        assert main_content in referenced_content_1.referencing_content.all()
+        assert main_content in referenced_content_2.referencing_content.all()
+
+        # Verify that an external resource was created for the external link
+        external_resources = WebsiteContent.objects.filter(
+            website=website, type=CONTENT_TYPE_EXTERNAL_RESOURCE
+        )
+        assert external_resources.count() == 1
+        external_resource = external_resources.first()
+        assert external_resource.metadata["external_url"] == "https://example.com"
+
+        # Verify that the external resource references the main content
+        assert main_content in external_resource.referencing_content.all()
