@@ -158,21 +158,12 @@ export async function getExternalResource(
 }
 
 export function updateHref(
-  externalResource: { title?: string; textId?: string },
+  externalResource: { title: string; textId: string },
   editor: Editor,
   superExecute: { (customHref: string): void },
 ) {
-  // Validate inputs
-  if (!externalResource.title || !externalResource.textId) {
-    console.warn("Missing title or textId, skipping updateHref.")
-    return
-  }
-
   // Handle successful API response
-  const { title, textId } = externalResource as {
-    title: string
-    textId: string
-  }
+  const { title, textId } = externalResource
 
   const syntax = editor.plugins.get(
     ResourceLinkMarkdownSyntax,

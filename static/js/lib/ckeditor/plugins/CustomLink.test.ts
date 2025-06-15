@@ -697,19 +697,29 @@ describe("CustomLink Plugin", () => {
       )
     })
 
-    it("handles missing title or textId gracefully", () => {
-      const consoleWarnSpy = jest
-        .spyOn(console, "warn")
-        .mockImplementation(() => {
-          // Intentionally empty - suppressing console warnings during tests
-        }) // Mock console.warn
-      updateHref({ title: "", textId: "" }, editor, superExecute)
-      expect(editor.model.change).not.toHaveBeenCalled() // Ensure no change is made
-      expect(superExecute).not.toHaveBeenCalled() // Ensure superExecute is not called
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        "Missing title or textId, skipping updateHref.",
-      ) // Verify warning
-      consoleWarnSpy.mockRestore() // Restore console.warn
+    it("should handle valid externalResource data correctly", () => {
+      expect(() => {
+        updateHref(
+          { title: "Valid Title", textId: "valid-id" },
+          editor,
+          superExecute,
+        )
+      }).not.toThrow()
+
+      // Verify successful execution with valid data
+      expect(editor.model.change).toHaveBeenCalled()
+
+      // Verify that the insertText was called with the correct parameters
+      const writer = { insertText: jest.fn() }
+      editor.model.change.mock.calls[0][0](writer)
+      expect(writer.insertText).toHaveBeenCalledWith(
+        "Valid Title",
+        {
+          linkHref:
+            "https://fake.mit.edu/valid-id?ocw_resource_link_uuid=valid-id&ocw_resource_link_suffix=",
+        },
+        undefined,
+      )
     })
   })
 
