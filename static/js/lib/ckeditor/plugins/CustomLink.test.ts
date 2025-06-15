@@ -660,7 +660,8 @@ describe("CustomLink Plugin", () => {
     beforeEach(() => {
       superExecute = jest.fn()
       const syntax = {
-        makeResourceLinkHref: (id: string) => `resource://${id}`,
+        makeResourceLinkHref: (id: string, suffix = "") =>
+          `https://fake.mit.edu/${id}?ocw_resource_link_uuid=${id}&ocw_resource_link_suffix=${suffix}`,
       }
       editor = {
         plugins: { get: () => syntax },
@@ -680,7 +681,10 @@ describe("CustomLink Plugin", () => {
       editor.model.change.mock.calls[0][0](writer)
       expect(writer.insertText).toHaveBeenCalledWith(
         "T",
-        { linkHref: "resource://id" },
+        {
+          linkHref:
+            "https://fake.mit.edu/id?ocw_resource_link_uuid=id&ocw_resource_link_suffix=",
+        },
         undefined,
       )
     })
@@ -688,7 +692,9 @@ describe("CustomLink Plugin", () => {
     it("calls superExecute with correct href if selection is not collapsed", () => {
       editor.model.document.selection.isCollapsed = false
       updateHref({ title: "T", textId: "id" }, editor, superExecute)
-      expect(superExecute).toHaveBeenCalledWith("resource://id")
+      expect(superExecute).toHaveBeenCalledWith(
+        "https://fake.mit.edu/id?ocw_resource_link_uuid=id&ocw_resource_link_suffix=",
+      )
     })
 
     it("handles missing title or textId gracefully", () => {
