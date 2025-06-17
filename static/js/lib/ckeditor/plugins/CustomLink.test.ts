@@ -6,6 +6,7 @@ jest.mock("../../api/util")
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import { URL as NodeURL } from "url"
+import invariant from "tiny-invariant"
 
 import Markdown from "./Markdown"
 import { createTestEditor } from "./test_util"
@@ -180,8 +181,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       // Mock resource link href (must have the query parameters that ResourceLinkMarkdownSyntax checks for)
       const resourceHref =
@@ -215,8 +215,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       // Execute command with external URL
       linkCommand.execute("https://external.com/test")
@@ -242,8 +241,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       linkCommand.execute("https://external.com/test")
 
@@ -271,8 +269,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       linkCommand.execute("https://ocw.mit.edu/courses/test")
 
@@ -297,12 +294,7 @@ describe("CustomLink Plugin", () => {
 
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) {
-        consoleLogSpy.mockRestore()
-        consoleErrorSpy.mockRestore()
-        return
-      }
+      invariant(linkCommand, "linkCommand should be defined")
 
       // Temporarily override URL to throw for invalid URLs while keeping MockURL for valid cases
       const originalURL = global.URL
@@ -339,11 +331,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) {
-        consoleErrorSpy.mockRestore()
-        return
-      }
+      invariant(linkCommand, "linkCommand should be defined")
 
       linkCommand.execute("https://external.com/test")
 
@@ -377,12 +365,11 @@ describe("CustomLink Plugin", () => {
       // Use the link command to create a link, which should trigger the document change handling
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       // First create some text in the editor
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       editor.model.change((writer) => {
         const paragraph = writer.createElement("paragraph")
@@ -412,7 +399,7 @@ describe("CustomLink Plugin", () => {
 
       // Create a resource link element in the editor
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       editor.model.change((writer) => {
         const paragraph = writer.createElement("paragraph")
@@ -447,7 +434,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
       const baseUrl = "https://external.com/"
       const shortPath = "a".repeat(50)
       const shortUrl = baseUrl + shortPath // < 100 chars
@@ -465,7 +452,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
       const baseUrl = "https://external.com/"
       const needed = SETTINGS.maxTitle - baseUrl.length
       const exactUrl = baseUrl + "a".repeat(needed)
@@ -484,7 +471,7 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
       const baseUrl = "https://external.com/"
       const longPath = "a".repeat(200)
       const longUrl = baseUrl + longPath
@@ -734,12 +721,11 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       // Create some text in the editor first
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       editor.model.change((writer) => {
         const paragraph = writer.createElement("paragraph")
@@ -777,12 +763,11 @@ describe("CustomLink Plugin", () => {
       const editor = await getEditor("")
       const linkCommand = editor.commands.get("link")
       expect(linkCommand).toBeDefined()
-
-      if (!linkCommand) return
+      invariant(linkCommand, "linkCommand should be defined")
 
       // Create text in the editor and select it
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       editor.model.change((writer) => {
         const paragraph = writer.createElement("paragraph")
@@ -830,7 +815,7 @@ describe("CustomLink Plugin", () => {
 
       // Create a range with a non-resource link
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       let linkElement: any
       editor.model.change((writer) => {
@@ -878,7 +863,7 @@ describe("CustomLink Plugin", () => {
 
       // Create a range with a non-resource link
       const root = editor.model.document.getRoot()
-      if (!root) return
+      invariant(root, "Document root should be defined")
 
       let linkElement: any
       editor.model.change((writer) => {
