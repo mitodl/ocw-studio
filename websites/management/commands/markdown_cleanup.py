@@ -27,6 +27,7 @@ class Command(WebsiteFilterCommand):
 
     By default, processes all websites (published and unpublished).
     Use --published-only to process only published websites.
+    Use --commit to save changes to the database.
 
     In general, these commands can be run in any order and are independent from
     one another. It may be useful to run LinkUnescape before other link fixes if
@@ -76,7 +77,7 @@ class Command(WebsiteFilterCommand):
             dest="commit",
             action="store_true",
             default=False,
-            help="Whether the changes to markdown should be commited. The default, False, is useful for QA and testing when combined with --out parameter.",  # noqa: E501
+            help="Whether to save changes to the database. The default is False, which is useful for QA and testing when combined with --out parameter.",  # noqa: E501
         )
         parser.add_argument(
             "-ss",

@@ -1,10 +1,23 @@
 # External Resource Availability Workflow
 
+If a resource is valid, the `check_external_resources` task triggers the `submit_url_to_wayback_task` to archive it.
+
+**External resource creation**: External resources can be created in multiple ways:
+
+1. **Manually** through the content management interface
+2. **Automatically** when adding links in the content editor
+3. **Via markdown cleanup** command for converting legacy external links (processes all websites by default; use `--published-only` flag for published websites only)
+   - **Note**: Requires either `--commit` flag to save changes or `--out filename.csv` to export results
+   - **Referencing content tracking**: Automatically tracks which content references each external resource
+
+Here's a high-level description of the process: Workflow
+
 This document describes the workflow for validating external resources (link checking) and integrating with the Internet Archive's Wayback Machine.
 
 **SECTIONS**
 
 1. [Overview](#overview)
+1. [External Resource Creation](#external-resource-creation)
 1. [Enabling Tasks](#enabling-tasks)
 1. [Wayback Machine Integration](#wayback-machine-integration-1)
 1. [Wayback Machine Removal Requests](#wayback-machine-removal-requests)
@@ -45,6 +58,71 @@ Here’s a high-level description of the process:
 - When external resource validation occurs, valid external resources are submitted to the Wayback Machine for archiving.
 - The status of Wayback Machine archiving jobs is tracked and updated periodically (currently, every 6 hours).
 - New external resources are automatically submitted to the Wayback Machine upon creation.
+
+# External Resource Creation
+
+External resources can be created in multiple ways:
+
+### 1. Manual Creation via Content Form
+
+External resources can be created manually through the OCW Studio content management interface:
+
+- Navigate to the course content area
+- Add a new external resource content item
+- Fill in the required fields (title, external URL, description, etc.)
+- Configure metadata and settings as needed
+- Save to create the external resource
+
+### 2. Automatic Creation in Editor
+
+When adding links in the content editor, external resources are automatically created:
+
+- When inserting external links in the text editor
+- The system automatically creates external resource objects for external URLs
+- These are then rendered as resource_link shortcodes in the final content
+- Applies to course content created using the OCW course starter
+
+### 3. Legacy Link Conversion via Markdown Cleanup
+
+The `markdown_cleanup` command is used to convert legacy external links to external resources:
+
+**Purpose**: Convert existing markdown links and navigation menu external links to the new external resource system.
+
+**LinkToExternalResourceRule**: Converts markdown links `[text](url)` to external resource shortcodes `{{% resource_link "uuid" "text" %}}` and creates corresponding external resource objects.
+
+**NavItemToExternalResourceRule**: Converts navigation menu external links to external resource references.
+
+**Key behaviors:**
+
+- **Default processing scope**: All websites (published and unpublished) are processed by default.
+- **Published-only option**: Use `--published-only` flag to process only published websites.
+- **Safety-first defaults**: Commands run in dry-run mode by default; use `--commit` flag to save changes to database.
+- **Referencing content tracking**: Automatically establishes relationships between content and the external resources they reference.
+- **Internal reference support**: Navigation items that reference internal content are tracked with proper referencing relationships.
+- **External license warnings**: Non-OCW domain URLs automatically get `has_external_license_warning: true`.
+- **Deduplication**: Existing external resources with the same URL are reused rather than creating duplicates.
+- **Course content only**: Rules only apply to websites using the OCW course starter.
+
+**Example transformation:**
+
+```markdown
+# Before
+
+[MIT OpenCourseWare](https://ocw.mit.edu)
+[Example Site](https://example.com)
+
+# After
+
+{{% resource_link "f3d0ebae-7083-4524-9b93-f688537a0317" "MIT OpenCourseWare" %}}
+{{% resource_link "d3d0ebae-7083-3453-7b92-a688537a0276" "Example Site" %}}
+```
+
+All methods create external resource objects with:
+
+- Unique UUID identifiers
+- Automatic filename generation based on title
+- External license warnings for non-OCW domains
+- Metadata populated from site configuration defaults
 
 # Enabling Tasks
 
@@ -128,7 +206,36 @@ To request removal of a URL from the Wayback Machine, email info@archive.org wit
 
 # Management Commands
 
-Two management commands are available to interact with the external resources' Wayback Machine functionality:
+Three management commands are available to interact with external resources:
+
+- **Markdown Cleanup with External Resource Processing:**
+  - Command: `markdown_cleanup`.
+  - Usage:
+    - Performs various markdown cleaning operations, including converting external links to external resources.
+    - **Default behavior**: Processes all websites (both published and unpublished).
+    - Use the `--published-only` flag to process only published websites.
+    - **REQUIRED**: Must specify either `--commit` (to save changes) or `--out filename.csv` (to export results).
+    - Supports various cleanup rules including `link_to_external_resource` and `nav_item_to_external_resource`.
+    - Automatically tracks referencing content relationships when creating external resources.
+    - Use `--out filename.csv` to export results to CSV for analysis.
+  - Example Usage:
+
+```
+    # Dry-run: process and export results to CSV without database changes
+    ./manage.py markdown_cleanup link_to_external_resource --out external_links.csv
+
+    # Convert external links to external resources for all websites
+    ./manage.py markdown_cleanup link_to_external_resource --commit
+
+    # Convert only for published websites
+    ./manage.py markdown_cleanup link_to_external_resource --published-only --commit
+
+    # Convert navigation menu external links to external resources
+    ./manage.py markdown_cleanup nav_item_to_external_resource --commit
+
+    # Commit changes and export results for analysis
+    ./manage.py markdown_cleanup link_to_external_resource --commit --out results.csv
+```
 
 - **Submitting Resources to Wayback Machine:**
   - Command: `submit_sites_to_wayback`.
@@ -161,6 +268,11 @@ Two management commands are available to interact with the external resources' W
 
 - **Models:**
   - [`ExternalResourceState`](/external_resources/models.py): Stores the state and Wayback Machine information for external resources.
+- **Management Commands:**
+  - [`markdown_cleanup`](/websites/management/commands/markdown_cleanup.py): Main command for processing markdown content and converting external links to resources.
+- **Markdown Cleanup Rules:**
+  - [`LinkToExternalResourceRule`](/websites/management/commands/markdown_cleaning/rules/link_to_external_resource.py): Converts markdown links to external resource shortcodes.
+  - [`NavItemToExternalResourceRule`](/websites/management/commands/markdown_cleaning/rules/link_to_external_resource.py): Converts navigation menu external links to external resources.
 - **Tasks:**
   - [`check_external_resources`](/external_resources/tasks.py): Checks external resources for broken links.
   - [`submit_url_to_wayback_task`](/external_resources/tasks.py): Submits external resource URLs to the Wayback Machine. This task is linked with `check_external_resources` and will only send valid external resources.
