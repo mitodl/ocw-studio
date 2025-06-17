@@ -16,7 +16,7 @@ WEBVTT_FORMAT_ID = 51
 
 
 class VideoStatus:
-    """Simple class for possible VideoFile statuses"""
+    """Simple class for possible Video statuses"""
 
     CREATED = STATUS_CREATED
     TRANSCODING = "Transcoding"

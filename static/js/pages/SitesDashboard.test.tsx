@@ -11,6 +11,10 @@ import IntegrationTestHelper, {
 import { Website } from "../types/websites"
 import PaginationControls from "../components/PaginationControls"
 import * as searchHooks from "../hooks/search"
+import React from "react"
+import { render, fireEvent } from "@testing-library/react"
+import { StatusWithDateHover, formatDateTime } from "./SitesDashboard"
+import { PublishStatus } from "../constants"
 
 jest.mock("../hooks/search", () => {
   return {
@@ -167,5 +171,190 @@ describe("SitesDashboard", () => {
     const { next, previous } = usePagination.mock.results[1].value
     expect(paginationControls.prop("next")).toBe(next)
     expect(paginationControls.prop("previous")).toBe(previous)
+  })
+})
+
+describe("StatusWithDateHover component", () => {
+  it("displays status text by default", () => {
+    const { getByText } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    expect(getByText("Published")).toBeInTheDocument()
+  })
+
+  it("shows formatted date on hover", () => {
+    const { getByText, container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    const element = container.firstChild as HTMLElement
+    fireEvent.mouseEnter(element)
+
+    expect(getByText(/Published on Jan 15, 2023/)).toBeInTheDocument()
+  })
+
+  it("reverts to status text when mouse leaves", () => {
+    const { getByText, container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    const element = container.firstChild as HTMLElement
+
+    // Hover
+    fireEvent.mouseEnter(element)
+    expect(getByText(/Published on Jan 15, 2023/)).toBeInTheDocument()
+
+    // Un-hover
+    fireEvent.mouseLeave(element)
+    expect(getByText("Published")).toBeInTheDocument()
+  })
+
+  it("applies the provided className", () => {
+    const { container } = render(
+      <StatusWithDateHover
+        statusText="Published"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-success"
+      />,
+    )
+
+    expect(container.firstChild).toHaveClass("text-success")
+  })
+})
+
+describe("formatDateTime function", () => {
+  it("formats date strings", () => {
+    const result = formatDateTime("2023-01-15T12:30:45Z")
+
+    expect(result).toContain("2023")
+    expect(result).toContain("Jan")
+    expect(result).toContain("15")
+  })
+})
+
+describe("Site status indicators", () => {
+  it("shows status for different site states", async () => {
+    const testHelper = new IntegrationTestHelper()
+    const testWebsites = makeWebsites(5)
+
+    // Never published site - no publish dates or statuses
+    const neverPublishedSite = {
+        ...testWebsites[0],
+        name: "never-published-site",
+        uuid: "test-uuid-1",
+        publish_date: null,
+        draft_publish_date: null,
+        live_publish_status: null,
+        unpublished: false,
+      },
+      // Unpublished site - has publish_date but marked as unpublished
+      unpublishedSite = {
+        ...testWebsites[1],
+        name: "unpublished-site",
+        uuid: "test-uuid-2",
+        publish_date: "2023-01-01T12:00:00Z",
+        unpublished: true,
+        unpublish_status: PublishStatus.Success,
+        unpublish_status_updated_on: "2023-01-15T12:30:45Z",
+        updated_on: "2023-01-15T12:30:45Z",
+      },
+      // Draft site - has draft_publish_status and draft_publish_date
+      // but no publish_date and unpublished is false
+      draftSite = {
+        ...testWebsites[2],
+        name: "draft-site",
+        uuid: "test-uuid-3",
+        draft_publish_date: "2023-01-15T12:30:45Z",
+        draft_publish_status: PublishStatus.Success,
+        publish_date: null,
+        live_publish_status: null,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
+      },
+      // Published site - has publish_date and live_publish_status
+      publishedSite = {
+        ...testWebsites[3],
+        name: "published-site",
+        uuid: "test-uuid-4",
+        publish_date: "2023-01-01T12:00:00Z",
+        live_publish_status: PublishStatus.Success,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
+      },
+      // Failed site - has live_publish_status marked as errored
+      failedSite = {
+        ...testWebsites[4],
+        name: "failed-site",
+        uuid: "test-uuid-5",
+        publish_date: "2023-01-01T12:00:00Z",
+        live_publish_status: PublishStatus.Errored,
+        unpublished: false,
+        updated_on: "2023-01-15T12:30:45Z",
+      }
+
+    const statusSites = [
+      neverPublishedSite,
+      unpublishedSite,
+      draftSite,
+      publishedSite,
+      failedSite,
+    ]
+    const testResponse = {
+      results: statusSites,
+      next: "https://example.com",
+      previous: null,
+      count: statusSites.length,
+    }
+
+    testHelper.mockGetRequest(
+      siteApiListingUrl.param({ offset: 0 }).toString(),
+      testResponse,
+    )
+
+    const websitesLookup: Record<string, Website> = {}
+    for (const site of statusSites) {
+      websitesLookup[site.name] = site
+    }
+
+    const testRender = testHelper.configureRenderer(
+      SitesDashboard,
+      {},
+      {
+        entities: {
+          websitesListing: {
+            ["0"]: {
+              ...testResponse,
+              results: statusSites.map((site) => site.name),
+            },
+          },
+          websiteDetails: websitesLookup,
+        },
+        queries: {},
+      },
+    )
+
+    const { wrapper } = await testRender()
+
+    // Check for status text
+    expect(wrapper.text()).toContain("Never Published")
+    expect(wrapper.text()).toContain("Unpublished from Production")
+    expect(wrapper.text()).toContain("Draft")
+    expect(wrapper.text()).toContain("Published")
+
+    // Cleanup
+    testHelper.cleanup()
   })
 })
