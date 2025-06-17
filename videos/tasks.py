@@ -149,7 +149,7 @@ def start_transcript_job(video_id: int):
 
 @app.task(bind=True)
 @single_task(timeout=settings.YT_STATUS_UPDATE_FREQUENCY, raise_block=False)
-def update_youtube_statuses(self):  # noqa: C901
+def update_youtube_statuses(self):
     """
     Update the status of recently uploaded YouTube videos if complete
     """
@@ -165,14 +165,17 @@ def update_youtube_statuses(self):  # noqa: C901
     for video_file in videos_processing:
         try:
             with transaction.atomic():
-                video_file.destination_status = youtube.video_status(
-                    video_file.destination_id
-                )
-                if video_file.destination_status == YouTubeStatus.PROCESSED:
-                    video_file.status = VideoFileStatus.COMPLETE
-                video_file.save()
+                if video_file.destination_status != YouTubeStatus.PROCESSED:
+                    video_file.destination_status = youtube.video_status(
+                        video_file.destination_id
+                    )
+                    video_file.save()
                 drive_file = DriveFile.objects.filter(video=video_file.video).first()
-                if drive_file and drive_file.resource:
+                if (
+                    video_file.destination_status == YouTubeStatus.PROCESSED
+                    and drive_file
+                    and drive_file.resource
+                ):
                     resource = drive_file.resource
                     set_dict_field(
                         resource.metadata,
@@ -185,10 +188,10 @@ def update_youtube_statuses(self):  # noqa: C901
                         YT_THUMBNAIL_IMG.format(video_id=video_file.destination_id),
                     )
                     resource.save()
-                    if video_file.status == VideoFileStatus.COMPLETE:
-                        group_tasks.append(start_transcript_job.s(video_file.video.id))
-            if video_file.status == VideoFileStatus.COMPLETE:
-                mail_youtube_upload_success(video_file)
+                    video_file.status = VideoFileStatus.COMPLETE
+                    video_file.save()
+                    group_tasks.append(start_transcript_job.s(video_file.video.id))
+                    mail_youtube_upload_success(video_file)
 
         except IndexError:
             # Video might be a dupe or deleted, mark it as failed and continue to next one.  # noqa: E501

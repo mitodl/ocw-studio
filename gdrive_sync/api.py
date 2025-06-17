@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from botocore.exceptions import ClientError
+from boto3.s3.transfer import TransferConfig
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
@@ -282,6 +282,12 @@ def process_file_result(
 @retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """Stream a Google Drive file to S3"""
+    if drive_file.status in (
+        DriveFileStatus.UPLOAD_COMPLETE,
+        DriveFileStatus.TRANSCODING,
+        DriveFileStatus.COMPLETE,
+    ):
+        return
     try:
         s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
@@ -294,16 +300,23 @@ def stream_to_s3(drive_file: DriveFile):
         if drive_file.mime_type.startswith("video/"):
             extra_args["ContentDisposition"] = "attachment"
 
+        config = TransferConfig(
+            multipart_chunksize=64 * 1024 * 1024,  # 64 MB chunks
+            max_concurrency=5,
+        )
         bucket.upload_fileobj(
             Fileobj=GDriveStreamReader(drive_file),
             Key=drive_file.s3_key,
             ExtraArgs=extra_args,
+            Config=config,
         )
         drive_file.update_status(DriveFileStatus.UPLOAD_COMPLETE)
-    except:  # pylint:disable=bare-except
-        drive_file.sync_error = (
-            f"An error occurred uploading Google Drive file {drive_file.name} to S3"
+    except Exception as exc:
+        log.exception(
+            "An error occurred uploading Google Drive file %s to S3",
+            drive_file.name,
         )
+        drive_file.sync_error = f"An error occurred uploading Google Drive file {drive_file.name} to S3: {exc}"  # noqa: E501
         drive_file.update_status(DriveFileStatus.UPLOAD_FAILED)
         raise
 
@@ -512,6 +525,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
         drive_file.update_status(DriveFileStatus.FAILED)
 
 
+@retry_on_failure
 def transcode_gdrive_video(drive_file: DriveFile):
     """Create a MediaConvert transcode job and Video object for the given drive file id if one doesn't already exist"""  # noqa: E501
     if settings.AWS_ACCOUNT_ID and settings.AWS_REGION and settings.AWS_ROLE_NAME:
@@ -528,16 +542,16 @@ def transcode_gdrive_video(drive_file: DriveFile):
         if prior_job:
             # Don't start another transcode job if there's a prior one that hasn't failed/completed yet  # noqa: E501
             return
-        drive_file.video = video
-        drive_file.save()
         try:
+            drive_file.video = video
+            drive_file.save()
             create_media_convert_job(video)
             drive_file.update_status(DriveFileStatus.TRANSCODING)
-        except ClientError:
+        except Exception as exc:
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
             video.save()
-            drive_file.sync_error = f"Error transcoding video {drive_file.name}, please contact us for assistance"  # noqa: E501
+            drive_file.sync_error = f"Error transcoding video {drive_file.name}: {exc}"
             drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
             raise
 
