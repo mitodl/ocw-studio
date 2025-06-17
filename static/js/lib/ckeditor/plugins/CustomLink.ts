@@ -73,7 +73,7 @@ class CustomLinkCommand extends LinkCommand {
  * CustomLink Plugin for CKEditor 5
  *
  * PURPOSE:
- * This plugin automatically converts external URLs into tracked "external resources"
+ * This plugin automatically converts URLs into tracked "external resources"
  * in the OCW Studio content management system. It exists to solve several problems:
  *
  * 1. LICENSE TRACKING: External links need license warnings and rights management
