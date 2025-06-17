@@ -738,9 +738,6 @@ class WebsiteContentViewSet(
         """
         references = []
 
-        log.info("Referencing content for %s", instance.markdown)
-        log.info("Referencing content for %s", instance.metadata)
-
         if instance.type == constants.CONTENT_TYPE_NAVMENU:
             references = [
                 item["identifier"]
