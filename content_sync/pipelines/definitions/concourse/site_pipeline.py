@@ -409,7 +409,10 @@ class FilterWebpackArtifactsStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"jq -r 'values[]' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | xargs -I {{}} aws s3{get_cli_endpoint_url()} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",  # noqa: E501
+                        # Strip query parameters (like ?64889571) from webpack manifest
+                        # paths before downloading from S3, since S3 object keys don't
+                        # include query parameters added by webpack for cache busting
+                        f"jq -r 'values[]' ./{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json | sed 's/?.*$//' | xargs -I {{}} aws s3{get_cli_endpoint_url()} cp s3://{web_bucket}{{}} ./{WEBPACK_ARTIFACTS_IDENTIFIER}/{{}} --exclude *.js.map",  # noqa: E501
                     ],
                 ),
             ),
