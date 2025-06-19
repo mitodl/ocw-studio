@@ -106,7 +106,7 @@ export const getMostRecentStatus = (
         site.draft_publish_status === PublishStatus.Success,
       statusText: "Draft",
       hoverText: "Draft updated",
-      className: "text-secondary",
+      className: "text-info",
       dateTime: site.draft_publish_date,
     },
     {
@@ -121,7 +121,7 @@ export const getMostRecentStatus = (
       active:
         site.unpublish_status &&
         site.unpublish_status === PublishStatus.Success,
-      statusText: "Unpublished from Production",
+      statusText: "Unpublished",
       className: "text-dark",
       dateTime: site.unpublish_status_updated_on,
     },
@@ -176,7 +176,7 @@ export const getMostRecentStatus = (
   // No active statuses - never published
   return {
     status: "Never Published",
-    statusClass: "text-danger",
+    statusClass: "text-orange",
     dateTime: null,
   }
 }
