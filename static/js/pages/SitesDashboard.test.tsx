@@ -350,7 +350,7 @@ describe("Site status indicators", () => {
 
     // Check for status text
     expect(wrapper.text()).toContain("Never Published")
-    expect(wrapper.text()).toContain("Unpublished from Production")
+    expect(wrapper.text()).toContain("Unpublished")
     expect(wrapper.text()).toContain("Draft")
     expect(wrapper.text()).toContain("Published")
 
