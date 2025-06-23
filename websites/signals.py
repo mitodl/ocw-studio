@@ -5,6 +5,8 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 
+from main.posthog import is_feature_enabled
+from websites.constants import POSTHOG_ENABLE_EDITABLE_PAGE_URLS
 from websites.models import Website, WebsiteContent
 from websites.permissions import setup_website_groups_permissions
 
@@ -34,7 +36,14 @@ def update_page_url_on_title_change(
     instance,
     **kwargs,  # noqa: ARG001
 ):
-    """Update page URL when title changes for page content"""
+    """
+    Update page URL when title changes for page content.
+    This is currently behind the PostHog feature flag
+    OCW_STUDIO_EDITABLE_PAGE_URLS.
+    """
+
+    if not is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
+        return
 
     if instance.is_page_content and instance.title:
         new_filename = slugify(instance.title)
