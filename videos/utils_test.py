@@ -35,7 +35,7 @@ def test_generate_s3_path(use_content, file_extension, expected_postfix):
     file = SimpleUploadedFile(
         f"/courses/{website.name}/{filename}-file.{file_extension}", b"Nothing here."
     )
-    expected_new_path = f'{website.s3_path.strip("/")}/{filename}-file{expected_postfix}.{file_extension}'
+    expected_new_path = f"{website.s3_path.strip('/')}/{filename}-file{expected_postfix}.{file_extension}"
 
     if use_content:
         file_or_content = WebsiteContentFactory.create(website=website, file=file)

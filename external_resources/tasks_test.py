@@ -82,7 +82,7 @@ def test_check_external_resources_for_breakages_zero_websites(
     assert mocked_celery.replace.call_count == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     (
         "url_status",
@@ -121,7 +121,7 @@ def test_check_external_resources(
     assert updated_state.external_url_response_code == url_status_code
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_check_external_resources_failed(mocker):
     """Test for failed api check"""
     external_resource_state = ExternalResourceStateFactory()
@@ -138,7 +138,7 @@ def test_check_external_resources_failed(mocker):
     assert updated_state.status == ExternalResourceState.Status.CHECK_FAILED
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_submit_url_to_wayback_task_success(mocker):
     """
     Test that submit_url_to_wayback_task successfully submits a URL to the Wayback Machine
@@ -172,7 +172,7 @@ def test_submit_url_to_wayback_task_success(mocker):
     assert updated_state.wayback_http_status is None
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, settings):
     """
     Test that submit_url_to_wayback_task skips submission when the URL was recently submitted.
@@ -213,7 +213,7 @@ def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, set
     assert updated_state.wayback_job_id == external_resource_state.wayback_job_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_submit_url_to_wayback_task_http_error_429(mocker):
     """
     Test that submit_url_to_wayback_task retries on HTTPError 429 (Too Many Requests).
@@ -251,7 +251,7 @@ def test_submit_url_to_wayback_task_http_error_429(mocker):
     mock_retry.assert_called_once_with(exc=http_error_429, countdown=30)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_update_wayback_jobs_status_batch_success(mocker):
     """
     Test that update_wayback_jobs_status_batch updates statuses of pending jobs successfully.
@@ -316,7 +316,7 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     assert updated_state2.wayback_http_status == 404
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
     """
     Test that update_wayback_jobs_status_batch handles no pending jobs gracefully.

@@ -55,14 +55,14 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name, too-many-arguments, unused-argument, protected-access
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_service(mocker):
     """Mock google drive service"""
     return mocker.patch("gdrive_sync.api.get_drive_service")
 
 
-@pytest.fixture()
-def mock_get_s3_content_type(mocker):  # noqa: PT004
+@pytest.fixture
+def mock_get_s3_content_type(mocker):
     """Mock gdrive_sync.api.get_s3_content_type"""
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type", return_value="application/ms-word"
@@ -175,7 +175,7 @@ def test_stream_to_s3(settings, mocker, is_video, current_s3_key):
     assert drive_file.s3_key == expected_key
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("fail_at", ["bucket", "upload"])
 def test_stream_to_s3_error_marks_failed(settings, mocker, fail_at):
     """Task should mark DriveFile status as UPLOAD_FAILED and raise if S3 upload errors occur."""
@@ -195,7 +195,7 @@ def test_stream_to_s3_error_marks_failed(settings, mocker, fail_at):
     assert drive_file.status == DriveFileStatus.UPLOAD_FAILED
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_stream_to_s3_skips_if_already_uploaded(mocker):
     """stream_to_s3 should skip if the file status is UPLOAD_COMPLETE"""
     mock_boto3 = mocker.patch("main.s3_utils.boto3")
@@ -204,7 +204,7 @@ def test_stream_to_s3_skips_if_already_uploaded(mocker):
     mock_boto3.resource.return_value.Bucket.return_value.upload_fileobj.assert_not_called()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("parent_folder", "parent_folder_in_ancestors"),
     [(None, False), ("correct_parent", False), ("correct_parent", True)],
@@ -540,8 +540,8 @@ def test_walk_gdrive_folder(mocker):
     )  # parent, subfolder1, subfolder1_1, subfolder2
 
 
-@pytest.fixture()
-def mock_gdrive_pdf(mocker):  # noqa: PT004
+@pytest.fixture
+def mock_gdrive_pdf(mocker):
     """Mock reading the metadata of a PDF file with blank metadata"""
     mocker.patch(
         "gdrive_sync.api.GDriveStreamReader",
