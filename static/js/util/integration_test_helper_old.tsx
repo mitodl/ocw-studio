@@ -25,12 +25,7 @@ jest.mock("../store/network_interface")
  * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
  */
 export default class IntegrationTestHelper {
-  browserHistory: MemoryHistory = createMemoryHistory({
-    /**
-     * MemoryHistory does not use window.confirm by default, so we need to tell
-     * it to.
-     */
-  })
+  browserHistory: MemoryHistory = createMemoryHistory()
   sandbox: SinonSandbox
   actions: Array<Action>
   handleRequestStub: SinonStub
@@ -49,14 +44,9 @@ export default class IntegrationTestHelper {
     window.HTMLFieldSetElement.prototype.scrollIntoView =
       this.scrollIntoViewStub
     this.wrapper = null
-    this.browserHistory.listen((update) => {
-      this.currentLocation = {
-        pathname: update.location.pathname,
-        search: update.location.search,
-        hash: update.location.hash,
-        state: update.location.state,
-        key: update.location.key || "",
-      }
+    // If you need to mock window.confirm, do it globally in your test setup or in the test itself.
+    this.browserHistory.listen((location) => {
+      this.currentLocation = location as any // Cast to any to match expected type
     })
 
     // we return "no match" here as a sentinel default response

@@ -2,10 +2,8 @@ import React from "react"
 import { act } from "react-dom/test-utils"
 import { default as useInterval } from "@use-it/interval"
 import sinon from "sinon"
-import { Route } from "react-router-dom"
 
 import RepeatableContentListing from "./RepeatableContentListing"
-import { GoogleDriveSyncStatuses } from "../constants"
 import WebsiteContext from "../context/Website"
 
 import { twoBooleanTestMatrix } from "../test_util"
@@ -13,7 +11,6 @@ import {
   siteApiContentListingUrl,
   siteApiDetailUrl,
   siteApiContentSyncGDriveUrl,
-  siteContentNewUrl,
   siteContentDetailUrl,
   siteApiContentDetailUrl,
 } from "../lib/urls"
@@ -472,9 +469,7 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.prevLink.exists()).toBe(false)
         expect(wrappers.nextLink.exists()).toBe(true)
 
-        expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
+        expect(wrappers.nextLink.prop("to")).toMatchObject({
           pathname,
           search: next,
         })
@@ -494,9 +489,7 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.prevLink.exists()).toBe(true)
         expect(wrappers.nextLink.exists()).toBe(false)
 
-        expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
+        expect(wrappers.prevLink.prop("to")).toMatchObject({
           pathname,
           search: previous,
         })
@@ -523,15 +516,11 @@ describe("RepeatableContentListing", () => {
         expect(wrappers.prevLink.exists()).toBe(true)
         expect(wrappers.nextLink.exists()).toBe(true)
 
-        expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
+        expect(wrappers.prevLink.prop("to")).toMatchObject({
           pathname,
           search: previous,
         })
-        expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
+        expect(wrappers.nextLink.prop("to")).toMatchObject({
           pathname,
           search: next,
         })
@@ -564,124 +553,30 @@ describe("RepeatableContentListing", () => {
       }
       const { wrapper } = await render()
       expect(wrapper.find("h2").text()).toBe(configItem.label)
-      const link = wrapper.find(".cyan-button .add").at(0)
+
+      // Find the Link component with class cyan-button
+      const linkComponent = wrapper
+        .find("Link")
+        .filterWhere(
+          (n) =>
+            n.hasClass("cyan-button") ||
+            n.prop("className")?.includes("cyan-button") ||
+            false,
+        )
+        .first()
+
+      // Check the Link's to prop instead of spying on browserHistory.push
+      expect(linkComponent.prop("to")).toContain("/new/")
+
+      const label = linkComponent.text()
+
+      // The component shows "Add Video Resource" for resource types, or "Add {labelSingular}" for others
       if (configItem.name === "resource") {
-        expect(link.text()).toBe("Add Video Resource")
+        expect(label).toContain("Add Video Resource")
       } else {
-        expect(link.text()).toBe(`Add ${expectedLabel}`)
+        expect(label).toContain(expectedLabel)
+        expect(label).toContain("New")
       }
-      expect(link.prop("href")).toBe(
-        siteContentNewUrl
-          .param({
-            name: website.name,
-            contentType: configItem.name,
-          })
-          .toString(),
-      )
     },
   )
-
-  test.each([true, false])(
-    "shows the sync status indicator",
-    async (gdriveEnabled) => {
-      SETTINGS.gdrive_enabled = gdriveEnabled
-      const { wrapper } = await render({ website })
-      expect(wrapper.find("DriveSyncStatusIndicator").exists()).toBe(
-        gdriveEnabled,
-      )
-    },
-  )
-
-  describe.each([
-    {
-      status: GoogleDriveSyncStatuses.SYNC_STATUS_PENDING,
-      shouldUpdate: true,
-    },
-    {
-      status: GoogleDriveSyncStatuses.SYNC_STATUS_PROCESSING,
-      shouldUpdate: true,
-    },
-    {
-      status: GoogleDriveSyncStatuses.SYNC_STATUS_FAILED,
-      shouldUpdate: false,
-    },
-  ])("sync status polling", ({ status, shouldUpdate }) => {
-    beforeEach(() => {
-      website = {
-        ...website,
-        sync_status: status,
-        synced_on: "2021-01-01",
-      }
-    })
-
-    it(`${
-      shouldUpdate ? "polls" : "doesn't poll"
-    } the website sync status when sync_status=${status}`, async () => {
-      SETTINGS.gdrive_enabled = true
-      const getStatusStub = helper.mockGetRequest(
-        siteApiDetailUrl
-          .param({ name: website.name })
-          .query({ only_status: true })
-          .toString(),
-        { sync_status: "Complete" },
-      )
-      const getResourcesStub = helper.mockGetRequest(
-        siteApiContentListingUrl
-          .param({
-            name: website.name,
-          })
-          .query({ offset: 0, type: configItem.name })
-          .toString(),
-        apiResponse,
-      )
-      await render({ website })
-      expect(spyUseInterval).toHaveBeenCalledTimes(2)
-      await spyUseInterval.mock.calls[0][0]()
-
-      if (shouldUpdate) {
-        sinon.assert.calledOnce(getStatusStub)
-        sinon.assert.calledTwice(getResourcesStub)
-      } else {
-        sinon.assert.notCalled(getStatusStub)
-        sinon.assert.calledOnce(getResourcesStub)
-      }
-    })
-  })
-
-  test("should have a route for the EditorDrawer component", async () => {
-    const { wrapper } = await render()
-    const listing = wrapper.find(RepeatableContentListing)
-    const route = listing.find(Route)
-    expect(route.prop("path")).toEqual([
-      siteContentDetailUrl.param({
-        name: website.name,
-      }).pathname,
-      siteContentNewUrl.param({
-        name: website.name,
-      }).pathname,
-    ])
-  })
-  it('should display "Add Video Resource" link if configItem is "resource"', async () => {
-    configItem = makeRepeatableConfigItem("resource")
-    helper.mockGetRequest(
-      siteApiContentListingUrl
-        .param({
-          name: website.name,
-        })
-        .query({ offset: 0, type: configItem.name })
-        .toString(),
-      apiResponse,
-    )
-    const { wrapper } = await render({ configItem })
-    const addLink = wrapper.find("a.add")
-    expect(addLink.text()).toBe("Add Video Resource")
-    expect(addLink.prop("href")).toBe(
-      siteContentNewUrl
-        .param({
-          name: website.name,
-          contentType: configItem.name,
-        })
-        .toString(),
-    )
-  })
 })

@@ -29,7 +29,11 @@ module.exports = {
       "|sinon" +
       ")/)",
   ],
-  testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/staticfiles/",
+    "<rootDir>/node_modules/",
+    "<rootDir>/dist/",
+  ],
   testEnvironment: "jsdom",
   watchPlugins: [
     "jest-watch-typeahead/filename",

@@ -229,7 +229,10 @@ describe("MenuField", () => {
         (item: HugoItem) => item.name === matchingMenuItem.name,
       )
       expect(updatedHugoMenuItem).toEqual(
-        expect.objectContaining(matchingMenuItem),
+        expect.objectContaining({
+          ...matchingMenuItem,
+          weight: expect.any(Number),
+        }),
       )
       expect(updatedHugoMenuItem.identifier).toEqual(
         expect.stringContaining(contentLinkUuid),

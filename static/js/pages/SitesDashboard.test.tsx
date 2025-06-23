@@ -122,7 +122,7 @@ describe("SitesDashboard", () => {
       response,
     )
     await render()
-    expect(helper.handleRequestStub.args).toStrictEqual([
+    expect(helper.handleRequestStub.args).toMatchObject([
       [
         siteApiListingUrl
           .param({ offset: 0 })

@@ -1,10 +1,11 @@
 import React, { useEffect } from "react"
 import { Prompt as ReactRouterPrompt, PromptProps } from "react-router"
-import { Location, Action } from "history"
+import * as H from "history"
 
+// Use H.Location and H.Action to match react-router's PromptProps exactly
 export type MessageFunc = (
-  location: Location,
-  action: Action,
+  location: H.Location,
+  action: H.Action,
 ) => boolean | string
 
 interface Props extends PromptProps {

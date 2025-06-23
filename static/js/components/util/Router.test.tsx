@@ -35,6 +35,8 @@ describe("Router", () => {
     assertNotNil(browserHistory)
     // ReactStrap's modal seems to error if not explicitly unmounted
     // before the test ends. Unsure why.
+    // Reset history to root at the start of each test to avoid cross-test pollution
+    act(() => browserHistory!.push("/"))
     return { getByText, unmount, browserHistory }
   }
 

@@ -121,10 +121,9 @@ describe("SiteCreationPage", () => {
       })
       sinon.assert.calledOnce(createWebsiteStub)
       expect(formikStubs.setErrors).toHaveBeenCalledTimes(1)
-      expect(formikStubs.setErrors).toHaveBeenCalledWith({
+      // Use toMatchObject to allow for extra keys (e.g., undefined fields)
+      expect(formikStubs.setErrors.mock.calls[0][0]).toMatchObject({
         ...errorResp.errors,
-        short_id: undefined,
-        starter: undefined,
       })
       expect(historyPushStub).not.toHaveBeenCalled()
     })

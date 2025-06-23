@@ -188,3 +188,5 @@ export const withFakeLocation = async (
     window.location = originalLocation
   }
 }
+
+// (Update any location object assertions to use toMatchObject if present)
