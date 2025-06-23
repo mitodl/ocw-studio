@@ -30,10 +30,6 @@ export default class IntegrationTestHelper {
      * MemoryHistory does not use window.confirm by default, so we need to tell
      * it to.
      */
-    getUserConfirmation: (message, cb) => {
-      const ok = window.confirm(message)
-      cb(ok)
-    },
   })
   sandbox: SinonSandbox
   actions: Array<Action>
@@ -53,8 +49,14 @@ export default class IntegrationTestHelper {
     window.HTMLFieldSetElement.prototype.scrollIntoView =
       this.scrollIntoViewStub
     this.wrapper = null
-    this.browserHistory.listen((location) => {
-      this.currentLocation = location
+    this.browserHistory.listen((update) => {
+      this.currentLocation = {
+        pathname: update.location.pathname,
+        search: update.location.search,
+        hash: update.location.hash,
+        state: update.location.state,
+        key: update.location.key || "",
+      }
     })
 
     // we return "no match" here as a sentinel default response
@@ -195,7 +197,7 @@ export default class IntegrationTestHelper {
       const wrapper = mount(
         <Provider store={store}>
           <ReduxQueryProvider queriesSelector={getQueries}>
-            <Router history={this.browserHistory}>
+            <Router history={this.browserHistory as any}>
               {/**
                * If the component under test uses hooks from react-router, e.g.,
                * useLocation, then the component should be re-rendered when
