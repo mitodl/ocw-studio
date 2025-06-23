@@ -22,7 +22,7 @@ describe("Router", () => {
     let browserHistory = null as null | RHistory
     const TestComponent = () => {
       const history = useHistory()
-      browserHistory = history
+      browserHistory = history as unknown as RHistory
       return <Prompt when={true} message="Confirm me!" onBeforeUnload={true} />
     }
     const { getByText, unmount } = render(
