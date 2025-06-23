@@ -2,7 +2,6 @@
 
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Optional
 
 from django.utils.functional import cached_property
 
@@ -20,11 +19,11 @@ class ConfigItem:
     """Utility class for describing an individual site config item"""
 
     item: dict
-    parent_item: Optional[dict] = None
+    parent_item: dict | None = None
     path: str = ""
 
     @property
-    def file_target(self) -> Optional[str]:
+    def file_target(self) -> str | None:
         """
         Returns the destination folder/directory if this is a folder-type config item, or the full destination filepath
         if this is a file-type config item.
@@ -76,7 +75,7 @@ class ConfigField:
     """Utility class for describing an individual site config field"""
 
     field: dict
-    parent_field: Optional[dict] = None
+    parent_field: dict | None = None
 
 
 class SiteConfig:
@@ -136,7 +135,7 @@ class SiteConfig:
             for inner_field in field.get("fields", []):
                 yield ConfigField(field=inner_field, parent_field=field)
 
-    def find_item_by_name(self, name: str) -> Optional[ConfigItem]:
+    def find_item_by_name(self, name: str) -> ConfigItem | None:
         """Finds a config item in the site config with a matching 'name' value"""  # noqa: D401
         for config_item in self.iter_items():
             if config_item.item.get("name") == name:
@@ -148,7 +147,7 @@ class SiteConfig:
         name: str,
         cls: object = None,
         use_defaults=False,  # noqa: FBT002
-        values: Optional[dict] = None,
+        values: dict | None = None,
     ) -> dict:
         """Generate a metadata dict with blank keys for the specified item. If
         use_defaults is True, fill the keys with default values from config.
@@ -186,7 +185,7 @@ class SiteConfig:
                         item_dict[parent_field][key] = value
         return item_dict
 
-    def find_item_by_filepath(self, filepath: str) -> Optional[ConfigItem]:
+    def find_item_by_filepath(self, filepath: str) -> ConfigItem | None:
         """Finds a config item in the site config with a matching 'file' value"""  # noqa: D401
         filepath = remove_trailing_slashes(filepath)
         for config_item in self.iter_items():

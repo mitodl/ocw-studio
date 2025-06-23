@@ -1307,7 +1307,7 @@ PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS = get_int(
     name="PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS",
     default=3000,
     description=(
-        "Timeout (ms) for PostHog feature flag requests, " "published to pipelines"
+        "Timeout (ms) for PostHog feature flag requests, published to pipelines"
     ),
     required=False,
 )
