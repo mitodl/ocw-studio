@@ -74,7 +74,7 @@ pytest-cov = "^6.0.0"
 pytest-django = "^4.5.2"
 pytest-env = "1.1.5"
 pytest-mock = "^3.11.1"
-ruff = "^0.11"
+ruff = "^0.12"
 semantic-version = "^2.10.0"
 
 [build-system]
