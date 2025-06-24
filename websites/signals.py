@@ -47,6 +47,8 @@ def update_page_url_on_title_change(
 
     if instance.is_page_content and instance.title:
         new_filename = slugify(instance.title)
+        if instance.filename == new_filename:
+            return
         cur_filename = WebsiteContent.objects.filter(
             website=instance.website,
             dirpath=instance.dirpath,
