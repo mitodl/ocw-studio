@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.148.0
+Version 0.148.0 (Released June 24, 2025)
 ---------------
 
 - Fix gdrive_sync video processing issues and improve multipart upload reliability (#2569)
