@@ -18,18 +18,57 @@ def test_handle_website_save():
 
 
 @pytest.mark.django_db()
-def test_update_page_url_on_title_change(mocker):
-    """
-    Filename should update to slugified title if feature flag
-    is enabled and no conflict exists
-    """
+@pytest.mark.parametrize(
+    (
+        "is_page_content",
+        "feature_flag",
+        "initial_title",
+        "new_title",
+        "existing_conflict",
+        "expected_filename",
+    ),
+    [
+        # feature flag disabled; no URL change
+        (True, False, "Original Title", "New Title", False, "original-title"),
+        # conflict with existing slugified title; no URL change
+        (True, True, "Original Title", "Some Existing Title", True, "original-title"),
+        # non-page content; no URL change
+        (False, True, "Original Title", "New Title", False, "original-title"),
+        # slugified title matches existing filename; no URL change
+        (True, True, "Test Page", "test page", False, "test-page"),
+        # URL should be updated
+        (True, True, "Test Page", "Some New Title", False, "some-new-title"),
+    ],
+)
+def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
+    mocker,
+    is_page_content,
+    feature_flag,
+    initial_title,
+    new_title,
+    existing_conflict,
+    expected_filename,
+):
     website = WebsiteFactory.create(owner=UserFactory.create())
-    mocker.patch("websites.signals.is_feature_enabled", return_value=True)
+    mocker.patch("websites.signals.is_feature_enabled", return_value=feature_flag)
+
+    if existing_conflict:
+        WebsiteContentFactory.create(
+            website=website,
+            is_page_content=True,
+            dirpath="",
+            title=new_title,
+            filename=slugify(new_title),
+        )
 
     page = WebsiteContentFactory.create(
-        website=website, is_page_content=True, title="Test Page", filename="test-page"
+        website=website,
+        is_page_content=is_page_content,
+        dirpath="",
+        title=initial_title,
+        filename=slugify(initial_title),
     )
-    page.title = "Some New Title"
+    page.title = new_title
     page.save()
     page.refresh_from_db()
-    assert page.filename == slugify("Some New Title")
+    assert page.filename == expected_filename
