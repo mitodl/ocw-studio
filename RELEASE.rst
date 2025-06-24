@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.148.0 (Released June 24, 2025)
+---------------
+
+- Fix gdrive_sync video processing issues and improve multipart upload reliability (#2569)
+- Retrieve video captions by YouTube ID (#2587)
+- Downgrade reactstrap to v8.10.1 (#2589)
+- fix(deps): update dependency requests to v2.32.4 [security] (#2588)
+- fix(deps): update dependency django to v4.2.22 [security] (#2586)
+- added hover message and new statuses for the site listing page (#2407)
+- fix(deps): update dependency @sentry/react to v9 (#2490)
+
 Version 0.147.1 (Released June 02, 2025)
 ---------------
 
