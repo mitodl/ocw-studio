@@ -304,6 +304,7 @@ export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
   type: casual.word,
   updated_on: randomISO8601(),
   is_deletable: true,
+  is_deletable_by_resourcetype: true,
 })
 
 export const makeWebsiteContentDetail = (): WebsiteContent => ({
