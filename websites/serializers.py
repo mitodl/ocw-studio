@@ -476,6 +476,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
     website_name = serializers.CharField(source="website.name")
     is_deletable = serializers.SerializerMethodField()
+    is_deletable_by_resourcetype = serializers.SerializerMethodField()
 
     def get_is_deletable(self, obj):
         request = self.context.get("request", None)
@@ -488,6 +489,14 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
             return len(refs) == 0
         return True
 
+    def get_is_deletable_by_resourcetype(self, obj):
+        # if not a resource, always OK, because we're using config var to
+        #  control deletable content types
+        if obj.type != CONTENT_TYPE_RESOURCE:
+            return True
+        # for resources only, check metadata.resourcetype === "Video"
+        return (obj.metadata or {}).get("resourcetype") == "Video"
+
     class Meta:
         model = WebsiteContent
         read_only_fields = [
@@ -497,6 +506,7 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
             "type",
             "updated_on",
             "is_deletable",
+            "is_deletable_by_resourcetype",
         ]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects  # noqa: E501
         fields = read_only_fields
