@@ -349,7 +349,7 @@ describe("Site status indicators", () => {
     const { wrapper } = await testRender()
 
     // Check for status text
-    expect(wrapper.text()).toContain("Never Published")
+    expect(wrapper.text()).toContain("Never Staged")
     expect(wrapper.text()).toContain("Unpublished")
     expect(wrapper.text()).toContain("Draft")
     expect(wrapper.text()).toContain("Published")

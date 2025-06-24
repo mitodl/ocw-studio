@@ -175,7 +175,7 @@ export const getMostRecentStatus = (
 
   // No active statuses - never published
   return {
-    status: "Never Published",
+    status: "Never Staged",
     statusClass: "text-orange",
     dateTime: null,
   }
