@@ -58,6 +58,8 @@ PERMISSION_PUBLISH = "websites.publish_website"
 PERMISSION_EDIT_CONTENT = "websites.edit_content_website"
 PERMISSION_COLLABORATE = "websites.add_collaborators_website"
 
+POSTHOG_ENABLE_EDITABLE_PAGE_URLS = "OCW_STUDIO_EDITABLE_PAGE_URLS"
+
 ROLE_ADMINISTRATOR = "admin"
 ROLE_EDITOR = "editor"
 ROLE_GLOBAL = "global_admin"
