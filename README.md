@@ -2,6 +2,21 @@
 
 OCW Studio manages deployments for OCW courses.
 
+## Recent Updates
+
+### Video Transcoding Enhancements (December 2024)
+
+Recent improvements to the video transcoding system include:
+
+- **Enhanced error handling** in video processing and transcoding workflows
+- **Local testing support** for video transcoding with mock AWS MediaConvert callbacks
+- **Improved video job status tracking** with comprehensive unit test coverage
+- **New API functions** for MediaConvert job management (`get_media_convert_job`, `prepare_job_results`)
+- **Automated transcoding status updates** via periodic Celery tasks for development environments
+- **Template-based result mocking** for testing transcoding workflows without AWS dependencies
+
+For detailed configuration, see the [Enabling AWS MediaConvert transcoding](#enabling-aws-mediaconvert-transcoding) section.
+
 **SECTIONS**
 
 - [ocw_studio](#ocw_studio)
@@ -480,13 +495,28 @@ AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_STORAGE_BUCKET_NAME
 VIDEO_S3_TRANSCODE_ENDPOINT
+VIDEO_S3_TRANSCODE_PREFIX
+VIDEO_S3_TRANSCODE_BUCKET
 AWS_ROLE_NAME
 DRIVE_SHARED_ID
 DRIVE_SERVICE_ACCOUNT_CREDS
 API_BEARER_TOKEN
+POST_TRANSCODE_ACTIONS
 ```
 
 This will allow for videos to be submitted for transcoding to the AWS MediaConvert service. This is done automatically once a video has been synced to Studio from Google Drive.
+
+## Local Development and Testing
+
+For local development and testing, additional environment variables can be configured to mock transcoding behavior:
+
+```
+VIDEO_TRANSCODING_STATUS_UPDATE_FREQUENCY=30
+TRANSCODE_RESULT_TEMPLATE=./test_videos_webhook/cloudwatch_sns_complete.json
+TRANSCODE_ERROR_TEMPLATE=./test_videos_webhook/cloudwatch_sns_error.json
+```
+
+These settings enable a periodic task that simulates AWS MediaConvert callbacks for testing video transcoding workflows locally without requiring actual AWS MediaConvert services.
 
 # Enabling 3Play integration
 

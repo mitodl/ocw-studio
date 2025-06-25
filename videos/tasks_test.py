@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 
 import pytest
 import pytz
+from botocore.exceptions import ClientError
 from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_aws
@@ -36,7 +37,7 @@ from videos.constants import (
     VideoStatus,
     YouTubeStatus,
 )
-from videos.factories import VideoFactory, VideoFileFactory
+from videos.factories import VideoFactory, VideoFileFactory, VideoJobFactory
 from videos.models import VideoFile
 from videos.tasks import (
     attempt_to_update_missing_transcripts,
@@ -893,3 +894,261 @@ def test_create_drivefile(mocker):
             "download_link": mock_gdrive_dl.get(DRIVE_FILE_DOWNLOAD_LINK),
         },
     }
+
+
+@pytest.mark.parametrize("job_status", ["COMPLETE", "ERROR"])
+def test_update_video_transcoding_statuses(settings, mocker, job_status):
+    """update_video_transcoding_statuses should check transcoding videos and update their status"""
+    # Set up test settings
+    settings.TRANSCODE_RESULT_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_complete.json"
+    )
+    settings.TRANSCODE_ERROR_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_error.json"
+    )
+    settings.POST_TRANSCODE_ACTIONS = "videos.api.update_video_job"
+
+    # Create test data
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    video_job = VideoJobFactory.create(video=video, job_id="test_job_id")
+
+    # Mock dependencies
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.return_value = {"Job": {"Status": job_status}}
+
+    mock_prepare_results = mocker.patch("videos.tasks.prepare_job_results")
+    mock_results = {"detail": {"jobId": video_job.job_id, "status": job_status}}
+    mock_prepare_results.return_value = mock_results
+
+    mock_import_string = mocker.patch("videos.tasks.import_string")
+    mock_post_transcode_action = mocker.Mock()
+    mock_import_string.return_value = mock_post_transcode_action
+
+    mock_path_open = mocker.patch("pathlib.Path.open")
+    mock_path_open.return_value.__enter__.return_value.read.return_value = (
+        '{"test": "data"}'
+    )
+
+    # Import the task function
+    from videos.tasks import update_video_transcoding_statuses
+
+    # Execute the task
+    update_video_transcoding_statuses()
+
+    # Verify calls
+    mock_get_job.assert_called_once_with(video_job.job_id)
+    mock_prepare_results.assert_called_once()
+    mock_post_transcode_action.assert_called_once_with(mock_results["detail"])
+
+
+def test_update_video_transcoding_statuses_no_video_job(mocker):
+    """update_video_transcoding_statuses should handle missing VideoJob gracefully"""
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    video.refresh_from_db()
+    assert video.status == VideoStatus.FAILED
+
+
+def test_update_video_transcoding_statuses_client_error(mocker):
+    """update_video_transcoding_statuses should handle AWS client errors gracefully"""
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    VideoJobFactory.create(video=video, job_id="test_job_id")
+
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.side_effect = ClientError(
+        {"Error": {"Code": "BadRequest", "Message": "Test error"}}, "GetJob"
+    )
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    video.refresh_from_db()
+    assert video.status == VideoStatus.FAILED
+
+
+def test_update_video_transcoding_statuses_multiple_videos(settings, mocker):
+    """update_video_transcoding_statuses should handle multiple transcoding videos"""
+    # Set up test settings
+    settings.TRANSCODE_RESULT_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_complete.json"
+    )
+    settings.POST_TRANSCODE_ACTIONS = "videos.api.update_video_job"
+
+    # Create multiple test videos
+    videos = VideoFactory.create_batch(3, status=VideoStatus.TRANSCODING)
+    for i, video in enumerate(videos):
+        VideoJobFactory.create(video=video, job_id=f"job_{i}")
+
+    # Mock dependencies
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.return_value = {"Job": {"Status": "COMPLETE"}}
+
+    mock_prepare_results = mocker.patch("videos.tasks.prepare_job_results")
+    mock_prepare_results.return_value = {"detail": {"status": "COMPLETE"}}
+
+    mock_import_string = mocker.patch("videos.tasks.import_string")
+    mock_post_transcode_action = mocker.Mock()
+    mock_import_string.return_value = mock_post_transcode_action
+
+    mock_path_open = mocker.patch("pathlib.Path.open")
+    mock_path_open.return_value.__enter__.return_value.read.return_value = (
+        '{"test": "data"}'
+    )
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    # Verify calls for each video
+    assert mock_get_job.call_count == 3
+    assert mock_prepare_results.call_count == 3
+    assert mock_post_transcode_action.call_count == 3
+
+
+def test_update_video_transcoding_statuses_mixed_statuses(settings, mocker):
+    """update_video_transcoding_statuses should handle videos with different job statuses"""
+    # Set up test settings
+    settings.TRANSCODE_RESULT_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_complete.json"
+    )
+    settings.TRANSCODE_ERROR_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_error.json"
+    )
+    settings.POST_TRANSCODE_ACTIONS = "videos.api.update_video_job"
+
+    # Create test videos
+    video1 = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    video2 = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    VideoJobFactory.create(video=video1, job_id="complete_job")
+    VideoJobFactory.create(video=video2, job_id="error_job")
+
+    # Mock dependencies
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.side_effect = [
+        {"Job": {"Status": "COMPLETE"}},
+        {"Job": {"Status": "ERROR"}},
+    ]
+
+    mock_prepare_results = mocker.patch("videos.tasks.prepare_job_results")
+    mock_prepare_results.side_effect = [
+        {"detail": {"status": "COMPLETE"}},
+        {"detail": {"status": "ERROR"}},
+    ]
+
+    mock_import_string = mocker.patch("videos.tasks.import_string")
+    mock_post_transcode_action = mocker.Mock()
+    mock_import_string.return_value = mock_post_transcode_action
+
+    mock_path_open = mocker.patch("pathlib.Path.open")
+    mock_path_open.return_value.__enter__.return_value.read.return_value = (
+        '{"test": "data"}'
+    )
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    # Verify both videos were processed
+    assert mock_get_job.call_count == 2
+    assert mock_prepare_results.call_count == 2
+    assert mock_post_transcode_action.call_count == 2
+
+
+def test_update_video_transcoding_statuses_no_transcoding_videos(mocker):
+    """update_video_transcoding_statuses should handle no transcoding videos gracefully"""
+    # Create videos with other statuses
+    VideoFactory.create(status=VideoStatus.COMPLETE)
+    VideoFactory.create(status=VideoStatus.FAILED)
+
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    # No jobs should be checked
+    mock_get_job.assert_not_called()
+
+
+def test_update_video_transcoding_statuses_invalid_post_action(settings, mocker):
+    """update_video_transcoding_statuses should handle invalid post-transcode action"""
+    # Set up test settings
+    settings.TRANSCODE_RESULT_TEMPLATE = (
+        "./test_videos_webhook/cloudwatch_sns_complete.json"
+    )
+    settings.POST_TRANSCODE_ACTIONS = "non.existent.function"
+
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    VideoJobFactory.create(video=video, job_id="test_job_id")
+
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.return_value = {"Job": {"Status": "COMPLETE"}}
+
+    mock_prepare_results = mocker.patch("videos.tasks.prepare_job_results")
+    mock_prepare_results.return_value = {"detail": {"status": "COMPLETE"}}
+
+    mock_import_string = mocker.patch("videos.tasks.import_string")
+    mock_import_string.side_effect = ImportError("Module not found")
+
+    mock_path_open = mocker.patch("pathlib.Path.open")
+    mock_path_open.return_value.__enter__.return_value.read.return_value = (
+        '{"test": "data"}'
+    )
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    # This should not raise an exception even if the import fails
+    with pytest.raises(ImportError):
+        update_video_transcoding_statuses()
+
+
+def test_update_video_transcoding_statuses_file_not_found(settings, mocker):
+    """update_video_transcoding_statuses should handle missing template files"""
+    # Set up test settings with non-existent template files
+    settings.TRANSCODE_RESULT_TEMPLATE = "./non_existent_file.json"
+    settings.POST_TRANSCODE_ACTIONS = "videos.api.update_video_job"
+
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    VideoJobFactory.create(video=video, job_id="test_job_id")
+
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.return_value = {"Job": {"Status": "COMPLETE"}}
+
+    mock_path_open = mocker.patch("pathlib.Path.open")
+    mock_path_open.side_effect = FileNotFoundError("File not found")
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    # This should not raise an exception even if the template file is missing
+    with pytest.raises(FileNotFoundError):
+        update_video_transcoding_statuses()
+
+
+@pytest.mark.parametrize("job_status", ["PROCESSING", "SUBMITTED", "PROGRESSING"])
+def test_update_video_transcoding_statuses_other_statuses(settings, mocker, job_status):
+    """update_video_transcoding_statuses should handle other MediaConvert job statuses"""
+    # Set up test settings
+    settings.POST_TRANSCODE_ACTIONS = "videos.api.update_video_job"
+
+    video = VideoFactory.create(status=VideoStatus.TRANSCODING)
+    VideoJobFactory.create(video=video, job_id="test_job_id")
+
+    mock_get_job = mocker.patch("videos.tasks.get_media_convert_job")
+    mock_get_job.return_value = {"Job": {"Status": job_status}}
+
+    mock_prepare_results = mocker.patch("videos.tasks.prepare_job_results")
+    mock_import_string = mocker.patch("videos.tasks.import_string")
+
+    from videos.tasks import update_video_transcoding_statuses
+
+    update_video_transcoding_statuses()
+
+    # Should check the job but not prepare results or call post-actions for intermediate statuses
+    mock_get_job.assert_called_once()
+    mock_prepare_results.assert_not_called()
+    mock_import_string.assert_not_called()

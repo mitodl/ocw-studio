@@ -1,12 +1,15 @@
 """Video tasks"""
 
 import logging
+from pathlib import Path
 from urllib.parse import urljoin
 
 import celery
+from botocore.exceptions import ClientError
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
+from django.utils.module_loading import import_string
 from googleapiclient.errors import HttpError
 from mitol.common.utils import now_in_utc
 from mitol.mail.api import get_message_sender
@@ -32,14 +35,16 @@ from main.celery import app
 from main.constants import STATUS_CREATED
 from main.s3_utils import get_boto3_resource
 from videos import threeplay_api
+from videos.api import get_media_convert_job, prepare_job_results
 from videos.constants import (
     DESTINATION_YOUTUBE,
     YT_THUMBNAIL_IMG,
     VideoFileStatus,
+    VideoJobStatus,
     VideoStatus,
     YouTubeStatus,
 )
-from videos.models import Video, VideoFile
+from videos.models import Video, VideoFile, VideoJob
 from videos.utils import create_new_content
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
@@ -134,7 +139,8 @@ def start_transcript_job(video_id: int):
             folder_name, youtube_id, video_resource.title
         )
 
-        threeplay_file_id = response.get("data").get("id")
+        data = response.get("data") if response else {}
+        threeplay_file_id = data.get("id") if data else None
 
         if (
             threeplay_file_id
@@ -561,3 +567,70 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             create_drivefile(
                 new_gdrive_file, new_resource, destination_course, "videos"
             )
+
+
+@app.task
+def update_video_transcoding_statuses():
+    """
+    Check on statuses of all transcoding videos and update their status if appropriate.
+    This task mocks AWS MediaConvert callbacks for local development/testing.
+    """
+    transcoding_videos = Video.objects.filter(status=VideoStatus.TRANSCODING)
+    log.info("Checking status of %d transcoding videos", transcoding_videos.count())
+
+    for video in transcoding_videos:
+        log.debug("Checking video transcoding status", extra={"video_id": video.id})
+
+        try:
+            # Get the latest video job for this video
+            video_job = VideoJob.objects.filter(video=video).latest("created_on")
+
+            media_convert_job = get_media_convert_job(video_job.job_id)
+
+            results = None
+            # Check if the job should be marked as complete (mock logic)
+            # In a real scenario, this would query AWS MediaConvert
+            if (
+                media_convert_job["Job"]["Status"].lower()
+                == VideoJobStatus.COMPLETE.lower()
+            ):
+                with Path(settings.TRANSCODE_RESULT_TEMPLATE).open(
+                    encoding="utf-8"
+                ) as f:
+                    results = prepare_job_results(video, video_job, f.read())
+
+            elif (
+                media_convert_job["Job"]["Status"].lower()
+                == VideoJobStatus.ERROR.lower()
+            ):
+                with Path(settings.TRANSCODE_ERROR_TEMPLATE).open(
+                    encoding="utf-8"
+                ) as f:
+                    results = prepare_job_results(video, video_job, f.read())
+                log.error(
+                    "Transcoding failed",
+                    extra={"video_id": video.id, "job_id": video_job.job_id},
+                )
+
+            # Execute post-transcode actions
+            if results is not None:
+                for action in settings.POST_TRANSCODE_ACTIONS:
+                    import_string(action)(results.get("detail", {}))
+
+        except VideoJob.DoesNotExist:
+            log.exception(
+                "No VideoJob object exists for transcoding video",
+                extra={"video_id": video.id},
+            )
+            video.status = VideoStatus.FAILED
+            video.save()
+        except ClientError as exc:
+            log.exception(
+                "Error when checking video transcoding status",
+                extra={
+                    "video_id": video.id,
+                    "response": str(exc) if exc.response else None,
+                },
+            )
+            video.status = VideoStatus.FAILED
+            video.save()
