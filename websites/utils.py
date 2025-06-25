@@ -128,7 +128,7 @@ def parse_string(text: str) -> str:
     pattern = r"""
     \{\{%\s+resource_link\s+"([a-f0-9-]{36})"\s+"([^"]+)"\s+%\}\}
     |
-    \{\{<\s+resource\s+uuid="([a-f0-9-]{36})"\+s>\}\}
+    \{\{<\s+resource\s+uuid="([a-f0-9-]{36})"\s*>\}\}
     """
 
     regex = re.compile(pattern, re.VERBOSE)
