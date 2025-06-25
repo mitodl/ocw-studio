@@ -115,7 +115,7 @@ def get_metadata_content_key(content) -> list:
     return content_keys
 
 
-def parse_string(text: str) -> str:
+def parse_string(text: str) -> list[str]:
     """
     Parse the input text to extract UUIDs from resource links.
 
@@ -123,12 +123,41 @@ def parse_string(text: str) -> str:
         text (str): The input text containing resource links.
 
     Returns:
-        str: A list of extracted UUIDs.
+        list[str]: A list of extracted UUIDs.
     """
+
+    # This regex pattern matches two types of Hugo resource patterns:
+    # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}}
+    # 2. Hugo resource syntax: {{< resource uuid="uuid" >}}
+    #
+    # Pattern breakdown:
+    # - Pattern 1: \{\{%\s+resource_link\s+"([uuid])"\s+"([^"]+)"\s+%\}\}
+    #   - \{\{%     : Matches literal "{{%"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - resource_link : Matches literal "resource_link"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - "([uuid])" : Captures UUID in group 1 (full pattern below)
+    #   - \s+       : Matches one or more whitespace characters
+    #   - "([^"]+)" : Captures title text in group 2
+    #   - \s+       : Matches one or more whitespace characters
+    #   - %\}\}     : Matches literal "%}}"
+    #
+    # - Pattern 2: \{\{<\s+resource\s+uuid="([uuid])"\s*>\}\}
+    #   - \{\{<     : Matches literal "{{<"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - resource  : Matches literal "resource"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - uuid="([uuid])" : Captures UUID in group 3 (full pattern below)
+    #   - \s*       : Matches zero or more whitespace characters
+    #   - >\}\}     : Matches literal ">}}"
+    #
+    # UUID format: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
+    # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
+
     pattern = r"""
-    \{\{%\s+resource_link\s+"([a-f0-9-]{36})"\s+"([^"]+)"\s+%\}\}
+    \{\{%\s+resource_link\s+"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"\s+"([^"]+)"\s+%\}\}
     |
-    \{\{<\s+resource\s+uuid="([a-f0-9-]{36})"\s*>\}\}
+    \{\{<\s+resource\s+uuid="([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"\s*>\}\}
     """
 
     regex = re.compile(pattern, re.VERBOSE)
