@@ -6,7 +6,7 @@ from websites import constants
 from websites.factories import WebsiteFactory
 from websites.utils import (
     get_dict_query_field,
-    parse_string,
+    parse_resource_uuid,
     permissions_group_name_for_role,
     set_dict_field,
 )
@@ -146,14 +146,14 @@ def test_set_dict_field():
         ),
     ],
 )
-def test_parse_string(input_text, expected_uuids):
-    """Test parse_string extracts UUIDs correctly from various resource patterns"""
-    result = parse_string(input_text)
+def test_parse_resource_uuid(input_text, expected_uuids):
+    """Test parse_resource_uuid extracts UUIDs correctly from various resource patterns"""
+    result = parse_resource_uuid(input_text)
     assert result == expected_uuids
 
 
-def test_parse_string_with_surrounding_text():
-    """Test parse_string works correctly when resource patterns are embedded in other text"""
+def test_parse_resource_uuid_with_surrounding_text():
+    """Test parse_resource_uuid works correctly when resource patterns are embedded in other text"""
     text = """
     This is some markdown content before the resource.
 
@@ -166,7 +166,7 @@ def test_parse_string_with_surrounding_text():
     And here is some content after the resources.
     """
 
-    result = parse_string(text)
+    result = parse_resource_uuid(text)
     expected = [
         "123e4567-e89b-12d3-a456-426614174000",
         "987fcdeb-ba01-2345-6789-abcdef012345",
@@ -174,8 +174,8 @@ def test_parse_string_with_surrounding_text():
     assert result == expected
 
 
-def test_parse_string_case_sensitivity():
-    """Test that parse_string is case sensitive for the pattern matching"""
+def test_parse_resource_uuid_case_sensitivity():
+    """Test that parse_resource_uuid is case sensitive for the pattern matching"""
     # These should not match because of case differences
     invalid_cases = [
         '{{< Resource uuid="123e4567-e89b-12d3-a456-426614174000" >}}',  # Capital R
@@ -184,5 +184,5 @@ def test_parse_string_case_sensitivity():
     ]
 
     for text in invalid_cases:
-        result = parse_string(text)
+        result = parse_resource_uuid(text)
         assert result == [], f"Expected no matches for: {text}"
