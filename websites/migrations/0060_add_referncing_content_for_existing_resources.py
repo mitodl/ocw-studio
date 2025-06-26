@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 def migrate_metadata_forward(apps, schema_editor):
     """
-    Forward migration remove the "name" field from the metadata
-    of existing stories
+    Forward migration to add referencing content for existing resources.
     """
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     website_content = WebsiteContent.objects.all()
