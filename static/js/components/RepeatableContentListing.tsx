@@ -270,23 +270,26 @@ export default function RepeatableContentListing(props: {
         </div>
       </div>
       <StudioList>
-        {listing.results.map((item: WebsiteContentListItem) => (
-          <StudioListItem
-            key={item.text_id}
-            to={siteContentDetailUrl
-              .param({
-                name: website.name,
-                contentType: configItem.name,
-                uuid: item.text_id,
-              })
-              .toString()}
-            title={item.title ?? ""}
-            subtitle={`Updated ${formatUpdatedOn(item)}`}
-            menuOptions={
-              isDeletable ? [["Delete", startDelete(item)]] : undefined
-            }
-          />
-        ))}
+        {listing.results.map((item: WebsiteContentListItem) => {
+          const showDelete = isDeletable && item.is_deletable_by_resourcetype
+          return (
+            <StudioListItem
+              key={item.text_id}
+              to={siteContentDetailUrl
+                .param({
+                  name: website.name,
+                  contentType: configItem.name,
+                  uuid: item.text_id,
+                })
+                .toString()}
+              title={item.title ?? ""}
+              subtitle={`Updated ${formatUpdatedOn(item)}`}
+              menuOptions={
+                showDelete ? [["Delete", startDelete(item)]] : undefined
+              }
+            />
+          )
+        })}
       </StudioList>
       <PaginationControls previous={pages.previous} next={pages.next} />
       <Route
