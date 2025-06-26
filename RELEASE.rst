@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.149.0
+Version 0.149.0 (Released June 26, 2025)
 ---------------
 
 - chore(fix): migrate links in markdown to external resources (#2590)
