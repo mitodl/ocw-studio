@@ -630,9 +630,22 @@ class WebsiteContentDetailSerializer(
                 result[file_field["name"]] = instance.file.url
         return result
 
+    is_deletable_by_resourcetype = serializers.SerializerMethodField()
+
+    def get_is_deletable_by_resourcetype(self, obj):
+        if obj.type != CONTENT_TYPE_RESOURCE:
+            return True
+        return (obj.metadata or {}).get("resourcetype") == "Video"
+
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "type", "content_context", "url_path"]
+        read_only_fields = [
+            "text_id",
+            "type",
+            "content_context",
+            "url_path",
+            "is_deletable_by_resourcetype",
+        ]
         fields = [
             *read_only_fields,
             "title",
