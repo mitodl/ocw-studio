@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.149.0 (Released June 26, 2025)
+---------------
+
+- chore(fix): migrate links in markdown to external resources (#2590)
+- chore(fix): updated color scheme and text for course states (#2593)
+- fix: added check for resource links with highlighted text (#2584)
+- fix(deps): update dependency django-webpack-loader to v3.2.1 (#2598)
+- fix(deps): update dependency django to v4.2.23 (#2596)
+- fix(deps): update dependency sinon to v21 (#2600)
+- fix(deps): update dependency boto3 to v1.38.41 (#2595)
+- fix(deps): update dependency dj-database-url to v3 (#2599)
+- chore(deps): update dependency ruff to ^0.12 (#2597)
+
 Version 0.148.0 (Released June 24, 2025)
 ---------------
 
