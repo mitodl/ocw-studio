@@ -28,6 +28,7 @@ from content_sync.api import (
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import update_mass_build_pipelines_on_publish
 from gdrive_sync.constants import WebsiteSyncStatus
+from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
@@ -689,6 +690,44 @@ class WebsiteContentViewSet(
             )
         )
         return {**super().get_serializer_context(), **added_context}
+
+    def destroy(self, request, *args, **kwargs):
+        content: WebsiteContent = self.get_object()
+
+        is_video = (
+            content.type == "resource"
+            and (content.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
+        )
+        if not is_video:
+            return super().destroy(request, *args, **kwargs)
+
+        drive_file = DriveFile.objects.filter(resource=content).first()
+        # print("drive file") # noqa: ERA001
+        # print("drive file") # noqa: ERA001
+        # print("drive file") # noqa: ERA001
+        # print(drive_file) # noqa: ERA001
+        video = drive_file.video if drive_file else None
+        # print("Vide") # noqa: ERA001
+        # print("Vide") # noqa: ERA001
+        # print("Vide") # noqa: ERA001
+        # print(video) # noqa: ERA001
+
+        # content.updated_by = request.user # noqa: ERA001
+        # super().perform_destroy(content) # noqa: ERA001
+
+        # if drive_file and drive_file.file_id:
+        # ds = get_drive_service() # noqa: ERA001
+        # ds.files().delete(fileId=drive_file.file_id).execute() # noqa: ERA001
+
+        if video:
+            video.delete()
+
+        # api.delete_drive_file(drive_file, sync_datetime=now_in_utc()) # noqa: ERA001
+        # (drivefile pre_delete ..S3 cleanup)
+        # drive_file.delete() # noqa: ERA001 # noqa: ERA001
+
+        update_website_backend(content.website)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance: WebsiteContent):
         """(soft) deletes a WebsiteContent record"""
