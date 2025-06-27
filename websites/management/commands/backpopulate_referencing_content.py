@@ -7,27 +7,29 @@ from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website, WebsiteContent
 from websites.utils import compile_referencing_content
 
+BATCH_SIZE_DEFAULT = 500  # Default batch size for processing content
+
 
 class Command(WebsiteFilterCommand):
     """Backpopulate referencing content for existing resources"""
 
     help = "Backpopulate referencing content for existing resources"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser, *args, **kwargs):
         """Add command arguments."""
-        super().add_arguments(parser)
+        super().add_arguments(parser, *args, **kwargs)
         parser.add_argument(
-            "--chunk-size",
+            "--batch-size",
             type=int,
-            default=500,
-            help="Number of content items to process in each chunk (default: 500)",
+            default=BATCH_SIZE_DEFAULT,
+            help="Number of content items to process in each batch (default: )",
         )
 
     def handle(self, *args, **options):
         """Handle the management command execution."""
         super().handle(*args, **options)
 
-        chunk_size = options["chunk_size"]
+        batch_size = options["batch_size"] or BATCH_SIZE_DEFAULT
         verbosity = options["verbosity"]
 
         self.stdout.write("Backpopulating referencing content for existing resources")
@@ -36,13 +38,12 @@ class Command(WebsiteFilterCommand):
         website_qset = self.filter_websites(websites=Website.objects.all())
 
         # Get total count for progress tracking
-        total_content = website_qset.count()
+        total_content = WebsiteContent.objects.filter(website__in=website_qset).count()
         self.stdout.write(
-            f"Processing {total_content} content items in chunks of {chunk_size}..."
+            f"Processing {total_content} content items in batches of {batch_size}..."
         )
 
         if verbosity >= 2:  # noqa: PLR2004
-            self.stdout.write(f"Verbosity level: {verbosity}")
             self.stdout.write(
                 f"Website filter applied: {website_qset.count()} websites"
             )
@@ -53,15 +54,15 @@ class Command(WebsiteFilterCommand):
         while offset < total_content:
             if verbosity >= 1:
                 self.stdout.write(
-                    f"Processing chunk {offset // chunk_size + 1}: "
-                    f"items {offset + 1} to {min(offset + chunk_size, total_content)}"
+                    f"Processing batch {offset // batch_size + 1}: "
+                    f"items {offset + 1} to {min(offset + batch_size, total_content)}"
                 )
 
-            chunk_updated = self._process_chunk(
-                website_qset, offset, chunk_size, verbosity
+            batch_updated = self._process_batch(
+                website_qset, offset, batch_size, verbosity
             )
-            total_updated += chunk_updated
-            offset += chunk_size
+            total_updated += batch_updated
+            offset += batch_size
 
             # Progress update
             processed = min(offset, total_content)
@@ -69,7 +70,7 @@ class Command(WebsiteFilterCommand):
                 self.stdout.write(
                     f"Processed {processed}/{total_content} items "
                     f"({processed/total_content*100:.1f}%) - "
-                    f"{chunk_updated} updated in this chunk"
+                    f"{batch_updated} updated in this batch"
                 )
 
         total_seconds = (now_in_utc() - start).total_seconds()
@@ -82,68 +83,60 @@ class Command(WebsiteFilterCommand):
             f"{total_updated} content updated"
         )
 
-    def _process_chunk(self, website_qset, offset, chunk_size, verbosity):
-        """Process a chunk of content items."""
-        # Fetch a chunk of content with optimized query
-        content_chunk = WebsiteContent.objects.filter(website__in=website_qset)[
-            offset : offset + chunk_size
+    def _process_batch(self, website_qset, offset, batch_size, verbosity):
+        """Process a batch of content items."""
+        # Fetch a batch of content
+        content_batch = WebsiteContent.objects.filter(website__in=website_qset)[
+            offset : offset + batch_size
         ]
 
         if verbosity >= 3:  # noqa: PLR2004
-            self.stdout.write(f"Fetched {len(content_chunk)} content items for chunk")
+            self.stdout.write(f"Fetched {len(content_batch)} content items for batch")
 
-        # Collect references for this chunk only
+        # Collect references for this batch only
         content_references, all_reference_uuids = self._collect_references(
-            content_chunk, verbosity
+            content_batch, verbosity
         )
 
         if not all_reference_uuids:
             if verbosity >= 2:  # noqa: PLR2004
-                self.stdout.write("No references found in this chunk")
+                self.stdout.write("No references found in this batch")
             return 0
 
         if verbosity >= 2:  # noqa: PLR2004
             self.stdout.write(
-                f"Found {len(all_reference_uuids)} unique references in chunk"
+                f"Found {len(all_reference_uuids)} unique references in batch"
             )
 
-        # Bulk fetch all referenced content for this chunk
+        # Bulk fetch all referenced content for this batch
         referenced_content_map = self._fetch_referenced_content(
             all_reference_uuids, verbosity
         )
 
-        # Update relationships for this chunk
-        chunk_updated = self._update_relationships(
+        # Update relationships for this batch
+        batch_updated = self._update_relationships(
             content_references, referenced_content_map, verbosity
         )
 
         if verbosity >= 2:  # noqa: PLR2004
-            self.stdout.write(f"Updated {chunk_updated} content items in chunk")
+            self.stdout.write(f"Updated {batch_updated} content items in batch")
 
-        return chunk_updated
+        return batch_updated
 
-    def _collect_references(self, content_chunk, verbosity):
-        """Collect and flatten references from content chunk."""
+    def _collect_references(self, content_batch, verbosity):
+        """Collect and flatten references from content batch."""
         content_references = {}
         all_reference_uuids = set()
 
-        for content in content_chunk:
+        for content in content_batch:
             if references := compile_referencing_content(content):
-                # Flatten the references list in case it contains nested lists
-                flat_references = []
-                for ref in references:
-                    if isinstance(ref, list):
-                        flat_references.extend(ref)
-                    else:
-                        flat_references.append(ref)
-
-                content_references[content.id] = flat_references
-                all_reference_uuids.update(flat_references)
+                content_references[content.id] = references
+                all_reference_uuids.update(references)
 
                 if verbosity >= 3:  # noqa: PLR2004
                     self.stdout.write(
                         f"Content {content.text_id} references "
-                        f"{len(flat_references)} items"
+                        f"{len(references)} items"
                     )
 
         return content_references, all_reference_uuids
@@ -169,7 +162,7 @@ class Command(WebsiteFilterCommand):
         self, content_references, referenced_content_map, verbosity
     ):
         """Update content relationships in a transaction."""
-        chunk_updated = 0
+        batch_updated = 0
         with transaction.atomic():
             for content_id, reference_uuids in content_references.items():
                 try:
@@ -188,7 +181,7 @@ class Command(WebsiteFilterCommand):
                             id__in=referenced_content_ids
                         )
                         content.referenced_by.set(referenced_objects)
-                        chunk_updated += 1
+                        batch_updated += 1
 
                         if verbosity >= 3:  # noqa: PLR2004
                             self.stdout.write(
@@ -204,4 +197,4 @@ class Command(WebsiteFilterCommand):
                         )
                     continue
 
-        return chunk_updated
+        return batch_updated
