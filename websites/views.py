@@ -47,7 +47,6 @@ from websites.constants import (
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
-    WEBSITE_CONTENT_LEFTNAV,
     WebsiteStarterStatus,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
@@ -78,9 +77,8 @@ from websites.serializers import (
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import (
-    get_metadata_content_key,
+    compile_referencing_content,
     get_valid_base_filename,
-    parse_string,
     permissions_group_name_for_role,
 )
 
@@ -736,29 +734,10 @@ class WebsiteContentViewSet(
         """
         Add referencing content to the instance if `referencing_content` is provided.
         """
-        references = []
 
-        if instance.type == constants.CONTENT_TYPE_NAVMENU:
-            references = [
-                item["identifier"]
-                for item in instance.metadata.get(WEBSITE_CONTENT_LEFTNAV, [])
-            ]
-        else:
-            if instance.markdown:
-                references += parse_string(instance.markdown)
-
-            if instance.metadata:
-                content_keys = get_metadata_content_key(instance)
-                references += [
-                    parse_string(instance.metadata[content_key])
-                    for content_key in content_keys
-                    if instance.metadata.get(content_key)
-                ]
-
-        if references:
+        if references := compile_referencing_content(instance):
             references = WebsiteContent.objects.filter(text_id__in=references).all()
-
-        instance.referenced_by.set(references)
+            instance.referenced_by.set(references)
         instance.save()
 
     def perform_update(self, serializer):
