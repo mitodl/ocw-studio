@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.150.0
+Version 0.150.0 (Released June 30, 2025)
 ---------------
 
 - fix: stripped query parameters before downloading (#2592)
