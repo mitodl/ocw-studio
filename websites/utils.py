@@ -100,22 +100,25 @@ def is_test_site(site_name: str) -> bool:
 
 
 def get_metadata_content_key(content) -> list:
+    """Get the metadata content keys based on the content type."""
     content_type = content.type
     match content_type:
         case (
-            constants.CONTENT_TYPE_RESOURCE_LIST,
-            constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+            constants.CONTENT_TYPE_RESOURCE_LIST
+            | constants.CONTENT_TYPE_RESOURCE_COLLECTION
         ):
             content_keys = ["description"]
         case constants.CONTENT_TYPE_METADATA:
             content_keys = ["course_description"]
+        case constants.CONTENT_TYPE_RESOURCE:
+            content_keys = ["image_metadata.caption", "image_metadata.credit"]
         case _:
             content_keys = []
 
     return content_keys
 
 
-def parse_string(text: str) -> list[str]:
+def parse_resource_uuid(text: str) -> list[str]:
     """
     Parse the input text to extract UUIDs from resource links.
 
@@ -169,3 +172,24 @@ def parse_string(text: str) -> list[str]:
         or _match[2]  # match[0] for first group UUID, match[2] for second group UUID
         for _match in matches
     ]
+
+
+def compile_referencing_content(content) -> list[str]:
+    """Compile referencing content for a website content instance."""
+    references = []
+
+    if content.type == constants.CONTENT_TYPE_NAVMENU:
+        references = [
+            item["identifier"]
+            for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
+        ]
+    else:
+        if content.markdown:
+            references += parse_resource_uuid(content.markdown)
+
+        if content.metadata:
+            content_keys = get_metadata_content_key(content)
+            for content_key in content_keys:
+                if resource_data := get_dict_field(content.metadata, content_key):
+                    references.extend(parse_resource_uuid(resource_data))
+    return references
