@@ -25,7 +25,7 @@ SCHEMA_RESOURCES_DIR = "localdev/configs/"
 SCHEMA_CONFIG_FILE = "ocw-course-site-config.yml"
 
 
-@pytest.fixture()
+@pytest.fixture
 def permission_groups():
     """Set up groups, users and websites for permission testing"""
     (
@@ -61,7 +61,7 @@ def permission_groups():
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def global_admin_user():
     """Returns a user with global admin permissions"""  # noqa: D401
     create_global_groups()
@@ -70,7 +70,7 @@ def global_admin_user():
     return global_admin_user
 
 
-@pytest.fixture()
+@pytest.fixture
 def basic_site_config(settings):
     """Returns an example site config"""  # noqa: D401
     return yaml.load(
@@ -79,7 +79,7 @@ def basic_site_config(settings):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def site_config_yml(settings):
     """Fixture that returns the contents of the example site config YAML file in the resource directory"""  # noqa: E501
     with open(  # noqa: PTH123
@@ -91,13 +91,13 @@ def site_config_yml(settings):
         return f.read().strip()
 
 
-@pytest.fixture()
+@pytest.fixture
 def parsed_site_config(site_config_yml):
     """Fixture that returns the parsed contents of the example site config YAML file in the resource directory"""  # noqa: E501
     return yaml.load(site_config_yml, Loader=yaml.SafeLoader)
 
 
-@pytest.fixture()
+@pytest.fixture
 def site_config_repeatable_only(basic_site_config):
     """Returns an example site config with a repeatable config item as the only item in 'collections'"""  # noqa: D401, E501
     site_config = basic_site_config.copy()
@@ -108,7 +108,7 @@ def site_config_repeatable_only(basic_site_config):
     return {**site_config, "collections": [config_item]}
 
 
-@pytest.fixture()
+@pytest.fixture
 def site_config_singleton_only(basic_site_config):
     """Returns an example site config with a singleton config item as the only item in 'collections'"""  # noqa: D401, E501
     site_config = basic_site_config.copy()
@@ -120,7 +120,7 @@ def site_config_singleton_only(basic_site_config):
     return {**site_config, "collections": [files_config_item]}
 
 
-@pytest.fixture()
+@pytest.fixture
 def ocw_site(parsed_site_config):
     """OCW Course site with metadata"""
     website = WebsiteFactory.create(

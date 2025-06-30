@@ -4,7 +4,7 @@ import functools
 import logging
 from collections.abc import Callable
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from django.conf import settings
 from django_redis import get_redis_connection
@@ -84,7 +84,7 @@ def check_sync_state(func: Callable) -> Callable:
 
 def single_task(
     timeout: int,
-    raise_block: Optional[bool] = True,  # noqa: FBT002
+    raise_block: bool | None = True,  # noqa: FBT002
 ) -> Callable:
     """
     Only allow one instance of a task to run concurrently, based on the task name

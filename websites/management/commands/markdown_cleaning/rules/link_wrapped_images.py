@@ -2,7 +2,6 @@
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 from urllib.parse import urlparse
 
 from pyparsing import ParseException
@@ -51,7 +50,7 @@ class LinkWrappedImagesRule(PyparsingRule):
     @dataclass
     class ReplacementNotes:
         note: str
-        had_extra_text: Optional[bool] = None
+        had_extra_text: bool | None = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -138,7 +137,7 @@ class LinkWrappedImagesRule(PyparsingRule):
             fragment=fragment,
         )
 
-    def get_replacement(  # noqa: PLR0913
+    def get_replacement(
         self,
         page_content: WebsiteContent,
         linked_content: WebsiteContent,
