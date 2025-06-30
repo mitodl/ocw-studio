@@ -5,6 +5,7 @@ import pytest
 from websites import constants
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.utils import (
+    compile_referencing_content,
     get_dict_field,
     get_dict_query_field,
     get_metadata_content_key,
@@ -213,6 +214,213 @@ def test_parse_resource_uuid_case_sensitivity():
     for text in invalid_cases:
         result = parse_resource_uuid(text)
         assert result == [], f"Expected no matches for: {text}"
+
+
+def test_compile_referencing_content_navmenu_type():
+    """Test compile_referencing_content with NAVMENU content type"""
+    # Create content with NAVMENU type and leftnav metadata
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={
+            constants.WEBSITE_CONTENT_LEFTNAV: [
+                {"identifier": "12345678-90ab-cdef-1234-567890abcdef"},
+                {"identifier": "abcdef12-3456-789a-bcde-f1234567890a"},
+                {"identifier": "99887766-5544-3322-1100-ffeeddccbbaa"},
+            ]
+        },
+        markdown="This markdown should be ignored for navmenu type",
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "12345678-90ab-cdef-1234-567890abcdef",
+        "abcdef12-3456-789a-bcde-f1234567890a",
+        "99887766-5544-3322-1100-ffeeddccbbaa",
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_navmenu_empty():
+    """Test compile_referencing_content with NAVMENU type but empty/no leftnav"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={constants.WEBSITE_CONTENT_LEFTNAV: []},
+        markdown="This markdown should be ignored",
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_page_markdown():
+    """Test compile_referencing_content with PAGE type containing markdown references"""
+    markdown_content = (
+        '{{% resource_link "550e8400-e29b-41d4-a716-446655440001" "Resource 1" %}} '
+        'and {{< resource uuid="550e8400-e29b-41d4-a716-446655440002" >}}'
+    )
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=markdown_content,
+        metadata={},
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002",
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_description_metadata():
+    """Test compile_referencing_content with RESOURCE_LIST and RESOURCE_COLLECTION types having description metadata"""
+    # Test RESOURCE_LIST type
+    content_list = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_LIST,
+        markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
+        metadata={
+            "description": '{{< resource uuid="66778899-aabb-ccdd-eeff-112233445566" >}}',
+            "other_field": "This should be ignored",
+        },
+    )
+
+    result_list = compile_referencing_content(content_list)
+    expected = [
+        "11223344-5566-7788-99aa-bbccddee1122",
+        "66778899-aabb-ccdd-eeff-112233445566",
+    ]
+    assert result_list == expected
+
+    # Test RESOURCE_COLLECTION type with same metadata structure
+    content_collection = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+        markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
+        metadata={
+            "description": '{{< resource uuid="66778899-aabb-ccdd-eeff-112233445566" >}}',
+            "other_field": "This should be ignored",
+        },
+    )
+
+    result_collection = compile_referencing_content(content_collection)
+    assert result_collection == expected
+
+
+def test_compile_referencing_content_metadata_course_description():
+    """Test compile_referencing_content with METADATA type having course_description"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown='Some markdown with {{< resource uuid="aaaabbbb-cccc-dddd-eeee-ffff12345678" >}}',
+        metadata={
+            "course_description": '{{% resource_link "ffffeedd-ccbb-aa99-8877-665544332211" "Course Description" %}}',
+            "other_metadata": "Should be ignored",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "aaaabbbb-cccc-dddd-eeee-ffff12345678",
+        "ffffeedd-ccbb-aa99-8877-665544332211",
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_resource_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having image_metadata caption and credit"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown='Resource markdown with {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
+        metadata={
+            "image_metadata": {
+                "caption": 'Caption with {{% resource_link "aaaabbbb-cccc-dddd-eeee-ffff12345678" "Caption Link" %}}',
+                "credit": 'Credit with {{< resource uuid="ffffeedd-ccbb-aa99-8877-665544332211" >}}',
+            },
+            "other_field": "Should be ignored",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "11223344-5566-7788-99aa-bbccddee1122",  # From markdown
+        "aaaabbbb-cccc-dddd-eeee-ffff12345678",  # From image_metadata.caption
+        "ffffeedd-ccbb-aa99-8877-665544332211",  # From image_metadata.credit
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_resource_partial_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having only caption or credit"""
+    # Test with only caption
+    content_caption_only = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "image_metadata": {
+                "caption": '{{< resource uuid="aaaabbbb-cccc-dddd-eeee-ffff12345678" >}}',
+                # No credit field
+            },
+        },
+    )
+
+    result_caption = compile_referencing_content(content_caption_only)
+    assert result_caption == ["aaaabbbb-cccc-dddd-eeee-ffff12345678"]
+
+    # Test with only credit
+    content_credit_only = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "image_metadata": {
+                # No caption field
+                "credit": '{{% resource_link "ffffeedd-ccbb-aa99-8877-665544332211" "Credit Link" %}}',
+            },
+        },
+    )
+
+    result_credit = compile_referencing_content(content_credit_only)
+    assert result_credit == ["ffffeedd-ccbb-aa99-8877-665544332211"]
+
+
+def test_compile_referencing_content_resource_no_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having no image_metadata"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown='Only markdown {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
+        metadata={
+            "title": "Some resource title",
+            "other_field": "Some other data",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == ["11223344-5566-7788-99aa-bbccddee1122"]
+
+
+def test_compile_referencing_content_empty_and_none():
+    """Test compile_referencing_content with no/empty markdown and metadata"""
+    # Test with None values
+    content_none = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=None,
+        metadata=None,
+    )
+    assert compile_referencing_content(content_none) == []
+
+    # Test with empty values
+    content_empty = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown="",
+        metadata={},
+    )
+    assert compile_referencing_content(content_empty) == []
+
+    # Test with markdown containing no resource references
+    content_plain = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown="This is just plain text with no resource links or shortcodes.",
+        metadata={},
+    )
+    assert compile_referencing_content(content_plain) == []
 
 
 def test_get_metadata_content_key():
