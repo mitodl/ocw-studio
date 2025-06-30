@@ -1,4 +1,4 @@
-# Data migration to add referencing content for existing resources
+"""Data migration to add referencing content for existing resources."""
 
 import logging
 
@@ -14,13 +14,12 @@ def migrate_metadata_forward(apps, schema_editor):
     Forward migration to add referencing content for existing resources.
     """
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
-    website_content = WebsiteContent.objects.all()
 
-    for content in website_content:
+    # Use iterator to process records one at a time without loading all into memory
+    for content in WebsiteContent.objects.iterator(chunk_size=1000):
         if references := compile_referencing_content(content):
-            references = WebsiteContent.objects.filter(text_id__in=references)
-            content.referenced_by.set(references)
-            content.save()
+            referenced_objects = WebsiteContent.objects.filter(text_id__in=references)
+            content.referenced_by.set(referenced_objects)
 
 
 def migrate_metadata_backward(apps, schema_editor):
