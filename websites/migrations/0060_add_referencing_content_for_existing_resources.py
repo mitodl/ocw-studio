@@ -15,7 +15,7 @@ def migrate_metadata_forward(apps, schema_editor):
     """
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
 
-    # Use iterator to process records one at a time without loading all into memory
+    # Process records in batches without loading all into memory
     for content in WebsiteContent.objects.iterator(chunk_size=1000):
         if references := compile_referencing_content(content):
             referenced_objects = WebsiteContent.objects.filter(text_id__in=references)
