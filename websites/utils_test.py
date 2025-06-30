@@ -3,9 +3,11 @@
 import pytest
 
 from websites import constants
-from websites.factories import WebsiteFactory
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.utils import (
+    get_dict_field,
     get_dict_query_field,
+    get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
     set_dict_field,
@@ -55,6 +57,31 @@ def test_get_dict_query_field():
         get_dict_query_field("metadata", "video_files.video_captions_file")
         == "metadata__video_files__video_captions_file"
     )
+
+
+def test_get_dict_field():
+    """Test get_dict_field for retrieving nested dictionary values"""
+    test_dict = {
+        "level1": {
+            "level2": {"level3": "deep_value", "other_field": "other_value"},
+            "direct_field": "direct_value",
+        },
+        "top_level": "top_value",
+    }
+
+    # Test nested field access
+    assert get_dict_field(test_dict, "level1.level2.level3") == "deep_value"
+    assert get_dict_field(test_dict, "level1.level2.other_field") == "other_value"
+    assert get_dict_field(test_dict, "level1.direct_field") == "direct_value"
+    assert get_dict_field(test_dict, "top_level") == "top_value"
+
+    # Test non-existent paths
+    assert get_dict_field(test_dict, "level1.level2.nonexistent") is None
+    assert get_dict_field(test_dict, "level1.nonexistent.field") is None
+    assert get_dict_field(test_dict, "nonexistent") is None
+
+    # Test empty dict
+    assert get_dict_field({}, "any.field") is None
 
 
 def test_set_dict_field():
@@ -186,3 +213,38 @@ def test_parse_resource_uuid_case_sensitivity():
     for text in invalid_cases:
         result = parse_resource_uuid(text)
         assert result == [], f"Expected no matches for: {text}"
+
+
+def test_get_metadata_content_key():
+    """Test get_metadata_content_key returns correct keys based on content type."""
+
+    # Test RESOURCE_LIST type
+    content_resource_list = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_LIST
+    )
+    assert get_metadata_content_key(content_resource_list) == ["description"]
+
+    # Test RESOURCE_COLLECTION type
+    content_resource_collection = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_COLLECTION
+    )
+    assert get_metadata_content_key(content_resource_collection) == ["description"]
+
+    # Test METADATA type
+    content_metadata = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_METADATA)
+    assert get_metadata_content_key(content_metadata) == ["course_description"]
+
+    # Test RESOURCE type (new case)
+    content_resource = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_RESOURCE)
+    assert get_metadata_content_key(content_resource) == [
+        "image_metadata.caption",
+        "image_metadata.credit",
+    ]
+
+    # Test unknown/unsupported type
+    content_page = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_PAGE)
+    assert get_metadata_content_key(content_page) == []
+
+    # Test another unsupported type
+    content_navmenu = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_NAVMENU)
+    assert get_metadata_content_key(content_navmenu) == []

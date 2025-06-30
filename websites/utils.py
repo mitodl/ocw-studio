@@ -104,12 +104,14 @@ def get_metadata_content_key(content) -> list:
     content_type = content.type
     match content_type:
         case (
-            constants.CONTENT_TYPE_RESOURCE_LIST,
-            constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+            constants.CONTENT_TYPE_RESOURCE_LIST
+            | constants.CONTENT_TYPE_RESOURCE_COLLECTION
         ):
             content_keys = ["description"]
         case constants.CONTENT_TYPE_METADATA:
             content_keys = ["course_description"]
+        case constants.CONTENT_TYPE_RESOURCE:
+            content_keys = ["image_metadata.caption", "image_metadata.credit"]
         case _:
             content_keys = []
 
@@ -188,8 +190,6 @@ def compile_referencing_content(content) -> list[str]:
         if content.metadata:
             content_keys = get_metadata_content_key(content)
             for content_key in content_keys:
-                if content.metadata.get(content_key):
-                    references.extend(
-                        parse_resource_uuid(content.metadata[content_key])
-                    )
+                if resource_data := get_dict_field(content.metadata, content_key):
+                    references.extend(parse_resource_uuid(resource_data))
     return references

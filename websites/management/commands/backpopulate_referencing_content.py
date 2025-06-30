@@ -176,7 +176,6 @@ class Command(WebsiteFilterCommand):
                     ]
 
                     if referenced_content_ids:
-                        # Set new relationships (clears existing ones automatically)
                         referenced_objects = WebsiteContent.objects.filter(
                             id__in=referenced_content_ids
                         )
