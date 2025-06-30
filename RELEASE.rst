@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.150.0 (Released June 30, 2025)
+---------------
+
+- fix: stripped query parameters before downloading (#2592)
+- fixed regex for the embedded resources (#2604)
+- Update page URL when title changes (#2601)
+
 Version 0.149.0 (Released June 26, 2025)
 ---------------
 
