@@ -2058,20 +2058,21 @@ typing-extensions = "*"
 
 [[package]]
 name = "mitol-django-mail"
-version = "2023.12.19"
+version = "2025.6.24"
 description = "MIT Open Learning django app extensions for mail"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "mitol-django-mail-2023.12.19.tar.gz", hash = "sha256:824f6ff0a7fb7b996962e608c61e5d02d06c174e466d00896eb43fdac864148f"},
-    {file = "mitol_django_mail-2023.12.19-py3-none-any.whl", hash = "sha256:a32853bfe7da39d4c34651d7e5bddc547678c1b5b3a54e56e492879276eab371"},
+    {file = "mitol_django_mail-2025.6.24-py3-none-any.whl", hash = "sha256:20e1830de82095fa1bc5484275c036a45b207e991f9febd65b4d9e276ffd4f57"},
+    {file = "mitol_django_mail-2025.6.24.tar.gz", hash = "sha256:7acaec76138b35bf20af8d33e55c575a829c9e7f6d28f02246da720147c1adc9"},
 ]
 
 [package.dependencies]
 beautifulsoup4 = ">=4.6.0"
 django = ">=3.0"
 django-anymail = ">=6.0"
+django-stubs = ">=1.13.1"
 html5lib = ">=1.1"
 mitol-django-common = "*"
 premailer = ">=3.7.0"
@@ -3833,4 +3834,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "b8de3d60cc80eaa05800b9cf19c4493f9197013fdb5dd5e43ac049f82eac56bd"
+content-hash = "a7930a044f707b600f3841db8c49bf7b71059d740260c8decaad684a3d2a2581"
