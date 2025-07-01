@@ -14,7 +14,7 @@ This document describes the components of the video workflow for OCW.
 
 # Overview
 
-This assumes that [Google Drive sync](/README.md#enabling-google-drive-integration), [YouTube integration](/README.md#enabling-youtube-integration), [AWS MediaConvert](/README.md#enabling-aws-transcoding), and [3Play submission](/README.md#enabling-3play-integration) are all enabled, which is required for the video workflow.
+This assumes that [Google Drive sync](/README.md#enabling-google-drive-integration), [YouTube integration](/README.md#enabling-youtube-integration), [AWS MediaConvert](/README.md#enabling-aws-mediaconvert-transcoding), and [3Play submission](/README.md#enabling-3play-integration) are all enabled, which is required for the video workflow.
 
 The high-level description of the process is below, and each subsequent section contains additional details, including links to the relevant code.
 
@@ -22,7 +22,8 @@ The high-level description of the process is below, and each subsequent section 
 - Upload a video with the name `<video_name>.<video_extension>` to the `videos_final` folder on Google Drive, where `<video_extension>` is a valid video extension, such as `mp4`. If there are pre-existing captions that should be uploaded with the video (as opposed to requesting captions/transcript from 3Play), then these should be named _exactly_ `<video_name>_captions.vtt` and `<video_name>_transcript.pdf`, and uploaded into the `files_final` folder on Google Drive.
 - Sync using the Studio UI. This uploads the video to S3.
 - As soon as the upload to S3 is complete, Studio initiates a celery task to submit the video to the AWS Media Convert service.
-- Once trancoding is complete, the video is uploaded to YouTube (set as unlisted prior to the course being published).
+- The enhanced transcoding system monitors job progress with automatic status updates and comprehensive error handling.
+- Once transcoding is complete, the video is uploaded to YouTube (set as unlisted prior to the course being published).
 - After the video has been successfully uploaded to YouTube, and if there are no pre-existing captions, Studio sends a transcript request to 3Play.
 - Once 3Play completes the transcript job, the captions (`.vtt` format) and transcript (`.pdf` format) are fetched and associated with the video.
 - On any publish action, the video metadata and YouTube metadata are updated, assuming the information has been received from the external services.
@@ -34,7 +35,17 @@ Users upload videos in a valid video format to the `videos_final` folder. Whethe
 
 The parameters of the AWS transcode request are defined through the AWS interface, and the role is defined [here](https://github.com/mitodl/ol-infrastructure/blob/main/src/ol_infrastructure/applications/ocw_studio/__main__.py). Some example JSONs used for triggering MediaConvert job are in [this folder](/test_videos_webhook/).
 
-The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that is sent when the transcoding job is complete.
+## Enhanced Transcoding Features
+
+The transcoding system has been enhanced with the following features:
+
+- **Enhanced error handling** in video processing workflows with comprehensive logging
+- **Local testing support** for transcoding workflows using mock AWS MediaConvert callbacks
+- **Automated status updates** via the [`update_video_transcoding_statuses`](/videos/tasks.py) Celery task
+- **Template-based result processing** using [`prepare_job_results`](/videos/api.py) for flexible response handling
+- **MediaConvert job management** via [`get_media_convert_job`](/videos/api.py) for real-time job status checking
+
+The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that is sent when the transcoding job is complete. For local development, the system can simulate these webhooks using template files and periodic status updates.
 
 # YouTube Submission
 
@@ -59,6 +70,8 @@ In cases where something may have gone wrong with the data, often due to legacy 
 
 # Testing PRs with Transcoding
 
+## Production-like Testing
+
 Before working on, testing, or reviewing any PR that requires a video to be uploaded to YouTube, make sure that AWS buckets (instead of local Minio storage) are being used for testing. To do that, set `OCW_STUDIO_ENVIRONMENT` to any value other than `dev`.
 
 Set the following variables to the same values as for RC:
@@ -74,13 +87,44 @@ DRIVE_SERVICE_ACCOUNT_CREDS
 DRIVE_SHARED_ID
 VIDEO_S3_TRANSCODE_ENDPOINT
 VIDEO_S3_TRANSCODE_PREFIX
+VIDEO_S3_TRANSCODE_BUCKET
 ```
 
 Upload the video to the course's Google Drive folder, as described in the [Google Drive Sync and AWS Transcoding](#google-drive-sync-and-aws-transcoding) section above. Wait for the video transcoding job to complete, which requires an amount of time proportional to the length of the video; for a very short video, this should only take a few minutes.
 
-Next, the response to the transcode request needs to be simulated. This is because the AWS MediaConvert service will not send a webhook notification to the local OCW Studio instance, but rather to the RC URL.
+## Local Development Testing
 
-To simulate the response, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in the example below, updated to match the relevant environment variables, course name, and video name.
+For local development and testing without AWS dependencies, you can use the enhanced mock transcoding system:
+
+### Configuration
+
+Add these environment variables to your `.env` file:
+
+```
+VIDEO_TRANSCODING_STATUS_UPDATE_FREQUENCY=30
+TRANSCODE_RESULT_TEMPLATE=./test_videos_webhook/cloudwatch_sns_complete.json
+TRANSCODE_ERROR_TEMPLATE=./test_videos_webhook/cloudwatch_sns_error.json
+POST_TRANSCODE_ACTIONS=videos.api.update_video_job
+```
+
+### Testing Workflow
+
+1. **Upload Video**: Upload a video to the course's Google Drive folder and sync it through the Studio UI
+2. **Automatic Processing**: The system will automatically:
+
+   - Create a `VideoJob` with a mock job ID
+   - Start periodic status checking via the `update_video_transcoding_statuses` task
+   - Use template files to simulate AWS MediaConvert responses
+   - Process results using the enhanced `prepare_job_results` function
+
+3. **Monitor Progress**: Check the Django admin interface to see:
+   - `VideoJob` status updates
+   - `VideoFile` objects created from mock transcoding results
+   - Comprehensive error logging if issues occur
+
+### Manual Testing (Legacy Method)
+
+If you need to manually simulate transcoding responses, use cURL, Postman, or an equivalent tool to POST a message to `https://localhost:8043/api/transcode-jobs/`, with the body as in the example below, updated to match the relevant environment variables, course name, and video name.
 
 ```json
 {
@@ -148,3 +192,5 @@ making sure to set the values in `<>`. In particular, set
 The `DriveFile` will be the one associated with the video: http://localhost:8043/admin/gdrive_sync/drivefile/.
 
 If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
+
+**Note**: The enhanced transcoding system now uses the `prepare_job_results` function to process these responses, which supports template variables like `<DRIVE_FILE_ID>`, `<VIDEO_JOB_ID>`, `<SHORT_ID>`, and various AWS settings, making manual testing more flexible and realistic.
