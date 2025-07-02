@@ -1,8 +1,11 @@
 """Syncing API"""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
 from time import sleep
+from typing import TYPE_CHECKING
 
 import pytz
 from django.conf import settings
@@ -10,14 +13,16 @@ from django.utils.module_loading import import_string
 from mitol.common.utils import now_in_utc
 
 from content_sync import tasks
-from content_sync.backends.base import BaseSyncBackend
 from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BasePipeline
 from websites.constants import PUBLISH_STATUS_ERRORED
 from websites.models import Website, WebsiteContent
+
+if TYPE_CHECKING:
+    from content_sync.backends.base import BaseSyncBackend
+    from content_sync.pipelines.base import BasePipeline
 
 log = logging.getLogger()
 
@@ -143,9 +148,7 @@ def trigger_unpublished_removal(website: Website):
     tasks.trigger_unpublished_removal.delay(website.name)
 
 
-def sync_github_website_starters(
-    url: str, files: list[str], commit: str | None = None
-):
+def sync_github_website_starters(url: str, files: list[str], commit: str | None = None):
     """Sync website starters from github"""
     tasks.sync_github_site_configs.delay(url, files, commit=commit)
 
@@ -154,8 +157,9 @@ def publish_website(  # pylint: disable=too-many-arguments
     name: str,
     version: str,
     pipeline_api: object | None = None,
-    prepublish: bool | None = True,  # noqa: FBT002
-    trigger_pipeline: bool | None = True,  # noqa: FBT002
+    *,
+    prepublish: bool | None = True,
+    trigger_pipeline: bool | None = True,
 ):
     """Publish a live or draft version of a website"""
     try:
@@ -219,6 +223,6 @@ def throttle_git_backend_calls(backend: object, min_delay: int | None = None):
         )
         if requests_remaining <= settings.GITHUB_RATE_LIMIT_CUTOFF:
             sleep((reset_time - now_in_utc()).seconds)
-        else:
+        elif min_delay is not None:
             # Always wait x seconds between git backend calls
             sleep(min_delay)

@@ -1,6 +1,5 @@
 """Common utilities"""
 
-
 import requests
 
 from gdrive_sync.constants import (

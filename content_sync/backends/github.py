@@ -143,9 +143,7 @@ class GithubBackend(BaseSyncBackend):
         content.delete(force_policy=HARD_DELETE)
         return True
 
-    def sync_all_content_to_db(
-        self, ref: str | None = NotSet, path: str | None = None
-    ):
+    def sync_all_content_to_db(self, ref: str | None = NotSet, path: str | None = None):
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.
         Then recursively iterate through the repo, upserting any ContentFiles to WebsiteContent objects.

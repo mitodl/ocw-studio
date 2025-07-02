@@ -65,12 +65,13 @@ class CourseAbsoluteLinkRule(RegexpCleanupRule):
         try:
             website_by_path = self.content_lookup.find_website_by_url_path(url_path)
         except KeyError:
-            return False
+            return None
 
-        if website_by_path and website_by_path.unpublish_status is None:
-            return True
-
-        return False
+        return (
+            url_path
+            if website_by_path and website_by_path.unpublish_status is None
+            else None
+        )
 
     def replace_match(self, match: re.Match, _website_content):
         """
