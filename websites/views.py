@@ -27,16 +27,13 @@ from content_sync.api import (
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import update_mass_build_pipelines_on_publish
-from gdrive_sync.api import delete_drive_file, get_drive_service
 from gdrive_sync.constants import WebsiteSyncStatus
-from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import import_website_files
 from main import features
 from main.permissions import ReadonlyPermission
 from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
-from videos.tasks import delete_s3_objects
 from websites import constants
 from websites.api import get_valid_new_filename, update_website_status
 from websites.constants import (
@@ -51,6 +48,10 @@ from websites.constants import (
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
     WebsiteStarterStatus,
+)
+from websites.deletion_utils import (
+    delete_related_captions_and_transcript,
+    delete_resource,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
@@ -700,44 +701,13 @@ class WebsiteContentViewSet(
             content.type == "resource"
             and (content.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
         )
-        if not is_video:
-            return super().destroy(request, *args, **kwargs)
+        if is_video:
+            delete_related_captions_and_transcript(content)
+            delete_resource(content)
+            self.perform_destroy(content)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-        drive_file = DriveFile.objects.filter(resource=content).first()
-        drive_file_id = drive_file.file_id if drive_file else None
-        video_files = content.metadata.get("video_files", {}) or {}
-        for attr in ("video_captions_file", "video_transcript_file"):
-            path = video_files.get(attr)
-            if not path:
-                continue
-            key = path
-            filename = key.split("/")[-1]
-            base_name = filename.rsplit(".", 1)[0]
-            qs = WebsiteContent.objects.filter(website=content.website)
-            related = qs.filter(
-                Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name)
-            ).first()
-            if related:
-                related_drive_file = DriveFile.objects.filter(resource=related).first()
-                related_drive_file_id = (
-                    related_drive_file.file_id if related_drive_file else None
-                )
-                if related_drive_file_id:
-                    delete_s3_objects.delay(key=related_drive_file.s3_key)
-                    delete_drive_file(related_drive_file, sync_datetime=now_in_utc())
-                    ds = get_drive_service()
-                    ds.files().delete(
-                        fileId=related_drive_file_id, supportsAllDrives=True
-                    ).execute()
-                related.delete()
-        if drive_file and drive_file_id:
-            delete_drive_file(drive_file, sync_datetime=now_in_utc())
-            ds = get_drive_service()
-            ds.files().delete(fileId=drive_file_id, supportsAllDrives=True).execute()
-        super().perform_destroy(content)
-        content.delete()
-        update_website_backend(content.website)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance: WebsiteContent):
         """(soft) deletes a WebsiteContent record"""
