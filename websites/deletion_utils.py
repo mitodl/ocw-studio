@@ -1,5 +1,3 @@
-import logging
-
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
@@ -7,8 +5,6 @@ from gdrive_sync.api import delete_drive_file, get_drive_service
 from gdrive_sync.models import DriveFile
 from videos.tasks import delete_s3_objects
 from websites.models import WebsiteContent
-
-log = logging.getLogger(__name__)
 
 
 def delete_resource(content: WebsiteContent):
