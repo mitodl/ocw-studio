@@ -477,6 +477,7 @@ describe("RepeatableContentListing", () => {
           key: expect.any(String),
           pathname,
           search: next,
+          state: null,
         })
       },
     )
@@ -499,6 +500,7 @@ describe("RepeatableContentListing", () => {
           key: expect.any(String),
           pathname,
           search: previous,
+          state: null,
         })
       },
     )
@@ -528,12 +530,14 @@ describe("RepeatableContentListing", () => {
           key: expect.any(String),
           pathname,
           search: previous,
+          state: null,
         })
         expect(wrappers.nextLink.prop("to")).toStrictEqual({
           hash: "",
           key: expect.any(String),
           pathname,
           search: next,
+          state: null,
         })
       },
     )
