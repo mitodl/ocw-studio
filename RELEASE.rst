@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.151.0 (Released July 03, 2025)
+---------------
+
+- fix: use iterator instead of loadig all records in memory (#2607)
+- fix(deps): update dependency mitol-django-mail to v2025 (#2530)
+- fix: added migration and management command to backpopulate referencing content (#2605)
+
 Version 0.150.0 (Released June 30, 2025)
 ---------------
 
