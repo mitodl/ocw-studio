@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.151.0
+Version 0.151.0 (Released July 03, 2025)
 ---------------
 
 - fix: use iterator instead of loadig all records in memory (#2607)
