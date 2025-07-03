@@ -724,6 +724,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ckeditor/ckeditor5-integrations-common@npm:^2.2.2":
+  version: 2.2.3
+  resolution: "@ckeditor/ckeditor5-integrations-common@npm:2.2.3"
+  peerDependencies:
+    ckeditor5: ">=42.0.0 || ^0.0.0-nightly"
+  checksum: 03a1b27893888a03ed958c8f52939938a639d08e67652df2fa3ee5d2923ec6856bfc3c28130aa3c1223011cc236e43024de401126c977a94391d9597fe93cf5b
+  languageName: node
+  linkType: hard
+
 "@ckeditor/ckeditor5-link@npm:^35.4.0":
   version: 35.4.0
   resolution: "@ckeditor/ckeditor5-link@npm:35.4.0"
@@ -778,14 +787,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-react@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "@ckeditor/ckeditor5-react@npm:3.0.3"
+"@ckeditor/ckeditor5-react@npm:^9.0.0":
+  version: 9.5.0
+  resolution: "@ckeditor/ckeditor5-react@npm:9.5.0"
   dependencies:
-    prop-types: ^15.7.2
+    "@ckeditor/ckeditor5-integrations-common": ^2.2.2
   peerDependencies:
-    react: ^16.13.1 || ^17.0.0
-  checksum: afa61dc78fd3d6e96d12cd960e7e6bf12a2a12ffc7128bee2da93b73436c435f685e68c883638e7fda42dfba1ef00a1629e6423e52813760bdd7e7c8bbb83667
+    ckeditor5: ">=42.0.0 || ^0.0.0-nightly"
+    react: ^16.13.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: c155665403e9ff1c1603162f3f40197a2ef3fa2e973192157058521ef1cbb2396e040d63c159bf15d8973435857d4bb1e66bab50113a8d16a414ac4a7079d5b5
   languageName: node
   linkType: hard
 
@@ -11073,7 +11083,7 @@ __metadata:
     "@ckeditor/ckeditor5-markdown-gfm": ^35.4.0
     "@ckeditor/ckeditor5-media-embed": ^35.4.0
     "@ckeditor/ckeditor5-paragraph": ^35.4.0
-    "@ckeditor/ckeditor5-react": ^3.0.3
+    "@ckeditor/ckeditor5-react": ^9.0.0
     "@ckeditor/ckeditor5-table": ^35.4.0
     "@ckeditor/ckeditor5-theme-lark": ^35.4.0
     "@ckeditor/ckeditor5-upload": ^35.4.0
