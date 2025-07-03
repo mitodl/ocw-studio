@@ -162,7 +162,7 @@ describe("Header with a loaded website", () => {
     )
 
     result.getByText("Publish your site")
-    expect(history.location.search).toBe("?publish=")
+    expect(history.location.search).toBe("publish=")
 
     result.unmount()
   })

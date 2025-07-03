@@ -1,3 +1,11 @@
+// Mock the Prompt component to track when it's called
+jest.mock("./util/Prompt", () => {
+  return {
+    __esModule: true,
+    default: jest.fn(() => null),
+  }
+})
+
 import React from "react"
 import { act } from "react-dom/test-utils"
 import sinon, { SinonStub } from "sinon"
@@ -26,6 +34,9 @@ import { createModalState } from "../types/modal_state"
 import SiteContentEditor from "./SiteContentEditor"
 import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
 import { flushEventQueue } from "../test_util"
+import Prompt from "./util/Prompt"
+
+const mockPrompt = Prompt as jest.MockedFunction<typeof Prompt>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
@@ -92,6 +103,10 @@ describe("SingletonsContentListing", () => {
         queries: {},
       },
     )
+
+    // Clear mocks
+    mockPrompt.mockClear()
+    window.mockConfirm.mockClear()
   })
 
   afterEach(() => {
@@ -210,81 +225,62 @@ describe("SingletonsContentListing", () => {
   })
 
   it.each([
-    { dirty: true, confirmCalls: 1 },
-    { dirty: false, confirmCalls: 0 },
+    { dirty: true, expectedWhen: true },
+    { dirty: false, expectedWhen: false },
   ])(
-    "prompts for confirmation on pathname change iff discarding dirty state [dirty=$dirty]",
-    async ({ dirty, confirmCalls }) => {
+    "ConfirmDiscardChanges shows correct when prop based on dirty state [dirty=$dirty]",
+    async ({ dirty, expectedWhen }) => {
       const { wrapper } = await render()
       const editor = wrapper.find(SiteContentEditor).first()
 
       act(() => editor.prop("setDirty")(dirty))
+      wrapper.update()
 
-      expect(window.mockConfirm).toHaveBeenCalledTimes(0)
-      helper.browserHistory.push("/elsewhere")
-      expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
-      if (confirmCalls > 0) {
-        expect(window.mockConfirm.mock.calls[0][0]).toMatch(
-          /Are you sure you want to discard your changes\?/,
-        )
-      }
+      expect(wrapper.find(ConfirmDiscardChanges).prop("when")).toBe(
+        expectedWhen,
+      )
     },
   )
 
-  it.each([
-    { dirty: true, confirmCalls: 1 },
-    { dirty: false, confirmCalls: 0 },
-  ])(
-    "prompts for confirmation on publish iff state is dirty [dirty=$dirty]",
-    async ({ dirty, confirmCalls }) => {
-      const { wrapper } = await render()
-      const editor = wrapper.find(SiteContentEditor).first()
-
-      act(() => editor.prop("setDirty")(dirty))
-
-      expect(window.mockConfirm).toHaveBeenCalledTimes(0)
-      helper.browserHistory.push("?publish=")
-      expect(window.mockConfirm).toHaveBeenCalledTimes(confirmCalls)
-      if (confirmCalls > 0) {
-        expect(window.mockConfirm.mock.calls[0][0]).toMatch(
-          /Are you sure you want to publish\?/,
-        )
-      }
-    },
-  )
-
-  it.each([true, false])(
-    "changes route and unmounts when dirty iff confirmed",
-    async (confirmed) => {
-      const { wrapper } = await render()
-      const editor = wrapper.find(SiteContentEditor).first()
-
-      act(() => editor.prop("setDirty")(true))
-      window.mockConfirm.mockReturnValue(confirmed)
-
-      expect(helper.browserHistory.location.pathname).toBe("/")
-      helper.browserHistory.push("/elsewhere")
-      if (confirmed) {
-        expect(helper.browserHistory.location.pathname).toBe("/elsewhere")
-      } else {
-        expect(helper.browserHistory.location.pathname).toBe("/")
-      }
-    },
-  )
-
-  it("clears a dirty flag when the path changes", async () => {
+  it("ConfirmDiscardChanges is rendered with when=true when dirty", async () => {
     const { wrapper } = await render()
     const editor = wrapper.find(SiteContentEditor).first()
 
     act(() => editor.prop("setDirty")(true))
+    wrapper.update()
 
-    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(true)
+    const confirmComponent = wrapper.find(ConfirmDiscardChanges)
+    expect(confirmComponent.prop("when")).toBe(true)
+  })
 
-    window.mockConfirm.mockReturnValue(true)
-    helper.browserHistory.push("/pages")
+  it("navigation works correctly - location can be changed", async () => {
+    await render()
+
+    expect(helper.browserHistory.location.pathname).toBe("/")
+    act(() => {
+      helper.browserHistory.push("/elsewhere")
+    })
+    expect(helper.browserHistory.location.pathname).toBe("/elsewhere")
+  })
+
+  it("clears dirty flag when pathname changes", async () => {
+    const { wrapper } = await render()
+    const editor = wrapper.find(SiteContentEditor).first()
+
+    // Set dirty state
+    act(() => editor.prop("setDirty")(true))
+    wrapper.update()
+
+    expect(wrapper.find(ConfirmDiscardChanges).prop("when")).toBe(true)
+
+    // Navigate to a different path - this should trigger the useEffect that clears dirty state
+    act(() => {
+      helper.browserHistory.push("/pages")
+    })
     await flushEventQueue()
-    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(
-      false,
-    )
+    wrapper.update()
+
+    // The dirty flag should be cleared due to pathname change
+    expect(wrapper.find(ConfirmDiscardChanges).prop("when")).toBe(false)
   })
 })

@@ -25,12 +25,18 @@ jest.mock("../store/network_interface")
  * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
  */
 export default class IntegrationTestHelper {
-  browserHistory: MemoryHistory = createMemoryHistory({
-    /**
-     * MemoryHistory does not use window.confirm by default, so we need to tell
-     * it to.
-     */
-  })
+  browserHistory: MemoryHistory = (() => {
+    const history = createMemoryHistory({})
+    // Override getUserConfirmation to use our mocked confirm function
+    ;(history as any).getUserConfirmation = (
+      message: string,
+      callback: (result: boolean) => void,
+    ) => {
+      const result = window.confirm(message)
+      callback(result)
+    }
+    return history
+  })()
   sandbox: SinonSandbox
   actions: Array<Action>
   handleRequestStub: SinonStub
