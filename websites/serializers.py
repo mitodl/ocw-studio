@@ -33,6 +33,7 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_NOT_STARTED,
+    RESOURCE_TYPE_VIDEO,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
@@ -490,12 +491,11 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         return True
 
     def get_is_deletable_by_resourcetype(self, obj):
-        # if not a resource, always OK, because we're using config var to
-        #  control deletable content types
+        # it will still use config var OCW_STUDIO_DELETABLE_CONTENT_TYPES
+        # to check for deletable content types
         if obj.type != CONTENT_TYPE_RESOURCE:
             return True
-        # for resources only, check metadata.resourcetype === "Video"
-        return (obj.metadata or {}).get("resourcetype") == "Video"
+        return (obj.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
 
     class Meta:
         model = WebsiteContent
