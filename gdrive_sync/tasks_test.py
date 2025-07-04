@@ -31,8 +31,8 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture()
-def mock_gdrive_files(mocker):  # noqa: PT004
+@pytest.fixture
+def mock_gdrive_files(mocker):
     """Return mock results from a google drive api request"""
     mocker.patch(
         "gdrive_sync.tasks.api.query_files",

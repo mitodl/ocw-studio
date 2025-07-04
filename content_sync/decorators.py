@@ -1,23 +1,25 @@
 """decorators for content_sync.backends"""
 
+from __future__ import annotations
+
 import functools
 import logging
-from collections.abc import Callable
 from time import sleep
-from typing import Any, Optional, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
 
-from content_sync.models import ContentSyncState
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-F = TypeVar("F", bound=Callable[..., Any])
+    from content_sync.models import ContentSyncState
 
 log = logging.getLogger(__name__)
 
 
-def retry_on_failure(func: F) -> F:
+def retry_on_failure(func: Callable[..., Any]) -> Callable[..., Any]:
     """
     Retry a function a certain number of times if it fails.
     """
@@ -84,7 +86,8 @@ def check_sync_state(func: Callable) -> Callable:
 
 def single_task(
     timeout: int,
-    raise_block: Optional[bool] = True,  # noqa: FBT002
+    *,
+    raise_block: bool | None = True,
 ) -> Callable:
     """
     Only allow one instance of a task to run concurrently, based on the task name

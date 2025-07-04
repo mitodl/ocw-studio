@@ -69,7 +69,7 @@ class Command(WebsiteFilterCommand):
             if verbosity >= 1:
                 self.stdout.write(
                     f"Processed {processed}/{total_content} items "
-                    f"({processed/total_content*100:.1f}%) - "
+                    f"({processed / total_content * 100:.1f}%) - "
                     f"{batch_updated} updated in this batch"
                 )
 
@@ -135,8 +135,7 @@ class Command(WebsiteFilterCommand):
 
                 if verbosity >= 3:  # noqa: PLR2004
                     self.stdout.write(
-                        f"Content {content.text_id} references "
-                        f"{len(references)} items"
+                        f"Content {content.text_id} references {len(references)} items"
                     )
 
         return content_references, all_reference_uuids
