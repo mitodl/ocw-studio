@@ -166,6 +166,29 @@ export function FormFields(props: InnerFormProps): JSX.Element {
             ) {
               return null
             }
+            if (field.name === "title") {
+              return (
+                <React.Fragment key={field.name}>
+                  <SiteContentField
+                    field={field}
+                    contentContext={contentContext}
+                    onChange={handleChange}
+                  />
+                  {content?.type === "page" ? (
+                    <div className="form-group mt-2">
+                      <label>Page URL</label>
+                      <input
+                        className="form-control"
+                        value={`/pages/${content.filename}`}
+                        type="text"
+                        readOnly
+                        style={{ cursor: "not-allowed" }}
+                      />
+                    </div>
+                  ) : null}
+                </React.Fragment>
+              )
+            }
             return field.widget === WidgetVariant.Object ? (
               <ObjectField
                 field={field}
