@@ -14,6 +14,7 @@ const Label: React.FC<Props> = (props) => {
     <div className="form-group">
       {value && !(value instanceof File) ? (
         <input
+          id={props.name}
           className="form-control"
           value={value}
           type="text"

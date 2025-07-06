@@ -177,8 +177,11 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                   />
                   {content?.type === "page" ? (
                     <div>
-                      <label>Page URL</label>
-                      <Label value={`/pages/${content.filename}`} />
+                      <label htmlFor="page-url">Page URL</label>
+                      <Label
+                        value={`/pages/${content.filename}`}
+                        name="page-url"
+                      />
                     </div>
                   ) : null}
                 </React.Fragment>
