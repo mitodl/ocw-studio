@@ -33,6 +33,7 @@ import {
 import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
 import { useWebsite } from "../../context/Website"
+import { filenameFromPath } from "../../lib/util"
 
 export interface FormProps {
   onSubmit: (
@@ -175,15 +176,9 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                     onChange={handleChange}
                   />
                   {content?.type === "page" ? (
-                    <div className="form-group mt-2">
+                    <div>
                       <label>Page URL</label>
-                      <input
-                        className="form-control"
-                        value={`/pages/${content.filename}`}
-                        type="text"
-                        readOnly
-                        style={{ cursor: "not-allowed" }}
-                      />
+                      <Label value={`/pages/${content.filename}`} />
                     </div>
                   ) : null}
                 </React.Fragment>
@@ -205,6 +200,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                 <Field
                   as={Label}
                   name={field.name}
+                  value={filenameFromPath(values[field.name])}
                   className="form-control"
                   onChange={handleChange}
                 />
