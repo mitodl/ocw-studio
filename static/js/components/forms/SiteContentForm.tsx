@@ -200,7 +200,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                 <Field
                   as={Label}
                   name={field.name}
-                  value={filenameFromPath(values[field.name])}
+                  value={filenameFromPath(values[field.name] as string)}
                   className="form-control"
                   onChange={handleChange}
                 />
