@@ -314,4 +314,5 @@ export const makeWebsiteContentDetail = (): WebsiteContent => ({
   },
   content_context: [],
   url_path: casual.text,
+  filename: casual.word,
 })

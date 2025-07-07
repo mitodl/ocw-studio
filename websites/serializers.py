@@ -622,7 +622,13 @@ class WebsiteContentDetailSerializer(
 
     class Meta:
         model = WebsiteContent
-        read_only_fields = ["text_id", "type", "content_context", "url_path"]
+        read_only_fields = [
+            "text_id",
+            "type",
+            "content_context",
+            "url_path",
+            "filename",
+        ]
         fields = [
             *read_only_fields,
             "title",

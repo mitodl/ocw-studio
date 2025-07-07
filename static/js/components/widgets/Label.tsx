@@ -1,5 +1,4 @@
 import React from "react"
-import { filenameFromPath } from "../../lib/util"
 
 export interface Props {
   name?: string
@@ -15,8 +14,9 @@ const Label: React.FC<Props> = (props) => {
     <div className="form-group">
       {value && !(value instanceof File) ? (
         <input
+          id={props.name}
           className="form-control"
-          value={filenameFromPath(value)}
+          value={value}
           type="text"
           readOnly
           style={{ cursor: "not-allowed" }}

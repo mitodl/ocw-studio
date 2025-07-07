@@ -33,6 +33,7 @@ import {
 import { SiteFormValues } from "../../types/forms"
 import { getContentSchema } from "./validation"
 import { useWebsite } from "../../context/Website"
+import { filenameFromPath } from "../../lib/util"
 
 export interface FormProps {
   onSubmit: (
@@ -166,6 +167,26 @@ export function FormFields(props: InnerFormProps): JSX.Element {
             ) {
               return null
             }
+            if (field.name === "title") {
+              return (
+                <React.Fragment key={field.name}>
+                  <SiteContentField
+                    field={field}
+                    contentContext={contentContext}
+                    onChange={handleChange}
+                  />
+                  {content?.type === "page" ? (
+                    <div>
+                      <label htmlFor="page-url">Page URL</label>
+                      <Label
+                        value={`/pages/${content.filename}`}
+                        name="page-url"
+                      />
+                    </div>
+                  ) : null}
+                </React.Fragment>
+              )
+            }
             return field.widget === WidgetVariant.Object ? (
               <ObjectField
                 field={field}
@@ -182,6 +203,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                 <Field
                   as={Label}
                   name={field.name}
+                  value={filenameFromPath(values[field.name] as string)}
                   className="form-control"
                   onChange={handleChange}
                 />

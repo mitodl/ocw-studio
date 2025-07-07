@@ -247,7 +247,7 @@ test.each`
 
 test.each`
   isGdriveEnabled | isResource | willRender | filename
-  ${true}         | ${true}    | ${true}    | ${"courses/file.pdf"}
+  ${true}         | ${true}    | ${true}    | ${"file.pdf"}
   ${false}        | ${true}    | ${false}   | ${null}
   ${true}         | ${false}   | ${false}   | ${null}
   ${false}        | ${false}   | ${false}   | ${null}
@@ -297,4 +297,23 @@ test("SiteContentField uses existing values when editing", () => {
   expect(form.find(FormFields).prop("values")).toEqual(
     contentInitialValues(data.content, data.configItem.fields, data.website),
   )
+})
+
+test("renders Page URL field for page content", () => {
+  const data = setupData()
+  data.content.type = "page"
+  data.content.filename = "test-page"
+  const configItem = makeEditableConfigItem("page")
+  configItem.fields = [
+    makeWebsiteConfigField({ name: "title", widget: WidgetVariant.String }),
+  ]
+  const { form } = setupInnerForm({
+    ...data,
+    configItem,
+    values: { title: "Test Page" },
+  })
+  const label = form
+    .find(Label)
+    .filterWhere((node) => node.prop("value") === "/pages/test-page")
+  expect(label.exists()).toBe(true)
 })

@@ -296,6 +296,7 @@ export interface WebsiteContent extends WebsiteContentListItem {
   markdown: string | null
   metadata: null | Record<string, SiteFormValue>
   content_context: WebsiteContent[] | null
+  filename: string
   file?: string
   url_path?: string
 }
