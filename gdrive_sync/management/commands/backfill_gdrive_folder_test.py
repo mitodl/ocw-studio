@@ -14,7 +14,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_drive_service(mocker):
     """Mock Google Drive service"""
     mock_gdrive_service = mocker.Mock()
@@ -36,7 +36,7 @@ def mock_get_drive_service(mocker):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_boto3_client(mocker):
     """Mock S3 client"""
     return mocker.patch("main.s3_utils.get_boto3_client")

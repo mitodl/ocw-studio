@@ -10,7 +10,6 @@ import json
 import logging
 import os
 from html import unescape
-from typing import Optional
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
@@ -230,7 +229,7 @@ class GeneralPipeline(BaseGeneralPipeline):
     def __init__(
         self,
         *args,  # noqa: ARG002
-        api: Optional[object] = None,
+        api: object | None = None,
         **kwargs,  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Initialize the pipeline API instance"""
@@ -245,7 +244,7 @@ class GeneralPipeline(BaseGeneralPipeline):
         return PipelineApi()
 
     def get_pipeline_definition(
-        self, pipeline_file: str, offline: Optional[bool] = None
+        self, pipeline_file: str, offline: bool | None = None
     ):
         """Get the pipeline definition as a string, processing for environment"""
         with open(  # noqa: PTH123
@@ -378,7 +377,7 @@ class ThemeAssetsPipeline(GeneralPipeline, BaseThemeAssetsPipeline):
     ]
 
     def __init__(
-        self, themes_branch: Optional[str] = None, api: Optional[PipelineApi] = None
+        self, themes_branch: str | None = None, api: PipelineApi | None = None
     ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
@@ -423,8 +422,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
     def __init__(
         self,
         website: Website,
-        hugo_args: Optional[str] = None,
-        api: Optional[PipelineApi] = None,
+        hugo_args: str | None = None,
+        api: PipelineApi | None = None,
     ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
@@ -509,13 +508,13 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
     def __init__(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         self,
         version,
-        api: Optional[PipelineApi] = None,
-        prefix: Optional[str] = None,
-        themes_branch: Optional[str] = None,
-        projects_branch: Optional[str] = None,
-        starter: Optional[str] = None,
-        offline: Optional[bool] = None,
-        hugo_args: Optional[str] = None,
+        api: PipelineApi | None = None,
+        prefix: str | None = None,
+        themes_branch: str | None = None,
+        projects_branch: str | None = None,
+        starter: str | None = None,
+        offline: bool | None = None,
+        hugo_args: str | None = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
@@ -582,7 +581,7 @@ class UnpublishedSiteRemovalPipeline(
 
     PIPELINE_NAME = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
 
-    def __init__(self, api: Optional[PipelineApi] = None):
+    def __init__(self, api: PipelineApi | None = None):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
             *MANDATORY_CONCOURSE_SETTINGS,
@@ -611,7 +610,7 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
         self,
         themes_branch: str,
         projects_branch: str,
-        api: Optional[PipelineApi] = None,
+        api: PipelineApi | None = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [

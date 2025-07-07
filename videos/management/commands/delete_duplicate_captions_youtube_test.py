@@ -24,7 +24,7 @@ from websites.factories import WebsiteFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_youtube_api(mocker):
     """Mock the YouTube API client"""
     mock_api_cls = mocker.patch(
@@ -81,7 +81,7 @@ def test_delete_duplicate_captions_youtube_command(mock_youtube_api):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_youtube_api_cc_english_newest(mocker):
     """
     Alternate fixture: newest track is 'CC (English)'
@@ -145,7 +145,7 @@ def test_delete_duplicate_captions_youtube_command_cc_english_newest(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_youtube_api_with_auto_captions(mocker):
     """
     Fixture with our managed caption tracks plus auto-generated captions in other languages.
@@ -239,7 +239,7 @@ def test_delete_duplicate_captions_with_auto_captions(
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_youtube_api_only_auto_captions(mocker):
     """
     Fixture with only auto-generated captions, no managed tracks.

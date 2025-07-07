@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -39,7 +38,7 @@ log = logging.getLogger()
 
 def get_destination_filepath(
     content: WebsiteContent, site_config: SiteConfig
-) -> Optional[str]:
+) -> str | None:
     """
     Returns the full filepath where the equivalent file for the WebsiteContent record should be placed
     """  # noqa: D401, E501
@@ -66,7 +65,7 @@ def get_destination_filepath(
 
 def get_destination_url(
     content: WebsiteContent, site_config: SiteConfig
-) -> Optional[str]:
+) -> str | None:
     """
     Returns the URL a given piece of content is expected to be at
     """  # noqa: D401

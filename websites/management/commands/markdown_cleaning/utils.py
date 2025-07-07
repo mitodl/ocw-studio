@@ -3,7 +3,6 @@
 import importlib
 import os
 from collections import defaultdict
-from typing import Optional
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -103,7 +102,7 @@ class ContentLookup:
         return self.websites_by_url_path[url_path]
 
     def find(
-        self, root_relative_path: str, base_site: Optional[Website] = None
+        self, root_relative_path: str, base_site: Website | None = None
     ) -> WebsiteContent:
         standardized_path = root_relative_path.strip("/") + "/"
         baseurl_prefix = R"{{< baseurl >}}"

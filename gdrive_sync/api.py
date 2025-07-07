@@ -7,7 +7,6 @@ import os
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from boto3.s3.transfer import TransferConfig
 from django.conf import settings
@@ -135,9 +134,9 @@ def _get_or_create_drive_file(
     file_obj: dict,
     drive_path: str,
     website: Website,
-    sync_date: Optional[datetime],
+    sync_date: datetime | None,
     replace_file: bool = True,  # noqa: FBT001, FBT002
-) -> Optional[DriveFile]:
+) -> DriveFile | None:
     """
     Determines if `file_obj` is a new or updated file and returns a new or updated
     DriveFile respectively.
@@ -228,9 +227,9 @@ def get_parent_tree(parents):
 def process_file_result(
     file_obj: dict,
     website: Website,
-    sync_date: Optional[datetime] = None,
-    replace_file: Optional[bool] = True,  # noqa: FBT002
-) -> Optional[DriveFile]:
+    sync_date: datetime | None = None,
+    replace_file: bool | None = True,  # noqa: FBT002
+) -> DriveFile | None:
     """
     Convert an API file response into a DriveFile object.
 
@@ -470,7 +469,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
             resource_type_fields = {
                 "file_type": drive_file.mime_type,
                 "file_size": drive_file.size,
-                **{field: resource_type for field in settings.RESOURCE_TYPE_FIELDS},
+                **dict.fromkeys(settings.RESOURCE_TYPE_FIELDS, resource_type),
             }
 
             resource_title = (

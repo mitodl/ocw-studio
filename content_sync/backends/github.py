@@ -1,7 +1,6 @@
 """Github backend"""
 
 import logging
-from typing import Optional
 
 from django.conf import settings
 from github.Commit import Commit
@@ -98,7 +97,7 @@ class GithubBackend(BaseSyncBackend):
         )
 
     def sync_all_content_to_backend(
-        self, query_set: Optional[WebsiteContentQuerySet] = None
+        self, query_set: WebsiteContentQuerySet | None = None
     ) -> Commit:
         """
         Sync all the website's files to Github in one commit
@@ -145,7 +144,7 @@ class GithubBackend(BaseSyncBackend):
         return True
 
     def sync_all_content_to_db(
-        self, ref: Optional[str] = NotSet, path: Optional[str] = None
+        self, ref: str | None = NotSet, path: str | None = None
     ):
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.

@@ -1,6 +1,6 @@
 """Tests for base backend implementation"""
 
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -34,7 +34,7 @@ class _ImplementedBackend(BaseSyncBackend):
     def delete_content_in_db(self, data: Any): ...
 
     def sync_all_content_to_db(
-        self, ref: Optional[str] = None, path: Optional[str] = None
+        self, ref: str | None = None, path: str | None = None
     ): ...
 
     def delete_orphaned_content_in_backend(self): ...
@@ -97,7 +97,7 @@ def test_sync_content_to_backend_delete(mocker):
     mock_delete_content_in_backend.assert_called_once_with(state)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_sync_all_content_to_backend(mocker):
     """Verify that sync_all_content_to_backend calls sync_content_to_backend for each piece of content"""
     mock_sync_content_to_backend = mocker.patch.object(

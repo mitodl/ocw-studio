@@ -3,7 +3,6 @@
 import logging
 import os
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from django.conf import settings
@@ -42,9 +41,9 @@ log = logging.getLogger(__name__)
 
 def get_valid_new_filename(
     website_pk: str,
-    dirpath: Optional[str],
+    dirpath: str | None,
     filename_base: str,
-    exclude_text_id: Optional[str] = None,
+    exclude_text_id: str | None = None,
 ) -> str:
     """
     Given a filename to act as a base/prefix, returns a filename that will satisfy unique constraints,
@@ -88,8 +87,8 @@ def find_available_name(
     website_content_qset: QuerySet,
     initial_filename_base: str,
     fieldname: str,
-    max_length: Optional[int] = CONTENT_FILENAME_MAX_LEN,
-    extension: Optional[str] = None,
+    max_length: int | None = CONTENT_FILENAME_MAX_LEN,
+    extension: str | None = None,
 ) -> str:
     """
     Returns a filename with the lowest possible suffix given some base filename. If the applied suffix

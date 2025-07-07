@@ -1,6 +1,5 @@
 import json
 from random import shuffle
-from typing import Optional
 from urllib.parse import quote
 
 import more_itertools
@@ -85,9 +84,9 @@ class MassBuildSitesPipelineDefinitionConfig:
         ocw_hugo_projects_branch: str,
         offline: bool,  # noqa: FBT001
         instance_vars: str,
-        starter: Optional[WebsiteStarter] = None,
-        prefix: Optional[str] = "",
-        hugo_arg_overrides: Optional[str] = None,
+        starter: WebsiteStarter | None = None,
+        prefix: str | None = "",
+        hugo_arg_overrides: str | None = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
         sites = list(get_publishable_sites(version, is_offline=offline))
@@ -331,7 +330,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
             if batch_number > 1:
                 tasks.append(
                     GetStep(
-                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number -1}",  # noqa: E501
+                        get=f"{MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER}-{batch_number - 1}",  # noqa: E501
                         passed=[
                             f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number - 1}"  # noqa: E501
                         ],

@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime
 from time import sleep
-from typing import Optional
 
 import pytz
 from django.conf import settings
@@ -45,7 +44,7 @@ def get_pipeline_api() -> BasePipeline:
 
 @is_publish_pipeline_enabled
 def get_site_pipeline(
-    website: Website, hugo_args: Optional[str] = "", api: Optional[object] = None
+    website: Website, hugo_args: str | None = "", api: object | None = None
 ) -> BasePipeline:
     """Get the configured sync publishing pipeline"""
     return import_string(
@@ -55,7 +54,7 @@ def get_site_pipeline(
 
 @is_publish_pipeline_enabled
 def get_theme_assets_pipeline(
-    themes_branch: Optional[str] = None, api: Optional[object] = None
+    themes_branch: str | None = None, api: object | None = None
 ) -> BasePipeline:
     """Get the configured theme asset pipeline"""
     return import_string(
@@ -65,9 +64,9 @@ def get_theme_assets_pipeline(
 
 @is_publish_pipeline_enabled
 def get_test_pipeline(
-    themes_branch: Optional[str] = None,
-    projects_branch: Optional[str] = None,
-    api: Optional[object] = None,
+    themes_branch: str | None = None,
+    projects_branch: str | None = None,
+    api: object | None = None,
 ) -> BasePipeline:
     """Get the configured end to end testing pipeline"""
     return import_string(
@@ -79,13 +78,13 @@ def get_test_pipeline(
 def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa: PLR0913
     version: str,
     *,
-    api: Optional[object] = None,
-    prefix: Optional[str] = "",
-    themes_branch: Optional[str] = "",
-    projects_branch: Optional[str] = "",
-    starter: Optional[str] = "",
-    offline: Optional[bool] = False,
-    hugo_args: Optional[str] = "",
+    api: object | None = None,
+    prefix: str | None = "",
+    themes_branch: str | None = "",
+    projects_branch: str | None = "",
+    starter: str | None = "",
+    offline: bool | None = False,
+    hugo_args: str | None = "",
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
     return import_string(
@@ -103,7 +102,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa:
 
 
 @is_publish_pipeline_enabled
-def get_unpublished_removal_pipeline(api: Optional[object] = None) -> object:
+def get_unpublished_removal_pipeline(api: object | None = None) -> object:
     """Get the unpublished sites removal pipeline if the backend has one"""
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.UnpublishedSiteRemovalPipeline"
@@ -145,7 +144,7 @@ def trigger_unpublished_removal(website: Website):
 
 
 def sync_github_website_starters(
-    url: str, files: list[str], commit: Optional[str] = None
+    url: str, files: list[str], commit: str | None = None
 ):
     """Sync website starters from github"""
     tasks.sync_github_site_configs.delay(url, files, commit=commit)
@@ -154,9 +153,9 @@ def sync_github_website_starters(
 def publish_website(  # pylint: disable=too-many-arguments
     name: str,
     version: str,
-    pipeline_api: Optional[object] = None,
-    prepublish: Optional[bool] = True,  # noqa: FBT002
-    trigger_pipeline: Optional[bool] = True,  # noqa: FBT002
+    pipeline_api: object | None = None,
+    prepublish: bool | None = True,  # noqa: FBT002
+    trigger_pipeline: bool | None = True,  # noqa: FBT002
 ):
     """Publish a live or draft version of a website"""
     try:
@@ -204,7 +203,7 @@ def publish_website(  # pylint: disable=too-many-arguments
         )
 
 
-def throttle_git_backend_calls(backend: object, min_delay: Optional[int] = None):
+def throttle_git_backend_calls(backend: object, min_delay: int | None = None):
     """If the current git api limit is too low, sleep until it is reset"""
     min_delay = min_delay or settings.GITHUB_RATE_LIMIT_MIN_SLEEP
     if settings.GITHUB_RATE_LIMIT_CHECK and isinstance(backend, GithubBackend):

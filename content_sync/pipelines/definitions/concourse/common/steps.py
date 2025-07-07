@@ -93,7 +93,7 @@ class ErrorHandlingStep(TryStep):
     Extends TryStep and sets error handling steps
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         pipeline_name: str,
         status: str,

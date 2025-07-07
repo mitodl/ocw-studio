@@ -71,4 +71,4 @@ class Command(WebsiteFilterCommand):
                 contents = self.filter_website_contents(website_contents=contents)
                 contents.update(**updated_data)
             except FieldDoesNotExist as e:
-                raise CommandError(e)  # noqa: B904, TRY200
+                raise CommandError(e)  # noqa: B904

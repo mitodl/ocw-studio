@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -73,7 +72,7 @@ class GitResource(Resource):
         name: Identifier,
         uri: str,
         branch: str,
-        private_key: Optional[str] = None,
+        private_key: str | None = None,
         **kwagrs,
     ):
         super().__init__(

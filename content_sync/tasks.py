@@ -3,7 +3,6 @@
 import logging
 import os
 from datetime import timedelta
-from typing import Optional
 from urllib.parse import urlparse
 
 import botocore
@@ -56,7 +55,7 @@ def sync_content(content_sync_id: str):
 @app.task(acks_late=True)
 def sync_unsynced_websites(
     create_backends: bool = False,  # noqa: FBT001, FBT002
-    delete: Optional[bool] = False,  # noqa: FBT002
+    delete: bool | None = False,  # noqa: FBT002
 ):
     """
     Sync all websites with unsynced content if they have existing repos.
@@ -305,8 +304,8 @@ def publish_website_backend_live(website_name: str):
 def publish_website_batch(
     website_names: list[str],
     version: str,
-    prepublish: Optional[bool] = False,  # noqa: FBT002
-    trigger_pipeline: Optional[bool] = True,  # noqa: FBT002
+    prepublish: bool | None = False,  # noqa: FBT002
+    trigger_pipeline: bool | None = True,  # noqa: FBT002
 ) -> bool:
     """Call api.publish_website for a batch of websites"""
     result = True
@@ -340,9 +339,9 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     self,
     website_names: list[str],
     version: str,
-    chunk_size: Optional[int] = 500,
-    prepublish: Optional[bool] = False,  # noqa: FBT002
-    no_mass_build: Optional[bool] = False,  # noqa: FBT002
+    chunk_size: int | None = 500,
+    prepublish: bool | None = False,  # noqa: FBT002
+    no_mass_build: bool | None = False,  # noqa: FBT002
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -364,7 +363,7 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 
 @app.task(acks_late=True)
-def sync_github_site_configs(url: str, files: list[str], commit: Optional[str] = None):
+def sync_github_site_configs(url: str, files: list[str], commit: str | None = None):
     """
     Sync WebsiteStarter objects from github
     """

@@ -1,7 +1,6 @@
 """External Resources API"""
 
 import logging
-from typing import Optional
 
 import requests
 
@@ -20,7 +19,7 @@ from websites.models import WebsiteContent
 log = logging.getLogger()
 
 
-def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
+def is_url_broken(url: str) -> tuple[bool, int | None]:
     """Check if provided url is broken"""
     if url.strip() == "":
         return False, None
@@ -52,7 +51,7 @@ def is_url_broken(url: str) -> tuple[bool, Optional[int]]:
 
 def is_external_url_broken(
     external_resource: WebsiteContent,
-) -> tuple[bool, Optional[int]]:
+) -> tuple[bool, int | None]:
     """Check if external url of the provided WebsiteContent is broken"""
     url = external_resource.metadata.get("external_url", "")
     return is_url_broken(url)
@@ -79,7 +78,7 @@ def make_wayback_request(url: str, params: dict, headers: dict) -> dict:
 
 def submit_url_to_wayback(
     url: str,
-) -> Optional[str]:
+) -> str | None:
     """
     Submit the external resource URL to the Wayback Machine and
     return the response

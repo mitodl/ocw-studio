@@ -61,7 +61,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
     _clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task").root
     _slack_resource = SlackAlertResource()
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         artifacts_bucket: str,
         preview_bucket: str,

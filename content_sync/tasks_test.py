@@ -38,7 +38,7 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@fixture()
+@fixture
 def api_mock(mocker, settings):
     """Return a mocked content_sync.tasks.api, and set the backend"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
@@ -46,7 +46,7 @@ def api_mock(mocker, settings):
     return mocker.patch("content_sync.tasks.api")
 
 
-@fixture()
+@fixture
 def log_mock(mocker):
     """Return a mocked log object"""
     return mocker.patch("content_sync.tasks.log")

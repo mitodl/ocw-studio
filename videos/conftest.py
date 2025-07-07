@@ -16,7 +16,7 @@ class MockHttpErrorResponse:
 
 
 @pytest.fixture(autouse=True)
-def valid_settings(settings):  # noqa: PT004
+def valid_settings(settings):
     """Valid settings for video processing"""  # noqa: D401
     settings.AWS_ACCOUNT_ID = "account-id"
     settings.AWS_REGION = "us-west-1"
@@ -30,7 +30,7 @@ def valid_settings(settings):  # noqa: PT004
 
 
 @pytest.fixture(autouse=True)
-def youtube_settings(settings, mocker):  # noqa: PT004
+def youtube_settings(settings, mocker):
     """Populate required youtube settings with dummy values"""
     settings.YT_CLIENT_ID = "testvalue"
     settings.YT_CLIENT_SECRET = "testvalue"  # pragma: allowlist secret  # noqa: S105
@@ -41,6 +41,6 @@ def youtube_settings(settings, mocker):  # noqa: PT004
 
 
 @pytest.fixture(autouse=True)
-def mock_smart_open_reader(mocker):  # noqa: PT004
+def mock_smart_open_reader(mocker):
     """Mock the smartopen s3 Reader"""
     mocker.patch("videos.youtube.Reader")

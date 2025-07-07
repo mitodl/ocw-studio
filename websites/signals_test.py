@@ -8,7 +8,7 @@ from websites import constants
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_handle_website_save():
     """Groups should be created for a new Website"""
     website = WebsiteFactory.create(owner=UserFactory.create())
@@ -17,7 +17,7 @@ def test_handle_website_save():
     assert website.owner.has_perm(constants.PERMISSION_EDIT, website)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     (
         "is_page_content",

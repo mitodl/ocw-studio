@@ -1,7 +1,7 @@
 """Sync abstract base"""
 
 import abc
-from typing import Any, Optional
+from typing import Any
 
 from content_sync.models import ContentSyncState
 from websites.models import Website, WebsiteContentQuerySet
@@ -103,7 +103,7 @@ class BaseSyncBackend(abc.ABC):
         ...
 
     def sync_all_content_to_backend(
-        self, query_set: Optional[WebsiteContentQuerySet] = None
+        self, query_set: WebsiteContentQuerySet | None = None
     ):
         """Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet"""  # noqa: E501
         sync_states = ContentSyncState.objects.filter(content__website=self.website)
@@ -141,7 +141,7 @@ class BaseSyncBackend(abc.ABC):
 
     @abc.abstractmethod
     def sync_all_content_to_db(
-        self, ref: Optional[str] = None, path: Optional[str] = None
+        self, ref: str | None = None, path: str | None = None
     ):  # pragma: no cover
         """
         Sync all content from the backend to the application database.

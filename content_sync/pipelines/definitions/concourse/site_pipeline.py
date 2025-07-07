@@ -1,4 +1,3 @@
-from typing import Optional
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -144,8 +143,8 @@ class SitePipelineDefinitionConfig:
         resource_base_url: str,
         ocw_hugo_themes_branch: str,
         ocw_hugo_projects_branch: str,
-        hugo_override_args: Optional[str] = "",
-        sitemap_domain: Optional[str] = settings.SITEMAP_DOMAIN,
+        hugo_override_args: str | None = "",
+        sitemap_domain: str | None = settings.SITEMAP_DOMAIN,
         prefix: str = "",
         namespace: str = "site:",
     ):
@@ -531,8 +530,8 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             "-exc",
                             f"""
                             cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
-                            hugo {pipeline_vars['hugo_args_online']}
-                            cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{pipeline_vars['static_resources_subdirectory']}
+                            hugo {pipeline_vars["hugo_args_online"]}
+                            cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online{pipeline_vars["static_resources_subdirectory"]}
                             """,  # noqa: E501
                         ],
                     ),
@@ -562,12 +561,12 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             # Sync directories with --delete, excluding the static_shared directory
             for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
-                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars['web_bucket']}{base_url}$(basename "$dir")" --delete --metadata site-id={pipeline_vars['site_name']}
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars["web_bucket"]}{base_url}$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
             done
             # Copy only files at the root (exclude directories)
-            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars['web_bucket']}{base_url}" --metadata site-id={pipeline_vars['site_name']} \;
+            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars["web_bucket"]}{base_url}" --metadata site-id={pipeline_vars["site_name"]} \;
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars['web_bucket']}{base_url}" --exclude='{pipeline_vars['short_id']}.zip' --exclude='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars["web_bucket"]}{base_url}" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -677,19 +676,19 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         fi
         touch ./content/static_resources/_index.md
         cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
-        hugo {pipeline_vars['hugo_args_offline']}
+        hugo {pipeline_vars["hugo_args_offline"]}
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars['short_id']}.zip ./
+            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}.zip ./
             rm -rf ./*
             cd ..
             if [ $MP4_COUNT != 0 ];
             then
                 mv ../videos/* ./content/static_resources
             fi
-            hugo {pipeline_vars['hugo_args_offline']}
+            hugo {pipeline_vars["hugo_args_offline"]}
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars['short_id']}-video.zip ./
+            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}-video.zip ./
         fi
         """  # noqa: E501
         build_offline_site_step = add_error_handling(
@@ -751,12 +750,12 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         offline_sync_command = f"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --recursive --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars["offline_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars['offline_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --metadata site-id={pipeline_vars['site_name']}{pipeline_vars['delete_flag']}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars["offline_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         fi
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars['web_bucket']}/{pipeline_vars['prefix']}{pipeline_vars['base_url']} --exclude='*' --include='{pipeline_vars['short_id']}.zip' --include='{pipeline_vars['short_id']}-video.zip' --metadata site-id={pipeline_vars['site_name']}
+            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
         fi
         """  # noqa: E501
         upload_offline_build_step = add_error_handling(
