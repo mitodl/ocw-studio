@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.152.0
+Version 0.152.0 (Released July 08, 2025)
 ---------------
 
 - Update menu on page URL change (#2611)
