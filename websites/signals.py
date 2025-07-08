@@ -6,7 +6,12 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 
 from main.posthog import is_feature_enabled
-from websites.constants import POSTHOG_ENABLE_EDITABLE_PAGE_URLS
+from websites.constants import (
+    CONTENT_TYPE_NAVMENU,
+    POSTHOG_ENABLE_EDITABLE_PAGE_URLS,
+    WEBSITE_CONTENT_LEFTNAV,
+    WEBSITE_PAGES_PATH,
+)
 from websites.models import Website, WebsiteContent
 from websites.permissions import setup_website_groups_permissions
 
@@ -58,3 +63,21 @@ def update_page_url_on_title_change(
 
         if not cur_filename.exists():
             instance.filename = new_filename
+
+            try:
+                navmenu = WebsiteContent.objects.get(
+                    website=instance.website,
+                    type=CONTENT_TYPE_NAVMENU,
+                )
+                menu_items = navmenu.metadata.get(WEBSITE_CONTENT_LEFTNAV, [])
+                navmenu_updated = False
+                for item in menu_items:
+                    if item.get("identifier") == instance.text_id:
+                        item["pageRef"] = f"/{WEBSITE_PAGES_PATH}/{new_filename}"
+                        item["name"] = instance.title
+                        navmenu_updated = True
+                if navmenu_updated:
+                    navmenu.metadata[WEBSITE_CONTENT_LEFTNAV] = menu_items
+                    navmenu.save(update_fields=["metadata"])
+            except WebsiteContent.DoesNotExist:
+                pass
