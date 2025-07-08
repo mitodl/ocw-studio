@@ -243,9 +243,7 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get a Concourse API instance"""
         return PipelineApi()
 
-    def get_pipeline_definition(
-        self, pipeline_file: str, offline: bool | None = None
-    ):
+    def get_pipeline_definition(self, pipeline_file: str, offline: bool | None = None):
         """Get the pipeline definition as a string, processing for environment"""
         with open(  # noqa: PTH123
             os.path.join(  # noqa: PTH118

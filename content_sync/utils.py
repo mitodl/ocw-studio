@@ -63,9 +63,7 @@ def get_destination_filepath(
     return None
 
 
-def get_destination_url(
-    content: WebsiteContent, site_config: SiteConfig
-) -> str | None:
+def get_destination_url(content: WebsiteContent, site_config: SiteConfig) -> str | None:
     """
     Returns the URL a given piece of content is expected to be at
     """  # noqa: D401
