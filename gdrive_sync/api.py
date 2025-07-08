@@ -228,7 +228,8 @@ def process_file_result(
     file_obj: dict,
     website: Website,
     sync_date: datetime | None = None,
-    replace_file: bool | None = True,  # noqa: FBT002
+    *,
+    replace_file: bool | None = True,
 ) -> DriveFile | None:
     """
     Convert an API file response into a DriveFile object.

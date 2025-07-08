@@ -54,8 +54,9 @@ def sync_content(content_sync_id: str):
 
 @app.task(acks_late=True)
 def sync_unsynced_websites(
-    create_backends: bool = False,  # noqa: FBT001, FBT002
-    delete: bool | None = False,  # noqa: FBT002
+    *,
+    create_backends: bool = False,
+    delete: bool | None = False,
 ):
     """
     Sync all websites with unsynced content if they have existing repos.
@@ -304,8 +305,9 @@ def publish_website_backend_live(website_name: str):
 def publish_website_batch(
     website_names: list[str],
     version: str,
-    prepublish: bool | None = False,  # noqa: FBT002
-    trigger_pipeline: bool | None = True,  # noqa: FBT002
+    *,
+    prepublish: bool | None = False,
+    trigger_pipeline: bool | None = True,
 ) -> bool:
     """Call api.publish_website for a batch of websites"""
     result = True
@@ -340,8 +342,9 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     website_names: list[str],
     version: str,
     chunk_size: int | None = 500,
-    prepublish: bool | None = False,  # noqa: FBT002
-    no_mass_build: bool | None = False,  # noqa: FBT002
+    *,
+    prepublish: bool | None = False,
+    no_mass_build: bool | None = False,
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:

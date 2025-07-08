@@ -152,8 +152,9 @@ def publish_website(  # pylint: disable=too-many-arguments
     name: str,
     version: str,
     pipeline_api: object | None = None,
-    prepublish: bool | None = True,  # noqa: FBT002
-    trigger_pipeline: bool | None = True,  # noqa: FBT002
+    *,
+    prepublish: bool | None = True,
+    trigger_pipeline: bool | None = True,
 ):
     """Publish a live or draft version of a website"""
     try:

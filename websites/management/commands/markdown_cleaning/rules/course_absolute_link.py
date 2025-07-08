@@ -67,10 +67,7 @@ class CourseAbsoluteLinkRule(RegexpCleanupRule):
         except KeyError:
             return False
 
-        if website_by_path and website_by_path.unpublish_status is None:
-            return True
-
-        return False
+        return website_by_path and website_by_path.unpublish_status is None
 
     def replace_match(self, match: re.Match, _website_content):
         """

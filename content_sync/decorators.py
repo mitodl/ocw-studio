@@ -17,7 +17,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 log = logging.getLogger(__name__)
 
 
-def retry_on_failure(func: F) -> F:
+def retry_on_failure(func: F) -> F:  # noqa: UP047
     """
     Retry a function a certain number of times if it fails.
     """
@@ -84,7 +84,8 @@ def check_sync_state(func: Callable) -> Callable:
 
 def single_task(
     timeout: int,
-    raise_block: bool | None = True,  # noqa: FBT002
+    *,
+    raise_block: bool | None = True,
 ) -> Callable:
     """
     Only allow one instance of a task to run concurrently, based on the task name

@@ -11,7 +11,7 @@ if __name__ == "__main__":
         base_dir = os.path.dirname(os.path.abspath(__file__))  # noqa: PTH100, PTH120
 
         sys.exit(
-            check_call(
+            check_call(  # nosec B603
                 [
                     os.path.join(base_dir, "manage.py"),  # noqa: PTH118
                     "shell",

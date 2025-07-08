@@ -120,9 +120,7 @@ class PipelineApi(Api, BasePipelineApi):
                         self.ATC_AUTH = self._get_skymarshal_auth()
                     else:
                         self._close_session()
-        if self.ATC_AUTH:
-            return True
-        return False
+        return bool(self.ATC_AUTH)
 
     @retry_on_failure
     def get_with_headers(  # pylint:disable=too-many-branches
@@ -243,7 +241,9 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Get a Concourse API instance"""
         return PipelineApi()
 
-    def get_pipeline_definition(self, pipeline_file: str, offline: bool | None = None):
+    def get_pipeline_definition(
+        self, pipeline_file: str, *, offline: bool | None = None
+    ):
         """Get the pipeline definition as a string, processing for environment"""
         with open(  # noqa: PTH123
             os.path.join(  # noqa: PTH118
@@ -511,6 +511,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         themes_branch: str | None = None,
         projects_branch: str | None = None,
         starter: str | None = None,
+        *,
         offline: bool | None = None,
         hugo_args: str | None = None,
     ):
