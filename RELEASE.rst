@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.152.0
+---------------
+
+- Update menu on page URL change (#2611)
+- Display read-only page URL in Edit Page drawer (#2610)
+- fix(deps): update dependency boto3 to v1.39.1 (#2609)
+
 Version 0.151.0 (Released July 03, 2025)
 ---------------
 
