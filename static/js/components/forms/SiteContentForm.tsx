@@ -178,6 +178,9 @@ export function FormFields(props: InnerFormProps): JSX.Element {
                   {content?.type === "page" ? (
                     <div>
                       <label htmlFor="page-url">Page URL</label>
+                      <div className="help-text">
+                        This is auto-generated from the title field
+                      </div>
                       <Label
                         value={`/pages/${content.filename}`}
                         name="page-url"
