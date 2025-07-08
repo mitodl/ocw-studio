@@ -1,3 +1,4 @@
+from typing import Optional  # noqa: F401
 from urllib.parse import urlparse
 
 from django.conf import settings
