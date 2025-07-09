@@ -50,7 +50,7 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: () => <div />,
 }))
 
-const render = (props = {}) => {
+const render = (props: any = {}) => {
   return shallow(
     <MarkdownEditor allowedHtml={[]} link={[]} embed={[]} {...props} />,
   )
