@@ -99,6 +99,7 @@ describe("MarkdownEditor", () => {
       })
       const ckWrapper = wrapper.find(CKEditor)
       expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
+      const rawConfig = ckWrapper.prop("config") as any
       const config = omit(
         [
           CKEDITOR_RESOURCE_UTILS,
@@ -106,7 +107,7 @@ describe("MarkdownEditor", () => {
           RESOURCE_LINK_CONFIG_KEY,
           WEBSITE_NAME,
         ],
-        ckWrapper.prop("config"),
+        rawConfig,
       )
       expect(config).toEqual(expectedConfig)
     },
