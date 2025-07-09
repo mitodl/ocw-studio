@@ -89,7 +89,7 @@ const MENU_EXTRA_PROPS: Array<keyof MenuConfigField> = ["collections"]
 const HIERARCHICAL_SELECT_EXTRA_PROPS: Array<
   keyof HierarchicalSelectConfigField
 > = ["options_map", "levels"]
-const STRING_EXTRA_PROPS = ["readOnly"]
+const STRING_EXTRA_PROPS: Array<keyof StringConfigField> = ["readOnly"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
   name: "title",

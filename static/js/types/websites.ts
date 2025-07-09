@@ -71,6 +71,7 @@ export interface TextConfigField extends ConfigFieldBaseProps {
 
 export interface StringConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.String
+  readOnly?: boolean
 }
 
 export interface HiddenConfigField extends ConfigFieldBaseProps {
