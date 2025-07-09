@@ -8,6 +8,7 @@ import BooleanField from "../components/widgets/BooleanField"
 import RelationField from "../components/widgets/RelationField"
 import MenuField from "../components/widgets/MenuField"
 import HierarchicalSelectField from "../components/widgets/HierarchicalSelectField"
+import { HierarchicalSelectConfigField } from "../types/websites"
 import WebsiteCollectionField from "../components/widgets/WebsiteCollectionField"
 
 import { objectToFormData } from "./util"
@@ -20,7 +21,10 @@ import {
   BaseConfigItem,
   ConfigField,
   EditableConfigItem,
+  MenuConfigField,
+  RelationConfigField,
   RepeatableConfigItem,
+  SelectConfigField,
   SingletonConfigItem,
   StringConfigField,
   Website,
@@ -64,8 +68,13 @@ export const componentFromWidget = (
   }
 }
 
-const SELECT_EXTRA_PROPS = ["options", "multiple", "max", "min"]
-const RELATION_EXTRA_PROPS = [
+const SELECT_EXTRA_PROPS: Array<keyof SelectConfigField> = [
+  "options",
+  "multiple",
+  "max",
+  "min",
+]
+const RELATION_EXTRA_PROPS: Array<keyof RelationConfigField> = [
   "collection",
   "display_field",
   "max",
@@ -76,8 +85,10 @@ const RELATION_EXTRA_PROPS = [
   "sortable",
   "cross_site",
 ]
-const MENU_EXTRA_PROPS = ["collections"]
-const HIERARCHICAL_SELECT_EXTRA_PROPS = ["options_map", "levels"]
+const MENU_EXTRA_PROPS: Array<keyof MenuConfigField> = ["collections"]
+const HIERARCHICAL_SELECT_EXTRA_PROPS: Array<
+  keyof HierarchicalSelectConfigField
+> = ["options_map", "levels"]
 const STRING_EXTRA_PROPS = ["readOnly"]
 
 export const DEFAULT_TITLE_FIELD: StringConfigField = {
