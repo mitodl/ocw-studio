@@ -1,4 +1,5 @@
 /* eslint-disable camelcase */
+import { Level } from "../components/widgets/HierarchicalSelectField"
 import {
   GoogleDriveSyncStatuses,
   PublishStatus,
@@ -70,6 +71,7 @@ export interface TextConfigField extends ConfigFieldBaseProps {
 
 export interface StringConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.String
+  readOnly?: boolean
 }
 
 export interface HiddenConfigField extends ConfigFieldBaseProps {
@@ -97,6 +99,7 @@ export interface ObjectConfigField extends ConfigFieldBaseProps {
 export interface HierarchicalSelectConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.HierarchicalSelect
   options_map: Record<string, any>
+  levels: Level[]
   min?: number
   max?: number
 }
