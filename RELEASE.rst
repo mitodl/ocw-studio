@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.152.1
+Version 0.152.1 (Released July 10, 2025)
 ---------------
 
 - Add help text to Page URL field in Edit Page drawer (#2613)
