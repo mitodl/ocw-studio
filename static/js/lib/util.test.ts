@@ -120,6 +120,11 @@ describe("util", () => {
     })
   })
 
+  it("filenameFromPath should return empty string if filepath is null or undefined", () => {
+    expect(filenameFromPath(null)).toBe("")
+    expect(filenameFromPath(undefined)).toBe("")
+  })
+
   it("isUuid4 should return true if the value is a valid UUID v4", () => {
     const uuid4 = "32629a02-3dc5-4128-8e43-0392b51e7b61"
     const notUuid4 = "abc"
@@ -170,11 +175,6 @@ describe("util", () => {
 
       await Promise.resolve()
       expect(setFlagMock).toHaveBeenCalledTimes(1)
-    })
-
-    it("filenameFromPath should return empty string if filepath is null or undefined", () => {
-      expect(filenameFromPath(null)).toBe("")
-      expect(filenameFromPath(undefined)).toBe("")
     })
   })
 })
