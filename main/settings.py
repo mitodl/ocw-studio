@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.152.1"
+VERSION = "0.153.0"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -1307,7 +1307,7 @@ PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS = get_int(
     name="PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS",
     default=3000,
     description=(
-        "Timeout (ms) for PostHog feature flag requests, " "published to pipelines"
+        "Timeout (ms) for PostHog feature flag requests, published to pipelines"
     ),
     required=False,
 )

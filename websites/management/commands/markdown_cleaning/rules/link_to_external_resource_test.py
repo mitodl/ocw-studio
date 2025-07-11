@@ -118,7 +118,7 @@ def test_build_external_resource():
     assert external_resource.metadata["has_external_license_warning"] is True
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("content_exists", [True, False])
 def test_get_or_build_external_resource(content_exists):
     """Test get_or_build_external_resource builds or gets depending on content existence."""

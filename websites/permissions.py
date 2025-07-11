@@ -268,12 +268,10 @@ class HasWebsiteCollaborationPermission(BasePermission):
         website = get_object_or_404(
             Website, name=view.kwargs.get("parent_lookup_website", None)
         )
-        if request.method not in SAFE_METHODS and (
-            website.owner == obj or is_global_admin(obj)
-        ):
-            return False
-        # Anyone not allowed to do this will already have been stopped by has_permission above  # noqa: E501
-        return True
+        return not (
+            request.method not in SAFE_METHODS
+            and (website.owner == obj or is_global_admin(obj))
+        )
 
 
 class HasWebsitePreviewPermission(BasePermission):

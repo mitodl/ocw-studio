@@ -3,7 +3,6 @@
 import abc
 import json
 import re
-from typing import Optional
 from urllib.parse import urlparse
 
 import yaml
@@ -58,7 +57,7 @@ class BaseContentFileSerializer(abc.ABC):
         return content
 
     @staticmethod
-    def serialize_contents(metadata: dict, title: Optional[str]) -> dict:
+    def serialize_contents(metadata: dict, title: str | None) -> dict:
         """Standard serializer function for website content data"""  # noqa: D401
         return {
             **metadata,

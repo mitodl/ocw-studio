@@ -1,7 +1,7 @@
 """Websites utils"""
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from django.conf import settings
 from django.db.models import Q
@@ -59,7 +59,7 @@ def resource_reference_field_filter(
     field: dict,
     resource_id: str,
     website: "Website",  # noqa: F821
-) -> Optional[Q]:
+) -> Q | None:
     """
     Generates an appropriate Q expression to filter a field for a resource usage.
     """  # noqa: D401

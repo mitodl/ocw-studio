@@ -38,7 +38,7 @@ def test_add_error_handling(step_type):
         instance_vars="?site:test-site",
     )
     for handler in [mock_step.on_failure, mock_step.on_error, mock_step.on_abort]:
-        assert type(handler) == ErrorHandlingStep
+        assert isinstance(handler, ErrorHandlingStep)
         steps = handler.try_.do
         types = [type(step) for step in steps]
         assert OcwStudioWebhookStep in types

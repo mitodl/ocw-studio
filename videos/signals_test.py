@@ -6,10 +6,10 @@ from django.core.files.uploadedfile import TemporaryUploadedFile
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFactory, VideoFileFactory
-from videos.models import Video  # noqa: TCH001
+from videos.models import Video  # noqa: TC001
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_video_file_signal(mocker):
     """Deleting a YouTube VideoFile should delete the s3 objects"""
     mock_delete_s3_objects = mocker.patch("videos.signals.delete_s3_objects")
@@ -18,7 +18,7 @@ def test_delete_video_file_signal(mocker):
     mock_delete_s3_objects.delay.assert_called_once_with(video_file.s3_key)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_video_transcripts():
     """Deleting a Video object should delete related files."""
     pdf_temp_file = TemporaryUploadedFile(
