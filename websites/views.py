@@ -49,6 +49,10 @@ from websites.constants import (
     RESOURCE_TYPE_VIDEO,
     WebsiteStarterStatus,
 )
+from websites.deletion_utils import (
+    delete_related_captions_and_transcript,
+    delete_resource,
+)
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
     BearerTokenPermission,
@@ -689,6 +693,21 @@ class WebsiteContentViewSet(
             )
         )
         return {**super().get_serializer_context(), **added_context}
+
+    def destroy(self, request, *args, **kwargs):
+        content: WebsiteContent = self.get_object()
+
+        is_video = (
+            content.type == "resource"
+            and (content.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
+        )
+        if is_video:
+            delete_related_captions_and_transcript(content)
+            delete_resource(content)
+            self.perform_destroy(content)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance: WebsiteContent):
         """(soft) deletes a WebsiteContent record"""
