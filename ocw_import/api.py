@@ -133,7 +133,7 @@ def update_ocw2hugo_content(
     create_new_content=False,  # noqa: FBT002
 ):
     """
-    update the update_field of all content files for an ocw course from hugo2ocw output
+    Update the update_field of all content files for an ocw course from hugo2ocw output
 
     Args:
         bucket (s3.Bucket): S3 bucket

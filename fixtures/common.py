@@ -4,13 +4,13 @@ import pytest
 from rest_framework.test import APIClient
 
 
-@pytest.fixture()
+@pytest.fixture
 def drf_client():
     """DRF API anonymous test client"""
     return APIClient()
 
 
-@pytest.fixture()
+@pytest.fixture
 def preexisting_captions_filenames():
     """
     Filenames for gdrive files and resources as they relate to

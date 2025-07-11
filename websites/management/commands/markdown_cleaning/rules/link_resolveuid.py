@@ -87,7 +87,7 @@ class LinkResolveuidRule(PyparsingRule):
         )
         if websites.count() == 1:
             website = websites.first()
-            return f'[{text}](/{website.url_path.lstrip("/")})', Notes(
+            return f"[{text}](/{website.url_path.lstrip('/')})", Notes(
                 match_type="legacy website uid"
             )
 

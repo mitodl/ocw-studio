@@ -4,7 +4,6 @@ import logging
 from base64 import b64decode
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -68,7 +67,7 @@ def decode_file_contents(content_file: ContentFile) -> str:
 
 
 def sync_starter_configs(  # pylint:disable=too-many-locals
-    repo_url: str, config_files: list[str], commit: Optional[str] = None
+    repo_url: str, config_files: list[str], commit: str | None = None
 ):
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
@@ -123,7 +122,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             continue
 
 
-def get_app_installation_id(app: GithubIntegration) -> Optional[str]:
+def get_app_installation_id(app: GithubIntegration) -> str | None:
     """
     Get the app installation id for the organization
     """
@@ -189,7 +188,7 @@ class GithubApiWrapper:
     Github API wrapper class
     """
 
-    def __init__(self, website: Website, site_config: Optional[SiteConfig] = None):
+    def __init__(self, website: Website, site_config: SiteConfig | None = None):
         """Initialize the Github API backend for a specific website"""
         self.website = website
         self.site_config = site_config or SiteConfig(self.website.starter.config)
@@ -296,7 +295,7 @@ class GithubApiWrapper:
     @retry_on_failure
     def upsert_content_file(
         self, website_content: WebsiteContent, **kwargs
-    ) -> Optional[Commit]:
+    ) -> Commit | None:
         """
         Create or update a file in git.
         """
@@ -332,7 +331,7 @@ class GithubApiWrapper:
             **kwargs,
         )
 
-    def upsert_content_files(self, query_set: Optional[WebsiteContentQuerySet] = None):
+    def upsert_content_files(self, query_set: WebsiteContentQuerySet | None = None):
         """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""  # noqa: E501
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
@@ -348,8 +347,8 @@ class GithubApiWrapper:
 
     @retry_on_failure
     def upsert_content_files_for_user(
-        self, user_id=None, query_set: Optional[WebsiteContentQuerySet] = None
-    ) -> Optional[Commit]:
+        self, user_id=None, query_set: WebsiteContentQuerySet | None = None
+    ) -> Commit | None:
         """
         Upsert multiple WebsiteContent objects to github in one commit, optionally filtering with a QuerySet
         """  # noqa: E501
@@ -510,7 +509,7 @@ class GithubApiWrapper:
             elif content.type == "dir":
                 yield from self.get_all_file_paths(content.path)
 
-    def batch_delete_files(self, paths: list[str], user: Optional[User] = None):
+    def batch_delete_files(self, paths: list[str], user: User | None = None):
         """Batch delete multiple git files in a single commit"""
         tree_elements = [
             InputGitTreeElement(
@@ -526,7 +525,7 @@ class GithubApiWrapper:
 
 
 def find_files_recursive(
-    repo: Repository, path: str, file_name: str, commit: Optional[str] = None
+    repo: Repository, path: str, file_name: str, commit: str | None = None
 ) -> Iterable[str]:
     """Find files recursively in a Repository"""
     file_paths = []

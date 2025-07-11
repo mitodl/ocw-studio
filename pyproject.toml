@@ -177,3 +177,5 @@ inline-quotes = "double"
 "*_test.py" = ["ARG001", "E501", "S101", "PLR2004"]
 "test_*.py" = ["ARG001", "E501", "S101", "PLR2004"]
 "**/migrations/**" = ["ARG001"]
+"**/apps.py" = ["PLC0415"]
+"repl.py" = ["S603"]

@@ -5,7 +5,6 @@ import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
-from typing import Optional
 from uuid import UUID, uuid4
 
 from django.conf import settings
@@ -115,7 +114,7 @@ def valid_key(key: str, request: HttpRequest) -> bool:
     return hmac.compare_digest(sig_parts[1], digest)
 
 
-def truncate_words(content: str, length: int, suffix: Optional[str] = "...") -> str:
+def truncate_words(content: str, length: int, suffix: str | None = "...") -> str:
     """Truncate text to < length chars, keeping words intact"""
     if len(content) <= length:
         return content

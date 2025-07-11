@@ -23,7 +23,7 @@ class ShortcodeParser(WrappedParser):
             """  # noqa: D401
 
             def _parse_action(
-                s: str,
+                s: str,  # noqa: ARG001
                 l: int,  # noqa: ARG001, E741
                 toks: "list[list[str]]",
             ):
@@ -37,11 +37,11 @@ class ShortcodeParser(WrappedParser):
                 content = toks[0][1:] if is_closing_tag else toks[0]
                 name = content[0]
                 param_assignments: list[str] = []
-                for s in content[1:]:
+                for part in content[1:]:
                     if param_assignments and param_assignments[-1].endswith("="):
-                        param_assignments[-1] += s
+                        param_assignments[-1] += part
                     else:
-                        param_assignments.append(s)
+                        param_assignments.append(part)
 
                 params = [ShortcodeParam.from_hugo(s) for s in param_assignments]
                 shortcode = ShortcodeTag(

@@ -7,7 +7,14 @@ import celery
 from django.conf import settings
 from django.utils import timezone
 from mitol.common.utils import chunks
-from requests.exceptions import ConnectionError, ConnectTimeout, HTTPError, Timeout
+from requests.exceptions import (
+    ConnectionError as RequestsConnectionError,
+)
+from requests.exceptions import (
+    ConnectTimeout,
+    HTTPError,
+    Timeout,
+)
 
 from content_sync.decorators import single_task
 from external_resources import api
@@ -181,7 +188,7 @@ def get_external_resource_state(resource_id):
     bind=True,
     acks_late=True,
     rate_limit=WAYBACK_MACHINE_TASK_RATE_LIMIT,
-    autoretry_for=(BlockingIOError, ConnectionError, Timeout),
+    autoretry_for=(BlockingIOError, RequestsConnectionError, Timeout),
     retry_backoff=True,
     retry_backoff_max=128,
     max_retries=7,
@@ -280,7 +287,7 @@ def _get_pending_states(job_ids=None):
 @app.task(
     bind=True,
     acks_late=True,
-    autoretry_for=(BlockingIOError, ConnectionError, Timeout),
+    autoretry_for=(BlockingIOError, RequestsConnectionError, Timeout),
     retry_backoff=30,
     retry_backoff_max=240,
     max_retries=5,

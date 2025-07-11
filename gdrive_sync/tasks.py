@@ -3,7 +3,6 @@
 import logging
 from collections import Counter
 from datetime import datetime
-from typing import Optional
 
 import celery
 from celery import chain, chord
@@ -58,7 +57,7 @@ def process_drive_file(self, drive_file_id: str):
 
 
 @app.task()
-def create_gdrive_resource_content_batch(drive_file_ids: list[Optional[str]]):
+def create_gdrive_resource_content_batch(drive_file_ids: list[str | None]):
     """
     Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
 

@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Union
 from uuid import UUID
 
 from pyparsing import ParserElement, ParseResults, originalTextFor
@@ -225,7 +225,7 @@ class ShortcodeTag:
 
     @classmethod
     def resource_link(
-        cls, uuid: Union[str, UUID], text: str, fragment: Optional[str] = None
+        cls, uuid: Union[str, UUID], text: str, fragment: str | None = None
     ):
         """
         Convenience method to create valid resource_link ShortcodeTag objects.
@@ -249,8 +249,8 @@ class ShortcodeTag:
     def resource(
         cls,
         uuid: Union[str, UUID],
-        href_uuid: Optional[Union[str, UUID]] = None,
-        href: Optional[str] = None,
+        href_uuid: Union[str, UUID] | None = None,
+        href: str | None = None,
     ):
         """Convenience method to create valid resource_link ShortcodeTag objects."""  # noqa: D401
         cls.validate_uuid(uuid)
@@ -273,7 +273,7 @@ class ShortcodeTag:
         msg = "Badly formed uuid."
         raise ValueError(msg)
 
-    def get(self, param_name: Union[str, int], default: Optional[str] = None):
+    def get(self, param_name: Union[str, int], default: str | None = None):
         """
         Retrieve a shortcode parameter value by name or position, providing
         `default` if param does not exist.

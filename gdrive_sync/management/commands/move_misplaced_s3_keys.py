@@ -30,8 +30,8 @@ class Command(BaseCommand):
                 ):
                     old_s3_key = drive_file.s3_key
                     new_s3_key = drive_file.s3_key.replace(
-                        f'{drive_file.s3_prefix}/{site["short_id"]}',
-                        f'{drive_file.s3_prefix}/{site["name"]}',
+                        f"{drive_file.s3_prefix}/{site['short_id']}",
+                        f"{drive_file.s3_prefix}/{site['name']}",
                         1,
                     )
                     if old_s3_key == new_s3_key:

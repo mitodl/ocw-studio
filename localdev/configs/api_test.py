@@ -37,7 +37,6 @@ def test_equivalent_example_configs(settings):
         with open(os.path.join(dirpath, filename)) as f:  # noqa: PTH118, PTH123
             raw_yaml_config = f.read().strip()
         parsed_config = yaml.load(raw_yaml_config, Loader=yaml.SafeLoader)
-        #
         js_config_path = os.path.join(  # noqa: PTH118
             settings.BASE_DIR, JS_CONFIG_DIRECTORY, f"{base_filename}.json"
         )
@@ -46,7 +45,8 @@ def test_equivalent_example_configs(settings):
         ), f"'{js_config_path}' does not exist. {_assert_msg}"
         with open(js_config_path) as f:  # noqa: PTH123
             json_config = json.load(f)
-        assert (
-            json.dumps(parsed_config, sort_keys=True)
-            == json.dumps(json_config, sort_keys=True)
-        ), f"'{js_config_path}' does not match the contents of '{filename}'. {_assert_msg}"
+        assert json.dumps(parsed_config, sort_keys=True) == json.dumps(
+            json_config, sort_keys=True
+        ), (
+            f"'{js_config_path}' does not match the contents of '{filename}'. {_assert_msg}"
+        )

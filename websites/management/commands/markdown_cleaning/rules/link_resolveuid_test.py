@@ -24,7 +24,7 @@ def get_cleaner():
     return Cleaner(rule)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("content", "expected_content"),
     [
@@ -60,7 +60,7 @@ def test_resolveuid_content_text_id(content, expected_content):
     assert target_content.markdown == expected_content
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("content", "expected_content"),
     [
@@ -101,7 +101,7 @@ def test_resolveuid_website_legacy_uid(content, expected_content):
     assert target_content.markdown == expected_content
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("content", "expected_content"),
     [

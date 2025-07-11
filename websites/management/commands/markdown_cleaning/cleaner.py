@@ -77,7 +77,7 @@ class WebsiteContentMarkdownCleaner:
             WebsiteContentMarkdownCleaner.ReplacementMatch
         ] = []
 
-    def store_match_data(  # noqa: PLR0913
+    def store_match_data(
         self,
         original_text: str,
         replacement: str,

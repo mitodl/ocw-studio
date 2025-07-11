@@ -1,7 +1,6 @@
 """Common functions and variables for gdrive_sync tests"""
 
 from collections.abc import Iterable
-from typing import Optional
 
 import boto3
 
@@ -111,7 +110,7 @@ def all_starters_items_fields() -> Iterable[tuple[WebsiteStarter, ConfigItem, di
 
 def generate_related_content_data(
     starter: WebsiteStarter, field: dict, resource_id: str, website: Website
-) -> Optional[dict]:
+) -> dict | None:
     """
     A utility method to create data for WebsiteContent for `field` that references
     `resource_id`.

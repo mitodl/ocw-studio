@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
 
 
-@pytest.fixture()
+@pytest.fixture
 def github(settings, mocker, mock_branches):
     """Create a github backend for a website"""
     settings.GIT_TOKEN = "faketoken"  # noqa: S105
@@ -40,7 +40,7 @@ def github(settings, mocker, mock_branches):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def patched_file_deserialize(mocker):
     """Patches function that deserializes file contents to website content"""
     return mocker.patch(
