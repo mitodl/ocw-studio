@@ -55,7 +55,7 @@ class CourseAbsoluteLinkRule(RegexpCleanupRule):
         super().__init__()
         self.content_lookup = ContentLookup()
 
-    def _is_valid_course_url_path(self, url_path: str) -> str | None:
+    def _is_valid_course_url_path(self, url_path: str) -> bool | None:
         """
         Return True if `url_path` is a valid.
 
@@ -67,7 +67,7 @@ class CourseAbsoluteLinkRule(RegexpCleanupRule):
         except KeyError:
             return False
 
-        return website_by_path and website_by_path.unpublish_status is None
+        return bool(website_by_path and website_by_path.unpublish_status is None)
 
     def replace_match(self, match: re.Match, _website_content):
         """
