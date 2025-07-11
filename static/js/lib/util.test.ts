@@ -171,5 +171,10 @@ describe("util", () => {
       await Promise.resolve()
       expect(setFlagMock).toHaveBeenCalledTimes(1)
     })
+
+    it("filenameFromPath should return empty string if filepath is null or undefined", () => {
+      expect(filenameFromPath(null)).toBe("")
+      expect(filenameFromPath(undefined)).toBe("")
+    })
   })
 })

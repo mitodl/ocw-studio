@@ -12,11 +12,11 @@ const Label: React.FC<Props> = (props) => {
   const { value } = props
   return (
     <div className="form-group">
-      {value && !(value instanceof File) ? (
+      {!(value instanceof File) ? (
         <input
           id={props.name}
           className="form-control"
-          value={value}
+          value={typeof value === "string" ? value : ""}
           type="text"
           readOnly
           style={{ cursor: "not-allowed" }}
