@@ -83,7 +83,10 @@ export const objectToFormData = (
   return formData
 }
 
-export const filenameFromPath = (filepath: string): string => {
+export const filenameFromPath = (
+  filepath: string | null | undefined,
+): string => {
+  if (!filepath) return ""
   const basename = filepath.split("/").pop() || ""
   const UUID =
     /^[0-9A-F]{8}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{4}-?[0-9A-F]{12}/i
