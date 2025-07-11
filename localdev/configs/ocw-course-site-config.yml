@@ -82,11 +82,10 @@ collections:
     - "Demonstration Videos"
     - "Design Assignments"
     - "Design Assignments with Examples"
-    - "Exam Materials"
     - Exams
     - "Exams with Solutions"
     - "Image Gallery"
-    - Labs
+    - "Laboratory Assignments"
     - "Lecture Audio"
     - "Lecture Notes"
     - "Lecture Videos"
@@ -94,22 +93,24 @@ collections:
     - "Media Assignments with Examples"
     - "Multiple Assignment Types"
     - "Multiple Assignment Types with Solutions"
-    - Music
-    - "Online Textbook"
+    - "Music Audio"
+    - "Open Textbooks"
     - "Other Audio"
     - "Other Video"
     - "Presentation Assignments"
     - "Presentation Assignments with Examples"
     - "Problem Sets"
     - "Problem Sets with Solutions"
+    - "Problem-solving Notes"
+    - "Problem-solving Videos"
     - "Programming Assignments"
     - "Programming Assignments with Examples"
     - Projects
     - "Projects with Examples"
     - Readings
-    - "Recitation Videos"
     - "Simulation Videos"
     - Simulations
+    - "Supplemental Exam Materials"
     - Tools
     - "Tutorial Videos"
     - "Video Materials"
@@ -284,11 +285,10 @@ collections:
       - "Demonstration Videos"
       - "Design Assignments"
       - "Design Assignments with Examples"
-      - "Exam Materials"
       - Exams
       - "Exams with Solutions"
       - "Image Gallery"
-      - Labs
+      - "Laboratory Assignments"
       - "Lecture Audio"
       - "Lecture Notes"
       - "Lecture Videos"
@@ -296,22 +296,24 @@ collections:
       - "Media Assignments with Examples"
       - "Multiple Assignment Types"
       - "Multiple Assignment Types with Solutions"
-      - Music
-      - "Online Textbook"
+      - "Music Audio"
+      - "Open Textbooks"
       - "Other Audio"
       - "Other Video"
       - "Presentation Assignments"
       - "Presentation Assignments with Examples"
       - "Problem Sets"
       - "Problem Sets with Solutions"
+      - "Problem-solving Notes"
+      - "Problem-solving Videos"
       - "Programming Assignments"
       - "Programming Assignments with Examples"
       - Projects
       - "Projects with Examples"
       - Readings
-      - "Recitation Videos"
       - "Simulation Videos"
       - Simulations
+      - "Supplemental Exam Materials"
       - Tools
       - "Tutorial Videos"
       - "Video Materials"
