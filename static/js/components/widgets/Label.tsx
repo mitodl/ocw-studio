@@ -16,7 +16,7 @@ const Label: React.FC<Props> = (props) => {
         <input
           id={props.name}
           className="form-control"
-          value={typeof value === "string" ? value : ""}
+          value={value ?? ""}
           type="text"
           readOnly
           style={{ cursor: "not-allowed" }}
