@@ -1,6 +1,7 @@
 """Manual migration to update learning resource types in metadata."""
 
 from django.db import migrations, transaction
+from django.db.models import Q
 
 # Mapping of old learning resource types to new ones
 LEARNING_RESOURCE_TYPE_MAPPING = {
@@ -29,7 +30,6 @@ def apply_mapping_to_types(learning_types, mapping):
 
 def update_website_content_objects(mapping, WebsiteContent):
     """Update learning_resource_types in WebsiteContent objects."""
-    from django.db.models import Q
 
     # Build query for objects containing any of the target values
     query = Q()
@@ -49,7 +49,6 @@ def update_website_content_objects(mapping, WebsiteContent):
 
 def update_website_objects(mapping, Website):
     """Update learning_resource_types in Website objects."""
-    from django.db.models import Q
 
     # Build query for objects containing any of the target values
     query = Q()
