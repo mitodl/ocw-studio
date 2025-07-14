@@ -59,8 +59,9 @@ def _attach_transcript_if_missing(
         summary["transcripts"]["total"] += 1
 
     if pdf_response:
+        file_size = len(pdf_response.read())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        filepath = _create_new_content(pdf_file, video)
+        filepath = _create_new_content(pdf_file, video, file_size=file_size)
         video.metadata["video_files"]["video_transcript_file"] = filepath
 
         if summary:
@@ -98,8 +99,9 @@ def _attach_captions_if_missing(
         summary["captions"]["total"] += 1
 
     if webvtt_response:
+        file_size = len(webvtt_response.read())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        new_filepath = _create_new_content(vtt_file, video)
+        new_filepath = _create_new_content(vtt_file, video, file_size)
         video.metadata["video_files"]["video_captions_file"] = new_filepath
         if summary:
             summary["captions"]["updated"] += 1
@@ -192,7 +194,9 @@ def generate_metadata(
     )
 
 
-def _create_new_content(file_content: File, video: WebsiteContent) -> str:
+def _create_new_content(
+    file_content: File, video: WebsiteContent, file_size: int | None = None
+) -> str:
     """
     Create and save a new WebsiteContent object
     for a caption or transcript file.
@@ -210,7 +214,6 @@ def _create_new_content(file_content: File, video: WebsiteContent) -> str:
         "metadata": new_obj_metadata,
         "title": title,
         "type": collection_type,
-        "text_id": new_text_id,
     }
 
     new_obj = WebsiteContent.objects.get_or_create(
@@ -220,6 +223,12 @@ def _create_new_content(file_content: File, video: WebsiteContent) -> str:
         is_page_content=True,
         defaults=defaults,
     )[0]
+    if not new_obj.text_id:
+        new_obj.text_id = new_text_id
+    if new_obj.metadata.get("file_size") != file_size:
+        new_obj.metadata["file_size"] = file_size
+    if new_obj.file != new_s3_loc:
+        new_obj.file = new_s3_loc
     new_obj.save()
 
     return new_s3_loc
