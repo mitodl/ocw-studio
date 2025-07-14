@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.153.0 (Released July 14, 2025)
+---------------
+
+- [pre-commit.ci] pre-commit autoupdate (#2230)
+- chore: change existing lrt names (#2614)
+
 Version 0.152.1 (Released July 10, 2025)
 ---------------
 
