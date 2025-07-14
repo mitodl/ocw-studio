@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.153.1
+---------------
+
+- Fix file field in Edit Resource drawer if file missing (#2616)
+
 Version 0.153.0 (Released July 14, 2025)
 ---------------
 
