@@ -297,6 +297,23 @@ def test_website_content_serializer():
     assert "metadata" not in serialized_data
 
 
+@pytest.mark.parametrize(
+    ("type_", "resourcetype", "expected"),
+    [
+        (CONTENT_TYPE_RESOURCE, "video", True),
+        (CONTENT_TYPE_RESOURCE, "document", False),
+    ],
+)
+def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
+    """
+    WebsiteContentSerializer should return correct is_deletable_by_resourcetype
+    """
+    metadata = {"resourcetype": resourcetype} if resourcetype else {}
+    content = WebsiteContentFactory.build(type=type_, metadata=metadata)
+    serializer = WebsiteContentSerializer(instance=content)
+    assert serializer.data["is_deletable_by_resourcetype"] is expected
+
+
 def test_website_content_detail_serializer():
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
     content = WebsiteContentFactory.create(
