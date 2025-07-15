@@ -89,7 +89,7 @@ def get_or_build_external_resource(
     url: str,
     title: str,
     *,
-    has_external_license_warning: bool = True,
+    has_external_license_warning: bool = False,
 ) -> WebsiteContent:
     """
     Find or build a WebsiteContent object for an external resource.
