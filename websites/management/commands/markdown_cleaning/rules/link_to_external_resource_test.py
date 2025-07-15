@@ -94,6 +94,7 @@ def get_cleaner(rule_type):
         ("https://google.com", False),
     ],
 )
+@patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
 def test_is_ocw_domain_url(url, expected_result):
     """Test is_ocw_domain_url."""
     result = is_ocw_domain_url(url)
@@ -735,19 +736,26 @@ def test_navitem_internal_references_functionality():
 @pytest.mark.parametrize(
     ("url", "has_external_license_warning", "expected_warning"),
     [
+        # When parameter is True: force warning for all domains
         ("https://ocw.mit.edu", True, True),
-        ("https://ocw.mit.edu", False, False),
         ("https://example.com", True, True),
-        ("https://example.com", False, True),
+        # When parameter is False: force no warning for all domains
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", False, False),
+        # When parameter is None: use hostname-based logic
+        ("https://ocw.mit.edu", None, False),
+        ("https://example.com", None, True),
     ],
 )
+@patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
 def test_build_external_resource_with_license_warning_override(
     url, has_external_license_warning, expected_warning
 ):
     """Test build_external_resource respects has_external_license_warning override.
 
     When has_external_license_warning=True, it forces the warning regardless of domain.
-    When has_external_license_warning=False, it uses hostname-based logic.
+    When has_external_license_warning=False, it forces no warning regardless of domain.
+    When has_external_license_warning=None, it uses hostname-based logic.
     """
     starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
@@ -769,19 +777,26 @@ def test_build_external_resource_with_license_warning_override(
 @pytest.mark.parametrize(
     ("url", "has_external_license_warning", "expected_warning"),
     [
+        # When parameter is True: force warning for all domains
         ("https://ocw.mit.edu", True, True),
-        ("https://ocw.mit.edu", False, False),
         ("https://example.com", True, True),
-        ("https://example.com", False, True),
+        # When parameter is False: force no warning for all domains
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", False, False),
+        # When parameter is None: use hostname-based logic
+        ("https://ocw.mit.edu", None, False),
+        ("https://example.com", None, True),
     ],
 )
+@patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
 def test_link_to_external_resource_rule_with_license_warning_override(
     settings, url, has_external_license_warning, expected_warning
 ):
     """Test LinkToExternalResourceRule respects has_external_license_warning option.
 
     When True, forces warning regardless of domain.
-    When False, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    When False, forces no warning regardless of domain.
+    When None, uses hostname-based logic (OCW domain = no warning, external domain = warning).
     """
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
@@ -820,19 +835,26 @@ def test_link_to_external_resource_rule_with_license_warning_override(
 @pytest.mark.parametrize(
     ("url", "has_external_license_warning", "expected_warning"),
     [
+        # When parameter is True: force warning for all domains
         ("https://ocw.mit.edu", True, True),
-        ("https://ocw.mit.edu", False, False),
         ("https://example.com", True, True),
-        ("https://example.com", False, True),
+        # When parameter is False: force no warning for all domains
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", False, False),
+        # When parameter is None: use hostname-based logic
+        ("https://ocw.mit.edu", None, False),
+        ("https://example.com", None, True),
     ],
 )
+@patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
 def test_nav_item_to_external_resource_rule_with_license_warning_override(
     url, has_external_license_warning, expected_warning
 ):
     """Test NavItemToExternalResourceRule respects has_external_license_warning option.
 
     When True, forces warning regardless of domain.
-    When False, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    When False, forces no warning regardless of domain.
+    When None, uses hostname-based logic (OCW domain = no warning, external domain = warning).
     """
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)

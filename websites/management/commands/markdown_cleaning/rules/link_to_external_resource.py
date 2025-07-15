@@ -25,7 +25,7 @@ from websites.utils import get_valid_base_filename
 def is_ocw_domain_url(url: str) -> bool:
     """Return True `url` has an ocw domain."""
     parsed_url = urlparse(url)
-    return parsed_url.netloc == "ocw.mit.edu"
+    return parsed_url.netloc == settings.SITEMAP_DOMAIN
 
 
 def build_external_resource(
@@ -34,7 +34,7 @@ def build_external_resource(
     title: str,
     url: str,
     *,
-    has_external_license_warning: bool = False,
+    has_external_license_warning: bool | None = None,
 ) -> WebsiteContent:
     """
     Build a WebsiteContent object for an external-resource.
@@ -45,8 +45,10 @@ def build_external_resource(
         CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
     )
     metadata["external_url"] = url
-    metadata["has_external_license_warning"] = has_external_license_warning or (
-        not is_ocw_domain_url(url)
+    metadata["has_external_license_warning"] = (
+        has_external_license_warning
+        if has_external_license_warning is not None
+        else (not is_ocw_domain_url(url))
     )
 
     # title is a special field. By default the value of title
@@ -89,7 +91,7 @@ def get_or_build_external_resource(
     url: str,
     title: str,
     *,
-    has_external_license_warning: bool = False,
+    has_external_license_warning: bool | None = None,
 ) -> WebsiteContent:
     """
     Find or build a WebsiteContent object for an external resource.

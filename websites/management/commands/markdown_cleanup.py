@@ -110,12 +110,23 @@ class Command(WebsiteFilterCommand):
             default=False,
             help="If provided, only process published websites. Otherwise, process all websites.",  # noqa: E501
         )
-        parser.add_argument(
-            "--external-license-warning",
+
+        # Mutually exclusive group for external license warning control
+        license_group = parser.add_mutually_exclusive_group()
+        license_group.add_argument(
+            "--add-external-license-warning",
             dest="external_license_warning",
-            action="store_true",
-            default=False,
-            help="If provided, set external license warning irrespective of hostname",
+            action="store_const",
+            const=True,
+            default=None,
+            help="If provided, add external license warning irrespective of hostname",
+        )
+        license_group.add_argument(
+            "--no-external-license-warning",
+            dest="external_license_warning",
+            action="store_const",
+            const=False,
+            help="If provided, disable external license warning irrespective of hostname",  # noqa: E501
         )
 
     @classmethod
