@@ -110,6 +110,13 @@ class Command(WebsiteFilterCommand):
             default=False,
             help="If provided, only process published websites. Otherwise, process all websites.",  # noqa: E501
         )
+        parser.add_argument(
+            "--external-license-warning",
+            dest="external_license_warning",
+            action="store_true",
+            default=False,
+            help="If provided, the rule set external license warning irrespective of hostname",  # noqa: E501
+        )
 
     @classmethod
     def validate_options(cls, options):
@@ -146,6 +153,7 @@ class Command(WebsiteFilterCommand):
             out=options["out"],
             csv_only_changes=options["csv_only_changes"],
             limit=options["limit"],
+            has_external_license_warning=options["external_license_warning"],
             website_contents=website_contents,
         )
 
@@ -164,13 +172,25 @@ class Command(WebsiteFilterCommand):
 
     @classmethod
     def do_handle(  # noqa: PLR0913
-        cls, alias, commit, out, csv_only_changes, limit, website_contents
+        cls,
+        alias,
+        commit,
+        out,
+        csv_only_changes,
+        limit,
+        has_external_license_warning,
+        website_contents,
     ):
         """Replace baseurl with resource_link"""
 
         Rule = next(R for R in cls.Rules if R.alias == alias)
         rule = Rule()
-        rule.set_options({"commit": commit})
+        rule.set_options(
+            {
+                "commit": commit,
+                "has_external_license_warning": has_external_license_warning,
+            }
+        )
 
         cleaner = WebsiteContentMarkdownCleaner(rule)
 
