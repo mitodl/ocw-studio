@@ -13,8 +13,7 @@ OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
 
 AWS_CLI_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
-    source=RegistryImage(repository="amazon/aws-cli",
-    tag="2.27.50")
+    source=RegistryImage(repository="amazon/aws-cli", tag="2.27.50"),
 )
 
 BASH_REGISTRY_IMAGE = AnonymousResource(
