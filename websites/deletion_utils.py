@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
@@ -31,8 +33,7 @@ def delete_related_captions_and_transcript(content: WebsiteContent):
         key = video_files.get(attr)
         if not key:
             continue
-        filename = key.split("/")[-1]
-        base_name = filename.rsplit(".", 1)[0]
+        base_name = Path(key).stem
         qs = WebsiteContent.objects.filter(website=content.website)
         related = qs.filter(
             Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name)
