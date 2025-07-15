@@ -309,7 +309,7 @@ def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
     WebsiteContentSerializer should return correct is_deletable_by_resourcetype
     """
     metadata = {"resourcetype": resourcetype} if resourcetype else {}
-    content = WebsiteContentFactory.build(type=type_, metadata=metadata)
+    content = WebsiteContentFactory.create(type=type_, metadata=metadata)
     serializer = WebsiteContentSerializer(instance=content)
     assert serializer.data["is_deletable_by_resourcetype"] is expected
 
