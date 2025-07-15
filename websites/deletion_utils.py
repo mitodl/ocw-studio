@@ -13,8 +13,7 @@ def delete_resource(content: WebsiteContent):
     and file itself from gdrive.
     """
     drive_file = DriveFile.objects.filter(resource=content).first()
-    drive_file_id = drive_file.file_id if drive_file else None
-    if drive_file_id:
+    if drive_file_id := drive_file and drive_file.file_id:
         delete_drive_file(drive_file, sync_datetime=now_in_utc())
         ds = get_drive_service()
         ds.files().delete(fileId=drive_file_id, supportsAllDrives=True).execute()
@@ -27,7 +26,7 @@ def delete_related_captions_and_transcript(content: WebsiteContent):
     """
     Delete related captions and transcript file for a video.
     """
-    video_files = content.metadata.get("video_files", {}) or {}
+    video_files = content.metadata.get("video_files", {})
     for attr in ("video_captions_file", "video_transcript_file"):
         key = video_files.get(attr)
         if not key:

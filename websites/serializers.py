@@ -472,12 +472,28 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
-class WebsiteContentSerializer(serializers.ModelSerializer):
+class WebsiteContentDeletableMixin(serializers.Serializer):
+    """Mixin for checking if content is deletable by resource type"""
+
+    is_deletable_by_resourcetype = serializers.SerializerMethodField()
+
+    def get_is_deletable_by_resourcetype(self, obj):
+        """
+        Still uses config var OCW_STUDIO_DELETABLE_CONTENT_TYPES
+        to check for deletable content types
+        """
+        return (obj.type != CONTENT_TYPE_RESOURCE) or (
+            (obj.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
+        )
+
+
+class WebsiteContentSerializer(
+    serializers.ModelSerializer, WebsiteContentDeletableMixin
+):
     """Serializes WebsiteContent for the list view"""
 
     website_name = serializers.CharField(source="website.name")
     is_deletable = serializers.SerializerMethodField()
-    is_deletable_by_resourcetype = serializers.SerializerMethodField()
 
     def get_is_deletable(self, obj):
         request = self.context.get("request", None)
@@ -489,13 +505,6 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
         if check_references and refs is not None:
             return len(refs) == 0
         return True
-
-    def get_is_deletable_by_resourcetype(self, obj):
-        # it will still use config var OCW_STUDIO_DELETABLE_CONTENT_TYPES
-        # to check for deletable content types
-        if obj.type != CONTENT_TYPE_RESOURCE:
-            return True
-        return (obj.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
 
     class Meta:
         model = WebsiteContent
@@ -513,7 +522,9 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
 
 
 class WebsiteContentDetailSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    RequestUserSerializerMixin,
+    WebsiteContentDeletableMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -629,13 +640,6 @@ class WebsiteContentDetailSerializer(
             if file_field:
                 result[file_field["name"]] = instance.file.url
         return result
-
-    is_deletable_by_resourcetype = serializers.SerializerMethodField()
-
-    def get_is_deletable_by_resourcetype(self, obj):
-        if obj.type != CONTENT_TYPE_RESOURCE:
-            return True
-        return (obj.metadata or {}).get("resourcetype") == "Video"
 
     class Meta:
         model = WebsiteContent

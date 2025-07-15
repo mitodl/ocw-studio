@@ -40,6 +40,7 @@ from websites.constants import (
     CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
     CONTENT_TYPE_RESOURCE_COLLECTION,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -698,7 +699,7 @@ class WebsiteContentViewSet(
         content: WebsiteContent = self.get_object()
 
         is_video = (
-            content.type == "resource"
+            content.type == CONTENT_TYPE_RESOURCE
             and (content.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
         )
         if is_video:
