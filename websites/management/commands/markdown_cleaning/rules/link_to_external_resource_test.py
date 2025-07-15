@@ -1,6 +1,7 @@
 """Tests for link_to_external_resource.py"""
 
 from unittest.mock import patch
+from urllib.parse import urlparse
 
 import pytest
 from django.conf import settings
@@ -729,3 +730,146 @@ def test_navitem_internal_references_functionality():
 
         # Verify that the external resource references the main content
         assert main_content in external_resource.referencing_content.all()
+
+
+@pytest.mark.parametrize(
+    ("url", "has_external_license_warning", "expected_warning"),
+    [
+        ("https://ocw.mit.edu", True, True),
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", True, True),
+        ("https://example.com", False, True),
+    ],
+)
+def test_build_external_resource_with_license_warning_override(
+    url, has_external_license_warning, expected_warning
+):
+    """Test build_external_resource respects has_external_license_warning override.
+
+    When has_external_license_warning=True, it forces the warning regardless of domain.
+    When has_external_license_warning=False, it uses hostname-based logic.
+    """
+    starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+    website = WebsiteFactory.create(starter=starter)
+    title = "Test Resource"
+
+    external_resource = build_external_resource(
+        website=website,
+        site_config=SiteConfig(SAMPLE_SITE_CONFIG),
+        title=title,
+        url=url,
+        has_external_license_warning=has_external_license_warning,
+    )
+
+    assert (
+        external_resource.metadata["has_external_license_warning"] == expected_warning
+    )
+
+
+@pytest.mark.parametrize(
+    ("url", "has_external_license_warning", "expected_warning"),
+    [
+        ("https://ocw.mit.edu", True, True),
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", True, True),
+        ("https://example.com", False, True),
+    ],
+)
+def test_link_to_external_resource_rule_with_license_warning_override(
+    settings, url, has_external_license_warning, expected_warning
+):
+    """Test LinkToExternalResourceRule respects has_external_license_warning option.
+
+    When True, forces warning regardless of domain.
+    When False, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    """
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Extract domain name for link text
+        content = f"[{urlparse(url).netloc}]({url})"
+        target_content = WebsiteContentFactory.create(
+            markdown=content,
+            website=website,
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options(
+            {
+                "commit": True,
+                "has_external_license_warning": has_external_license_warning,
+            }
+        )
+        cleaner = Cleaner(rule)
+        cleaner.update_website_content(target_content)
+
+        external_resource = WebsiteContent.objects.get(
+            website=website,
+            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+            metadata__external_url=url,
+        )
+
+        assert (
+            external_resource.metadata["has_external_license_warning"]
+            == expected_warning
+        )
+
+
+@pytest.mark.parametrize(
+    ("url", "has_external_license_warning", "expected_warning"),
+    [
+        ("https://ocw.mit.edu", True, True),
+        ("https://ocw.mit.edu", False, False),
+        ("https://example.com", True, True),
+        ("https://example.com", False, True),
+    ],
+)
+def test_nav_item_to_external_resource_rule_with_license_warning_override(
+    url, has_external_license_warning, expected_warning
+):
+    """Test NavItemToExternalResourceRule respects has_external_license_warning option.
+
+    When True, forces warning regardless of domain.
+    When False, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    """
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+
+        # Extract domain name for nav item name
+        nav_items = [
+            {
+                "name": urlparse(url).netloc,
+                "url": url,
+                "weight": 10,
+                "identifier": "external--test-id",
+            }
+        ]
+
+        target_content = WebsiteContentFactory.create(
+            website=website,
+            metadata={"leftnav": nav_items},
+        )
+
+        rule = NavItemToExternalResourceRule()
+        rule.set_options(
+            {
+                "commit": True,
+                "has_external_license_warning": has_external_license_warning,
+            }
+        )
+        cleaner = Cleaner(rule)
+        cleaner.update_website_content(target_content)
+
+        external_resource = WebsiteContent.objects.get(
+            website=website,
+            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+            metadata__external_url=url,
+        )
+
+        assert (
+            external_resource.metadata["has_external_license_warning"]
+            == expected_warning
+        )
