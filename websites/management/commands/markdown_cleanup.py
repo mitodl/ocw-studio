@@ -115,7 +115,7 @@ class Command(WebsiteFilterCommand):
             dest="external_license_warning",
             action="store_true",
             default=False,
-            help="If provided, the rule set external license warning irrespective of hostname",  # noqa: E501
+            help="If provided, set external license warning irrespective of hostname",
         )
 
     @classmethod
