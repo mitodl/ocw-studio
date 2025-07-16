@@ -5,7 +5,6 @@ from django.utils.text import slugify
 
 from users.factories import UserFactory
 from websites import constants
-from websites.constants import CONTENT_TYPE_INSTRUCTOR, CONTENT_TYPE_PAGE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -57,7 +56,7 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
     if existing_conflict:
         WebsiteContentFactory.create(
             website=website,
-            type=CONTENT_TYPE_PAGE,
+            type=constants.CONTENT_TYPE_PAGE,
             dirpath="",
             title=new_title,
             filename=slugify(new_title),
@@ -65,7 +64,9 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
 
     page = WebsiteContentFactory.create(
         website=website,
-        type=CONTENT_TYPE_PAGE if is_page else CONTENT_TYPE_INSTRUCTOR,
+        type=constants.CONTENT_TYPE_PAGE
+        if is_page
+        else constants.CONTENT_TYPE_INSTRUCTOR,
         dirpath="",
         title=initial_title,
         filename=slugify(initial_title),
@@ -84,7 +85,7 @@ def test_navmenu_updated_on_page_title_change(mocker):
 
     page = WebsiteContentFactory.create(
         website=website,
-        type=CONTENT_TYPE_PAGE,
+        type=constants.CONTENT_TYPE_PAGE,
         dirpath="",
         title="Original Title",
         filename="original-title",
