@@ -11,7 +11,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_video_deletes_captions_and_transcripts(mocker):
     """
     Deleting a video should also delete its associated caption and transcript WebsiteContent
