@@ -300,8 +300,8 @@ def test_website_content_serializer():
 @pytest.mark.parametrize(
     ("type_", "resourcetype", "expected"),
     [
-        (CONTENT_TYPE_RESOURCE, "video", True),
-        (CONTENT_TYPE_RESOURCE, "document", False),
+        (CONTENT_TYPE_RESOURCE, "Video", True),
+        (CONTENT_TYPE_RESOURCE, "Document", False),
     ],
 )
 def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
@@ -310,8 +310,8 @@ def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
     """
     metadata = {"resourcetype": resourcetype} if resourcetype else {}
     content = WebsiteContentFactory.create(type=type_, metadata=metadata)
-    serializer = WebsiteContentSerializer(instance=content)
-    assert serializer.data["is_deletable_by_resourcetype"] is expected
+    serializer = WebsiteContentSerializer(instance=content).data
+    assert serializer["is_deletable_by_resourcetype"] is expected
 
 
 def test_website_content_detail_serializer():
