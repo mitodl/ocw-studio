@@ -4,6 +4,7 @@ import logging
 from urllib.parse import urljoin
 
 import celery
+import requests
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
@@ -561,3 +562,14 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             create_drivefile(
                 new_gdrive_file, new_resource, destination_course, "videos"
             )
+
+
+@app.task(acks_late=True)
+def populate_video_file_size(video_content_id: int):
+    video = WebsiteContent.objects.get(id=video_content_id)
+    archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
+    if archive_url and not (video.metadata or {}).get("file_size"):
+        response = requests.head(archive_url, allow_redirects=True, timeout=10)
+        if response.status_code == 200 and "Content-Length" in response.headers:  # noqa: PLR2004
+            video.metadata["file_size"] = int(response.headers["Content-Length"])
+            video.save()

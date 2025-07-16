@@ -1,10 +1,11 @@
 """videos signals"""
 
+import requests
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from videos.models import Video, VideoFile
-from videos.tasks import delete_s3_objects
+from videos.tasks import delete_s3_objects, populate_video_file_size
 from videos.threeplay_sync import sync_video_captions_and_transcripts
 from websites.models import WebsiteContent
 
@@ -58,4 +59,13 @@ def sync_missing_caption(
         metadata.get("resourcetype") == "Video"
         and video_metadata.get("source") == "youtube"
     ):
+        populate_video_file_size.delay(instance.id)
+        archive_url = (
+            (instance.metadata or {}).get("video_files", {}).get("archive_url")
+        )
+        if archive_url and not (instance.metadata or {}).get("file_size"):
+            response = requests.head(archive_url, allow_redirects=True, timeout=10)
+            if response.status_code == 200 and "Content-Length" in response.headers:  # noqa: PLR2004
+                instance.metadata["file_size"] = int(response.headers["Content-Length"])
+                instance.save()
         sync_video_captions_and_transcripts(instance)
