@@ -5,6 +5,7 @@ from django.utils.text import slugify
 
 from users.factories import UserFactory
 from websites import constants
+from websites.constants import CONTENT_TYPE_INSTRUCTOR, CONTENT_TYPE_PAGE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 
@@ -20,7 +21,7 @@ def test_handle_website_save():
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     (
-        "is_page_content",
+        "is_page",
         "feature_flag",
         "initial_title",
         "new_title",
@@ -32,7 +33,7 @@ def test_handle_website_save():
         (True, False, "Original Title", "New Title", False, "original-title"),
         # conflict with existing slugified title; no URL change
         (True, True, "Original Title", "Some Existing Title", True, "original-title"),
-        # non-page content; no URL change
+        # non-page; no URL change
         (False, True, "Original Title", "New Title", False, "original-title"),
         # slugified title matches existing filename; no URL change
         (True, True, "Test Page", "test page", False, "test-page"),
@@ -42,7 +43,7 @@ def test_handle_website_save():
 )
 def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
     mocker,
-    is_page_content,
+    is_page,
     feature_flag,
     initial_title,
     new_title,
@@ -56,7 +57,7 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
     if existing_conflict:
         WebsiteContentFactory.create(
             website=website,
-            is_page_content=True,
+            type=CONTENT_TYPE_PAGE,
             dirpath="",
             title=new_title,
             filename=slugify(new_title),
@@ -64,7 +65,7 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
 
     page = WebsiteContentFactory.create(
         website=website,
-        is_page_content=is_page_content,
+        type=CONTENT_TYPE_PAGE if is_page else CONTENT_TYPE_INSTRUCTOR,
         dirpath="",
         title=initial_title,
         filename=slugify(initial_title),
@@ -83,7 +84,7 @@ def test_navmenu_updated_on_page_title_change(mocker):
 
     page = WebsiteContentFactory.create(
         website=website,
-        is_page_content=True,
+        type=CONTENT_TYPE_PAGE,
         dirpath="",
         title="Original Title",
         filename="original-title",

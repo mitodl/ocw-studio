@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from main.posthog import is_feature_enabled
 from websites.constants import (
     CONTENT_TYPE_NAVMENU,
+    CONTENT_TYPE_PAGE,
     POSTHOG_ENABLE_EDITABLE_PAGE_URLS,
     WEBSITE_CONTENT_LEFTNAV,
     WEBSITE_PAGES_PATH,
@@ -50,7 +51,7 @@ def update_page_url_on_title_change(
     if not is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
         return
 
-    if instance.is_page_content and instance.title:
+    if instance.type == CONTENT_TYPE_PAGE and instance.title:
         new_filename = slugify(instance.title)
         if instance.filename == new_filename:
             return
@@ -58,7 +59,7 @@ def update_page_url_on_title_change(
             website=instance.website,
             dirpath=instance.dirpath,
             filename=new_filename,
-            is_page_content=True,
+            type=CONTENT_TYPE_PAGE,
         ).exclude(pk=instance.pk)
 
         if not cur_filename.exists():
