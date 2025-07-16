@@ -227,7 +227,7 @@ def _create_new_content(
         new_obj.text_id = new_text_id
     if new_obj.metadata.get("file_size") != file_size:
         new_obj.metadata["file_size"] = file_size
-    if new_obj.file != new_s3_loc:
+    if new_obj.file.name != new_s3_loc:
         new_obj.file = new_s3_loc
     new_obj.save()
 
