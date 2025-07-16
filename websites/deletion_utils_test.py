@@ -21,7 +21,7 @@ def test_delete_video_deletes_captions_and_transcripts(mocker):
 
     mocker.patch("websites.deletion_utils.delete_drive_file")
     mocker.patch("websites.deletion_utils.get_drive_service")
-    mocker.patch("websites.deletion_utils.delete_s3_objects.delay")
+    mocker.patch("websites.deletion_utils.delete_s3_objects")
 
     base_name = "E8uZtq_vOYM"
     course_path = f"/courses/{website.name}/"
