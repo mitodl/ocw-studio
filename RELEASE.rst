@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.153.2
+---------------
+
+- fix: Pin aws-cli image to AL2 (#2622)
+
 Version 0.153.1 (Released July 15, 2025)
 ---------------
 
