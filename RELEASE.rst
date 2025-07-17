@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.153.3
+---------------
+
+- Update URLs only for pages when title changes (#2623)
+
 Version 0.153.2 (Released July 16, 2025)
 ---------------
 
