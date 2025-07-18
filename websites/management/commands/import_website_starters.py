@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         repo_path = urlparse(git_url).path.lstrip("/")
         org_name, repo_name = repo_path.split("/", 1)
-        git = Github()
+        git = Github(timeout=settings.GITHUB_TIMEOUT)
         org = git.get_organization(org_name)
         repo = org.get_repo(repo_name)
         config_files = find_files_recursive(

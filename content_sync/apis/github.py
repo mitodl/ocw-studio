@@ -194,6 +194,7 @@ class GithubApiWrapper:
         self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
         self.git = Github(
+            timeout=settings.GITHUB_TIMEOUT,
             login_or_token=get_token(),
             **(
                 {"base_url": settings.GIT_API_URL}

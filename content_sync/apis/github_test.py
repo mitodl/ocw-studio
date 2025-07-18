@@ -693,6 +693,7 @@ def test_git_user(settings, mock_api_wrapper, is_anonymous):
 @pytest.mark.parametrize("git_url", ["http://github.example.edu/api/v3", None])
 def test_custom_github_url(mocker, settings, git_url):
     """The github api wrapper should use the GIT_API_URL specified in settings or a default"""
+    settings.GITHUB_TIMEOUT = 30
     settings.GITHUB_APP_ID = None
     settings.GIT_API_URL = git_url
     settings.GIT_TOKEN = "abcdef"  # noqa: S105
@@ -700,10 +701,14 @@ def test_custom_github_url(mocker, settings, git_url):
     GithubApiWrapper(website=mocker.Mock(), site_config=mocker.Mock())
     if git_url:
         mock_github.assert_called_once_with(
-            login_or_token=settings.GIT_TOKEN, base_url=settings.GIT_API_URL
+            login_or_token=settings.GIT_TOKEN,
+            base_url=settings.GIT_API_URL,
+            timeout=settings.GITHUB_TIMEOUT,
         )
     else:
-        mock_github.assert_called_once_with(login_or_token=settings.GIT_TOKEN)
+        mock_github.assert_called_once_with(
+            login_or_token=settings.GIT_TOKEN, timeout=settings.GITHUB_TIMEOUT
+        )
 
 
 def test_create_repo_new(mocker, mock_api_wrapper, mock_branches):
