@@ -40,6 +40,7 @@ from websites.constants import (
     CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
     CONTENT_TYPE_RESOURCE_COLLECTION,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -48,6 +49,10 @@ from websites.constants import (
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
     WebsiteStarterStatus,
+)
+from websites.deletion_utils import (
+    delete_related_captions_and_transcript,
+    delete_resource,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import (
@@ -689,6 +694,21 @@ class WebsiteContentViewSet(
             )
         )
         return {**super().get_serializer_context(), **added_context}
+
+    def destroy(self, request, *args, **kwargs):
+        content: WebsiteContent = self.get_object()
+
+        is_video = (
+            content.type == CONTENT_TYPE_RESOURCE
+            and (content.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
+        )
+        if is_video:
+            delete_related_captions_and_transcript(content)
+            delete_resource(content)
+            self.perform_destroy(content)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return super().destroy(request, *args, **kwargs)
 
     def perform_destroy(self, instance: WebsiteContent):
         """(soft) deletes a WebsiteContent record"""
