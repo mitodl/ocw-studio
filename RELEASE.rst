@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.153.4
+Version 0.153.4 (Released July 18, 2025)
 ---------------
 
 - add github timeout setting and utilize it if set (#2626)
