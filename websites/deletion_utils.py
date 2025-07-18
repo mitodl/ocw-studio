@@ -17,14 +17,12 @@ def delete_resource(content: WebsiteContent):
     drive_file = DriveFile.objects.filter(resource=content).first()
     if drive_file:
         if drive_file.file_id:
-            # Only perform external cleanup if file_id exists
             ds = get_drive_service()
             ds.files().delete(
                 fileId=drive_file.file_id, supportsAllDrives=True
             ).execute()
             if content.file:
                 delete_s3_objects.delay(key=drive_file.s3_key)
-        # Always delete the DriveFile object from database
         delete_drive_file(drive_file, sync_datetime=now_in_utc())
     content.delete()
 
