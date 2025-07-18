@@ -76,7 +76,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
     """  # noqa: E501
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
-    git = Github()
+    git = Github(timeout=settings.GITHUB_TIMEOUT)
     org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 

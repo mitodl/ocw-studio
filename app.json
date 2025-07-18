@@ -214,6 +214,10 @@
       "description": "Minimum time to sleep between when throttling github calls",
       "required": false
     },
+    "GITHUB_TIMEOUT": {
+      "description": "Timeout in seconds for Github API requests",
+      "required": false
+    },
     "GITHUB_WEBHOOK_BRANCH": {
       "description": "Github branch to filter webhook requests against",
       "required": false
@@ -479,6 +483,10 @@
       "description": "API token for communicating with PostHog",
       "required": false
     },
+    "POST_TRANSCODE_ACTIONS": {
+      "description": "Actions to perform before publish",
+      "required": false
+    },
     "PREPUBLISH_ACTIONS": {
       "description": "Actions to perform before publish",
       "required": false
@@ -644,6 +652,10 @@
       "description": "3play project id",
       "required": false
     },
+    "TRANSCODE_JOB_TEMPLATE": {
+      "description": "Path to the transcoding job template",
+      "required": false
+    },
     "UPDATE_MISSING_TRANSCRIPT_FREQUENCY": {
       "description": "The frequency to check for transcripts for published videos with blank transcripts",
       "required": false
@@ -664,12 +676,28 @@
       "description": "Use the PORT from original url accessed by user",
       "required": false
     },
+    "VIDEO_S3_THUMBNAIL_BUCKET": {
+      "description": "Bucket to be used for thumbnail generation",
+      "required": false
+    },
+    "VIDEO_S3_THUMBNAIL_PREFIX": {
+      "description": "Prefix for the thumbnail video",
+      "required": false
+    },
+    "VIDEO_S3_TRANSCODE_BUCKET": {
+      "description": "Bucket to be used for transcoding",
+      "required": false
+    },
     "VIDEO_S3_TRANSCODE_ENDPOINT": {
       "description": "Endpoint to be used for AWS MediaConvert",
       "required": false
     },
     "VIDEO_S3_TRANSCODE_PREFIX": {
-      "description": "Prefix to be used for S3 keys of files transcoded from AWS MediaConvert",
+      "description": "Prefix for the transcoded video",
+      "required": false
+    },
+    "VIDEO_S3_UPLOAD_PREFIX": {
+      "description": "Prefix for the source video",
       "required": false
     },
     "VIDEO_TRANSCODE_QUEUE": {
