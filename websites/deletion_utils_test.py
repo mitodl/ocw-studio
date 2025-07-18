@@ -14,7 +14,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_delete_pre_existing_video(mocker):
     """
     Deleting a pre-existing video should also delete its associated caption and transcript.
@@ -63,7 +63,7 @@ def test_delete_pre_existing_video(mocker):
     assert not WebsiteContent.objects.filter(pk=transcript.pk).exists()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_delete_video_with_drive_files_comprehensive(mocker):
     """
     Deleting a video with associated drive files should:
@@ -80,6 +80,7 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
         "gdrive_sync.api.delete_drive_file", wraps=gdrive_api_module.delete_drive_file
     )
     mock_delete_s3_objects = mocker.patch("websites.deletion_utils.delete_s3_objects")
+    mocker.patch("gdrive_sync.signals.delete_s3_objects")
     mocker.patch.object(DriveFile, "get_content_dependencies", return_value=[])
 
     base_name = "E8uZtq_vOYM"
@@ -169,7 +170,7 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
         assert key in s3_keys
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_delete_video_mixed_scenario(mocker):
     """
     Test mixed scenario: Video has drive file, but caption/transcript don't.
@@ -180,6 +181,7 @@ def test_delete_video_mixed_scenario(mocker):
     mock_get_drive_service = mocker.patch("websites.deletion_utils.get_drive_service")
     mock_drive_service = mock_get_drive_service.return_value
     mock_delete_s3_objects = mocker.patch("websites.deletion_utils.delete_s3_objects")
+    mocker.patch("gdrive_sync.signals.delete_s3_objects")
     mock_delete_drive_file.side_effect = (
         lambda drive_file, **kwargs: drive_file.delete()  # noqa: ARG005
     )
