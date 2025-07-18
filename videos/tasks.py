@@ -564,8 +564,16 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             )
 
 
-@app.task(acks_late=True)
+@app.task(
+    acks_late=True,
+    retry_backoff=True,
+    retry_backoff_max=128,
+    max_retries=3,
+)
 def populate_video_file_size(video_content_id: int):
+    """
+    Populate the file size for a video by making a HEAD request to its archive_url.
+    """
     video = WebsiteContent.objects.get(id=video_content_id)
     archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
     if archive_url and not (video.metadata or {}).get("file_size"):
