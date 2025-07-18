@@ -4,7 +4,7 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from videos.models import Video, VideoFile
-from videos.tasks import delete_s3_objects
+from videos.tasks import delete_s3_objects, populate_video_file_size
 from videos.threeplay_sync import sync_video_captions_and_transcripts
 from websites.models import WebsiteContent
 
@@ -58,4 +58,5 @@ def sync_missing_caption(
         metadata.get("resourcetype") == "Video"
         and video_metadata.get("source") == "youtube"
     ):
+        populate_video_file_size.delay(instance.id)
         sync_video_captions_and_transcripts(instance)
