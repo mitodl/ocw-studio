@@ -974,6 +974,12 @@ GITHUB_APP_PRIVATE_KEY = (
     .decode("unicode_escape")
     .encode()
 )
+GITHUB_TIMEOUT = get_int(
+    name="GITHUB_TIMEOUT",
+    default=15,
+    description="Timeout in seconds for Github API requests",
+    required=False,
+)
 GIT_ORGANIZATION = get_string(
     name="GIT_ORGANIZATION",
     default=None,
