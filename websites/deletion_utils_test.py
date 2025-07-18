@@ -14,7 +14,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_pre_existing_video(mocker):
     """
     Deleting a pre-existing video should also delete its associated caption and transcript.
@@ -63,7 +63,7 @@ def test_delete_pre_existing_video(mocker):
     assert not WebsiteContent.objects.filter(pk=transcript.pk).exists()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_video_with_drive_files_comprehensive(mocker):
     """
     Deleting a video with associated drive files should:
@@ -170,7 +170,7 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
         assert key in s3_keys
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_delete_video_mixed_scenario(mocker):
     """
     Test mixed scenario: Video has drive file, but caption/transcript don't.
