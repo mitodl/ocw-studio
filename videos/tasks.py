@@ -11,6 +11,7 @@ from django.db.models import Q
 from googleapiclient.errors import HttpError
 from mitol.common.utils import now_in_utc
 from mitol.mail.api import get_message_sender
+from rest_framework.status import HTTP_200_OK
 
 from content_sync.decorators import single_task
 from gdrive_sync.api import get_drive_service, query_files
@@ -576,8 +577,8 @@ def populate_video_file_size(video_content_id: int):
     """
     video = WebsiteContent.objects.get(id=video_content_id)
     archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
-    if archive_url and not (video.metadata or {}).get("file_size"):
+    if archive_url:
         response = requests.head(archive_url, allow_redirects=True, timeout=10)
-        if response.status_code == 200 and "Content-Length" in response.headers:  # noqa: PLR2004
+        if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
             video.metadata["file_size"] = int(response.headers["Content-Length"])
             video.save()
