@@ -972,14 +972,14 @@ sqlparse = ">=0.2"
 
 [[package]]
 name = "django-guardian"
-version = "3.0.0"
+version = "3.0.3"
 description = "Per object permissions for Django"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "django_guardian-3.0.0-py3-none-any.whl", hash = "sha256:f3ebe3cc7f486e267041b780c3429ad5db72c909df40c2f74adb1b059582a3cd"},
-    {file = "django_guardian-3.0.0.tar.gz", hash = "sha256:0c79d55c4af2cfc14fbd19539846a1ebfed2a38198b7697e0f5177b7f654e1cd"},
+    {file = "django_guardian-3.0.3-py3-none-any.whl", hash = "sha256:d2164cea9f03c369d7ade21802710f3ab23ca6734bcc7dfcfb385906783916c7"},
+    {file = "django_guardian-3.0.3.tar.gz", hash = "sha256:4e59eab4d836da5a027cf0c176d14bc2a4e22cbbdf753159a03946c08c8a196d"},
 ]
 
 [package.dependencies]
@@ -3833,4 +3833,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "cab842338928e2b2980f74f575ef97c2e772ffcb2f6277a5353cc1f7b2d40233"
+content-hash = "567bd01f106f6ab0b7dfa2500fe68f86d47f91eb9164003e6f55e4c3f08b4eb0"
