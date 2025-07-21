@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.154.0
+---------------
+
+- set github timeout in remaining places (#2628)
+- fix(deps): update dependency django-hijack to v3.7.3 (#2632)
+- fix(deps): update dependency boto3 to v1.39.9 (#2629)
+- fix(deps): update dependency ramda to ^0.31.0 (#2506)
+
 Version 0.153.4 (Released July 18, 2025)
 ---------------
 
