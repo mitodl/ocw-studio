@@ -210,25 +210,20 @@ def _create_new_content(
     filename = get_dirpath_and_filename(new_s3_loc)[1]
     dirpath = get_content_dirpath("ocw-course-v2", collection_type)
 
-    defaults = {
-        "metadata": new_obj_metadata,
-        "title": title,
-        "type": collection_type,
-    }
-
-    new_obj = WebsiteContent.objects.get_or_create(
+    obj, _ = WebsiteContent.objects.get_or_create(
         website=video.website,
         filename=filename,
         dirpath=dirpath,
         is_page_content=True,
-        defaults=defaults,
-    )[0]
-    if not new_obj.text_id:
-        new_obj.text_id = new_text_id
-    if new_obj.metadata.get("file_size") != file_size:
-        new_obj.metadata["file_size"] = file_size
-    if new_obj.file.name != new_s3_loc:
-        new_obj.file = new_s3_loc
-    new_obj.save()
+        defaults={
+            "metadata": new_obj_metadata,
+            "title": title,
+            "type": collection_type,
+            "text_id": new_text_id,
+        },
+    )
+    obj.metadata["file_size"] = file_size
+    obj.file = new_s3_loc
+    obj.save()
 
     return new_s3_loc
