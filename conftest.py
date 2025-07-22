@@ -91,10 +91,17 @@ def pytest_configure(config):
             config.pluginmanager.unregister(warnings_plugin)
 
 
-# In websites/conftest.py or your test file
 @pytest.fixture(autouse=True)
 def disable_websitecontent_signal():
     """Disable page url update signal"""
 
     # Disconnect
     pre_save.disconnect(update_page_url_on_title_change, sender=WebsiteContent)
+
+
+@pytest.fixture
+def enable_websitecontent_signal():
+    """Enable page url update signal"""
+
+    # Disconnect
+    pre_save.connect(update_page_url_on_title_change, sender=WebsiteContent)

@@ -42,6 +42,7 @@ def test_handle_website_save():
 )
 def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
     mocker,
+    enable_websitecontent_signal,
     is_page,
     feature_flag,
     initial_title,
@@ -78,7 +79,7 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
 
 
 @pytest.mark.django_db
-def test_navmenu_updated_on_page_title_change(mocker):
+def test_navmenu_updated_on_page_title_change(mocker, enable_websitecontent_signal):
     """Navmenu pageRef and name are updated when a page's title changes"""
     website = WebsiteFactory.create(owner=UserFactory.create())
     mocker.patch("websites.signals.is_feature_enabled", return_value=True)
