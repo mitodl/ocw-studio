@@ -59,7 +59,7 @@ def _attach_transcript_if_missing(
         summary["transcripts"]["total"] += 1
 
     if pdf_response:
-        file_size = len(pdf_response.read())
+        file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
         filepath = _create_new_content(pdf_file, video, file_size=file_size)
         video.metadata["video_files"]["video_transcript_file"] = filepath
@@ -99,7 +99,7 @@ def _attach_captions_if_missing(
         summary["captions"]["total"] += 1
 
     if webvtt_response:
-        file_size = len(webvtt_response.read())
+        file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
         new_filepath = _create_new_content(vtt_file, video, file_size)
         video.metadata["video_files"]["video_captions_file"] = new_filepath
