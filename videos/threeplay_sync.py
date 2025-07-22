@@ -101,8 +101,8 @@ def _attach_captions_if_missing(
     if webvtt_response:
         file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        new_filepath = _create_new_content(vtt_file, video, file_size)
-        video.metadata["video_files"]["video_captions_file"] = new_filepath
+        filepath = _create_new_content(vtt_file, video, file_size)
+        video.metadata["video_files"]["video_captions_file"] = filepath
         if summary:
             summary["captions"]["updated"] += 1
         write_output(
