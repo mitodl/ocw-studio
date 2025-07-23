@@ -18,6 +18,8 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
+    RESOURCE_TYPE_DOCUMENT,
+    RESOURCE_TYPE_VIDEO,
     ROLE_EDITOR,
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_SOURCE_OCW_IMPORT,
@@ -295,6 +297,23 @@ def test_website_content_serializer():
     assert serialized_data["updated_on"] == content.updated_on.isoformat()[:-6] + "Z"
     assert "markdown" not in serialized_data
     assert "metadata" not in serialized_data
+
+
+@pytest.mark.parametrize(
+    ("type_", "resourcetype", "expected"),
+    [
+        (CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO, True),
+        (CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_DOCUMENT, False),
+    ],
+)
+def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
+    """
+    WebsiteContentSerializer should return correct is_deletable_by_resourcetype
+    """
+    metadata = {"resourcetype": resourcetype} if resourcetype else {}
+    content = WebsiteContentFactory.create(type=type_, metadata=metadata)
+    serializer = WebsiteContentSerializer(instance=content).data
+    assert serializer["is_deletable_by_resourcetype"] is expected
 
 
 def test_website_content_detail_serializer():

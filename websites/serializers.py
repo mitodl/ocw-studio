@@ -33,6 +33,7 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_NOT_STARTED,
+    RESOURCE_TYPE_VIDEO,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
@@ -471,7 +472,24 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
-class WebsiteContentSerializer(serializers.ModelSerializer):
+class WebsiteContentDeletableMixin(serializers.Serializer):
+    """Mixin for checking if content is deletable by resource type"""
+
+    is_deletable_by_resourcetype = serializers.SerializerMethodField()
+
+    def get_is_deletable_by_resourcetype(self, obj):
+        """
+        Still uses config var OCW_STUDIO_DELETABLE_CONTENT_TYPES
+        to check for deletable content types
+        """
+        return (obj.type != CONTENT_TYPE_RESOURCE) or (
+            (obj.metadata or {}).get("resourcetype") == RESOURCE_TYPE_VIDEO
+        )
+
+
+class WebsiteContentSerializer(
+    serializers.ModelSerializer, WebsiteContentDeletableMixin
+):
     """Serializes WebsiteContent for the list view"""
 
     website_name = serializers.CharField(source="website.name")
@@ -497,13 +515,16 @@ class WebsiteContentSerializer(serializers.ModelSerializer):
             "type",
             "updated_on",
             "is_deletable",
+            "is_deletable_by_resourcetype",
         ]
         # See WebsiteContentCreateSerializer below for creating new WebsiteContent objects  # noqa: E501
         fields = read_only_fields
 
 
 class WebsiteContentDetailSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    RequestUserSerializerMixin,
+    WebsiteContentDeletableMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -628,6 +649,7 @@ class WebsiteContentDetailSerializer(
             "content_context",
             "url_path",
             "filename",
+            "is_deletable_by_resourcetype",
         ]
         fields = [
             *read_only_fields,

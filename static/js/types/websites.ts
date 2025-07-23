@@ -293,6 +293,7 @@ export interface WebsiteContentListItem {
   /** ISO 8601 formatted datetime string */
   updated_on: string
   is_deletable?: boolean
+  is_deletable_by_resourcetype?: boolean
 }
 
 export interface WebsiteContent extends WebsiteContentListItem {

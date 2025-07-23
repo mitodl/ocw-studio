@@ -183,6 +183,36 @@ def test_websites_endpoint_list_forbidden_methods(drf_client, method):
     assert resp.status_code == 405
 
 
+def test_delete_video_content_triggers_cleanup(mocker, drf_client, permission_groups):
+    """Test video deletion workflow"""
+    delete_related_captions_mock = mocker.patch(
+        "websites.views.delete_related_captions_and_transcript"
+    )
+    delete_resource_mock = mocker.patch("websites.views.delete_resource")
+    update_backend_mock = mocker.patch("websites.views.update_website_backend")
+
+    video_content = WebsiteContentFactory.create(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={"resourcetype": constants.RESOURCE_TYPE_VIDEO},
+    )
+
+    drf_client.force_login(permission_groups.global_admin)
+    url = reverse(
+        "websites_content_api-detail",
+        kwargs={
+            "parent_lookup_website": video_content.website.name,
+            "text_id": str(video_content.text_id),
+        },
+    )
+
+    resp = drf_client.delete(url)
+
+    assert resp.status_code == 204
+    delete_related_captions_mock.assert_called_once_with(video_content)
+    delete_resource_mock.assert_called_once_with(video_content)
+    update_backend_mock.assert_called_once_with(video_content.website)
+
+
 @pytest.mark.parametrize("is_admin", [True, False])
 def test_websites_endpoint_detail(drf_client, is_admin, permission_groups):
     """Test new websites endpoint for details"""
