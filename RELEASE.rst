@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.155.0
+---------------
+
+- Ability to delete video resources (#2602)
+- fix(deps): update dependency @ckeditor/ckeditor5-inspector to v5 (#2633)
+- fix(deps): update dependency django-guardian to v3.0.3 (#2631)
+- fix(deps): update dependency dj-database-url to v3.0.1 (#2630)
+
 Version 0.154.0 (Released July 21, 2025)
 ---------------
 
