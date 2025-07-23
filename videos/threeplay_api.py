@@ -61,7 +61,7 @@ def threeplay_updated_media_file_request() -> dict:
 
 
 def threeplay_upload_video_request(
-    folder_name: str, youtube_id: str, title: str
+    folder_name: str, youtube_id: str, title: str, timeout: int = 60
 ) -> dict:
     """3play data request to upload a video from youtube"""
     youtube_url = "https://www.youtube.com/watch?v=" + youtube_id
@@ -76,14 +76,33 @@ def threeplay_upload_video_request(
         "batch_id": folder_id,
     }
     url = "https://api.3playmedia.com/v3/files/"
-    response = requests.post(url, payload, timeout=60)
-    if response:
-        return response.json()
-    else:
-        return {}
+
+    try:
+        response = requests.post(url, payload, timeout=timeout)
+        response.raise_for_status()
+
+        return response.json() if response else {}
+
+    except requests.exceptions.Timeout:
+        # Let timeout exceptions propagate for retry logic in tasks.py
+        raise
+    except requests.exceptions.HTTPError as exc:
+        error_msg = (
+            f"3Play upload video request failed for youtube_id {youtube_id} - "
+            f"HTTP {exc.response.status_code}"
+        )
+        raise ConnectionError(error_msg) from exc
+    except requests.exceptions.RequestException as exc:
+        error_msg = (
+            f"3Play upload video request failed for youtube_id {youtube_id} - "
+            f"{type(exc).__name__}"
+        )
+        raise ConnectionError(error_msg) from exc
 
 
-def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -> dict:
+def threeplay_order_transcript_request(
+    video_id: int, threeplay_video_id: int, timeout: int = 60
+) -> dict:
     """3play request to order a transcript"""
 
     payload = {
@@ -101,13 +120,27 @@ def threeplay_order_transcript_request(video_id: int, threeplay_video_id: int) -
 
         payload["callback"] = callback_url
 
-    response = requests.post(url, payload, timeout=60)
-    if response:
-        return response.json()
-    else:
-        raise ConnectionError(
-            "3Play transcript request failed for video_id " + str(video_id)
+    try:
+        response = requests.post(url, payload, timeout=timeout)
+        response.raise_for_status()
+
+        return response.json() if response else {}
+
+    except requests.exceptions.Timeout:
+        # Let timeout exceptions propagate for retry logic in tasks.py
+        raise
+    except requests.exceptions.HTTPError as exc:
+        error_msg = (
+            f"3Play transcript request failed for video_id {video_id} - "
+            f"HTTP {exc.response.status_code}"
         )
+        raise ConnectionError(error_msg) from exc
+    except requests.exceptions.RequestException as exc:
+        error_msg = (
+            f"3Play transcript request failed for video_id {video_id} - "
+            f"{type(exc).__name__}"
+        )
+        raise ConnectionError(error_msg) from exc
 
 
 def threeplay_remove_tags(threeplay_video_id: int):

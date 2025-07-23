@@ -7,6 +7,8 @@ from urllib.parse import urljoin
 
 import pytest
 import pytz
+import requests
+from celery.exceptions import Retry
 from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_aws
@@ -276,7 +278,7 @@ def test_start_transcript_job(
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
 
-    start_transcript_job(video.id)
+    start_transcript_job.apply([video.id])
 
     video_content.refresh_from_db()
     assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) == (
@@ -292,11 +294,14 @@ def test_start_transcript_job(
         return
 
     mock_threeplay_upload_video_request.assert_called_once_with(
-        video.website.short_id, youtube_id, title
+        video.website.short_id,
+        youtube_id,
+        title,
+        timeout=settings.THREEPLAY_BASE_TIMEOUT,
     )
     if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
         mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id
+            video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
         )
     else:
         mock_order_transcript_request_request.assert_not_called()
@@ -324,12 +329,12 @@ def test_threeplay_submission_called_once_per_video(mocker, settings):
         "videos.tasks.threeplay_api.threeplay_order_transcript_request"
     )
 
-    start_transcript_job(video.id)
-    start_transcript_job(video.id)
+    start_transcript_job.apply([video.id])
+    start_transcript_job.apply([video.id])
 
     if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
         mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id
+            video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
         )
     else:
         mock_order_transcript_request_request.assert_not_called()
@@ -893,3 +898,90 @@ def test_create_drivefile(mocker):
             "download_link": mock_gdrive_dl.get(DRIVE_FILE_DOWNLOAD_LINK),
         },
     }
+
+
+def test_start_transcript_job_retry_on_connection_error(mocker, settings):
+    """Test that start_transcript_job retries on connection errors"""
+    youtube_id = "test"
+    title = "title"
+
+    video = create_video(youtube_id, title)
+    create_content(video.website, youtube_id, title)
+
+    # Mock the retry method to capture retry calls
+    mock_retry = mocker.patch("videos.tasks.start_transcript_job.retry")
+    mock_retry.side_effect = Retry("Retry called")
+
+    # Mock 3Play upload to raise a connection error
+    mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        side_effect=requests.exceptions.ConnectionError("Connection failed"),
+    )
+
+    # Test that the task calls retry when a connection error occurs
+    with pytest.raises(Retry, match="Retry called"):
+        start_transcript_job.apply([video.id])
+
+    mock_retry.assert_called_once()
+
+
+def test_start_transcript_job_retry_on_timeout_error(mocker, settings):
+    """Test that start_transcript_job retries on timeout errors with increased timeout"""
+    youtube_id = "test"
+    title = "title"
+
+    video = create_video(youtube_id, title)
+    create_content(video.website, youtube_id, title)
+
+    # Mock the retry method to capture retry calls
+    mock_retry = mocker.patch("videos.tasks.start_transcript_job.retry")
+    mock_retry.side_effect = Retry("Retry called")
+
+    # Mock 3Play upload to raise a timeout error
+    mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        side_effect=requests.exceptions.Timeout("Request timed out"),
+    )
+
+    # Create a mock task instance with proper request mock
+    mock_task = mocker.Mock()
+    mock_task.request = mocker.Mock(retries=0)
+
+    # Test that the task calls retry when a timeout error occurs
+    with pytest.raises(Retry, match="Retry called"):
+        start_transcript_job.apply([video.id])
+
+    # Verify retry was called with timeout exception and increased timeout
+    mock_retry.assert_called_once()
+    call_args = mock_retry.call_args
+    assert "exc" in call_args[1]
+    assert isinstance(call_args[1]["exc"], requests.exceptions.Timeout)
+    assert "kwargs" in call_args[1]
+    assert (
+        call_args[1]["kwargs"]["timeout_override"]
+        == settings.THREEPLAY_BASE_TIMEOUT * 2
+    )
+
+
+def test_start_transcript_job_no_retry_on_unexpected_error(mocker, settings):
+    """Test that start_transcript_job doesn't retry on unexpected errors"""
+    youtube_id = "test"
+    title = "title"
+
+    video = create_video(youtube_id, title)
+    create_content(video.website, youtube_id, title)
+
+    # Mock the retry method to capture retry calls
+    mock_retry = mocker.patch("videos.tasks.start_transcript_job.retry")
+
+    # Mock 3Play upload to raise an unexpected error
+    mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        side_effect=ValueError("Unexpected error"),
+    )
+
+    # Test that the task doesn't retry on unexpected errors
+    with pytest.raises(ValueError, match="Unexpected error"):
+        start_transcript_job.apply([video.id])
+
+    mock_retry.assert_not_called()
