@@ -5,10 +5,12 @@ from types import SimpleNamespace
 
 import pytest
 import yaml
+from django.db.models.signals import pre_save
 
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import  # noqa: F403
 from websites.constants import OMNIBUS_STARTER_SLUG
-from websites.models import WebsiteStarter
+from websites.models import WebsiteContent, WebsiteStarter
+from websites.signals import update_page_url_on_title_change
 from websites.site_config_api import SiteConfig
 
 
@@ -87,3 +89,19 @@ def pytest_configure(config):
         if config.pluginmanager.has_plugin("warnings"):
             warnings_plugin = config.pluginmanager.get_plugin("warnings")
             config.pluginmanager.unregister(warnings_plugin)
+
+
+@pytest.fixture(autouse=True)
+def disable_websitecontent_signal():
+    """Disable page url update signal"""
+
+    # Disconnect
+    pre_save.disconnect(update_page_url_on_title_change, sender=WebsiteContent)
+
+
+@pytest.fixture
+def enable_websitecontent_signal():
+    """Enable page url update signal"""
+
+    # Disconnect
+    pre_save.connect(update_page_url_on_title_change, sender=WebsiteContent)
