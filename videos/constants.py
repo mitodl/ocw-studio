@@ -33,6 +33,7 @@ class VideoJobStatus:
     CREATED = STATUS_CREATED
     FAILED = STATUS_FAILED
     COMPLETE = STATUS_COMPLETE
+    ERROR = "Error"
 
 
 class VideoFileStatus:

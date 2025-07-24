@@ -553,6 +553,29 @@ YT_UPLOAD_LIMIT = get_int(
     default=50,
     description="Max Youtube uploads allowed per day",
 )
+
+# Transcoding settings for local testing
+VIDEO_TRANSCODING_STATUS_UPDATE_FREQUENCY = get_int(
+    name="VIDEO_TRANSCODING_STATUS_UPDATE_FREQUENCY",
+    default=30,
+    dev_only=True,
+    description="Frequency in seconds for checking transcoding video statuses",
+)
+
+TRANSCODE_RESULT_TEMPLATE = get_string(
+    name="TRANSCODE_RESULT_TEMPLATE",
+    default="./test_videos_webhook/cloudwatch_sns_complete.json",
+    dev_only=True,
+    description="Template file for mock transcoding results",
+)
+
+TRANSCODE_ERROR_TEMPLATE = get_string(
+    name="TRANSCODE_ERROR_TEMPLATE",
+    default="./test_videos_webhook/cloudwatch_sns_error.json",
+    dev_only=True,
+    description="Template file for mock transcoding error results",
+)
+
 # OCW metadata fields
 FIELD_RESOURCETYPE = get_string(
     name="FIELD_RESOURCETYPE",
@@ -762,6 +785,12 @@ if ENABLE_CHECK_EXTERNAL_RESOURCE_TASK:
     CELERY_BEAT_SCHEDULE["check-broken-external-urls"] = {
         "task": "external_resources.tasks.check_external_resources_for_breakages",
         "schedule": CHECK_EXTERNAL_RESOURCE_STATUS_FREQUENCY,
+    }
+
+if ENVIRONMENT.lower() == "staging":
+    CELERY_BEAT_SCHEDULE["update-video-transcoding-statuses"] = {
+        "task": "videos.tasks.update_video_transcoding_statuses",
+        "schedule": VIDEO_TRANSCODING_STATUS_UPDATE_FREQUENCY,
     }
 
 # django cache back-ends

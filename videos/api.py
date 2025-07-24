@@ -1,8 +1,10 @@
 """APi functions for video processing"""
 
+import json
 import logging
 import os
 
+import boto3
 import botocore
 from django.conf import settings
 from mitol.transcoding.api import media_convert_job
@@ -67,8 +69,11 @@ def create_media_convert_job(video: Video):
     video.save()
 
 
-def process_video_outputs(video: Video, output_group_details: dict):
+def process_video_outputs(video: Video, output_group_details: list):
     """Create video model objects for each output"""
+    if not output_group_details:
+        return
+
     for group_detail in output_group_details:
         for output_detail in group_detail.get("outputDetails", []):
             for path in output_detail.get("outputFilePaths", []):
@@ -96,15 +101,16 @@ def update_video_job(results: dict):
 
     video_job = VideoJob.objects.get(job_id=results.get("jobId"))
     video_job.job_output = results
-    status = results.get("status")
+    status = results.get("status", "")
     video = video_job.video
-    if status == "COMPLETE":
+    if status.lower() == VideoJobStatus.COMPLETE.lower():
         video_job.status = VideoJobStatus.COMPLETE
         try:
-            process_video_outputs(video, results.get("outputGroupDetails"))
+            output_group_details = results.get("outputGroupDetails", [])
+            process_video_outputs(video, output_group_details)
         except:  # pylint:disable=bare-except  # noqa: E722
             log.exception("Error processing video outputs for job %s", video_job.job_id)
-    elif status == "ERROR":
+    elif status.lower() == VideoJobStatus.ERROR.lower():
         video.status = VideoStatus.FAILED
         video_job.status = VideoJobStatus.FAILED
         log.error(
@@ -117,3 +123,68 @@ def update_video_job(results: dict):
         video_job.error_message = results.get("errorMessage")
     video_job.save()
     video.save()
+
+
+def get_media_convert_job(job_id: str) -> dict:
+    """
+    Get the MediaConvert job details.
+    Args:
+        job_id (str): The MediaConvert job ID.
+    Returns:
+        dict: The MediaConvert job details.
+    """
+    client = boto3.client(
+        "mediaconvert",
+        region_name=settings.AWS_REGION,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        endpoint_url=settings.VIDEO_S3_TRANSCODE_ENDPOINT,
+    )
+
+    return client.get_job(Id=job_id)
+
+
+def prepare_job_results(video: Video, job: VideoJob, results: str) -> dict:
+    """
+    Prepare the results from the MediaConvert job.
+    Args:
+        results (str): The MediaConvert job results.
+    Returns:
+        dict: The prepared results.
+    """
+    # Load the results from the JSON file
+
+    results = results.replace("<VIDEO_JOB_ID>", job.job_id).replace(
+        "<SHORT_ID>", video.website.short_id
+    )
+
+    for key in [
+        "AWS_ACCOUNT_ID",
+        "AWS_REGION",
+        "VIDEO_TRANSCODE_QUEUE",
+        "VIDEO_S3_TRANSCODE_BUCKET",
+        "VIDEO_S3_TRANSCODE_PREFIX",
+    ]:
+        results = results.replace(f"<{key}>", getattr(settings, key, ""))
+
+    # Extract drive file ID from source_key structure
+    drive_file_id = ""
+    min_source_key_parts = 3
+    try:
+        source_key_parts = video.source_key.split("/")
+        if len(source_key_parts) >= min_source_key_parts:
+            drive_file_id = source_key_parts[-2]  # Second to last part
+    except (AttributeError, IndexError):
+        pass
+
+    results = results.replace("<DRIVE_FILE_ID>", drive_file_id).replace(
+        "<VIDEO_NAME>", "video"
+    )
+
+    # Decode the JSON string
+    try:
+        return json.loads(results)
+
+    except json.JSONDecodeError:
+        log.exception("Failed to decode MediaConvert job results")
+        return {}
