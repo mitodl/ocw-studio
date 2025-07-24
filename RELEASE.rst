@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.155.0
+---------------
+
+- feat: added override for `has_external_license_warning` settings when migrating links (#2621)
+- set number of attempts for the offline build gate step to three (#2638)
+- fix(deps): update python 3.12->3.12.11 (#2347)
+- Remove Course Introduction learning resource type (#2635)
+- Ability to delete video resources (#2602)
+- fix(deps): update dependency @ckeditor/ckeditor5-inspector to v5 (#2633)
+- fix(deps): update dependency django-guardian to v3.0.3 (#2631)
+- fix(deps): update dependency dj-database-url to v3.0.1 (#2630)
+
 Version 0.154.0 (Released July 21, 2025)
 ---------------
 
