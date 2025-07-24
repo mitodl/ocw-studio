@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.155.0
+Version 0.155.0 (Released July 24, 2025)
 ---------------
 
 - feat: added override for `has_external_license_warning` settings when migrating links (#2621)
