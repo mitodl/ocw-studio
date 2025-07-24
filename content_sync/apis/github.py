@@ -335,13 +335,14 @@ class GithubApiWrapper:
     def upsert_content_files(self, query_set: WebsiteContentQuerySet | None = None):
         """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""  # noqa: E501
         if query_set:
-            content_files = query_set.values_list("updated_by", flat=True).distinct()
+            content_files = query_set.values_list("updated_by", flat=True).distinct().order_by("updated_by")
         else:
             content_files = (
                 WebsiteContent.objects.all_with_deleted()
                 .filter(website=self.website)
                 .values_list("updated_by", flat=True)
                 .distinct()
+                .order_by("updated_by")
             )
         for user_id in content_files:
             self.upsert_content_files_for_user(user_id, query_set)
@@ -358,7 +359,7 @@ class GithubApiWrapper:
         ).exclude(
             Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
             & Q(synced_checksum__isnull=False)
-        )
+        ).order_by("content__id")
         if query_set:
             unsynced_states = unsynced_states.filter(content__in=query_set)
         modified_element_list = []
