@@ -577,19 +577,9 @@ def populate_video_file_size(video_content_id: int):
     """
     video = WebsiteContent.objects.get(id=video_content_id)
     archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
-    if archive_url:
-        log.info(
-            "Populating file size for video %s with archive_url %s",
-            video.id,
-            archive_url,
-        )
-        response = requests.head(archive_url, allow_redirects=True, timeout=10)
-        if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
-            video.metadata["file_size"] = int(response.headers["Content-Length"])
-            video.save()
-    else:
-        log.warning(
-            "No archive_url found for video %s, cannot populate file size", video.id
-        )
-        video.metadata["file_size"] = None
+    response = requests.head(
+        archive_url, allow_redirects=True, timeout=settings.ARCHIVE_URL_REQUEST_TIMEOUT
+    )
+    if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
+        video.metadata["file_size"] = int(response.headers["Content-Length"])
         video.save()
