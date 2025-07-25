@@ -553,6 +553,11 @@ YT_UPLOAD_LIMIT = get_int(
     default=50,
     description="Max Youtube uploads allowed per day",
 )
+ARCHIVE_URL_REQUEST_TIMEOUT = get_int(
+    name="ARCHIVE_URL_REQUEST_TIMEOUT",
+    default=30,
+    description="Timeout for making HEAD requests to archive_url to fetch file size for videos",  # noqa: E501
+)
 # OCW metadata fields
 FIELD_RESOURCETYPE = get_string(
     name="FIELD_RESOURCETYPE",
