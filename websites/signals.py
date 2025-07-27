@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from main.posthog import is_feature_enabled
 from websites.constants import (
     CONTENT_TYPE_NAVMENU,
+    CONTENT_TYPE_PAGE,
     POSTHOG_ENABLE_EDITABLE_PAGE_URLS,
     WEBSITE_CONTENT_LEFTNAV,
     WEBSITE_PAGES_PATH,
@@ -48,6 +49,16 @@ def update_navmenu_on_title_change(
     """
 
     if not is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
+        return
+
+    if instance.type != CONTENT_TYPE_PAGE:
+        return
+
+    try:
+        prev_instance = WebsiteContent.objects.get(pk=instance.pk)
+        if prev_instance.title == instance.title:
+            return
+    except WebsiteContent.DoesNotExist:
         return
 
     new_filename = slugify(instance.title)
