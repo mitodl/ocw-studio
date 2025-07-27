@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
 from django.db.models import Q
+from django.utils.text import slugify
 from guardian.shortcuts import get_groups_with_perms, get_users_with_perms
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -31,7 +32,9 @@ from websites.api import (
 )
 from websites.constants import (
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
+    POSTHOG_ENABLE_EDITABLE_PAGE_URLS,
     PUBLISH_STATUS_NOT_STARTED,
     RESOURCE_TYPE_VIDEO,
 )
@@ -532,6 +535,28 @@ class WebsiteContentDetailSerializer(
     url_path = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
+        if is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
+            title = validated_data.get("title", instance.title)
+            if instance.type == CONTENT_TYPE_PAGE and title:
+                new_filename = slugify(title)
+                if instance.filename != new_filename:
+                    cur_filename = WebsiteContent.objects.filter(
+                        website=instance.website,
+                        dirpath=instance.dirpath,
+                        filename=new_filename,
+                        type=instance.type,
+                    ).exclude(pk=instance.pk)
+                    if cur_filename.exists():
+                        raise ValidationError(
+                            {
+                                "title": (
+                                    "A page with this URL already exists. "
+                                    "Please choose a different title."
+                                )
+                            }
+                        )
+                    else:
+                        instance.filename = new_filename
         """Add updated_by to the data"""
         if instance.type == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
