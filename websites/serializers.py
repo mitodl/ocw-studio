@@ -535,6 +535,7 @@ class WebsiteContentDetailSerializer(
     url_path = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
+        """Update WebsiteContent, handling filename and metadata."""
         if is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
             title = validated_data.get("title", instance.title)
             if instance.type == CONTENT_TYPE_PAGE and title:
@@ -557,7 +558,6 @@ class WebsiteContentDetailSerializer(
                         )
                     else:
                         instance.filename = new_filename
-        """Add updated_by to the data"""
         if instance.type == CONTENT_TYPE_RESOURCE:
             update_youtube_thumbnail(
                 instance.website.uuid, validated_data.get("metadata"), overwrite=True
