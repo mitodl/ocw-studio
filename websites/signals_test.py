@@ -21,6 +21,7 @@ def test_handle_website_save():
 def test_navmenu_updated_on_page_title_change(mocker, enable_websitecontent_signal):
     """Navmenu pageRef and name are updated when a page's title changes"""
     website = WebsiteFactory.create(owner=UserFactory.create())
+    mocker.patch("websites.serializers.is_feature_enabled", return_value=True)
     mocker.patch("websites.signals.is_feature_enabled", return_value=True)
 
     page = WebsiteContentFactory.create(
