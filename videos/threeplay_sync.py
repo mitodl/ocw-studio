@@ -59,8 +59,9 @@ def _attach_transcript_if_missing(
         summary["transcripts"]["total"] += 1
 
     if pdf_response:
+        file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        filepath = _create_new_content(pdf_file, video)
+        filepath = _create_new_content(pdf_file, video, file_size=file_size)
         video.metadata["video_files"]["video_transcript_file"] = filepath
 
         if summary:
@@ -98,9 +99,10 @@ def _attach_captions_if_missing(
         summary["captions"]["total"] += 1
 
     if webvtt_response:
+        file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        new_filepath = _create_new_content(vtt_file, video)
-        video.metadata["video_files"]["video_captions_file"] = new_filepath
+        filepath = _create_new_content(vtt_file, video, file_size)
+        video.metadata["video_files"]["video_captions_file"] = filepath
         if summary:
             summary["captions"]["updated"] += 1
         write_output(
@@ -192,7 +194,9 @@ def generate_metadata(
     )
 
 
-def _create_new_content(file_content: File, video: WebsiteContent) -> str:
+def _create_new_content(
+    file_content: File, video: WebsiteContent, file_size: int | None = None
+) -> str:
     """
     Create and save a new WebsiteContent object
     for a caption or transcript file.
@@ -206,20 +210,20 @@ def _create_new_content(file_content: File, video: WebsiteContent) -> str:
     filename = get_dirpath_and_filename(new_s3_loc)[1]
     dirpath = get_content_dirpath("ocw-course-v2", collection_type)
 
-    defaults = {
-        "metadata": new_obj_metadata,
-        "title": title,
-        "type": collection_type,
-        "text_id": new_text_id,
-    }
-
-    new_obj = WebsiteContent.objects.get_or_create(
+    obj, _ = WebsiteContent.objects.get_or_create(
         website=video.website,
         filename=filename,
         dirpath=dirpath,
         is_page_content=True,
-        defaults=defaults,
-    )[0]
-    new_obj.save()
+        defaults={
+            "metadata": new_obj_metadata,
+            "title": title,
+            "type": collection_type,
+            "text_id": new_text_id,
+        },
+    )
+    obj.metadata["file_size"] = file_size
+    obj.file = new_s3_loc
+    obj.save()
 
     return new_s3_loc

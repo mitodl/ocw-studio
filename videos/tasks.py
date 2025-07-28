@@ -4,12 +4,14 @@ import logging
 from urllib.parse import urljoin
 
 import celery
+import requests
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from googleapiclient.errors import HttpError
 from mitol.common.utils import now_in_utc
 from mitol.mail.api import get_message_sender
+from rest_framework.status import HTTP_200_OK
 
 from content_sync.decorators import single_task
 from gdrive_sync.api import get_drive_service, query_files
@@ -561,3 +563,23 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
             create_drivefile(
                 new_gdrive_file, new_resource, destination_course, "videos"
             )
+
+
+@app.task(
+    acks_late=True,
+    retry_backoff=True,
+    retry_backoff_max=128,
+    max_retries=3,
+)
+def populate_video_file_size(video_content_id: int):
+    """
+    Populate the file size for a video by making a HEAD request to its archive_url.
+    """
+    video = WebsiteContent.objects.get(id=video_content_id)
+    archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
+    response = requests.head(
+        archive_url, allow_redirects=True, timeout=settings.ARCHIVE_URL_REQUEST_TIMEOUT
+    )
+    if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
+        video.metadata["file_size"] = int(response.headers["Content-Length"])
+        video.save()

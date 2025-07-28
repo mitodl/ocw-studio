@@ -26,6 +26,10 @@
       "description": "Authorization bearer token for webhook endpoints",
       "required": false
     },
+    "ARCHIVE_URL_REQUEST_TIMEOUT": {
+      "description": "Timeout for making HEAD requests to archive_url to fetch file size for videos",
+      "required": false
+    },
     "AWS_ACCESS_KEY_ID": {
       "description": "AWS Access Key for S3 storage.",
       "required": false
