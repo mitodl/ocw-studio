@@ -583,4 +583,4 @@ def populate_video_file_size(video_content_id: int):
     if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
         video.metadata["file_size"] = int(response.headers["Content-Length"])
         video.skip_sync = True
-        video.save()
+        video.save(update_fields=["metadata"])
