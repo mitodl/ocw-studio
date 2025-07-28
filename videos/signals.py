@@ -76,5 +76,6 @@ def sync_missing_caption(
             )
             instance.metadata = metadata
             metadata["file_size"] = None
+            instance.skip_sync = True
             instance.save(update_fields=["metadata"])
         sync_video_captions_and_transcripts(instance)
