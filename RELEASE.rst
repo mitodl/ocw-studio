@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.155.1
+---------------
+
+- Populate file and file_size fields for pre-existing video resources (#2618)
+
 Version 0.155.0 (Released July 24, 2025)
 ---------------
 
