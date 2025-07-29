@@ -202,6 +202,22 @@ describe("StatusWithDateHover component", () => {
     expect(getByText(/Published on Jan 15, 2023/)).toBeInTheDocument()
   })
 
+  it("shows 'Staged on' for draft sites on hover", () => {
+    const { getByText, container } = render(
+      <StatusWithDateHover
+        statusText="Draft"
+        hoverText="Staged"
+        dateTime="2023-01-15T12:30:45Z"
+        className="text-info"
+      />,
+    )
+
+    const element = container.firstChild as HTMLElement
+    fireEvent.mouseEnter(element)
+
+    expect(getByText(/Staged on Jan 15, 2023/)).toBeInTheDocument()
+  })
+
   it("reverts to status text when mouse leaves", () => {
     const { getByText, container } = render(
       <StatusWithDateHover
