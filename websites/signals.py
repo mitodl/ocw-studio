@@ -37,13 +37,13 @@ def handle_website_save(
 
 
 @receiver(pre_save, sender=WebsiteContent)
-def update_page_url_on_title_change(
+def update_navmenu_on_title_change(
     sender,  # noqa: ARG001
     instance,
     **kwargs,  # noqa: ARG001
 ):
     """
-    Update page URL when title changes for page content.
+    Update navmenu when the title of a page changes.
     This is currently behind the PostHog feature flag
     OCW_STUDIO_EDITABLE_PAGE_URLS.
     """
@@ -51,34 +51,32 @@ def update_page_url_on_title_change(
     if not is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
         return
 
-    if instance.type == CONTENT_TYPE_PAGE and instance.title:
-        new_filename = slugify(instance.title)
-        if instance.filename == new_filename:
+    if instance.type != CONTENT_TYPE_PAGE:
+        return
+
+    try:
+        prev_instance = WebsiteContent.objects.get(pk=instance.pk)
+        if prev_instance.title == instance.title:
             return
-        cur_filename = WebsiteContent.objects.filter(
-            website=instance.website,
-            dirpath=instance.dirpath,
-            filename=new_filename,
-            type=CONTENT_TYPE_PAGE,
-        ).exclude(pk=instance.pk)
+    except WebsiteContent.DoesNotExist:
+        return
 
-        if not cur_filename.exists():
-            instance.filename = new_filename
-
-            try:
-                navmenu = WebsiteContent.objects.get(
-                    website=instance.website,
-                    type=CONTENT_TYPE_NAVMENU,
-                )
-                menu_items = navmenu.metadata.get(WEBSITE_CONTENT_LEFTNAV, [])
-                navmenu_updated = False
-                for item in menu_items:
-                    if item.get("identifier") == instance.text_id:
-                        item["pageRef"] = f"/{WEBSITE_PAGES_PATH}/{new_filename}"
-                        item["name"] = instance.title
-                        navmenu_updated = True
-                if navmenu_updated:
-                    navmenu.metadata[WEBSITE_CONTENT_LEFTNAV] = menu_items
-                    navmenu.save(update_fields=["metadata"])
-            except WebsiteContent.DoesNotExist:
-                pass
+    new_filename = slugify(instance.title)
+    if instance.filename == new_filename:
+        try:
+            navmenu = WebsiteContent.objects.get(
+                website=instance.website,
+                type=CONTENT_TYPE_NAVMENU,
+            )
+            menu_items = navmenu.metadata.get(WEBSITE_CONTENT_LEFTNAV, [])
+            navmenu_updated = False
+            for item in menu_items:
+                if item.get("identifier") == instance.text_id:
+                    item["pageRef"] = f"/{WEBSITE_PAGES_PATH}/{new_filename}"
+                    item["name"] = instance.title
+                    navmenu_updated = True
+            if navmenu_updated:
+                navmenu.metadata[WEBSITE_CONTENT_LEFTNAV] = menu_items
+                navmenu.save(update_fields=["metadata"])
+        except WebsiteContent.DoesNotExist:
+            pass
