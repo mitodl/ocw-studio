@@ -8,6 +8,7 @@ from django.core.files import File
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
+from videos.tasks import populate_video_file_size
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path, get_content_dirpath
 from websites.models import WebsiteContent
@@ -59,9 +60,8 @@ def _attach_transcript_if_missing(
         summary["transcripts"]["total"] += 1
 
     if pdf_response:
-        file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        filepath = _create_new_content(pdf_file, video, file_size=file_size)
+        filepath = _create_new_content(pdf_file, video)
         video.metadata["video_files"]["video_transcript_file"] = filepath
 
         if summary:
@@ -99,9 +99,8 @@ def _attach_captions_if_missing(
         summary["captions"]["total"] += 1
 
     if webvtt_response:
-        file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        filepath = _create_new_content(vtt_file, video, file_size)
+        filepath = _create_new_content(vtt_file, video)
         video.metadata["video_files"]["video_captions_file"] = filepath
         if summary:
             summary["captions"]["updated"] += 1
@@ -194,9 +193,7 @@ def generate_metadata(
     )
 
 
-def _create_new_content(
-    file_content: File, video: WebsiteContent, file_size: int | None = None
-) -> str:
+def _create_new_content(file_content: File, video: WebsiteContent) -> str:
     """
     Create and save a new WebsiteContent object
     for a caption or transcript file.
@@ -222,8 +219,39 @@ def _create_new_content(
             "text_id": new_text_id,
         },
     )
-    obj.metadata["file_size"] = file_size
-    obj.file = new_s3_loc
     obj.save()
 
     return new_s3_loc
+
+
+def backfill_video_resource(video_obj: WebsiteContent):
+    metadata = video_obj.metadata or {}
+
+    file_size = metadata.get("file_size")
+    archive_url = metadata.get("video_files", {}).get("archive_url")
+
+    if (file_size is None or file_size == "") and archive_url:
+        populate_video_file_size.run(video_obj.id)
+
+
+def backfill_file_and_size_for_transcript(transcript_obj: WebsiteContent):
+    """
+    Backfill `file` and `metadata["file_size"]` for a transcript WebsiteContent object.
+    Assumes metadata["file"] exists and points to a valid S3 path.
+    """
+    s3_path = transcript_obj.metadata.get("file")
+
+    s3_key = s3_path.lstrip("/")
+    s3 = get_boto3_resource("s3")
+    s3_obj = s3.Object(settings.AWS_STORAGE_BUCKET_NAME, s3_key)
+
+    try:
+        file_size = s3_obj.content_length
+    except Exception:
+        log.exception("Error fetching file size for %s", s3_key)
+        file_size = None
+
+    # Populate Django's file field without re-uploading
+    transcript_obj.file = s3_path
+    transcript_obj.metadata["file_size"] = file_size
+    transcript_obj.save()
