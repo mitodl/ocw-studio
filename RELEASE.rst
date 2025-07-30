@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.156.0 (Released July 30, 2025)
+---------------
+
+- Skip recursion by using skip_sync flag variable for Add Video Resource (#2646)
+- fix(deps): update dependency boto3 to v1.39.15 (#2647)
+- fix(deps): update dependency django-anymail to v13.0.1 (#2645)
+- fix(deps): update dependency boto3 to v1.39.14 (#2644)
+- Populate file and file_size fields for pre-existing video resources (#2618)
+
 Version 0.155.0 (Released July 24, 2025)
 ---------------
 
