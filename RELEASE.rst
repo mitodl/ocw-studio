@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.156.0
+Version 0.156.0 (Released July 30, 2025)
 ---------------
 
 - Skip recursion by using skip_sync flag variable for Add Video Resource (#2646)
