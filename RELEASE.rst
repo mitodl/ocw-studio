@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.157.0
+---------------
+
+- added check for root site when checking hide_download setting (#2651)
+- Update hover text for draft courses (#2648)
+- Warn and prevent save if new page title conflicts with existing URL (#2642)
+
 Version 0.156.0 (Released July 30, 2025)
 ---------------
 

@@ -105,7 +105,7 @@ export const getMostRecentStatus = (
         site.draft_publish_status &&
         site.draft_publish_status === PublishStatus.Success,
       statusText: "Draft",
-      hoverText: "Draft updated",
+      hoverText: "Staged",
       className: "text-info",
       dateTime: site.draft_publish_date,
     },

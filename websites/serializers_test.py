@@ -7,14 +7,18 @@ import pytest
 from dateutil.parser import parse as parse_date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
+from django.utils.text import slugify
 from mitol.common.utils import now_in_utc
+from rest_framework.exceptions import ValidationError
 
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
 from videos.constants import YT_THUMBNAIL_IMG
 from websites.constants import (
+    CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -807,3 +811,69 @@ def test_website_content_export_serializer(ocw_site):
     assert data["fields"]["owner"] is None
     assert data["fields"]["updated_by"] is None
     assert data["fields"]["file"] == str(Path(content.website.url_path) / "file.txt")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    (
+        "is_page",
+        "feature_flag",
+        "initial_title",
+        "new_title",
+        "existing_conflict",
+        "expected_filename",
+    ),
+    [
+        # feature flag disabled; no URL change
+        (True, False, "Original Title", "New Title", False, "original-title"),
+        # conflict with existing slugified title; no URL change
+        (True, True, "Original Title", "Some Existing Title", True, "original-title"),
+        # non-page; no URL change
+        (False, True, "Original Title", "New Title", False, "original-title"),
+        # slugified title matches existing filename; no URL change
+        (True, True, "Test Page", "test page", False, "test-page"),
+        # URL should be updated
+        (True, True, "Test Page", "Some New Title", False, "some-new-title"),
+    ],
+)
+def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
+    mocker,
+    enable_websitecontent_signal,
+    is_page,
+    feature_flag,
+    initial_title,
+    new_title,
+    existing_conflict,
+    expected_filename,
+):
+    """Page filename is updated correctly when page's title changes"""
+    website = WebsiteFactory.create(owner=UserFactory.create())
+    mocker.patch("websites.serializers.is_feature_enabled", return_value=feature_flag)
+
+    if existing_conflict:
+        WebsiteContentFactory.create(
+            website=website,
+            type=CONTENT_TYPE_PAGE,
+            dirpath="",
+            title=new_title,
+            filename=slugify(new_title),
+        )
+
+    page = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_PAGE if is_page else CONTENT_TYPE_INSTRUCTOR,
+        dirpath="",
+        title=initial_title,
+        filename=slugify(initial_title),
+    )
+    serializer = WebsiteContentDetailSerializer(
+        instance=page, data={"title": new_title}, partial=True
+    )
+    assert serializer.is_valid(), serializer.errors
+    if existing_conflict:
+        with pytest.raises(ValidationError):
+            serializer.save()
+    else:
+        serializer.save()
+        page.refresh_from_db()
+        assert page.filename == expected_filename
