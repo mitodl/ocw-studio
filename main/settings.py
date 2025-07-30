@@ -836,6 +836,13 @@ THREEPLAY_PROJECT_ID = get_int(
     description="3play project id",
 )
 
+THREEPLAY_BASE_TIMEOUT = get_int(
+    name="THREEPLAY_BASE_TIMEOUT",
+    default=15,
+    description="Base timeout in seconds for 3Play API requests, "
+    "incremented on timeout retries",
+)
+
 S3_TRANSCRIPTS_PREFIX = get_string(
     name="S3_TRANSCRIPTS_PREFIX",
     default="transcript_files",

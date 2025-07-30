@@ -97,12 +97,23 @@ def upload_youtube_videos():
             mail_youtube_upload_failure(video_file)
 
 
-@app.task
-def start_transcript_job(video_id: int):
+@app.task(
+    acks_late=True,
+    retry_backoff=10,  # Base delay of 10 seconds
+    retry_backoff_max=600,  # 10 minutes max delay
+    max_retries=3,
+    bind=True,  # Bind to access retry count
+)
+def start_transcript_job(self, video_id: int, timeout_override: int | None = None):
     """
     If there are existing captions or transcript, associate them with the video;
     otherwise, use the 3Play API to order a new transcript for video
     """
+    # Use configurable base timeout from settings or override from retry
+    retry_count = self.request.retries
+    base_timeout = settings.THREEPLAY_BASE_TIMEOUT
+    request_timeout = timeout_override or base_timeout
+
     video = Video.objects.filter(pk=video_id).last()
     folder_name = video.website.short_id
     youtube_id = video.youtube_id()
@@ -132,21 +143,59 @@ def start_transcript_job(video_id: int):
 
     # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
     else:
-        response = threeplay_api.threeplay_upload_video_request(
-            folder_name, youtube_id, video_resource.title
-        )
-
-        threeplay_file_id = response.get("data").get("id")
-
-        if (
-            threeplay_file_id
-            and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
-        ):
-            threeplay_api.threeplay_order_transcript_request(
-                video.id, threeplay_file_id
+        try:
+            response = threeplay_api.threeplay_upload_video_request(
+                folder_name, youtube_id, video_resource.title, timeout=request_timeout
             )
-            video.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
-            video.save()
+
+            # Check if response has the expected structure
+            if not response or not response.get("data"):
+                log.warning(
+                    "Invalid response from 3Play upload for video %s: %s",
+                    video_id,
+                    response,
+                )
+                return
+
+            data = response.get("data")
+            threeplay_file_id = data.get("id") if data else None
+
+            if (
+                threeplay_file_id
+                and video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+            ):
+                threeplay_api.threeplay_order_transcript_request(
+                    video.id, threeplay_file_id, timeout=request_timeout
+                )
+                video.status = VideoStatus.SUBMITTED_FOR_TRANSCRIPTION
+                video.save()
+        except requests.exceptions.Timeout as exc:
+            # Increment timeout for timeout-specific retries
+            new_timeout = request_timeout + base_timeout
+            log.exception(
+                "Timeout error submitting 3Play transcript order for video %s "
+                "(retry %d, timeout %ds -> %ds)",
+                video_id,
+                retry_count,
+                request_timeout,
+                new_timeout,
+            )
+            # Retry with increased timeout
+            self.retry(exc=exc, kwargs={"timeout_override": new_timeout})
+        except (requests.exceptions.RequestException, ConnectionError) as exc:
+            log.exception(
+                "Error submitting 3Play transcript order for video %s "
+                "(retry %d, timeout %ds)",
+                video_id,
+                retry_count,
+                request_timeout,
+            )
+            # Retry the task with exponential backoff but same timeout
+            self.retry(exc=exc)
+        except Exception:
+            log.exception("Unexpected error in transcript job for video %s", video_id)
+            # Don't retry for unexpected errors, just log and fail
+            raise
 
 
 @app.task(bind=True)

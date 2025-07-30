@@ -656,6 +656,10 @@
       "description": "3play project id",
       "required": false
     },
+    "THREEPLAY_BASE_TIMEOUT": {
+      "description": "Base timeout in seconds for 3Play API requests, incremented on timeout retries",
+      "required": false
+    },
     "TRANSCODE_JOB_TEMPLATE": {
       "description": "Path to the transcoding job template",
       "required": false

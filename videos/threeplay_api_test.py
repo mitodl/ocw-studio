@@ -3,6 +3,7 @@
 from io import BytesIO
 
 import pytest
+import requests
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFileFactory
@@ -272,3 +273,19 @@ def test_threeplay_order_transcript_request(mocker, settings, threeplay_callback
         payload,
         timeout=60,
     )
+
+
+def test_threeplay_upload_video_request_connection_error_converted(mocker, settings):
+    """Test that ConnectionError exceptions are converted to ConnectionError with context"""
+
+    settings.THREEPLAY_API_KEY = "key"
+    mocker.patch("videos.threeplay_api.get_or_create_folder", return_value=123)
+    mock_post_call = mocker.patch("videos.threeplay_api.requests.post")
+    mock_post_call.side_effect = requests.exceptions.ConnectionError(
+        "Connection failed"
+    )
+
+    with pytest.raises(ConnectionError) as exc_info:
+        threeplay_upload_video_request("website_short_id", "youtube_id", "title")
+
+    assert "ConnectionError" in str(exc_info.value)
