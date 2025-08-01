@@ -609,21 +609,53 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
 
 
 @app.task(
+    bind=True,
     acks_late=True,
     retry_backoff=True,
     retry_backoff_max=128,
     max_retries=3,
 )
-def populate_video_file_size(video_content_id: int):
+def populate_video_file_size(self, video_content_id: int):
     """
     Populate the file size for a video by making a HEAD request to its archive_url.
     """
-    video = WebsiteContent.objects.get(id=video_content_id)
-    archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
-    response = requests.head(
-        archive_url, allow_redirects=True, timeout=settings.ARCHIVE_URL_REQUEST_TIMEOUT
-    )
-    if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
-        video.metadata["file_size"] = int(response.headers["Content-Length"])
-        video.skip_sync = True
-        video.save(update_fields=["metadata"])
+
+    def _raise_bad_response_error(status_code: int, video_title: str):
+        error_msg = f"Bad response: {status_code}"
+        log.error(
+            "Failed to populate file size for video %s: %s",
+            video_title,
+            error_msg,
+        )
+        raise requests.HTTPError(error_msg)
+
+    try:
+        video = WebsiteContent.objects.get(id=video_content_id)
+        archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
+        response = requests.head(
+            archive_url,
+            allow_redirects=True,
+            timeout=settings.ARCHIVE_URL_REQUEST_TIMEOUT,
+        )
+        if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
+            video.metadata["file_size"] = int(response.headers["Content-Length"])
+            video.skip_sync = True
+            video.save(update_fields=["metadata"])
+        else:
+            _raise_bad_response_error(response.status_code, video.title)
+
+    except requests.RequestException as exc:
+        log.exception(
+            "Request error while populating file size for video %s from course %s",
+            video.title,
+            video.website.short_id,
+        )
+        raise self.retry(exc=exc) from exc
+
+    except Exception as exc:
+        log.exception(
+            "Unhandled error while populating file size for video %s from course %s",
+            video.title,
+            video.website.short_id,
+        )
+        raise self.retry(exc=exc) from exc
