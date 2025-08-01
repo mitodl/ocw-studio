@@ -4,7 +4,10 @@ from django.db import migrations, transaction
 def remove_course_intro_lrt(apps, schema_editor):
     Website = apps.get_model("websites", "Website")
     with transaction.atomic():
-        for website in Website.objects.all():
+        websites_to_update = Website.objects.filter(
+            metadata__learning_resource_types__contains="Course Introduction"
+        )
+        for website in websites_to_update.iterator():
             metadata = website.metadata or {}
             lrts = metadata.get("learning_resource_types")
             if isinstance(lrts, list) and "Course Introduction" in lrts:
@@ -18,7 +21,7 @@ def remove_course_intro_lrt(apps, schema_editor):
 def restore_course_intro_lrt(apps, schema_editor):
     Website = apps.get_model("websites", "Website")
     with transaction.atomic():
-        for website in Website.objects.all():
+        for website in Website.objects.iterator():
             metadata = website.metadata or {}
             lrts = metadata.get("learning_resource_types")
             course_features = metadata.get("course_features")
