@@ -41,6 +41,7 @@ from videos.constants import (
     VideoStatus,
     YouTubeStatus,
 )
+from videos.exceptions import raise_invalid_response_error
 from videos.models import Video, VideoFile
 from videos.utils import create_new_content
 from videos.youtube import (
@@ -99,8 +100,7 @@ def upload_youtube_videos():
 
 @app.task(
     acks_late=True,
-    retry_backoff=10,  # Base delay of 10 seconds
-    retry_backoff_max=600,  # 10 minutes max delay
+    retry_backoff=15,  # Base delay of 15 seconds
     max_retries=3,
     bind=True,  # Bind to access retry count
 )
@@ -150,15 +150,9 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
 
             # Check if response has the expected structure
             if not response or not response.get("data"):
-                log.warning(
-                    "Invalid response from 3Play upload for video %s: %s",
-                    video_id,
-                    response,
-                )
-                return
+                raise_invalid_response_error(video_id, response)
 
-            data = response.get("data")
-            threeplay_file_id = data.get("id") if data else None
+            threeplay_file_id = response["data"].get("id")
 
             if (
                 threeplay_file_id
