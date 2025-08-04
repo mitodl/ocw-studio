@@ -678,6 +678,7 @@ def backfill_caption_or_transcript_file_size(self, resource_id: int):
         error_msg = f"Missing metadata['file'] for {filename}"
         raise ValueError(error_msg)
 
+    resource = None
     try:
         resource = WebsiteContent.objects.get(id=resource_id)
         s3_path = (resource.metadata or {}).get("file")
@@ -696,9 +697,8 @@ def backfill_caption_or_transcript_file_size(self, resource_id: int):
 
     except Exception as exc:
         log.exception(
-            "Error backfilling file size for %s (%s) in course %s",
-            getattr(resource, "filename", f"ID {resource_id}"),
-            getattr(resource, "id", resource_id),
-            getattr(resource.website, "short_id", "?"),
+            "Error backfilling file size for %s in course %s",
+            resource.title,
+            resource.website.short_id,
         )
         raise self.retry(exc=exc) from exc
