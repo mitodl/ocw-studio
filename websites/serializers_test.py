@@ -817,30 +817,26 @@ def test_website_content_export_serializer(ocw_site):
 @pytest.mark.parametrize(
     (
         "is_page",
-        "feature_flag",
         "initial_title",
         "new_title",
         "existing_conflict",
         "expected_filename",
     ),
     [
-        # feature flag disabled; no URL change
-        (True, False, "Original Title", "New Title", False, "original-title"),
         # conflict with existing slugified title; no URL change
-        (True, True, "Original Title", "Some Existing Title", True, "original-title"),
+        (True, "Original Title", "Some Existing Title", True, "original-title"),
         # non-page; no URL change
-        (False, True, "Original Title", "New Title", False, "original-title"),
+        (False, "Original Title", "New Title", False, "original-title"),
         # slugified title matches existing filename; no URL change
-        (True, True, "Test Page", "test page", False, "test-page"),
+        (True, "Test Page", "test page", False, "test-page"),
         # URL should be updated
-        (True, True, "Test Page", "Some New Title", False, "some-new-title"),
+        (True, "Test Page", "Some New Title", False, "some-new-title"),
     ],
 )
 def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
     mocker,
     enable_websitecontent_signal,
     is_page,
-    feature_flag,
     initial_title,
     new_title,
     existing_conflict,
@@ -848,7 +844,6 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
 ):
     """Page filename is updated correctly when page's title changes"""
     website = WebsiteFactory.create(owner=UserFactory.create())
-    mocker.patch("websites.serializers.is_feature_enabled", return_value=feature_flag)
 
     if existing_conflict:
         WebsiteContentFactory.create(
