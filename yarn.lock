@@ -3037,12 +3037,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ramda@npm:^0.30.0":
-  version: 0.30.2
-  resolution: "@types/ramda@npm:0.30.2"
+"@types/ramda@npm:^0.31.0":
+  version: 0.31.0
+  resolution: "@types/ramda@npm:0.31.0"
   dependencies:
-    types-ramda: ^0.30.1
-  checksum: 528e62da967adb38b7b6be3314ee11009f4e7312e4fbb9670f4556bb2f640754f08ae68ede87822ae255aba747e67296f40b37d53bfb427c58ab82f5b7a4989e
+    types-ramda: ^0.31.0
+  checksum: 5870f219b1234c1bc1a8254a566ad41264c18d45e32b8c080faad51bc29755dc0564171feb3e3f63b5f25d7ae66f66317b653737720149a6951b417a34b139d9
   languageName: node
   linkType: hard
 
@@ -11100,7 +11100,7 @@ __metadata:
     "@types/luxon": ^3.2.0
     "@types/node": ^22.0.0
     "@types/pluralize": ^0.0.33
-    "@types/ramda": ^0.30.0
+    "@types/ramda": ^0.31.0
     "@types/react": ^16.9.46
     "@types/react-dom": ^16.9.8
     "@types/react-outside-click-handler": ^1.3.0
@@ -15035,12 +15035,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"types-ramda@npm:^0.30.1":
-  version: 0.30.1
-  resolution: "types-ramda@npm:0.30.1"
+"types-ramda@npm:^0.31.0":
+  version: 0.31.0
+  resolution: "types-ramda@npm:0.31.0"
   dependencies:
     ts-toolbelt: ^9.6.0
-  checksum: 7af1b5b6dbb5878e5104013f7eca7feff999b538d98d59c91ce82e69908b31223b44a163271b0c13c9828c27f6cff39f78cff0f83d82b73ac47f74ffb3fe7ded
+  checksum: 9de570d0198c367bf7babda5307bacaf946a3cac1fa45c3e37092ff42f7639061e17bbb2002d8ca5de1cf4c62f087b3ed5d956327cb5ae0c66c5aa03097e143e
   languageName: node
   linkType: hard
 
