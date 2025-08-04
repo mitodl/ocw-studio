@@ -124,7 +124,7 @@ def threeplay_order_transcript_request(
         response = requests.post(url, payload, timeout=timeout)
         response.raise_for_status()
 
-        return response.json() if response else {}
+        return response.json()
 
     except requests.exceptions.Timeout:
         # Let timeout exceptions propagate for retry logic in tasks.py
