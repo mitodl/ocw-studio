@@ -659,3 +659,46 @@ def populate_video_file_size(self, video_content_id: int):
             video.website.short_id,
         )
         raise self.retry(exc=exc) from exc
+
+
+@app.task(
+    bind=True,
+    acks_late=True,
+    retry_backoff=True,
+    retry_backoff_max=128,
+    max_retries=3,
+)
+def backfill_caption_or_transcript_file_size(self, resource_id: int):
+    """
+    Populate file and file_size for a caption or transcript resource.
+    Uses metadata["file"] to get the S3 path and fetch its size.
+    """
+
+    def _raise_missing_file_error(filename: str) -> None:
+        error_msg = f"Missing metadata['file'] for {filename}"
+        raise ValueError(error_msg)
+
+    try:
+        resource = WebsiteContent.objects.get(id=resource_id)
+        s3_path = (resource.metadata or {}).get("file")
+        if not s3_path:
+            _raise_missing_file_error(resource.filename)
+
+        s3_key = s3_path.lstrip("/")
+        s3 = get_boto3_resource("s3")
+        s3_obj = s3.Object(settings.AWS_STORAGE_BUCKET_NAME, s3_key)
+        file_size = s3_obj.content_length
+
+        resource.file = s3_path
+        resource.metadata["file_size"] = file_size
+        resource.skip_sync = True
+        resource.save(update_fields=["file", "metadata"])
+
+    except Exception as exc:
+        log.exception(
+            "Error backfilling file size for %s (%s) in course %s",
+            getattr(resource, "filename", f"ID {resource_id}"),
+            getattr(resource, "id", resource_id),
+            getattr(resource.website, "short_id", "?"),
+        )
+        raise self.retry(exc=exc) from exc
