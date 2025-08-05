@@ -5,11 +5,9 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 
-from main.posthog import is_feature_enabled
 from websites.constants import (
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
-    POSTHOG_ENABLE_EDITABLE_PAGE_URLS,
     WEBSITE_CONTENT_LEFTNAV,
     WEBSITE_PAGES_PATH,
 )
@@ -44,12 +42,7 @@ def update_navmenu_on_title_change(
 ):
     """
     Update navmenu when the title of a page changes.
-    This is currently behind the PostHog feature flag
-    OCW_STUDIO_EDITABLE_PAGE_URLS.
     """
-
-    if not is_feature_enabled(POSTHOG_ENABLE_EDITABLE_PAGE_URLS):
-        return
 
     if instance.type != CONTENT_TYPE_PAGE:
         return
