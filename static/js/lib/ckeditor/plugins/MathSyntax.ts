@@ -76,14 +76,14 @@ class MathSyntax extends MarkdownSyntaxPlugin {
           type: "output",
           regex: /<span data-math="">(.*?)<\/span>/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<script type="math/tex">${math.replace(/\\_/g, "_").replace(/\\\\/g, "\\")}</script>`
+            return `<script type="math/tex">${math}</script>`
           },
         },
         {
           type: "output",
           regex: /<span data-math="" mode="display">(.*?)<\/span>/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<script type="math/tex; mode=display">${math.replace(/\\_/g, "_").replace(/\\\\/g, "\\")}</script>`
+            return `<script type="math/tex; mode=display">${math}</script>`
           },
         },
       ]
