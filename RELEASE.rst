@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.157.0
+Version 0.157.0 (Released August 05, 2025)
 ---------------
 
 - added check for root site when checking hide_download setting (#2651)
