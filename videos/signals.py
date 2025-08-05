@@ -6,7 +6,7 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from videos.models import Video, VideoFile
-from videos.tasks import delete_s3_objects
+from videos.tasks import delete_s3_objects, populate_video_file_size
 from videos.threeplay_sync import sync_video_captions_and_transcripts
 from websites.models import WebsiteContent
 
@@ -68,6 +68,7 @@ def sync_missing_caption(
                 instance.id,
                 archive_url,
             )
+            populate_video_file_size.delay(instance.id)
         else:
             log.warning(
                 "No archive_url found for video %s, cannot populate file size",
