@@ -3832,5 +3832,5 @@ ruamel = ["ruamel.yaml"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = "3.12.11"
-content-hash = "21890700d7a0759a572dcc619fdcdef512be58c32d6b4c6327ba0703a026d468"
+python-versions = "~3.12"
+content-hash = "2eff95e0d0b9449662e7ccbdfd92d53f6a5a4d94877b940de2be1aae5eb450f2"
