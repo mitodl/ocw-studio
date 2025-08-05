@@ -2368,14 +2368,14 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "posthog"
-version = "4.0.1"
+version = "6.3.3"
 description = "Integrate PostHog into any python application."
 optional = false
-python-versions = "*"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "posthog-4.0.1-py2.py3-none-any.whl", hash = "sha256:0c76cbab3e5ab0096c4f591c0b536465478357270f926d11ff833c97984659d8"},
-    {file = "posthog-4.0.1.tar.gz", hash = "sha256:77e7ebfc6086972db421d3e05c91d5431b2b964865d33a9a32e55dd88da4bff8"},
+    {file = "posthog-6.3.3-py3-none-any.whl", hash = "sha256:883e7bf4c43aafc6f1d004286bded2c4b151841b80e1a195ef1bfd3e2e90c00a"},
+    {file = "posthog-6.3.3.tar.gz", hash = "sha256:213a3cbcc30446e785bef19539318846cf783d1cf1968c1154bad716aa7a7b9c"},
 ]
 
 [package.dependencies]
@@ -2384,12 +2384,12 @@ distro = ">=1.5.0"
 python-dateutil = ">=2.2"
 requests = ">=2.7,<3.0"
 six = ">=1.5"
+typing-extensions = ">=4.2.0"
 
 [package.extras]
-dev = ["black", "django-stubs", "flake8", "flake8-print", "isort", "lxml", "mypy", "mypy-baseline", "pre-commit", "pydantic", "types-mock", "types-python-dateutil", "types-requests", "types-setuptools", "types-six"]
+dev = ["django-stubs", "lxml", "mypy", "mypy-baseline", "packaging", "pre-commit", "pydantic", "ruff", "setuptools", "tomli", "tomli_w", "twine", "types-mock", "types-python-dateutil", "types-requests", "types-setuptools", "types-six", "wheel"]
 langchain = ["langchain (>=0.2.0)"]
-sentry = ["django", "sentry-sdk"]
-test = ["anthropic", "coverage", "django", "flake8", "freezegun (==1.5.1)", "langchain-anthropic (>=0.2.0)", "langchain-community (>=0.2.0)", "langchain-openai (>=0.2.0)", "langgraph", "mock (>=2.0.0)", "openai", "parameterized (>=0.8.1)", "pydantic", "pylint", "pytest", "pytest-asyncio", "pytest-timeout"]
+test = ["anthropic", "coverage", "django", "freezegun (==1.5.1)", "google-genai", "langchain-anthropic (>=0.3.15)", "langchain-community (>=0.3.25)", "langchain-core (>=0.3.65)", "langchain-openai (>=0.3.22)", "langgraph (>=0.4.8)", "mock (>=2.0.0)", "openai", "parameterized (>=0.8.1)", "pydantic", "pytest", "pytest-asyncio", "pytest-timeout"]
 
 [[package]]
 name = "pre-commit"
@@ -3833,4 +3833,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "2eff95e0d0b9449662e7ccbdfd92d53f6a5a4d94877b940de2be1aae5eb450f2"
+content-hash = "bcd8f7414ce5dcd668f72bfa0ff41b57e682d9a9b87eedf1049ac45250d3bfc4"
