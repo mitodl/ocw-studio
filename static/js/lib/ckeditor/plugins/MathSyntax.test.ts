@@ -15,7 +15,7 @@ const display = {
   scriptType: "math/tex; mode=display",
 }
 const inline = {
-  name: "display",
+  name: "inline",
   start: "\\\\[",
   end: "\\\\]",
   scriptType: "math/tex; mode=display",
@@ -25,7 +25,7 @@ const modes = [display, inline]
 const scriptify = (mode: { scriptType: string }, math: string): string =>
   `<script type="${mode.scriptType}">${math}</script>`
 
-describe.each(modes)("MathSyntax converstion to/from $mode", (mode) => {
+describe.each(modes)("MathSyntax converstion to/from $name", (mode) => {
   test.each([
     {
       at: "start",
@@ -68,12 +68,29 @@ describe.each(modes)("MathSyntax converstion to/from $mode", (mode) => {
     const html = `<p>${scriptify(mode, "x \u00A0 + \u00A0 y")}</p>`
     expect(html2md(html)).toEqual(md)
   })
+
+  test("It treats percent symbols properly", async () => {
+    const editor = await getEditor()
+    const math = "90 \\\\%"
+    const md = mode.start + math + mode.end
+    const html = `<p>${scriptify(mode, "90 \\%")}</p>`
+    await htmlConvertContainsTest(editor, md, html)
+  })
+
+  test("a complex expression involving subscripts", async () => {
+    const editor = await getEditor()
+    const math = String.raw`\\mathbb{F}\_q^2 + \\mathbb{N}\_q^2 + |\\pi\_{t\_1 + t\_2} (X)| \\le K^C |X|^{1/2}`
+    const md = mode.start + math + mode.end
+    const html = `<p>${scriptify(mode, math.replace(/\\\\/g, "\\").replace(/\\_/g, "_"))}</p>`
+    await htmlConvertContainsTest(editor, md, html)
+  })
+
 })
 
 test("Display math with new lines", async () => {
   const editor = await getEditor()
   const { md2html, html2md } = getConverters(editor)
-  const math = String.raw`\begin{align} 1 + 1 = & 2 \\\\ x + y = & z \end{align}`
+  const math = String.raw`\\begin{align} 1 + 1 = & 2 \\\\ x + y = & z \\end{align}`
   const md = String.raw`\\[${math}\\]`
   const html = `<p>${scriptify(
     display,

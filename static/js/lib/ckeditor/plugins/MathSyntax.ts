@@ -35,7 +35,6 @@ const prepareTexForMarkdown = (s: string) => {
        *
        *  So we replace any "_" by "\_".
        */
-
       .replace(/_/g, String.raw`\_`)
   )
 }
