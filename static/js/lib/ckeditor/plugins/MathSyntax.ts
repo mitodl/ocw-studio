@@ -1,6 +1,7 @@
 import { ShowdownExtension } from "showdown"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
+import { Editor } from "@ckeditor/ckeditor5-core"
 
 const prepareTexForMarkdown = (s: string) => {
   return (
@@ -23,6 +24,12 @@ const prepareTexForMarkdown = (s: string) => {
 }
 
 class MathSyntax extends MarkdownSyntaxPlugin {
+
+  constructor (editor: Editor) {
+    super(editor);
+    this.mathExprIdMap = new Map<string, string>();
+  }
+
   static get pluginName(): string {
     return "MathSyntax"
   }
@@ -62,28 +69,32 @@ class MathSyntax extends MarkdownSyntaxPlugin {
           type: "lang",
           regex: /\\\\\((.*?)\\\\\)/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<span data-math="">${math.replace(/\\/g, "\\\\").replace(/_/g, "\\_" )}</span>`
+            let exprId = crypto.randomUUID().replace(/-/g, "");
+            this.mathExprIdMap.set(exprId, math);
+            return `<span data-math="">${exprId}</span>`
           },
         },
         {
           type: "lang",
           regex: /\\\\\[(.*?)\\\\\]/g,
           replace: (_stringMatch: string, math: string) => {
-            return `<span data-math="" mode="display">${math.replace(/\\/g, "\\\\").replace(/_/g, "\\_" )}</span>`
+            let exprId = crypto.randomUUID().replace(/-/g, "");
+            this.mathExprIdMap.set(exprId, math);
+            return `<span data-math="" mode="display">${exprId}</span>`
           },
         },
         {
           type: "output",
           regex: /<span data-math="">(.*?)<\/span>/g,
-          replace: (_stringMatch: string, math: string) => {
-            return `<script type="math/tex">${math}</script>`
+          replace: (_stringMatch: string, mathId: string) => {
+            return `<script type="math/tex">${this.mathExprIdMap.get(mathId)}</script>`
           },
         },
         {
           type: "output",
           regex: /<span data-math="" mode="display">(.*?)<\/span>/g,
-          replace: (_stringMatch: string, math: string) => {
-            return `<script type="math/tex; mode=display">${math}</script>`
+          replace: (_stringMatch: string, mathId: string) => {
+            return `<script type="math/tex; mode=display">${this.mathExprIdMap.get(mathId)}</script>`
           },
         },
       ]
