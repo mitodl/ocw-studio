@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.158.0
+---------------
+
+- Remove OCW_STUDIO_EDITABLE_PAGE_URLS PostHog feature flag (#2661)
+- chore(deps): update dependency django-debug-toolbar to v6 (#2659)
+- fix(deps): update dependency pygithub to v2.7.0 (#2658)
+- fix(deps): update dependency posthog to v6 (#2660)
+- fix(deps): update dependency boto3 to v1.40.2 (#2657)
+- chore(deps): update dependency ubuntu to v24 (#2510)
+- chore(fix): Added retries for 3play submissions (#2637)
+
 Version 0.157.0 (Released August 05, 2025)
 ---------------
 
