@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.158.0
+Version 0.158.0 (Released August 06, 2025)
 ---------------
 
 - Remove OCW_STUDIO_EDITABLE_PAGE_URLS PostHog feature flag (#2661)
