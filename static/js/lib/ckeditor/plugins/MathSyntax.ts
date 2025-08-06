@@ -19,6 +19,24 @@ const prepareTexForMarkdown = (s: string) => {
        *  So replace all double backslashes with a quadruple backslash.
        */
       .replace(/\\\\/g, String.raw`\\\\`)
+      /**
+       * In TeX, a single backslash followed by a percent "\%" represents a percent sign. Markdown uses
+       * backslash as an escape character. So Hugo may render '\%' as just '%' in the html, breaking its
+       * rendering by MathJax.
+       *
+       *  So we replace any "single" backslashes by "doubles".
+       */
+      .replace(/(?<!\\)\\(?!\\)/g, String.raw`\\`)
+      /**
+       * In TeX, an "_" is used to respresent subscripts. Markdown uses "_" to represent emphasis.
+       * It may happen that when interpreting markdown in ckeditor, the "_" is interpreted as <em>
+       * tags in the html, mangling part of our math. Hugo may also interpret "_" as an emphasis tag, not
+       * producing the html we want.
+       *
+       *  So we replace any "_" by "\_".
+       */
+
+      .replace(/_/g, String.raw`\_`)
   )
 }
 
@@ -107,9 +125,12 @@ class MathSyntax extends MarkdownSyntaxPlugin {
             const script = node as HTMLScriptElement
             const isDisplayMode = script.type.includes("mode=display")
             const text = prepareTexForMarkdown(node.textContent ?? "")
-            return isDisplayMode
+            let to_ret = isDisplayMode
               ? String.raw`\\[${text}\\]`
               : String.raw`\\(${text}\\)`
+            
+            console.log('Returning', to_ret, node.textContent)
+            return to_ret
           },
         },
       },
