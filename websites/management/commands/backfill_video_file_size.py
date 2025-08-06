@@ -2,6 +2,7 @@
 
 from main.management.commands.filter import WebsiteFilterCommand
 from videos.tasks import populate_video_file_size
+from websites.constants import CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
 
 CHUNK_SIZE = 50
@@ -29,7 +30,9 @@ class Command(WebsiteFilterCommand):
         websites = self.filter_websites(websites)
 
         videos = WebsiteContent.objects.filter(
-            type="resource", metadata__resourcetype="Video", website__in=websites
+            type=CONTENT_TYPE_RESOURCE,
+            metadata__resourcetype=RESOURCE_TYPE_VIDEO,
+            website__in=websites,
         )
 
         videos_to_backfill = []
