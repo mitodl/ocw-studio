@@ -124,12 +124,9 @@ class MathSyntax extends MarkdownSyntaxPlugin {
             const script = node as HTMLScriptElement
             const isDisplayMode = script.type.includes("mode=display")
             const text = prepareTexForMarkdown(node.textContent ?? "")
-            let to_ret = isDisplayMode
+            return isDisplayMode
               ? String.raw`\\[${text}\\]`
               : String.raw`\\(${text}\\)`
-            
-            console.log('Returning', to_ret, node.textContent)
-            return to_ret
           },
         },
       },

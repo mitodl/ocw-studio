@@ -84,7 +84,6 @@ describe.each(modes)("MathSyntax converstion to/from $name", (mode) => {
     const html = `<p>${scriptify(mode, math.replace(/\\\\/g, "\\").replace(/\\_/g, "_"))}</p>`
     await htmlConvertContainsTest(editor, md, html)
   })
-
 })
 
 test("Display math with new lines", async () => {
