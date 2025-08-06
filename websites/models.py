@@ -184,11 +184,14 @@ class Website(TimestampedModel):
     @property
     def collaborators(self):
         """Get all site collaborators"""
-        return [
-            *list(self.admin_group.user_set.all()),
-            self.owner,
-            *list(self.editor_group.user_set.all()),
-        ]
+        collaborator_list = []
+        if self.admin_group:
+            collaborator_list.extend(list(self.admin_group.user_set.all()))
+        if self.owner:
+            collaborator_list.append(self.owner)
+        if self.editor_group:
+            collaborator_list.extend(list(self.editor_group.user_set.all()))
+        return collaborator_list
 
     def get_site_root_path(self):
         """Get the site root url path"""
