@@ -3,14 +3,10 @@
 from django.conf import settings
 from django.core.management.base import CommandError
 
-from external_resources.constants import (
-    POSTHOG_ENABLE_WAYBACK_TASKS,
-    WAYBACK_PENDING_STATUS,
-)
+from external_resources.constants import WAYBACK_PENDING_STATUS
 from external_resources.models import ExternalResourceState
 from external_resources.tasks import update_wayback_jobs_status_batch
 from main.management.commands.filter import WebsiteFilterCommand
-from main.posthog import is_feature_enabled
 from websites.models import Website
 
 
@@ -30,9 +26,7 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
-            POSTHOG_ENABLE_WAYBACK_TASKS
-        ):
+        if settings.ENABLE_WAYBACK_TASKS:
             sync_execution = options.get("sync", False)
 
             websites = Website.objects.all()

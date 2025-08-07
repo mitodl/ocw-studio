@@ -2,10 +2,8 @@
 
 from django.conf import settings
 
-from external_resources.constants import POSTHOG_ENABLE_WAYBACK_TASKS
 from external_resources.tasks import submit_website_resources_to_wayback_task
 from main.management.commands.filter import WebsiteFilterCommand
-from main.posthog import is_feature_enabled
 from websites.models import Website
 
 
@@ -25,9 +23,7 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         super().handle(*args, **options)
 
-        if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
-            POSTHOG_ENABLE_WAYBACK_TASKS
-        ):
+        if settings.ENABLE_WAYBACK_TASKS:
             force_submission = options.get("force", False)
 
             websites = Website.objects.all()
