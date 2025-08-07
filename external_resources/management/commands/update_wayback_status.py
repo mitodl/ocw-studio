@@ -72,6 +72,6 @@ class Command(WebsiteFilterCommand):
             self.stdout.write("Command execution completed.")
         else:
             self.stdout.write(
-                "Wayback Machine tasks are disabled via environment settings "
+                "Wayback Machine tasks are disabled via environment settings."
             )
             return

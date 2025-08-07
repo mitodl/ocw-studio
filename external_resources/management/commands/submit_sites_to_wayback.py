@@ -46,6 +46,6 @@ class Command(WebsiteFilterCommand):
             self.stdout.write("All tasks have been enqueued.")
         else:
             self.stdout.write(
-                "Wayback Machine tasks are disabled via environment settings "
+                "Wayback Machine tasks are disabled via environment settings."
             )
             return
