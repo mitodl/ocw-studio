@@ -139,7 +139,7 @@ The task for external resource checking can be enabled/disabled using the `ENABL
 
 ### Wayback Machine Tasks:
 
-Wayback Machine tasks are controlled by the `ENABLE_WAYBACK_TASKS` envrionment setting in [settings.py](/main/settings.py), which is `False` by default. It can be overridden through your `.env` file.
+Wayback Machine tasks are controlled by the `ENABLE_WAYBACK_TASKS` environment setting in [settings.py](/main/settings.py), which is `False` by default. It can be overridden through your `.env` file.
 
 If the `ENABLE_WAYBACK_TASKS` setting is set to `True`, Wayback Machine tasks are executed.
 
