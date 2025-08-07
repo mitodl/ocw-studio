@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.158.1
+---------------
+
+- Backfill file and file_size for videos and their captions/transcript (#2654)
+- fix(deps): update dependency django-hijack to v3.7.4 (#2666)
+
 Version 0.158.0 (Released August 06, 2025)
 ---------------
 
