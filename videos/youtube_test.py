@@ -365,6 +365,11 @@ def test_mail_youtube_upload_failure_collaborators_exception(mocker, mock_mail):
     """Test exception handling when iterating over collaborators fails"""
     mock_log = mocker.patch("videos.youtube.log.exception")
 
+    # Save the original collaborators property to restore later
+    website_collaboratores_original = type(
+        mock_mail.video_file.video.website
+    ).collaborators
+
     # Mock the website.collaborators property to raise an exception
     mock_collaborators = mocker.PropertyMock(
         side_effect=Exception("Collaborators access error")
@@ -378,6 +383,11 @@ def test_mail_youtube_upload_failure_collaborators_exception(mocker, mock_mail):
     mock_log.assert_called_once_with(
         "Failed to send YouTube upload failure notification"
     )
+
+    # Clean up by restoring the original property
+    type(
+        mock_mail.video_file.video.website
+    ).collaborators = website_collaboratores_original
 
 
 def test_mail_youtube_upload_success_exception_handling(mocker, mock_mail):
@@ -399,6 +409,11 @@ def test_mail_youtube_upload_success_collaborators_exception(mocker, mock_mail):
     """Test exception handling when iterating over collaborators fails"""
     mock_log = mocker.patch("videos.youtube.log.exception")
 
+    # Save the original collaborators property to restore later
+    website_collaboratores_original = type(
+        mock_mail.video_file.video.website
+    ).collaborators
+
     # Mock the website.collaborators property to raise an exception
     mock_collaborators = mocker.PropertyMock(
         side_effect=Exception("Collaborators access error")
@@ -412,6 +427,11 @@ def test_mail_youtube_upload_success_collaborators_exception(mocker, mock_mail):
     mock_log.assert_called_once_with(
         "Failed to send YouTube upload success notification"
     )
+
+    # Clean up by restoring the original property
+    type(
+        mock_mail.video_file.video.website
+    ).collaborators = website_collaboratores_original
 
 
 def test_mail_youtube_upload_success_sender_exception(mocker, mock_mail):
