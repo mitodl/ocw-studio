@@ -1,9 +1,12 @@
 """Website models tests"""
 
 import pytest
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from mitol.common.utils import now_in_utc
 
+from users.factories import UserFactory
+from websites import constants
 from websites.constants import WEBSITE_CONFIG_ROOT_URL_PATH_KEY
 from websites.factories import (
     WebsiteContentFactory,
@@ -11,6 +14,7 @@ from websites.factories import (
     WebsiteStarterFactory,
 )
 from websites.site_config_api import SiteConfig
+from websites.utils import permissions_group_name_for_role
 
 pytestmark = pytest.mark.django_db
 
@@ -346,3 +350,81 @@ def test_ocw_hugo_projects_url(path):
     """The ocw_hugo_projects_url property should return the proper git repo URL"""
     starter = WebsiteStarterFactory(path=path)
     assert starter.ocw_hugo_projects_url == "https://github.com/org/repo.git"
+
+
+def test_website_collaborators_empty_groups():
+    """Test that collaborators property handles empty groups gracefully"""
+    website = WebsiteFactory.create(owner=None)
+
+    # Verify that collaborators returns an empty list when no groups or owner exist
+    collaborators = website.collaborators
+    assert collaborators == []
+    assert isinstance(collaborators, list)
+
+
+def test_website_collaborators_with_owner_only():
+    """Test that collaborators property includes only the owner when no groups exist"""
+    owner = UserFactory.create()
+    website = WebsiteFactory.create(owner=owner)
+
+    # Verify that collaborators returns only the owner
+    collaborators = website.collaborators
+    assert len(collaborators) == 1
+    assert owner in collaborators
+
+
+def test_website_collaborators_with_groups():
+    """Test that collaborators property includes users from admin and editor groups"""
+    owner = UserFactory.create()
+    website = WebsiteFactory.create(owner=owner)
+
+    # Get or create admin and editor groups
+    admin_group_name = permissions_group_name_for_role(
+        constants.ROLE_ADMINISTRATOR, website
+    )
+    editor_group_name = permissions_group_name_for_role(constants.ROLE_EDITOR, website)
+
+    admin_group, _ = Group.objects.get_or_create(name=admin_group_name)
+    editor_group, _ = Group.objects.get_or_create(name=editor_group_name)
+
+    # Create users and add them to groups
+    admin_user = UserFactory.create()
+    editor_user1 = UserFactory.create()
+    editor_user2 = UserFactory.create()
+
+    admin_group.user_set.add(admin_user)
+    editor_group.user_set.add(editor_user1, editor_user2)
+
+    # Verify that collaborators includes owner, admin users, and editor users
+    collaborators = website.collaborators
+    assert len(collaborators) == 4  # owner + 1 admin + 2 editors
+    assert owner in collaborators
+    assert admin_user in collaborators
+    assert editor_user1 in collaborators
+    assert editor_user2 in collaborators
+
+
+def test_website_collaborators_with_missing_groups():
+    """Test that collaborators property handles missing admin/editor groups gracefully"""
+    owner = UserFactory.create()
+    website = WebsiteFactory.create(owner=owner)
+
+    # The admin_group and editor_group properties may return existing groups
+    # Let's verify they exist and clear them to test the missing groups scenario
+    admin_group = website.admin_group
+    editor_group = website.editor_group
+
+    # Delete the groups if they exist to test the None case
+    if admin_group:
+        admin_group.delete()
+    if editor_group:
+        editor_group.delete()
+
+    # Now they should return None since groups don't exist
+    assert website.admin_group is None
+    assert website.editor_group is None
+
+    # Verify that collaborators still works and includes only the owner
+    collaborators = website.collaborators
+    assert len(collaborators) == 1
+    assert owner in collaborators
