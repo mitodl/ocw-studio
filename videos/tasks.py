@@ -35,13 +35,19 @@ from main.constants import STATUS_CREATED
 from main.s3_utils import get_boto3_resource
 from videos import threeplay_api
 from videos.constants import (
+    ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT,
     DESTINATION_YOUTUBE,
+    S3_FILESIZE_TASK_RATE_LIMIT,
     YT_THUMBNAIL_IMG,
     VideoFileStatus,
     VideoStatus,
     YouTubeStatus,
 )
-from videos.exceptions import raise_invalid_response_error
+from videos.exceptions import (
+    raise_head_request_error,
+    raise_invalid_response_error,
+    raise_missing_file_metadata_error,
+)
 from videos.models import Video, VideoFile
 from videos.utils import create_new_content
 from videos.youtube import (
@@ -609,21 +615,83 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
 
 
 @app.task(
+    bind=True,
     acks_late=True,
-    retry_backoff=True,
-    retry_backoff_max=128,
+    retry_backoff=30,
     max_retries=3,
+    rate_limit=ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT,
 )
-def populate_video_file_size(video_content_id: int):
+def populate_video_file_size(self, video_content_id: int):
     """
     Populate the file size for a video by making a HEAD request to its archive_url.
     """
-    video = WebsiteContent.objects.get(id=video_content_id)
-    archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
-    response = requests.head(
-        archive_url, allow_redirects=True, timeout=settings.ARCHIVE_URL_REQUEST_TIMEOUT
-    )
-    if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
-        video.metadata["file_size"] = int(response.headers["Content-Length"])
-        video.skip_sync = True
-        video.save(update_fields=["metadata"])
+    try:
+        retry_count = self.request.retries
+        request_timeout = settings.ARCHIVE_URL_REQUEST_TIMEOUT + (retry_count * 60)
+        video = WebsiteContent.objects.get(id=video_content_id)
+        archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
+        response = requests.head(
+            archive_url,
+            allow_redirects=True,
+            timeout=request_timeout,
+        )
+        if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
+            video.metadata["file_size"] = int(response.headers["Content-Length"])
+            video.skip_sync = True
+            video.save(update_fields=["metadata"])
+        else:
+            raise_head_request_error(response.status_code, video.title)
+
+    except requests.RequestException as exc:
+        log.exception(
+            "Request error while populating file size for video %s from course %s",
+            video.title,
+            video.website.short_id,
+        )
+        raise self.retry(exc=exc) from exc
+
+    except Exception as exc:
+        log.exception(
+            "Unhandled error while populating file size for video %s from course %s",
+            video.title,
+            video.website.short_id,
+        )
+        raise self.retry(exc=exc) from exc
+
+
+@app.task(
+    bind=True,
+    acks_late=True,
+    retry_backoff=30,
+    max_retries=3,
+    rate_limit=S3_FILESIZE_TASK_RATE_LIMIT,
+)
+def backfill_caption_or_transcript_file_size(self, resource_id: int):
+    """
+    Populate file and file_size for a caption or transcript resource.
+    Uses metadata["file"] to get the S3 path and fetch its size.
+    """
+    resource = None
+    try:
+        resource = WebsiteContent.objects.get(id=resource_id)
+        s3_path = (resource.metadata or {}).get("file")
+        if not s3_path:
+            raise_missing_file_metadata_error(resource.filename)
+
+        s3_key = s3_path.lstrip("/")
+        s3 = get_boto3_resource("s3")
+        s3_obj = s3.Object(settings.AWS_STORAGE_BUCKET_NAME, s3_key)
+        file_size = s3_obj.content_length
+
+        resource.file = s3_path
+        resource.metadata["file_size"] = file_size
+        resource.skip_sync = True
+        resource.save(update_fields=["file", "metadata"])
+
+    except Exception as exc:
+        log.exception(
+            "Error backfilling file size for %s in course %s",
+            resource.title,
+            resource.website.short_id,
+        )
+        raise self.retry(exc=exc) from exc
