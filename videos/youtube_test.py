@@ -365,33 +365,19 @@ def test_mail_youtube_upload_failure_collaborators_exception(mocker, mock_mail):
     """Test exception handling when iterating over collaborators fails"""
     mock_log = mocker.patch("videos.youtube.log.exception")
 
-    # Create a custom exception for testing
-    class CollaboratorsError(Exception):
-        pass
+    # Mock the website.collaborators property to raise an exception
+    mock_collaborators = mocker.PropertyMock(
+        side_effect=Exception("Collaborators access error")
+    )
+    type(mock_mail.video_file.video.website).collaborators = mock_collaborators
 
-    # Create a clean property mock with getter that raises exception
-    def collaborators_getter(self):
-        msg = "Collaborators access error"
-        raise CollaboratorsError(msg)
+    # This should not raise an exception
+    mail_youtube_upload_failure(mock_mail.video_file)
 
-    # Mock the collaborators property on the Website class
-    mock_collaborators = property(collaborators_getter)
-
-    # Apply the mock temporarily and clean up after
-    original_collaborators = type(mock_mail.video_file.video.website).collaborators
-    try:
-        type(mock_mail.video_file.video.website).collaborators = mock_collaborators
-
-        # This should not raise an exception
-        mail_youtube_upload_failure(mock_mail.video_file)
-
-        # Verify the exception was logged
-        mock_log.assert_called_once_with(
-            "Failed to send YouTube upload failure notification"
-        )
-    finally:
-        # Clean up by restoring the original property
-        type(mock_mail.video_file.video.website).collaborators = original_collaborators
+    # Verify the exception was logged
+    mock_log.assert_called_once_with(
+        "Failed to send YouTube upload failure notification"
+    )
 
 
 def test_mail_youtube_upload_success_exception_handling(mocker, mock_mail):
@@ -413,33 +399,19 @@ def test_mail_youtube_upload_success_collaborators_exception(mocker, mock_mail):
     """Test exception handling when iterating over collaborators fails"""
     mock_log = mocker.patch("videos.youtube.log.exception")
 
-    # Create a custom exception for testing
-    class CollaboratorsError(Exception):
-        pass
+    # Mock the website.collaborators property to raise an exception
+    mock_collaborators = mocker.PropertyMock(
+        side_effect=Exception("Collaborators access error")
+    )
+    type(mock_mail.video_file.video.website).collaborators = mock_collaborators
 
-    # Create a clean property mock with getter that raises exception
-    def collaborators_getter(self):
-        msg = "Collaborators access error"
-        raise CollaboratorsError(msg)
+    # This should not raise an exception
+    mail_youtube_upload_success(mock_mail.video_file)
 
-    # Mock the collaborators property on the Website class
-    mock_collaborators = property(collaborators_getter)
-
-    # Apply the mock temporarily and clean up after
-    original_collaborators = type(mock_mail.video_file.video.website).collaborators
-    try:
-        type(mock_mail.video_file.video.website).collaborators = mock_collaborators
-
-        # This should not raise an exception
-        mail_youtube_upload_success(mock_mail.video_file)
-
-        # Verify the exception was logged
-        mock_log.assert_called_once_with(
-            "Failed to send YouTube upload success notification"
-        )
-    finally:
-        # Clean up by restoring the original property
-        type(mock_mail.video_file.video.website).collaborators = original_collaborators
+    # Verify the exception was logged
+    mock_log.assert_called_once_with(
+        "Failed to send YouTube upload success notification"
+    )
 
 
 def test_mail_youtube_upload_success_sender_exception(mocker, mock_mail):
