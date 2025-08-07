@@ -57,45 +57,53 @@ def is_youtube_enabled() -> bool:
 
 def mail_youtube_upload_failure(video_file: VideoFile):
     """Notify collaborators that a youtube upload failed"""
-    with get_message_sender(YouTubeUploadFailureMessage) as sender:
-        website = video_file.video.website
-        for collaborator in website.collaborators:
-            sender.build_and_send_message(
-                collaborator,
-                {
-                    "site": {
-                        "title": website.title,
-                        "url": urljoin(
-                            settings.SITE_BASE_URL,
-                            f"sites/{website.name}",
-                        ),
+    try:
+        with get_message_sender(YouTubeUploadFailureMessage) as sender:
+            website = video_file.video.website
+            for collaborator in website.collaborators:
+                sender.build_and_send_message(
+                    collaborator,
+                    {
+                        "site": {
+                            "title": website.title,
+                            "url": urljoin(
+                                settings.SITE_BASE_URL,
+                                f"sites/{website.name}",
+                            ),
+                        },
+                        "video": {
+                            "filename": video_file.video.source_key.split("/")[-1]
+                        },
                     },
-                    "video": {"filename": video_file.video.source_key.split("/")[-1]},
-                },
-            )
+                )
+    except Exception:
+        log.exception("Failed to send YouTube upload failure notification")
 
 
 def mail_youtube_upload_success(video_file: VideoFile):
     """Notify collaborators that a youtube upload succeeded"""
-    with get_message_sender(YouTubeUploadSuccessMessage) as sender:
-        website = video_file.video.website
-        for collaborator in website.collaborators:
-            sender.build_and_send_message(
-                collaborator,
-                {
-                    "site": {
-                        "title": website.title,
-                        "url": urljoin(
-                            settings.SITE_BASE_URL,
-                            f"sites/{website.name}",
-                        ),
+    try:
+        with get_message_sender(YouTubeUploadSuccessMessage) as sender:
+            website = video_file.video.website
+            for collaborator in website.collaborators:
+                sender.build_and_send_message(
+                    collaborator,
+                    {
+                        "site": {
+                            "title": website.title,
+                            "url": urljoin(
+                                settings.SITE_BASE_URL,
+                                f"sites/{website.name}",
+                            ),
+                        },
+                        "video": {
+                            "filename": video_file.video.source_key.split("/")[-1],
+                            "url": f"https://www.youtube.com/watch?v={video_file.destination_id}",
+                        },
                     },
-                    "video": {
-                        "filename": video_file.video.source_key.split("/")[-1],
-                        "url": f"https://www.youtube.com/watch?v={video_file.destination_id}",
-                    },
-                },
-            )
+                )
+    except Exception:
+        log.exception("Failed to send YouTube upload success notification")
 
 
 def resumable_upload(request, max_retries=10):
