@@ -14,6 +14,9 @@ YT_MAX_LENGTH_DESCRIPTION = 5000
 PDF_FORMAT_ID = 46
 WEBVTT_FORMAT_ID = 51
 
+ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT = "0.1/s"
+S3_FILESIZE_TASK_RATE_LIMIT = "5/s"
+
 
 class VideoStatus:
     """Simple class for possible Video statuses"""

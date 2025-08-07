@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.158.0"
+VERSION = "0.158.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -555,7 +555,7 @@ YT_UPLOAD_LIMIT = get_int(
 )
 ARCHIVE_URL_REQUEST_TIMEOUT = get_int(
     name="ARCHIVE_URL_REQUEST_TIMEOUT",
-    default=30,
+    default=120,
     description="Timeout for making HEAD requests to archive_url to fetch file size for videos",  # noqa: E501
 )
 # OCW metadata fields
