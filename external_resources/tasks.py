@@ -142,10 +142,7 @@ def submit_website_resources_to_wayback_task(
             return self.replace(celery.group(tasks))
         return None
     else:
-        log.info(
-            "Wayback Machine tasks are disabled via environment settings "
-            "or PostHog feature flag."
-        )
+        log.info("Wayback Machine tasks are disabled via environment settings ")
         return None
 
 
@@ -329,10 +326,7 @@ def update_wayback_jobs_status_batch(self, job_ids=None):
             log.exception("Error during batch status update of Wayback Machine jobs")
             raise self.retry(exc=exc) from exc
     else:
-        log.info(
-            "Wayback Machine tasks are disabled via environment settings "
-            "or PostHog feature flag."
-        )
+        log.info("Wayback Machine tasks are disabled via environment settings ")
         return
 
 

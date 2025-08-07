@@ -47,6 +47,5 @@ class Command(WebsiteFilterCommand):
         else:
             self.stdout.write(
                 "Wayback Machine tasks are disabled via environment settings "
-                "or PostHog feature flag."
             )
             return
