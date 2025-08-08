@@ -130,27 +130,30 @@ def parse_resource_uuid(text: str) -> list[str]:
     """
 
     # This regex pattern matches two types of Hugo resource patterns:
-    # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}}
-    # 2. Hugo resource syntax: {{< resource uuid="uuid" >}}
+    # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}} or
+    #    {{% resource_link uuid "title" %}}
+    # 2. Hugo resource syntax: {{< resource uuid="uuid" >}} or
+    #    {{< resource uuid=uuid >}}
     #
     # Pattern breakdown:
-    # - Pattern 1: \{\{%\s+resource_link\s+"([uuid])"\s+"([^"]+)"\s+%\}\}
+    # - Pattern 1: \{\{%\s+resource_link\s+"?([uuid])"?\s+"([^"]+)"\s+%\}\}
     #   - \{\{%     : Matches literal "{{%"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource_link : Matches literal "resource_link"
     #   - \s+       : Matches one or more whitespace characters
-    #   - "([uuid])" : Captures UUID in group 1 (full pattern below)
+    #   - "?([uuid])"? : Captures UUID in group 1 with optional quotes
+    #                    (full pattern below)
     #   - \s+       : Matches one or more whitespace characters
     #   - "([^"]+)" : Captures title text in group 2
     #   - \s+       : Matches one or more whitespace characters
     #   - %\}\}     : Matches literal "%}}"
     #
-    # - Pattern 2: \{\{<\s+resource\s+uuid="([uuid])"\s*>\}\}
+    # - Pattern 2: \{\{<\s+resource\s+uuid="?([uuid])"?\s*>\}\}
     #   - \{\{<     : Matches literal "{{<"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource  : Matches literal "resource"
     #   - \s+       : Matches one or more whitespace characters
-    #   - uuid="([uuid])" : Captures UUID in group 3 (full pattern below)
+    #   - uuid="?([uuid])"? : Captures UUID in group 3 with optional quotes
     #   - \s*       : Matches zero or more whitespace characters
     #   - >\}\}     : Matches literal ">}}"
     #
@@ -158,9 +161,9 @@ def parse_resource_uuid(text: str) -> list[str]:
     # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
 
     pattern = r"""
-    \{\{%\s+resource_link\s+"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"\s+"([^"]+)"\s+%\}\}
+    \{\{%\s+resource_link\s+"?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"?\s+"([^"]+)"\s+%\}\}
     |
-    \{\{<\s+resource\s+uuid="([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"\s*>\}\}
+    \{\{<\s+resource\s+uuid="?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"?\s*>\}\}
     """
 
     regex = re.compile(pattern, re.VERBOSE)

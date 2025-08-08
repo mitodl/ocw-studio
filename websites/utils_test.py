@@ -172,6 +172,92 @@ def test_set_dict_field():
             "Some text with {{< resource uuid= and other incomplete patterns",
             [],
         ),
+        # Test case 12: Unquoted UUID in resource_link (user's failing case)
+        (
+            'asdhgfhgf  {{% resource_link 5e104a4b-ffe0-67b3-5506-f301bef2d39f "PDF" %}}',
+            ["5e104a4b-ffe0-67b3-5506-f301bef2d39f"],
+        ),
+        # Test case 13: Mixed quoted and unquoted UUIDs
+        (
+            '{{% resource_link abcd1234-5678-90ef-abcd-123456789012 "Unquoted" %}} and {{% resource_link "efab5678-90ab-cdef-1234-567890abcdef" "Quoted" %}}',
+            [
+                "abcd1234-5678-90ef-abcd-123456789012",
+                "efab5678-90ab-cdef-1234-567890abcdef",
+            ],
+        ),
+        # Test case 14: Extra whitespace variations with unquoted UUID
+        (
+            '{{%  resource_link   1234abcd-ef56-7890-abcd-123456789012   "Title"   %}}',
+            ["1234abcd-ef56-7890-abcd-123456789012"],
+        ),
+        # Test case 15: Unquoted UUID with complex title
+        (
+            '{{% resource_link fedcba98-7654-3210-fedc-ba9876543210 "Complex Title with 123 Numbers & Symbols!" %}}',
+            ["fedcba98-7654-3210-fedc-ba9876543210"],
+        ),
+        # Test case 16: Unquoted UUID in resource shortcode
+        (
+            "{{< resource uuid=abcdef01-2345-6789-abcd-ef0123456789 >}}",
+            ["abcdef01-2345-6789-abcd-ef0123456789"],
+        ),
+        # Test case 17: Mixed quoted resource_link and unquoted resource shortcode
+        (
+            '{{% resource_link "11111111-2222-3333-4444-555555555555" "Link" %}} and {{< resource uuid=66666666-7777-8888-9999-000000000000 >}}',
+            [
+                "11111111-2222-3333-4444-555555555555",
+                "66666666-7777-8888-9999-000000000000",
+            ],
+        ),
+        # Test case 18: Unquoted resource shortcode with extra whitespace
+        (
+            "{{<  resource  uuid=fedcba98-7654-3210-fedc-ba9876543210  >}}",
+            ["fedcba98-7654-3210-fedc-ba9876543210"],
+        ),
+        # Edge cases: Malformed patterns
+        # Missing closing
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-426614174000" "title"',
+            [],
+        ),
+        # Missing closing
+        (
+            '{{< resource uuid="123e4567-e89b-12d3-a456-426614174000"',
+            [],
+        ),
+        # Invalid UUID
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-426614174000x" "title" %}}',
+            [],
+        ),
+        # Invalid UUID
+        (
+            '{{< resource uuid="123e4567-e89b-12d3-a456-426614174000extra" >}}',
+            [],
+        ),
+        # Missing title
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-426614174000" %}}',
+            [],
+        ),
+        # Wrong UUID format
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-42661417400" "title" %}}',
+            [],
+        ),
+        # Extra dash
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-426614174000-extra" "title" %}}',
+            [],
+        ),
+        # Edge cases: Extreme whitespace (valid patterns)
+        (
+            '   {{% resource_link    12345678-abcd-1234-5678-123456789012    "title"    %}}   ',
+            ["12345678-abcd-1234-5678-123456789012"],
+        ),
+        (
+            '{{<    resource    uuid="87654321-dcba-4321-8765-210987654321"    >}}',
+            ["87654321-dcba-4321-8765-210987654321"],
+        ),
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
