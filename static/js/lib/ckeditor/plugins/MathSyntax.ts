@@ -28,7 +28,7 @@ const prepareTexForMarkdown = (s: string) => {
        */
       .replace(/(?<!\\)\\(?!\\)/g, String.raw`\\`)
       /**
-       * In TeX, an "_" is used to respresent subscripts. Markdown uses "_" to represent emphasis.
+       * In TeX, an "_" is used to represent subscripts. Markdown uses "_" to represent emphasis.
        * It may happen that when interpreting markdown in ckeditor, the "_" is interpreted as <em>
        * tags in the html, mangling part of our math. Hugo may also interpret "_" as an emphasis tag, not
        * producing the html we want.
