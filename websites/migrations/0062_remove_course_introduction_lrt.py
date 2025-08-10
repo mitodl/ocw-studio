@@ -40,9 +40,7 @@ def restore_course_intro_lrt(apps, schema_editor):
             metadata__learning_resource_types__contains=COURSE_INTRODUCTION_LRT
         )
         contents = (
-            WebsiteContent.objects.filter(
-                website_id__in=[w.pk for w in websites_to_update]
-            )
+            WebsiteContent.objects.filter(website__in=websites_to_update)
             .filter(Q(type=CONTENT_TYPE_METADATA) | Q(type=CONTENT_TYPE_WEBSITE))
             .exclude(
                 metadata__learning_resource_types__contains=COURSE_INTRODUCTION_LRT
