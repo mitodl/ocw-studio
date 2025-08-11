@@ -9,7 +9,7 @@ ci:
   - shfmt-docker
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: trailing-whitespace
     exclude: static/js/lib/ckeditor/plugins/MarkdownListSyntax.test.ts
@@ -24,7 +24,7 @@ repos:
   - id: check-toml
   - id: debug-statements
 - repo: https://github.com/scop/pre-commit-shfmt
-  rev: v3.11.0-1
+  rev: v3.12.0-2
   hooks:
   - id: shfmt-docker
 - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
@@ -72,7 +72,7 @@ repos:
     - --exclude-files
     - ".*/generated/"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.12.2"
+  rev: "v0.12.8"
   hooks:
   - id: ruff-format
   - id: ruff
@@ -104,7 +104,7 @@ repos:
     exclude: "(node_modules/|static/css/vendor/)"
     require_serial: false
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.10.0.1
+  rev: v0.11.0.1
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]
