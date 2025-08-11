@@ -339,8 +339,8 @@ def test_metadata_file_serialize():
         **metadata,
         "site_uid": str(content.website.uuid),
         "title": "Content Title",
-        "site_short_id": str(content.website.short_id),
-        "site_url_path": str(content.website.url_path),
+        "site_short_id": content.website.short_id,
+        "site_url_path": content.website.url_path,
     }
 
 
