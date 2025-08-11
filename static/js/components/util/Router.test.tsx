@@ -1,6 +1,6 @@
 import React from "react"
 import userEvent from "@testing-library/user-event"
-import { render, act } from "@testing-library/react"
+import { render } from "@testing-library/react"
 import { useHistory, Route } from "react-router"
 import { History as RHistory } from "history"
 import Router from "./Router"
@@ -23,66 +23,83 @@ describe("Router", () => {
     const TestComponent = () => {
       const history = useHistory()
       browserHistory = history as unknown as RHistory
-      return <Prompt when={true} message="Confirm me!" onBeforeUnload={true} />
+      return (
+        <div>
+          <button
+            onClick={() => {
+              history.push("/")
+            }}
+          >
+            home
+          </button>
+          <button
+            onClick={() => {
+              history.push("/somewhere")
+            }}
+          >
+            somewhere
+          </button>
+          <Prompt
+            when={true}
+            message={"Are you sure you want to leave this page?"}
+            onBeforeUnload={false}
+          />
+        </div>
+      )
     }
+
     const { getByText, unmount } = render(
-      <div>
-        <Router>
-          <Route path={"*"} component={TestComponent} />
-        </Router>
-      </div>,
+      <Router>
+        <Route path="*">
+          <TestComponent />
+        </Route>
+      </Router>,
     )
+
     assertNotNil(browserHistory)
-    // ReactStrap's modal seems to error if not explicitly unmounted
-    // before the test ends. Unsure why.
-    return { getByText, unmount, browserHistory }
+
+    return {
+      browserHistory,
+      getByText,
+      unmount,
+    }
   }
 
-  it('Does not navigate if user clicks "Cancel" on prompt', async () => {
-    const buttonText = "Cancel"
+  it("Does not navigate if user cancels window.confirm", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false)
+
     const { browserHistory, getByText, unmount } = setup()
     const user = userEvent.setup()
 
     expect(browserHistory.location.pathname).toBe("/")
-    act(() => browserHistory.push("/woof"))
+
+    await user.click(getByText("somewhere"))
 
     expect(browserHistory.location.pathname).toBe("/")
-
-    await act(() =>
-      user.pointer([
-        { target: getByText(buttonText) },
-        { keys: "[MouseLeft]" },
-      ]),
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Are you sure you want to leave this page?",
     )
 
-    expect(browserHistory.location.pathname).toBe("/")
-
+    confirmSpy.mockRestore()
     unmount()
   })
 
-  it('Does navigate if user clicks "Confirm" on prompt', async () => {
-    const buttonText = "Confirm"
+  it("Does navigate if user confirms window.confirm", async () => {
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true)
+
     const { browserHistory, getByText, unmount } = setup()
     const user = userEvent.setup()
 
     expect(browserHistory.location.pathname).toBe("/")
-    act(() => browserHistory.push("/woof"))
 
-    expect(browserHistory.location.pathname).toBe("/")
+    await user.click(getByText("somewhere"))
 
-    await act(() =>
-      user.pointer([
-        { target: getByText(buttonText) },
-        { keys: "[MouseLeft]" },
-      ]),
+    expect(browserHistory.location.pathname).toBe("/somewhere")
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Are you sure you want to leave this page?",
     )
 
-    expect(browserHistory.location.pathname).toBe("/woof")
-
+    confirmSpy.mockRestore()
     unmount()
-
-    // Go back to '/' at test end since history is shared within this file.
-    act(() => browserHistory.push("/"))
-    expect(browserHistory.location.pathname).toBe("/")
   })
 })
