@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.158.1
+Version 0.158.1 (Released August 11, 2025)
 ---------------
 
 - Backfill file and file_size for videos and their captions/transcript (#2654)
