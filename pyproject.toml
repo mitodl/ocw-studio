@@ -48,7 +48,7 @@ redis = "^4.5.5"
 requests = "2.32.4"
 sentry-sdk = "2.29.1"
 smart-open = {extras = ["s3"], version = "^7.0.0"}
-social-auth-app-django = "5.4.3"
+social-auth-app-django = "5.5.1"
 social-auth-core = {version = "^4", extras = ["saml"]}
 tqdm = "^4.65.0"
 uwsgi = "^2.0.24"
