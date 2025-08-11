@@ -24,7 +24,6 @@ from external_resources.constants import (
     EXTERNAL_RESOURCE_TASK_RATE_LIMIT,
     HTTP_TOO_MANY_REQUESTS,
     METADATA_URL_STATUS_CODE,
-    POSTHOG_ENABLE_WAYBACK_TASKS,
     RESOURCE_UNCHECKED_STATUSES,
     WAYBACK_ERROR_STATUS,
     WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
@@ -35,7 +34,6 @@ from external_resources.constants import (
 from external_resources.exceptions import CheckFailedError
 from external_resources.models import ExternalResourceState
 from main.celery import app
-from main.posthog import is_feature_enabled
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -129,9 +127,7 @@ def submit_website_resources_to_wayback_task(
     self, website_name, ignore_last_submission=None
 ):
     """Submit all external resources of a website to the Wayback Machine."""
-    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
-        POSTHOG_ENABLE_WAYBACK_TASKS
-    ):
+    if settings.ENABLE_WAYBACK_TASKS:
         external_resources = WebsiteContent.objects.filter(
             website__name=website_name,
             type=CONTENT_TYPE_EXTERNAL_RESOURCE,
@@ -146,10 +142,7 @@ def submit_website_resources_to_wayback_task(
             return self.replace(celery.group(tasks))
         return None
     else:
-        log.info(
-            "Wayback Machine tasks are disabled via environment settings "
-            "or PostHog feature flag."
-        )
+        log.info("Wayback Machine tasks are disabled via environment settings ")
         return None
 
 
@@ -197,9 +190,7 @@ def get_external_resource_state(resource_id):
 @single_task(7)
 def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
-    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
-        POSTHOG_ENABLE_WAYBACK_TASKS
-    ):
+    if settings.ENABLE_WAYBACK_TASKS:
         try:
             state = get_external_resource_state(resource_id)
             if should_skip_wayback_submission(state, ignore_last_submission):
@@ -295,9 +286,7 @@ def _get_pending_states(job_ids=None):
 @single_task(10)
 def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
-    if settings.ENABLE_WAYBACK_TASKS and is_feature_enabled(
-        POSTHOG_ENABLE_WAYBACK_TASKS
-    ):
+    if settings.ENABLE_WAYBACK_TASKS:
         try:
             pending_states = _get_pending_states(job_ids)
             if not pending_states.exists():
@@ -337,10 +326,7 @@ def update_wayback_jobs_status_batch(self, job_ids=None):
             log.exception("Error during batch status update of Wayback Machine jobs")
             raise self.retry(exc=exc) from exc
     else:
-        log.info(
-            "Wayback Machine tasks are disabled via environment settings "
-            "or PostHog feature flag."
-        )
+        log.info("Wayback Machine tasks are disabled via environment settings.")
         return
 
 

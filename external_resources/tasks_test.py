@@ -145,7 +145,6 @@ def test_submit_url_to_wayback_task_success(mocker):
     and updates the ExternalResourceState accordingly.
     """
     mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
-    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
 
     external_resource_state = ExternalResourceStateFactory()
     resource = external_resource_state.content
@@ -178,7 +177,6 @@ def test_submit_url_to_wayback_task_skipped_due_to_recent_submission(mocker, set
     Test that submit_url_to_wayback_task skips submission when the URL was recently submitted.
     """
     mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
-    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
 
     settings.WAYBACK_SUBMISSION_INTERVAL_DAYS = 7
 
@@ -219,7 +217,6 @@ def test_submit_url_to_wayback_task_http_error_429(mocker):
     Test that submit_url_to_wayback_task retries on HTTPError 429 (Too Many Requests).
     """
     mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
-    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
 
     external_resource_state = ExternalResourceStateFactory()
     resource = external_resource_state.content
@@ -257,7 +254,6 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     Test that update_wayback_jobs_status_batch updates statuses of pending jobs successfully.
     """
     mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
-    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
 
     # Create ExternalResourceState objects with pending Wayback Machine jobs
     state1 = ExternalResourceStateFactory(
@@ -322,7 +318,6 @@ def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
     Test that update_wayback_jobs_status_batch handles no pending jobs gracefully.
     """
     mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
-    mocker.patch("external_resources.tasks.is_feature_enabled", return_value=True)
 
     # Ensure there are no ExternalResourceState instances with wayback_status "pending"
     ExternalResourceState.objects.filter(wayback_status=WAYBACK_PENDING_STATUS).delete()
