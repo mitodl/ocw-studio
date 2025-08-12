@@ -146,7 +146,7 @@ def test_hugo_file_serialize(settings, markdown, exp_sections):
         + [f"{k}: {v}" for k, v in metadata.items()]
     )
     assert (
-        f"image: /media/{content.website.url_path}/{content.file.name.split('/')[-1]}"
+        f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
         in front_matter_lines
     )
     if exp_sections > 1:
@@ -319,8 +319,13 @@ def test_data_file_serialize(serializer_cls):
 @pytest.mark.django_db
 def test_metadata_file_serialize():
     """JsonFileSerializer should create the expected data file contents for sitemetadata files"""
+    website = WebsiteFactory.create(
+        short_id="somecourse-f25",
+        url_path="courses/somecourse-fall-2025",
+    )
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
     content = WebsiteContentFactory.create(
+        website=website,
         text_id="abcdefg",
         title="Content Title",
         type="sitemetadata",
@@ -334,6 +339,8 @@ def test_metadata_file_serialize():
         **metadata,
         "site_uid": str(content.website.uuid),
         "title": "Content Title",
+        "site_short_id": content.website.short_id,
+        "site_url_path": content.website.get_url_path(),
     }
 
 
