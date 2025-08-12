@@ -146,7 +146,7 @@ def test_hugo_file_serialize(settings, markdown, exp_sections):
         + [f"{k}: {v}" for k, v in metadata.items()]
     )
     assert (
-        f"image: /media/{content.website.url_path}/{content.file.name.split('/')[-1]}"
+        f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
         in front_matter_lines
     )
     if exp_sections > 1:
@@ -340,7 +340,7 @@ def test_metadata_file_serialize():
         "site_uid": str(content.website.uuid),
         "title": "Content Title",
         "site_short_id": content.website.short_id,
-        "site_url_path": content.website.url_path,
+        "site_url_path": content.website.get_url_path(),
     }
 
 
