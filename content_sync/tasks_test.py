@@ -6,6 +6,7 @@ from datetime import timedelta
 import factory
 import pytest
 import pytz
+from botocore.exceptions import ClientError
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
@@ -31,7 +32,7 @@ from websites.constants import (
     PUBLISH_STATUS_SUCCEEDED,
 )
 from websites.factories import WebsiteContentFactory, WebsiteFactory
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
@@ -963,3 +964,116 @@ def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unus
             prefix,
             website_names[chunk_size:],
         )
+
+
+@pytest.mark.django_db
+def test_remove_download_content_for_site_success(mocker):
+    """Test successful removal of download content for a site"""
+    # Setup
+    website = WebsiteFactory.create(name="test-site", url_path="test-site")
+
+    # Mock S3 and common vars
+    mock_s3_resource = mocker.patch("content_sync.tasks.get_boto3_resource")
+    mock_get_common_vars = mocker.patch("content_sync.tasks.get_common_pipeline_vars")
+
+    # Configure mocks
+    mock_bucket = mocker.MagicMock()
+    mock_s3_resource.return_value.Bucket.return_value = mock_bucket
+
+    mock_get_common_vars.return_value = {
+        "offline_preview_bucket_name": "test-preview-bucket",
+        "offline_publish_bucket_name": "test-publish-bucket",
+    }
+
+    # Mock objects in bucket
+    mock_object = mocker.MagicMock()
+    mock_bucket.objects.filter.return_value.limit.return_value = [mock_object]
+    mock_bucket.objects.filter.return_value = [mock_object, mock_object]
+
+    # Execute
+    tasks.remove_download_content_for_site(website.name)
+
+    # Verify
+    mock_s3_resource.assert_called_once_with("s3")
+    mock_get_common_vars.assert_called_once()
+
+    # Should filter objects by site prefix for both buckets
+    expected_prefix = f"{website.url_path}/"
+    assert mock_bucket.objects.filter.call_count >= 2  # At least once per bucket
+    mock_bucket.objects.filter.assert_any_call(Prefix=expected_prefix)
+
+    # Should delete objects
+    assert mock_object.delete.call_count == 2  # One per mock object
+
+
+@pytest.mark.django_db
+def test_remove_download_content_for_site_website_not_found(mocker):
+    """Test that task handles missing website gracefully"""
+    # Mock S3 and common vars (even though they won't be called)
+    mocker.patch("content_sync.tasks.get_boto3_resource")
+    mocker.patch("content_sync.tasks.get_common_pipeline_vars")
+
+    # Execute and expect exception to be raised
+    with pytest.raises(Website.DoesNotExist):
+        tasks.remove_download_content_for_site("nonexistent-site")
+
+
+@pytest.mark.django_db
+def test_remove_download_content_for_site_no_objects_in_bucket(mocker):
+    """Test that task handles empty buckets gracefully"""
+    # Setup
+    website = WebsiteFactory.create(name="test-site")
+
+    # Mock S3 and common vars
+    mock_s3_resource = mocker.patch("content_sync.tasks.get_boto3_resource")
+    mock_get_common_vars = mocker.patch("content_sync.tasks.get_common_pipeline_vars")
+
+    # Configure mocks
+    mock_bucket = mocker.MagicMock()
+    mock_s3_resource.return_value.Bucket.return_value = mock_bucket
+
+    mock_get_common_vars.return_value = {
+        "offline_preview_bucket_name": "test-preview-bucket",
+        "offline_publish_bucket_name": "test-publish-bucket",
+    }
+
+    # Mock empty bucket
+    mock_bucket.objects.filter.return_value.limit.return_value = []
+
+    # Execute
+    tasks.remove_download_content_for_site(website.name)
+
+    # Verify - should check for objects but not attempt to delete anything
+    mock_bucket.objects.filter.return_value.limit.assert_called()
+    # Should not attempt to iterate over objects for deletion since bucket is empty
+
+
+@pytest.mark.django_db
+def test_remove_download_content_for_site_bucket_not_found(mocker):
+    """Test that task handles missing buckets gracefully"""
+    # Setup
+    website = WebsiteFactory.create(name="test-site")
+
+    # Mock S3 and common vars
+    mock_s3_resource = mocker.patch("content_sync.tasks.get_boto3_resource")
+    mock_get_common_vars = mocker.patch("content_sync.tasks.get_common_pipeline_vars")
+
+    # Configure mocks to simulate bucket not found
+    mock_bucket = mocker.MagicMock()
+    mock_s3_resource.return_value.Bucket.return_value = mock_bucket
+
+    # Simulate 404 error when accessing bucket
+    error_response = {"Error": {"Code": "404"}}
+    mock_bucket.objects.filter.side_effect = ClientError(error_response, "operation")
+
+    mock_get_common_vars.return_value = {
+        "offline_preview_bucket_name": "nonexistent-preview-bucket",
+        "offline_publish_bucket_name": "nonexistent-publish-bucket",
+    }
+
+    # Execute - should not raise an exception
+    tasks.remove_download_content_for_site(website.name)
+
+    # Verify - should attempt to access buckets but handle errors gracefully
+    mock_s3_resource.assert_called_once_with("s3")
+    mock_get_common_vars.assert_called_once()
