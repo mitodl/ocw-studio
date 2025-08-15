@@ -987,8 +987,14 @@ def test_remove_download_content_for_site_success(mocker):
 
     # Mock objects in bucket
     mock_object = mocker.MagicMock()
-    mock_bucket.objects.filter.return_value.limit.return_value = [mock_object]
-    mock_bucket.objects.filter.return_value = [mock_object, mock_object]
+    mock_collection = mocker.MagicMock()
+    mock_collection.limit.return_value = [mock_object]
+    mock_bucket.objects.filter.return_value = mock_collection
+
+    # Mock delete operation to return objects to delete
+    mock_collection.__iter__ = mocker.MagicMock(
+        return_value=iter([mock_object, mock_object])
+    )
 
     # Execute
     tasks.remove_download_content_for_site(website.name)
@@ -1038,13 +1044,15 @@ def test_remove_download_content_for_site_no_objects_in_bucket(mocker):
     }
 
     # Mock empty bucket
-    mock_bucket.objects.filter.return_value.limit.return_value = []
+    mock_collection = mocker.MagicMock()
+    mock_collection.limit.return_value = []
+    mock_bucket.objects.filter.return_value = mock_collection
 
     # Execute
     tasks.remove_download_content_for_site(website.name)
 
     # Verify - should check for objects but not attempt to delete anything
-    mock_bucket.objects.filter.return_value.limit.assert_called()
+    mock_collection.limit.assert_called()
     # Should not attempt to iterate over objects for deletion since bucket is empty
 
 
