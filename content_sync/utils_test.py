@@ -39,7 +39,7 @@ from content_sync.utils import (
     strip_lines_between,
 )
 from main.s3_utils import get_boto3_client
-from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
+from videos.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.constants import CONTENT_TYPE_METADATA
 from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
 from websites.site_config_api import ConfigItem, SiteConfig
@@ -169,7 +169,8 @@ def test_get_destination_filepath(is_page_content, dirpath, filename, expected):
 def test_move_s3_object(settings):
     """S3 key for a moved object should be changed as expected"""
     settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME
-    setup_s3(settings)
+    test_files = {"biology/config/_default/menus.yaml": "menu content"}
+    setup_s3(settings, test_files)
     client = get_boto3_client("s3")
     from_path = "biology/config/_default/menus.yaml"
     to_path = "courses/mycourse/_default/menus.yaml"
