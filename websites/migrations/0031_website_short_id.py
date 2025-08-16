@@ -4,8 +4,7 @@ import contextlib
 
 from django.db import migrations, models
 
-from ocw_import.api import get_short_id
-from websites.api import find_available_name
+from websites.api import find_available_name, get_short_id
 
 
 def backpopulate_short_id(apps, schema_editor):

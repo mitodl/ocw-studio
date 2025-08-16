@@ -2,6 +2,9 @@
 
 import pytest
 
+from main.s3_utils import get_boto3_resource
+
+MOCK_BUCKET_NAME = "testbucket"
 TEST_VIDEOS_WEBHOOK_PATH = "./test_videos_webhook"
 
 
@@ -13,6 +16,26 @@ class MockHttpErrorResponse:
     def __init__(self, status, reason="mock reason"):
         self.status = status
         self.reason = reason
+
+
+def setup_s3(settings, test_files=None):
+    """
+    Set up fake s3 data
+    """
+    # Fake the settings
+    settings.ENVIRONMENT = "test"
+    settings.AWS_ACCESS_KEY_ID = "abc"
+    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
+    # Create our fake bucket
+    conn = get_boto3_resource("s3")
+    conn.create_bucket(Bucket=MOCK_BUCKET_NAME)
+
+    # Add data to the fake bucket
+    test_bucket = conn.Bucket(name=MOCK_BUCKET_NAME)
+    test_bucket.objects.all().delete()
+    if test_files:
+        for key, content in test_files.items():
+            test_bucket.put_object(Key=key, Body=content)
 
 
 @pytest.fixture(autouse=True)

@@ -28,9 +28,8 @@ from gdrive_sync.models import DriveFile
 from gdrive_sync.utils import get_resource_name
 from main.s3_utils import get_boto3_client
 from main.utils import get_base_filename
-from ocw_import.conftest import MOCK_BUCKET_NAME, setup_s3
 from users.factories import UserFactory
-from videos.conftest import MockHttpErrorResponse
+from videos.conftest import MOCK_BUCKET_NAME, MockHttpErrorResponse, setup_s3
 from videos.constants import (
     DESTINATION_YOUTUBE,
     YT_THUMBNAIL_IMG,
@@ -512,7 +511,13 @@ def test_mail_youtube_upload_success_trigger(mocker, youtube_status, file_status
 def test_delete_s3_objects(settings):
     """Test that s3 objects are deleted"""
     settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME
-    setup_s3(settings)
+
+    test_files = {
+        "biology/config/_default/menus.yaml": "menu content",
+        "biology/content/resources/biology.md": "course content",
+    }
+
+    setup_s3(settings, test_files)
     client = get_boto3_client("s3")
     assert (
         client.get_object(

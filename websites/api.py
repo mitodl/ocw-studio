@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 from datetime import datetime
 from uuid import UUID
 
@@ -451,3 +452,43 @@ def get_website_in_root_website_metadata(website, version):
     # Carry over url_path for proper linking
     site_metadata["url_path"] = website.url_path
     return site_metadata
+
+
+def get_short_id(name: str, metadata: dict) -> str:
+    """Get a short_id from the metadata"""
+    existing_site = Website.objects.filter(name=name).first()
+    if existing_site and existing_site.short_id:
+        return existing_site.short_id
+    course_num = metadata.get("primary_course_number")
+    if not course_num:
+        msg = "Primary course number is missing"
+        raise ValueError(msg)
+    short_id = (
+        (
+            "-".join(
+                [
+                    piece
+                    for piece in [
+                        re.sub(r"\(.+\)", "", course_num).strip(),
+                        metadata.get("term", ""),
+                        metadata.get("year", ""),
+                    ]
+                    if piece
+                ]
+            )
+        )
+        .lower()
+        .replace(" ", "-")
+    )
+    short_id_exists = (
+        Website.objects.exclude(name=name).filter(short_id=short_id).exists()
+    )
+    if short_id_exists:
+        short_id_prefix = f"{short_id}-"
+        short_id = find_available_name(
+            Website.objects.filter(short_id__startswith=short_id),
+            short_id_prefix,
+            "short_id",
+            max_length=100,
+        )
+    return short_id
