@@ -13,6 +13,7 @@ from websites.api import (
     detect_mime_type,
     fetch_website,
     get_content_warnings,
+    get_short_id,
     get_valid_new_filename,
     get_valid_new_slug,
     get_website_in_root_website_metadata,
@@ -606,3 +607,40 @@ def test_get_website_in_root_website_metadata(version, site_fields, expected_dra
         expected["draft"] = True
 
     assert get_website_in_root_website_metadata(website, version) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("course_num", "term", "year", "expected_id"),
+    [
+        ("6.0001", "", "", "6.0001"),
+        ("5.3", "Spring", "2022", "5.3-spring-2022"),
+        ("5.3", "Spring 2022", None, "5.3-spring-2022"),
+        ("5.3", "January IAP", "2011", "5.3-january-iap-2011"),
+        (
+            "18.650 (formerly 18.443) ",
+            "Spring",
+            "2015",
+            "18.650-spring-2015",
+        ),
+        (None, "January IAP", "2011", None),
+    ],
+)
+def test_get_short_id(course_num, term, year, expected_id):
+    """get_short_id should return expected values, or raise an error if no course number"""
+    metadata = {"primary_course_number": course_num, "term": term, "year": year}
+    if expected_id:
+        website = WebsiteFactory.create(short_id=expected_id)
+        short_id = get_short_id(website.name, metadata)
+        assert short_id == expected_id
+        for i in range(2, 5):
+            name = f"site_name_{i}"
+            website.short_id = get_short_id(website.name, metadata)
+            new_site = WebsiteFactory.create(
+                name=name, short_id=get_short_id(name, metadata)
+            )
+            assert new_site.short_id == f"{expected_id}-{i}"
+            assert website.short_id == expected_id
+    else:
+        with pytest.raises(ValueError, match="Primary course number is missing"):
+            get_short_id("random-name", metadata)
