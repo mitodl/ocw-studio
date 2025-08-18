@@ -35,13 +35,13 @@ def handle_website_save(
 
 
 @receiver(pre_save, sender=WebsiteContent)
-def update_navmenu_on_title_change(
+def update_navmenu_on_page_url_change(
     sender,  # noqa: ARG001
     instance,
     **kwargs,  # noqa: ARG001
 ):
     """
-    Update navmenu when the title of a page changes.
+    Update navmenu when the URL of a page changes.
     """
 
     if instance.type != CONTENT_TYPE_PAGE:
@@ -49,7 +49,7 @@ def update_navmenu_on_title_change(
 
     try:
         prev_instance = WebsiteContent.objects.get(pk=instance.pk)
-        if prev_instance.title == instance.title:
+        if prev_instance.filename == instance.filename:
             return
     except WebsiteContent.DoesNotExist:
         return
