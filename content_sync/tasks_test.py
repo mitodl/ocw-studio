@@ -991,10 +991,8 @@ def test_remove_download_content_for_site_success(mocker):
     mock_collection.limit.return_value = [mock_object]
     mock_bucket.objects.filter.return_value = mock_collection
 
-    # Mock delete operation to return objects to delete
-    mock_collection.__iter__ = mocker.MagicMock(
-        return_value=iter([mock_object, mock_object])
-    )
+    # Mock delete operation to return a count of deleted objects
+    mock_collection.delete.return_value = [{"Deleted": [{}, {}]}]  # 2 objects deleted
 
     # Execute
     tasks.remove_download_content_for_site(website.name)
@@ -1009,7 +1007,7 @@ def test_remove_download_content_for_site_success(mocker):
     mock_bucket.objects.filter.assert_any_call(Prefix=expected_prefix)
 
     # Should delete objects
-    assert mock_object.delete.call_count == 2  # One per mock object
+    assert mock_collection.delete.call_count == 2
 
 
 @pytest.mark.django_db

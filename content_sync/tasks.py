@@ -737,12 +737,10 @@ def _remove_content_from_buckets(buckets_to_clean, site_url_path, s3, website_na
                 continue
 
             # Delete all objects with the site prefix
-            delete_count = 0
-            objects_to_delete = bucket.objects.filter(Prefix=site_prefix)
-
-            for obj in objects_to_delete:
-                obj.delete()
-                delete_count += 1
+            delete_results = bucket.objects.filter(Prefix=site_prefix).delete()
+            delete_count = sum(
+                len(result.get("Deleted", [])) for result in delete_results
+            )
 
             log.info(
                 "Removed %d objects for site %s from %s bucket %s",
