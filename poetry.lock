@@ -3757,25 +3757,63 @@ files = [
 
 [[package]]
 name = "xmlsec"
-version = "1.3.13"
+version = "1.3.16"
 description = "Python bindings for the XML Security Library"
 optional = false
 python-versions = ">=3.5"
 groups = ["main"]
 files = [
-    {file = "xmlsec-1.3.13-cp310-cp310-win32.whl", hash = "sha256:2174e8c88555383322d8b7d3927490a92ef72ad72a6ddaf4fa1b96a3f27c3e90"},
-    {file = "xmlsec-1.3.13-cp310-cp310-win_amd64.whl", hash = "sha256:46d1daf16a8f4430efca5bb9c6a15776f2671f69f48a1941d6bb335e6f8cb29d"},
-    {file = "xmlsec-1.3.13-cp35-cp35m-win32.whl", hash = "sha256:d47062c42775a025aa94fb8b15de97c1db86e301e549d3168157e0b1223d51b1"},
-    {file = "xmlsec-1.3.13-cp35-cp35m-win_amd64.whl", hash = "sha256:7c7e8ef52688ddaf5b66750cc8d901f61716f46727014ff012f41d8858cedeb0"},
-    {file = "xmlsec-1.3.13-cp36-cp36m-win32.whl", hash = "sha256:1725d70ee2bb2cd8dd66c7a7451be02bb59dc8280103db4f68e731f00135b1e0"},
-    {file = "xmlsec-1.3.13-cp36-cp36m-win_amd64.whl", hash = "sha256:1f8c41162152d7086fd459926e61bc7cb2d52ffc829e760bf8b2c221a645d568"},
-    {file = "xmlsec-1.3.13-cp37-cp37m-win32.whl", hash = "sha256:ff1c61f296e75cba5bac802d0000bfde09143eed946ced1a5162211867c335f8"},
-    {file = "xmlsec-1.3.13-cp37-cp37m-win_amd64.whl", hash = "sha256:d249c0a2bf3ff13a231bca6a588e7d276b3f1e2cf09316b542f470a63855799e"},
-    {file = "xmlsec-1.3.13-cp38-cp38-win32.whl", hash = "sha256:56cfcf3487b6ad269eb1fb543c04dee2c101f1bc91e06d6cf7bfab9ac486efd8"},
-    {file = "xmlsec-1.3.13-cp38-cp38-win_amd64.whl", hash = "sha256:e6626bece0e97a8598b5df28c27bc6f2ae1e97d29dca3c1a4910a7598a4d1d0f"},
-    {file = "xmlsec-1.3.13-cp39-cp39-win32.whl", hash = "sha256:091f23765729df6f3b3a55c8a6a96f9c713fa86e76b86a19cdb756aaa6dc0646"},
-    {file = "xmlsec-1.3.13-cp39-cp39-win_amd64.whl", hash = "sha256:5162f416179350587c4ff64737af68a846a9b86f95fd465df4e68b589ce56618"},
-    {file = "xmlsec-1.3.13.tar.gz", hash = "sha256:916f5d78e8041f6cd9391abba659da8c94a4fef7196d126d40af1ff417f2cf86"},
+    {file = "xmlsec-1.3.16-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a34ff8241eef1a98bc8105dad8909c00501aa8c045613cc55da75784d0a77a7a"},
+    {file = "xmlsec-1.3.16-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:7347748781c1a58d05e25a804e706b5a232cdac658ffd477866db109f32f3bf2"},
+    {file = "xmlsec-1.3.16-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fda5206b7c94b6d9552d20493d57316cb165950f2501164c4ea682cd63fadeab"},
+    {file = "xmlsec-1.3.16-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3343e37fc86a823ed4cb9272e548b27aeea964603c05d6d6d82f797d4f9d2826"},
+    {file = "xmlsec-1.3.16-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3e0942d08284b9343e42126939ad67ec72348dff922fbdc328593beea37a9ec3"},
+    {file = "xmlsec-1.3.16-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:9ec5f9e57b18d4de372235b631cab6fb4f30e58c5f9d72999b687cf55019b588"},
+    {file = "xmlsec-1.3.16-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:b1321897c417ae7d633063c60742c722dad20797e7d5821438c2955ca5eafe92"},
+    {file = "xmlsec-1.3.16-cp310-cp310-win32.whl", hash = "sha256:ab161b770addd44c04c7f6cdcfa6409e72ce60fde0356a851c678ed60bbb53e9"},
+    {file = "xmlsec-1.3.16-cp310-cp310-win_amd64.whl", hash = "sha256:1c616f4a4c956ddf40dbcad45b4e1cee0e1efe2d1dd47ded483e6d89161b484d"},
+    {file = "xmlsec-1.3.16-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:837fe04902341e6cb07fd652b73a40d776fef68842a8f8a6987d555d3244557f"},
+    {file = "xmlsec-1.3.16-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:0cc4c475a30364fc0db5b761e71add9212a5cc41a06399ee167249e7cfc8887f"},
+    {file = "xmlsec-1.3.16-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3fc4bef7772391710fd4f7abe552f44b1b51bedc0d6eaa14311c353f6aac5830"},
+    {file = "xmlsec-1.3.16-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c130ad630580da10656002ab577f307dba92bdbe285cea9aedd633847a28be91"},
+    {file = "xmlsec-1.3.16-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:df55939743f48b1802a2036670f5004344fa71e787a8c395b4adc4f17beceb5f"},
+    {file = "xmlsec-1.3.16-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:f8087d866c0997fd8145a37e0a60bfb7328af13a4cd424467f10b1b51b2f58d6"},
+    {file = "xmlsec-1.3.16-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:6bf07d5add2bfa47245c6ffbdc2f8646160e6f68a519f8723800e743acbdc300"},
+    {file = "xmlsec-1.3.16-cp311-cp311-win32.whl", hash = "sha256:ab5f6293e101e45f53ccf6c46a7a54b39aecb8610a7688d9ddbb8879bdba7812"},
+    {file = "xmlsec-1.3.16-cp311-cp311-win_amd64.whl", hash = "sha256:8c209841a9e0e34e6542d92012488db37422e5a50fa8d94ea899c3d138d619e0"},
+    {file = "xmlsec-1.3.16-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:b4878829e95561e66b2d43b987f1d3c75f470eff979acf6121f297f9cce0fc77"},
+    {file = "xmlsec-1.3.16-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1f79a3324db82fa9da639723982971f7d8ca970e4677159a49f6242452cf8a33"},
+    {file = "xmlsec-1.3.16-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d0b3028f89760e5a87956af92d4aab102da56d5e07f34086f29793f644e7c8cb"},
+    {file = "xmlsec-1.3.16-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:27392ea8bc3b7e6ff310d261f0232ad14972188c44a45be5a1ebe33bf9d4f4c5"},
+    {file = "xmlsec-1.3.16-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bfbe712a1117145916c0fc183f3a3e924b3ca7495d6d06f4236d6f93324427d6"},
+    {file = "xmlsec-1.3.16-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:37144c51339a1217bcba2f5a2412fe9ec29410d08f25957f3635694512f0a375"},
+    {file = "xmlsec-1.3.16-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:6f430206704190738fb33a43b695a0813671675e811b570547789750e4de1390"},
+    {file = "xmlsec-1.3.16-cp312-cp312-win32.whl", hash = "sha256:fc76572c58bf50d5d5c524ac649112a9cd62e5f525618af52efc162d22201a39"},
+    {file = "xmlsec-1.3.16-cp312-cp312-win_amd64.whl", hash = "sha256:ae91291233db6fcbe154b58e06d647b4c01a28693b735cdfcda5f5ad0c86b3b3"},
+    {file = "xmlsec-1.3.16-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:68b60867e6be61e06964be64d7501b88156f0ad0a4808b5c2eb8b16d8de9b6bc"},
+    {file = "xmlsec-1.3.16-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:174917827e26ff71dab512e5e87544dcd3309eb4a5dc18e6f1e8022789e1f1bf"},
+    {file = "xmlsec-1.3.16-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:bb683689a7770a3a71657af96c1953c9d00da7e3c8d9a9851777fa2c9ecf741a"},
+    {file = "xmlsec-1.3.16-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2fda1627987e26989ead9ae8ec8b089f2affa0e922f585ab1c37d1c2111c78c7"},
+    {file = "xmlsec-1.3.16-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a4fe9e8ab3497632ea242fc718a57e7524e0300537fd106a7455696b339ac0a6"},
+    {file = "xmlsec-1.3.16-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:1014c6cb723ad99781a2f37c03969eb246b310da029ddf3250df998801bb62d7"},
+    {file = "xmlsec-1.3.16-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:795eedbdb4dbc72c786dbf4193561de0f3ebd8f8ee3a32e81b085b24ccbee120"},
+    {file = "xmlsec-1.3.16-cp313-cp313-win32.whl", hash = "sha256:1f83fbd4c44bbeebd19db9de5969b68ed7d5b723d7812c5a62c795452f7c8945"},
+    {file = "xmlsec-1.3.16-cp313-cp313-win_amd64.whl", hash = "sha256:4b8b36cdccd13fa84a923958ebf5f73febe8a97da4ecff711fdeb97fec6896db"},
+    {file = "xmlsec-1.3.16-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6ffff00ac7bcf8f28d33c250f20e09c7a257ec804463762f17609318b82a2177"},
+    {file = "xmlsec-1.3.16-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:69a9e786e06a3338bb9fe135ce5b97e1c410144d438ec35bd707b33f164f75cb"},
+    {file = "xmlsec-1.3.16-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:c5f36b3cce22c9686dcb981d382eeed4b7e5407c69992bb4fe40a732d47403db"},
+    {file = "xmlsec-1.3.16-cp38-cp38-win32.whl", hash = "sha256:dd3465fb57c6b67df74022557dd7d5fcd5b57304987636cb61303dce8dd2dfd3"},
+    {file = "xmlsec-1.3.16-cp38-cp38-win_amd64.whl", hash = "sha256:fcf4650aaed744c846aac0f87f69aec9c00926eb6f839744c1d3b508cd35093a"},
+    {file = "xmlsec-1.3.16-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:0264dad1de0d5aa5a5bf26fdd58db0626dd01731dd9150c74c8afd76a4467674"},
+    {file = "xmlsec-1.3.16-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:7899a22d3dddeba5e21fcb70a244301c4a71538ead55c814f0589b63c7ba1de8"},
+    {file = "xmlsec-1.3.16-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:967c57f66932106078d571d02aa31b1eb59e51c2fe744685d1409f4d39b23034"},
+    {file = "xmlsec-1.3.16-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b65fa36c495440f0ef08350df3e2a6eb54cc0cb88fcd528a5d522d164cd71d69"},
+    {file = "xmlsec-1.3.16-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:40532aab61599cf5510eb344930893e2d786edbb51bb78ad24efdfd9c37c1614"},
+    {file = "xmlsec-1.3.16-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:7faf7ef829f5a946234e466a7cfdac745aa6e436bb7ea55884dce7193e63629e"},
+    {file = "xmlsec-1.3.16-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:cd23b75c9808fb86f4a3106ab706e485552e1a3364606c2226bfaad794264142"},
+    {file = "xmlsec-1.3.16-cp39-cp39-win32.whl", hash = "sha256:51cf9da31c8efe4adcc739557c7747fbd32f29b1cf4f7f3aef60d557bfb7957d"},
+    {file = "xmlsec-1.3.16-cp39-cp39-win_amd64.whl", hash = "sha256:53ade42eb59b45958b41dae196972544ed39c75274c232e31263e30578d9006c"},
+    {file = "xmlsec-1.3.16.tar.gz", hash = "sha256:2b6c70544c6d1d4ca006aaa314958e0ef3514dc81fffde1b23f2ec41a5791f9d"},
 ]
 
 [package.dependencies]
@@ -3814,4 +3852,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.12"
-content-hash = "fd04d7995b77a48cdabd742c0c13a586f89c083689f249078b0cf1f24770e26b"
+content-hash = "5fa89e7bed7fd6707eb73c46617d516e3a98f6a131d9bbc465cb4bc8527c0a27"
