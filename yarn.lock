@@ -14879,12 +14879,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"turndown@npm:7.2.0":
-  version: 7.2.0
-  resolution: "turndown@npm:7.2.0"
+"turndown@npm:7.2.1":
+  version: 7.2.1
+  resolution: "turndown@npm:7.2.1"
   dependencies:
     "@mixmark-io/domino": ^2.2.0
-  checksum: a0bdf2fcc8cd531c94edbd7c384ae58a13251e7b472f7245fac74a316c08f8d04eb9dddfce6a5e6170ddb09c0494154a0d69312e5d9c2a7223a936a7e369ac7c
+  checksum: 44629c982a05c5e70a15aa1736acdd7dec59bc072275681960e380ad7d9bf6d9076dcbdd349f47da11b308984a3ab96485ef0cd1b9c6c350d88b206f0dab6e58
   languageName: node
   linkType: hard
 
