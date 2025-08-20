@@ -30,7 +30,7 @@ class LinkResolveuidRule(PyparsingRule):
 
     alias = "link_resolveuid"
 
-    Parser = partial(LinkParser, recursive=True)
+    Parser = staticmethod(partial(LinkParser, recursive=True))
 
     fields = [
         "markdown",

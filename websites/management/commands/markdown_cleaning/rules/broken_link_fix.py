@@ -48,7 +48,7 @@ class BrokenLinkFixRuleMixin(ABC):
             - /pages/page2
     """
 
-    Parser = partial(LinkParser, recursive=True)
+    Parser = staticmethod(partial(LinkParser, recursive=True))
 
     @dataclass
     class ReplacementNotes:
