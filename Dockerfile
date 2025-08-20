@@ -54,3 +54,4 @@ USER mitodl
 
 EXPOSE 8043
 ENV PORT 8043
+CMD uwsgi uwsgi.ini
