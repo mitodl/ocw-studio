@@ -1,4 +1,4 @@
-FROM python:3.12.11
+FROM python:3.13.7
 LABEL maintainer "ODL DevOps <mitx-devops@mit.edu>"
 
 # Add package files, install updated node and pip
@@ -20,7 +20,7 @@ RUN mkdir /var/media && chown -R mitodl:mitodl /var/media
 # Install Python packages
 ## Set some poetry config
 ENV  \
-  POETRY_VERSION=2.1.1 \
+  POETRY_VERSION=2.1.4 \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/tmp/cache/poetry' \
   POETRY_HOME='/home/mitodl/.local' \
@@ -54,4 +54,3 @@ USER mitodl
 
 EXPOSE 8043
 ENV PORT 8043
-CMD uwsgi uwsgi.ini
