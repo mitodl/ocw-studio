@@ -1,6 +1,23 @@
 Release Notes
 =============
 
+Version 0.160.0
+---------------
+
+- Remove ocw_to_hugo dependency and refactor (#2680)
+- fix(deps): update dependency requests to v2.32.5 (#2688)
+- fix(deps): update dependency boto3 to v1.40.12 (#2687)
+- chore(deps): update actions/checkout action to v5 (#2685)
+- fix(deps): update dependency xmlsec to v1.3.16 (#2495)
+- chore(deps): update dependency turndown to v7.2.1 (#2683)
+- fix(deps): update dependency pypdf to v6 [security] (#2678)
+- fix(deps): update dependency boto3 to v1.40.11 (#2684)
+- fix: underscores in tex expressions being interpreted as em tags (#2664)
+- chore(deps): update actions/checkout digest to 08eba0b (#2682)
+- fix: use filename instead of title for determining if changes are needed to menu (#2679)
+- added handling for optional quotes in internal resource links (#2675)
+- [pre-commit.ci] pre-commit autoupdate (#2619)
+
 Version 0.159.0 (Released August 21, 2025)
 ---------------
 
