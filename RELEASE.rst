@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.159.0 (Released August 21, 2025)
+---------------
+
+- Add published URL to metadata for build (#2676)
+- fix(deps): update dependency djangorestframework to v3.16.1 (#2673)
+- fix(deps): update dependency boto3 to v1.40.6 (#2672)
+- Remove OCW_STUDIO_WAYBACK_MACHINE_TASKS PostHog feature flag (#2671)
+- Add migration to remove Course Introduction LRT from course metadata (#2655)
+- chore: added check for empty groups and exception handling (#2665)
+- chore(deps): update postgres docker tag to v16.9 (#2668)
+- chore(deps): update node.js to v22.18.0 (#2667)
+
 Version 0.158.1 (Released August 11, 2025)
 ---------------
 
