@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.159.0
+Version 0.159.0 (Released August 21, 2025)
 ---------------
 
 - Add published URL to metadata for build (#2676)
