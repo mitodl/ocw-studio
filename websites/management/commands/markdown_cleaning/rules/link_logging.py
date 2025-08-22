@@ -21,7 +21,7 @@ class LinkLoggingRule(PyparsingRule):
 
     alias = "link_logging"
 
-    Parser = partial(LinkParser, recursive=True)
+    Parser = staticmethod(partial(LinkParser, recursive=True))
 
     fields = [
         "markdown",
