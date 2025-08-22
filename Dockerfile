@@ -20,7 +20,7 @@ RUN mkdir /var/media && chown -R mitodl:mitodl /var/media
 # Install Python packages
 ## Set some poetry config
 ENV  \
-  POETRY_VERSION=2.1.1 \
+  POETRY_VERSION=2.1.4 \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/tmp/cache/poetry' \
   POETRY_HOME='/home/mitodl/.local' \
