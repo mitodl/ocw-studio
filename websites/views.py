@@ -26,7 +26,10 @@ from content_sync.api import (
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.tasks import update_mass_build_pipelines_on_publish
+from content_sync.tasks import (
+    remove_download_content_for_site,
+    update_mass_build_pipelines_on_publish,
+)
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
@@ -338,6 +341,12 @@ class WebsiteViewSet(
                 website=website, type=CONTENT_TYPE_METADATA
             )
             hide_download = content and content.metadata.get("hide_download")
+
+            # If hide_download is set to True, trigger the task to remove
+            # download content
+            if hide_download:
+                remove_download_content_for_site.delay(website.name)
+
         return Response(
             status=200,
             data={} if hide_download else {"version": str(now_in_utc().timestamp())},
