@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.160.0
+Version 0.160.0 (Released August 25, 2025)
 ---------------
 
 - Remove ocw_to_hugo dependency and refactor (#2680)
