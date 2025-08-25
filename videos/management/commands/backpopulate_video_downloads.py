@@ -1,9 +1,7 @@
 """
-Move 16:9 transcoded videos into the correct S3 paths for syncing, and update the resource
-metadata to point to that path for downloads.
-"""  # noqa: E501
-
-from pathlib import Path
+Move 16:9 transcoded videos into the correct S3 paths for syncing,
+and update the resource metadata to point to that path for downloads.
+"""
 
 from django.conf import settings
 from django.core.management import CommandParser
@@ -13,8 +11,6 @@ from content_sync.tasks import sync_unsynced_websites
 from main.management.commands.filter import WebsiteFilterCommand
 from videos.api import prepare_video_download_file
 from videos.models import Video
-
-script_path = Path(__file__).parent
 
 
 class Command(WebsiteFilterCommand):
