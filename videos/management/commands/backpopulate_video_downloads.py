@@ -58,10 +58,10 @@ class Command(WebsiteFilterCommand):
                 )
             try:
                 prepare_video_download_file(video)
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error updating video {video.source_key}"
-                    "for site {video.website.short_id}: {exc}"
+                    f"for site {video.website.short_id}: {exc}"
                 )
         self.stdout.write(
             f"Completed updating downloadable video files for {videos.count()} videos."
