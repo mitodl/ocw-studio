@@ -1,7 +1,7 @@
-import { SchemaOf } from "yup"
+import { Schema } from "yup"
 import { FormikHelpers } from "formik"
 
-export type FormSchema = SchemaOf<any>
+export type FormSchema = Schema<any>
 
 /**
  * These are the primitive types which can be present in our site content

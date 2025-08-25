@@ -245,7 +245,7 @@ describe("form validation utils", () => {
             ...defaultFormValues,
             [name]: null,
           }),
-        ).toThrow(new yup.ValidationError(`${name} is a required field.`))
+        ).toThrow(new yup.ValidationError(`${name} is a required field`))
       })
 
       it("should pass validation for valid multiple select values", async () => {
@@ -418,9 +418,7 @@ describe("form validation utils", () => {
               content: null,
             },
           }),
-        ).toThrow(
-          new yup.ValidationError(`${name}.content is a required field.`),
-        )
+        ).toThrow(new yup.ValidationError(`${name}.content cannot be null`))
       })
 
       it("should validate for a required cross_site relation field", () => {
@@ -518,9 +516,7 @@ describe("form validation utils", () => {
               content: null,
             },
           }),
-        ).toThrow(
-          new yup.ValidationError(`${name}.content is a required field.`),
-        )
+        ).toThrow(new yup.ValidationError(`${name} is a required field`))
         await expect(
           schema.isValid({
             ...defaultFormValues,
@@ -565,7 +561,7 @@ describe("form validation utils", () => {
 
         await schema
           .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })
-          .catch((err) => {
+          .catch((err: any) => {
             expect(err.errors).toEqual([
               "mystring is a required field",
               "myboolean is a required field",
