@@ -28,7 +28,7 @@ setLocale({
 const defaultTitleFieldSchema = yup.string().required().label("Title")
 
 const minMax = (
-  schema: ArraySchema<any>,
+  schema: ArraySchema<any, any>,
   field:
     | RelationConfigField
     | SelectConfigField
