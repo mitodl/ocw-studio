@@ -3,7 +3,7 @@ Move 16:9 transcoded videos into the correct S3 paths for syncing, and update th
 metadata to point to that path for downloads.
 """  # noqa: E501
 
-import os
+from pathlib import Path
 
 from django.conf import settings
 from django.core.management import CommandParser
@@ -14,18 +14,19 @@ from main.management.commands.filter import WebsiteFilterCommand
 from videos.api import prepare_video_download_file
 from videos.models import Video
 
-script_path = os.path.dirname(os.path.realpath(__file__))  # noqa: PTH120
+script_path = Path(__file__).parent
 
 
 class Command(WebsiteFilterCommand):
     """
-    Move 16:9 transcoded videos into the correct S3 paths for syncing, and update the resource
-    metadata to point to that path for downloads.
-    """  # noqa: E501
+    Move 16:9 transcoded videos into the correct S3 paths for syncing,
+    and update the resource metadata to point to that path for downloads.
+    """
 
     help = __doc__
 
     def add_arguments(self, parser: CommandParser) -> None:
+        """Add arguments to the command's argument parser."""
         super().add_arguments(parser)
         parser.add_argument(
             "-ss",
@@ -44,7 +45,7 @@ class Command(WebsiteFilterCommand):
         is_verbose = options["verbosity"] > 1
 
         videos = Video.objects.all()
-        self.filter_videos(videos=videos)
+        videos = self.filter_videos(videos=videos)
 
         self.stdout.write(
             f"Updating downloadable video files for {videos.count()} videos."
@@ -52,23 +53,25 @@ class Command(WebsiteFilterCommand):
         for video in videos:
             if is_verbose:
                 self.stdout.write(
-                    f"Updating video {video.source_key} for site {video.website.short_id}"  # noqa: E501
+                    f"Updating video {video.source_key}"
+                    "for site {video.website.short_id}"
                 )
             try:
                 prepare_video_download_file(video)
-            except Exception as exc:  # pylint:disable=broad-except  # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 self.stderr.write(
-                    f"Error Updating video {video.source_key} for site {video.website.short_id}: {exc}"  # noqa: E501
+                    f"Error updating video {video.source_key}"
+                    "for site {video.website.short_id}: {exc}"
                 )
         self.stdout.write(
-            f"Completed Updating downloadable video files for {videos.count()} videos."
+            f"Completed updating downloadable video files for {videos.count()} videos."
         )
 
         if settings.CONTENT_SYNC_BACKEND and not options["skip_sync"]:
-            self.stdout.write("Syncing all unsynced websites to the designated backend")
+            self.stdout.write("Syncing all unsynced websites to designated backend.")
             start = now_in_utc()
             task = sync_unsynced_websites.delay(create_backends=True)
             self.stdout.write(f"Starting task {task}...")
             task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
+            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds.")
