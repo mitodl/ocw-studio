@@ -561,7 +561,7 @@ describe("form validation utils", () => {
 
         await schema
           .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })
-          .catch((err: any) => {
+          .catch((err: yup.ValidationError) => {
             expect(err.errors).toEqual([
               "mystring is a required field",
               "myboolean is a required field",
