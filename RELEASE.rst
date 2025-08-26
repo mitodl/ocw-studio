@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.160.1
+---------------
+
+- Properly filter websites for backpopulate_video_downloads command (#2694)
+- fix(deps): update dependency sentry-sdk to v2.35.0 (#2692)
+- fix(deps): update dependency boto3 to v1.40.16 (#2691)
+- fix(deps): update python to v3.13.7 (#2649)
+- Update Poetry to version 2.1.4 (#2689)
+
 Version 0.160.0 (Released August 25, 2025)
 ---------------
 
