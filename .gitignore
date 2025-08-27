@@ -71,7 +71,6 @@ target/
 # Heroku/Foreman
 .env
 .env-*
-.python-version
 .husky/
 
 # webpack
