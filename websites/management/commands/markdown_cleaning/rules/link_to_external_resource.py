@@ -145,7 +145,7 @@ class LinkToExternalResourceRule(PyparsingRule):
 
     alias = "link_to_external_resource"
 
-    Parser = partial(LinkParser, recursive=True)
+    Parser = staticmethod(partial(LinkParser, recursive=True))
 
     fields = [
         "markdown",

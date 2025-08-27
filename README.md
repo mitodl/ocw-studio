@@ -22,7 +22,6 @@ OCW Studio manages deployments for OCW courses.
   - [Running a Local Concourse Docker Container](#running-a-local-concourse-docker-container)
   - [End to end testing of site pipelines](#end-to-end-testing-of-site-pipelines)
   - [Publish And Build Dates](#publish-and-build-dates)
-- [Running OCW Studio on Apple Silicon](#running-ocw-studio-on-apple-silicon)
 - [Video Workflow](#video-workflow)
 - [Enabling YouTube integration](#enabling-youtube-integration)
 - [Enabling Google Drive integration](#enabling-google-drive-integration)
@@ -414,14 +413,6 @@ You should now have a pipeline in Concourse called `e2e-test-pipeline`. Run this
 
 - Publishing the site from Studio for live and draft versions updates the website properties `(live_build_date, publish_date)` and `(draft_build_date, draft_publish_date)`, respectively.
 - Running the mass build for live and draft versions only updates the website properties `live_build_date` and `draft_build_date`, respectively.
-
-# Running OCW Studio on Apple Silicon
-
-Currently, the default Docker image for Concourse is not compatible with Apple Silicon. Therefore, run the following command prior to running `docker-compose up`:
-
-```
-cp docker-compose-arm64.yml docker-compose.override.yml
-```
 
 # Video Workflow
 
