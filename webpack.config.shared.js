@@ -71,6 +71,12 @@ module.exports = {
     resolve: {
       modules: [path.join(__dirname, "static/js"), "node_modules"],
       extensions: [".js", ".jsx", ".ts", ".tsx"],
+      alias: {
+        "react-router-dom/dist/index.js": path.resolve(
+          __dirname,
+          "node_modules/react-router-dom/index.js",
+        ),
+      },
     },
     performance: {
       hints: false,
