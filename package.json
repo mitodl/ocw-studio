@@ -149,7 +149,7 @@
     "webpack-cli": "^6.0.0",
     "webpack-dev-middleware": "^5.0.0",
     "webpack-hot-middleware": "^2.25.0",
-    "yup": "^0.32.9"
+    "yup": "^1.0.0"
   },
   "engines": {
     "node": "22.18.0",
