@@ -3161,10 +3161,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/showdown@npm:^1.9.4":
-  version: 1.9.4
-  resolution: "@types/showdown@npm:1.9.4"
-  checksum: bebf742fdf154bc37f8b8e8bfb155c7d5a016215326b787bab8fc1e5053cf07d7b85848d473e4382fb245a1c5c856098fb2481778f73ff9748bd8c55a0453afe
+"@types/showdown@npm:^2.0.0":
+  version: 2.0.6
+  resolution: "@types/showdown@npm:2.0.6"
+  checksum: c4c341e4a93061cabed6168f2c2eb7b83c08bc57284f5c14bc2e5d18c6b42b533cc2efc4fa3e4cd96e009520ae2fa8c40997be31e4409239aabf8a2cf37c1ada
   languageName: node
   linkType: hard
 
@@ -5108,6 +5108,13 @@ __metadata:
   version: 7.2.0
   resolution: "commander@npm:7.2.0"
   checksum: 53501cbeee61d5157546c0bef0fedb6cdfc763a882136284bed9a07225f09a14b82d2a84e7637edfd1a679fb35ed9502fd58ef1d091e6287f60d790147f68ddc
+  languageName: node
+  linkType: hard
+
+"commander@npm:^9.0.0":
+  version: 9.5.0
+  resolution: "commander@npm:9.5.0"
+  checksum: c7a3e27aa59e913b54a1bafd366b88650bc41d6651f0cbe258d4ff09d43d6a7394232a4dadd0bf518b3e696fdf595db1028a0d82c785b88bd61f8a440cecfade
   languageName: node
   linkType: hard
 
@@ -11102,7 +11109,7 @@ __metadata:
     "@types/react-router-dom": ^5.1.8
     "@types/react-select": ^4.0.17
     "@types/redux-logger": ^3.0.9
-    "@types/showdown": ^1.9.4
+    "@types/showdown": ^2.0.0
     "@types/sinon": ^17.0.0
     "@types/turndown": ^5.0.1
     "@types/url-assembler": ^2.1.1
@@ -11169,7 +11176,7 @@ __metadata:
     sass-lint: ^1.13.1
     sass-loader: ^12.1.0
     sentry-testkit: ^4.0.3
-    showdown: ^1.9.1
+    showdown: ^2.0.0
     sinon: ^21.0.0
     style-loader: ^3.2.1
     stylelint: ^15.10.3
@@ -13717,14 +13724,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"showdown@npm:^1.9.1":
-  version: 1.9.1
-  resolution: "showdown@npm:1.9.1"
+"showdown@npm:^2.0.0":
+  version: 2.1.0
+  resolution: "showdown@npm:2.1.0"
   dependencies:
-    yargs: ^14.2
+    commander: ^9.0.0
   bin:
     showdown: bin/showdown.js
-  checksum: d6aac199cb28c2b89bce804eddda928c816e5a2b0e0e6dfe66db8ced6968e237995bf1d547046c9970b804e5c3181b1a55740883e1332c837024668f9c031a01
+  checksum: 9e33607612c4465f9ef39de356e2cee512e248eb71d4725e1d4353cf3ab4bbe89a94601ce6bfbd8245000633693c8b90e7d85a9613dfeba7704a7422cee78282
   languageName: node
   linkType: hard
 
@@ -15863,16 +15870,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yargs-parser@npm:^15.0.1":
-  version: 15.0.3
-  resolution: "yargs-parser@npm:15.0.3"
-  dependencies:
-    camelcase: ^5.0.0
-    decamelize: ^1.2.0
-  checksum: 06611c1893fa9f1c25ae79df3c6e2edbac7c8d75257a4b55b8432cbc87ee03eda86bea0537f65b4b8a0d9684c83fa6e9ef61ef720a1e5cc8a9aa6893b54ee4c3
-  languageName: node
-  linkType: hard
-
 "yargs-parser@npm:^20.2.9":
   version: 20.2.9
   resolution: "yargs-parser@npm:20.2.9"
@@ -15913,25 +15910,6 @@ __metadata:
     y18n: ^4.0.0
     yargs-parser: ^13.1.2
   checksum: 75c13e837eb2bb25717957ba58d277e864efc0cca7f945c98bdf6477e6ec2f9be6afa9ed8a876b251a21423500c148d7b91e88dee7adea6029bdec97af1ef3e8
-  languageName: node
-  linkType: hard
-
-"yargs@npm:^14.2":
-  version: 14.2.3
-  resolution: "yargs@npm:14.2.3"
-  dependencies:
-    cliui: ^5.0.0
-    decamelize: ^1.2.0
-    find-up: ^3.0.0
-    get-caller-file: ^2.0.1
-    require-directory: ^2.1.1
-    require-main-filename: ^2.0.0
-    set-blocking: ^2.0.0
-    string-width: ^3.0.0
-    which-module: ^2.0.0
-    y18n: ^4.0.0
-    yargs-parser: ^15.0.1
-  checksum: 684fcb1896e6c873c31c09c5c16445d6253dfe505aa879cff56d49425f5bca44f2ab8d7a1c949f3b932ae8654128425e89770e5e2f2c3d816e5816b9eb6efb6f
   languageName: node
   linkType: hard
 
