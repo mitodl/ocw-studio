@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.160.1
+Version 0.160.1 (Released September 02, 2025)
 ---------------
 
 - Add .python-version for builds (#2697)
