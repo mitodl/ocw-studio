@@ -997,6 +997,12 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
             False,
             "multiple attributes",
         ),
+        # Multiple links inside same shortcode attribute should NOT be converted
+        (
+            '{{< image-gallery-item text="Check [link1](https://example.com) and [link2](https://google.com) both" >}}',
+            False,
+            "multiple links in single attribute",
+        ),
         # Link outside any shortcode should be converted
         ("Regular [link](https://example.com) in text", True, "outside shortcode"),
     ],
@@ -1031,16 +1037,18 @@ def test_shortcode_attribute_detection_edge_cases(
             assert "resource_link" in website_content.markdown, (
                 f"Failed: {description} - no resource_link found"
             )
-            assert "[link](https://example.com)" not in website_content.markdown, (
-                f"Failed: {description} - original link still present"
+            # Check that original markdown links are no longer present
+            assert "](https://" not in website_content.markdown, (
+                f"Failed: {description} - original links still present"
             )
         else:
             # Content should remain unchanged
             assert website_content.markdown == original_content, (
                 f"Failed: {description} - content was modified"
             )
-            assert "[link](https://example.com)" in website_content.markdown, (
-                f"Failed: {description} - original link missing"
+            # Check that original markdown links are still present
+            assert "](https://" in website_content.markdown, (
+                f"Failed: {description} - original links missing"
             )
             assert "resource_link" not in website_content.markdown, (
                 f"Failed: {description} - unexpected resource_link found"
