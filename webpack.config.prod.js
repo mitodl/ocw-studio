@@ -41,7 +41,8 @@ module.exports = Object.assign(prodConfig, {
 
   plugins: [
     new BundleTracker({
-      filename: "./webpack-stats.json",
+      filename: "webpack-stats.json",
+      path: ".",
     }),
     new webpack.LoaderOptionsPlugin({
       minimize: true,
