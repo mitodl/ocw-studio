@@ -895,3 +895,153 @@ def test_nav_item_to_external_resource_rule_with_license_warning_override(
             external_resource.metadata["has_external_license_warning"]
             == expected_warning
         )
+
+
+@pytest.mark.django_db
+def test_link_to_external_resource_skips_shortcode_attributes(settings):
+    """Test that links inside Hugo shortcode attributes are not converted."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test case: link inside shortcode attribute should NOT be converted
+        markdown_with_shortcode_link = """
+            {{< image-gallery >}}
+            {{< image-gallery-item href="test1.png" text="Botryoidal and massive hematite: Fe{{< sub 2 >}}O{{< sub 3 >}}." >}}
+            {{< image-gallery-item href="test1.png" data-ngdesc="An end view diagram of the Beaver press with various parts identified." text="[OCW](https://ocw.mit.edu) - The screw to which the bar of the press is affixed, and which produces the pressure on the platen." >}}
+            {{< /image-gallery >}}
+        """
+
+        # Test case: regular link should be converted
+        markdown_with_regular_link = (
+            "Here is a [regular link](https://example.com) that should be converted."
+        )
+
+        # Test case: mixed content - regular links converted, shortcode links preserved
+        markdown_mixed = f"""
+            Here is a [normal link](https://example.com).
+            {markdown_with_shortcode_link}
+            And another [normal link](https://example2.com) here.
+        """
+
+        website_content_shortcode = WebsiteContentFactory.create(
+            website=website, markdown=markdown_with_shortcode_link, type="page"
+        )
+
+        website_content_regular = WebsiteContentFactory.create(
+            website=website, markdown=markdown_with_regular_link, type="page"
+        )
+
+        website_content_mixed = WebsiteContentFactory.create(
+            website=website, markdown=markdown_mixed, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        # Test 1: Shortcode attribute link should NOT be converted
+        original_shortcode_content = website_content_shortcode.markdown
+        cleaner.update_website_content(website_content_shortcode)
+
+        # The content should remain unchanged (link inside shortcode attribute preserved)
+        assert website_content_shortcode.markdown == original_shortcode_content
+        assert "[OCW](https://ocw.mit.edu)" in website_content_shortcode.markdown
+        assert "resource_link" not in website_content_shortcode.markdown
+
+        # Test 2: Regular link should be converted
+        updated_regular = cleaner.update_website_content(website_content_regular)
+        assert updated_regular is True
+        assert "resource_link" in website_content_regular.markdown
+        assert (
+            "[regular link](https://example.com)"
+            not in website_content_regular.markdown
+        )
+
+        # Test 3: Mixed content - only regular links converted
+        updated_mixed = cleaner.update_website_content(website_content_mixed)
+        assert updated_mixed is True
+        # Regular links should be converted
+        assert (
+            "[normal link](https://example.com)" not in website_content_mixed.markdown
+        )
+        assert (
+            "[normal link](https://example2.com)" not in website_content_mixed.markdown
+        )
+        assert "resource_link" in website_content_mixed.markdown
+        # Shortcode attribute link should be preserved
+        assert "[OCW](https://ocw.mit.edu)" in website_content_mixed.markdown
+
+
+@pytest.mark.parametrize(
+    ("markdown_text", "should_convert", "description"),
+    [
+        # Link after closed shortcode should be converted
+        (
+            "Before {{< shortcode >}} and [link](https://example.com) after",
+            True,
+            "after closed shortcode",
+        ),
+        # Link inside single-line shortcode attribute should NOT be converted
+        (
+            '{{< image-gallery-item text="[link](https://example.com)" >}}',
+            False,
+            "single-line shortcode attribute",
+        ),
+        # Link with multiple attributes should NOT be converted
+        (
+            '{{< image-gallery-item text="Some [link](https://example.com) text" attr="value" >}}',
+            False,
+            "multiple attributes",
+        ),
+        # Link outside any shortcode should be converted
+        ("Regular [link](https://example.com) in text", True, "outside shortcode"),
+    ],
+)
+@pytest.mark.django_db
+def test_shortcode_attribute_detection_edge_cases(
+    settings, markdown_text, should_convert, description
+):
+    """Test edge cases for shortcode attribute detection."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        website_content = WebsiteContentFactory.create(
+            website=website, markdown=markdown_text, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        original_content = website_content.markdown
+        updated = cleaner.update_website_content(website_content)
+
+        if should_convert:
+            assert updated is True, (
+                f"Failed: {description} - should have been converted"
+            )
+            assert "resource_link" in website_content.markdown, (
+                f"Failed: {description} - no resource_link found"
+            )
+            assert "[link](https://example.com)" not in website_content.markdown, (
+                f"Failed: {description} - original link still present"
+            )
+        else:
+            # Content should remain unchanged
+            assert website_content.markdown == original_content, (
+                f"Failed: {description} - content was modified"
+            )
+            assert "[link](https://example.com)" in website_content.markdown, (
+                f"Failed: {description} - original link missing"
+            )
+            assert "resource_link" not in website_content.markdown, (
+                f"Failed: {description} - unexpected resource_link found"
+            )

@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from functools import partial
 from urllib.parse import urlparse
@@ -168,13 +169,67 @@ class LinkToExternalResourceRule(PyparsingRule):
         super().__init__()
         self.starter_lookup = StarterSiteConfigLookup()
 
+    def _is_inside_shortcode_attribute(
+        self, s: str, start_pos: int, end_pos: int
+    ) -> bool:
+        """
+        Check if the link at positions start_pos:end_pos is inside a Hugo
+        shortcode attribute.
+
+        This prevents converting links like:
+        {{< image-gallery-item text="[link](url)" >}}
+        """
+        # Look backwards from the link to find if we're inside a shortcode
+        before_link = s[:start_pos]
+
+        # Find the last opening shortcode before this position
+        # Use a more robust pattern that handles newlines and extra spaces
+        # This pattern matches:
+        # - {{< followed by optional whitespace
+        # - shortcode name (any non-whitespace, non->, non-} characters)
+        # - any attributes/content that doesn't contain > or }}
+        # - must end at the end of the string (no closing >}} found yet)
+        shortcode_pattern = r"\{\{<\s*[^\s>}]+(?:\s+[^>}]*)?$"
+        match = re.search(shortcode_pattern, before_link, re.DOTALL)
+
+        if not match:
+            return False
+
+        last_shortcode_start = match.start()
+
+        # Look forward from the link to see if we're before the shortcode closes
+        after_link = s[end_pos:]
+        shortcode_end_match = re.search(r">}}", after_link)
+        if not shortcode_end_match:
+            return False
+
+        # We're inside a shortcode, now check if we're inside an attribute value
+        # by looking for quote patterns around our link
+        # This is a simple heuristic: if there are unbalanced quotes before our
+        # link within the shortcode, we're likely inside an attribute
+        before_link_in_shortcode = s[last_shortcode_start:start_pos]
+
+        # Count quotes but ignore escaped quotes
+        quote_count = before_link_in_shortcode.count(
+            '"'
+        ) - before_link_in_shortcode.count('\\"')
+
+        return quote_count % 2 == 1  # Odd number means we're inside quotes
+
     def replace_match(
         self,
-        s: str,  # noqa: ARG002
-        l: int,  # noqa: ARG002, E741
+        s: str,
+        l: int,  # noqa: E741
         toks: LinkParseResult,
         website_content: WebsiteContent,
     ):
+        # Check if this link is inside a Hugo shortcode attribute
+        link_end = l + len(toks.original_text)
+        if self._is_inside_shortcode_attribute(s, l, link_end):
+            return toks.original_text, self.ReplacementNotes(
+                note="inside shortcode attribute"
+            )
+
         link = toks.link
         try:
             url = urlparse(link.destination)
