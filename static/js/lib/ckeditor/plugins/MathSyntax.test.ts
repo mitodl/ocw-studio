@@ -77,6 +77,14 @@ describe.each(modes)("MathSyntax converstion to/from $name", (mode) => {
     await htmlConvertContainsTest(editor, md, html)
   })
 
+  test("a complex expression involving asterisks and subscripts", async () => {
+    const editor = await getEditor()
+    const math = String.raw`\\Vert 1\_X^{\*2} \\Vert\_{\\ell\_{\\infty}} + \\Vert 1\_X^{\*2} \\Vert\_{\\ell\_{\\infty}}`
+    const md = mode.start + math + mode.end
+    const html = `<p>${scriptify(mode, math.replace(/\\\\/g, "\\").replace(/\\_/g, "_").replace(/\\\*/g, "*"))}</p>`
+    await htmlConvertContainsTest(editor, md, html)
+  })
+
   test("a complex expression involving subscripts", async () => {
     const editor = await getEditor()
     const math = String.raw`\\mathbb{F}\_q^2 + \\mathbb{N}\_q^2 + |\\pi\_{t\_1 + t\_2} (X)| \\le K^C |X|^{1/2}`

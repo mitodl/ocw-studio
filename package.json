@@ -63,7 +63,7 @@
     "@types/react-router-dom": "^5.1.8",
     "@types/react-select": "^4.0.17",
     "@types/redux-logger": "^3.0.9",
-    "@types/showdown": "^1.9.4",
+    "@types/showdown": "^2.0.0",
     "@types/sinon": "^17.0.0",
     "@types/turndown": "^5.0.1",
     "@types/url-assembler": "^2.1.1",
@@ -130,7 +130,7 @@
     "sass-lint": "^1.13.1",
     "sass-loader": "^12.1.0",
     "sentry-testkit": "^4.0.3",
-    "showdown": "^1.9.1",
+    "showdown": "^2.0.0",
     "sinon": "^21.0.0",
     "style-loader": "^3.2.1",
     "stylelint": "^15.10.3",
@@ -147,13 +147,13 @@
     "webpack": "^5.76.0",
     "webpack-bundle-tracker": "^1.2.0",
     "webpack-cli": "^6.0.0",
-    "webpack-dev-middleware": "^5.0.0",
+    "webpack-dev-middleware": "^7.0.0",
     "webpack-hot-middleware": "^2.25.0",
     "yup": "^1.0.0"
   },
   "engines": {
     "node": "22.18.0",
-    "yarn": "3.x"
+    "yarn": "4.x"
   },
   "scripts": {
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
@@ -179,5 +179,5 @@
     "@types/react": "^16.9.46",
     "@types/react-dom": "^16.9.8"
   },
-  "packageManager": "yarn@3.8.7"
+  "packageManager": "yarn@4.9.4"
 }

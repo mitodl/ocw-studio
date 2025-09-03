@@ -12,9 +12,9 @@ repos:
   rev: v6.0.0
   hooks:
   - id: trailing-whitespace
-    exclude: static/js/lib/ckeditor/plugins/MarkdownListSyntax.test.ts
+    exclude: static/js/lib/ckeditor/plugins/MarkdownListSyntax.test.ts|.yarn/
   - id: end-of-file-fixer
-    exclude: ".hbs$"
+    exclude: ".hbs$|.yarn/"
   - id: check-yaml
     exclude: content_sync/pipelines/definitions/
     args:
@@ -85,6 +85,7 @@ repos:
     entry: yarn
     args: [run, prettier, --write, --ignore-unknown]
     types_or: [javascript, jsx, ts, tsx, json, scss, sass, css, markdown, html]
+    exclude: ".yarn/"
   - id: eslint
     name: eslint
     description: "Lint JS/TS files and apply automatic fixes"

@@ -36,6 +36,14 @@ const prepareTexForMarkdown = (s: string) => {
        *  So we replace any "_" by "\_".
        */
       .replace(/_/g, String.raw`\_`)
+      /**
+       * Markdown uses "*" to represent emphasis.
+       * It may happen that when interpreting markdown in ckeditor, the "*" is interpreted as <em>
+       * tags in the html, mangling part of our math.
+       *
+       *  So we escape asterisks by replacing any "*" by "\*".
+       */
+      .replace(/\*/g, String.raw`\*`)
   )
 }
 
