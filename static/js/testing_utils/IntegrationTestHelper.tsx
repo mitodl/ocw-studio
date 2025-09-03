@@ -158,7 +158,7 @@ export default class IntegrationTestHelper {
     const renderResult = render(
       <Provider store={store}>
         <ReduxQueryProvider queriesSelector={getQueries}>
-          <Router history={history}>
+          <Router history={history as any}>
             {/**
              * When location updates, components consuming location via
              * useLocation or useHistory should re-render. But this appears to

@@ -5,18 +5,22 @@ import React, {
   forwardRef,
 } from "react"
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "reactstrap"
-import { BrowserRouterProps } from "react-router-dom"
 
-export type GetUserConfirmation = NonNullable<
-  BrowserRouterProps["getUserConfirmation"]
->
+// Type definition for the confirmation function
+// This matches the old getUserConfirmation signature from BrowserRouter
+export type GetUserConfirmation = (
+  message: string,
+  callback: (ok: boolean) => void,
+) => void
 
 /**
  * This is a confirmation modal to be used with react-router's <Prompt />.
  * By default, react-router's <Prompt /> component uses window.confirm which is
  * not very customizable.
  *
- * To use this, consume the ref and pass it to a react-router router component.
+ * Note: With history v5.0.0+, getUserConfirmation was removed from BrowserRouter.
+ * This modal can still be used with React Router's <Prompt> component for
+ * custom confirmation dialogs.
  */
 const PromptConfirmationModal = (
   _props: unknown,

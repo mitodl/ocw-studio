@@ -25,16 +25,18 @@ jest.mock("../store/network_interface")
  * Avoid using this for new tests. Prefer `IntegrationTestHelper.tsx` instead.
  */
 export default class IntegrationTestHelper {
-  browserHistory: MemoryHistory = createMemoryHistory({
-    /**
-     * MemoryHistory does not use window.confirm by default, so we need to tell
-     * it to.
-     */
-    getUserConfirmation: (message, cb) => {
-      const ok = window.confirm(message)
-      cb(ok)
-    },
-  })
+  browserHistory: MemoryHistory = (() => {
+    const history = createMemoryHistory({})
+    // Override getUserConfirmation to use our mocked confirm function
+    ;(history as any).getUserConfirmation = (
+      message: string,
+      callback: (result: boolean) => void,
+    ) => {
+      const result = window.confirm(message)
+      callback(result)
+    }
+    return history
+  })()
   sandbox: SinonSandbox
   actions: Array<Action>
   handleRequestStub: SinonStub
@@ -53,8 +55,14 @@ export default class IntegrationTestHelper {
     window.HTMLFieldSetElement.prototype.scrollIntoView =
       this.scrollIntoViewStub
     this.wrapper = null
-    this.browserHistory.listen((location) => {
-      this.currentLocation = location
+    this.browserHistory.listen((update) => {
+      this.currentLocation = {
+        pathname: update.location.pathname,
+        search: update.location.search,
+        hash: update.location.hash,
+        state: update.location.state,
+        key: update.location.key || "",
+      }
     })
 
     // we return "no match" here as a sentinel default response
@@ -195,7 +203,7 @@ export default class IntegrationTestHelper {
       const wrapper = mount(
         <Provider store={store}>
           <ReduxQueryProvider queriesSelector={getQueries}>
-            <Router history={this.browserHistory}>
+            <Router history={this.browserHistory as any}>
               {/**
                * If the component under test uses hooks from react-router, e.g.,
                * useLocation, then the component should be re-rendered when

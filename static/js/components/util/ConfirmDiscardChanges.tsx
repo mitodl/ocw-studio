@@ -1,6 +1,7 @@
 import React, { useCallback } from "react"
 import { useLocation } from "react-router"
-import Prompt, { MessageFunc } from "./Prompt"
+import * as H from "history"
+import Prompt from "./Prompt"
 
 interface Props {
   when: boolean
@@ -8,8 +9,8 @@ interface Props {
 
 export default function ConfirmDiscardChanges(props: Props) {
   const location = useLocation()
-  const message = useCallback<MessageFunc>(
-    (nextLocation) => {
+  const message = useCallback(
+    (nextLocation: H.Location): string | boolean => {
       const search = new URLSearchParams(nextLocation.search)
       if (search.has("publish")) {
         return "You have unsaved changes. Are you sure you want to publish?"
@@ -20,5 +21,7 @@ export default function ConfirmDiscardChanges(props: Props) {
     },
     [location],
   )
-  return <Prompt when={props.when} onBeforeUnload={true} message={message} />
+  return (
+    <Prompt when={props.when} onBeforeUnload={true} message={message as any} />
+  )
 }

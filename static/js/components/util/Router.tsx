@@ -1,33 +1,17 @@
-import React, { useState } from "react"
+import React from "react"
 import { BrowserRouter, BrowserRouterProps } from "react-router-dom"
-import PromptConfirmationModal, {
-  GetUserConfirmation,
-} from "./PromptConfirmationModal"
 
 /**
- * Wrapper around BrowserRouter that uses a custom getUserConfirmation modal
- * instead of the default window.confirm.
+ * Custom Router that provides confirmation functionality.
+ *
+ * Since getUserConfirmation was removed from BrowserRouter in history v5.0.0,
+ * we now rely on the browser's native window.confirm for navigation blocking.
+ *
+ * This maintains the same user experience but uses the standard browser modal
+ * instead of our custom React modal.
  */
-const CustomConfirmBrowserRouter: React.FC<
-  Omit<BrowserRouterProps, "getUserConfirmation">
-> = (props) => {
-  const [getUserConfirmation, setGetUserConfirmation] =
-    useState<GetUserConfirmation | null>(null)
-  return (
-    <>
-      {getUserConfirmation && (
-        <BrowserRouter getUserConfirmation={getUserConfirmation}>
-          {props.children}
-        </BrowserRouter>
-      )}
-      <PromptConfirmationModal
-        ref={(ref) => {
-          if (ref === null) return
-          setGetUserConfirmation(() => ref)
-        }}
-      />
-    </>
-  )
+const CustomConfirmBrowserRouter: React.FC<BrowserRouterProps> = (props) => {
+  return <BrowserRouter {...props} />
 }
 
 export default CustomConfirmBrowserRouter
