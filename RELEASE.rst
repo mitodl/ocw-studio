@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.160.2
+---------------
+
+- chore(deps): update yarn to v4 (#2056)
+- fix(deps): update dependency webpack-dev-middleware to v7 (#2546)
+- fix(deps): update dependency showdown to v2 (#2539)
+- fix(deps): update dependency django-guardian to v3.1.0 (#2701)
+- fix(deps): update dependency sentry-sdk to v2.35.1 (#2700)
+- fix(deps): update dependency boto3 to v1.40.21 (#2699)
+- fix: asterisks in math formulas being interpreted as em tags in ckeditor (#2695)
+
 Version 0.160.1 (Released September 02, 2025)
 ---------------
 
