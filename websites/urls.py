@@ -16,6 +16,11 @@ mass_build_route = router.register(
 unpublish_route = router.register(
     r"unpublish", views.WebsiteUnpublishViewSet, basename="unpublished_removal_api"
 )
+hidden_download_route = router.register(
+    r"hidden_download",
+    views.WebsiteHiddenDownloadViewSet,
+    basename="hidden_download_removal_api",
+)
 website_route.register(
     r"collaborators",
     views.WebsiteCollaboratorViewSet,

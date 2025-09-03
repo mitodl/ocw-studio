@@ -109,6 +109,14 @@ def get_unpublished_removal_pipeline(api: object | None = None) -> object:
     )(api=api)
 
 
+@is_publish_pipeline_enabled
+def get_hidden_download_removal_pipeline(api: object | None = None) -> object:
+    """Get the hidden download content removal pipeline if the backend has one"""
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.HiddenDownloadContentRemovalPipeline"
+    )(api=api)
+
+
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
     """Sync a piece of content based on its sync state"""

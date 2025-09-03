@@ -231,6 +231,16 @@ def trigger_unpublished_removal(website_name: str) -> bool:
     return True
 
 
+@app.task(acks_late=True)
+def trigger_hidden_download_removal() -> bool:
+    """Trigger the hidden download content removal pipeline"""
+    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+        removal_pipeline = api.get_hidden_download_removal_pipeline()
+        removal_pipeline.unpause()
+        removal_pipeline.trigger()
+    return True
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):
