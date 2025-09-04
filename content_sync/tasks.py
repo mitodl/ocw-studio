@@ -19,7 +19,7 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
-from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
+from content_sync.utils import get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
 from websites.api import (
@@ -226,16 +226,6 @@ def trigger_unpublished_removal(website_name: str) -> bool:
         site_pipeline = api.get_site_pipeline(website)
         site_pipeline.pause_pipeline(VERSION_LIVE)
         removal_pipeline = api.get_unpublished_removal_pipeline()
-        removal_pipeline.unpause()
-        removal_pipeline.trigger()
-    return True
-
-
-@app.task(acks_late=True)
-def trigger_hidden_download_removal() -> bool:
-    """Trigger the hidden download content removal pipeline"""
-    if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        removal_pipeline = api.get_hidden_download_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
     return True
@@ -690,99 +680,3 @@ def backpopulate_archive_videos(  # pylint: disable=too-many-arguments
             )
         )
     return self.replace(celery.group(tasks))
-
-
-@app.task(acks_late=True)
-def remove_download_content_for_site(website_name: str):
-    """
-    Remove content from the offline buckets.
-
-    Args:
-        website_name (str): The name of the website to remove download content for
-    """
-
-    try:
-        # Get S3 resource and common pipeline vars
-        s3 = get_boto3_resource("s3")
-        common_vars = get_common_pipeline_vars()
-        website = Website.objects.get(name=website_name)
-
-        offline_preview_bucket = common_vars["offline_preview_bucket_name"]
-        offline_publish_bucket = common_vars["offline_publish_bucket_name"]
-
-        # Use the website's url_path for S3 key prefix
-        site_url_path = website.url_path or website.name
-
-        # List of buckets to clean up
-        buckets_to_clean = [
-            (offline_preview_bucket, "preview"),
-            (offline_publish_bucket, "published"),
-        ]
-
-        _remove_content_from_buckets(buckets_to_clean, site_url_path, s3, website_name)
-
-        log.info("Completed removal of download content for site %s", website_name)
-
-    except Exception:
-        log.exception("Error removing download content for site %s", website_name)
-        raise
-
-
-def _remove_content_from_buckets(buckets_to_clean, site_url_path, s3, website_name):
-    """Remove content from S3 buckets."""
-    for bucket_name, bucket_type in buckets_to_clean:
-        try:
-            # List objects with the site prefix to check if folder exists
-            bucket = s3.Bucket(bucket_name)
-            site_prefix = f"{site_url_path}/"
-
-            objects = list(bucket.objects.filter(Prefix=site_prefix).limit(1))
-            if not objects:
-                log.info(
-                    "No content found for site %s in %s bucket %s, skipping",
-                    site_url_path,
-                    bucket_type,
-                    bucket_name,
-                )
-                continue
-
-            # Delete all objects with the site prefix
-            delete_results = bucket.objects.filter(Prefix=site_prefix).delete()
-            delete_count = sum(
-                len(result.get("Deleted", [])) for result in delete_results
-            )
-
-            log.info(
-                "Removed %d objects for site %s from %s bucket %s",
-                delete_count,
-                site_url_path,
-                bucket_type,
-                bucket_name,
-            )
-
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            if error_code == "404":
-                log.warning(
-                    (
-                        "Resource not found, skipping removal for site: %s"
-                        "in %s bucket: %s"
-                    ),
-                    website_name,
-                    bucket_type,
-                    bucket_name,
-                )
-            else:
-                log.exception(
-                    "Error accessing %s bucket %s for site %s",
-                    bucket_type,
-                    bucket_name,
-                    website_name,
-                )
-        except botocore.exceptions.BotoCoreError:
-            log.exception(
-                "Boto error removing content from %s bucket %s for site %s",
-                bucket_type,
-                bucket_name,
-                website_name,
-            )

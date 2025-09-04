@@ -91,12 +91,6 @@ class BaseUnpublishedSiteRemovalPipeline(BasePipeline):
     PIPELINE_NAME = "remove-unpublished-sites"
 
 
-class BaseHiddenDownloadContentRemovalPipeline(BasePipeline):
-    """Base class for removing hidden download content"""
-
-    PIPELINE_NAME = "remove-hidden-download-content"
-
-
 class BaseTestPipeline(BasePipeline):
     """Base class for end to end testing"""
 

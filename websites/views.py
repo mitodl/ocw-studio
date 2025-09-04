@@ -26,9 +26,7 @@ from content_sync.api import (
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.tasks import (
-    update_mass_build_pipelines_on_publish,
-)
+from content_sync.tasks import update_mass_build_pipelines_on_publish
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
@@ -340,10 +338,6 @@ class WebsiteViewSet(
                 website=website, type=CONTENT_TYPE_METADATA
             )
             hide_download = content and content.metadata.get("hide_download")
-
-            # Note: The actual content removal is handled by the
-            # remove-hidden-download-content Concourse pipeline
-
         return Response(
             status=200,
             data={} if hide_download else {"version": str(now_in_utc().timestamp())},
@@ -402,37 +396,6 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
             .order_by("name")
         )
         serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
-        return Response({"sites": serializer.data})
-
-
-class WebsiteHiddenDownloadViewSet(viewsets.ViewSet):
-    """
-    Return a list of sites with hide_download=True, with the info required by the remove-hidden-download-content pipeline
-    """  # noqa: E501
-
-    permission_classes = (BearerTokenPermission,)
-
-    def list(self, request):  # noqa: ARG002
-        """Return a list of websites that have hide_download=True and need content removal"""  # noqa: E501
-        # Get all websites that have hide_download=True in their metadata
-        sites_with_hidden_download = []
-        websites = Website.objects.exclude(
-            name=settings.ROOT_WEBSITE_NAME
-        ).prefetch_related("starter")
-
-        for website in websites:
-            try:
-                content = WebsiteContent.objects.get(
-                    website=website, type=CONTENT_TYPE_METADATA
-                )
-                if content and content.metadata.get("hide_download"):
-                    sites_with_hidden_download.append(website)
-            except WebsiteContent.DoesNotExist:
-                continue
-
-        serializer = WebsiteUnpublishSerializer(
-            instance=sites_with_hidden_download, many=True
-        )
         return Response({"sites": serializer.data})
 
 
