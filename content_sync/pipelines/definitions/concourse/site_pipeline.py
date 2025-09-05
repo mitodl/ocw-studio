@@ -860,8 +860,6 @@ class SitePipelineDefinition(Pipeline):
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
         online_job = self.get_online_build_job(config=config)
-        # Create S3 cleanup step for offline build gate failure
-        offline_content_cleanup_step = self.get_offline_content_cleanup_step()
 
         # Create the inner put step with error handlers
         inner_put_step = PutStep(
@@ -873,9 +871,7 @@ class SitePipelineDefinition(Pipeline):
         )
         # Add cleanup step to the inner put step.
         # This will trigger before TryStep suppresses the error
-        inner_put_step.on_failure = offline_content_cleanup_step
-        inner_put_step.on_error = offline_content_cleanup_step
-        inner_put_step.on_abort = offline_content_cleanup_step
+        inner_put_step.on_error = self.get_offline_content_cleanup_step()
 
         # Wrap in TryStep to prevent online job failure
         offline_build_gate_put_step = TryStep(try_=inner_put_step)
@@ -939,7 +935,7 @@ class SitePipelineDefinition(Pipeline):
             **kwargs,
         )
 
-    def get_offline_content_cleanup_step(self):
+    def get_offline_content_cleanup_step(self) -> TaskStep:
         """
         Create a task step to remove offline content from S3 when offline build
         gate fails
