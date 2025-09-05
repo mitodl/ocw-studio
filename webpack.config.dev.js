@@ -26,7 +26,10 @@ const devConfig = Object.assign({}, config, {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
-    new BundleTracker({ filename: "./webpack-stats.json" }),
+    new BundleTracker({
+      filename: "webpack-stats.json",
+      path: ".",
+    }),
     new CKEditorTranslationsPlugin({
       language: "en",
       addMainLanguageTranslationsToAllAssets: true,
