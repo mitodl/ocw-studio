@@ -93,7 +93,7 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
         if (!values.video_files.video_thumbnail_file) {
           values.video_files.video_thumbnail_file = `https://img.youtube.com/vi/${youtubeId}/default.jpg`
         }
-        if (!values.video_metadata.source) {
+        if (!values.video_metadata.source && editorState.adding()) {
           values.video_metadata.source = "youtube"
         }
       }
