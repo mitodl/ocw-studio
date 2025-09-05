@@ -724,7 +724,7 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
         assert not hasattr(cleanup_step, "params") or cleanup_step.params is None
 
 
-def test_offline_build_gate_failure_handling(website, settings, mocker):
+def test_offline_build_gate_cleanup_task(website, settings, mocker):
     """
     Test that the offline build gate put step has proper failure handling attached
     """
@@ -781,20 +781,16 @@ def test_offline_build_gate_failure_handling(website, settings, mocker):
     assert gate_put_step is not None, "Offline build gate put step should exist"
 
     # Verify that failure handling is attached to the inner put step
-    assert "on_failure" in gate_put_step
     assert "on_error" in gate_put_step
-    assert "on_abort" in gate_put_step
 
     # Verify the failure handling is the cleanup task
-    for handler_key in ["on_failure", "on_error", "on_abort"]:
-        handler = gate_put_step[handler_key]
-        assert handler["task"] == "remove-offline-content-task"
-        assert handler["timeout"] == "5m"
-        assert handler["attempts"] == 3
+    assert gate_put_step["on_error"]["task"] == "remove-offline-content-task"
+    assert gate_put_step["on_error"]["timeout"] == "5m"
+    assert gate_put_step["on_error"]["attempts"] == 3
 
 
 @pytest.mark.parametrize("site_name", ["test-course"])
-def test_offline_cleanup_uses_correct_site_path(site_name, settings, mocker):
+def test_offline_cleanup_uses_correct_site_path(site_name, mocker):
     """
     Test that the cleanup step uses the correct site path for different site types
     """

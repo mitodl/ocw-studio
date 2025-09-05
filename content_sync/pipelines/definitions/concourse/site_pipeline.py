@@ -865,7 +865,7 @@ class SitePipelineDefinition(Pipeline):
         inner_put_step = PutStep(
             put=self._offline_build_gate_identifier,
             timeout="1m",
-            attempts=1,
+            attempts=3,
             get_params={"strict": True},
             no_get=True,
         )
