@@ -139,9 +139,9 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          `Last updated: ${moment(website[publishDateField]).format(
-            "dddd, MMMM D h:mma ZZ",
-          )}`,
+          `${action === "staging" ? "Last staged: " : "Last Published to Production: "}${moment(
+            website[publishDateField],
+          ).format("dddd, MMMM D h:mma ZZ")}`,
         )
         expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
           website[urlField],
@@ -175,7 +175,7 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "Last updated: never published",
+          `${action === "staging" ? "Last staged: " : "Last Published to Production: "}never`,
         )
       })
 
@@ -205,10 +205,13 @@ describe("PublishDrawer", () => {
       it("renders a message about unpublished content", async () => {
         website[unpublishedField] = true
         const { wrapper } = await render()
-
+        await simulateClickRadio(wrapper, idx)
         wrapper.update()
+
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "You have unpublished changes.",
+          action === "staging"
+            ? "You have changes that have not been Staged."
+            : "You have changes that have not been Published to Production.",
         )
       })
       ;[[], ["error 1", "error2"]].forEach((warnings) => {
