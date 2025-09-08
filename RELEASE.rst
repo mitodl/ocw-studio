@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.160.2
+Version 0.160.2 (Released September 08, 2025)
 ---------------
 
 - chore(deps): update yarn to v4 (#2056)
