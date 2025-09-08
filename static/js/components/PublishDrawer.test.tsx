@@ -96,6 +96,8 @@ describe("PublishDrawer", () => {
       publishDateField: "draft_publish_date",
       publishStatusField: "draft_publish_status",
       idx: 0,
+      lastPublishedText: "Last staged: ",
+      unpublishedChangesText: "You have changes that have not been Staged.",
     },
     {
       action: "production",
@@ -106,6 +108,9 @@ describe("PublishDrawer", () => {
       publishDateField: "publish_date",
       publishStatusField: "live_publish_status",
       idx: 1,
+      lastPublishedText: "Last Published to Production: ",
+      unpublishedChangesText:
+        "You have changes that have not been Published to Production.",
     },
   ])(
     "$action",
@@ -118,6 +123,8 @@ describe("PublishDrawer", () => {
       publishDateField,
       publishStatusField,
       idx,
+      lastPublishedText,
+      unpublishedChangesText,
     }) => {
       ;[true, false].forEach((visible) => {
         it(`renders inside a Modal when visibility=${visible}`, async () => {
@@ -139,9 +146,9 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          `${action === "staging" ? "Last staged: " : "Last Published to Production: "}${moment(
-            website[publishDateField],
-          ).format("dddd, MMMM D h:mma ZZ")}`,
+          `${lastPublishedText}${moment(website[publishDateField]).format(
+            "dddd, MMMM D h:mma ZZ",
+          )}`,
         )
         expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
           website[urlField],
@@ -175,7 +182,7 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          `${action === "staging" ? "Last staged: " : "Last Published to Production: "}never`,
+          `${lastPublishedText}never`,
         )
       })
 
@@ -209,9 +216,7 @@ describe("PublishDrawer", () => {
         wrapper.update()
 
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          action === "staging"
-            ? "You have changes that have not been Staged."
-            : "You have changes that have not been Published to Production.",
+          unpublishedChangesText,
         )
       })
       ;[[], ["error 1", "error2"]].forEach((warnings) => {
