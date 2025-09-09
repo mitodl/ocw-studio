@@ -10056,24 +10056,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash.assign@npm:^4.2.0":
-  version: 4.2.0
-  resolution: "lodash.assign@npm:4.2.0"
-  checksum: 10c0/77e9a28edcb41655e5f5b4b07ec55a5f9bbd6f020f64474acd66c94ce256ed26451f59e5eb421fc4e5ea79d3939a2e2b3a6abeaa0da47bfd1ccd64dfb21f89a0
-  languageName: node
-  linkType: hard
-
 "lodash.capitalize@npm:^4.1.0":
   version: 4.2.1
   resolution: "lodash.capitalize@npm:4.2.1"
   checksum: 10c0/b289326497c2e24d6b8afa2af2ca4e068ef6ef007ade36bfb6f70af77ce10ea3f090eeee947d5fdcf2db4bcfa4703c8c10a5857a2b39e308bddfd1d11ad35970
-  languageName: node
-  linkType: hard
-
-"lodash.defaults@npm:^4.2.0":
-  version: 4.2.0
-  resolution: "lodash.defaults@npm:4.2.0"
-  checksum: 10c0/d5b77aeb702caa69b17be1358faece33a84497bcca814897383c58b28a2f8dfc381b1d9edbec239f8b425126a3bbe4916223da2a576bb0411c2cefd67df80707
   languageName: node
   linkType: hard
 
@@ -10088,20 +10074,6 @@ __metadata:
   version: 4.4.0
   resolution: "lodash.flattendeep@npm:4.4.0"
   checksum: 10c0/83cb80754b921fb4ed2c222b91a82b2524f3bdc60c3ae91e00688bd4bf1bcc28b8a2cc250e11fdc1b6da3a2de09e57008e13f15a209cafdd4f9163d047f97544
-  languageName: node
-  linkType: hard
-
-"lodash.foreach@npm:^4.5.0":
-  version: 4.5.0
-  resolution: "lodash.foreach@npm:4.5.0"
-  checksum: 10c0/bd9cc83e87e805b21058ce6cf718dd22db137c7ca08eddbd608549db59989911c571b7195707f615cb37f27bb4f9a9fa9980778940d768c24095f5a04b244c84
-  languageName: node
-  linkType: hard
-
-"lodash.frompairs@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "lodash.frompairs@npm:4.0.1"
-  checksum: 10c0/67cd95a9b04fc776de17c2699822d0a9f748a68d373f2fcfae059b10d5546e4474476f78c7b5d6c2b881a6e058d4dc8c0175147842b875f8626c3ab5cf90981d
   languageName: node
   linkType: hard
 
@@ -10137,13 +10109,6 @@ __metadata:
   version: 4.6.2
   resolution: "lodash.merge@npm:4.6.2"
   checksum: 10c0/402fa16a1edd7538de5b5903a90228aa48eb5533986ba7fa26606a49db2572bf414ff73a2c9f5d5fd36b31c46a5d5c7e1527749c07cbcf965ccff5fbdf32c506
-  languageName: node
-  linkType: hard
-
-"lodash.topairs@npm:^4.3.0":
-  version: 4.3.0
-  resolution: "lodash.topairs@npm:4.3.0"
-  checksum: 10c0/3b517179b60c695c9fac23d932531c2eced5d8c5c3b83ad19bd897fdca1a307f216d29d2c171fd615ad8b393b15161acdc592c1ac612d2d72fa42f0b0c30b183
   languageName: node
   linkType: hard
 
@@ -11273,7 +11238,7 @@ __metadata:
     url-loader: "npm:^4.1.1"
     waait: "npm:^1.0.5"
     webpack: "npm:^5.76.0"
-    webpack-bundle-tracker: "npm:^1.2.0"
+    webpack-bundle-tracker: "npm:^3.0.0"
     webpack-cli: "npm:^6.0.0"
     webpack-dev-middleware: "npm:^7.0.0"
     webpack-hot-middleware: "npm:^2.25.0"
@@ -15521,18 +15486,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack-bundle-tracker@npm:^1.2.0":
-  version: 1.8.1
-  resolution: "webpack-bundle-tracker@npm:1.8.1"
-  dependencies:
-    lodash.assign: "npm:^4.2.0"
-    lodash.defaults: "npm:^4.2.0"
-    lodash.foreach: "npm:^4.5.0"
-    lodash.frompairs: "npm:^4.0.1"
-    lodash.get: "npm:^4.4.2"
-    lodash.topairs: "npm:^4.3.0"
-    strip-ansi: "npm:^6.0.0"
-  checksum: 10c0/fcfeff52e4cd157b73e3600c687937bf1fbe3071a867f732c73155bbb11310246a8ff03ae4e193736515cbb00e9fc37ab08b4bf92dfab0eb1465ce884c0898c2
+"webpack-bundle-tracker@npm:^3.0.0":
+  version: 3.2.1
+  resolution: "webpack-bundle-tracker@npm:3.2.1"
+  checksum: 10c0/e414d7f4c1726abad6b4af253980b90b7e81a14b228340b1de4ec5a4adfc02817db5a17b0da4ea189bb0a61ec640838fa48882f121ed0a27d198dff387a7efac
   languageName: node
   linkType: hard
 
