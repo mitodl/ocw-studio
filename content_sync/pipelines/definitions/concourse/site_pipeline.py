@@ -860,15 +860,22 @@ class SitePipelineDefinition(Pipeline):
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
         online_job = self.get_online_build_job(config=config)
-        offline_build_gate_put_step = TryStep(
-            try_=PutStep(
-                put=self._offline_build_gate_identifier,
-                timeout="1m",
-                attempts=3,
-                get_params={"strict": True},
-                no_get=True,
-            )
+
+        # Create the inner put step with error handlers
+        inner_put_step = PutStep(
+            put=self._offline_build_gate_identifier,
+            timeout="1m",
+            attempts=3,
+            get_params={"strict": True},
+            no_get=True,
         )
+        # Add cleanup step to the inner put step.
+        # This will trigger before TryStep suppresses the error
+        inner_put_step.on_error = self.get_offline_content_cleanup_step()
+
+        # Wrap in TryStep to prevent online job failure
+        offline_build_gate_put_step = TryStep(try_=inner_put_step)
+
         online_job.plan.append(offline_build_gate_put_step)
         offline_job = self.get_offline_build_job(config=config)
         offline_build_gate_get_step = add_error_handling(
@@ -927,6 +934,50 @@ class SitePipelineDefinition(Pipeline):
             jobs=[online_job, offline_job],
             **kwargs,
         )
+
+    def get_offline_content_cleanup_step(self) -> TaskStep:
+        """
+        Create a task step to remove offline content from S3 when offline build
+        gate fails
+
+        Returns:
+            TaskStep: A task step that removes content from the offline S3 bucket
+        """
+        # Use same variable naming as unpublished sites for consistency
+        minio_root_user = settings.AWS_ACCESS_KEY_ID
+        minio_root_password = settings.AWS_SECRET_ACCESS_KEY
+        cli_endpoint_url = get_cli_endpoint_url()
+
+        cleanup_task = TaskStep(
+            task="remove-offline-content-task",
+            timeout="5m",
+            attempts=3,
+            config=TaskConfig(
+                platform="linux",
+                image_resource=AWS_CLI_REGISTRY_IMAGE,
+                run=Command(
+                    path="sh",
+                    args=[
+                        "-exc",
+                        f"""
+                        echo "Removing offline content for site: ((site:url_path))"
+                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip
+                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip
+                        aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive
+                        echo "Offline content cleanup completed"
+                        """,  # noqa: E501
+                    ],
+                ),
+            ),
+        )
+
+        if is_dev():
+            cleanup_task.params = {
+                "AWS_ACCESS_KEY_ID": minio_root_user,
+                "AWS_SECRET_ACCESS_KEY": minio_root_password,
+            }
+
+        return cleanup_task
 
     def get_online_build_job(self, config: SitePipelineDefinitionConfig):
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
