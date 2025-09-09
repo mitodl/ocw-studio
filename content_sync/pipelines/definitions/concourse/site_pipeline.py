@@ -940,10 +940,6 @@ class SitePipelineDefinition(Pipeline):
         Create a task step to remove offline content from S3 when offline build
         gate fails
 
-        Args:
-            config(SitePipelineDefinitionConfig): The site pipeline configuration
-                object
-
         Returns:
             TaskStep: A task step that removes content from the offline S3 bucket
         """
@@ -965,9 +961,9 @@ class SitePipelineDefinition(Pipeline):
                         "-exc",
                         f"""
                         echo "Removing offline content for site: ((site:url_path))"
-                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip || echo "No content found to remove in web bucket"
-                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip || echo "No content found to remove in web bucket"
-                        aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive || echo "No content found to remove in offline bucket"
+                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip
+                        aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip
+                        aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive
                         echo "Offline content cleanup completed"
                         """,  # noqa: E501
                     ],
