@@ -702,6 +702,16 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
 
     # Check that the actual command structure matches expectations
     actual_command = cleanup_step.config.run.args[1]
+
+    # Check that all three AWS S3 remove commands are present
+    assert (
+        f"aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip"
+        in actual_command
+    )
+    assert (
+        f"aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip"
+        in actual_command
+    )
     assert (
         f"aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive"
         in actual_command
@@ -787,56 +797,3 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
     assert gate_put_step["on_error"]["task"] == "remove-offline-content-task"
     assert gate_put_step["on_error"]["timeout"] == "5m"
     assert gate_put_step["on_error"]["attempts"] == 3
-
-
-@pytest.mark.parametrize("site_name", ["test-course"])
-def test_offline_cleanup_uses_correct_site_path(site_name, mocker):
-    """
-    Test that the cleanup step uses the correct site path for different site types
-    """
-    # Setup mocks
-    mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
-    mock_pipeline_is_dev = mocker.patch(
-        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
-    )
-    mock_main_utils_is_dev = mocker.patch("main.utils.is_dev")
-    mock_utils_is_dev.return_value = False
-    mock_pipeline_is_dev.return_value = False
-    mock_main_utils_is_dev.return_value = False
-
-    # Create website with specific name
-    hugo_projects_path = "https://github.com/org/repo"
-    starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
-    )
-    website = WebsiteFactory.create(starter=starter, name=site_name)
-
-    config = SitePipelineDefinitionConfig(
-        site=website,
-        pipeline_name="test",
-        instance_vars="",
-        site_content_branch="main",
-        static_api_url="https://test.example.com/",
-        storage_bucket="test-storage",
-        artifacts_bucket="test-artifacts",
-        web_bucket="test-web",
-        offline_bucket="test-offline-bucket",
-        resource_base_url="https://test.example.com/",
-        ocw_hugo_themes_branch="main",
-        ocw_hugo_projects_branch="main",
-    )
-
-    pipeline_definition = SitePipelineDefinition(config=config)
-    cleanup_step = pipeline_definition.get_offline_content_cleanup_step()
-
-    # Test that the correct site path is used in the command
-    command_args = cleanup_step.config.run.args[
-        1
-    ]  # The actual command is the second arg
-
-    assert "site: ((site:url_path))" in command_args
-    assert "s3://((site:offline_bucket))/((site:url_path))/" in command_args
-
-    # Cleanup
-    website.delete()
-    starter.delete()
