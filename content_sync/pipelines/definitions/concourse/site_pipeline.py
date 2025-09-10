@@ -868,7 +868,7 @@ class SitePipelineDefinition(Pipeline):
             attempts=3,
             get_params={"strict": True},
             no_get=True,
-            inputs=[]
+            inputs=[],
         )
         # Add cleanup step to the inner put step.
         # This will trigger before TryStep suppresses the error
