@@ -322,6 +322,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "WEBPACK_WATCH_MODE": "false",
                         "WWW_CONTENT_PATH": f"../{www_content_git_identifier}",
                         "WWW_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-www/config.yaml",  # noqa: E501
+                        "MIT_LEARN_BASE_URL": settings.MIT_LEARN_BASE_URL,
+                        "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
                     },
                     run=Command(
                         path="sh",
