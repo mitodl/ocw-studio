@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.161.0
+---------------
+
+- fix(deps): update dependency style-loader to v4 (#2540)
+- fix: concourse issues while streaming volumes in the offline gate put step (#2713)
+- feat: added celery task to remove offline site if hide download is true (#2681)
+- fix(deps): update dependency webpack-bundle-tracker to v3 (#2544)
+- fix(deps): update dependency pygithub to v2.8.1 (#2709)
+- fix(deps): update dependency django-anymail to v13.1 (#2708)
+- chore(deps): update actions/setup-node action to v5 (#2711)
+- chore(deps): update actions/setup-python action to v6 (#2712)
+- fix(deps): update dependency sentry-sdk to v2.37.0 (#2710)
+- fix(deps): update dependency django to v4.2.24 (#2707)
+- fix(deps): update dependency boto3 to v1.40.25 (#2706)
+
 Version 0.160.2 (Released September 08, 2025)
 ---------------
 
