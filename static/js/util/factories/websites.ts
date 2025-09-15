@@ -96,6 +96,7 @@ export const resourceFields: ConfigField[] = [
     label: "Resource Type",
     name: "resourcetype",
     widget: WidgetVariant.Select,
+    options: ["Image", "Video"],
   },
   {
     label: "Video Metadata",

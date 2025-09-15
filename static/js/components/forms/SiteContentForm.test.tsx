@@ -156,7 +156,7 @@ test.each(EDITOR_STATES)(
   async (editorState) => {
     const data = setupData()
     data.content.type = "resource"
-    data.content.metadata.resourcetype = "Video"
+    data.content.metadata = { resourcetype: "Video" }
     const configItem = makeEditableConfigItem("resource")
     configItem.fields = resourceFields
 
@@ -177,7 +177,7 @@ test.each(EDITOR_STATES)(
       form.update()
     })
 
-    const expectedVideoMetadata = {
+    const expectedVideoMetadata: any = {
       youtube_id: "abcdefghij",
     }
 
