@@ -177,7 +177,7 @@ test.each(EDITOR_STATES)(
       form.update()
     })
 
-    let expectedVideoMetadata = {
+    const expectedVideoMetadata = {
       youtube_id: "abcdefghij",
     }
 
