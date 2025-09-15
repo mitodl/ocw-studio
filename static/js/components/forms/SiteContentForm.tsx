@@ -84,7 +84,7 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
     values: FormikValues,
     formikHelpers: FormikHelpers<any>,
   ) => {
-    if (values.resourcetype === "Video") {
+    if (values.resourcetype === "Video" && editorState.adding()) {
       const youtubeId = values?.video_metadata?.youtube_id
       if (youtubeId) {
         if (!values.video_files) {
@@ -93,7 +93,7 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
         if (!values.video_files.video_thumbnail_file) {
           values.video_files.video_thumbnail_file = `https://img.youtube.com/vi/${youtubeId}/default.jpg`
         }
-        if (!values.video_metadata.source && editorState.adding()) {
+        if (!values.video_metadata.source) {
           values.video_metadata.source = "youtube"
         }
       }

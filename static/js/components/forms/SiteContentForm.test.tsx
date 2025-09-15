@@ -23,6 +23,7 @@ import ObjectField from "../widgets/ObjectField"
 
 import * as Website from "../../context/Website"
 import Label from "../widgets/Label"
+import { resourceFields } from "../../util/factories/websites"
 const { useWebsite: mockUseWebsite } = Website as jest.Mocked<typeof Website>
 
 // ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
@@ -147,6 +148,47 @@ test.each(EDITOR_STATE_BOOLEAN_MATRIX)(
       form.update()
     })
     expect(setDirty).toHaveBeenCalledWith(true)
+  },
+)
+
+test.each(EDITOR_STATES)(
+  "Video metadata source only added on creation",
+  async (editorState) => {
+    const data = setupData()
+    data.content.type = "resource"
+    data.content.metadata.resourcetype = "Video"
+    const configItem = makeEditableConfigItem("resource")
+    configItem.fields = resourceFields
+
+    const { form, onSubmit } = setup({
+      editorState,
+      content: data.content,
+      configItem,
+    })
+
+    await act(async () => {
+      form.find("input[name='video_metadata.youtube_id']").simulate("change", {
+        target: {
+          name: "video_metadata.youtube_id",
+          value: "abcdefghij",
+        },
+      })
+      form.find("form").simulate("submit")
+      form.update()
+    })
+
+    let expectedVideoMetadata = {
+      youtube_id: "abcdefghij",
+    }
+
+    if (editorState.adding()) {
+      expectedVideoMetadata.source = "youtube"
+    }
+
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(onSubmit.mock.calls[0][0].video_metadata).toEqual(
+      expectedVideoMetadata,
+    )
   },
 )
 
