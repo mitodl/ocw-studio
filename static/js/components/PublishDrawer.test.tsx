@@ -96,6 +96,8 @@ describe("PublishDrawer", () => {
       publishDateField: "draft_publish_date",
       publishStatusField: "draft_publish_status",
       idx: 0,
+      lastPublishedText: "Last staged: ",
+      unpublishedChangesText: "You have changes that have not been Staged.",
     },
     {
       action: "production",
@@ -106,6 +108,9 @@ describe("PublishDrawer", () => {
       publishDateField: "publish_date",
       publishStatusField: "live_publish_status",
       idx: 1,
+      lastPublishedText: "Last Published to Production: ",
+      unpublishedChangesText:
+        "You have changes that have not been Published to Production.",
     },
   ])(
     "$action",
@@ -118,6 +123,8 @@ describe("PublishDrawer", () => {
       publishDateField,
       publishStatusField,
       idx,
+      lastPublishedText,
+      unpublishedChangesText,
     }) => {
       ;[true, false].forEach((visible) => {
         it(`renders inside a Modal when visibility=${visible}`, async () => {
@@ -139,7 +146,7 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          `Last updated: ${moment(website[publishDateField]).format(
+          `${lastPublishedText}${moment(website[publishDateField]).format(
             "dddd, MMMM D h:mma ZZ",
           )}`,
         )
@@ -175,7 +182,7 @@ describe("PublishDrawer", () => {
         await simulateClickRadio(wrapper, idx)
         wrapper.update()
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "Last updated: never published",
+          `${lastPublishedText}never`,
         )
       })
 
@@ -205,10 +212,11 @@ describe("PublishDrawer", () => {
       it("renders a message about unpublished content", async () => {
         website[unpublishedField] = true
         const { wrapper } = await render()
-
+        await simulateClickRadio(wrapper, idx)
         wrapper.update()
+
         expect(wrapper.find(".publish-option-description").text()).toContain(
-          "You have unpublished changes.",
+          unpublishedChangesText,
         )
       })
       ;[[], ["error 1", "error2"]].forEach((warnings) => {

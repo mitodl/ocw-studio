@@ -110,14 +110,20 @@ const PublishingOption: React.FC<PublishingOptionProps> = (props) => {
       </div>
       {selected && (
         <div className="publish-option-description">
-          Last updated:{" "}
+          {publishingEnv === PublishingEnv.Staging
+            ? "Last staged: "
+            : "Last Published to Production: "}
           {publishingInfo.date
             ? moment(publishingInfo.date).format("dddd, MMMM D h:mma ZZ")
-            : "never published"}
+            : "never"}
           <br />
           {publishingInfo.hasUnpublishedChanges && (
             <>
-              <strong>You have unpublished changes.</strong>
+              <strong>
+                {publishingEnv === PublishingEnv.Staging
+                  ? "You have changes that have not been Staged."
+                  : "You have changes that have not been Published to Production."}
+              </strong>
               <br />
             </>
           )}
