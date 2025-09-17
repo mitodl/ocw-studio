@@ -203,7 +203,14 @@ class OcwStudioWebhookStep(TryStep):
                 timeout="1m",
                 attempts=3,
                 params={
-                    "text": json.dumps({"version": pipeline_name, "status": status})
+                    "text": json.dumps(
+                        {
+                            "version": pipeline_name,
+                            "status": status,
+                            "build_id": "$BUILD_ID",
+                        }
+                    ),
+                    "build_metadata": ["body"],
                 },
                 inputs=[],
                 no_get=True,
