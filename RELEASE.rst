@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.161.0
+Version 0.161.0 (Released September 17, 2025)
 ---------------
 
 - fix(deps): update dependency style-loader to v4 (#2540)
