@@ -149,7 +149,7 @@ class WebsiteContentMarkdownCleaner:
                 *self.csv_metadata_fieldnames,
                 *(f.name for f in fields(self.rule.ReplacementNotes)),
             ]
-            writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
+            writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_MINIMAL)
             writer.writeheader()
             for change in self.replacement_matches:
                 has_changed = change.original_text != change.replacement
