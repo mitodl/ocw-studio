@@ -468,7 +468,8 @@ def test_update_unpublished_website_status(status, version):
     """update_website_status should update an unpublished site appropriately"""
     website = WebsiteFactory.create(not_published=True, draft_publish_date=None)
     now = now_in_utc()
-    update_website_status(website, version, status, now)
+    setattr(website, f"latest_build_id_{version}", 123)
+    update_website_status(website, version, status, now, build_id=123)
     website.refresh_from_db()
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
