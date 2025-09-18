@@ -90,6 +90,28 @@ const exampleFields: ConfigField[] = [
   },
 ]
 
+export const resourceFields: ConfigField[] = [
+  ...exampleFields,
+  {
+    label: "Resource Type",
+    name: "resourcetype",
+    widget: WidgetVariant.Select,
+    options: ["Image", "Video"],
+  },
+  {
+    label: "Video Metadata",
+    name: "video_metadata",
+    widget: WidgetVariant.Object,
+    fields: [
+      {
+        label: "YouTube ID",
+        name: "youtube_id",
+        widget: WidgetVariant.String,
+      },
+    ],
+  },
+]
+
 export const makeFileConfigItem = (name?: string): SingletonConfigItem => ({
   fields: cloneDeep(exampleFields),
   file: casual.word,
