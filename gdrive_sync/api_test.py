@@ -38,6 +38,7 @@ from gdrive_sync.constants import (
 from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
+from users.factories import UserFactory
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.factories import VideoFactory, VideoJobFactory
 from websites.constants import (
@@ -556,11 +557,14 @@ def mock_gdrive_pdf(mocker):
 @pytest.mark.parametrize(
     "mime_type", ["application/pdf", "application/vnd.ms-powerpoint"]
 )
-def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
+@pytest.mark.parametrize("with_user", [True, False])
+def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type, with_user):
     """create_resource_from_gdrive should create a WebsiteContent object linked to a DriveFile object"""
     filenames = ["word.docx", "word!.docx", "(word?).docx"]
     deduped_names = ["word_docx", "word_docx2", "word_docx3"]
     website = WebsiteFactory.create()
+    user = UserFactory.create() if with_user else None
+    user_pk = user.pk if user else None
     for filename, deduped_name in zip(filenames, deduped_names):
         drive_file = DriveFileFactory.create(
             website=website,
@@ -568,7 +572,7 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
             s3_key=f"test/path/{deduped_name}.docx",
             mime_type=mime_type,
         )
-        create_gdrive_resource_content(drive_file)
+        create_gdrive_resource_content(drive_file, user_pk=user_pk)
         content = WebsiteContent.objects.filter(
             website=website,
             title=filename,
@@ -584,6 +588,8 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type):
         assert content.metadata["file_type"] == mime_type
         assert content.metadata["image"] == ""
         assert content.metadata["license"] == "default_license_specificed_in_config"
+        assert content.owner_id == user_pk
+        assert content.updated_by_id == user_pk
         drive_file.refresh_from_db()
         assert drive_file.resource == content
 
@@ -943,13 +949,17 @@ def test_find_missing_files(deleted_drive_files_count):
 
 @pytest.mark.parametrize("with_resource", [False, True])
 @pytest.mark.parametrize("is_used_in_content", [False, True])
-def test_delete_drive_file(mocker, with_resource, is_used_in_content):
+@pytest.mark.parametrize("with_user", [False, True])
+def test_delete_drive_file(mocker, with_resource, is_used_in_content, with_user):
     """delete_drive_file should delete the file and resource only if resource is not being used"""
     mocker.patch("main.s3_utils.boto3")
 
     for starter, item, field in all_starters_items_fields():
         website = WebsiteFactory.create()
         drive_file = DriveFileFactory.create(website=website)
+
+        user = UserFactory.create() if with_user else None
+        user_pk = user.pk if user else None
 
         content_data = None
         if with_resource:
@@ -974,7 +984,9 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content):
                     website=website,
                 )
 
-        api.delete_drive_file(drive_file, sync_datetime=website.synced_on)
+        api.delete_drive_file(
+            drive_file, sync_datetime=website.synced_on, user_pk=user_pk
+        )
 
         drive_file_exists = DriveFile.objects.filter(
             file_id=drive_file.file_id
@@ -986,6 +998,7 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content):
             assert WebsiteContent.objects.filter(pk=content.id).exists()
             assert resource_exists
             assert drive_file_exists
+            assert WebsiteContent.objects.filter(pk=resource.id).updated_by == user
         elif with_resource:
             assert not drive_file_exists
             assert not resource_exists
