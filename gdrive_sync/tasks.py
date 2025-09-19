@@ -82,31 +82,6 @@ def create_gdrive_resource_content_batch(
 
 
 @app.task()
-def update_updated_by_field_on_deleted_resources(
-    drive_file_ids: list[str | None], user_pk=None
-):
-    """
-    Updates the `updated_by` field on WebsiteContent resources deleted by a gdrive sync
-
-    `drive_file_ids` are expected to be results from `process_drive_file` tasks.
-    """  # noqa: D401
-    for drive_file_id in drive_file_ids:
-        if drive_file_id is None:
-            continue
-
-        try:
-            drive_file = DriveFile.objects.get(file_id=drive_file_id)
-        except DriveFile.DoesNotExist as exc:
-            log.exception(
-                "Attempted to create resource for drive file %s which does not exist.",
-                drive_file_id,
-                exc_info=exc,
-            )
-        else:
-            api.create_gdrive_resource_content(drive_file, user_pk=user_pk)
-
-
-@app.task()
 def delete_drive_file(drive_file_id: str, sync_datetime: datetime, user_pk=None):
     """
     Delete the DriveFile if it is not being used in website page content.
