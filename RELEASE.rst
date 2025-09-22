@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.162.0
+Version 0.162.0 (Released September 22, 2025)
 ---------------
 
 - fix: do not add incorrect source for gdrive videos (#2704)
