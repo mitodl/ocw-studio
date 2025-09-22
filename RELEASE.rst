@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.162.0 (Released September 22, 2025)
+---------------
+
+- fix: do not add incorrect source for gdrive videos (#2704)
+- fix(deps): update dependency stylelint-config-standard-scss to v16 (#2722)
+- fix(deps): update dependency sentry-sdk to v2.38.0 (#2718)
+- chore(deps): update node.js to v22.19.0 (#2720)
+- fix(deps): update dependency sass-loader to v16 (#2537)
+- fix(deps): update dependency css-loader to v7 (#2519)
+- chore(deps): update dependency ruff to ^0.13 (#2719)
+- Update publish drawer text to clarify staging and production status (#2705)
+- chore: add missing vars to e2e pipeline (#2715)
+- fix(deps): update dependency django-guardian to v3.1.3 (#2717)
+- fix(deps): update dependency boto3 to v1.40.30 (#2716)
+
 Version 0.161.0 (Released September 17, 2025)
 ---------------
 
