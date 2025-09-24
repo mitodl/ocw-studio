@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.163.0
+---------------
+
+- Revert "added console log for debugging" (#2733)
+- fix: fixed form validation error for null values (#2730)
+- chore(deps): update yarn to v4.10.0 (#2728)
+- fix(deps): update dependency django-guardian to v3.2.0 (#2729)
+- fix(deps): update dependency boto3 to v1.40.35 (#2727)
+- chore(deps): update dependency pytest-cov to v7 (#2721)
+
 Version 0.162.0 (Released September 22, 2025)
 ---------------
 
