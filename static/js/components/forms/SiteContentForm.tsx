@@ -74,7 +74,6 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
     try {
       await validateYupSchema(values, schema)
     } catch (e) {
-      console.error("Form validation failed:", e)
       return yupToFormErrors(e)
     }
     return {}
