@@ -601,6 +601,27 @@ describe("form validation utils", () => {
         })
       })
 
+      it("null values in non-required file fields are valid", async () => {
+        configItem = {
+          ...repeatableConfigItem,
+          fields: [
+            {
+              ...partialField,
+              widget: WidgetVariant.File,
+              required: false,
+            } as FileConfigField,
+          ],
+        }
+
+        const schema = getContentSchema(configItem, {})
+        expect(
+          schema.isValidSync({
+            ...defaultFormValues,
+            [partialField.name]: null,
+          }),
+        ).toBeTruthy()
+      })
+
       it("should skip validation on sub-fields which don't have data to send", async () => {
         const [configItem, name] = makeObjectConfigItem({ required: true })
         const fieldIsVisibleStub = sandbox

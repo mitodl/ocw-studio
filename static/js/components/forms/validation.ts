@@ -86,7 +86,7 @@ export const getFieldSchema = (
       break
     }
     case WidgetVariant.File: {
-      schema = yup.mixed()
+      schema = yup.mixed().nullable()
       break
     }
     case WidgetVariant.Object: {
