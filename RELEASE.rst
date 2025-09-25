@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.163.0
+Version 0.163.0 (Released September 25, 2025)
 ---------------
 
 - Revert "added console log for debugging" (#2733)
