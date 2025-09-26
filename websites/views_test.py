@@ -1277,6 +1277,7 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913
         status,
         mocker.ANY,
         unpublished=(unpublished and version == VERSION_LIVE),
+        build_id=None,
     )
     assert resp.status_code == 200
 

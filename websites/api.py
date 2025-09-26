@@ -323,12 +323,13 @@ def reset_publishing_fields(website_name: str):
     )
 
 
-def update_website_status(
+def update_website_status(  # noqa: PLR0913, PLR0912, C901
     website: Website,
     version: str,
     status: str,
     update_time: datetime,
     unpublished=False,  # noqa: FBT002
+    build_id=None,
 ):
     """Update some status fields in Website"""
     if version == VERSION_DRAFT:
@@ -339,8 +340,10 @@ def update_website_status(
         }
         if status in PUBLISH_STATUSES_FINAL:
             if status == PUBLISH_STATUS_SUCCEEDED:
-                update_kwargs["draft_publish_date"] = update_time
+                if build_id and str(build_id) == str(website.latest_build_id_draft):
+                    update_kwargs["draft_publish_date"] = update_time
                 update_kwargs["draft_last_published_by"] = None
+                update_kwargs["draft_build_date"] = update_time
             else:
                 # Allow user to retry
                 update_kwargs["has_unpublished_draft"] = True
@@ -363,7 +366,9 @@ def update_website_status(
             if status == PUBLISH_STATUS_SUCCEEDED:
                 if website.first_published_to_production is None:
                     update_kwargs["first_published_to_production"] = update_time
-                update_kwargs["publish_date"] = update_time
+                if build_id and str(build_id) == str(website.latest_build_id_live):
+                    update_kwargs["publish_date"] = update_time
+                update_kwargs["live_build_date"] = update_time
                 update_kwargs["live_last_published_by"] = None
             else:
                 # Allow user to retry

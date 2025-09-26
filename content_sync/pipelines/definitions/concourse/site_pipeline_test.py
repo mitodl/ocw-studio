@@ -411,7 +411,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     assert (
         upload_online_build_task["on_success"]["try"]["params"]["text"]
-        == f'{{"version": "{config.vars["pipeline_name"]}", "status": "succeeded"}}'
+        == f'{{"version": "{config.vars["pipeline_name"]}", "status": "succeeded", "build_id": "$BUILD_ID"}}'
     )
     if is_dev:
         assert set(
