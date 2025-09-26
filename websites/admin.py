@@ -89,6 +89,16 @@ class WebsiteContentAdmin(TimestampedModelAdmin, SafeDeleteAdmin):
                 kwargs["queryset"] = WebsiteContent.objects.none()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
+    def save_model(self, request, obj, form, change):
+        """
+        Set the updated_by and owner fields when modifying objects
+        from the django admin.
+        """
+        obj.updated_by = request.user
+        if not change:
+            obj.owner = request.user
+        super().save_model(request, obj, form, change)
+
 
 class WebsiteStarterForm(forms.ModelForm):
     """Custom form for the WebsiteStarter model"""
