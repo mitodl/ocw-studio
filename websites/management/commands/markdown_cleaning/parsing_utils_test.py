@@ -311,3 +311,74 @@ def test_shortcode_resource():
 
     with pytest.raises(ValueError):  # noqa: PT011
         ShortcodeTag.resource(id, href_uuid=href_uuid, href="/cats/go/meow")
+
+
+@pytest.mark.parametrize(
+    ("input_text", "expected_escaped"),
+    [
+        # Test that only double quotes are escaped, not other characters
+        ('Text with "quotes"', 'Text with \\"quotes\\"'),
+        (
+            "Text with [brackets]",
+            "Text with [brackets]",
+        ),  # brackets should not be escaped
+        (
+            "Text with `backticks`",
+            "Text with `backticks`",
+        ),  # backticks should not be escaped
+        (
+            "Text with \\backslashes\\",
+            "Text with \\backslashes\\",
+        ),  # existing backslashes preserved
+        (
+            "Text with `[T]his complex content",
+            "Text with `[T]his complex content",
+        ),  # mix should not be escaped
+        (
+            'Text with "quotes" and [brackets] and `backticks`',
+            'Text with \\"quotes\\" and [brackets] and `backticks`',
+        ),  # only quotes escaped
+    ],
+)
+def test_shortcode_param_escaping_only_quotes(input_text, expected_escaped):
+    """Test that ShortcodeParam only escapes double quotes, not other characters."""
+    param = ShortcodeParam(input_text)
+    result = param.to_hugo()
+
+    # The to_hugo() method should wrap in quotes and escape only inner double quotes
+    expected = f'"{expected_escaped}"'
+    assert result == expected
+
+
+def test_csv_double_quote_issue_reproduction():
+    """Test to reproduce the double-quote issue when shortcodes are written to CSV."""
+    # This reproduces the issue where shortcode parameters get double-quoted in CSV output
+    uuid_param = ShortcodeParam("d82dbc5f-3cf5-4194-8d48-e8958049ec45")
+    title_param = ShortcodeParam("@Doug88888")
+
+    # These should generate proper Hugo shortcode format
+    uuid_hugo = uuid_param.to_hugo()
+    title_hugo = title_param.to_hugo()
+
+    # Should be: "d82dbc5f-3cf5-4194-8d48-e8958049ec45"
+    assert uuid_hugo == '"d82dbc5f-3cf5-4194-8d48-e8958049ec45"'
+    # Should be: "@Doug88888"
+    assert title_hugo == '"@Doug88888"'
+
+    # The issue is that when these go to CSV with csv.QUOTE_ALL, they become:
+    # ""d82dbc5f-3cf5-4194-8d48-e8958049ec45"" and ""@Doug88888""
+    # This causes Hugo parsing errors because the outer quotes close each other
+
+
+def test_shortcode_param_with_problematic_title():
+    """Test shortcode param behavior when given already-cleaned text."""
+    # With our prevention approach, the link parser cleans text before
+    # it reaches ShortcodeParam, so this test uses already-clean text
+    clean_title = "`[T]his is Eating your Greens, This is Doing your Homework"
+    param = ShortcodeParam(clean_title)
+
+    result = param.to_hugo()
+
+    # The result should properly escape only quotes (no backticks or brackets)
+    expected = '"`[T]his is Eating your Greens, This is Doing your Homework"'
+    assert result == expected

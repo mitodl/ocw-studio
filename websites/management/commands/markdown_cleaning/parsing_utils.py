@@ -157,7 +157,7 @@ class ShortcodeParam:
         >>> ShortcodeParam(name='dog', value='woof "woof" bark').to_hugo()
         'dog="woof \\"woof\\" bark"
         """
-        hugo_value = self.hugo_escape_param_value(self.value)
+        hugo_value = ShortcodeParam.hugo_escape_param_value(self.value)
 
         if self.name:
             return f"{self.name}={hugo_value}"
@@ -175,7 +175,9 @@ class ShortcodeParam:
             - encase in double quotes and escape any quotes in the arg
             - replace newlines with space
         """
+        # Replace newlines with spaces
         no_new_lines = s.replace("\n", " ")
+        # Escape double quotes and wrap in quotes
         return f'"{escape_double_quotes(no_new_lines)}"'
 
 

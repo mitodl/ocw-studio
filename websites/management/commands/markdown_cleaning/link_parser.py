@@ -173,7 +173,18 @@ class LinkParser(WrappedParser):
                 ignoreExpr=ignore,
             )
         ).setResultsName("text")
-        text.addParseAction(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
+
+        def clean_text_parse_action(_s, _l, toks):
+            # Extract text without the outer brackets
+            raw_text = toks[0][1:-1]
+            # Clean up unnecessary escapes that come from Turndown conversion
+            # Remove escapes from backticks - they don't need to be escaped
+            cleaned = raw_text.replace("\\`", "`")
+            # Remove escapes from square brackets - they don't need to be escaped
+            return cleaned.replace("\\[", "[").replace("\\]", "]")
+            # Keep double quote escapes as they are necessary
+
+        text.addParseAction(clean_text_parse_action)
         return text
 
     @staticmethod
