@@ -167,7 +167,7 @@ ocw_www = Website.objects.get(name='ocw-www')
 sync_states = ContentSyncState.objects.filter(website=ocw_www)
 
 for sync_state in sync_states:
-    sync_state.synced_checksum = sync_state.calculate_checksum()
+    sync_state.synced_checksum = sync_state.content.calculate_checksum()
     sync_state.save()
 ```
 
