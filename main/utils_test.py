@@ -3,13 +3,18 @@
 import pytest
 
 from main.utils import (
+    FeatureFlag,
+    NestableKeyTextTransform,
     are_equivalent_paths,
     get_base_filename,
+    get_dict_list_item_by_field,
     get_dirpath_and_filename,
     get_file_extension,
+    is_dev,
     is_valid_uuid,
     remove_trailing_slashes,
     truncate_words,
+    uuid_string,
     valid_key,
 )
 
@@ -125,3 +130,93 @@ def test_truncate_words(text, truncated):
 def test_get_base_filename(filename, expected_base_filename):
     """Test get_base_filename truncates extension"""
     assert get_base_filename(filename) == expected_base_filename
+
+
+def test_uuid_string():
+    """Test uuid_string generates valid UUID strings"""
+    uuid_str = uuid_string()
+    assert isinstance(uuid_str, str)
+    assert is_valid_uuid(uuid_str)
+    
+    # Test that multiple calls generate different UUIDs
+    uuid_str2 = uuid_string()
+    assert uuid_str != uuid_str2
+
+
+def test_feature_flag_enum():
+    """Test FeatureFlag enum"""
+    # Test that EXAMPLE_FEATURE has a power of 2 value
+    assert FeatureFlag.EXAMPLE_FEATURE.value > 0
+    # Test that it's a power of 2 (has only one bit set)
+    assert (FeatureFlag.EXAMPLE_FEATURE.value & (FeatureFlag.EXAMPLE_FEATURE.value - 1)) == 0
+
+
+def test_nestable_key_text_transform():
+    """Test NestableKeyTextTransform class"""
+    # Test with single path
+    transform = NestableKeyTextTransform("field", "key1")
+    assert transform is not None
+    
+    # Test with multiple paths
+    transform = NestableKeyTextTransform("field", "key1", "key2", "key3")
+    assert transform is not None
+    
+    # Test that empty path raises ValueError
+    with pytest.raises(ValueError, match=r"Path must contain at least one key\."):
+        NestableKeyTextTransform("field")
+
+
+def test_is_dev(settings):
+    """Test is_dev function"""
+    # Test when ENVIRONMENT is "dev"
+    settings.ENVIRONMENT = "dev"
+    assert is_dev() is True
+    
+    # Test when ENVIRONMENT is not "dev"
+    settings.ENVIRONMENT = "production"
+    assert is_dev() is False
+    
+    settings.ENVIRONMENT = "staging"
+    assert is_dev() is False
+
+
+@pytest.mark.parametrize(
+    ("items", "field", "value", "expected"),
+    [
+        # Test finding item in list
+        ([{"name": "item1", "id": 1}, {"name": "item2", "id": 2}], "name", "item2", {"name": "item2", "id": 2}),
+        # Test item not found
+        ([{"name": "item1", "id": 1}, {"name": "item2", "id": 2}], "name", "item3", None),
+        # Test empty list
+        ([], "name", "item1", None),
+        # Test field doesn't exist
+        ([{"name": "item1", "id": 1}], "missing_field", "value", None),
+        # Test with numeric values
+        ([{"name": "item1", "id": 1}, {"name": "item2", "id": 2}], "id", 1, {"name": "item1", "id": 1}),
+    ],
+)
+def test_get_dict_list_item_by_field(items, field, value, expected):
+    """Test get_dict_list_item_by_field function"""
+    result = get_dict_list_item_by_field(items, field, value)
+    assert result == expected
+
+
+def test_truncate_words_edge_cases():
+    """Test truncate_words with edge cases"""
+    # Test with content shorter than length
+    assert truncate_words("short", 10) == "short"
+    
+    # Test with exact length
+    assert truncate_words("exactly10c", 10) == "exactly10c"
+    
+    # Test with custom suffix
+    assert truncate_words("This is a long sentence", 10, suffix=">>>") == "This is>>>>"
+    
+    # Test with None suffix
+    assert truncate_words("This is a long sentence", 10, suffix=None) == "This isNone"
+    
+    # Test with empty suffix
+    assert truncate_words("This is a long sentence", 10, suffix="") == "This is a "
+    
+    # Test with single word longer than length
+    assert truncate_words("supercalifragilisticexpialidocious", 10) == "super..."
