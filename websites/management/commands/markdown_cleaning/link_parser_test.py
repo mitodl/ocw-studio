@@ -68,11 +68,8 @@ def test_link_parser_parses_good_links(title, dest, text, is_image):
     parsed = parser.parse_string(markdown)
     assert parsed.original_text == markdown
 
-    # Our escape prevention should clean unnecessary escapes
-    expected_text = text.replace("\\]", "]").replace("\\[", "[")
-
     expected_link = MarkdownLink(
-        text=expected_text,
+        text=text,
         destination=dest,
         title=title,
         is_image=is_image,

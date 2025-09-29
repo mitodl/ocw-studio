@@ -164,6 +164,7 @@ class LinkToExternalResourceRule(PyparsingRule):
         url: str = ""
         external_resource: str = ""
         has_external_license_warning: bool = True
+        is_inside_shortcode_attribute: bool = False
 
     def __init__(self) -> None:
         super().__init__()
@@ -225,10 +226,6 @@ class LinkToExternalResourceRule(PyparsingRule):
     ):
         # Check if this link is inside a Hugo shortcode attribute
         link_end = l + len(toks.original_text)
-        if self._is_inside_shortcode_attribute(s, l, link_end):
-            return toks.original_text, self.ReplacementNotes(
-                note="inside shortcode attribute"
-            )
         is_inside_shortcode_attribute = self._is_inside_shortcode_attribute(
             s, l, link_end
         )
