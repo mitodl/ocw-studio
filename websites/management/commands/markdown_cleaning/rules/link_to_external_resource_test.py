@@ -898,8 +898,10 @@ def test_nav_item_to_external_resource_rule_with_license_warning_override(
 
 
 @pytest.mark.django_db
-def test_link_to_external_resource_skips_shortcode_attributes(settings):
-    """Test that links inside Hugo shortcode attributes are not converted."""
+def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_quotes(
+    settings,
+):
+    """Test that links inside Hugo shortcode attributes are converted with proper quote escaping."""
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(
             config=SAMPLE_SITE_CONFIG,
@@ -907,7 +909,7 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
         website = WebsiteFactory.create(starter=starter)
         settings.OCW_COURSE_STARTER_SLUG = starter.slug
 
-        # Test case: link inside shortcode attribute should NOT be converted
+        # Test case: link inside shortcode attribute should be converted with escaped quotes
         markdown_with_shortcode_link = """
             {{< image-gallery >}}
             {{< image-gallery-item href="test1.png" text="Botryoidal and massive hematite: Fe{{< sub 2 >}}O{{< sub 3 >}}." >}}
@@ -920,7 +922,7 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
             "Here is a [regular link](https://example.com) that should be converted."
         )
 
-        # Test case: mixed content - regular links converted, shortcode links preserved
+        # Test case: mixed content - regular links converted, shortcode links converted with escaping
         markdown_mixed = f"""
             Here is a [normal link](https://example.com).
             {markdown_with_shortcode_link}
@@ -943,16 +945,25 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
         rule.set_options({"commit": True})
         cleaner = Cleaner(rule)
 
-        # Test 1: Shortcode attribute link should NOT be converted
+        # Test 1: Shortcode attribute link SHOULD be converted with escaped quotes
         original_shortcode_content = website_content_shortcode.markdown
-        cleaner.update_website_content(website_content_shortcode)
+        updated_shortcode = cleaner.update_website_content(website_content_shortcode)
 
-        # The content should remain unchanged (link inside shortcode attribute preserved)
-        assert website_content_shortcode.markdown == original_shortcode_content
-        assert "[OCW](https://ocw.mit.edu)" in website_content_shortcode.markdown
-        assert "resource_link" not in website_content_shortcode.markdown
+        assert updated_shortcode is True
+        # The content should have been changed (link converted to resource_link with escaped quotes)
+        assert website_content_shortcode.markdown != original_shortcode_content
+        assert "[OCW](https://ocw.mit.edu)" not in website_content_shortcode.markdown
+        assert "resource_link" in website_content_shortcode.markdown
+        # Check that quotes are properly escaped inside the shortcode attribute
+        assert (
+            '\\"' in website_content_shortcode.markdown
+        )  # Escaped quotes should be present
+        # The pattern should look like: text="{{% resource_link \"uuid\" \"OCW\" %}}"
+        assert 'resource_link \\"' in website_content_shortcode.markdown
+        # The pattern should look like: text="{{% resource_link \"uuid\" \"OCW\" %}}"
+        assert 'resource_link \\"' in website_content_shortcode.markdown
 
-        # Test 2: Regular link should be converted
+        # Test 2: Regular link should be converted (no change in behavior)
         updated_regular = cleaner.update_website_content(website_content_regular)
         assert updated_regular is True
         assert "resource_link" in website_content_regular.markdown
@@ -961,10 +972,10 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
             not in website_content_regular.markdown
         )
 
-        # Test 3: Mixed content - only regular links converted
+        # Test 3: Mixed content - all links converted (regular links normally, shortcode links with escaping)
         updated_mixed = cleaner.update_website_content(website_content_mixed)
         assert updated_mixed is True
-        # Regular links should be converted
+        # Regular links should be converted normally
         assert (
             "[normal link](https://example.com)" not in website_content_mixed.markdown
         )
@@ -972,46 +983,56 @@ def test_link_to_external_resource_skips_shortcode_attributes(settings):
             "[normal link](https://example2.com)" not in website_content_mixed.markdown
         )
         assert "resource_link" in website_content_mixed.markdown
-        # Shortcode attribute link should be preserved
-        assert "[OCW](https://ocw.mit.edu)" in website_content_mixed.markdown
+        # Shortcode attribute link should be converted with escaped quotes
+        assert "[OCW](https://ocw.mit.edu)" not in website_content_mixed.markdown
+        assert 'resource_link \\"' in website_content_mixed.markdown
 
 
 @pytest.mark.parametrize(
-    ("markdown_text", "should_convert", "description"),
+    ("markdown_text", "should_convert", "should_have_escaped_quotes", "description"),
     [
-        # Link after closed shortcode should be converted
+        # Link after closed shortcode should be converted normally
         (
             "Before {{< shortcode >}} and [link](https://example.com) after",
             True,
+            False,
             "after closed shortcode",
         ),
-        # Link inside single-line shortcode attribute should NOT be converted
+        # Link inside single-line shortcode attribute should be converted with escaped quotes
         (
             '{{< image-gallery-item text="[link](https://example.com)" >}}',
-            False,
+            True,
+            True,
             "single-line shortcode attribute",
         ),
-        # Link with multiple attributes should NOT be converted
+        # Link with multiple attributes should be converted with escaped quotes
         (
             '{{< image-gallery-item text="Some [link](https://example.com) text" attr="value" >}}',
-            False,
+            True,
+            True,
             "multiple attributes",
         ),
-        # Multiple links inside same shortcode attribute should NOT be converted
+        # Multiple links inside same shortcode attribute should be converted with escaped quotes
         (
             '{{< image-gallery-item text="Check [link1](https://example.com) and [link2](https://google.com) both" >}}',
-            False,
+            True,
+            True,
             "multiple links in single attribute",
         ),
-        # Link outside any shortcode should be converted
-        ("Regular [link](https://example.com) in text", True, "outside shortcode"),
+        # Link outside any shortcode should be converted normally
+        (
+            "Regular [link](https://example.com) in text",
+            True,
+            False,
+            "outside shortcode",
+        ),
     ],
 )
 @pytest.mark.django_db
 def test_shortcode_attribute_detection_edge_cases(
-    settings, markdown_text, should_convert, description
+    settings, markdown_text, should_convert, should_have_escaped_quotes, description
 ):
-    """Test edge cases for shortcode attribute detection."""
+    """Test edge cases for shortcode attribute detection and quote escaping."""
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(
             config=SAMPLE_SITE_CONFIG,
@@ -1041,15 +1062,101 @@ def test_shortcode_attribute_detection_edge_cases(
             assert "](https://" not in website_content.markdown, (
                 f"Failed: {description} - original links still present"
             )
+
+            # Check quote escaping based on context
+            if should_have_escaped_quotes:
+                assert '\\"' in website_content.markdown, (
+                    f"Failed: {description} - should have escaped quotes inside shortcode attribute"
+                )
+                assert 'resource_link \\"' in website_content.markdown, (
+                    f"Failed: {description} - resource_link should have escaped quotes"
+                )
+            else:
+                # For links outside shortcode attributes, quotes should not be escaped
+                # (they use normal Hugo shortcode syntax with regular quotes)
+                assert 'resource_link "' in website_content.markdown, (
+                    f"Failed: {description} - should have normal quotes outside shortcode"
+                )
         else:
-            # Content should remain unchanged
-            assert website_content.markdown == original_content, (
-                f"Failed: {description} - content was modified"
+            # This branch is no longer used since we now convert all links
+            # Keeping it for potential future use cases
+            assert updated is False or website_content.markdown == original_content, (
+                f"Failed: {description} - should not have been converted"
             )
-            # Check that original markdown links are still present
             assert "](https://" in website_content.markdown, (
-                f"Failed: {description} - original links missing"
+                f"Failed: {description} - original links should be preserved"
             )
-            assert "resource_link" not in website_content.markdown, (
-                f"Failed: {description} - unexpected resource_link found"
+
+
+@pytest.mark.django_db
+def test_nested_shortcode_quote_escaping_comprehensive(settings):
+    """Test comprehensive scenarios for nested shortcode quote escaping."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test various nested shortcode scenarios
+        test_cases = [
+            {
+                "name": "image-gallery with multiple attributes",
+                "input": """{{< image-gallery id="gallery1" >}}
+{{< image-gallery-item href="image1.jpg" data-ngdesc="This is a [markdown link](https://example.com) within shortcode" text="Description with [another link](https://example.org) text" >}}
+{{< image-gallery-item href="image2.jpg" data-ngdesc="Multiple [link one](https://first.com) and [link two](https://second.com) in same text" >}}
+{{< /image-gallery >}}""",
+                "expected_patterns": [
+                    'resource_link \\"',  # Escaped quotes
+                    'data-ngdesc="This is a {{% resource_link',  # Proper nesting
+                    'text="Description with {{% resource_link',  # Multiple attributes
+                ],
+            },
+            {
+                "name": "single attribute with quotes in link text",
+                "input": '{{< shortcode text="Here is [Spindle](https://example.com/spindle) text" >}}',
+                "expected_patterns": [
+                    'resource_link \\"',  # Escaped quotes
+                    'text="Here is {{% resource_link',  # Proper conversion
+                ],
+            },
+            {
+                "name": "mixed content with regular and nested links",
+                "input": """Regular [link](https://regular.com) here.
+{{< shortcode attr="Nested [link](https://nested.com) here" >}}
+Another regular [link](https://another.com).""",
+                "expected_patterns": [
+                    'resource_link "',  # Regular quotes for normal links
+                    'resource_link \\"',  # Escaped quotes for nested links
+                ],
+            },
+        ]
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        for test_case in test_cases:
+            website_content = WebsiteContentFactory.create(
+                website=website,
+                markdown=test_case["input"],
+                type="page",
+                title=f"Test {test_case['name']}",
             )
+
+            updated = cleaner.update_website_content(website_content)
+
+            assert updated is True, f"Failed to update: {test_case['name']}"
+
+            # Check that all links were converted
+            assert "](https://" not in website_content.markdown, (
+                f"Original links still present in: {test_case['name']}"
+            )
+            assert "resource_link" in website_content.markdown, (
+                f"No resource_link found in: {test_case['name']}"
+            )
+
+            # Check expected patterns
+            for pattern in test_case["expected_patterns"]:
+                assert pattern in website_content.markdown, (
+                    f"Pattern '{pattern}' not found in {test_case['name']}.\n"
+                    f"Content: {website_content.markdown[:200]}..."
+                )

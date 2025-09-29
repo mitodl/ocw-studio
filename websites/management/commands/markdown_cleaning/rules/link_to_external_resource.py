@@ -229,6 +229,9 @@ class LinkToExternalResourceRule(PyparsingRule):
             return toks.original_text, self.ReplacementNotes(
                 note="inside shortcode attribute"
             )
+        is_inside_shortcode_attribute = self._is_inside_shortcode_attribute(
+            s, l, link_end
+        )
 
         link = toks.link
         try:
@@ -266,14 +269,21 @@ class LinkToExternalResourceRule(PyparsingRule):
             resource.referencing_content.add(website_content)
 
         shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
+        hugo_output = shortcode.to_hugo()
 
-        return shortcode.to_hugo(), self.ReplacementNotes(
+        # If inside shortcode attribute, escape the quotes in the Hugo output
+        if is_inside_shortcode_attribute:
+            # Escape internal quotes for HTML attribute context
+            hugo_output = hugo_output.replace('"', '\\"')
+
+        return hugo_output, self.ReplacementNotes(
             note="replaced successfully",
             url=toks.link.destination,
             external_resource=resource.text_id,
             has_external_license_warning=resource.metadata[
                 "has_external_license_warning"
             ],
+            is_inside_shortcode_attribute=is_inside_shortcode_attribute,
         )
 
     def should_parse(self, text: str) -> bool:
