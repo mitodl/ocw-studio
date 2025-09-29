@@ -148,13 +148,13 @@ Publish all websites except `ocw-www`:
 ./manage.py mass_publish --exclude ocw-www
 ```
 
-**Note:** This process can take a very long time as it publishes every website to GitHub.
+**Note:** This process can take a long time as it publishes every website to GitHub.
 
-### 3.3 Publish ocw-www Separately
+### 3.3 Publish ocw-www separately
 
 The `ocw-www` website requires special handling due to its large size. This is the reason we exclude it during the mass publish as its publication is prone to network failures.
 
-Go to the studio UI and trigger a publish of ocw-www. Verify from the github content repo that the content has been properly synced. This step may run into failures due to the large number of objects associated to ocw-www. If repeated attempts to publish `ocw-www` fail, you can use batch-processing to sync `ocw-www` to its github content repo:-
+Go to the studio UI and trigger a publish of `ocw-www`. Verify from the github content repo that the content has been properly synced. This step may run into failures due to the large number of objects associated to `ocw-www`. If repeated attempts to publish `ocw-www` fail, you can use batch-processing to sync `ocw-www` to its github content repo:-
 
 1. Set all ContentSyncState objects for `ocw-www` to have already been synced:
 
@@ -206,8 +206,7 @@ One issue that you are likely to run into here is the circular dependency betwee
 One way to get around this is to manually copy instructor JSON files from production to RC:
 
 ```bash
-# Example AWS CLI command (adjust bucket names as needed)
-aws s3 sync s3://ol-ocw-studio-app-production/instructors/ s3://ol-ocw-studio-app-qa/instructors/
+aws s3 sync s3://{AWS_PUBLISH/PREVIEW_BUCKET_NAME_PROD}/instructors/ s3://{AWS_PUBLISH/PREVIEW_BUCKET_NAME_RC}/instructors/
 ```
 
 ## Step 5: Static Asset Synchronization (Optional)
@@ -219,8 +218,7 @@ Assets may not load properly on newly built sites because we haven't replicated 
 To sync static assets from production to RC:
 
 ```bash
-# Full sync (this can be very large - ~2TB)
-aws s3 sync s3://ol-ocw-studio-app-production/ s3://ol-ocw-studio-app-qa/ --exclude "instructors/*"
+aws s3 sync s3://{AWS_STORAGE_BUCKET_NAME_PROD}/ s3://{AWS_STORAGE_BUCKET_NAME_RC}/"
 
 ```
 
