@@ -225,3 +225,7 @@ aws s3 sync s3://ol-ocw-studio-app-production/ s3://ol-ocw-studio-app-qa/ --excl
 ```
 
 In the future, we will be setting up an automated concourse pipeline for regular incremental syncs.
+
+### 5.2 Run the mass build
+
+Once the content buckets have been synced, trigger the mass build again and monitor it to completion.
