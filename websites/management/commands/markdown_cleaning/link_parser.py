@@ -165,7 +165,7 @@ class LinkParser(WrappedParser):
         # If this ever changes, we would need to change content to something
         # like Combine(OneOrMore(~ignore + content_character))
         content = content_character
-        return originalTextFor(
+        text = originalTextFor(
             nestedExpr(
                 opener="[",
                 closer="]",
@@ -173,6 +173,10 @@ class LinkParser(WrappedParser):
                 ignoreExpr=ignore,
             )
         ).setResultsName("text")
+
+        text.addParseAction(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
+
+        return text
 
     @staticmethod
     def _parser_piece_destination_and_title():
