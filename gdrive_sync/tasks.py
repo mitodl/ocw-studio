@@ -57,7 +57,9 @@ def process_drive_file(self, drive_file_id: str):
 
 
 @app.task()
-def create_gdrive_resource_content_batch(drive_file_ids: list[str | None]):
+def create_gdrive_resource_content_batch(
+    drive_file_ids: list[str | None], user_pk=None
+):
     """
     Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
 
@@ -76,18 +78,18 @@ def create_gdrive_resource_content_batch(drive_file_ids: list[str | None]):
                 exc_info=exc,
             )
         else:
-            api.create_gdrive_resource_content(drive_file)
+            api.create_gdrive_resource_content(drive_file, user_pk=user_pk)
 
 
 @app.task()
-def delete_drive_file(drive_file_id: str, sync_datetime: datetime):
+def delete_drive_file(drive_file_id: str, sync_datetime: datetime, user_pk=None):
     """
     Delete the DriveFile if it is not being used in website page content.
     See api.delete_drive_file for details.
     """
     drive_file = DriveFile.objects.filter(file_id=drive_file_id).first()
     if drive_file:
-        api.delete_drive_file(drive_file, sync_datetime=sync_datetime)
+        api.delete_drive_file(drive_file, sync_datetime=sync_datetime, user_pk=user_pk)
 
 
 def _get_gdrive_files(website: Website) -> tuple[dict[str, list[dict]], list[str]]:
@@ -129,7 +131,7 @@ def _get_gdrive_files(website: Website) -> tuple[dict[str, list[dict]], list[str
 
 @app.task(bind=True, acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=30)
 @single_task(30)
-def import_website_files(self, name: str):
+def import_website_files(self, name: str, user_pk=None):
     """Query the Drive API for all children of a website folder and import the files"""
     if not api.is_gdrive_enabled():
         return None
@@ -145,7 +147,7 @@ def import_website_files(self, name: str):
         website,
     )
     delete_file_tasks = [
-        delete_drive_file.si(drive_file.file_id, website.synced_on)
+        delete_drive_file.si(drive_file.file_id, website.synced_on, user_pk=user_pk)
         for drive_file in deleted_drive_files
     ]
 
@@ -176,7 +178,8 @@ def import_website_files(self, name: str):
 
     if file_tasks:
         step = chord(
-            celery.group(*file_tasks), create_gdrive_resource_content_batch.s()
+            celery.group(*file_tasks),
+            create_gdrive_resource_content_batch.s(user_pk=user_pk),
         )
         workflow_steps.append(step)
 

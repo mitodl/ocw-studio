@@ -23,6 +23,7 @@ from gdrive_sync.tasks import (
     process_drive_file,
     update_website_status,
 )
+from users.factories import UserFactory
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 
@@ -110,10 +111,13 @@ def test_create_gdrive_folders_batch_errors(mocker, has_error):
     assert result == ([short_ids[1]] if has_error else True)
 
 
-def test_import_website_files(mocker, mocked_celery, mock_gdrive_files):  # pylint:disable=unused-argument
+@pytest.mark.parametrize("has_user", [True, False])
+def test_import_website_files(mocker, mocked_celery, mock_gdrive_files, has_user):  # pylint:disable=unused-argument
     """import_website_files should run process_file_result for each drive file and trigger tasks"""
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
     website = WebsiteFactory.create()
+    user = UserFactory.create() if has_user else None
+    user_pk = user.pk if user else None
     drive_files = DriveFileFactory.create_batch(2, website=website)
     mock_process_file_result = mocker.patch(
         "gdrive_sync.tasks.api.process_file_result", side_effect=drive_files
@@ -122,7 +126,7 @@ def test_import_website_files(mocker, mocked_celery, mock_gdrive_files):  # pyli
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
     mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
-        import_website_files.delay(website.name)
+        import_website_files.delay(website.name, user_pk=user_pk)
     assert mock_process_file_result.call_count == 2
     for drive_file in drive_files:
         mock_process_gdrive_file.assert_any_call(drive_file.file_id)
@@ -213,7 +217,9 @@ def test_import_website_files_delete_missing(mocker, mocked_celery):
         import_website_files.delay(website.name)
     assert mock_delete_drive_file.call_count == 2
     for drive_file in drive_files:
-        mock_delete_drive_file.assert_any_call(drive_file.file_id, mocker.ANY)
+        mock_delete_drive_file.assert_any_call(
+            drive_file.file_id, mocker.ANY, user_pk=None
+        )
 
 
 def test_update_website_status(mocker):
@@ -252,8 +258,9 @@ def test_process_drive_file(mocker, is_video, has_error):
     assert mock_log.call_count == (1 if has_error else 0)
 
 
+@pytest.mark.parametrize("has_user", [True, False])
 @pytest.mark.parametrize("drive_file_count", [0, 5])
-def test_create_gdrive_resource_content_batch(mocker, drive_file_count):
+def test_create_gdrive_resource_content_batch(mocker, has_user, drive_file_count):
     """This batch task should call create_gdrive_resource_content for each valid file."""
     mock_create_resource = mocker.patch(
         "gdrive_sync.tasks.api.create_gdrive_resource_content"
@@ -264,20 +271,27 @@ def test_create_gdrive_resource_content_batch(mocker, drive_file_count):
         None,
         "an_id_that_does_not_exist",
     ]
+    user = UserFactory.create() if has_user else None
+    user_pk = user.pk if user else None
 
-    create_gdrive_resource_content_batch.delay(drive_file_ids)
+    create_gdrive_resource_content_batch.delay(drive_file_ids, user_pk=user_pk)
     assert mock_create_resource.call_count == len(drive_files)
     for drive_file in drive_files:
-        mock_create_resource.assert_any_call(drive_file)
+        mock_create_resource.assert_any_call(drive_file, user_pk=user_pk)
 
 
-def test_delete_drive_file(mocker):
+@pytest.mark.parametrize("has_user", [True, False])
+def test_delete_drive_file(mocker, has_user):
     """Task delete_drive_file should delegate the delete action to api.delete_drive_file."""
     drive_file = DriveFileFactory.create()
+    user = UserFactory.create() if has_user else None
+    user_pk = user.pk if user else None
     mock_delete_drive_file = mocker.patch("gdrive_sync.api.delete_drive_file")
-    delete_drive_file.delay(drive_file.file_id, drive_file.website.synced_on)
+    delete_drive_file.delay(
+        drive_file.file_id, drive_file.website.synced_on, user_pk=user_pk
+    )
     mock_delete_drive_file.assert_called_once_with(
-        drive_file, sync_datetime=drive_file.website.synced_on
+        drive_file, sync_datetime=drive_file.website.synced_on, user_pk=user_pk
     )
 
 

@@ -776,12 +776,12 @@ class WebsiteContentViewSet(
     )
     def gdrive_sync(
         self,
-        request,  # noqa: ARG002
+        request,
         **kwargs,  # noqa: ARG002
     ):  # pylint:disable=unused-argument
         """Trigger a task to sync all non-video Google Drive files"""
         website = Website.objects.get(name=self.kwargs.get("parent_lookup_website"))
         website.sync_status = WebsiteSyncStatus.PENDING
         website.save()
-        import_website_files.delay(website.name)
+        import_website_files.delay(website.name, user_pk=request.user.pk)
         return Response(status=200)
