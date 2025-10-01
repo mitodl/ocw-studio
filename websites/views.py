@@ -10,8 +10,10 @@ from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db.models import Case, CharField, F, OuterRef, Prefetch, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
+from github import GithubException
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
+from requests import HTTPError
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -235,7 +237,22 @@ class WebsiteViewSet(
             return Response(status=200)
         except ValidationError as ve:
             return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
+<<<<<<< HEAD
         except Exception:  # pylint: disable=broad-except
+=======
+        except GithubException as github_exc:
+            log.exception(
+                "GitHub error publishing %s version for %s (user: %s)",
+                version,
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"error": "Failed to publish website", "error_type": "github_error"},
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+>>>>>>> 052ab000 (Fix tests)
             log.exception(
                 "Error publishing %s version for %s (user: %s)",
                 version,
@@ -244,7 +261,11 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+<<<<<<< HEAD
                 data={"error": "Failed to publish website"},
+=======
+                data={"error": "Failed to publish website", "error_type": "unknown"},
+>>>>>>> 052ab000 (Fix tests)
             )
 
     @action(
@@ -319,7 +340,21 @@ class WebsiteViewSet(
                     status=200,
                     data="The site has been submitted for unpublishing.",
                 )
+<<<<<<< HEAD
         except Exception:  # pylint: disable=broad-except
+=======
+        except HTTPError as http_exc:
+            log.exception(
+                "HTTP error unpublishing %s (user: %s)",
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"error": "Failed to unpublish website", "error_type": "http_error"},
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+>>>>>>> 052ab000 (Fix tests)
             log.exception(
                 "Error unpublishing %s (user: %s)",
                 name,
@@ -327,10 +362,18 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+<<<<<<< HEAD
                 data={"error": "Failed to unpublish website"},
+=======
+                data={"error": "Failed to unpublish website", "error_type": "unknown"},
+>>>>>>> 052ab000 (Fix tests)
             )
 
-    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[BearerTokenPermission],
+    )
     def pipeline_status(self, request, name=None):
         """Process webhook requests from concourse pipeline runs"""
         website = get_object_or_404(Website, name=name)
@@ -455,26 +498,47 @@ class WebsiteStarterViewSet(
                         for commit in data["commits"]
                     ]
                     for file in sublist
-                    if os.path.basename(file)  # noqa: PTH119
+                    if os.path.basename(file)
                     == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
                 )
+<<<<<<< HEAD
             except Exception:  # pylint: disable=broad-except
                 log.exception(
                     "Error syncing config files from repo %s, files: %s, commit: %s",
                     data.get("repository", {}).get("html_url"),
                     files if "files" in locals() else [],
+=======
+            except KeyError as key_exc:
+                log.exception(
+                    "Key error syncing config files from repo %s, commit: %s",
+                    data.get("repository", {}).get("html_url"),
+>>>>>>> 052ab000 (Fix tests)
                     data.get("after"),
                 )
                 return Response(
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+<<<<<<< HEAD
                     data={"error": "Failed to sync site configuration files"},
+=======
+                    data={"error": "Failed to sync site configuration files", "error_type": "key_error"},
+                )
+            except Exception as exc:  # pylint: disable=broad-except
+                log.exception(
+                    "Error syncing config files from repo %s, files: %s, commit: %s",
+                    data.get("repository", {}).get("html_url"),
+                    files if 'files' in locals() else [],
+                    data.get("after"),
+                )
+                return Response(
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    data={"error": "Failed to sync site configuration files", "error_type": "unknown"},
+>>>>>>> 052ab000 (Fix tests)
                 )
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
-            # Only github webhooks are currently supported
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
