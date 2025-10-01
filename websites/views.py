@@ -235,7 +235,7 @@ class WebsiteViewSet(
             return Response(status=200)
         except ValidationError as ve:
             return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             log.exception(
                 "Error publishing %s version for %s (user: %s)",
                 version,
@@ -244,7 +244,7 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                data={"error": "Failed to publish website"}
+                data={"error": "Failed to publish website"},
             )
 
     @action(
@@ -319,7 +319,7 @@ class WebsiteViewSet(
                     status=200,
                     data="The site has been submitted for unpublishing.",
                 )
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             log.exception(
                 "Error unpublishing %s (user: %s)",
                 name,
@@ -327,12 +327,10 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                data={"error": "Failed to unpublish website"}
+                data={"error": "Failed to unpublish website"},
             )
 
-    @action(
-        detail=True, methods=["post"], permission_classes=[BearerTokenPermission]
-    )
+    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
     def pipeline_status(self, request, name=None):
         """Process webhook requests from concourse pipeline runs"""
         website = get_object_or_404(Website, name=name)
@@ -463,16 +461,16 @@ class WebsiteStarterViewSet(
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
                 )
-            except Exception as exc:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 log.exception(
                     "Error syncing config files from repo %s, files: %s, commit: %s",
                     data.get("repository", {}).get("html_url"),
-                    files if 'files' in locals() else [],
+                    files if "files" in locals() else [],
                     data.get("after"),
                 )
                 return Response(
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    data={"error": "Failed to sync site configuration files"}
+                    data={"error": "Failed to sync site configuration files"},
                 )
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
