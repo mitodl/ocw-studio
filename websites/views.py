@@ -2,7 +2,7 @@
 
 import json
 import logging
-import os
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -16,7 +16,7 @@ from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
@@ -235,8 +235,9 @@ class WebsiteViewSet(
                 )
             trigger_publish(website.name, version)
             return Response(status=200)
-        except ValidationError as ve:
-            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
+        except (ValidationError, PermissionDenied):
+            # Let DRF handle these exceptions
+            raise
         except GithubException:
             log.exception(
                 "GitHub error publishing %s version for %s (user: %s)",
@@ -335,6 +336,9 @@ class WebsiteViewSet(
                     status=200,
                     data="The site has been submitted for unpublishing.",
                 )
+        except PermissionDenied:
+            # Let DRF handle permission exceptions
+            raise
         except HTTPError:
             log.exception(
                 "HTTP error unpublishing %s (user: %s)",
@@ -488,7 +492,7 @@ class WebsiteStarterViewSet(
                         for commit in data["commits"]
                     ]
                     for file in sublist
-                    if os.path.basename(file) == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                    if Path(file).name == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
