@@ -75,8 +75,10 @@ repos:
   rev: "v0.12.8"
   hooks:
   - id: ruff-format
+    exclude: ".*/migrations/.*"
   - id: ruff
     args: [--extend-ignore=D1, --fix]
+    exclude: ".*/migrations/.*"
 - repo: local
   hooks:
   - id: prettier
