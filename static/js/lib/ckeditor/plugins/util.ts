@@ -75,7 +75,10 @@ export class ShortcodeParam {
   }
 
   static hugoEscapeParamValue(value: string): string {
-    return value.replace(/\n/g, " ").replace(/"/g, '\\"')
+    return value
+      .replace(/\\/g, '\\\\')  // Escape backslashes FIRST
+      .replace(/\n/g, " ")     // Then newlines
+      .replace(/"/g, '\\"')    // Then quotes LAST
   }
 
   toHugo() {
