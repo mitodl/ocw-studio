@@ -224,7 +224,7 @@ export const contentFormValuesToPayload = (
           hasFileUpload = true
         }
         // if value is a string, it came from the GET request and we should ignore it
-      } else if (field.name == "gdrive_url") {
+      } else if (field.name === "gdrive_url") {
         continue
       } else {
         metadata[field.name] = value
@@ -255,7 +255,7 @@ export const contentInitialValues = (
       values[field.name] = content.markdown ?? ""
     } else if (field.name === "title") {
       values[field.name] = content[field.name] ?? ""
-    } else if (field.name == "gdrive_url") {
+    } else if (field.name === "gdrive_url") {
       values[field.name] = content[field.name] ?? ""
     } else if (field.widget === WidgetVariant.File) {
       values[field.name] = content[field.name]
