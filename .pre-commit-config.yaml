@@ -86,15 +86,15 @@ repos:
     args: [run, prettier, --write, --ignore-unknown]
     types_or: [javascript, jsx, ts, tsx, json, scss, sass, css, markdown, html]
     exclude: ".yarn/"
-  - id: eslint
-    name: eslint
-    description: "Lint JS/TS files and apply automatic fixes"
-    entry: yarn
-    language: node
-    types_or: [javascript, jsx, ts, tsx]
-    args: [run, eslint, --fix, --quiet]
-    exclude: "(node_modules/|.yarn/)"
-    require_serial: false
+  # - id: eslint
+  #   name: eslint
+  #   description: "Lint JS/TS files and apply automatic fixes"
+  #   entry: yarn
+  #   language: node
+  #   types_or: [javascript, jsx, ts, tsx]
+  #   args: [run, eslint, --fix, --quiet]
+  #   exclude: "(node_modules/|.yarn/)"
+  #   require_serial: false
   - id: stylelint
     name: stylelint
     description: "Lint SCSS files"

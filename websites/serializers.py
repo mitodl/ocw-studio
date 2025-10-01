@@ -662,6 +662,13 @@ class WebsiteContentDetailSerializer(
             file_field = instance.get_config_file_field()
             if file_field:
                 result[file_field["name"]] = instance.file.url
+
+        drivefile = instance.drivefile_set.first()
+        if drivefile:
+            result["gdrive_url"] = (
+                f"https://drive.google.com/file/d/{drivefile.file_id}/view"
+            )
+
         return result
 
     class Meta:
