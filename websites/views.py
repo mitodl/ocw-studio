@@ -237,7 +237,7 @@ class WebsiteViewSet(
             return Response(status=200)
         except ValidationError as ve:
             return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
-        except GithubException as github_exc:
+        except GithubException:
             log.exception(
                 "GitHub error publishing %s version for %s (user: %s)",
                 version,
@@ -246,9 +246,12 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                data={"error": "Failed to publish website", "error_type": "github_error"},
+                data={
+                    "error": "Failed to publish website",
+                    "error_type": "github_error",
+                },
             )
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             log.exception(
                 "Error publishing %s version for %s (user: %s)",
                 version,
@@ -332,7 +335,7 @@ class WebsiteViewSet(
                     status=200,
                     data="The site has been submitted for unpublishing.",
                 )
-        except HTTPError as http_exc:
+        except HTTPError:
             log.exception(
                 "HTTP error unpublishing %s (user: %s)",
                 name,
@@ -340,9 +343,12 @@ class WebsiteViewSet(
             )
             return Response(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                data={"error": "Failed to unpublish website", "error_type": "http_error"},
+                data={
+                    "error": "Failed to unpublish website",
+                    "error_type": "http_error",
+                },
             )
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             log.exception(
                 "Error unpublishing %s (user: %s)",
                 name,
@@ -482,13 +488,12 @@ class WebsiteStarterViewSet(
                         for commit in data["commits"]
                     ]
                     for file in sublist
-                    if os.path.basename(file)
-                    == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                    if os.path.basename(file) == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
                 )
-            except KeyError as key_exc:
+            except KeyError:
                 log.exception(
                     "Key error syncing config files from repo %s, commit: %s",
                     data.get("repository", {}).get("html_url"),
@@ -496,18 +501,24 @@ class WebsiteStarterViewSet(
                 )
                 return Response(
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    data={"error": "Failed to sync site configuration files", "error_type": "key_error"},
+                    data={
+                        "error": "Failed to sync site configuration files",
+                        "error_type": "key_error",
+                    },
                 )
-            except Exception as exc:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 log.exception(
                     "Error syncing config files from repo %s, files: %s, commit: %s",
                     data.get("repository", {}).get("html_url"),
-                    files if 'files' in locals() else [],
+                    files if "files" in locals() else [],
                     data.get("after"),
                 )
                 return Response(
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    data={"error": "Failed to sync site configuration files", "error_type": "unknown"},
+                    data={
+                        "error": "Failed to sync site configuration files",
+                        "error_type": "unknown",
+                    },
                 )
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
