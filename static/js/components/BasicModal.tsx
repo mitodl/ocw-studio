@@ -1,4 +1,4 @@
-// import React from "react"
+import React from "react"
 import { Modal, ModalBody, ModalHeader } from "reactstrap"
 
 interface PassDownProps {
