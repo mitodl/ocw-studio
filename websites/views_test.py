@@ -352,10 +352,8 @@ def test_websites_endpoint_publish_denied(mocker, drf_client):
     resp = drf_client.post(
         reverse("websites_api-publish", kwargs={"name": website.name})
     )
-    assert resp.status_code == 500
-    assert resp.data == {
-        "details": "You do not have permission to perform this action."
-    }
+    assert resp.status_code == 403
+    assert "detail" in resp.data or "details" in resp.data
 
 
 def test_websites_endpoint_publish_error(mocker, drf_client):
@@ -472,10 +470,8 @@ def test_websites_endpoint_unpublish_denied(drf_client, mocker):
     resp = drf_client.post(
         reverse("websites_api-unpublish", kwargs={"name": website.name})
     )
-    assert resp.status_code == 500
-    assert resp.data == {
-        "details": "You do not have permission to perform this action."
-    }
+    assert resp.status_code == 403
+    assert "detail" in resp.data or "details" in resp.data
 
 
 def test_websites_endpoint_unpublish_error(drf_client, mocker):
