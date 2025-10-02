@@ -89,7 +89,7 @@ destination:
 ```
 
 **Getting Connection Information:**
-At MIT, ocw-studio is run in heroku, hence the database name, host, username and password can be obtained through the heroku cli as `heroku config:get -a <app_name> DATABASE_URL`
+At MIT, ocw-studio is run in heroku, hence the database name, host, username, and password can be obtained through the heroku cli as `heroku config:get -a <app_name> DATABASE_URL`
 
 ### 1.3 Deploy and Run Pipeline
 
@@ -103,7 +103,7 @@ Then trigger the pipeline through the Concourse UI.
 
 ## Step 2: Google Drive Folder Management
 
-After the database restore, Website objects' gdrive folders will be pointing to the production gdrive instance. We need to update them to point to appropriate RC gdrive links.
+Once the database is restored, Website objects' gdrive folders will be pointing to the Google Drive for the production environment. We need to update these to link to appropriate folders in the Google Drive for the RC environment.
 
 ### 2.1 Clear Existing gdrive Folder References
 
@@ -134,7 +134,7 @@ The RC environment needs to synchronize all content with GitHub repositories. Th
 
 ### 3.1 Reset Sync States
 
-Reset all sync states to ensure a clean synchronization:
+Reset all sync states to ensure complete synchronization:
 
 ```bash
 ./manage.py reset_sync_states --skip_sync
@@ -160,15 +160,12 @@ Go to the studio UI and trigger a publish of `ocw-www`. Verify from the github c
 
 ```python
 # In Django shell
+from django.db.models import F
 from content_sync.models import ContentSyncState
 from websites.models import Website
 
 ocw_www = Website.objects.get(name='ocw-www')
-sync_states = ContentSyncState.objects.filter(website=ocw_www)
-
-for sync_state in sync_states:
-    sync_state.synced_checksum = sync_state.content.calculate_checksum()
-    sync_state.save()
+ContentSyncState.objects.filter(website=ocw_www).update(synced_checksum=F('current_checksum'))
 ```
 
 2. Process in batches of ~500 objects:
