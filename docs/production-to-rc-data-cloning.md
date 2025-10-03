@@ -116,7 +116,7 @@ Website.objects.all().update(gdrive_folder=None)
 
 ### 2.2 Recreate GDrive Folders
 
-Run the management command to recreate missing GDrive folders:
+Run the management command to create missing GDrive folders:
 
 ```bash
 ./manage.py create_missing_gdrive_folders
