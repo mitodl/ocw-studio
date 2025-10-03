@@ -11,6 +11,7 @@ from django.utils.text import slugify
 from mitol.common.utils import now_in_utc
 from rest_framework.exceptions import ValidationError
 
+from gdrive_sync.factories import DriveFileFactory
 from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
@@ -320,11 +321,15 @@ def test_serializer_is_deletable_by_resourcetype(type_, resourcetype, expected):
     assert serializer["is_deletable_by_resourcetype"] is expected
 
 
-def test_website_content_detail_serializer():
+@pytest.mark.parametrize("has_gdrive_file", [True, False])
+def test_website_content_detail_serializer(has_gdrive_file):
     """WebsiteContentDetailSerializer should serialize all relevant fields to the frontend"""
     content = WebsiteContentFactory.create(
         website=WebsiteFactory.create(url_path="courses/mysite-fall-2022")
     )
+    if has_gdrive_file:
+        DriveFileFactory.create(file_id="test-file-id-123", resource=content)
+
     serialized_data = WebsiteContentDetailSerializer(instance=content).data
     assert serialized_data["text_id"] == str(content.text_id)
     assert serialized_data["title"] == content.title
@@ -333,6 +338,12 @@ def test_website_content_detail_serializer():
     assert serialized_data["markdown"] == content.markdown
     assert serialized_data["metadata"] == content.metadata
     assert serialized_data["url_path"] == content.website.url_path
+
+    if has_gdrive_file:
+        expected_gdrive_url = "https://drive.google.com/file/d/test-file-id-123/view"
+        assert serialized_data["gdrive_url"] == expected_gdrive_url
+    else:
+        assert "gdrive_url" not in serialized_data
 
 
 def test_website_content_detail_serializer_with_url_format():

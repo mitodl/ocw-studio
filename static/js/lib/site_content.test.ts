@@ -288,6 +288,43 @@ describe("site_content", () => {
         },
       })
     })
+
+    it("does not include gdrive_url field in the payload", () => {
+      const values = {
+        title: "a title",
+        gdrive_url: "https://drive.google.com/file/d/1234567890/view",
+        description: "a description here",
+      }
+      const fields: ConfigField[] = [
+        {
+          label: "Title",
+          name: "title",
+          widget: WidgetVariant.String,
+        },
+        {
+          label: "Google Drive URL",
+          name: "gdrive_url",
+          widget: WidgetVariant.String,
+        },
+        {
+          label: "Description",
+          name: "description",
+          widget: WidgetVariant.Text,
+        },
+      ]
+
+      const payload = contentFormValuesToPayload(
+        values,
+        fields,
+        makeWebsiteDetail(),
+      )
+      expect(payload).toStrictEqual({
+        title: "a title",
+        metadata: {
+          description: "a description here",
+        },
+      })
+    })
   })
 
   describe("contentInitialValues", () => {
@@ -306,6 +343,39 @@ describe("site_content", () => {
         [MAIN_PAGE_CONTENT_FIELD]: content.markdown,
       })
     })
+
+    it.each(["https://drive.google.com/file/d/abc123/view", ""])(
+      "properly sets gdrive_url in initialValues",
+      (gdriveUrlValue) => {
+        const content = {
+          ...makeWebsiteContentDetail(),
+          gdrive_url: gdriveUrlValue,
+        }
+        const fields: ConfigField[] = [
+          {
+            label: "Title",
+            name: "title",
+            widget: WidgetVariant.String,
+          },
+          {
+            label: "GDrive URL",
+            name: "gdrive_url",
+            widget: WidgetVariant.String,
+          },
+        ]
+
+        const payload = contentInitialValues(
+          content,
+          fields,
+          makeWebsiteDetail(),
+        )
+
+        expect(payload).toEqual({
+          title: content.title,
+          gdrive_url: gdriveUrlValue,
+        })
+      },
+    )
   })
 
   describe("newInitialValues", () => {

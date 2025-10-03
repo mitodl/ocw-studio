@@ -20,6 +20,7 @@ DRIVE_FILE_MODIFIED_TIME = "modifiedTime"
 DRIVE_FILE_CREATED_TIME = "createdTime"
 DRIVE_FILE_SIZE = "size"
 DRIVE_FILE_DOWNLOAD_LINK = "webContentLink"
+DRIVE_FILE_VIEW_URL = "https://drive.google.com/file/d/{file_id}/view"
 
 VALID_TEXT_FILE_TYPES = [
     ".pdf",

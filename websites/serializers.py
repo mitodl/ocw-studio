@@ -19,6 +19,7 @@ from content_sync.api import create_website_backend, update_website_backend
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.models import ContentSyncState
 from gdrive_sync.api import gdrive_root_url, is_gdrive_enabled
+from gdrive_sync.constants import DRIVE_FILE_VIEW_URL
 from gdrive_sync.tasks import create_gdrive_folders
 from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
@@ -662,6 +663,11 @@ class WebsiteContentDetailSerializer(
             file_field = instance.get_config_file_field()
             if file_field:
                 result[file_field["name"]] = instance.file.url
+
+        drivefile = instance.drivefile_set.first()
+        if drivefile:
+            result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
+
         return result
 
     class Meta:
