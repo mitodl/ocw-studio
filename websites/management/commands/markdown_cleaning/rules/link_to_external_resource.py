@@ -360,11 +360,18 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         starter_id = website_content.website.starter_id
         site_config = self.starter_lookup.get_config(starter_id)
 
+        # Unescape markdown characters in the link text for use in shortcode
+        # Markdown may escape backticks and square brackets that should not be
+        # escaped in the shortcode title parameter
+        unescaped_link_text = (
+            link_text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
+        )
+
         resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=site_config,
             url=url,
-            title=link_text,
+            title=unescaped_link_text,  # Use unescaped text for the resource title
             has_external_license_warning=self.options.get(
                 "has_external_license_warning", False
             ),

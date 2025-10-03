@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pytest
 from django.conf import settings
 
-from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
+from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE, CONTENT_TYPE_NAVMENU
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -1175,3 +1175,80 @@ def test_link_to_external_resource_fixes_incorrect_title_escaping(settings):
         # The title in the shortcode should have unescaped characters
         assert "`[T]his title is problematic" in escaped_content.markdown
         assert r"\`\[T\]his title is problematic" not in escaped_content.markdown
+
+
+def test_navitem_to_external_resource_fixes_incorrect_title_escaping():
+    r"""
+    Test that NavItemToExternalResourceRule properly unescapes backticks and square brackets
+    in navigation item names when converting to external resources.
+
+    In nav item: name: [\`\[T\]his...]() needs escaping for proper parsing
+    In external resource: title should be "`[T]his..." (unescaped)
+    """
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+
+        # Test data with escaped characters in nav item names
+        nav_items_with_escaped_chars = [
+            {
+                "name": r"\`\[T\]his is a problematic nav item",
+                "url": "https://example.com/nav1",
+                "weight": 10,
+                "identifier": "external--123456789",
+            },
+            {
+                "name": r"Another \`escaped\` example",
+                "url": "https://example.com/nav2",
+                "weight": 20,
+                "identifier": "external--987654321",
+            },
+            {
+                "name": r"\[Bracket only\] example",
+                "url": "https://example.com/nav3",
+                "weight": 30,
+                "identifier": "external--555666777",
+            },
+        ]
+
+        target_content = WebsiteContentFactory.create(
+            website=website,
+            type=CONTENT_TYPE_NAVMENU,
+            metadata={"leftnav": nav_items_with_escaped_chars},
+        )
+
+        cleaner = get_cleaner("nav_item")
+        cleaner.update_website_content(target_content)
+
+        # Get all external resource content created by the rule
+        external_resources = WebsiteContent.objects.filter(
+            website=website, type=CONTENT_TYPE_EXTERNAL_RESOURCE
+        ).order_by("title")
+
+        assert external_resources.count() == 3
+
+        # Check that external resource titles have unescaped characters
+        resource_titles = [resource.title for resource in external_resources]
+
+        # Verify unescaping happened correctly
+        assert "`[T]his is a problematic nav item" in resource_titles
+        assert "Another `escaped` example" in resource_titles
+        assert "[Bracket only] example" in resource_titles
+
+        # Verify escaped versions are NOT in the titles
+        assert r"\`\[T\]his is a problematic nav item" not in resource_titles
+        assert r"Another \`escaped\` example" not in resource_titles
+        assert r"\[Bracket only\] example" not in resource_titles
+
+        # Verify that nav items now reference the external resources correctly
+        updated_nav = target_content.metadata["leftnav"]
+        assert len(updated_nav) == 3
+
+        # Each nav item should have its identifier updated and url removed
+        for item in updated_nav:
+            assert "url" not in item
+            assert "identifier" in item
+            # The identifier should be a valid UUID (external resource text_id)
+            assert len(item["identifier"]) == 36  # UUID length
