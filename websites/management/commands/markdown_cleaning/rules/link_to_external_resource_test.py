@@ -989,12 +989,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
 
 
 @pytest.mark.parametrize(
-    ("markdown_text", "should_convert", "should_have_escaped_quotes", "description"),
+    ("markdown_text", "should_have_escaped_quotes", "description"),
     [
         # Link after closed shortcode should be converted normally
         (
             "Before {{< shortcode >}} and [link](https://example.com) after",
-            True,
             False,
             "after closed shortcode",
         ),
@@ -1002,13 +1001,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
         (
             '{{< image-gallery-item text="[link](https://example.com)" >}}',
             True,
-            True,
             "single-line shortcode attribute",
         ),
         # Link with multiple attributes should be converted with escaped quotes
         (
             '{{< image-gallery-item text="Some [link](https://example.com) text" attr="value" >}}',
-            True,
             True,
             "multiple attributes",
         ),
@@ -1016,13 +1013,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
         (
             '{{< image-gallery-item text="Check [link1](https://example.com) and [link2](https://google.com) both" >}}',
             True,
-            True,
             "multiple links in single attribute",
         ),
         # Link outside any shortcode should be converted normally
         (
             "Regular [link](https://example.com) in text",
-            True,
             False,
             "outside shortcode",
         ),
@@ -1030,7 +1025,7 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
 )
 @pytest.mark.django_db
 def test_shortcode_attribute_detection_edge_cases(
-    settings, markdown_text, should_convert, should_have_escaped_quotes, description
+    settings, markdown_text, should_have_escaped_quotes, description
 ):
     """Test edge cases for shortcode attribute detection and quote escaping."""
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
@@ -1048,43 +1043,30 @@ def test_shortcode_attribute_detection_edge_cases(
         rule.set_options({"commit": True})
         cleaner = Cleaner(rule)
 
-        original_content = website_content.markdown
         updated = cleaner.update_website_content(website_content)
 
-        if should_convert:
-            assert updated is True, (
-                f"Failed: {description} - should have been converted"
-            )
-            assert "resource_link" in website_content.markdown, (
-                f"Failed: {description} - no resource_link found"
-            )
-            # Check that original markdown links are no longer present
-            assert "](https://" not in website_content.markdown, (
-                f"Failed: {description} - original links still present"
-            )
+        assert updated is True, f"Failed: {description} - should have been converted"
+        assert "resource_link" in website_content.markdown, (
+            f"Failed: {description} - no resource_link found"
+        )
+        # Check that original markdown links are no longer present
+        assert "](https://" not in website_content.markdown, (
+            f"Failed: {description} - original links still present"
+        )
 
-            # Check quote escaping based on context
-            if should_have_escaped_quotes:
-                assert '\\"' in website_content.markdown, (
-                    f"Failed: {description} - should have escaped quotes inside shortcode attribute"
-                )
-                assert 'resource_link \\"' in website_content.markdown, (
-                    f"Failed: {description} - resource_link should have escaped quotes"
-                )
-            else:
-                # For links outside shortcode attributes, quotes should not be escaped
-                # (they use normal Hugo shortcode syntax with regular quotes)
-                assert 'resource_link "' in website_content.markdown, (
-                    f"Failed: {description} - should have normal quotes outside shortcode"
-                )
-        else:
-            # This branch is no longer used since we now convert all links
-            # Keeping it for potential future use cases
-            assert updated is False or website_content.markdown == original_content, (
-                f"Failed: {description} - should not have been converted"
+        # Check quote escaping based on context
+        if should_have_escaped_quotes:
+            assert '\\"' in website_content.markdown, (
+                f"Failed: {description} - should have escaped quotes inside shortcode attribute"
             )
-            assert "](https://" in website_content.markdown, (
-                f"Failed: {description} - original links should be preserved"
+            assert 'resource_link \\"' in website_content.markdown, (
+                f"Failed: {description} - resource_link should have escaped quotes"
+            )
+        else:
+            # For links outside shortcode attributes, quotes should not be escaped
+            # (they use normal Hugo shortcode syntax with regular quotes)
+            assert 'resource_link "' in website_content.markdown, (
+                f"Failed: {description} - should have normal quotes outside shortcode"
             )
 
 
@@ -1160,3 +1142,36 @@ Another regular [link](https://another.com).""",
                     f"Pattern '{pattern}' not found in {test_case['name']}.\n"
                     f"Content: {website_content.markdown[:200]}..."
                 )
+
+
+def test_link_to_external_resource_fixes_incorrect_title_escaping(settings):
+    r"""
+    Test that link conversion properly unescapes backticks and square brackets
+    in the title when converting from markdown to shortcode.
+
+    In markdown: [\`\[T\]his...]() needs escaping for proper parsing
+    In shortcode: "`[T]his..." should NOT be escaped in the title argument
+    """
+    # Then test the problematic markdown
+    escaped_markdown = r"[\`\[T\]his title is problematic](http://example.com)"
+
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        escaped_content = WebsiteContentFactory.create(
+            markdown=escaped_markdown,
+            website=website,
+        )
+
+        cleaner = get_cleaner("markdown")
+        cleaner.update_website_content(escaped_content)
+
+        assert "resource_link" in escaped_content.markdown
+
+        # The title in the shortcode should have unescaped characters
+        assert "`[T]his title is problematic" in escaped_content.markdown
+        assert r"\`\[T\]his title is problematic" not in escaped_content.markdown
