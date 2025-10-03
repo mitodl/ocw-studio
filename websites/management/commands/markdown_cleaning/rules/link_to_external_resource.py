@@ -251,11 +251,18 @@ class LinkToExternalResourceRule(PyparsingRule):
         config = self.starter_lookup.get_config(starter_id)
         link_text = toks.link.text
 
+        # Unescape markdown characters in the link text for use in shortcode
+        # Markdown may escape backticks and square brackets that should not be
+        # escaped in the shortcode title parameter
+        unescaped_link_text = (
+            link_text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
+        )
+
         resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=config,
             url=toks.link.destination,
-            title=link_text,
+            title=unescaped_link_text,  # Use unescaped text for the resource title
             has_external_license_warning=self.options.get(
                 "has_external_license_warning", False
             ),
@@ -265,7 +272,8 @@ class LinkToExternalResourceRule(PyparsingRule):
             resource.save()
             resource.referencing_content.add(website_content)
 
-        shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
+        # Use unescaped text for shortcode parameter
+        shortcode = ShortcodeTag.resource_link(resource.text_id, unescaped_link_text)
         hugo_output = shortcode.to_hugo()
 
         # If inside shortcode attribute, escape the quotes in the Hugo output
