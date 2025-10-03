@@ -114,7 +114,7 @@ from websites.models import *
 Website.objects.all().update(gdrive_folder=None)
 ```
 
-### 2.2 Recreate GDrive Folders
+### 2.2 Create/Update GDrive Folders
 
 Run the management command to create missing GDrive folders:
 
