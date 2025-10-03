@@ -98,8 +98,9 @@ class Website(TimestampedModel):
         null=True,
         blank=True,
         help_text=(
-            "Concourse site pipeline ID for builds triggered through Studio publish. "
-            "Not updated for automated builds."
+            "Concourse site pipeline build ID for builds triggered "
+            "through Studio publish. This field is not updated by "
+            "mass builds or site builds triggered outside of Studio."
         ),
     )
     live_build_date = models.DateTimeField(null=True, blank=True)
@@ -124,8 +125,9 @@ class Website(TimestampedModel):
         null=True,
         blank=True,
         help_text=(
-            "Concourse site pipeline ID for builds triggered through Studio publish. "
-            "Not updated for automated builds."
+            "Concourse site pipeline build ID for builds triggered "
+            "through Studio publish. This field is not updated by "
+            "mass builds or site builds triggered outside of Studio."
         ),
     )
     live_publish_status_updated_on = models.DateTimeField(null=True, blank=True)
