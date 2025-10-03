@@ -144,12 +144,18 @@ class WebsiteContentMarkdownCleaner:
     def write_matches_to_csv(self, path: str, only_changes):
         """Write matches and replacements to csv."""
 
-        with open(path, "w", newline="") as csvfile:  # noqa: PTH123
+        with open(path, "w", newline="", encoding="utf-8") as csvfile:  # noqa: PTH123
             fieldnames = [
                 *self.csv_metadata_fieldnames,
                 *(f.name for f in fields(self.rule.ReplacementNotes)),
             ]
-            writer = csv.DictWriter(csvfile, fieldnames, quoting=csv.QUOTE_ALL)
+            writer = csv.DictWriter(
+                csvfile,
+                fieldnames,
+                quoting=csv.QUOTE_MINIMAL,
+                escapechar="\\",
+                doublequote=False,
+            )
             writer.writeheader()
             for change in self.replacement_matches:
                 has_changed = change.original_text != change.replacement

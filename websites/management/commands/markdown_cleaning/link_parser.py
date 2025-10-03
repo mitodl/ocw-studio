@@ -173,7 +173,9 @@ class LinkParser(WrappedParser):
                 ignoreExpr=ignore,
             )
         ).setResultsName("text")
+
         text.addParseAction(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
+
         return text
 
     @staticmethod
