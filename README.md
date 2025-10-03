@@ -30,6 +30,7 @@ OCW Studio manages deployments for OCW courses.
 - [Enabling Open Catalog Search Webhooks](#enabling-open-catalog-search-webhooks)
 - [Checking External Resource Availability](#checking-external-resource-availability)
 - [Enabling PostHog Integration](#enabling-posthog-integration)
+- [Production to RC Data Cloning](#production-to-rc-data-cloning)
 
 # Initial Setup
 
@@ -526,3 +527,7 @@ The following variables can be optionally set to configure PostHog requests:
 POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS=<3000 by default>
 POSTHOG_MAX_RETRIES=<3 by default>
 ```
+
+# Production to RC Data Cloning
+
+For information on duplicating OCW Studio data from production to RC/staging environments, see the [Production to RC Data Cloning Guide](docs/production-to-rc-data-cloning.md).
