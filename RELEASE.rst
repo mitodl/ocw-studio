@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.164.0
+---------------
+
+- differentiate build date and publish date (#2723)
+- Umar/8322 nested shortcode syntax in hugo (#2702)
+- fix(deps): update dependency django to v4.2.25 [security] (#2746)
+- fix(deps): update dependency sentry-sdk to v2.39.0 (#2740)
+- fix(deps): update dependency boto3 to v1.40.40 (#2738)
+- Security: Disable yarn postinstall scripts (#2736)
+
 Version 0.163.0 (Released September 25, 2025)
 ---------------
 
