@@ -23,6 +23,13 @@ from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
 
+def unescape_link_text(text: str) -> str:
+    """
+    Unescape markdown-escaped characters allowed in shortcode titles.
+    """
+    return text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
+
+
 def is_ocw_domain_url(url: str) -> bool:
     """Return True `url` has an ocw domain."""
     parsed_url = urlparse(url)
@@ -254,9 +261,7 @@ class LinkToExternalResourceRule(PyparsingRule):
         # Unescape markdown characters in the link text for use in shortcode
         # Markdown may escape backticks and square brackets that should not be
         # escaped in the shortcode title parameter
-        unescaped_link_text = (
-            link_text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
-        )
+        unescaped_link_text = unescape_link_text(link_text)
 
         resource = get_or_build_external_resource(
             website=website_content.website,
@@ -363,9 +368,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         # Unescape markdown characters in the link text for use in shortcode
         # Markdown may escape backticks and square brackets that should not be
         # escaped in the shortcode title parameter
-        unescaped_link_text = (
-            link_text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
-        )
+        unescaped_link_text = unescape_link_text(link_text)
 
         resource = get_or_build_external_resource(
             website=website_content.website,
