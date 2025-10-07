@@ -22,12 +22,19 @@ from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
+UNESCAPE_MAP = {r"\`": "`", r"\[": "[", r"\]": "]"}
+
 
 def unescape_link_text(text: str) -> str:
     """
     Unescape markdown-escaped characters allowed in shortcode titles.
     """
-    return text.replace(r"\`", "`").replace(r"\[", "[").replace(r"\]", "]")
+    if not text:
+        return text
+    for escaped, literal in UNESCAPE_MAP.items():
+        if escaped in text:
+            text = text.replace(escaped, literal)
+    return text
 
 
 def is_ocw_domain_url(url: str) -> bool:

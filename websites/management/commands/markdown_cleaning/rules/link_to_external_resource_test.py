@@ -21,6 +21,7 @@ from websites.management.commands.markdown_cleaning.rules.link_to_external_resou
     build_external_resource,
     get_or_build_external_resource,
     is_ocw_domain_url,
+    unescape_link_text,
 )
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -1252,3 +1253,16 @@ def test_navitem_to_external_resource_fixes_incorrect_title_escaping():
             assert "identifier" in item
             # The identifier should be a valid UUID (external resource text_id)
             assert len(item["identifier"]) == 36  # UUID length
+
+
+def test_unescape_link_text():
+    """Test the unescape_link_text helper function."""
+    test_cases = [
+        (r"\`\[T\]his", "`[T]his"),
+        (r"Mixed \`code\` and \[bracket\]", "Mixed `code` and [bracket]"),
+        ("Already clean", "Already clean"),
+        ("", ""),
+    ]
+    for raw, expected in test_cases:
+        assert unescape_link_text(raw) == expected
+        assert unescape_link_text(unescape_link_text(raw)) == expected
