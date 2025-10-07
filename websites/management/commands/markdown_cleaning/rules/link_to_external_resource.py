@@ -94,7 +94,7 @@ def build_external_resource(
 
 
 def get_or_build_external_resource(
-    website: WebsiteContent,
+    website: Website,
     site_config: SiteConfig,
     url: str,
     title: str,
@@ -395,7 +395,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
 
     def transform_text(
         self, website_content: WebsiteContent, text: list[dict], on_match
-    ) -> str:
+    ) -> list[dict]:
         """
         Return new text to replace `text`.
         """
