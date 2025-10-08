@@ -133,6 +133,20 @@ export default function RelationField(props: Props): JSX.Element {
   const websiteName = props.website ? props.website : contextWebsite.name
   const publishedOnly = props.website || props.cross_site ? true : false
 
+  type WrappedRelationValue = { website?: string; content: string | string[] }
+  const effectiveValue = useMemo(() => {
+    if (
+      !crossSite &&
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      "content" in (value as any)
+    ) {
+      return (value as WrappedRelationValue).content
+    }
+    return value
+  }, [value, crossSite])
+
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
       const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
@@ -346,11 +360,13 @@ export default function RelationField(props: Props): JSX.Element {
   const selectedIds = useMemo(
     () =>
       crossSite
-        ? (value as CrossSitePair[]).map((pair) => pair[0])
+        ? (effectiveValue as CrossSitePair[]).map((pair) => pair[0])
         : multiple
-          ? (value as string[])
-          : [value as string],
-    [multiple, value, crossSite],
+          ? (effectiveValue as string[]) || []
+          : effectiveValue
+            ? [effectiveValue as string]
+            : [],
+    [multiple, effectiveValue, crossSite],
   )
 
   const isOptionDisabled = useCallback(
@@ -395,7 +411,7 @@ export default function RelationField(props: Props): JSX.Element {
       ) : (
         <SelectField
           name={name}
-          value={value as string | string[]}
+          value={effectiveValue as string | string[]}
           onChange={handleChange}
           options={options}
           loadOptions={loadOptions}
