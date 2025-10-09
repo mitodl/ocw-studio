@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.164.1
+---------------
+
+- fix: Add handling for escaped charaters in markdown link (#2749)
+
 Version 0.164.0 (Released October 09, 2025)
 ---------------
 
