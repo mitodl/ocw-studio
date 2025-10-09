@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.164.0
+Version 0.164.0 (Released October 09, 2025)
 ---------------
 
 - differentiate build date and publish date (#2723)
