@@ -197,7 +197,7 @@ Now is the time to trigger a mass build through the concourse UI and verify that
 
 One issue that you are likely to run into here is the circular dependency between `ocw-www` and course sites. Particularly, the problem is that
 
-- `ocw-www` needs those course sites to be built that it references(for example in course lists)
+- `ocw-www` needs those course sites to be built that it references (for example in course lists)
 - Course sites need instructor JSON files, which are only generated when `ocw-www` is built
 
 One way to get around this is to manually copy instructor JSON files from production to RC:
