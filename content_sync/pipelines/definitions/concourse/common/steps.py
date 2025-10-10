@@ -32,12 +32,13 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 from content_sync.utils import get_ocw_studio_api_url
 
 
-def add_error_handling(
+def add_error_handling(  # noqa: PLR0913
     step: StepModifierMixin,
     step_description: str,
     pipeline_name: str,
     short_id: str,  # noqa: ARG001
     instance_vars: str,
+    build_type: str | None = None,
 ):
     """
     Add error handling steps to any Step-like object
@@ -48,6 +49,7 @@ def add_error_handling(
         pipeline_name(str): The name of the pipeline to set the status on
         short_id(str): The short_id of the site the status is in reference to
         instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
+        build_type(str, optional): The type of build ('online' or 'offline')
 
     Returns:
         None
@@ -70,6 +72,7 @@ def add_error_handling(
         failure_description="Failed",
         step_description=step_description,
         concourse_url=concourse_url,
+        build_type=build_type,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -77,6 +80,7 @@ def add_error_handling(
         failure_description="Concourse system error",
         step_description=step_description,
         concourse_url=concourse_url,
+        build_type=build_type,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -84,6 +88,7 @@ def add_error_handling(
         failure_description="Aborted",
         step_description=step_description,
         concourse_url=concourse_url,
+        build_type=build_type,
     )
     return step
 
@@ -93,13 +98,14 @@ class ErrorHandlingStep(TryStep):
     Extends TryStep and sets error handling steps
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_name: str,
         status: str,
         failure_description: str,
         step_description: str,
         concourse_url: str,
+        build_type: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -109,6 +115,7 @@ class ErrorHandlingStep(TryStep):
                         OcwStudioWebhookStep(
                             pipeline_name=pipeline_name,
                             status=status,
+                            build_type=build_type,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -194,22 +201,28 @@ class OcwStudioWebhookStep(TryStep):
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
+        build_type: (str, optional): The type of build ('online' or 'offline')
     """
 
-    def __init__(self, pipeline_name: str, status: str, **kwargs):
+    def __init__(
+        self, pipeline_name: str, status: str, build_type: str | None = None, **kwargs
+    ):
+        webhook_data = {
+            "version": pipeline_name,
+            "status": status,
+            "build_id": "$BUILD_ID",
+        }
+
+        if build_type is not None:
+            webhook_data["build_type"] = build_type
+
         super().__init__(
             try_=PutStep(
                 put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
                 timeout="1m",
                 attempts=3,
                 params={
-                    "text": json.dumps(
-                        {
-                            "version": pipeline_name,
-                            "status": status,
-                            "build_id": "$BUILD_ID",
-                        }
-                    ),
+                    "text": json.dumps(webhook_data),
                     "build_metadata": ["body"],
                 },
                 inputs=[],

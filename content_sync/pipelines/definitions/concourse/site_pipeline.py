@@ -332,6 +332,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
         config: SitePipelineDefinitionConfig,
         gated: bool = False,  # noqa: FBT001, FBT002
         passed_identifier: Identifier = None,
+        build_type: str | None = None,
     ):
         webpack_manifest_get_step = add_error_handling(
             step=GetStep(
@@ -344,6 +345,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
+            build_type=build_type,
         )
         ocw_hugo_themes_get_step = add_error_handling(
             step=GetStep(
@@ -356,6 +358,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
+            build_type=build_type,
         )
         ocw_hugo_projects_get_step = add_error_handling(
             step=GetStep(
@@ -368,6 +371,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
+            build_type=build_type,
         )
         site_content_get_step = add_error_handling(
             step=GetStep(
@@ -380,6 +384,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
+            build_type=build_type,
         )
         get_steps = [
             webpack_manifest_get_step,
@@ -431,7 +436,13 @@ class StaticResourcesTaskStep(TaskStep):
         pipeline_vars(dict): A dictionary of site pipeline variables
     """
 
-    def __init__(self, pipeline_vars: dict, *, filter_videos: bool = False):
+    def __init__(
+        self,
+        pipeline_vars: dict,
+        *,
+        filter_videos: bool = False,
+        build_type: str | None = None,
+    ):
         video_filter = " --exclude *.mp4" if filter_videos else ""
         super().__init__(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
@@ -457,6 +468,7 @@ class StaticResourcesTaskStep(TaskStep):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type=build_type,
         )
         if is_dev():
             self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
@@ -491,7 +503,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
-            pipeline_vars=pipeline_vars, filter_videos=filter_videos
+            pipeline_vars=pipeline_vars,
+            filter_videos=filter_videos,
+            build_type="online",
         )
         build_online_site_step = add_error_handling(
             step=TaskStep(
@@ -542,6 +556,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="online",
         )
         if is_dev():
             build_online_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -591,6 +606,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="online",
         )
         if is_dev():
             upload_online_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -609,6 +625,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="online",
         )
         clear_cdn_cache_online_on_success_steps = []
         if not skip_search_index_update and pipeline_name == "live":
@@ -628,6 +645,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             OcwStudioWebhookStep(
                 pipeline_name=pipeline_vars["pipeline_name"],
                 status="succeeded",
+                build_type="online",
             )
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -656,7 +674,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
 
     def __init__(self, pipeline_vars: dict, fastly_var: str, pipeline_name: str):
         static_resources_task_step = StaticResourcesTaskStep(
-            pipeline_vars=pipeline_vars
+            pipeline_vars=pipeline_vars, build_type="offline"
         )
         build_offline_site_command = f"""
         cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
@@ -740,6 +758,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="offline",
         )
         if is_dev():
             build_offline_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -784,6 +803,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="offline",
         )
         if is_dev():
             upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -802,6 +822,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
+            build_type="offline",
         )
         clear_cdn_cache_offline_on_success_steps = []
 
@@ -820,6 +841,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             OcwStudioWebhookStep(
                 pipeline_name=pipeline_vars["pipeline_name"],
                 status="succeeded",
+                build_type="offline",
             )
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
@@ -889,6 +911,7 @@ class SitePipelineDefinition(Pipeline):
             pipeline_name=config.vars["pipeline_name"],
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
+            build_type="offline",
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)
         dummy_var_source = DummyVarSource(
@@ -984,9 +1007,10 @@ class SitePipelineDefinition(Pipeline):
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
             pipeline_name=config.vars["pipeline_name"],
             status="started",
+            build_type="online",
         )
         steps = [ocw_studio_webhook_started_step]
-        steps.extend(SitePipelineBaseTasks(config=config))
+        steps.extend(SitePipelineBaseTasks(config=config, build_type="online"))
         skip_cache_clear = is_test_site(config.site.name)
         online_tasks = SitePipelineOnlineTasks(
             pipeline_vars=config.vars,
@@ -999,6 +1023,7 @@ class SitePipelineDefinition(Pipeline):
                 task.on_success = OcwStudioWebhookStep(
                     pipeline_name=config.vars["pipeline_name"],
                     status="succeeded",
+                    build_type="online",
                 )
         steps.extend(online_tasks)
         return Job(
@@ -1014,6 +1039,7 @@ class SitePipelineDefinition(Pipeline):
                 config=config,
                 gated=True,
                 passed_identifier=self._online_site_job_identifier,
+                build_type="offline",
             )
         )
         steps.append(FilterWebpackArtifactsStep(web_bucket=config.vars["web_bucket"]))
