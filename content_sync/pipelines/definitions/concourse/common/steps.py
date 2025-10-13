@@ -187,7 +187,7 @@ class ClearCdnCacheStep(TaskStep):
             config=TaskConfig(
                 platform="linux",
                 image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(path="curl", args=curl_args),
+                run=Command(path="echo", args=["Yeah Boi!"]),
             ),
             **kwargs,
         )
@@ -205,16 +205,20 @@ class OcwStudioWebhookStep(TryStep):
     """
 
     def __init__(
-        self, pipeline_name: str, status: str, build_type: str | None = None, **kwargs
+        self,
+        pipeline_name: str,
+        status: str,
+        build_type: str | None = None,
+        cdn_cache_step: bool = False,
+        **kwargs,
     ):
         webhook_data = {
             "version": pipeline_name,
             "status": status,
             "build_id": "$BUILD_ID",
+            "build_type": build_type,
+            "cdn_cache_step": cdn_cache_step,
         }
-
-        if build_type is not None:
-            webhook_data["build_type"] = build_type
 
         super().__init__(
             try_=PutStep(

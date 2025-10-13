@@ -324,15 +324,24 @@ class WebsiteViewSet(
         publish_status = data.get("status")
         unpublished = data.get("unpublished", False) and version == VERSION_LIVE
         build_id = data.get("build_id")
+        build_type = data.get("build_type")
+        cdn_cache_step = data.get("cdn_cache_step", False)
 
-        update_website_status(
-            website,
-            version,
-            publish_status,
-            now_in_utc(),
-            unpublished=unpublished,
-            build_id=build_id,
-        )
+        if build_type != "offline":
+            update_website_status(
+                website,
+                version,
+                publish_status,
+                now_in_utc(),
+                unpublished=unpublished,
+                build_id=build_id,
+                cdn_cache_step=cdn_cache_step,
+            )
+        else:
+            print(
+                f"PIPELINE STATUS IGNORED FOR {website.name=} {version=} {publish_status=} {build_id=} {build_type=}"
+            )
+
         return Response(status=200)
 
     @action(detail=True, methods=["get"], permission_classes=[BearerTokenPermission])

@@ -127,6 +127,7 @@ def upsert_website_pipeline_batch(
     unpause=False,  # noqa: FBT002
     hugo_args="",
 ):
+    log.error("Please be called")
     """Create/update publishing pipelines for multiple websites"""
     api_instance = None
     for website_name in website_names:
@@ -448,7 +449,9 @@ def check_incomplete_publish_build_statuses():  # noqa: C901
                         pipeline.abort_build(build_id)
                         status = PUBLISH_STATUS_ABORTED
                     if status != last_status:
-                        update_website_status(website, version, status, now)
+                        update_website_status(
+                            website, version, status, now, build_id=build_id
+                        )
         except:  # pylint: disable=bare-except  # noqa: E722
             log.exception(
                 "Error updating publishing status for website %s", website.name

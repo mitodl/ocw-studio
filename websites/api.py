@@ -284,6 +284,8 @@ def mail_on_publish(
     user_id: int,
 ):
     """Send a publishing success or failure message to the requesting user"""
+
+    print(f"SENDING MAIL ON PUBLISH TO {user_id}")
     message = (
         PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
     )
@@ -323,14 +325,23 @@ def reset_publishing_fields(website_name: str):
     )
 
 
-def update_website_status(  # noqa: PLR0913, PLR0912, C901
+def update_website_status(  # noqa: PLR0913
     website: Website,
     version: str,
     status: str,
     update_time: datetime,
     unpublished=False,  # noqa: FBT002
     build_id=None,
+    cdn_cache_step=False,
 ):
+    print(
+        f"UPDATING WEBSITE STATUS {website.name=} {version=} {status=} {update_time=} {unpublished=} {build_id=}"
+    )
+
+    is_studio_publish = str(build_id) in [
+        str(website.latest_build_id_live),
+        str(website.latest_build_id_draft),
+    ]
     """Update some status fields in Website"""
     if version == VERSION_DRAFT:
         user = website.draft_last_published_by
@@ -340,9 +351,6 @@ def update_website_status(  # noqa: PLR0913, PLR0912, C901
         }
         if status in PUBLISH_STATUSES_FINAL:
             if status == PUBLISH_STATUS_SUCCEEDED:
-                if build_id and str(build_id) == str(website.latest_build_id_draft):
-                    update_kwargs["draft_publish_date"] = update_time
-                update_kwargs["draft_last_published_by"] = None
                 update_kwargs["draft_build_date"] = update_time
             else:
                 # Allow user to retry
@@ -366,17 +374,20 @@ def update_website_status(  # noqa: PLR0913, PLR0912, C901
             if status == PUBLISH_STATUS_SUCCEEDED:
                 if website.first_published_to_production is None:
                     update_kwargs["first_published_to_production"] = update_time
-                if build_id and str(build_id) == str(website.latest_build_id_live):
-                    update_kwargs["publish_date"] = update_time
                 update_kwargs["live_build_date"] = update_time
-                update_kwargs["live_last_published_by"] = None
             else:
                 # Allow user to retry
                 update_kwargs["has_unpublished_live"] = True
     Website.objects.filter(name=website.name).update(**update_kwargs)
     if status in (PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_ABORTED):
         log.error("A %s pipeline build failed for %s", version, website.name)
-    if status in PUBLISH_STATUSES_FINAL and user and not unpublished:
+    if (
+        status in PUBLISH_STATUSES_FINAL
+        and user
+        and not unpublished
+        and is_studio_publish
+        and not cdn_cache_step
+    ):
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
         )
