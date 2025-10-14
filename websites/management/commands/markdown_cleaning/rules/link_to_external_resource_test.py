@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pytest
 from django.conf import settings
 
-from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
+from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE, CONTENT_TYPE_NAVMENU
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -21,6 +21,7 @@ from websites.management.commands.markdown_cleaning.rules.link_to_external_resou
     build_external_resource,
     get_or_build_external_resource,
     is_ocw_domain_url,
+    unescape_link_text,
 )
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -989,12 +990,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
 
 
 @pytest.mark.parametrize(
-    ("markdown_text", "should_convert", "should_have_escaped_quotes", "description"),
+    ("markdown_text", "should_have_escaped_quotes", "description"),
     [
         # Link after closed shortcode should be converted normally
         (
             "Before {{< shortcode >}} and [link](https://example.com) after",
-            True,
             False,
             "after closed shortcode",
         ),
@@ -1002,13 +1002,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
         (
             '{{< image-gallery-item text="[link](https://example.com)" >}}',
             True,
-            True,
             "single-line shortcode attribute",
         ),
         # Link with multiple attributes should be converted with escaped quotes
         (
             '{{< image-gallery-item text="Some [link](https://example.com) text" attr="value" >}}',
-            True,
             True,
             "multiple attributes",
         ),
@@ -1016,13 +1014,11 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
         (
             '{{< image-gallery-item text="Check [link1](https://example.com) and [link2](https://google.com) both" >}}',
             True,
-            True,
             "multiple links in single attribute",
         ),
         # Link outside any shortcode should be converted normally
         (
             "Regular [link](https://example.com) in text",
-            True,
             False,
             "outside shortcode",
         ),
@@ -1030,7 +1026,7 @@ def test_link_to_external_resource_converts_shortcode_attributes_with_escaped_qu
 )
 @pytest.mark.django_db
 def test_shortcode_attribute_detection_edge_cases(
-    settings, markdown_text, should_convert, should_have_escaped_quotes, description
+    settings, markdown_text, should_have_escaped_quotes, description
 ):
     """Test edge cases for shortcode attribute detection and quote escaping."""
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
@@ -1048,43 +1044,30 @@ def test_shortcode_attribute_detection_edge_cases(
         rule.set_options({"commit": True})
         cleaner = Cleaner(rule)
 
-        original_content = website_content.markdown
         updated = cleaner.update_website_content(website_content)
 
-        if should_convert:
-            assert updated is True, (
-                f"Failed: {description} - should have been converted"
-            )
-            assert "resource_link" in website_content.markdown, (
-                f"Failed: {description} - no resource_link found"
-            )
-            # Check that original markdown links are no longer present
-            assert "](https://" not in website_content.markdown, (
-                f"Failed: {description} - original links still present"
-            )
+        assert updated is True, f"Failed: {description} - should have been converted"
+        assert "resource_link" in website_content.markdown, (
+            f"Failed: {description} - no resource_link found"
+        )
+        # Check that original markdown links are no longer present
+        assert "](https://" not in website_content.markdown, (
+            f"Failed: {description} - original links still present"
+        )
 
-            # Check quote escaping based on context
-            if should_have_escaped_quotes:
-                assert '\\"' in website_content.markdown, (
-                    f"Failed: {description} - should have escaped quotes inside shortcode attribute"
-                )
-                assert 'resource_link \\"' in website_content.markdown, (
-                    f"Failed: {description} - resource_link should have escaped quotes"
-                )
-            else:
-                # For links outside shortcode attributes, quotes should not be escaped
-                # (they use normal Hugo shortcode syntax with regular quotes)
-                assert 'resource_link "' in website_content.markdown, (
-                    f"Failed: {description} - should have normal quotes outside shortcode"
-                )
-        else:
-            # This branch is no longer used since we now convert all links
-            # Keeping it for potential future use cases
-            assert updated is False or website_content.markdown == original_content, (
-                f"Failed: {description} - should not have been converted"
+        # Check quote escaping based on context
+        if should_have_escaped_quotes:
+            assert '\\"' in website_content.markdown, (
+                f"Failed: {description} - should have escaped quotes inside shortcode attribute"
             )
-            assert "](https://" in website_content.markdown, (
-                f"Failed: {description} - original links should be preserved"
+            assert 'resource_link \\"' in website_content.markdown, (
+                f"Failed: {description} - resource_link should have escaped quotes"
+            )
+        else:
+            # For links outside shortcode attributes, quotes should not be escaped
+            # (they use normal Hugo shortcode syntax with regular quotes)
+            assert 'resource_link "' in website_content.markdown, (
+                f"Failed: {description} - should have normal quotes outside shortcode"
             )
 
 
@@ -1160,3 +1143,126 @@ Another regular [link](https://another.com).""",
                     f"Pattern '{pattern}' not found in {test_case['name']}.\n"
                     f"Content: {website_content.markdown[:200]}..."
                 )
+
+
+def test_link_to_external_resource_fixes_incorrect_title_escaping(settings):
+    r"""
+    Test that link conversion properly unescapes backticks and square brackets
+    in the title when converting from markdown to shortcode.
+
+    In markdown: [\`\[T\]his...]() needs escaping for proper parsing
+    In shortcode: "`[T]his..." should NOT be escaped in the title argument
+    """
+    # Then test the problematic markdown
+    escaped_markdown = r"[\`\[T\]his title is problematic](http://example.com)"
+
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        escaped_content = WebsiteContentFactory.create(
+            markdown=escaped_markdown,
+            website=website,
+        )
+
+        cleaner = get_cleaner("markdown")
+        cleaner.update_website_content(escaped_content)
+
+        assert "resource_link" in escaped_content.markdown
+
+        # The title in the shortcode should have unescaped characters
+        assert "`[T]his title is problematic" in escaped_content.markdown
+        assert r"\`\[T\]his title is problematic" not in escaped_content.markdown
+
+
+def test_navitem_to_external_resource_fixes_incorrect_title_escaping():
+    r"""
+    Test that NavItemToExternalResourceRule properly unescapes backticks and square brackets
+    in navigation item names when converting to external resources.
+
+    In nav item: name: [\`\[T\]his...]() needs escaping for proper parsing
+    In external resource: title should be "`[T]his..." (unescaped)
+    """
+    with patch(
+        "external_resources.signals.submit_url_to_wayback_task.delay", return_value=None
+    ):
+        starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
+        website = WebsiteFactory.create(starter=starter)
+
+        # Test data with escaped characters in nav item names
+        nav_items_with_escaped_chars = [
+            {
+                "name": r"\`\[T\]his is a problematic nav item",
+                "url": "https://example.com/nav1",
+                "weight": 10,
+                "identifier": "external--123456789",
+            },
+            {
+                "name": r"Another \`escaped\` example",
+                "url": "https://example.com/nav2",
+                "weight": 20,
+                "identifier": "external--987654321",
+            },
+            {
+                "name": r"\[Bracket only\] example",
+                "url": "https://example.com/nav3",
+                "weight": 30,
+                "identifier": "external--555666777",
+            },
+        ]
+
+        target_content = WebsiteContentFactory.create(
+            website=website,
+            type=CONTENT_TYPE_NAVMENU,
+            metadata={"leftnav": nav_items_with_escaped_chars},
+        )
+
+        cleaner = get_cleaner("nav_item")
+        cleaner.update_website_content(target_content)
+
+        # Get all external resource content created by the rule
+        external_resources = WebsiteContent.objects.filter(
+            website=website, type=CONTENT_TYPE_EXTERNAL_RESOURCE
+        ).order_by("title")
+
+        assert external_resources.count() == 3
+
+        # Check that external resource titles have unescaped characters
+        resource_titles = [resource.title for resource in external_resources]
+
+        # Verify unescaping happened correctly
+        assert "`[T]his is a problematic nav item" in resource_titles
+        assert "Another `escaped` example" in resource_titles
+        assert "[Bracket only] example" in resource_titles
+
+        # Verify escaped versions are NOT in the titles
+        assert r"\`\[T\]his is a problematic nav item" not in resource_titles
+        assert r"Another \`escaped\` example" not in resource_titles
+        assert r"\[Bracket only\] example" not in resource_titles
+
+        # Verify that nav items now reference the external resources correctly
+        updated_nav = target_content.metadata["leftnav"]
+        assert len(updated_nav) == 3
+
+        # Each nav item should have its identifier updated and url removed
+        for item in updated_nav:
+            assert "url" not in item
+            assert "identifier" in item
+            # The identifier should be a valid UUID (external resource text_id)
+            assert len(item["identifier"]) == 36  # UUID length
+
+
+def test_unescape_link_text():
+    """Test the unescape_link_text helper function."""
+    test_cases = [
+        (r"\`\[T\]his", "`[T]his"),
+        (r"Mixed \`code\` and \[bracket\]", "Mixed `code` and [bracket]"),
+        ("Already clean", "Already clean"),
+        ("", ""),
+    ]
+    for raw, expected in test_cases:
+        assert unescape_link_text(raw) == expected
+        assert unescape_link_text(unescape_link_text(raw)) == expected

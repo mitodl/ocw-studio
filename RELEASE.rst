@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.165.0
+---------------
+
+- Add gdrive url field for resources (#2742)
+- fix: git author attribution for django admin edits and gdrive sync (#2726)
+- chore(deps): update node.js to v22.20.0 (#2739)
+- chore(deps): update yarn to v4.10.3 (#2737)
+- fix: Add handling for escaped charaters in markdown link (#2749)
+
 Version 0.164.0 (Released October 09, 2025)
 ---------------
 
