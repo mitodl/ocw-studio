@@ -127,7 +127,6 @@ def upsert_website_pipeline_batch(
     unpause=False,  # noqa: FBT002
     hugo_args="",
 ):
-    log.error("Please be called")
     """Create/update publishing pipelines for multiple websites"""
     api_instance = None
     for website_name in website_names:
