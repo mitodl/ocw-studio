@@ -1,5 +1,6 @@
 """Tests for websites API functionality"""
 
+from unittest.mock import patch
 from uuid import UUID
 
 import factory
@@ -437,6 +438,77 @@ def test_update_website_status(mocker, status, notify, has_user, version):
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
 
 
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@patch("websites.api.mail_on_publish")
+def test_update_website_status_sends_notification(mock_mail_on_publish, version):
+    """
+    mail_on_publish should be called for a successful, studio-triggered publish
+    that is not a CDN cache step.
+    """
+    user = UserFactory.create()
+    website = WebsiteFactory.create(
+        **{
+            f"{version}_last_published_by": user,
+            f"latest_build_id_{version}": "787",
+        }
+    )
+    now = now_in_utc()
+    update_website_status(
+        website,
+        version,
+        PUBLISH_STATUS_SUCCEEDED,
+        now,
+        build_id="787",
+        cdn_cache_step=False,
+    )
+    mock_mail_on_publish.assert_called_once_with(website.name, version, True, user.id)
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@patch("websites.api.mail_on_publish")
+def test_update_website_status_no_email_if_not_studio_publish(
+    mock_mail_on_publish, version
+):
+    """
+    mail_on_publish should not be called if the build_id does not match a
+    studio-initiated build ID.
+    """
+    user = UserFactory.create()
+    website = WebsiteFactory.create(**{f"{version}_last_published_by": user})
+    now = now_in_utc()
+    update_website_status(
+        website, version, PUBLISH_STATUS_SUCCEEDED, now, build_id="986"
+    )
+    mock_mail_on_publish.assert_not_called()
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@patch("websites.api.mail_on_publish")
+def test_update_website_status_no_notification_cdn_cache_step(
+    mock_mail_on_publish, version
+):
+    """
+    mail_on_publish should not be called if cdn_cache_step is True.
+    """
+    user = UserFactory.create()
+    website = WebsiteFactory.create(
+        **{
+            f"{version}_last_published_by": user,
+            f"latest_build_id_{version}": "123",
+        }
+    )
+    now = now_in_utc()
+    update_website_status(
+        website,
+        version,
+        PUBLISH_STATUS_SUCCEEDED,
+        now,
+        build_id="123",
+        cdn_cache_step=True,
+    )
+    mock_mail_on_publish.assert_not_called()
+
+
 @pytest.mark.parametrize("status", [PUBLISH_STATUS_SUCCEEDED, PUBLISH_STATUS_ERRORED])
 def test_update_website_unpublish_status(mocker, status):
     """update_website_status should update the appropriate website publishing fields"""
@@ -474,15 +546,12 @@ def test_update_unpublished_website_status(status, version):
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
 
-    publish_date_field = (
-        "publish_date" if version == VERSION_LIVE else "draft_publish_date"
-    )
     if status == PUBLISH_STATUS_SUCCEEDED:
-        assert getattr(website, publish_date_field) == now
+        assert getattr(website, f"{version}_build_date") == now
         if version == VERSION_LIVE:
             assert website.first_published_to_production == now
     else:
-        assert getattr(website, publish_date_field) is None
+        assert getattr(website, f"{version}_build_date") is None
 
 
 @pytest.mark.parametrize("has_missing_ids", [True, False])

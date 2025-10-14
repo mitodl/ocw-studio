@@ -2,6 +2,7 @@
 
 import datetime
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import factory
 import pytest
@@ -1278,6 +1279,7 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913
         mocker.ANY,
         unpublished=(unpublished and version == VERSION_LIVE),
         build_id=None,
+        cdn_cache_step=False,
     )
     assert resp.status_code == 200
 
@@ -1392,3 +1394,40 @@ def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_t
         drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
     resp = drf_client.get(f"{reverse('unpublished_removal_api-list')}")
     assert resp.status_code == 403
+
+
+@pytest.mark.parametrize(
+    ("data", "should_call", "is_cdn_cache_step"),
+    [
+        ({"build_type": "offline"}, False, False),
+        ({"build_type": "online"}, True, False),
+        ({}, True, False),
+    ],
+)
+@patch("websites.views.update_website_status")
+def test_pipeline_status_build_type(
+    mock_update_website_status,
+    drf_client,
+    settings,
+    data,
+    should_call,
+    is_cdn_cache_step,
+):
+    """Test that pipeline_status processes builds based on build_type"""
+    website = WebsiteFactory.create()
+    settings.API_BEARER_TOKEN = "test_token"
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    base_data = {
+        "version": "draft",
+        "status": "succeeded",
+    }
+    base_data.update(data)
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data=base_data,
+    )
+    assert resp.status_code == 200
+    if should_call:
+        mock_update_website_status.assert_called_once()
+    else:
+        mock_update_website_status.assert_not_called()

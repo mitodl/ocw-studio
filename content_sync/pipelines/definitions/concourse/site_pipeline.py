@@ -637,7 +637,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                             pipeline_name=pipeline_vars["pipeline_name"],
                             open_catalog_url=open_catalog_url,
                         )
-                        for open_catalog_url in []
+                        for open_catalog_url in settings.OPEN_CATALOG_URLS
                     ]
                 ]
             )
@@ -659,7 +659,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 upload_online_build_step,
             ]
         )
-        if is_dev() and not skip_cache_clear:
+        if not is_dev() and not skip_cache_clear:
             self.append(clear_cdn_cache_online_step)
 
 
@@ -835,7 +835,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                         pipeline_name=pipeline_vars["pipeline_name"],
                         open_catalog_url=open_catalog_url,
                     )
-                    for open_catalog_url in []
+                    for open_catalog_url in settings.OPEN_CATALOG_URLS
                 ]
             )
         clear_cdn_cache_offline_on_success_steps.append(
@@ -856,7 +856,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 upload_offline_build_step,
             ]
         )
-        if is_dev():
+        if not is_dev():
             self.append(clear_cdn_cache_offline_step)
 
 
