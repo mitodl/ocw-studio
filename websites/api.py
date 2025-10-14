@@ -284,8 +284,6 @@ def mail_on_publish(
     user_id: int,
 ):
     """Send a publishing success or failure message to the requesting user"""
-
-    print(f"SENDING MAIL ON PUBLISH TO {user_id}")
     message = (
         PreviewOrPublishSuccessMessage if success else PreviewOrPublishFailureMessage
     )
@@ -332,12 +330,8 @@ def update_website_status(  # noqa: PLR0913
     update_time: datetime,
     unpublished=False,  # noqa: FBT002
     build_id=None,
-    cdn_cache_step=False,
+    cdn_cache_step=False,  # noqa: FBT002
 ):
-    print(
-        f"UPDATING WEBSITE STATUS {website.name=} {version=} {status=} {update_time=} {unpublished=} {build_id=}"
-    )
-
     is_studio_publish = str(build_id) in [
         str(website.latest_build_id_live),
         str(website.latest_build_id_draft),

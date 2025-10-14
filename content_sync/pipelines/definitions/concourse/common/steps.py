@@ -209,7 +209,7 @@ class OcwStudioWebhookStep(TryStep):
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
-        cdn_cache_step: bool = False,
+        cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         webhook_data = {

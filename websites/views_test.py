@@ -1405,7 +1405,7 @@ def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_t
     ],
 )
 @patch("websites.views.update_website_status")
-def test_pipeline_status_build_type(
+def test_pipeline_status_build_type(  # noqa: PLR0913
     mock_update_website_status,
     drf_client,
     settings,
@@ -1415,7 +1415,7 @@ def test_pipeline_status_build_type(
 ):
     """Test that pipeline_status processes builds based on build_type"""
     website = WebsiteFactory.create()
-    settings.API_BEARER_TOKEN = "test_token"
+    settings.API_BEARER_TOKEN = "test_token"  # noqa: S105
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     base_data = {
         "version": "draft",

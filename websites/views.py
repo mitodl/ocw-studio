@@ -337,10 +337,6 @@ class WebsiteViewSet(
                 build_id=build_id,
                 cdn_cache_step=cdn_cache_step,
             )
-        else:
-            print(
-                f"PIPELINE STATUS IGNORED FOR {website.name=} {version=} {publish_status=} {build_id=} {build_type=}"
-            )
 
         return Response(status=200)
 

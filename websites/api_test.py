@@ -461,7 +461,12 @@ def test_update_website_status_sends_notification(mock_mail_on_publish, version)
         build_id="787",
         cdn_cache_step=False,
     )
-    mock_mail_on_publish.assert_called_once_with(website.name, version, True, user.id)
+    mock_mail_on_publish.assert_called_once_with(
+        website.name,
+        version,
+        True,  # noqa: FBT003
+        user.id,
+    )
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
