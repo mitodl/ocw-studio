@@ -87,6 +87,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
         else repo.get_branch(repo.default_branch)
     )
     if commit is not None and commit != branch.commit.sha:
+        log.warning("Commit does not match GITHUB_WEBHOOK_BRANCH, ignoring sync")
         return
 
     for config_file in config_files:

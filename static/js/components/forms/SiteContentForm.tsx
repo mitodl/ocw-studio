@@ -159,10 +159,12 @@ export function FormFields(props: InnerFormProps): JSX.Element {
         {renamedFields
           .filter((field) => fieldIsVisible(field, values))
           .map((field) => {
-            // Hide `resourcetype` and `file` in case of adding Video Resource (using YouTube ID)
+            // Hide `resourcetype`, `file`, and `gdrive_url` in case of adding Video Resource (using YouTube ID)
             if (
               configItem.name === "resource" &&
-              (field.name === "resourcetype" || field.name === "file") &&
+              (field.name === "resourcetype" ||
+                field.name === "file" ||
+                field.name === "gdrive_url") &&
               editorState.adding()
             ) {
               return null
