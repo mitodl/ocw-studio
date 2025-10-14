@@ -447,7 +447,7 @@ def get_pdf_title(drive_file: DriveFile) -> str:
 
 
 @transaction.atomic
-def create_gdrive_resource_content(drive_file: DriveFile):
+def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
     """Create a WebsiteContent resource from a Google Drive file"""
     try:
         resource_type = get_resource_type(drive_file)
@@ -479,6 +479,13 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                 else drive_file.name
             )
 
+            ownership_fields = {}
+            if user_pk:
+                ownership_fields = {
+                    "owner_id": user_pk,
+                    "updated_by_id": user_pk,
+                }
+
             resource = WebsiteContent.objects.create(
                 website=drive_file.website,
                 title=resource_title,
@@ -497,6 +504,7 @@ def create_gdrive_resource_content(drive_file: DriveFile):
                         values=resource_type_fields,
                     )
                 },
+                **ownership_fields,
             )
         else:
             resource.file = drive_file.s3_key
@@ -656,7 +664,7 @@ def find_missing_files(
     return [file for file in drive_files if file.file_id not in gdrive_file_ids]
 
 
-def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
+def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime, user_pk=None):
     """
     Deletes `drive_file` only if it is not being used in a page type content.
 
@@ -676,6 +684,8 @@ def delete_drive_file(drive_file: DriveFile, sync_datetime: datetime):
     log.info("Deleting file %s", drive_file)
 
     if drive_file.resource:
+        if user_pk:
+            drive_file.resource.updated_by_id = user_pk
         log.info("Deleting resource %s", drive_file.resource)
         drive_file.resource.delete()
 
