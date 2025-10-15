@@ -110,7 +110,7 @@ Once the database is restored, Website objects' gdrive folders will be pointing 
 In a Django shell on the RC environment:
 
 ```python
-from websites.models import *
+from websites.models import Website
 Website.objects.all().update(gdrive_folder=None)
 ```
 
