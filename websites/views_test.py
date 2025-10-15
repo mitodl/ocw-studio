@@ -909,7 +909,9 @@ def test_websites_content_gdrive_sync(mocker, drf_client, permission_groups):
             kwargs={"parent_lookup_website": website.name},
         )
     )
-    mock_sync.assert_called_once_with(website.name)
+    mock_sync.assert_called_once_with(
+        website.name, user_pk=permission_groups.site_editor.id
+    )
     assert resp.status_code == 200
 
 

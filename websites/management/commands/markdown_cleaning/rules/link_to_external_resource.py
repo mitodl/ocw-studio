@@ -22,6 +22,17 @@ from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
 
+UNESCAPE_MAP = {r"\`": "`", r"\[": "[", r"\]": "]"}
+
+
+def unescape_link_text(text: str) -> str:
+    """
+    Unescape markdown-escaped characters allowed in shortcode titles.
+    """
+    for escaped, literal in UNESCAPE_MAP.items():
+        text = text.replace(escaped, literal)
+    return text
+
 
 def is_ocw_domain_url(url: str) -> bool:
     """Return True `url` has an ocw domain."""
@@ -87,7 +98,7 @@ def build_external_resource(
 
 
 def get_or_build_external_resource(
-    website: WebsiteContent,
+    website: Website,
     site_config: SiteConfig,
     url: str,
     title: str,
@@ -251,11 +262,16 @@ class LinkToExternalResourceRule(PyparsingRule):
         config = self.starter_lookup.get_config(starter_id)
         link_text = toks.link.text
 
+        # Unescape markdown characters in the link text for use in shortcode
+        # Markdown may escape backticks and square brackets that should not be
+        # escaped in the shortcode title parameter
+        unescaped_link_text = unescape_link_text(link_text)
+
         resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=config,
             url=toks.link.destination,
-            title=link_text,
+            title=unescaped_link_text,  # Use unescaped text for the resource title
             has_external_license_warning=self.options.get(
                 "has_external_license_warning", False
             ),
@@ -265,7 +281,8 @@ class LinkToExternalResourceRule(PyparsingRule):
             resource.save()
             resource.referencing_content.add(website_content)
 
-        shortcode = ShortcodeTag.resource_link(resource.text_id, link_text)
+        # Use unescaped text for shortcode parameter
+        shortcode = ShortcodeTag.resource_link(resource.text_id, unescaped_link_text)
         hugo_output = shortcode.to_hugo()
 
         # If inside shortcode attribute, escape the quotes in the Hugo output
@@ -352,11 +369,16 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
         starter_id = website_content.website.starter_id
         site_config = self.starter_lookup.get_config(starter_id)
 
+        # Unescape markdown characters in the link text for use in shortcode
+        # Markdown may escape backticks and square brackets that should not be
+        # escaped in the shortcode title parameter
+        unescaped_link_text = unescape_link_text(link_text)
+
         resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=site_config,
             url=url,
-            title=link_text,
+            title=unescaped_link_text,  # Use unescaped text for the resource title
             has_external_license_warning=self.options.get(
                 "has_external_license_warning", False
             ),
@@ -377,7 +399,7 @@ class NavItemToExternalResourceRule(MarkdownCleanupRule):
 
     def transform_text(
         self, website_content: WebsiteContent, text: list[dict], on_match
-    ) -> str:
+    ) -> list[dict]:
         """
         Return new text to replace `text`.
         """
