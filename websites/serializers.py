@@ -40,12 +40,20 @@ from websites.constants import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import (
+    permissions_group_name_for_role,
+)
 
 log = logging.getLogger(__name__)
 
 
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
+
+
+def resource_file_path(resource: WebsiteContent | None) -> str | None:
+    if not resource or not resource.file:
+        return None
+    return f"/{resource.file.lstrip('/')}"
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
