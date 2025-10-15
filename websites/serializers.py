@@ -42,7 +42,9 @@ from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
 from websites.utils import (
+    get_dict_field,
     permissions_group_name_for_role,
+    set_dict_field,
 )
 
 log = logging.getLogger(__name__)
@@ -51,10 +53,52 @@ log = logging.getLogger(__name__)
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
 
 
-def resource_file_path(resource: WebsiteContent | None) -> str | None:
-    if not resource or not resource.file:
+RELATION_URL_FIELDS = (
+    ("video_files.video_captions_resource", settings.YT_FIELD_CAPTIONS),
+    ("video_files.video_transcript_resource", settings.YT_FIELD_TRANSCRIPT),
+)
+
+
+def relation_value_to_id(value) -> str | None:
+    if not value:
         return None
-    return f"/{resource.file.lstrip('/')}"
+    if isinstance(value, dict):
+        return value.get("content") or None
+    if isinstance(value, list):
+        first = value[0] if value else None
+        return first[0] if isinstance(first, list | tuple) else first
+    return value if isinstance(value, str) else None
+
+
+def resource_file_path(resource: WebsiteContent | None) -> str | None:
+    if not resource:
+        return None
+    if getattr(resource, "file", None) and getattr(resource.file, "name", None):
+        return f"/{resource.file.name.lstrip('/')}"
+    return None
+
+
+def sync_video_relation_urls(metadata: dict) -> None:
+    if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
+        return
+    updated_resources: set[str] = set()
+    for relation_field, target_field in RELATION_URL_FIELDS:
+        relation_value = get_dict_field(metadata, relation_field)
+        relation_id = relation_value_to_id(relation_value)
+        resource = (
+            WebsiteContent.objects.filter(text_id=relation_id).first()
+            if relation_id
+            else None
+        )
+        set_dict_field(metadata, target_field, resource_file_path(resource))
+        if (
+            resource
+            and not resource.is_page_content
+            and resource.text_id not in updated_resources
+        ):
+            resource.is_page_content = True
+            resource.save(update_fields=["is_page_content"])
+            updated_resources.add(resource.text_id)
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -577,10 +621,9 @@ class WebsiteContentDetailSerializer(
             )
         existing_metadata = instance.metadata if instance.metadata else {}
         if "metadata" in validated_data:
-            validated_data["metadata"] = {
-                **existing_metadata,
-                **validated_data["metadata"],
-            }
+            merged_metadata = {**existing_metadata, **validated_data["metadata"]}
+            sync_video_relation_urls(merged_metadata)
+            validated_data["metadata"] = merged_metadata
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
