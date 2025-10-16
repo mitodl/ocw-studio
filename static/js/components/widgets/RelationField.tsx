@@ -149,8 +149,13 @@ export default function RelationField(props: Props): JSX.Element {
 
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
-      const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
-
+      const valueAsSet = new Set(
+        Array.isArray(effectiveValue)
+          ? crossSite
+            ? (effectiveValue as CrossSitePair[]).map((pair) => pair[0])
+            : (effectiveValue as string[])
+          : [effectiveValue as string],
+      )
       return results
         .map((entry) => ({
           ...entry,
@@ -180,7 +185,7 @@ export default function RelationField(props: Props): JSX.Element {
           }
         })
     },
-    [filter, value, valuesToOmit],
+    [filter, effectiveValue, valuesToOmit, crossSite],
   )
 
   const fetchOptions = useCallback(
