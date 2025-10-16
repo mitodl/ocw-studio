@@ -955,7 +955,7 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content, with_user)
     mocker.patch("main.s3_utils.boto3")
 
     for starter, item, field in all_starters_items_fields():
-        website = WebsiteFactory.create()
+        website = WebsiteFactory.create(starter=starter)
         drive_file = DriveFileFactory.create(website=website)
 
         user = UserFactory.create() if with_user else None
@@ -998,9 +998,9 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content, with_user)
             assert WebsiteContent.objects.filter(pk=content.id).exists()
             assert resource_exists
             assert drive_file_exists
-            assert WebsiteContent.objects.filter(pk=resource.id).updated_by == user
         elif with_resource:
             assert not drive_file_exists
             assert not resource_exists
+            assert WebsiteContent.all_objects.get(pk=resource.id).updated_by == user
         else:
             assert not drive_file_exists
