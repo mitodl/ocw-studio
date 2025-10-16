@@ -157,6 +157,7 @@ def publish_website(  # pylint: disable=too-many-arguments
     trigger_pipeline: bool | None = True,
 ):
     """Publish a live or draft version of a website"""
+    update_kwargs = {}
     try:
         website = Website.objects.get(name=name)
         if prepublish:
@@ -165,8 +166,10 @@ def publish_website(  # pylint: disable=too-many-arguments
         backend = get_sync_backend(website)
         backend.sync_all_content_to_backend()
         if version == VERSION_DRAFT:
+            update_kwargs["draft_publish_date"] = now_in_utc()
             backend.merge_backend_draft()
         else:
+            update_kwargs["publish_date"] = now_in_utc()
             backend.merge_backend_live()
 
         if trigger_pipeline and settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -177,20 +180,18 @@ def publish_website(  # pylint: disable=too-many-arguments
                 pipeline.upsert_pipeline()
             pipeline.unpause_pipeline(version)
             build_id = pipeline.trigger_pipeline_build(version)
-            update_kwargs = {
-                f"latest_build_id_{version}": build_id,
-            }
-        else:
-            update_kwargs = {}
+            update_kwargs[f"latest_build_id_{version}"] = build_id
+
         # Need to update additional fields
         update_kwargs = {
+            **update_kwargs,
             f"{version}_publish_status": PUBLISH_STATUS_NOT_STARTED,
             f"{version}_publish_status_updated_on": now_in_utc(),
             f"has_unpublished_{version}": False,
-            **update_kwargs,
         }
     except:  # pylint:disable=bare-except
         update_kwargs = {
+            **update_kwargs,
             f"{version}_publish_status": PUBLISH_STATUS_ERRORED,
             f"{version}_publish_status_updated_on": now_in_utc(),
             f"has_unpublished_{version}": True,
