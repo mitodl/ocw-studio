@@ -646,7 +646,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 pipeline_name=pipeline_vars["pipeline_name"],
                 status="succeeded",
                 build_type="online",
-                cdn_cache_step=True,
+                is_cdn_cache_step=True,
             )
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -843,7 +843,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 pipeline_name=pipeline_vars["pipeline_name"],
                 status="succeeded",
                 build_type="offline",
-                cdn_cache_step=True,
+                is_cdn_cache_step=True,
             )
         )
         clear_cdn_cache_offline_step.on_success = TryStep(

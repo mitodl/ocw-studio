@@ -416,7 +416,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         "status": "succeeded",
         "build_id": "$BUILD_ID",
         "build_type": "online",
-        "cdn_cache_step": False,
+        "is_cdn_cache_step": False,
     }
     if is_dev:
         assert set(

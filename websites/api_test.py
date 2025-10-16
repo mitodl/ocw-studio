@@ -459,7 +459,7 @@ def test_update_website_status_sends_notification(mock_mail_on_publish, version)
         PUBLISH_STATUS_SUCCEEDED,
         now,
         build_id="787",
-        cdn_cache_step=False,
+        is_cdn_cache_step=False,
     )
     mock_mail_on_publish.assert_called_once_with(
         website.name,
@@ -493,7 +493,7 @@ def test_update_website_status_no_notification_cdn_cache_step(
     mock_mail_on_publish, version
 ):
     """
-    mail_on_publish should not be called if cdn_cache_step is True.
+    mail_on_publish should not be called if is_cdn_cache_step is True.
     """
     user = UserFactory.create()
     website = WebsiteFactory.create(
@@ -509,7 +509,7 @@ def test_update_website_status_no_notification_cdn_cache_step(
         PUBLISH_STATUS_SUCCEEDED,
         now,
         build_id="123",
-        cdn_cache_step=True,
+        is_cdn_cache_step=True,
     )
     mock_mail_on_publish.assert_not_called()
 

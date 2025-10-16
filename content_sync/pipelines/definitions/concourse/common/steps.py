@@ -202,6 +202,8 @@ class OcwStudioWebhookStep(TryStep):
         pipeline_name(str): The name of the pipeline to set the status on
         status: (str): The status to set on the pipeline (failed, errored, succeeded)
         build_type: (str, optional): The type of build ('online' or 'offline')
+        is_cdn_cache_step(bool, optional): Whether this step is being called from
+                                           a cdn cache purge step
     """
 
     def __init__(
@@ -209,7 +211,7 @@ class OcwStudioWebhookStep(TryStep):
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
-        cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
+        is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         webhook_data = {
@@ -217,7 +219,7 @@ class OcwStudioWebhookStep(TryStep):
             "status": status,
             "build_id": "$BUILD_ID",
             "build_type": build_type,
-            "cdn_cache_step": cdn_cache_step,
+            "is_cdn_cache_step": is_cdn_cache_step,
         }
 
         super().__init__(

@@ -1279,7 +1279,7 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913
         mocker.ANY,
         unpublished=(unpublished and version == VERSION_LIVE),
         build_id=None,
-        cdn_cache_step=False,
+        is_cdn_cache_step=False,
     )
     assert resp.status_code == 200
 
@@ -1420,6 +1420,7 @@ def test_pipeline_status_build_type(  # noqa: PLR0913
     base_data = {
         "version": "draft",
         "status": "succeeded",
+        "is_cdn_cache_step": is_cdn_cache_step,
     }
     base_data.update(data)
     resp = drf_client.post(

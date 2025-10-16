@@ -325,7 +325,7 @@ class WebsiteViewSet(
         unpublished = data.get("unpublished", False) and version == VERSION_LIVE
         build_id = data.get("build_id")
         build_type = data.get("build_type")
-        cdn_cache_step = data.get("cdn_cache_step", False)
+        is_cdn_cache_step = data.get("is_cdn_cache_step", False)
 
         if build_type != "offline":
             update_website_status(
@@ -335,7 +335,7 @@ class WebsiteViewSet(
                 now_in_utc(),
                 unpublished=unpublished,
                 build_id=build_id,
-                cdn_cache_step=cdn_cache_step,
+                is_cdn_cache_step=is_cdn_cache_step,
             )
 
         return Response(status=200)

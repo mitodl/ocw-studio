@@ -330,7 +330,7 @@ def update_website_status(  # noqa: PLR0913
     update_time: datetime,
     unpublished=False,  # noqa: FBT002
     build_id=None,
-    cdn_cache_step=False,  # noqa: FBT002
+    is_cdn_cache_step=False,  # noqa: FBT002
 ):
     is_studio_publish = str(build_id) in [
         str(website.latest_build_id_live),
@@ -380,7 +380,7 @@ def update_website_status(  # noqa: PLR0913
         and user
         and not unpublished
         and is_studio_publish
-        and not cdn_cache_step
+        and not is_cdn_cache_step
     ):
         mail_on_publish(
             website.name, version, status == PUBLISH_STATUS_SUCCEEDED, user.id
