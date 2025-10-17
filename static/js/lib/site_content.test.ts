@@ -695,6 +695,29 @@ describe("site_content", () => {
       expect(renameNestedFields([field])[0].name).toEqual("myobject.content")
     })
 
+    it("should rename nested Relation fields within an Object field with .content suffix", () => {
+      const field = makeWebsiteConfigField({
+        widget: WidgetVariant.Object,
+        label: "myobject",
+        fields: [
+          makeWebsiteConfigField({
+            widget: WidgetVariant.String,
+            label: "mystring",
+          }),
+          makeWebsiteConfigField({
+            widget: WidgetVariant.Relation,
+            label: "myrelation",
+          }),
+        ],
+      })
+
+      expect(
+        (renameNestedFields([field])[0] as ObjectConfigField).fields.map(
+          (field) => field.name,
+        ),
+      ).toEqual(["myobject.mystring", "myobject.myrelation.content"])
+    })
+
     it("should leave others alone", () => {
       const fields = Object.values(WidgetVariant)
         .filter(
