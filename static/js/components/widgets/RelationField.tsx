@@ -133,29 +133,10 @@ export default function RelationField(props: Props): JSX.Element {
   const websiteName = props.website ? props.website : contextWebsite.name
   const publishedOnly = props.website || props.cross_site ? true : false
 
-  type WrappedRelationValue = { website?: string; content: string | string[] }
-  const effectiveValue = useMemo(() => {
-    if (
-      !crossSite &&
-      value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      "content" in (value as any)
-    ) {
-      return (value as WrappedRelationValue).content
-    }
-    return value
-  }, [value, crossSite])
-
   const filterContentListing = useCallback(
     (results: WebsiteContent[]) => {
-      const valueAsSet = new Set(
-        Array.isArray(effectiveValue)
-          ? crossSite
-            ? (effectiveValue as CrossSitePair[]).map((pair) => pair[0])
-            : (effectiveValue as string[])
-          : [effectiveValue as string],
-      )
+      const valueAsSet = new Set(Array.isArray(value) ? value.flat() : [value])
+
       return results
         .map((entry) => ({
           ...entry,
@@ -185,7 +166,7 @@ export default function RelationField(props: Props): JSX.Element {
           }
         })
     },
-    [filter, effectiveValue, valuesToOmit, crossSite],
+    [filter, value, valuesToOmit],
   )
 
   const fetchOptions = useCallback(
@@ -365,13 +346,11 @@ export default function RelationField(props: Props): JSX.Element {
   const selectedIds = useMemo(
     () =>
       crossSite
-        ? (effectiveValue as CrossSitePair[]).map((pair) => pair[0])
+        ? (value as CrossSitePair[]).map((pair) => pair[0])
         : multiple
-          ? (effectiveValue as string[]) || []
-          : effectiveValue
-            ? [effectiveValue as string]
-            : [],
-    [multiple, effectiveValue, crossSite],
+          ? (value as string[])
+          : [value as string],
+    [multiple, value, crossSite],
   )
 
   const isOptionDisabled = useCallback(
@@ -416,7 +395,7 @@ export default function RelationField(props: Props): JSX.Element {
       ) : (
         <SelectField
           name={name}
-          value={effectiveValue as string | string[]}
+          value={value as string | string[]}
           onChange={handleChange}
           options={options}
           loadOptions={loadOptions}

@@ -283,30 +283,6 @@ describe("RelationField", () => {
     expect(wrapper.find("SelectField").prop("value")).toBe("foobar")
   })
 
-  it("unwraps single-site relation objects when computing selected ids", async () => {
-    const relationValue = { website: "course-site", content: "uuid-1" }
-    const { wrapper } = await render({ value: relationValue, multiple: false })
-    wrapper.update()
-    expect(wrapper.find("SelectField").prop("value")).toBe("uuid-1")
-  })
-
-  it("unwraps multiple relation objects to an array for selected ids", async () => {
-    const relationValue = {
-      website: "course-site",
-      content: ["uuid-1", "uuid-2"],
-    }
-    const { wrapper } = await render({
-      value: relationValue,
-      multiple: true,
-      sortable: true,
-    })
-    wrapper.update()
-    expect(wrapper.find("SortableSelect").prop("value")).toEqual([
-      { id: "uuid-1", title: "uuid-1" },
-      { id: "uuid-2", title: "uuid-2" },
-    ])
-  })
-
   it("should filter results", async () => {
     contentListingItems[0].metadata!.testfield = "testvalue"
     const { wrapper } = await render({
@@ -324,34 +300,6 @@ describe("RelationField", () => {
       },
     ])
   })
-
-  it.each([
-    { filterValue: "Other", expectedResourcetype: "Other" },
-    { filterValue: "Document", expectedResourcetype: "Document" },
-  ])(
-    "supports single resource relations filtered by resourcetype %s",
-    async ({ filterValue, expectedResourcetype }) => {
-      const { wrapper } = await render({
-        collection: "resource",
-        multiple: false,
-        name: "resource_relation",
-        filter: {
-          field: "resourcetype",
-          filter_type: RelationFilterVariant.Equals,
-          value: filterValue,
-        },
-      })
-      wrapper.update()
-      expect(wrapper.find("SelectField").prop("multiple")).toBe(false)
-      expect(global.fetch).toHaveBeenCalledTimes(1)
-      const [url] = (global.fetch as jest.Mock).mock.calls[0]
-      const parsedUrl = new URL(url as string, "http://localhost")
-      expect(parsedUrl.searchParams.get("type")).toBe("resource")
-      expect(parsedUrl.searchParams.get("resourcetype")).toBe(
-        expectedResourcetype,
-      )
-    },
-  )
 
   //
   ;[
