@@ -72,6 +72,18 @@ export default function RelationField(props: Props): JSX.Element {
     cross_site: crossSite,
   } = props
 
+  useEffect(() => {
+    /**
+     * @pt2302 Note that the name here will have had '.content' appended to it
+     * because of the renameNestedFields function in site_content.ts.
+     *
+     * I have note entirely figured out why this is done, but there's a note
+     * about it below in the onChangeShim function.
+     */
+    console.log(`RELATION FIELD: ${name}`)
+    console.log({ value })
+  }, [name, value])
+
   const [options, setOptions] = useState<Option[]>(
     contentContext ? formatContentOptions(contentContext, displayField) : [],
   )
