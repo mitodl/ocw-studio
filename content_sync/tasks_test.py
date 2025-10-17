@@ -568,9 +568,9 @@ def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913
     )
     api_mock.get_site_pipeline.return_value.get_build_status.return_value = new_status
     tasks.check_incomplete_publish_build_statuses.delay()
-    for website, version in [
-        (draft_site_in_query, VERSION_DRAFT),
-        (live_site_in_query, VERSION_LIVE),
+    for website, version, build_id in [
+        (draft_site_in_query, VERSION_DRAFT, 1),
+        (live_site_in_query, VERSION_LIVE, 3),
     ]:
         if should_check and pipeline is not None:
             api_mock.get_site_pipeline.assert_any_call(website)
@@ -579,7 +579,7 @@ def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913
             )
             if should_update:
                 mock_update_status.assert_any_call(
-                    website, version, new_status, mocker.ANY
+                    website, version, new_status, mocker.ANY, build_id=build_id
                 )
         else:
             with pytest.raises(AssertionError):

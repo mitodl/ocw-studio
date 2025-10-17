@@ -1,5 +1,6 @@
 """Content sync api tests"""
 
+from datetime import timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -269,6 +270,29 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         mock_api_funcs.mock_import_string.return_value.assert_any_call(
             website, version=version
         )
+
+
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_publish_website_sets_publish_date(mock_api_funcs, version):
+    """
+    publish_website should set the draft_publish_date or publish_date
+    when a site is published.
+    """
+
+    current_utc = now_in_utc()
+    website = WebsiteFactory.create(draft_publish_date=None, publish_date=None)
+    api.publish_website(website.name, version, trigger_pipeline=False)
+    website.refresh_from_db()
+    if version == VERSION_DRAFT:
+        assert website.publish_date is None
+        assert (
+            current_utc
+            <= website.draft_publish_date
+            <= current_utc + timedelta(minutes=1)
+        )
+    else:
+        assert website.draft_publish_date is None
+        assert current_utc <= website.publish_date <= current_utc + timedelta(minutes=1)
 
 
 def test_publish_website_error(mock_api_funcs, settings):

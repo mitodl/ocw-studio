@@ -336,7 +336,6 @@ class GeneralPipeline(BaseGeneralPipeline):
     def upsert_config(self, config_str: str, pipeline_name: str):
         """Upsert the configuration for a pipeline"""
         config = json.dumps(yaml.load(config_str, Loader=yaml.SafeLoader))
-        log.debug(config)
         # Try to get the pipeline_name of the pipeline if it already exists, because it will be  # noqa: E501
         # necessary to update an existing pipeline.
         url_path = self._make_pipeline_config_url(pipeline_name)

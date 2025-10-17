@@ -409,10 +409,15 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["on_success"]["try"]["put"]
         == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
     )
-    assert (
+    assert json.loads(
         upload_online_build_task["on_success"]["try"]["params"]["text"]
-        == f'{{"version": "{config.vars["pipeline_name"]}", "status": "succeeded", "build_id": "$BUILD_ID"}}'
-    )
+    ) == {
+        "version": f"{config.vars['pipeline_name']}",
+        "status": "succeeded",
+        "build_id": "$BUILD_ID",
+        "build_type": "online",
+        "is_cdn_cache_step": False,
+    }
     if is_dev:
         assert set(
             {
@@ -427,9 +432,24 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
         ]["try"]["do"]
+        clear_cdn_cache_online_failure_steps = clear_cdn_cache_online_step[
+            "on_failure"
+        ]["try"]["do"]
         open_discussions_webhook_step_online_params = json.loads(
             clear_cdn_cache_online_success_steps[0]["try"]["params"]["text"]
         )
+        ocw_webhook_step_online_params = json.loads(
+            clear_cdn_cache_online_success_steps[-1]["try"]["params"]["text"]
+        )
+        ocw_webhook_step_online_cdn_cache_failure_step = json.loads(
+            clear_cdn_cache_online_failure_steps[0]["try"]["params"]["text"]
+        )
+        assert (
+            clear_cdn_cache_online_success_steps[-1]["try"]["put"]
+            == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+        )
+        assert ocw_webhook_step_online_params["build_type"] == "online"
+        assert ocw_webhook_step_online_cdn_cache_failure_step["build_type"] == "online"
         if branch_vars["pipeline_name"] == VERSION_DRAFT:
             assert "webhook_key" not in open_discussions_webhook_step_online_params
         elif branch_vars["pipeline_name"] == VERSION_LIVE:
@@ -603,9 +623,27 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
         ]["try"]["do"]
+        clear_cdn_cache_offline_failure_steps = clear_cdn_cache_offline_step[
+            "on_failure"
+        ]["try"]["do"]
         open_discussions_webhook_step_offline_params = json.loads(
             clear_cdn_cache_offline_success_steps[0]["try"]["params"]["text"]
         )
+        ocw_webhook_step_offline_params = json.loads(
+            clear_cdn_cache_offline_success_steps[-1]["try"]["params"]["text"]
+        )
+        ocw_webhook_step_offline_cdn_cache_failure_step = json.loads(
+            clear_cdn_cache_offline_failure_steps[0]["try"]["params"]["text"]
+        )
+        assert (
+            clear_cdn_cache_offline_success_steps[-1]["try"]["put"]
+            == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+        )
+        assert ocw_webhook_step_offline_params["build_type"] == "offline"
+        assert (
+            ocw_webhook_step_offline_cdn_cache_failure_step["build_type"] == "offline"
+        )
+
         if branch_vars["pipeline_name"] == VERSION_DRAFT:
             assert "webhook_key" not in open_discussions_webhook_step_offline_params
         elif branch_vars["pipeline_name"] == VERSION_LIVE:
