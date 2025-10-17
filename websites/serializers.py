@@ -73,9 +73,8 @@ def relation_value_to_id(value) -> str | None:
 def resource_file_path(resource: WebsiteContent | None) -> str | None:
     if not resource:
         return None
-    if getattr(resource, "file", None) and getattr(resource.file, "name", None):
-        return f"/{resource.file.name.lstrip('/')}"
-    return None
+    file_name = getattr(getattr(resource, "file", None), "name", None)
+    return f"/{file_name.lstrip('/')}" if file_name else None
 
 
 def sync_video_relation_urls(metadata: dict) -> None:
