@@ -54,8 +54,8 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 
 
 RELATION_URL_FIELDS = (
-    ("video_files.video_captions_resource", settings.YT_FIELD_CAPTIONS),
-    ("video_files.video_transcript_resource", settings.YT_FIELD_TRANSCRIPT),
+    (settings.YT_FIELD_CAPTIONS_RESOURCE, settings.YT_FIELD_CAPTIONS),
+    (settings.YT_FIELD_TRANSCRIPT_RESOURCE, settings.YT_FIELD_TRANSCRIPT),
 )
 
 

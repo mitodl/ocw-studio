@@ -917,12 +917,12 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
     metadata_patch = {"video_files": {}}
     set_dict_field(
         metadata_patch,
-        "video_files.video_captions_resource",
+        settings.YT_FIELD_CAPTIONS_RESOURCE,
         {"content": str(caption.text_id)},
     )
     set_dict_field(
         metadata_patch,
-        "video_files.video_transcript_resource",
+        settings.YT_FIELD_TRANSCRIPT_RESOURCE,
         {"content": str(transcript.text_id)},
     )
 
