@@ -80,7 +80,6 @@ def resource_file_path(resource: WebsiteContent | None) -> str | None:
 def sync_video_relation_urls(metadata: dict) -> None:
     if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
         return
-    updated_resources: set[str] = set()
     for relation_field, target_field in RELATION_URL_FIELDS:
         relation_value = get_dict_field(metadata, relation_field)
         relation_id = relation_value_to_id(relation_value)
@@ -90,14 +89,6 @@ def sync_video_relation_urls(metadata: dict) -> None:
             else None
         )
         set_dict_field(metadata, target_field, resource_file_path(resource))
-        if (
-            resource
-            and not resource.is_page_content
-            and resource.text_id not in updated_resources
-        ):
-            resource.is_page_content = True
-            resource.save(update_fields=["is_page_content"])
-            updated_resources.add(resource.text_id)
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
