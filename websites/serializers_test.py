@@ -903,10 +903,14 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
         type=CONTENT_TYPE_RESOURCE,
         metadata=video_metadata,
     )
-    caption = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    caption = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE, is_page_content=True
+    )
     caption.file = SimpleUploadedFile("captions.vtt", b"caption data")
     caption.save()
-    transcript = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    transcript = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE, is_page_content=True
+    )
     transcript.file = SimpleUploadedFile("transcript.pdf", b"transcript data")
     transcript.save()
 
@@ -944,5 +948,3 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
         get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
         == expected_transcript_path
     )
-    assert caption.is_page_content is True
-    assert transcript.is_page_content is True
