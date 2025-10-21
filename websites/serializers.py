@@ -59,17 +59,6 @@ RELATION_URL_FIELDS = (
 )
 
 
-def relation_value_to_id(value) -> str | None:
-    if not value:
-        return None
-    if isinstance(value, dict):
-        return value.get("content") or None
-    if isinstance(value, list):
-        first = value[0] if value else None
-        return first[0] if isinstance(first, list | tuple) else first
-    return value if isinstance(value, str) else None
-
-
 def resource_file_path(resource: WebsiteContent | None) -> str | None:
     if not resource:
         return None
@@ -82,7 +71,7 @@ def sync_video_relation_urls(metadata: dict) -> None:
         return
     for relation_field, target_field in RELATION_URL_FIELDS:
         relation_value = get_dict_field(metadata, relation_field)
-        relation_id = relation_value_to_id(relation_value)
+        relation_id = relation_value.get("content")
         resource = (
             WebsiteContent.objects.filter(text_id=relation_id).first()
             if relation_id
