@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.165.0
+Version 0.165.0 (Released October 21, 2025)
 ---------------
 
 - Add gdrive url field for resources (#2742)
