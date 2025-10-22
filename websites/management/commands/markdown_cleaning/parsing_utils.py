@@ -148,7 +148,7 @@ def convert_shortcodes_to_html(s: str) -> str:
 
         # Match sup shortcodes with UNQUOTED parameters: {{< sup content >}}
         s = HUGO_SUP_UNQUOTED_PATTERN.sub(
-            lambda m: f"<sup>{m.group(1)}</sup>",
+            lambda m: _replace_shortcode_with_html(m, "sup"),
             s,
         )
 
@@ -160,7 +160,7 @@ def convert_shortcodes_to_html(s: str) -> str:
 
         # Match sub shortcodes with UNQUOTED parameters: {{< sub content >}}
         s = HUGO_SUB_UNQUOTED_PATTERN.sub(
-            lambda m: f"<sub>{m.group(1)}</sub>",
+            lambda m: _replace_shortcode_with_html(m, "sub"),
             s,
         )
 
@@ -269,13 +269,11 @@ class ShortcodeParam:
         Make shortcode parameter safe for Hugo.
             - encase in double quotes and escape any quotes in the arg
             - replace newlines with space
-            - convert embedded Hugo shortcodes to HTML equivalents
         """
         # Replace newlines with spaces
         no_new_lines = s.replace("\n", " ")
-        # Convert shortcodes to HTML, then escape remaining quotes
-        html_converted = convert_shortcodes_to_html(no_new_lines)
-        return f'"{escape_double_quotes(html_converted)}"'
+        # Escape quotes for use in Hugo shortcode parameters
+        return f'"{escape_double_quotes(no_new_lines)}"'
 
 
 @dataclass
