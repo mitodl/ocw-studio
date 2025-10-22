@@ -744,6 +744,10 @@
       "description": "The site config metadata field for the caption url",
       "required": false
     },
+    "YT_FIELD_CAPTIONS_RESOURCE": {
+      "description": "The site config metadata field for the captions resource",
+      "required": false
+    },
     "YT_FIELD_DESCRIPTION": {
       "description": "The site config metadata field for YouTube description",
       "required": false
@@ -766,6 +770,10 @@
     },
     "YT_FIELD_TRANSCRIPT": {
       "description": "The site config metadata field for the transcript url",
+      "required": false
+    },
+    "YT_FIELD_TRANSCRIPT_RESOURCE": {
+      "description": "The site config metadata field for the transcript resource",
       "required": false
     },
     "YT_PROJECT_ID": {
