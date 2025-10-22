@@ -3,6 +3,7 @@ import os
 from urllib.parse import quote, urljoin
 
 import pytest
+from ol_concourse.lib.models.pipeline import DoStep
 from ol_concourse.lib.resource_types import slack_notification_resource
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
@@ -21,6 +22,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    CURL_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
@@ -694,13 +696,15 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
+def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noqa: PLR0915
     """
-    Test that the offline content cleanup step is correctly configured
+    Test that the offline content cleanup step is correctly configured with across pattern for root site
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+    settings.ROOT_WEBSITE_NAME = "ocw-www"
+    settings.API_BEARER_TOKEN = "test_bearer_token"  # noqa: S105
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -730,46 +734,100 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
     pipeline_definition = SitePipelineDefinition(config=config)
     cleanup_step = pipeline_definition.get_offline_content_cleanup_step()
 
-    # Test the cleanup step configuration
-    assert cleanup_step.task == "remove-offline-content-task"
-    assert cleanup_step.timeout.root == "5m"
-    assert cleanup_step.attempts == 3
+    # Test the cleanup step is a DoStep
+    assert isinstance(cleanup_step, DoStep)
+    assert (
+        len(cleanup_step.do) == 3
+    )  # S3 cleanup + WebsiteContent deletion + root site publish step
 
-    # Test the command configuration
-    assert cleanup_step.config.run.path == "sh"
+    # Test the first step: S3 cleanup only
+    s3_cleanup_task = cleanup_step.do[0]
+    assert s3_cleanup_task.task == "remove-offline-s3-content-task"
+    assert s3_cleanup_task.timeout.root == "5m"
+    assert s3_cleanup_task.attempts == 3
+    assert s3_cleanup_task.config.run.path == "sh"
 
-    # Check that the actual command structure matches expectations
-    actual_command = cleanup_step.config.run.args[1]
+    s3_cleanup_command = s3_cleanup_task.config.run.args[1]
 
     # Check that all three AWS S3 remove commands are present
     assert (
         f"aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip"
-        in actual_command
+        in s3_cleanup_command
     )
     assert (
         f"aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip"
-        in actual_command
+        in s3_cleanup_command
     )
     assert (
         f"aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive"
-        in actual_command
+        in s3_cleanup_command
     )
+    assert 'echo "S3 cleanup completed"' in s3_cleanup_command
 
-    # Check that the core components are present
-    assert (
-        'echo "Removing offline content for site: ((site:url_path))"' in actual_command
-    )
-    assert 'echo "Offline content cleanup completed"' in actual_command
-
-    assert cleanup_step.config.platform == "linux"
-    assert cleanup_step.config.image_resource == AWS_CLI_REGISTRY_IMAGE
+    assert s3_cleanup_task.config.platform == "linux"
+    assert s3_cleanup_task.config.image_resource == AWS_CLI_REGISTRY_IMAGE
 
     # Test environment variables for dev
     if is_dev:
-        assert cleanup_step.params["AWS_ACCESS_KEY_ID"] == "test_access_key_id"
-        assert cleanup_step.params["AWS_SECRET_ACCESS_KEY"] == "test_secret_access_key"  # noqa: S105
+        assert s3_cleanup_task.params["AWS_ACCESS_KEY_ID"] == "test_access_key_id"
+        assert (
+            s3_cleanup_task.params["AWS_SECRET_ACCESS_KEY"] == "test_secret_access_key"  # noqa: S105
+        )
     else:
-        assert not hasattr(cleanup_step, "params") or cleanup_step.params is None
+        assert not hasattr(s3_cleanup_task, "params") or s3_cleanup_task.params is None
+
+    # Test the second step: WebsiteContent deletion task
+    delete_website_content_task = cleanup_step.do[1]
+    assert delete_website_content_task.task == "remove-from-root-website-task"
+    assert delete_website_content_task.timeout.root == "2m"
+    assert delete_website_content_task.attempts == 3
+    assert delete_website_content_task.config.run.path == "curl"
+
+    delete_command = delete_website_content_task.config.run.args[1]
+
+    # Check that the WebsiteContent deletion API call is present
+    assert (
+        'echo "Deleting WebsiteContent for site: ((site:site_name)) from root website"'
+        in delete_command
+    )
+    assert "WEBSITE_CONTENT_URL=" in delete_command
+    assert "/api/websites/ocw-www/content/" in delete_command
+    assert f"Authorization: Bearer {settings.API_BEARER_TOKEN}" in delete_command
+    assert "?type=website&title=((site:site_name))" in delete_command
+    assert "curl -f -X DELETE" in delete_command
+    assert 'echo "WebsiteContent deletion completed"' in delete_command
+
+    assert delete_website_content_task.config.platform == "linux"
+    assert delete_website_content_task.config.image_resource == CURL_REGISTRY_IMAGE
+
+    # Test the third step: Root site publish with across pattern
+    root_site_publish_step = cleanup_step.do[2]
+    assert isinstance(root_site_publish_step, DoStep)
+    assert len(root_site_publish_step.do) == 1
+    assert len(root_site_publish_step.across) == 1
+
+    # Check the across variable configuration for root site
+    across_var = root_site_publish_step.across[0]
+    assert across_var.var == "root_site"
+    # Access the root property of Value objects in the values list
+    assert len(across_var.values) == 1
+    assert across_var.values[0].root == {"name": "ocw-www"}
+
+    # Check the root site publish task
+    root_site_task = root_site_publish_step.do[0]
+    assert root_site_task.task == "publish-root-website-task"
+    assert root_site_task.timeout.root == "5m"
+    assert root_site_task.attempts == 3
+    assert root_site_task.config.run.path == "sh"
+
+    root_site_command = root_site_task.config.run.args[1]
+    assert 'echo "Publishing root website: ((root_site:name))"' in root_site_command
+    assert "/api/websites/((root_site:name))/publish/" in root_site_command
+    assert "curl -f -X POST" in root_site_command
+    assert f"Authorization: Bearer {settings.API_BEARER_TOKEN}" in root_site_command
+    assert 'echo "Root website publish completed"' in root_site_command
+
+    assert root_site_task.config.platform == "linux"
 
 
 def test_offline_build_gate_cleanup_task(website, settings, mocker):
@@ -831,7 +889,28 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
     # Verify that failure handling is attached to the inner put step
     assert "on_error" in gate_put_step
 
-    # Verify the failure handling is the cleanup task
-    assert gate_put_step["on_error"]["task"] == "remove-offline-content-task"
-    assert gate_put_step["on_error"]["timeout"] == "5m"
-    assert gate_put_step["on_error"]["attempts"] == 3
+    # Verify the failure handling is a do step with cleanup tasks
+    on_error_step = gate_put_step["on_error"]
+    assert "do" in on_error_step, "on_error should be a do step"
+    assert len(on_error_step["do"]) == 3, (
+        "Should have 3 steps: S3 cleanup + WebsiteContent deletion + root site publish"
+    )
+
+    # Verify the first step is the S3 cleanup task
+    s3_cleanup_task = on_error_step["do"][0]
+    assert s3_cleanup_task["task"] == "remove-offline-s3-content-task"
+    assert s3_cleanup_task["timeout"] == "5m"
+    assert s3_cleanup_task["attempts"] == 3
+
+    # Verify the second step is the WebsiteContent deletion task
+    delete_website_content_task = on_error_step["do"][1]
+    assert delete_website_content_task["task"] == "delete-website-content-task"
+    assert delete_website_content_task["timeout"] == "5m"
+    assert delete_website_content_task["attempts"] == 3
+
+    # Verify the third step is the root site publish (with across)
+    root_site_publish_step = on_error_step["do"][2]
+    assert "do" in root_site_publish_step, "Root site publish should be a do step"
+    assert "across" in root_site_publish_step, "Root site publish should have across"
+    assert len(root_site_publish_step["across"]) == 1
+    assert root_site_publish_step["across"][0]["var"] == "root_site"
