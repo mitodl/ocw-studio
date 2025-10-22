@@ -783,19 +783,15 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noq
     assert delete_website_content_task.attempts == 3
     assert delete_website_content_task.config.run.path == "curl"
 
-    delete_command = delete_website_content_task.config.run.args[1]
-
-    # Check that the WebsiteContent deletion API call is present
-    assert (
-        'echo "Deleting WebsiteContent for site: ((site:site_name)) from root website"'
-        in delete_command
-    )
-    assert "WEBSITE_CONTENT_URL=" in delete_command
-    assert "/api/websites/ocw-www/content/" in delete_command
-    assert f"Authorization: Bearer {settings.API_BEARER_TOKEN}" in delete_command
-    assert "?type=website&title=((site:site_name))" in delete_command
-    assert "curl -f -X DELETE" in delete_command
-    assert 'echo "WebsiteContent deletion completed"' in delete_command
+    # Check that the WebsiteContent deletion API call is present in args
+    delete_args = delete_website_content_task.config.run.args
+    assert "-f" in delete_args
+    assert "-X" in delete_args
+    assert "POST" in delete_args
+    assert f"Authorization: Bearer {settings.API_BEARER_TOKEN}" in delete_args
+    # Check the URL contains the API endpoint
+    assert any("/api/websites/ocw-www/content/" in arg for arg in delete_args)
+    assert any("?type=website" in arg for arg in delete_args)
 
     assert delete_website_content_task.config.platform == "linux"
     assert delete_website_content_task.config.image_resource == CURL_REGISTRY_IMAGE
@@ -904,8 +900,8 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
 
     # Verify the second step is the WebsiteContent deletion task
     delete_website_content_task = on_error_step["do"][1]
-    assert delete_website_content_task["task"] == "delete-website-content-task"
-    assert delete_website_content_task["timeout"] == "5m"
+    assert delete_website_content_task["task"] == "remove-from-root-website-task"
+    assert delete_website_content_task["timeout"] == "2m"
     assert delete_website_content_task["attempts"] == 3
 
     # Verify the third step is the root site publish (with across)
