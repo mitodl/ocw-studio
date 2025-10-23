@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.166.0
+Version 0.166.0 (Released October 23, 2025)
 ---------------
 
 - chore(deps): update actions/setup-node action to v6 (#2762)
