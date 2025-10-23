@@ -948,3 +948,78 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
         get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
         == expected_transcript_path
     )
+
+
+@pytest.mark.parametrize("update_field", ["captions", "transcript"])
+def test_website_content_detail_serializer_syncs_video_relation_files_partial(
+    mocker, mocked_website_funcs, update_field
+):
+    """Updating only either the captions/transcript resource updates just that URL."""
+    mocker.patch("websites.serializers.update_youtube_thumbnail")
+    video_metadata = {
+        settings.FIELD_RESOURCETYPE: RESOURCE_TYPE_VIDEO,
+        "video_files": {
+            "video_captions_file": "/old/captions.vtt",
+            "video_transcript_file": "/old/transcript.pdf",
+        },
+    }
+
+    video = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata=video_metadata,
+    )
+    resource = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE, is_page_content=True
+    )
+    resource.file = SimpleUploadedFile(
+        f"{update_field}.txt", f"{update_field} data".encode()
+    )
+    resource.save()
+
+    metadata_patch = {
+        "video_files": {
+            "video_captions_file": "/old/captions.vtt",
+            "video_transcript_file": "/old/transcript.pdf",
+        }
+    }
+    relation_field = (
+        settings.YT_FIELD_CAPTIONS_RESOURCE
+        if update_field == "captions"
+        else settings.YT_FIELD_TRANSCRIPT_RESOURCE
+    )
+    set_dict_field(
+        metadata_patch,
+        relation_field,
+        {"content": str(resource.text_id)},
+    )
+
+    serializer = WebsiteContentDetailSerializer(
+        instance=video,
+        data={"metadata": metadata_patch},
+        partial=True,
+        context={"request": mocker.Mock(user=UserFactory.create())},
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    video.refresh_from_db()
+
+    expected_new_path = f"/{resource.file.name.lstrip('/')}"
+
+    if update_field == "captions":
+        assert (
+            get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
+            == expected_new_path
+        )
+        assert (
+            get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
+            == "/old/transcript.pdf"
+        )
+    else:
+        assert (
+            get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
+            == expected_new_path
+        )
+        assert (
+            get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
+            == "/old/captions.vtt"
+        )
