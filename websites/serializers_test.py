@@ -976,12 +976,8 @@ def test_website_content_detail_serializer_syncs_video_relation_files_partial(
     )
     resource.save()
 
-    metadata_patch = {
-        "video_files": {
-            "video_captions_file": "/old/captions.vtt",
-            "video_transcript_file": "/old/transcript.pdf",
-        }
-    }
+    metadata_patch = {"video_files": video.metadata["video_files"].copy()}
+
     relation_field = (
         settings.YT_FIELD_CAPTIONS_RESOURCE
         if update_field == "captions"
