@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
-    AcrossVar,  # noqa: F401
     Command,
     DoStep,
     DummyConfig,
@@ -36,6 +35,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    CURL_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
@@ -896,7 +896,7 @@ class SitePipelineDefinition(Pipeline):
         )
         # Add cleanup step to the inner put step.
         # This will trigger before TryStep suppresses the error
-        inner_put_step.on_error = self.get_offline_content_cleanup_step()
+        inner_put_step.on_error = self.get_offline_content_cleanup_step(config=config)
 
         # Wrap in TryStep to prevent online job failure
         offline_build_gate_put_step = TryStep(try_=inner_put_step)
@@ -961,21 +961,28 @@ class SitePipelineDefinition(Pipeline):
             **kwargs,
         )
 
-    def get_offline_content_cleanup_step(self) -> TaskStep:
+    def get_offline_content_cleanup_step(
+        self, config: SitePipelineDefinitionConfig
+    ) -> DoStep:
         """
-        Create a task step to remove offline content from S3 when offline build
-        gate fails
+        Create task steps to remove offline content when offline build gate fails.
+
+        If API returns 404 (no content found), step 3 is skipped via on_success.
+        Note: Errors are already handled by the outer TryStep wrapping the gate.
+
+        Args:
+            config: The site pipeline definition config
 
         Returns:
-            TaskStep: A task step that removes content from the offline S3 bucket
+            DoStep: A DoStep with cleanup tasks and conditional publish
         """
-        # Use same variable naming as unpublished sites for consistency
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
         cli_endpoint_url = get_cli_endpoint_url()
+        ocw_studio_url = get_ocw_studio_api_url()
 
-        cleanup_task = TaskStep(
-            task="remove-offline-content-task",
+        s3_cleanup_task = TaskStep(
+            task="remove-offline-content-s3-task",
             timeout="5m",
             attempts=3,
             config=TaskConfig(
@@ -986,11 +993,9 @@ class SitePipelineDefinition(Pipeline):
                     args=[
                         "-exc",
                         f"""
-                        echo "Removing offline content for site: ((site:url_path))"
                         aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip
                         aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip
                         aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive
-                        echo "Offline content cleanup completed"
                         """,  # noqa: E501
                     ],
                 ),
@@ -998,12 +1003,52 @@ class SitePipelineDefinition(Pipeline):
         )
 
         if is_dev():
-            cleanup_task.params = {
+            s3_cleanup_task.params = {
                 "AWS_ACCESS_KEY_ID": minio_root_user,
                 "AWS_SECRET_ACCESS_KEY": minio_root_password,
             }
 
-        return cleanup_task
+        # Returns 200 if content removed (triggers step 3),
+        # 404 if not found (skips step 3)
+        remove_content_task = TaskStep(
+            task="remove-from-root-website-task",
+            timeout="10m",
+            attempts=3,
+            config=TaskConfig(
+                platform="linux",
+                image_resource=CURL_REGISTRY_IMAGE,
+                run=Command(
+                    path="curl",
+                    args=[
+                        "-f",
+                        "-X",
+                        "POST",
+                        "-H",
+                        "Content-Type: application/json",
+                        "-H",
+                        f"Authorization: Bearer {settings.API_BEARER_TOKEN}",
+                        f"{ocw_studio_url.rstrip('/')}/api/websites/((site:site_name))/remove_from_root_website/",
+                    ],
+                ),
+            ),
+        )
+
+        root_pipeline_resource = f"{settings.ROOT_WEBSITE_NAME}-{config.pipeline_name}"
+        trigger_root_pipeline_step = PutStep(
+            put=root_pipeline_resource,
+            resource=root_pipeline_resource,
+            timeout="1m",
+            attempts=3,
+        )
+
+        remove_content_task.on_success = trigger_root_pipeline_step
+
+        return DoStep(
+            do=[
+                s3_cleanup_task,
+                remove_content_task,
+            ]
+        )
 
     def get_online_build_job(self, config: SitePipelineDefinitionConfig):
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(

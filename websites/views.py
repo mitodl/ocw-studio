@@ -26,7 +26,10 @@ from content_sync.api import (
     update_website_backend,
 )
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from content_sync.tasks import update_mass_build_pipelines_on_publish
+from content_sync.tasks import (
+    remove_website_in_root_website,
+    update_mass_build_pipelines_on_publish,
+)
 from gdrive_sync.constants import WebsiteSyncStatus
 from gdrive_sync.tasks import import_website_files
 from main import features
@@ -354,6 +357,36 @@ class WebsiteViewSet(
             status=200,
             data={} if hide_download else {"version": str(now_in_utc().timestamp())},
         )
+
+    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
+    def remove_from_root_website(self, request, name=None):  # noqa: ARG002
+        """
+        Remove the website listing from the root website and sync to backend.
+
+        Args:
+            request: The HTTP request object
+            name (str): The name of the website to remove from the root website
+
+        Returns:
+            200: Content was successfully removed and synced to backend
+            404: Website not found or no content to remove
+        """
+        website = get_object_or_404(Website, name=name)
+
+        try:
+            remove_website_in_root_website(website)
+            return Response(
+                {
+                    "status": "success",
+                    "message": "Content removed and synced to backend",
+                },
+                status=200,
+            )
+        except WebsiteContent.DoesNotExist:
+            return Response(
+                {"status": "not_found", "message": "No content to remove"},
+                status=404,
+            )
 
 
 class WebsiteMassBuildViewSet(viewsets.ViewSet):
