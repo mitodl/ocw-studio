@@ -376,7 +376,10 @@ export const renameNestedFields = (fields: ConfigField[]): ConfigField[] =>
           {
             fields: map((nestedField: ConfigField) => ({
               ...nestedField,
-              name: `${field.name}.${nestedField.name}`,
+              name:
+                nestedField.widget === WidgetVariant.Relation
+                  ? `${field.name}.${nestedField.name}.content`
+                  : `${field.name}.${nestedField.name}`,
             })),
           },
           field,

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from dateutil.parser import parse as parse_date
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 from django.utils.text import slugify
@@ -52,6 +53,7 @@ from websites.serializers import (
     WebsiteUrlSerializer,
 )
 from websites.site_config_api import SiteConfig
+from websites.utils import get_dict_field, set_dict_field
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
@@ -883,3 +885,66 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
         serializer.save()
         page.refresh_from_db()
         assert page.filename == expected_filename
+
+
+def test_website_content_detail_serializer_syncs_video_relation_files(
+    mocker, mocked_website_funcs
+):
+    """Updating video caption/transcript resources should populate URLs."""
+    mocker.patch("websites.serializers.update_youtube_thumbnail")
+    video_metadata = {
+        settings.FIELD_RESOURCETYPE: RESOURCE_TYPE_VIDEO,
+        "video_files": {},
+    }
+    set_dict_field(video_metadata, settings.YT_FIELD_CAPTIONS, "")
+    set_dict_field(video_metadata, settings.YT_FIELD_TRANSCRIPT, "")
+
+    video = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata=video_metadata,
+    )
+    caption = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE, is_page_content=True
+    )
+    caption.file = SimpleUploadedFile("captions.vtt", b"caption data")
+    caption.save()
+    transcript = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE, is_page_content=True
+    )
+    transcript.file = SimpleUploadedFile("transcript.pdf", b"transcript data")
+    transcript.save()
+
+    metadata_patch = {"video_files": {}}
+    set_dict_field(
+        metadata_patch,
+        settings.YT_FIELD_CAPTIONS_RESOURCE,
+        {"content": str(caption.text_id)},
+    )
+    set_dict_field(
+        metadata_patch,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+        {"content": str(transcript.text_id)},
+    )
+
+    serializer = WebsiteContentDetailSerializer(
+        instance=video,
+        data={"metadata": metadata_patch},
+        partial=True,
+        context={"request": mocker.Mock(user=UserFactory.create())},
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    video.refresh_from_db()
+    caption.refresh_from_db()
+    transcript.refresh_from_db()
+
+    expected_caption_path = f"/{caption.file.name.lstrip('/')}"
+    expected_transcript_path = f"/{transcript.file.name.lstrip('/')}"
+    assert (
+        get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
+        == expected_caption_path
+    )
+    assert (
+        get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
+        == expected_transcript_path
+    )

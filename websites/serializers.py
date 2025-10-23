@@ -41,12 +41,43 @@ from websites.constants import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import permissions_group_name_for_role
+from websites.utils import (
+    get_dict_field,
+    permissions_group_name_for_role,
+    set_dict_field,
+)
 
 log = logging.getLogger(__name__)
 
 
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
+
+
+RELATION_URL_FIELDS = (
+    (settings.YT_FIELD_CAPTIONS_RESOURCE, settings.YT_FIELD_CAPTIONS),
+    (settings.YT_FIELD_TRANSCRIPT_RESOURCE, settings.YT_FIELD_TRANSCRIPT),
+)
+
+
+def resource_file_path(resource: WebsiteContent | None) -> str | None:
+    if not resource:
+        return None
+    file_name = getattr(getattr(resource, "file", None), "name", None)
+    return f"/{file_name.lstrip('/')}" if file_name else None
+
+
+def sync_video_relation_urls(metadata: dict) -> None:
+    if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
+        return
+    for relation_field, target_field in RELATION_URL_FIELDS:
+        relation_value = get_dict_field(metadata, relation_field)
+        relation_id = relation_value.get("content")
+        resource = (
+            WebsiteContent.objects.filter(text_id=relation_id).first()
+            if relation_id
+            else None
+        )
+        set_dict_field(metadata, target_field, resource_file_path(resource))
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -569,10 +600,9 @@ class WebsiteContentDetailSerializer(
             )
         existing_metadata = instance.metadata if instance.metadata else {}
         if "metadata" in validated_data:
-            validated_data["metadata"] = {
-                **existing_metadata,
-                **validated_data["metadata"],
-            }
+            merged_metadata = {**existing_metadata, **validated_data["metadata"]}
+            sync_video_relation_urls(merged_metadata)
+            validated_data["metadata"] = merged_metadata
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
