@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
-    AcrossVar,  # noqa: F401
     Command,
     DoStep,
     DummyConfig,
@@ -36,6 +35,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
@@ -57,6 +57,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     OcwStudioWebhookStep,
     OpenCatalogWebhookStep,
+    SiteContentGitTaskStep,
     add_error_handling,
 )
 from content_sync.utils import (
@@ -896,7 +897,7 @@ class SitePipelineDefinition(Pipeline):
         )
         # Add cleanup step to the inner put step.
         # This will trigger before TryStep suppresses the error
-        inner_put_step.on_error = self.get_offline_content_cleanup_step()
+        inner_put_step.on_error = self.get_offline_content_cleanup_step(config=config)
 
         # Wrap in TryStep to prevent online job failure
         offline_build_gate_put_step = TryStep(try_=inner_put_step)
@@ -961,21 +962,28 @@ class SitePipelineDefinition(Pipeline):
             **kwargs,
         )
 
-    def get_offline_content_cleanup_step(self) -> TaskStep:
+    def get_offline_content_cleanup_step(
+        self, config: SitePipelineDefinitionConfig
+    ) -> DoStep:
         """
-        Create a task step to remove offline content from S3 when offline build
-        gate fails
+        Create task steps to remove offline content when offline build gate fails.
+
+        If API returns 404 (no content found), step 3 is skipped via on_success.
+        Note: Errors are already handled by the outer TryStep wrapping the gate.
+
+        Args:
+            config: The site pipeline definition config
 
         Returns:
-            TaskStep: A task step that removes content from the offline S3 bucket
+            DoStep: A DoStep with cleanup tasks and conditional publish
         """
-        # Use same variable naming as unpublished sites for consistency
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
         cli_endpoint_url = get_cli_endpoint_url()
+        ocw_studio_url = get_ocw_studio_api_url()
 
-        cleanup_task = TaskStep(
-            task="remove-offline-content-task",
+        s3_cleanup_task = TaskStep(
+            task="remove-offline-content-s3-task",
             timeout="5m",
             attempts=3,
             config=TaskConfig(
@@ -998,12 +1006,91 @@ class SitePipelineDefinition(Pipeline):
         )
 
         if is_dev():
-            cleanup_task.params = {
+            s3_cleanup_task.params = {
                 "AWS_ACCESS_KEY_ID": minio_root_user,
                 "AWS_SECRET_ACCESS_KEY": minio_root_password,
             }
 
-        return cleanup_task
+        # Returns 200 if content removed (triggers step 3),
+        # 404 if not found (skips step 3)
+        remove_content_task = TaskStep(
+            task="remove-from-root-website-task",
+            timeout="10m",
+            attempts=3,
+            config=TaskConfig(
+                platform="linux",
+                image_resource=BASH_REGISTRY_IMAGE,
+                run=Command(
+                    path="sh",
+                    args=[
+                        "-exc",
+                        f"""
+                        echo "Removing WebsiteContent from root website for site: ((site:site_name))"
+                        echo "Calling API endpoint: {ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        wget -O- --post-data='' --header="Content-Type: application/json" --header="Authorization: Bearer {settings.API_BEARER_TOKEN}" "{ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        """,  # noqa: E501
+                    ],
+                ),
+            ),
+        )
+
+        # Build root website inline
+        root_site = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        root_site_config = SitePipelineDefinitionConfig(
+            site=root_site,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
+            site_content_branch=config.site_content_branch,
+            static_api_url=config.static_api_url,
+            storage_bucket=config.storage_bucket_name,
+            artifacts_bucket=config.artifacts_bucket,
+            web_bucket=config.web_bucket,
+            offline_bucket=config.offline_bucket,
+            resource_base_url=config.resource_base_url,
+            ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
+            ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
+        )
+
+        # Build the root website using the same tasks as the pipeline would
+        root_build_tasks: list[StepModifierMixin] = [
+            SiteContentGitTaskStep(
+                branch=root_site_config.vars["site_content_branch"],
+                short_id=root_site_config.vars["short_id"],
+            ),
+        ]
+
+        # Add both online and offline build tasks
+        root_build_tasks_online = SitePipelineOnlineTasks(
+            pipeline_vars=root_site_config.vars,
+            fastly_var=root_site_config.pipeline_name,
+            pipeline_name=root_site_config.pipeline_name,
+            destructive_sync=False,
+            filter_videos=True,
+        )
+
+        root_build_tasks_offline = SitePipelineOfflineTasks(
+            pipeline_vars=root_site_config.vars,
+            fastly_var=root_site_config.pipeline_name,
+            pipeline_name=root_site_config.pipeline_name,
+        )
+
+        for root_task in [*root_build_tasks_online, *root_build_tasks_offline]:
+            root_task.on_success = None
+            root_task.on_abort = None
+            root_task.on_failure = None
+
+        root_build_tasks.extend(root_build_tasks_online)
+        root_build_tasks.extend(root_build_tasks_offline)
+
+        root_build_step = DoStep(do=root_build_tasks)
+        remove_content_task.on_success = root_build_step
+
+        return DoStep(
+            do=[
+                s3_cleanup_task,
+                remove_content_task,
+            ]
+        )
 
     def get_online_build_job(self, config: SitePipelineDefinitionConfig):
         ocw_studio_webhook_started_step = OcwStudioWebhookStep(
