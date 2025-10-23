@@ -993,9 +993,11 @@ class SitePipelineDefinition(Pipeline):
                     args=[
                         "-exc",
                         f"""
+                        echo "Removing offline content for site: ((site:url_path))"
                         aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip
                         aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id))-video.zip
                         aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive
+                        echo "Offline content cleanup completed"
                         """,  # noqa: E501
                     ],
                 ),
