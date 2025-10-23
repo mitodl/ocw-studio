@@ -57,6 +57,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     OcwStudioWebhookStep,
     OpenCatalogWebhookStep,
+    SiteContentGitTaskStep,
     add_error_handling,
 )
 from content_sync.utils import (
@@ -1026,22 +1027,63 @@ class SitePipelineDefinition(Pipeline):
                         f"""
                         echo "Removing WebsiteContent from root website for site: ((site:site_name))"
                         echo "Calling API endpoint: {ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
-                        wget -O- --method=POST --header="Content-Type: application/json" --header="Authorization: Bearer {settings.API_BEARER_TOKEN}" "{ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        wget -O- --post-data='' --header="Content-Type: application/json" --header="Authorization: Bearer {settings.API_BEARER_TOKEN}" "{ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
                         """,  # noqa: E501
                     ],
                 ),
             ),
         )
 
-        root_pipeline_resource = f"{settings.ROOT_WEBSITE_NAME}-{config.pipeline_name}"
-        trigger_root_pipeline_step = PutStep(
-            put=root_pipeline_resource,
-            resource=root_pipeline_resource,
-            timeout="1m",
-            attempts=3,
+        # Build root website inline
+        root_site = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        root_site_config = SitePipelineDefinitionConfig(
+            site=root_site,
+            pipeline_name=config.pipeline_name,
+            instance_vars=config.instance_vars,
+            site_content_branch=config.site_content_branch,
+            static_api_url=config.static_api_url,
+            storage_bucket=config.storage_bucket_name,
+            artifacts_bucket=config.artifacts_bucket,
+            web_bucket=config.web_bucket,
+            offline_bucket=config.offline_bucket,
+            resource_base_url=config.resource_base_url,
+            ocw_hugo_themes_branch=config.ocw_hugo_themes_branch,
+            ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
         )
 
-        remove_content_task.on_success = trigger_root_pipeline_step
+        # Build the root website using the same tasks as the pipeline would
+        root_build_tasks: list[StepModifierMixin] = [
+            SiteContentGitTaskStep(
+                branch=root_site_config.vars["site_content_branch"],
+                short_id=root_site_config.vars["short_id"],
+            ),
+        ]
+
+        # Add both online and offline build tasks
+        root_build_tasks_online = SitePipelineOnlineTasks(
+            pipeline_vars=root_site_config.vars,
+            fastly_var=root_site_config.pipeline_name,
+            pipeline_name=root_site_config.pipeline_name,
+            destructive_sync=False,
+            filter_videos=True,
+        )
+
+        root_build_tasks_offline = SitePipelineOfflineTasks(
+            pipeline_vars=root_site_config.vars,
+            fastly_var=root_site_config.pipeline_name,
+            pipeline_name=root_site_config.pipeline_name,
+        )
+
+        for root_task in [*root_build_tasks_online, *root_build_tasks_offline]:
+            root_task.on_success = None
+            root_task.on_abort = None
+            root_task.on_failure = None
+
+        root_build_tasks.extend(root_build_tasks_online)
+        root_build_tasks.extend(root_build_tasks_offline)
+
+        root_build_step = DoStep(do=root_build_tasks)
+        remove_content_task.on_success = root_build_step
 
         return DoStep(
             do=[

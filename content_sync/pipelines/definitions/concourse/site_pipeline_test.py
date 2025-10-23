@@ -37,6 +37,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.models import Website
 
 pytestmark = pytest.mark.django_db
 
@@ -695,13 +696,25 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
+def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noqa: PLR0915
     """
     Test that the offline content cleanup step is correctly configured with all three cleanup tasks
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+    settings.ROOT_WEBSITE_NAME = "root-website"
+
+    # Create root website if it doesn't already exist (needed for inline build tasks)
+    if not Website.objects.filter(name="root-website").exists():
+        root_starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/root"
+        )
+        root_website = WebsiteFactory.create(  # noqa: F841
+            starter=root_starter,
+            name="root-website",
+        )
+
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -779,29 +792,48 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
     # Check wget command is used with proper arguments
     api_command = conditional_step.config.run.args[1]
     assert "wget" in api_command
-    assert "--method=POST" in api_command
+    assert "--post-data=''" in api_command
     assert "/remove_from_root_website/" in api_command
     assert conditional_step.config.image_resource == BASH_REGISTRY_IMAGE
 
     assert hasattr(conditional_step, "on_success"), "Should have on_success handler"
 
-    # Test the trigger root website pipeline (on_success of the API call)
-    trigger_root_task = conditional_step.on_success
-    expected_pipeline = f"{settings.ROOT_WEBSITE_NAME}-{config.pipeline_name}"
-    assert trigger_root_task.put == expected_pipeline
-    assert trigger_root_task.resource == expected_pipeline
-    assert trigger_root_task.timeout.root == "1m"
-    assert trigger_root_task.attempts == 3
+    # Test the root website build tasks (on_success of the API call)
+    root_build_step = conditional_step.on_success
+    assert hasattr(root_build_step, "do"), "Root build should be a DoStep"
+    root_build_tasks = root_build_step.do
+    assert len(root_build_tasks) > 1, "Should have multiple build tasks"
+
+    # First task should be SiteContentGitTaskStep (a TaskStep that clones git repo)
+    git_task = root_build_tasks[0]
+    assert hasattr(git_task, "task"), "Should be a TaskStep"
+    assert git_task.task == SITE_CONTENT_GIT_IDENTIFIER
+
+    # Remaining tasks should be the online build tasks
+    # (build, upload, CDN clear, search index update)
+    assert len(root_build_tasks) >= 2, "Should have git + build tasks"
 
 
 @pytest.mark.parametrize("pipeline_name", ["draft", "live"])
-def test_offline_build_gate_cleanup_task(website, settings, mocker, pipeline_name):
+def test_offline_build_gate_cleanup_task(website, settings, mocker, pipeline_name):  # noqa: PLR0915
     """
     Test that the offline build gate put step has proper failure handling attached
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+    settings.ROOT_WEBSITE_NAME = "root-website"
+
+    # Create root website if it doesn't already exist (needed for inline build tasks)
+    if not Website.objects.filter(name="root-website").exists():
+        root_starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/root"
+        )
+        root_website = WebsiteFactory.create(  # noqa: F841
+            starter=root_starter,
+            name="root-website",
+        )
+
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -882,14 +914,20 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker, pipeline_nam
     # Check wget command is used with proper arguments
     api_args = remove_content_task["config"]["run"]["args"][1]
     assert "wget" in api_args
-    assert "--method=POST" in api_args
+    assert "--post-data=''" in api_args
     assert "/remove_from_root_website/" in api_args
     assert "on_success" in remove_content_task, "Should have on_success handler"
 
-    # Verify the trigger root website pipeline step (on_success of API call)
-    trigger_root_task = remove_content_task["on_success"]
-    expected_pipeline = f"{settings.ROOT_WEBSITE_NAME}-{pipeline_name}"
-    assert trigger_root_task["put"] == expected_pipeline
-    assert trigger_root_task["resource"] == expected_pipeline
-    assert trigger_root_task["timeout"] == "1m"
-    assert trigger_root_task["attempts"] == 3
+    # Verify the root website build step (on_success of API call)
+    root_build_step = remove_content_task["on_success"]
+    assert "do" in root_build_step, "Root build should be a DoStep"
+    root_build_tasks = root_build_step["do"]
+    assert len(root_build_tasks) > 1, "Should have multiple build tasks"
+
+    # First task should be SiteContentGitTaskStep (a TaskStep that clones git repo)
+    git_task = root_build_tasks[0]
+    assert "task" in git_task, "Should be a TaskStep"
+    assert git_task["task"] == SITE_CONTENT_GIT_IDENTIFIER
+
+    # Remaining tasks should be the online build tasks
+    assert len(root_build_tasks) >= 2, "Should have git + build tasks"
