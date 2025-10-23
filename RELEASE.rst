@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.166.0 (Released October 23, 2025)
+---------------
+
+- chore(deps): update actions/setup-node action to v6 (#2762)
+- fix(deps): update dependency sentry-sdk to v2.42.0 (#2761)
+- chore(deps): update dependency ruff to ^0.14 (#2759)
+- chore(deps): update dependency pytest-env to v1.2.0 (#2758)
+- fix(deps): update dependency boto3 to v1.40.55 (#2757)
+- Document the process for cloning production to rc (#2741)
+- fix: incorrect attribute access (#2756)
+- Fix some metadata tracking for website builds (#2753)
+
 Version 0.165.0 (Released October 21, 2025)
 ---------------
 
