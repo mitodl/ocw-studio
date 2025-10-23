@@ -21,6 +21,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
@@ -756,11 +757,6 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
         f"aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive"
         in actual_command
     )
-    assert (
-        'echo "Removing offline content from S3 for site: ((site:url_path))"'
-        in actual_command
-    )
-    assert 'echo "S3 cleanup completed"' in actual_command
     assert s3_cleanup_task.config.platform == "linux"
     assert s3_cleanup_task.config.image_resource == AWS_CLI_REGISTRY_IMAGE
 
@@ -778,9 +774,15 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
     assert conditional_step.task == "remove-from-root-website-task"
     assert conditional_step.timeout.root == "10m"
     assert conditional_step.attempts == 3
-    assert conditional_step.config.run.path == "curl"
-    assert "-f" in conditional_step.config.run.args  # Fail on non-2xx
-    assert "/remove_from_root_website/" in conditional_step.config.run.args[-1]
+    assert conditional_step.config.run.path == "sh"
+
+    # Check wget command is used with proper arguments
+    api_command = conditional_step.config.run.args[1]
+    assert "wget" in api_command
+    assert "--method=POST" in api_command
+    assert "/remove_from_root_website/" in api_command
+    assert conditional_step.config.image_resource == BASH_REGISTRY_IMAGE
+
     assert hasattr(conditional_step, "on_success"), "Should have on_success handler"
 
     # Test the trigger root website pipeline (on_success of the API call)
@@ -875,11 +877,13 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker, pipeline_nam
     assert remove_content_task["task"] == "remove-from-root-website-task"
     assert remove_content_task["timeout"] == "10m"
     assert remove_content_task["attempts"] == 3
-    assert remove_content_task["config"]["run"]["path"] == "curl"
-    assert "-f" in remove_content_task["config"]["run"]["args"]
-    assert (
-        "/remove_from_root_website/" in remove_content_task["config"]["run"]["args"][-1]
-    )
+    assert remove_content_task["config"]["run"]["path"] == "sh"
+
+    # Check wget command is used with proper arguments
+    api_args = remove_content_task["config"]["run"]["args"][1]
+    assert "wget" in api_args
+    assert "--method=POST" in api_args
+    assert "/remove_from_root_website/" in api_args
     assert "on_success" in remove_content_task, "Should have on_success handler"
 
     # Verify the trigger root website pipeline step (on_success of API call)

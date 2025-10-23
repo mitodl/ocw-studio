@@ -35,7 +35,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
-    CURL_REGISTRY_IMAGE,
+    BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
@@ -1018,18 +1018,16 @@ class SitePipelineDefinition(Pipeline):
             attempts=3,
             config=TaskConfig(
                 platform="linux",
-                image_resource=CURL_REGISTRY_IMAGE,
+                image_resource=BASH_REGISTRY_IMAGE,
                 run=Command(
-                    path="curl",
+                    path="sh",
                     args=[
-                        "-f",
-                        "-X",
-                        "POST",
-                        "-H",
-                        "Content-Type: application/json",
-                        "-H",
-                        f"Authorization: Bearer {settings.API_BEARER_TOKEN}",
-                        f"{ocw_studio_url.rstrip('/')}/api/websites/((site:site_name))/remove_from_root_website/",
+                        "-exc",
+                        f"""
+                        echo "Removing WebsiteContent from root website for site: ((site:site_name))"
+                        echo "Calling API endpoint: {ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        wget -O- --method=POST --header="Content-Type: application/json" --header="Authorization: Bearer {settings.API_BEARER_TOKEN}" "{ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        """,  # noqa: E501
                     ],
                 ),
             ),
