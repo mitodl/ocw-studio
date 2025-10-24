@@ -138,34 +138,38 @@ def convert_shortcodes_to_html(s: str) -> str:
     iterations = 0
 
     while iterations < MAX_SHORTCODE_CONVERSION_ITERATIONS:
-        original = s
+        total_subs = 0
 
         # Match sup shortcodes with QUOTED parameters: {{< sup "content" >}}
-        s = HUGO_SUP_QUOTED_PATTERN.sub(
+        s, subs = HUGO_SUP_QUOTED_PATTERN.subn(
             lambda m: _replace_shortcode_with_html(m, "sup"),
             s,
         )
+        total_subs += subs
 
         # Match sup shortcodes with UNQUOTED parameters: {{< sup content >}}
-        s = HUGO_SUP_UNQUOTED_PATTERN.sub(
+        s, subs = HUGO_SUP_UNQUOTED_PATTERN.subn(
             lambda m: _replace_shortcode_with_html(m, "sup"),
             s,
         )
+        total_subs += subs
 
         # Match sub shortcodes with QUOTED parameters: {{< sub "content" >}}
-        s = HUGO_SUB_QUOTED_PATTERN.sub(
+        s, subs = HUGO_SUB_QUOTED_PATTERN.subn(
             lambda m: _replace_shortcode_with_html(m, "sub"),
             s,
         )
+        total_subs += subs
 
         # Match sub shortcodes with UNQUOTED parameters: {{< sub content >}}
-        s = HUGO_SUB_UNQUOTED_PATTERN.sub(
+        s, subs = HUGO_SUB_UNQUOTED_PATTERN.subn(
             lambda m: _replace_shortcode_with_html(m, "sub"),
             s,
         )
+        total_subs += subs
 
         # If nothing changed, we're done
-        if s == original:
+        if total_subs == 0:
             break
 
         iterations += 1
