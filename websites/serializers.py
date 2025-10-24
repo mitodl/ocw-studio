@@ -71,6 +71,8 @@ def sync_video_relation_urls(metadata: dict) -> None:
         return
     for relation_field, target_field in RELATION_URL_FIELDS:
         relation_value = get_dict_field(metadata, relation_field)
+        if not isinstance(relation_value, dict):
+            continue
         relation_id = relation_value.get("content")
         resource = (
             WebsiteContent.objects.filter(text_id=relation_id).first()
