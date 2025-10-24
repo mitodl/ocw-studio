@@ -133,6 +133,10 @@ def convert_shortcodes_to_html(s: str) -> str:
     Returns:
         The string with shortcodes converted to HTML
     """
+    # Normalize malformed shortcodes with escaped backslashes
+    # This handles edge cases where source data has escaped backslashes
+    s = s.replace(r"{{\<", "{{<").replace(r"\>}}", ">}}")
+
     # Keep replacing until no more shortcodes found (handles nested shortcodes)
     # Start with innermost shortcodes and work outward
     iterations = 0
