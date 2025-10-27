@@ -29,6 +29,7 @@ interface Props {
   preserveSearchText?: boolean
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
+  isClearable?: boolean
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -46,6 +47,7 @@ export default function SelectField(props: Props): JSX.Element {
     hideSelectedOptions,
     preserveSearchText = false,
     cacheUniques,
+    isClearable,
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
@@ -61,8 +63,8 @@ export default function SelectField(props: Props): JSX.Element {
   const changeHandler = useCallback(
     (newValue: any) => {
       const eventValue = multiple
-        ? newValue.map((option: Option) => option.value)
-        : newValue.value
+        ? newValue?.map((option: Option) => option.value)
+        : (newValue?.value ?? null)
       onChange({
         target: { value: eventValue, name },
       } as ChangeEvent<HTMLSelectElement>)
@@ -146,6 +148,7 @@ export default function SelectField(props: Props): JSX.Element {
     onMenuOpen: preserveSearchText ? handleMenuOpen : undefined,
     isOptionDisabled,
     isOptionSelected,
+    isClearable,
     styles: {
       control: (base: any) => ({
         ...base,
