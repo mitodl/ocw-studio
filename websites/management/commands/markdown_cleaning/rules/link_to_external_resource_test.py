@@ -1266,3 +1266,192 @@ def test_unescape_link_text():
     for raw, expected in test_cases:
         assert unescape_link_text(raw) == expected
         assert unescape_link_text(unescape_link_text(raw)) == expected
+
+
+@pytest.mark.django_db
+def test_link_to_external_resource_converts_embedded_shortcodes_to_html(settings):
+    """Test that links with embedded shortcodes in the title convert them to HTML."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test case: link title contains embedded shortcodes (like APA Style with registered trademark)
+        markdown_with_embedded_shortcode = (
+            '[APA Style{{< sup "{{< sub \\"®\\" >}}" >}}](http://www.apastyle.org/)'
+        )
+
+        website_content = WebsiteContentFactory.create(
+            website=website, markdown=markdown_with_embedded_shortcode, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        # Convert the markdown link to resource_link shortcode
+        updated = cleaner.update_website_content(website_content)
+
+        assert updated is True
+        # The original markdown link should be replaced
+        assert (
+            '[APA Style{{< sup "{{< sub \\"®\\" >}}" >}}](http://www.apastyle.org/)'
+            not in website_content.markdown
+        )
+        # The result should contain a resource_link shortcode
+        assert "resource_link" in website_content.markdown
+
+        # Critical: The embedded shortcodes should be converted to HTML equivalents
+        # Hugo expects: {{% resource_link "uuid" "APA Style<sup><sub>®</sub></sup>" %}}
+        # This allows proper rendering within the shortcode parameter
+
+        # Check that shortcodes were converted to HTML tags
+        assert "<sup>" in website_content.markdown
+        assert "</sup>" in website_content.markdown
+        assert "<sub>" in website_content.markdown
+        assert "</sub>" in website_content.markdown
+
+        # Verify that the HTML structure is intact
+        # The pattern should be: "APA Style<sup><sub>®</sub></sup>"
+        assert "<sup><sub>®</sub></sup>" in website_content.markdown
+
+        # Make sure original shortcode syntax was removed
+        assert "{{< sup" not in website_content.markdown
+        assert "{{< sub" not in website_content.markdown
+
+
+def test_link_to_external_resource_converts_malformed_escaped_shortcodes(settings):
+    """Test that malformed shortcodes with escaped backslashes are handled correctly."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test case: malformed shortcode with escaped backslash: {{\< instead of {{<
+        # This is a data quality issue found in some legacy content
+        markdown_with_malformed_shortcode = (
+            r'[The MathWorks{{\< sup "®" >}}](http://in.mathworks.com/)'
+        )
+
+        website_content = WebsiteContentFactory.create(
+            website=website, markdown=markdown_with_malformed_shortcode, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        # Convert the markdown link to resource_link shortcode
+        updated = cleaner.update_website_content(website_content)
+
+        assert updated is True
+        # The original markdown link should be replaced
+        assert r'{{\< sup "®" >}}' not in website_content.markdown
+        # The result should contain a resource_link shortcode
+        assert "resource_link" in website_content.markdown
+
+        # Critical: Even malformed shortcodes should be normalized and converted to HTML
+        # The normalization step converts {{\< to {{< before processing
+        assert "<sup>" in website_content.markdown
+        assert "</sup>" in website_content.markdown
+
+        # Verify the HTML is properly formed
+        assert "<sup>®</sup>" in website_content.markdown
+
+        # Make sure no shortcode syntax remains (including malformed)
+        assert "{{< sup" not in website_content.markdown
+        assert r"{{\<" not in website_content.markdown
+
+
+def test_link_to_external_resource_converts_malformed_escaped_closing_syntax(
+    settings,
+):
+    """Test that malformed shortcodes with escaped backslash in closing syntax are handled."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test case: malformed shortcode with escaped backslash in closing: \>}} instead of >}}
+        markdown_with_malformed_closing = (
+            r'[The MathWorks{{< sup "®" \>}}](http://in.mathworks.com/)'
+        )
+
+        website_content = WebsiteContentFactory.create(
+            website=website, markdown=markdown_with_malformed_closing, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        # Convert the markdown link to resource_link shortcode
+        updated = cleaner.update_website_content(website_content)
+
+        assert updated is True
+        # The original markdown link should be replaced
+        assert r'{{< sup "®" \>}}' not in website_content.markdown
+        # The result should contain a resource_link shortcode
+        assert "resource_link" in website_content.markdown
+
+        # Critical: Even malformed closing syntax should be normalized and converted to HTML
+        # The normalization step converts \>}} to >}} before processing
+        assert "<sup>" in website_content.markdown
+        assert "</sup>" in website_content.markdown
+
+        # Verify the HTML is properly formed
+        assert "<sup>®</sup>" in website_content.markdown
+
+        # Make sure no malformed syntax remains
+        assert "{{< sup" not in website_content.markdown
+        assert r"\>}}" not in website_content.markdown
+
+
+def test_link_to_external_resource_converts_fully_malformed_shortcodes(settings):
+    """Test that shortcodes with both opening and closing escaped backslashes are handled."""
+    with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
+        starter = WebsiteStarterFactory.create(
+            config=SAMPLE_SITE_CONFIG,
+        )
+        website = WebsiteFactory.create(starter=starter)
+        settings.OCW_COURSE_STARTER_SLUG = starter.slug
+
+        # Test case: both opening and closing have escaped backslashes
+        markdown_fully_malformed = (
+            r'[The MathWorks{{\< sup "®" \>}}](http://in.mathworks.com/)'
+        )
+
+        website_content = WebsiteContentFactory.create(
+            website=website, markdown=markdown_fully_malformed, type="page"
+        )
+
+        rule = LinkToExternalResourceRule()
+        rule.set_options({"commit": True})
+        cleaner = Cleaner(rule)
+
+        # Convert the markdown link to resource_link shortcode
+        updated = cleaner.update_website_content(website_content)
+
+        assert updated is True
+        # The original markdown link should be replaced
+        assert r'{{\< sup "®" \>}}' not in website_content.markdown
+        # The result should contain a resource_link shortcode
+        assert "resource_link" in website_content.markdown
+
+        # Critical: Both opening and closing malformed syntax should be normalized and converted
+        assert "<sup>" in website_content.markdown
+        assert "</sup>" in website_content.markdown
+
+        # Verify the HTML is properly formed
+        assert "<sup>®</sup>" in website_content.markdown
+
+        # Make sure no malformed syntax remains (neither opening nor closing)
+        assert "{{< sup" not in website_content.markdown
+        assert r"{{\<" not in website_content.markdown
+        assert r"\>}}" not in website_content.markdown

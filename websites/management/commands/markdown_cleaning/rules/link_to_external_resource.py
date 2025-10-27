@@ -16,7 +16,10 @@ from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParser,
     LinkParseResult,
 )
-from websites.management.commands.markdown_cleaning.parsing_utils import ShortcodeTag
+from websites.management.commands.markdown_cleaning.parsing_utils import (
+    ShortcodeTag,
+    convert_shortcodes_to_html,
+)
 from websites.management.commands.markdown_cleaning.utils import StarterSiteConfigLookup
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -267,11 +270,16 @@ class LinkToExternalResourceRule(PyparsingRule):
         # escaped in the shortcode title parameter
         unescaped_link_text = unescape_link_text(link_text)
 
+        # Convert nested Hugo shortcodes (sup/sub) to HTML
+        # Hugo cannot parse shortcodes nested in shortcode parameters, so we
+        # convert them to HTML equivalents before creating the resource_link
+        html_converted_text = convert_shortcodes_to_html(unescaped_link_text)
+
         resource = get_or_build_external_resource(
             website=website_content.website,
             site_config=config,
             url=toks.link.destination,
-            title=unescaped_link_text,  # Use unescaped text for the resource title
+            title=html_converted_text,  # Use HTML-converted text for the resource title
             has_external_license_warning=self.options.get(
                 "has_external_license_warning", False
             ),
@@ -281,8 +289,8 @@ class LinkToExternalResourceRule(PyparsingRule):
             resource.save()
             resource.referencing_content.add(website_content)
 
-        # Use unescaped text for shortcode parameter
-        shortcode = ShortcodeTag.resource_link(resource.text_id, unescaped_link_text)
+        # Use HTML-converted text for shortcode parameter
+        shortcode = ShortcodeTag.resource_link(resource.text_id, html_converted_text)
         hugo_output = shortcode.to_hugo()
 
         # If inside shortcode attribute, escape the quotes in the Hugo output

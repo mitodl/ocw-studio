@@ -3,6 +3,7 @@ import uuid
 import pytest
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
+    convert_shortcodes_to_html,
     unescape_quoted_string,
 )
 from websites.management.commands.markdown_cleaning.shortcode_parser import (
@@ -382,3 +383,95 @@ def test_shortcode_param_with_problematic_title():
     # The result should properly escape only quotes (no backticks or brackets)
     expected = '"`[T]his is Eating your Greens, This is Doing your Homework"'
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("input_text", "expected_output"),
+    [
+        # Simple sup shortcode with quotes
+        (R'{{< sup "text" >}}', "<sup>text</sup>"),
+        # Simple sup shortcode without quotes
+        ("{{< sup text >}}", "<sup>text</sup>"),
+        # Simple sub shortcode with quotes
+        (R'{{< sub "text" >}}', "<sub>text</sub>"),
+        # Simple sub shortcode without quotes
+        ("{{< sub text >}}", "<sub>text</sub>"),
+        # Nested: sup containing sub (quoted)
+        (
+            R'{{< sup "{{< sub "®" >}}" >}}',
+            "<sup><sub>®</sub></sup>",
+        ),
+        # Nested: sup containing sub (unquoted inner)
+        (
+            R'{{< sup "{{< sub ® >}}" >}}',
+            "<sup><sub>®</sub></sup>",
+        ),
+        # Nested: sub containing sup (quoted)
+        (
+            R'{{< sub "{{< sup "2" >}}" >}}',
+            "<sub><sup>2</sup></sub>",
+        ),
+        # Nested: sub containing sup (unquoted inner)
+        (
+            R'{{< sub "{{< sup 2 >}}" >}}',
+            "<sub><sup>2</sup></sub>",
+        ),
+        # Real-world example: APA Style with registered trademark (sup > sub)
+        (
+            R'APA Style{{< sup "{{< sub "®" >}}" >}}',
+            "APA Style<sup><sub>®</sub></sup>",
+        ),
+        # Text with escaped quotes inside shortcode
+        (
+            R'APA Style{{< sup "{{< sub \"®\" >}}" >}}',
+            "APA Style<sup><sub>®</sub></sup>",
+        ),
+        # Mathematical notation: x² with unquoted parameters (sup > sub)
+        (
+            R'x{{< sup "{{< sub 2 >}}" >}}',
+            "x<sup><sub>2</sub></sup>",
+        ),
+        # Mathematical notation: subscript with superscript inside (sub > sup)
+        (
+            R'H{{< sub "{{< sup "+" >}}" >}}',
+            "H<sub><sup>+</sup></sub>",
+        ),
+        # Multiple separate shortcodes
+        (
+            R'{{< sup "1" >}} and {{< sub "2" >}}',
+            "<sup>1</sup> and <sub>2</sub>",
+        ),
+        # Both sup and sub in same text
+        (
+            R'E = mc{{< sup "2" >}} at T{{< sub "0" >}}',
+            "E = mc<sup>2</sup> at T<sub>0</sub>",
+        ),
+        # Triple nesting: sup > sub > sup
+        (
+            R'{{< sup "{{< sub "{{< sup "x" >}}" >}}" >}}',
+            "<sup><sub><sup>x</sup></sub></sup>",
+        ),
+        # Shortcode with minimal spaces in delimiters
+        (R'{{< sup "text">}}', "<sup>text</sup>"),
+        # Text without shortcodes (unchanged)
+        ("Just regular text", "Just regular text"),
+        # Text with quotes but no shortcodes
+        (R'Some "quoted" text', R'Some "quoted" text'),
+        # Empty string
+        ("", ""),
+        # Shortcode with complex content
+        (
+            R'{{< sup "Footnote 1" >}}',
+            "<sup>Footnote 1</sup>",
+        ),
+        # Both quoted and unquoted in same expression
+        (
+            R'{{< sup "{{< sub 1 >}}" >}} and {{< sub "{{< sup 2 >}}" >}}',
+            "<sup><sub>1</sub></sup> and <sub><sup>2</sup></sub>",
+        ),
+    ],
+)
+def test_convert_shortcodes_to_html(input_text, expected_output):
+    """Test that convert_shortcodes_to_html converts Hugo shortcodes to HTML."""
+    result = convert_shortcodes_to_html(input_text)
+    assert result == expected_output

@@ -6,6 +6,13 @@ from uuid import UUID
 from pyparsing import ParserElement, ParseResults, originalTextFor
 
 import main.utils
+from websites.management.commands.markdown_cleaning.constants import (
+    HUGO_SUB_QUOTED_PATTERN,
+    HUGO_SUB_UNQUOTED_PATTERN,
+    HUGO_SUP_QUOTED_PATTERN,
+    HUGO_SUP_UNQUOTED_PATTERN,
+    MAX_SHORTCODE_CONVERSION_ITERATIONS,
+)
 
 INITIAL_DEFAULT_WHITESPACE_CHARS = ParserElement.DEFAULT_WHITE_CHARS
 
@@ -76,6 +83,102 @@ class WrappedParser:
 def escape_double_quotes(s: str):
     """Encase `s` in double quotes and escape double quotes within `s`."""
     return s.replace('"', '\\"')
+
+
+def _replace_shortcode_with_html(match, tag):
+    """
+    Replace shortcode match with HTML tag.
+
+    Args:
+        match: Regex match object
+        tag: HTML tag name (e.g., 'sup', 'sub')
+
+    Returns:
+        HTML string with the tag wrapping the content
+    """
+    content = match.group(1)
+    # Unescape quotes in the content
+    content = content.replace('\\"', '"')
+    return f"<{tag}>{content}</{tag}>"
+
+
+def convert_shortcodes_to_html(s: str) -> str:
+    """
+    Convert Hugo shortcodes to HTML equivalents for use in shortcode parameters.
+
+    Hugo cannot parse shortcodes nested inside other shortcode parameters.
+    This function converts common Hugo shortcodes to their HTML equivalents
+    so they can be used within link titles that become shortcode parameters.
+
+    The function processes nested shortcodes from innermost to outermost using:
+    1. Regex patterns with negated character classes that stop at quote/bracket
+       boundaries, ensuring only innermost shortcodes are matched per iteration
+    2. Iterative replacement - each pass converts one level of nesting, then
+       repeats until no more shortcodes remain or max iterations reached
+
+    Example of processing nested shortcodes:
+        Input:  {{< sup "{{< sub "text" >}}" >}}
+        Pass 1: {{< sup "<sub>text</sub>" >}}  (innermost sub converted)
+        Pass 2: <sup><sub>text</sub></sup>     (outer sup converted)
+
+    Supported conversions:
+    - {{< sup "text" >}} → <sup>text</sup>  (quoted parameter)
+    - {{< sup text >}} → <sup>text</sup>    (unquoted parameter)
+    - {{< sub "text" >}} → <sub>text</sub>  (quoted parameter)
+    - {{< sub text >}} → <sub>text</sub>    (unquoted parameter)
+
+    Args:
+        s: The string potentially containing shortcodes
+
+    Returns:
+        The string with shortcodes converted to HTML
+    """
+    # Normalize malformed shortcodes with escaped backslashes
+    # This handles edge cases where source data has escaped backslashes
+    s = s.replace(r"{{\<", "{{<").replace(r"\>}}", ">}}")
+
+    # Keep replacing until no more shortcodes found (handles nested shortcodes)
+    # Start with innermost shortcodes and work outward
+    iterations = 0
+
+    while iterations < MAX_SHORTCODE_CONVERSION_ITERATIONS:
+        total_subs = 0
+
+        # Match sup shortcodes with QUOTED parameters: {{< sup "content" >}}
+        s, subs = HUGO_SUP_QUOTED_PATTERN.subn(
+            lambda m: _replace_shortcode_with_html(m, "sup"),
+            s,
+        )
+        total_subs += subs
+
+        # Match sup shortcodes with UNQUOTED parameters: {{< sup content >}}
+        s, subs = HUGO_SUP_UNQUOTED_PATTERN.subn(
+            lambda m: _replace_shortcode_with_html(m, "sup"),
+            s,
+        )
+        total_subs += subs
+
+        # Match sub shortcodes with QUOTED parameters: {{< sub "content" >}}
+        s, subs = HUGO_SUB_QUOTED_PATTERN.subn(
+            lambda m: _replace_shortcode_with_html(m, "sub"),
+            s,
+        )
+        total_subs += subs
+
+        # Match sub shortcodes with UNQUOTED parameters: {{< sub content >}}
+        s, subs = HUGO_SUB_UNQUOTED_PATTERN.subn(
+            lambda m: _replace_shortcode_with_html(m, "sub"),
+            s,
+        )
+        total_subs += subs
+
+        # If nothing changed, we're done
+        if total_subs == 0:
+            break
+
+        iterations += 1
+
+    return s
 
 
 def unescape_string_quoted_with(text: str, single_quotes=False):  # noqa: FBT002
@@ -177,7 +280,7 @@ class ShortcodeParam:
         """
         # Replace newlines with spaces
         no_new_lines = s.replace("\n", " ")
-        # Escape double quotes and wrap in quotes
+        # Escape quotes for use in Hugo shortcode parameters
         return f'"{escape_double_quotes(no_new_lines)}"'
 
 
