@@ -63,7 +63,9 @@ export default function SelectField(props: Props): JSX.Element {
   const changeHandler = useCallback(
     (newValue: any) => {
       const eventValue = multiple
-        ? newValue?.map((option: Option) => option.value)
+        ? (Array.isArray(newValue) ? newValue : []).map(
+            (option: Option) => option.value,
+          )
         : (newValue?.value ?? null)
       onChange({
         target: { value: eventValue, name },
