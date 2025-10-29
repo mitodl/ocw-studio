@@ -71,7 +71,6 @@ const { Formik } = formikFuncs
 const { testkit, sentryTransport } = sentryTestkit()
 Sentry.init({
   dsn: "https://fake@fakesentry.example.com/123",
-  // @ts-expect-error Unsure the issue here.
   transport: sentryTransport,
 })
 
