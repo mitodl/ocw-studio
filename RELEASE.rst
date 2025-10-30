@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.167.1
+---------------
+
+- Allow user to clear captions/transcript resources (#2770)
+- fix(deps): update dependency sentry-testkit to v6 (#2538)
+- chore(deps): update postgres docker tag to v16.10 (#2771)
+- fix: Handled nested Hugo shortcodes in external resource link titles (#2764)
+- Allow for associating either captions or transcript with existing videos (#2769)
+- Add captions/transcript resource variables to Heroku (#2765)
+
 Version 0.167.0 (Released October 27, 2025)
 ---------------
 
