@@ -40,6 +40,7 @@ from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB, STARTER_SOURCE_LOCAL
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.models import Website, WebsiteStarter
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name,unused-argument
@@ -311,19 +312,51 @@ def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
     settings.CONCOURSE_HARD_PURGE = hard_purge
 
     hugo_projects_path = "https://github.com/org/repo"
+
+    # Get or create root starter for cleanup step (shared across all tests)
+    root_starter, _ = WebsiteStarter.objects.get_or_create(
+        slug="test-root-starter",
+        defaults={
+            "source": STARTER_SOURCE_GITHUB,
+            "path": f"{hugo_projects_path}/root",
+            "name": "Root Starter",
+            "status": "default",
+            "config": {},
+        },
+    )
+    root_starter.config["root-url-path"] = ""
+    root_starter.save()
+
+    # Get or create root website instance (shared across all tests)
+    root_website, _ = Website.objects.get_or_create(
+        name=settings.ROOT_WEBSITE_NAME,
+        defaults={
+            "starter": root_starter,
+            "url_path": None,
+        },
+    )
+
+    # Create unique slug for each test iteration to avoid Factory sequence collisions
+    # Use shortened format to fit 30-char limit: env(4), ver(5), home(1), pipe(1), purge(1), api(1)
+    test_slug = f"{env_name[:4]}-{version[:5]}-{int(home_page)}{int(pipeline_exists)}{int(hard_purge)}{int(with_api)}"
     starter = WebsiteStarterFactory.create(
-        source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug=test_slug,
     )
     if home_page:
         name = settings.ROOT_WEBSITE_NAME
         starter.config["root-url-path"] = ""
         site_path = None
+        # Update the existing root website to use this test's starter
+        root_website.starter = starter
+        root_website.save()
+        website = root_website
     else:
         name = "standard-course"
         starter.config["root-url-path"] = "courses"
         site_path = "courses/my-site-fall-2020"
-
-    website = WebsiteFactory.create(starter=starter, name=name, url_path=site_path)
+        website = WebsiteFactory.create(starter=starter, name=name, url_path=site_path)
 
     instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
