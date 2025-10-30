@@ -478,5 +478,19 @@ describe("RelationField", () => {
       const expected = [false, false, false, ...Array(7).fill(true)]
       expect(options.map(isOptionEnabled)).toEqual(expected)
     })
+
+    it("should be clearable for single select but not multiple", async () => {
+      const { wrapper: singleWrapper } = await render({
+        multiple: false,
+        value: contentListingItems[0].text_id,
+      })
+      expect(singleWrapper.find("SelectField").prop("isClearable")).toBe(true)
+
+      const { wrapper: multiWrapper } = await render({
+        multiple: true,
+        value: [contentListingItems[0].text_id],
+      })
+      expect(multiWrapper.find("SelectField").prop("isClearable")).toBe(false)
+    })
   })
 })
