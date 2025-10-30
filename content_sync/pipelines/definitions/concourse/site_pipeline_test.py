@@ -37,7 +37,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
-from websites.models import Website
+from websites.models import Website, WebsiteStarter
 
 pytestmark = pytest.mark.django_db
 
@@ -46,8 +46,11 @@ pytestmark = pytest.mark.django_db
 def website(request, django_db_setup, django_db_blocker):
     hugo_projects_path = "https://github.com/org/repo"
     with django_db_blocker.unblock():
+        # Use unique slug to avoid collisions with other tests
         starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+            source=STARTER_SOURCE_GITHUB,
+            path=f"{hugo_projects_path}/site",
+            slug=f"fixture-starter-{request.param}",
         )
         site = WebsiteFactory.create(
             starter=starter,
@@ -706,14 +709,22 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noq
     settings.ROOT_WEBSITE_NAME = "root-website"
 
     # Create root website if it doesn't already exist (needed for inline build tasks)
-    if not Website.objects.filter(name="root-website").exists():
-        root_starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/root"
-        )
-        root_website = WebsiteFactory.create(  # noqa: F841
-            starter=root_starter,
-            name="root-website",
-        )
+    root_starter, _ = WebsiteStarter.objects.get_or_create(
+        slug="test-cleanup-root-starter",
+        defaults={
+            "source": STARTER_SOURCE_GITHUB,
+            "path": "https://github.com/org/repo/root",
+            "name": "Root Starter",
+            "status": "default",
+            "config": {},
+        },
+    )
+    root_website, _ = Website.objects.get_or_create(
+        name="root-website",
+        defaults={
+            "starter": root_starter,
+        },
+    )
 
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
