@@ -327,7 +327,7 @@ export default function RelationField(props: Props): JSX.Element {
             website: websiteName,
             content: crossSite
               ? (value as string[]).map((id) => [id, contentToWebsite.get(id)])
-              : value,
+              : (value ?? ""),
           },
         },
       }
@@ -401,6 +401,7 @@ export default function RelationField(props: Props): JSX.Element {
           loadOptions={loadOptions}
           multiple={multiple}
           defaultOptions={defaultOptions}
+          isClearable={!multiple}
         />
       )}
       {fetchStatus === FetchStatus.Error ? (

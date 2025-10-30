@@ -741,7 +741,11 @@
       "required": false
     },
     "YT_FIELD_CAPTIONS": {
-      "description": "The site config metadata field for the caption url",
+      "description": "The site config metadata field for the captions URL",
+      "required": false
+    },
+    "YT_FIELD_CAPTIONS_RESOURCE": {
+      "description": "The site config metadata field for the captions resource",
       "required": false
     },
     "YT_FIELD_DESCRIPTION": {
@@ -761,11 +765,15 @@
       "required": false
     },
     "YT_FIELD_THUMBNAIL": {
-      "description": "The site config metadata field for YouTube thumbnail url",
+      "description": "The site config metadata field for YouTube thumbnail URL",
       "required": false
     },
     "YT_FIELD_TRANSCRIPT": {
-      "description": "The site config metadata field for the transcript url",
+      "description": "The site config metadata field for the transcript URL",
+      "required": false
+    },
+    "YT_FIELD_TRANSCRIPT_RESOURCE": {
+      "description": "The site config metadata field for the transcript resource",
       "required": false
     },
     "YT_PROJECT_ID": {
