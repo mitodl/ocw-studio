@@ -202,13 +202,18 @@ export function FormFields(props: InnerFormProps): JSX.Element {
               />
             ) : SETTINGS.gdrive_enabled &&
               content?.type === "resource" &&
-              field.widget === WidgetVariant.File ? (
+              (field.widget === WidgetVariant.File ||
+                field.name === "gdrive_url") ? (
               <div key={field.name}>
                 <label htmlFor={field.name}>{field.label}</label>
                 <Field
                   as={Label}
                   name={field.name}
-                  value={filenameFromPath(values[field.name] as string)}
+                  value={
+                    field.name === "gdrive_url"
+                      ? values[field.name]
+                      : filenameFromPath(values[field.name] as string)
+                  }
                   className="form-control"
                   onChange={handleChange}
                 />
