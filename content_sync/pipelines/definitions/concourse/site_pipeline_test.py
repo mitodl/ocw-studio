@@ -61,6 +61,33 @@ def website(request, django_db_setup, django_db_blocker):
         starter.delete()
 
 
+@pytest.fixture
+def root_website(settings):
+    """Create a root website for tests that need it"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+
+    root_starter, _ = WebsiteStarter.objects.get_or_create(
+        slug="test-root-website-starter",
+        defaults={
+            "source": STARTER_SOURCE_GITHUB,
+            "path": "https://github.com/org/repo/root",
+            "name": "Root Starter",
+            "status": "default",
+            "config": {},
+        },
+    )
+    root_site, _ = Website.objects.get_or_create(
+        name="root-website",
+        defaults={
+            "starter": root_starter,
+            "url_path": "root",
+            "short_id": "root-site",
+            "title": "Root Website",
+        },
+    )
+    return root_site
+
+
 @pytest.mark.parametrize(
     "branch_vars",
     [
@@ -699,32 +726,13 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noqa: PLR0915
+def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_website):  # noqa: PLR0915
     """
     Test that the offline content cleanup step is correctly configured with all three cleanup tasks
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
-    settings.ROOT_WEBSITE_NAME = "root-website"
-
-    # Create root website if it doesn't already exist (needed for inline build tasks)
-    root_starter, _ = WebsiteStarter.objects.get_or_create(
-        slug="test-cleanup-root-starter",
-        defaults={
-            "source": STARTER_SOURCE_GITHUB,
-            "path": "https://github.com/org/repo/root",
-            "name": "Root Starter",
-            "status": "default",
-            "config": {},
-        },
-    )
-    root_website, _ = Website.objects.get_or_create(
-        name="root-website",
-        defaults={
-            "starter": root_starter,
-        },
-    )
 
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
@@ -826,24 +834,15 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):  # noq
 
 
 @pytest.mark.parametrize("pipeline_name", ["draft", "live"])
-def test_offline_build_gate_cleanup_task(website, settings, mocker, pipeline_name):  # noqa: PLR0915
+def test_offline_build_gate_cleanup_task(  # noqa: PLR0915
+    website, settings, mocker, pipeline_name, root_website
+):
     """
     Test that the offline build gate put step has proper failure handling attached
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
-    settings.ROOT_WEBSITE_NAME = "root-website"
-
-    # Create root website if it doesn't already exist (needed for inline build tasks)
-    if not Website.objects.filter(name="root-website").exists():
-        root_starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/root"
-        )
-        root_website = WebsiteFactory.create(  # noqa: F841
-            starter=root_starter,
-            name="root-website",
-        )
 
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(

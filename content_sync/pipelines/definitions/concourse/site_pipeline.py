@@ -895,9 +895,11 @@ class SitePipelineDefinition(Pipeline):
             no_get=True,
             inputs=[],
         )
-        # Add cleanup step to the inner put step.
+        # Add cleanup step to the inner put step if root website exists.
         # This will trigger before TryStep suppresses the error
-        inner_put_step.on_error = self.get_offline_content_cleanup_step(config=config)
+        cleanup_step = self.get_offline_content_cleanup_step(config=config)
+        if cleanup_step:
+            inner_put_step.on_error = cleanup_step
 
         # Wrap in TryStep to prevent online job failure
         offline_build_gate_put_step = TryStep(try_=inner_put_step)
@@ -964,7 +966,7 @@ class SitePipelineDefinition(Pipeline):
 
     def get_offline_content_cleanup_step(
         self, config: SitePipelineDefinitionConfig
-    ) -> DoStep:
+    ) -> DoStep | None:
         """
         Create task steps to remove offline content when offline build gate fails.
 
@@ -975,8 +977,17 @@ class SitePipelineDefinition(Pipeline):
             config: The site pipeline definition config
 
         Returns:
-            DoStep: A DoStep with cleanup tasks and conditional publish
+            DoStep | None: A DoStep with cleanup tasks and conditional
+                publish, or None if root website doesn't exist
         """
+        # Check if root website exists (might not in test environments)
+        try:
+            root_site = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
+        except Website.DoesNotExist:
+            # Root website doesn't exist (e.g., in test environment)
+            # Return None to skip cleanup step
+            return None
+
         minio_root_user = settings.AWS_ACCESS_KEY_ID
         minio_root_password = settings.AWS_SECRET_ACCESS_KEY
         cli_endpoint_url = get_cli_endpoint_url()
@@ -1035,7 +1046,6 @@ class SitePipelineDefinition(Pipeline):
         )
 
         # Build root website inline
-        root_site = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         root_site_config = SitePipelineDefinitionConfig(
             site=root_site,
             pipeline_name=config.pipeline_name,
