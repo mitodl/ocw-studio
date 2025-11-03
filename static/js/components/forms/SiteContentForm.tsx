@@ -159,7 +159,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
   const labelValue = (field: ConfigField) =>
     field.name === "gdrive_url"
       ? ((values[field.name] as string) ?? "")
-      : filenameFromPath(((values[field.name] as string) ?? "") as string)
+      : filenameFromPath((values[field.name] as string) ?? "")
 
   const renderField = (field: ConfigField) => {
     if (hideForNewVideoResource(field)) return null
