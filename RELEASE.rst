@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.167.1
+Version 0.167.1 (Released November 03, 2025)
 ---------------
 
 - Allow user to clear captions/transcript resources (#2770)
