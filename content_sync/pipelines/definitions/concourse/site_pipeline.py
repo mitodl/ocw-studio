@@ -1038,7 +1038,9 @@ class SitePipelineDefinition(Pipeline):
                         f"""
                         echo "Removing WebsiteContent from root website for site: ((site:site_name))"
                         echo "Calling API endpoint: {ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        set +x
                         wget -O- --post-data='' --header="Content-Type: application/json" --header="Authorization: Bearer {settings.API_BEARER_TOKEN}" "{ocw_studio_url.rstrip("/")}/api/websites/((site:site_name))/remove_from_root_website/"
+                        set -x
                         """,  # noqa: E501
                     ],
                 ),
