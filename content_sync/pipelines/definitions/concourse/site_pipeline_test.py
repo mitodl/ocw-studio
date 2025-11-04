@@ -497,12 +497,20 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_online_params["version"]
                 == config.vars["pipeline_name"]
             )
+
+    # Root websites should not have the offline build gate step
+    if website.name == settings.ROOT_WEBSITE_NAME:
+        return  # Skip offline job testing for root websites
+
+    # For non-root websites, verify gate step exists
     offline_build_gate_put_task = online_site_tasks[-1]
     assert (
         offline_build_gate_put_task["try"]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     assert offline_build_gate_put_task["try"]["no_get"] is True
+
+    # Test offline job for non-root websites
     offline_site_job = get_dict_list_item_by_field(
         jobs,
         "name",
@@ -691,6 +699,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_offline_params["version"]
                 == config.vars["pipeline_name"]
             )
+
     expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
@@ -868,6 +877,16 @@ def test_offline_build_gate_cleanup_task(
             break
 
     assert online_job is not None, "Online job should exist"
+
+    # Root websites should not have the offline build gate step
+    if website.name == settings.ROOT_WEBSITE_NAME:
+        # Verify no offline gate step exists for root websites
+        for step in online_job["plan"]:
+            if "try" in step and "put" in step["try"]:
+                assert step["try"]["put"] != "offline-build-gate", (
+                    "Root websites should not have offline build gate step"
+                )
+        return  # Skip the rest of the test for root websites
 
     # Find the offline build gate put step (should be the last step in the online job)
     gate_put_step = None
