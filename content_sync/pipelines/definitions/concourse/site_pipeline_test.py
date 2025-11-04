@@ -726,7 +726,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_website):  # noqa: PLR0915
+def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_website):
     """
     Test that the offline content cleanup step is correctly configured with all three cleanup tasks
     """
@@ -766,7 +766,7 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_we
     # Test that the cleanup step is a DoStep (not wrapped in TryStep)
     # The outer TryStep wrapping the gate already handles errors
     assert hasattr(cleanup_step, "do")
-    assert len(cleanup_step.do) == 2  # S3 cleanup + API call with on_success
+    assert len(cleanup_step.do) == 2  # S3 cleanup + API call
 
     # Test Step 1: S3 cleanup task
     s3_cleanup_task = cleanup_step.do[0]
@@ -801,40 +801,29 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_we
     else:
         assert not hasattr(s3_cleanup_task, "params") or s3_cleanup_task.params is None
 
-    # Test Step 2: Conditional step (DoStep with API call and on_success)
-    conditional_step = cleanup_step.do[1]
-    assert conditional_step.task == "remove-from-root-website-task"
-    assert conditional_step.timeout.root == "10m"
-    assert conditional_step.attempts == 3
-    assert conditional_step.config.run.path == "sh"
+    # Test Step 2: API call to remove from root website
+    # This triggers root website pipeline rebuild from OCW Studio, not inline
+    api_call_task = cleanup_step.do[1]
+    assert api_call_task.task == "remove-from-root-website-task"
+    assert api_call_task.timeout.root == "10m"
+    assert api_call_task.attempts == 3
+    assert api_call_task.config.run.path == "sh"
 
     # Check wget command is used with proper arguments
-    api_command = conditional_step.config.run.args[1]
+    api_command = api_call_task.config.run.args[1]
     assert "wget" in api_command
     assert "--post-data=''" in api_command
     assert "/remove_from_root_website/" in api_command
-    assert conditional_step.config.image_resource == BASH_REGISTRY_IMAGE
+    # Verify version parameter is included so OCW Studio knows which pipeline to trigger
+    assert "?version=((site:pipeline_name))" in api_command
+    assert api_call_task.config.image_resource == BASH_REGISTRY_IMAGE
 
-    assert hasattr(conditional_step, "on_success"), "Should have on_success handler"
-
-    # Test the root website build tasks (on_success of the API call)
-    root_build_step = conditional_step.on_success
-    assert hasattr(root_build_step, "do"), "Root build should be a DoStep"
-    root_build_tasks = root_build_step.do
-    assert len(root_build_tasks) > 1, "Should have multiple build tasks"
-
-    # First task should be SiteContentGitTaskStep (a TaskStep that clones git repo)
-    git_task = root_build_tasks[0]
-    assert hasattr(git_task, "task"), "Should be a TaskStep"
-    assert git_task.task == SITE_CONTENT_GIT_IDENTIFIER
-
-    # Remaining tasks should be the online build tasks
-    # (build, upload, CDN clear, search index update)
-    assert len(root_build_tasks) >= 2, "Should have git + build tasks"
+    # Verify no on_success handler - root website rebuild is triggered from OCW Studio
+    assert not hasattr(api_call_task, "on_success") or api_call_task.on_success is None
 
 
 @pytest.mark.parametrize("pipeline_name", ["draft", "live"])
-def test_offline_build_gate_cleanup_task(  # noqa: PLR0915
+def test_offline_build_gate_cleanup_task(
     website, settings, mocker, pipeline_name, root_website
 ):
     """
@@ -902,9 +891,7 @@ def test_offline_build_gate_cleanup_task(  # noqa: PLR0915
 
     # Verify the cleanup tasks (no need for across since this is a single-site pipeline)
     cleanup_tasks = error_handler["do"]
-    assert len(cleanup_tasks) == 2, (
-        "Should have S3 cleanup and API call with on_success"
-    )
+    assert len(cleanup_tasks) == 2, "Should have S3 cleanup and API call"
 
     # Verify the S3 cleanup task
     s3_cleanup_task = cleanup_tasks[0]
@@ -914,7 +901,7 @@ def test_offline_build_gate_cleanup_task(  # noqa: PLR0915
     assert "rm s3://" in s3_cleanup_task["config"]["run"]["args"][1]
     assert "--recursive" in s3_cleanup_task["config"]["run"]["args"][1]
 
-    # Verify the API call task with on_success
+    # Verify the API call task - triggers root website rebuild from OCW Studio
     remove_content_task = cleanup_tasks[1]
     assert remove_content_task["task"] == "remove-from-root-website-task"
     assert remove_content_task["timeout"] == "10m"
@@ -926,18 +913,11 @@ def test_offline_build_gate_cleanup_task(  # noqa: PLR0915
     assert "wget" in api_args
     assert "--post-data=''" in api_args
     assert "/remove_from_root_website/" in api_args
-    assert "on_success" in remove_content_task, "Should have on_success handler"
+    # Verify version parameter is included so OCW Studio knows which pipeline to trigger
+    assert "?version=" in api_args
+    assert "((site:pipeline_name))" in api_args
 
-    # Verify the root website build step (on_success of API call)
-    root_build_step = remove_content_task["on_success"]
-    assert "do" in root_build_step, "Root build should be a DoStep"
-    root_build_tasks = root_build_step["do"]
-    assert len(root_build_tasks) > 1, "Should have multiple build tasks"
-
-    # First task should be SiteContentGitTaskStep (a TaskStep that clones git repo)
-    git_task = root_build_tasks[0]
-    assert "task" in git_task, "Should be a TaskStep"
-    assert git_task["task"] == SITE_CONTENT_GIT_IDENTIFIER
-
-    # Remaining tasks should be the online build tasks
-    assert len(root_build_tasks) >= 2, "Should have git + build tasks"
+    # Verify no on_success handler - root website rebuild is triggered from OCW Studio, not inline
+    assert "on_success" not in remove_content_task, (
+        "Should not have on_success handler - root website rebuild is triggered from OCW Studio"
+    )

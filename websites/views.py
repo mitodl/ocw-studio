@@ -359,7 +359,7 @@ class WebsiteViewSet(
         )
 
     @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
-    def remove_from_root_website(self, request, name=None):  # noqa: ARG002
+    def remove_from_root_website(self, request, name=None):
         """
         Remove the website listing from the root website and sync to backend.
 
@@ -367,14 +367,18 @@ class WebsiteViewSet(
             request: The HTTP request object
             name (str): The name of the website to remove from the root website
 
+        Query parameters:
+            version (str): The pipeline version to rebuild (draft or live)
+
         Returns:
             200: Content was successfully removed and synced to backend
             404: Website not found or no content to remove
         """
         website = get_object_or_404(Website, name=name)
+        version = request.query_params.get("version", "draft")
 
         try:
-            remove_website_in_root_website(website)
+            remove_website_in_root_website(website, version)
             return Response(
                 {
                     "status": "success",
