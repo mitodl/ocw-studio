@@ -498,11 +498,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 == config.vars["pipeline_name"]
             )
 
-    # Root websites should not have the offline build gate step
-    if website.name == settings.ROOT_WEBSITE_NAME:
-        return  # Skip offline job testing for root websites
-
-    # For non-root websites, verify gate step exists
+    # Verify gate step exists for all websites (including root)
     offline_build_gate_put_task = online_site_tasks[-1]
     assert (
         offline_build_gate_put_task["try"]["put"]
@@ -510,7 +506,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     assert offline_build_gate_put_task["try"]["no_get"] is True
 
-    # Test offline job for non-root websites
+    # Test offline job
     offline_site_job = get_dict_list_item_by_field(
         jobs,
         "name",
@@ -878,17 +874,8 @@ def test_offline_build_gate_cleanup_task(
 
     assert online_job is not None, "Online job should exist"
 
-    # Root websites should not have the offline build gate step
-    if website.name == settings.ROOT_WEBSITE_NAME:
-        # Verify no offline gate step exists for root websites
-        for step in online_job["plan"]:
-            if "try" in step and "put" in step["try"]:
-                assert step["try"]["put"] != "offline-build-gate", (
-                    "Root websites should not have offline build gate step"
-                )
-        return  # Skip the rest of the test for root websites
-
     # Find the offline build gate put step (should be the last step in the online job)
+    # This step exists for both root and non-root websites
     gate_put_step = None
     for step in online_job["plan"]:
         if (
@@ -901,7 +888,14 @@ def test_offline_build_gate_cleanup_task(
 
     assert gate_put_step is not None, "Offline build gate put step should exist"
 
-    # Verify that failure handling is attached to the inner put step
+    # Root websites should have the gate step but NO cleanup handler
+    if website.name == settings.ROOT_WEBSITE_NAME:
+        assert "on_error" not in gate_put_step, (
+            "Root websites should not have cleanup (can't remove themselves)"
+        )
+        return  # Test complete for root websites
+
+    # For non-root websites, verify that failure handling is attached
     assert "on_error" in gate_put_step
 
     # Verify the failure handling is a DoStep (outer TryStep wrapping gate already handles errors)

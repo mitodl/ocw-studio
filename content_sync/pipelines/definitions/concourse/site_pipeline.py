@@ -885,27 +885,25 @@ class SitePipelineDefinition(Pipeline):
         resources = SitePipelineResources(config=config)
         online_job = self.get_online_build_job(config=config)
 
-        # Only add offline gate step for non-root websites
+        # Create the inner put step with error handlers
+        inner_put_step = PutStep(
+            put=self._offline_build_gate_identifier,
+            timeout="1m",
+            attempts=3,
+            get_params={"strict": True},
+            no_get=True,
+            inputs=[],
+        )
+        # Add cleanup step to the inner put step if not a root website
         if not config.is_root_website:
-            # Create the inner put step with error handlers
-            inner_put_step = PutStep(
-                put=self._offline_build_gate_identifier,
-                timeout="1m",
-                attempts=3,
-                get_params={"strict": True},
-                no_get=True,
-                inputs=[],
-            )
-            # Add cleanup step to the inner put step if root website exists.
-            # This will trigger before TryStep suppresses the error
             cleanup_step = self.get_offline_content_cleanup_step(config=config)
             if cleanup_step:
                 inner_put_step.on_error = cleanup_step
 
-            # Wrap in TryStep to prevent online job failure
-            offline_build_gate_put_step = TryStep(try_=inner_put_step)
+        # Wrap in TryStep to prevent online job failure
+        offline_build_gate_put_step = TryStep(try_=inner_put_step)
 
-            online_job.plan.append(offline_build_gate_put_step)
+        online_job.plan.append(offline_build_gate_put_step)
         offline_job = self.get_offline_build_job(config=config)
         offline_build_gate_get_step = add_error_handling(
             step=GetStep(
