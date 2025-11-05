@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.168.0
+---------------
+
+- chore: added tasks in offline gate step to remove site from offline search index (#2766)
+
 Version 0.167.1 (Released November 03, 2025)
 ---------------
 
