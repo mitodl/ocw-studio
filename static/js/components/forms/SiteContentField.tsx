@@ -6,6 +6,8 @@ import { componentFromWidget, widgetExtraProps } from "../../lib/site_content"
 
 import { ConfigField, WebsiteContent } from "../../types/websites"
 
+import { WidgetVariant } from "../../types/websites"
+
 interface Props {
   field: ConfigField
   contentContext: WebsiteContent[] | null
@@ -23,6 +25,9 @@ export default function SiteContentField({
   const extraProps = widgetExtraProps(field)
   const component = componentFromWidget(field)
 
+  const isReadOnly =
+    field.widget === WidgetVariant.String && (field as any).readOnly === true
+
   if (component && typeof component !== "string") {
     extraProps.contentContext = contentContext
   }
@@ -36,6 +41,10 @@ export default function SiteContentField({
         name={field.name}
         className="form-control"
         onChange={onChange}
+        style={{
+          ...(extraProps?.style || {}),
+          ...(isReadOnly ? { cursor: "not-allowed" } : {}),
+        }}
         {...extraProps}
       />
       <ErrorMessage name={field.name} component={FormError} />
