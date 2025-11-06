@@ -11,6 +11,7 @@ This document describes the components of the video workflow for OCW.
 1. [Completing the Workflow](#completing-the-workflow)
 1. [Management Commands](#management-commands)
 1. [Testing PRs with Transcoding](#testing-prs-with-transcoding)
+1. [Adding Captions and Transcript to Existing Videos](#adding-captions-and-transcript-to-existing-videos)
 
 # Overview
 
@@ -148,3 +149,5 @@ making sure to set the values in `<>`. In particular, set
 The `DriveFile` will be the one associated with the video: http://localhost:8043/admin/gdrive_sync/drivefile/.
 
 If this completes successfully, the `VideoJob` status in Django admin should be `COMPLETE`, and there should now be three new `VideoFile` objects populated with `status`, `destination`, and `s3_key` fields.
+
+# Adding Captions and Transcript to Existing Videos
