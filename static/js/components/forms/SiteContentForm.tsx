@@ -144,6 +144,82 @@ export function FormFields(props: InnerFormProps): JSX.Element {
     setDirty(dirty)
   }, [setDirty, dirty])
 
+  const hideForNewVideoResource = (field: ConfigField) =>
+    configItem.name === "resource" &&
+    editorState.adding() &&
+    (field.name === "resourcetype" ||
+      field.name === "file" ||
+      field.name === "gdrive_url")
+
+  const showAsLabel = (field: ConfigField) =>
+    SETTINGS.gdrive_enabled &&
+    content?.type === "resource" &&
+    field.widget === WidgetVariant.File
+
+  const labelValue = (field: ConfigField) =>
+    filenameFromPath((values[field.name] as string) ?? "")
+
+  const renderField = (field: ConfigField) => {
+    if (hideForNewVideoResource(field)) return null
+
+    if (field.name === "title") {
+      return (
+        <React.Fragment key={field.name}>
+          <SiteContentField
+            field={field}
+            contentContext={contentContext}
+            onChange={handleChange}
+          />
+          {content?.type === "page" ? (
+            <div>
+              <label htmlFor="page-url">Page URL</label>
+              <div className="help-text">
+                This is auto-generated from the title field
+              </div>
+              <Label value={`/pages/${content.filename}`} name="page-url" />
+            </div>
+          ) : null}
+        </React.Fragment>
+      )
+    }
+
+    if (field.widget === WidgetVariant.Object) {
+      return (
+        <ObjectField
+          key={field.name}
+          field={field}
+          contentContext={contentContext}
+          values={values}
+          onChange={handleChange}
+        />
+      )
+    }
+
+    if (showAsLabel(field)) {
+      return (
+        <div key={field.name}>
+          <label htmlFor={field.name}>{field.label}</label>
+          <Field
+            as={Label}
+            name={field.name}
+            value={labelValue(field)}
+            className="form-control"
+            onChange={handleChange}
+          />
+        </div>
+      )
+    }
+
+    return (
+      <SiteContentField
+        key={field.name}
+        field={field}
+        contentContext={contentContext}
+        onChange={handleChange}
+      />
+    )
+  }
+
   return (
     <Form
       onSubmit={async (event) => {
@@ -158,70 +234,7 @@ export function FormFields(props: InnerFormProps): JSX.Element {
       <div>
         {renamedFields
           .filter((field) => fieldIsVisible(field, values))
-          .map((field) => {
-            // Hide `resourcetype`, `file`, and `gdrive_url` in case of adding Video Resource (using YouTube ID)
-            if (
-              configItem.name === "resource" &&
-              (field.name === "resourcetype" ||
-                field.name === "file" ||
-                field.name === "gdrive_url") &&
-              editorState.adding()
-            ) {
-              return null
-            }
-            if (field.name === "title") {
-              return (
-                <React.Fragment key={field.name}>
-                  <SiteContentField
-                    field={field}
-                    contentContext={contentContext}
-                    onChange={handleChange}
-                  />
-                  {content?.type === "page" ? (
-                    <div>
-                      <label htmlFor="page-url">Page URL</label>
-                      <div className="help-text">
-                        This is auto-generated from the title field
-                      </div>
-                      <Label
-                        value={`/pages/${content.filename}`}
-                        name="page-url"
-                      />
-                    </div>
-                  ) : null}
-                </React.Fragment>
-              )
-            }
-            return field.widget === WidgetVariant.Object ? (
-              <ObjectField
-                field={field}
-                key={field.name}
-                contentContext={contentContext}
-                values={values}
-                onChange={handleChange}
-              />
-            ) : SETTINGS.gdrive_enabled &&
-              content?.type === "resource" &&
-              field.widget === WidgetVariant.File ? (
-              <div key={field.name}>
-                <label htmlFor={field.name}>{field.label}</label>
-                <Field
-                  as={Label}
-                  name={field.name}
-                  value={filenameFromPath(values[field.name] as string)}
-                  className="form-control"
-                  onChange={handleChange}
-                />
-              </div>
-            ) : (
-              <SiteContentField
-                field={field}
-                key={field.name}
-                contentContext={contentContext}
-                onChange={handleChange}
-              />
-            )
-          })}
+          .map(renderField)}
       </div>
       <div className="form-group d-flex w-100 justify-content-end">
         <button
