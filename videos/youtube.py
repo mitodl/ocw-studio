@@ -28,6 +28,7 @@ from videos.constants import (
 )
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
+from videos.utils import get_course_tag, get_tags_with_course
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
@@ -317,6 +318,7 @@ class YouTubeApi:
         if speakers:
             description = f"{description}\n\nSpeakers: {speakers}"
         youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
+        course_slug = get_course_tag(resource.website)
         self.client.videos().update(
             part="snippet",
             body={
@@ -328,7 +330,7 @@ class YouTubeApi:
                     "description": truncate_words(
                         strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
                     ),
-                    "tags": get_dict_field(metadata, settings.YT_FIELD_TAGS),
+                    "tags": get_tags_with_course(metadata, course_slug),
                     "categoryId": settings.YT_CATEGORY_ID,
                 },
             },

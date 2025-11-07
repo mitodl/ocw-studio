@@ -12,6 +12,7 @@ from django.conf import settings
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
 from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.utils import get_dict_field, set_dict_field
 
 
 def generate_s3_path(file_or_webcontent, website):
@@ -110,3 +111,54 @@ def update_metadata(source_obj, new_uid, new_s3_path):
     new_metadata["uid"] = new_uid
     new_metadata["file"] = str(new_s3_path).lstrip("/")
     return new_metadata
+
+
+def get_course_tag(website):
+    """
+    Get the course tag from the website's url_path.
+
+    Args:
+        website: Website instance
+
+    Returns:
+        str: Course URL slug without the 'courses/' prefix
+    """
+    url_path = website.url_path or website.name
+    # Remove 'courses/' prefix if it exists
+    return url_path.split("/", 1)[-1] if "/" in url_path else url_path
+
+
+def get_tags_with_course(metadata, course_slug):
+    """
+    Get video tags with the course URL slug appended.
+
+    Args:
+        metadata (dict): The WebsiteContent metadata dictionary
+        course_slug (str): The course URL slug to add as a tag
+
+    Returns:
+        str: Comma-separated tags with course slug appended
+    """
+    existing_tags = get_dict_field(metadata, settings.YT_FIELD_TAGS) or ""
+    tag_list = [tag.strip() for tag in existing_tags.split(",") if tag.strip()]
+
+    if course_slug not in tag_list:
+        tag_list.append(course_slug)
+
+    return ", ".join(tag_list)
+
+
+def merge_course_tag_into_metadata(metadata, course_slug):
+    """
+    Merge the course URL slug into video_tags in the metadata.
+
+    Args:
+        metadata (dict): The WebsiteContent metadata dictionary
+        course_slug (str): The course URL slug to add as a tag
+
+    Returns:
+        dict: The modified metadata dictionary (for convenience/chaining)
+    """
+    merged_tags = get_tags_with_course(metadata, course_slug)
+    set_dict_field(metadata, settings.YT_FIELD_TAGS, merged_tags)
+    return metadata

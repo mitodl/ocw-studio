@@ -21,6 +21,7 @@ from videos.constants import (
 )
 from videos.factories import VideoFactory, VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
+from videos.utils import get_course_tag
 from videos.youtube import (
     CAPTION_UPLOAD_NAME,
     YouTubeApi,
@@ -220,6 +221,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
 
     expected_title = f"{' '.join([title.replace('>', '') for _ in range(9)])}..."
     expected_desc = f"{' '.join([description.replace('>', '') for _ in range(499)])}..."
+    # Course URL slug should be automatically added to tags
+    expected_tags = f"{tags}, {get_course_tag(content.website)}"
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
     assert (
@@ -239,7 +242,7 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
             "snippet": {
                 "title": expected_title,
                 "description": expected_desc,
-                "tags": tags,
+                "tags": expected_tags,
                 "categoryId": settings.YT_CATEGORY_ID,
             },
         },
