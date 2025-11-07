@@ -172,6 +172,7 @@ def test_upload_errors_retryable(mocker, youtube_mocker, error, retryable):
 def test_upload_video_long_fields(mocker, youtube_mocker):
     """
     Test that the upload_youtube_video task truncates title and description if too long
+    and includes course slug as tag
     """
     name = "".join(random.choice(string.ascii_lowercase) for c in range(105))  # noqa: S311
     video_file = VideoFileFactory.create()
@@ -181,6 +182,9 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     YouTubeApi().upload_video(video_file)
     called_args, called_kwargs = mock_upload.call_args
     assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
+    # Verify course slug is included as tag
+    course_slug = get_course_tag(video_file.video.website)
+    assert called_kwargs["body"]["snippet"]["tags"] == [course_slug]
 
 
 @pytest.mark.parametrize("notify", [True, False])
@@ -257,6 +261,58 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         )
 
     mock_update_caption.assert_called_once_with(content, youtube_id)
+
+
+def test_update_video_tags(youtube_mocker):
+    """Test update_video_tags updates only tags for a YouTube video"""
+    youtube_id = "test_video_123"
+    new_tags = "python, django, machine-learning"
+
+    # Mock the list call to return current video data
+    current_snippet = {
+        "title": "Existing Title",
+        "description": "Existing description",
+        "tags": ["old-tag1", "old-tag2"],
+        "categoryId": "27",
+    }
+    youtube_mocker().videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": current_snippet}]
+    }
+
+    YouTubeApi().update_video_tags(youtube_id, new_tags)
+
+    # Verify it fetched current video data
+    youtube_mocker().videos.return_value.list.assert_called_once_with(
+        part="snippet", id=youtube_id
+    )
+
+    # Verify it updated with modified tags
+    youtube_mocker().videos.return_value.update.assert_called_once()
+    update_call = youtube_mocker().videos.return_value.update.call_args
+
+    assert update_call[1]["part"] == "snippet"
+    assert update_call[1]["body"]["id"] == youtube_id
+    assert update_call[1]["body"]["snippet"]["tags"] == [
+        "python",
+        "django",
+        "machine-learning",
+    ]
+    # Verify other fields are preserved
+    assert update_call[1]["body"]["snippet"]["title"] == "Existing Title"
+    assert update_call[1]["body"]["snippet"]["description"] == "Existing description"
+
+
+def test_update_video_tags_not_found(youtube_mocker):
+    """Test update_video_tags raises exception when video not found"""
+    youtube_id = "nonexistent_video"
+
+    # Mock the list call to return empty items
+    youtube_mocker().videos.return_value.list.return_value.execute.return_value = {
+        "items": []
+    }
+
+    with pytest.raises(YouTubeUploadException, match="Video .* not found"):
+        YouTubeApi().update_video_tags(youtube_id, "test-tag")
 
 
 def test_video_status(youtube_mocker):

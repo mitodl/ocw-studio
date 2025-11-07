@@ -224,12 +224,14 @@ class YouTubeApi:
 
         """
         original_name = videofile.video.source_key.split("/")[-1]
+        course_slug = get_course_tag(videofile.video.website)
         request_body = {
             "snippet": {
                 "title": truncate_words(
                     strip_bad_chars(original_name), YT_MAX_LENGTH_TITLE
                 ),
                 "description": "",
+                "tags": [course_slug],
                 "categoryId": settings.YT_CATEGORY_ID,
             },
             "status": {"privacyStatus": privacy},
@@ -340,6 +342,45 @@ class YouTubeApi:
 
         if privacy:
             self.update_privacy(youtube_id, privacy=privacy)
+
+    def update_video_tags(self, youtube_id: str, tags: str):
+        """
+        Update only the tags for a YouTube video.
+
+        Args:
+            youtube_id (str): The YouTube video ID
+            tags (str): Comma-separated tags string
+
+        Returns:
+            dict: YouTube API response
+        """
+        # Get current video snippet to preserve other fields
+        video_response = (
+            self.client.videos().list(part="snippet", id=youtube_id).execute()
+        )
+
+        if not video_response.get("items"):
+            msg = f"Video {youtube_id} not found"
+            raise YouTubeUploadException(msg)
+
+        current_snippet = video_response["items"][0]["snippet"]
+
+        # Update only the tags field
+        tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        current_snippet["tags"] = tag_list
+
+        # Update the video with modified snippet
+        return (
+            self.client.videos()
+            .update(
+                part="snippet",
+                body={
+                    "id": youtube_id,
+                    "snippet": current_snippet,
+                },
+            )
+            .execute()
+        )
 
     @classmethod
     def get_all_video_captions(

@@ -4,11 +4,11 @@ from django.conf import settings
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
-from videos.utils import get_course_tag, merge_course_tag_into_metadata
+from videos.utils import get_course_tag, get_tags_with_course
 from videos.youtube import YouTubeApi, is_youtube_enabled
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import WebsiteContent
-from websites.utils import get_dict_field
+from websites.utils import get_dict_field, set_dict_field
 
 # Verbosity level for detailed output
 VERBOSITY_DETAILED = 2
@@ -76,7 +76,8 @@ class Command(WebsiteFilterCommand):
 
         # Merge course slug into tags if requested
         if add_course_tag:
-            merge_course_tag_into_metadata(video_resource.metadata, course_slug)
+            merged_tags = get_tags_with_course(video_resource.metadata, course_slug)
+            set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags)
 
         # Get tags after potential merge
         tags = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
@@ -94,8 +95,8 @@ class Command(WebsiteFilterCommand):
             return ("success", "  [DRY RUN] Would not update tags on YouTube")
 
         try:
-            # Update only metadata including tags, not privacy
-            youtube.update_video(video_resource, privacy=None)
+            # Update only tags on YouTube (not other metadata)
+            youtube.update_video_tags(youtube_id, tags or "")
         except Exception as exc:  # noqa: BLE001
             msg = f"  ✗ Error updating tags for {youtube_id}: {exc!s}"
             return ("error", msg)
