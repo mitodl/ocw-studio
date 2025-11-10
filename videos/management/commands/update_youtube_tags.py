@@ -78,6 +78,8 @@ class Command(WebsiteFilterCommand):
         if add_course_tag:
             merged_tags = get_tags_with_course(video_resource.metadata, course_slug)
             set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags)
+            if not dry_run:
+                video_resource.save()
 
         # Get tags after potential merge
         tags = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)

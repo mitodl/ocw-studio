@@ -363,3 +363,85 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     assert tags.count("my-course") == 1
     assert "python" in tags
     assert "django" in tags
+
+
+def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
+    """Test that merged tags are saved to the database"""
+    website = WebsiteFactory.create(name="test-course", url_path="courses/test-course")
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_save_test",
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        title="Test Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_save_test",
+                "video_tags": "python, django",
+            },
+        },
+    )
+
+    # Get initial tags
+    initial_tags = content.metadata["video_metadata"]["video_tags"]
+    assert initial_tags == "python, django"
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        add_course_tag=True,
+    )
+
+    # Refresh from database to verify persistence
+    content.refresh_from_db()
+    updated_tags = content.metadata["video_metadata"]["video_tags"]
+
+    # Verify tags were merged and saved to database (alphabetically sorted)
+    assert "test-course" in updated_tags
+    assert "python" in updated_tags
+    assert "django" in updated_tags
+    assert updated_tags == "python, django, test-course"
+
+
+def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
+    """Test that dry-run mode doesn't save metadata to database"""
+    website = WebsiteFactory.create(name="test-course", url_path="courses/test-course")
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_dry_run_test",
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        title="Test Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_dry_run_test",
+                "video_tags": "python, django",
+            },
+        },
+    )
+
+    initial_tags = content.metadata["video_metadata"]["video_tags"]
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        add_course_tag=True,
+        dry_run=True,
+    )
+
+    # Refresh from database
+    content.refresh_from_db()
+    tags_after_dry_run = content.metadata["video_metadata"]["video_tags"]
+
+    # Verify tags were NOT modified in database during dry-run
+    assert tags_after_dry_run == initial_tags
+    assert tags_after_dry_run == "python, django"
+    assert "test-course" not in tags_after_dry_run
