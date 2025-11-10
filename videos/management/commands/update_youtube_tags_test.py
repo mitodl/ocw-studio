@@ -68,7 +68,9 @@ def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
         filter="test-course",
     )
 
-    mock_youtube_api.update_video_tags.assert_called_once()
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "test_youtube_id_123", "python, django, testing"
+    )
 
 
 def test_update_youtube_tags_specific_video(mock_youtube_api):
@@ -118,7 +120,7 @@ def test_update_youtube_tags_specific_video(mock_youtube_api):
     )
 
     # Should only update the video with youtube_id_1
-    mock_youtube_api.update_video_tags.assert_called_once()
+    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_id_1", "tag1")
 
 
 def test_update_youtube_tags_no_tags(mock_youtube_api):
@@ -147,7 +149,7 @@ def test_update_youtube_tags_no_tags(mock_youtube_api):
     )
 
     # Should still update, even with empty tags
-    mock_youtube_api.update_video_tags.assert_called_once()
+    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_id_no_tags", "")
 
 
 def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
@@ -182,7 +184,9 @@ def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags
     )
 
     # Should have attempted to call update despite error
-    mock_youtube_api.update_video_tags.assert_called_once()
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "test_youtube_id_123", "python, django, testing"
+    )
 
 
 def test_update_youtube_tags_youtube_not_enabled(mocker):
@@ -253,7 +257,7 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
     )
 
     # Should only update video from course-1
-    mock_youtube_api.update_video_tags.assert_called_once()
+    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_1", "tag1")
 
 
 def test_update_youtube_tags_add_course_tag(mock_youtube_api):
@@ -287,12 +291,10 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify the tags were merged with the course URL slug
-    mock_youtube_api.update_video_tags.assert_called_once()
-    tags = mock_youtube_api.update_video_tags.call_args[0][1]
-    assert "course-with-videos" in tags
-    assert "python" in tags
-    assert "django" in tags
+    # Verify the tags were merged with the course URL slug (alphabetically sorted)
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "youtube_test_123", "python, django, course-with-videos"
+    )
 
 
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
@@ -324,9 +326,9 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
     )
 
     # Verify course URL slug was added as the only tag
-    mock_youtube_api.update_video_tags.assert_called_once()
-    tags = mock_youtube_api.update_video_tags.call_args[0][1]
-    assert tags == "test-course-123"
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "yt_id_789", "test-course-123"
+    )
 
 
 def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
@@ -356,13 +358,10 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify course URL slug wasn't duplicated
-    mock_youtube_api.update_video_tags.assert_called_once()
-    tags = mock_youtube_api.update_video_tags.call_args[0][1]
-    # Should appear only once
-    assert tags.count("my-course") == 1
-    assert "python" in tags
-    assert "django" in tags
+    # Verify course URL slug wasn't duplicated (alphabetically sorted)
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "yt_existing", "python, my-course, django"
+    )
 
 
 def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
@@ -395,6 +394,9 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
         filter="test-course",
         add_course_tag=True,
     )
+
+    # Verify YouTube API was called
+    assert mock_youtube_api.update_video_tags.called
 
     # Refresh from database to verify persistence
     content.refresh_from_db()
@@ -436,6 +438,9 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
         add_course_tag=True,
         dry_run=True,
     )
+
+    # Verify YouTube API was NOT called in dry-run mode
+    assert not mock_youtube_api.update_video_tags.called
 
     # Refresh from database
     content.refresh_from_db()
