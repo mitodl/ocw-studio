@@ -115,16 +115,31 @@ def update_metadata(source_obj, new_uid, new_s3_path):
 
 def get_course_tag(website: Website) -> str:
     """
-    Get the course tag from the website's url_path.
+    Get the course URL slug from the website's url_path.
 
     Args:
         website: Website instance
 
     Returns:
-        str: Course URL slug without the 'courses/' prefix
+        str: The course URL slug (e.g., '18-01-fall-2020')
     """
-    url_path = website.url_path or website.name
-    return url_path.split("/", 1)[-1] if "/" in url_path else url_path
+    url_path = website.url_path
+    if url_path.startswith("courses/"):
+        return url_path[len("courses/") :]
+    return url_path
+
+
+def parse_tags(tags: str) -> list[str]:
+    """
+    Parse a comma-separated tag string into a list of cleaned tags.
+
+    Args:
+        tags (str): Comma-separated tag string
+
+    Returns:
+        list[str]: List of cleaned, non-empty tags
+    """
+    return [tag.strip() for tag in tags.split(",") if tag.strip()]
 
 
 def get_tags_with_course(metadata: dict, course_slug: str) -> str:
@@ -139,7 +154,7 @@ def get_tags_with_course(metadata: dict, course_slug: str) -> str:
         str: Comma-separated tags with course slug appended
     """
     existing_tags = get_dict_field(metadata, settings.YT_FIELD_TAGS) or ""
-    tag_list = [tag.strip() for tag in existing_tags.split(",") if tag.strip()]
+    tag_list = parse_tags(existing_tags)
 
     if course_slug not in tag_list:
         tag_list.append(course_slug)

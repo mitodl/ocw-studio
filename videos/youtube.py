@@ -28,7 +28,7 @@ from videos.constants import (
 )
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
-from videos.utils import get_course_tag, get_tags_with_course
+from videos.utils import get_course_tag, get_tags_with_course, parse_tags
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
@@ -366,7 +366,7 @@ class YouTubeApi:
         current_snippet = video_response["items"][0]["snippet"]
 
         # Update only the tags field
-        tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        tag_list = parse_tags(tags)
         current_snippet["tags"] = tag_list
 
         # Update the video with modified snippet
