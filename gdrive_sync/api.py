@@ -282,12 +282,6 @@ def process_file_result(
 @retry_on_failure
 def stream_to_s3(drive_file: DriveFile):
     """Stream a Google Drive file to S3"""
-    if drive_file.status in (
-        DriveFileStatus.UPLOAD_COMPLETE,
-        DriveFileStatus.TRANSCODING,
-        DriveFileStatus.COMPLETE,
-    ):
-        return
     try:
         s3 = get_boto3_resource("s3")
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME

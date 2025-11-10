@@ -564,13 +564,16 @@ def update_website_in_root_website(website, version):
 
 
 @app.task(acks_late=True)
-def remove_website_in_root_website(website):
+def remove_website_in_root_website(website, version="draft"):
     """
-    Delete a WebsiteContent object of type website in the website denoted by settings.ROOT_WEBSITE_NAME
+    Delete a WebsiteContent object of type website in the root website and
+    trigger rebuild.
 
     Args:
-        website (Website): The Website look up
-    """  # noqa: E501
+        website (Website): The Website to remove from the root website
+        version (str): The pipeline version to rebuild (draft or live),
+            defaults to draft
+    """
     if website.name != settings.ROOT_WEBSITE_NAME:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
         website_content = WebsiteContent.objects.get(
@@ -584,6 +587,11 @@ def remove_website_in_root_website(website):
         website_content.delete()
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend()
+
+        # Trigger root website pipeline to rebuild with updated content
+        if settings.CONTENT_SYNC_PIPELINE_BACKEND:
+            pipeline = api.get_site_pipeline(root_website)
+            pipeline.trigger_pipeline_build(version)
 
 
 @app.task(acks_late=True)

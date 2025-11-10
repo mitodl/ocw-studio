@@ -9,6 +9,13 @@ $form-border: 1px solid $studio-gray !important;
   box-shadow: 0 1px $studio-gray;
 }
 
+.form-control[readonly],
+.form-input[readonly],
+input[readonly].form-control,
+textarea[readonly].form-control {
+  cursor: not-allowed;
+}
+
 .ck.ck-editor__top {
   border-bottom: $form-border;
 }

@@ -21,6 +21,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
+    BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
@@ -36,6 +37,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.models import Website, WebsiteStarter
 
 pytestmark = pytest.mark.django_db
 
@@ -44,8 +46,11 @@ pytestmark = pytest.mark.django_db
 def website(request, django_db_setup, django_db_blocker):
     hugo_projects_path = "https://github.com/org/repo"
     with django_db_blocker.unblock():
+        # Use unique slug to avoid collisions with other tests
         starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=f"{hugo_projects_path}/site"
+            source=STARTER_SOURCE_GITHUB,
+            path=f"{hugo_projects_path}/site",
+            slug=f"fixture-starter-{request.param}",
         )
         site = WebsiteFactory.create(
             starter=starter,
@@ -54,6 +59,33 @@ def website(request, django_db_setup, django_db_blocker):
         yield site
         site.delete()
         starter.delete()
+
+
+@pytest.fixture
+def root_website(settings):
+    """Create a root website for tests that need it"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+
+    root_starter, _ = WebsiteStarter.objects.get_or_create(
+        slug="test-root-website-starter",
+        defaults={
+            "source": STARTER_SOURCE_GITHUB,
+            "path": "https://github.com/org/repo/root",
+            "name": "Root Starter",
+            "status": "default",
+            "config": {},
+        },
+    )
+    root_site, _ = Website.objects.get_or_create(
+        name="root-website",
+        defaults={
+            "starter": root_starter,
+            "url_path": "root",
+            "short_id": "root-site",
+            "title": "Root Website",
+        },
+    )
+    return root_site
 
 
 @pytest.mark.parametrize(
@@ -465,12 +497,16 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_online_params["version"]
                 == config.vars["pipeline_name"]
             )
+
+    # Verify gate step exists for all websites (including root)
     offline_build_gate_put_task = online_site_tasks[-1]
     assert (
         offline_build_gate_put_task["try"]["put"]
         == pipeline_definition._offline_build_gate_identifier  # noqa: SLF001
     )
     assert offline_build_gate_put_task["try"]["no_get"] is True
+
+    # Test offline job
     offline_site_job = get_dict_list_item_by_field(
         jobs,
         "name",
@@ -659,6 +695,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 open_discussions_webhook_step_offline_params["version"]
                 == config.vars["pipeline_name"]
             )
+
     expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
@@ -694,13 +731,14 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
-def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
+def test_offline_content_cleanup_step(website, settings, mocker, is_dev, root_website):
     """
-    Test that the offline content cleanup step is correctly configured
+    Test that the offline content cleanup step is correctly configured with all three cleanup tasks
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -728,20 +766,22 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
     )
 
     pipeline_definition = SitePipelineDefinition(config=config)
-    cleanup_step = pipeline_definition.get_offline_content_cleanup_step()
+    cleanup_step = pipeline_definition.get_offline_content_cleanup_step(config)
 
-    # Test the cleanup step configuration
-    assert cleanup_step.task == "remove-offline-content-task"
-    assert cleanup_step.timeout.root == "5m"
-    assert cleanup_step.attempts == 3
+    # Test that the cleanup step is a DoStep (not wrapped in TryStep)
+    # The outer TryStep wrapping the gate already handles errors
+    assert hasattr(cleanup_step, "do")
+    assert len(cleanup_step.do) == 2  # S3 cleanup + API call
 
-    # Test the command configuration
-    assert cleanup_step.config.run.path == "sh"
-
-    # Check that the actual command structure matches expectations
-    actual_command = cleanup_step.config.run.args[1]
+    # Test Step 1: S3 cleanup task
+    s3_cleanup_task = cleanup_step.do[0]
+    assert s3_cleanup_task.task == "remove-offline-content-s3-task"
+    assert s3_cleanup_task.timeout.root == "5m"
+    assert s3_cleanup_task.attempts == 3
+    assert s3_cleanup_task.config.run.path == "sh"
 
     # Check that all three AWS S3 remove commands are present
+    actual_command = s3_cleanup_task.config.run.args[1]
     assert (
         f"aws s3{cli_endpoint_url} rm s3://((site:web_bucket))/((site:url_path))/((site:short_id)).zip"
         in actual_command
@@ -754,31 +794,50 @@ def test_offline_content_cleanup_step(website, settings, mocker, is_dev):
         f"aws s3{cli_endpoint_url} rm s3://((site:offline_bucket))/((site:url_path))/ --recursive"
         in actual_command
     )
-
-    # Check that the core components are present
-    assert (
-        'echo "Removing offline content for site: ((site:url_path))"' in actual_command
-    )
-    assert 'echo "Offline content cleanup completed"' in actual_command
-
-    assert cleanup_step.config.platform == "linux"
-    assert cleanup_step.config.image_resource == AWS_CLI_REGISTRY_IMAGE
+    assert s3_cleanup_task.config.platform == "linux"
+    assert s3_cleanup_task.config.image_resource == AWS_CLI_REGISTRY_IMAGE
 
     # Test environment variables for dev
     if is_dev:
-        assert cleanup_step.params["AWS_ACCESS_KEY_ID"] == "test_access_key_id"
-        assert cleanup_step.params["AWS_SECRET_ACCESS_KEY"] == "test_secret_access_key"  # noqa: S105
+        assert s3_cleanup_task.params["AWS_ACCESS_KEY_ID"] == "test_access_key_id"
+        assert (
+            s3_cleanup_task.params["AWS_SECRET_ACCESS_KEY"] == "test_secret_access_key"  # noqa: S105
+        )
     else:
-        assert not hasattr(cleanup_step, "params") or cleanup_step.params is None
+        assert not hasattr(s3_cleanup_task, "params") or s3_cleanup_task.params is None
+
+    # Test Step 2: API call to remove from root website
+    # This triggers root website pipeline rebuild from OCW Studio, not inline
+    api_call_task = cleanup_step.do[1]
+    assert api_call_task.task == "remove-from-root-website-task"
+    assert api_call_task.timeout.root == "10m"
+    assert api_call_task.attempts == 3
+    assert api_call_task.config.run.path == "sh"
+
+    # Check wget command is used with proper arguments
+    api_command = api_call_task.config.run.args[1]
+    assert "wget" in api_command
+    assert "--post-data=''" in api_command
+    assert "/remove_from_root_website/" in api_command
+    # Verify version parameter is included so OCW Studio knows which pipeline to trigger
+    assert "?version=((site:pipeline_name))" in api_command
+    assert api_call_task.config.image_resource == BASH_REGISTRY_IMAGE
+
+    # Verify no on_success handler - root website rebuild is triggered from OCW Studio
+    assert not hasattr(api_call_task, "on_success") or api_call_task.on_success is None
 
 
-def test_offline_build_gate_cleanup_task(website, settings, mocker):
+@pytest.mark.parametrize("pipeline_name", ["draft", "live"])
+def test_offline_build_gate_cleanup_task(
+    website, settings, mocker, pipeline_name, root_website
+):
     """
     Test that the offline build gate put step has proper failure handling attached
     """
     # Setup
     settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
     settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+
     mock_utils_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_pipeline_is_dev = mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
@@ -790,7 +849,7 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
 
     config = SitePipelineDefinitionConfig(
         site=website,
-        pipeline_name="test",
+        pipeline_name=pipeline_name,
         instance_vars="",
         site_content_branch="main",
         static_api_url="https://test.example.com/",
@@ -816,6 +875,7 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
     assert online_job is not None, "Online job should exist"
 
     # Find the offline build gate put step (should be the last step in the online job)
+    # This step exists for both root and non-root websites
     gate_put_step = None
     for step in online_job["plan"]:
         if (
@@ -828,10 +888,49 @@ def test_offline_build_gate_cleanup_task(website, settings, mocker):
 
     assert gate_put_step is not None, "Offline build gate put step should exist"
 
-    # Verify that failure handling is attached to the inner put step
+    # Root websites should have the gate step but NO cleanup handler
+    if website.name == settings.ROOT_WEBSITE_NAME:
+        assert "on_error" not in gate_put_step, (
+            "Root websites should not have cleanup (can't remove themselves)"
+        )
+        return  # Test complete for root websites
+
+    # For non-root websites, verify that failure handling is attached
     assert "on_error" in gate_put_step
 
-    # Verify the failure handling is the cleanup task
-    assert gate_put_step["on_error"]["task"] == "remove-offline-content-task"
-    assert gate_put_step["on_error"]["timeout"] == "5m"
-    assert gate_put_step["on_error"]["attempts"] == 3
+    # Verify the failure handling is a DoStep (outer TryStep wrapping gate already handles errors)
+    error_handler = gate_put_step["on_error"]
+    assert "do" in error_handler, "Error handler should be a DoStep"
+
+    # Verify the cleanup tasks (no need for across since this is a single-site pipeline)
+    cleanup_tasks = error_handler["do"]
+    assert len(cleanup_tasks) == 2, "Should have S3 cleanup and API call"
+
+    # Verify the S3 cleanup task
+    s3_cleanup_task = cleanup_tasks[0]
+    assert s3_cleanup_task["task"] == "remove-offline-content-s3-task"
+    assert s3_cleanup_task["timeout"] == "5m"
+    assert s3_cleanup_task["attempts"] == 3
+    assert "rm s3://" in s3_cleanup_task["config"]["run"]["args"][1]
+    assert "--recursive" in s3_cleanup_task["config"]["run"]["args"][1]
+
+    # Verify the API call task - triggers root website rebuild from OCW Studio
+    remove_content_task = cleanup_tasks[1]
+    assert remove_content_task["task"] == "remove-from-root-website-task"
+    assert remove_content_task["timeout"] == "10m"
+    assert remove_content_task["attempts"] == 3
+    assert remove_content_task["config"]["run"]["path"] == "sh"
+
+    # Check wget command is used with proper arguments
+    api_args = remove_content_task["config"]["run"]["args"][1]
+    assert "wget" in api_args
+    assert "--post-data=''" in api_args
+    assert "/remove_from_root_website/" in api_args
+    # Verify version parameter is included so OCW Studio knows which pipeline to trigger
+    assert "?version=" in api_args
+    assert "((site:pipeline_name))" in api_args
+
+    # Verify no on_success handler - root website rebuild is triggered from OCW Studio, not inline
+    assert "on_success" not in remove_content_task, (
+        "Should not have on_success handler - root website rebuild is triggered from OCW Studio"
+    )

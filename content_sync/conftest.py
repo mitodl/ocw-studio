@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from websites.constants import STARTER_SOURCE_GITHUB
-from websites.factories import WebsiteFactory, WebsiteStarterFactory
+from websites.factories import WebsiteFactory
 from websites.models import Website, WebsiteStarter
 
 
@@ -100,20 +100,44 @@ def mass_build_websites(django_db_setup, django_db_blocker):  # noqa: ARG001
         now = datetime.now(tz=UTC) - timedelta(hours=48)
         total_sites = 6
         ocw_hugo_projects_path = "https://github.com/org/repo"
-        root_starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB,
-            path=ocw_hugo_projects_path,
-            slug="root-website-starter",
+        # Use sufficiently unique slugs to avoid factory auto-sequence collisions
+        root_starter, _ = WebsiteStarter.objects.get_or_create(
+            slug="mass-build-root-starter-999",
+            defaults={
+                "source": STARTER_SOURCE_GITHUB,
+                "path": ocw_hugo_projects_path,
+                "name": "Root Website Starter",
+                "status": "default",
+                "config": {},
+            },
         )
-        starter = WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path=ocw_hugo_projects_path
+        starter, _ = WebsiteStarter.objects.get_or_create(
+            slug="mass-build-test-starter-999",
+            defaults={
+                "source": STARTER_SOURCE_GITHUB,
+                "path": ocw_hugo_projects_path,
+                "name": "Mass Build Test Starter",
+                "status": "default",
+                "config": {},
+            },
         )
-        root_website = WebsiteFactory.create(name="root-website", starter=root_starter)
+        root_website, _ = Website.objects.get_or_create(
+            name="root-website",
+            defaults={
+                "starter": root_starter,
+                "url_path": "root",
+                "short_id": "root-site",
+                "title": "Root Website",
+                "draft_publish_date": now,
+                "publish_date": now,
+            },
+        )
         batch_sites = WebsiteFactory.create_batch(
             total_sites, starter=starter, draft_publish_date=now, publish_date=now
         )
         batch_sites.append(root_website)
         yield batch_sites
+        # Cleanup - these objects persist across the module due to scope
         for site in batch_sites:
             site.delete()
         starter.delete()

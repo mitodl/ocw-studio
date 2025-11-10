@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.168.0
+---------------
+
+- fix: stream to s3 for edited gdrive files (#2777)
+- fix(deps): update dependency boto3 to v1.40.68 (#2780)
+- Refactor SiteContentForm and use not-allowed cursor for read-only string fields (#2776)
+- fix(deps): update dependency django to v4.2.26 [security] (#2779)
+- chore: added tasks in offline gate step to remove site from offline search index (#2766)
+
 Version 0.167.1 (Released November 03, 2025)
 ---------------
 

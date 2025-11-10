@@ -197,15 +197,6 @@ def test_stream_to_s3_error_marks_failed(settings, mocker, fail_at):
 
 
 @pytest.mark.django_db
-def test_stream_to_s3_skips_if_already_uploaded(mocker):
-    """stream_to_s3 should skip if the file status is UPLOAD_COMPLETE"""
-    mock_boto3 = mocker.patch("main.s3_utils.boto3")
-    drive_file = DriveFileFactory.create(status=DriveFileStatus.UPLOAD_COMPLETE)
-    api.stream_to_s3(drive_file)
-    mock_boto3.resource.return_value.Bucket.return_value.upload_fileobj.assert_not_called()
-
-
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("parent_folder", "parent_folder_in_ancestors"),
     [(None, False), ("correct_parent", False), ("correct_parent", True)],

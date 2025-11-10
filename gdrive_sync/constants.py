@@ -6,21 +6,25 @@ DRIVE_API_CHANGES = "changes"
 DRIVE_API_FILES = "files"
 DRIVE_API_RESOURCES = [DRIVE_API_FILES, DRIVE_API_CHANGES]
 
-DRIVE_FOLDER_VIDEOS_FINAL = "videos_final"
-DRIVE_FOLDER_FILES_FINAL = "files_final"
-DRIVE_FOLDER_FILES = "files"
-DRIVE_FILE_FIELDS = "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, modifiedTime, size, webContentLink, trashed, parents)"  # noqa: E501
-DRIVE_MIMETYPE_FOLDER = "application/vnd.google-apps.folder"
-
-DRIVE_FILE_ID = "id"
-DRIVE_FILE_NAME = "name"
-DRIVE_FILE_MIME_TYPE = "mimeType"
-DRIVE_FILE_MD5_CHECKSUM = "md5Checksum"
-DRIVE_FILE_MODIFIED_TIME = "modifiedTime"
 DRIVE_FILE_CREATED_TIME = "createdTime"
-DRIVE_FILE_SIZE = "size"
 DRIVE_FILE_DOWNLOAD_LINK = "webContentLink"
+DRIVE_FILE_FIELDS = (
+    "nextPageToken, files(id, name, md5Checksum, mimeType, createdTime, "
+    "modifiedTime, size, webContentLink, trashed, parents)"
+)
+DRIVE_FILE_ID = "id"
+DRIVE_FILE_MD5_CHECKSUM = "md5Checksum"
+DRIVE_FILE_MIME_TYPE = "mimeType"
+DRIVE_FILE_MODIFIED_TIME = "modifiedTime"
+DRIVE_FILE_NAME = "name"
+DRIVE_FILE_SIZE = "size"
 DRIVE_FILE_VIEW_URL = "https://drive.google.com/file/d/{file_id}/view"
+
+DRIVE_FOLDER_FILES = "files"
+DRIVE_FOLDER_FILES_FINAL = "files_final"
+DRIVE_FOLDER_VIDEOS_FINAL = "videos_final"
+
+DRIVE_MIMETYPE_FOLDER = "application/vnd.google-apps.folder"
 
 VALID_TEXT_FILE_TYPES = [
     ".pdf",
