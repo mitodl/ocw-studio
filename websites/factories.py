@@ -14,6 +14,7 @@ from websites import constants
 from websites.models import Website, WebsiteContent, WebsiteStarter
 
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
+FACTORY_COURSE_CONFIG_PATH = "localdev/configs/ocw-course-site-config.yml"
 
 
 class WebsiteStarterFactory(DjangoModelFactory):
@@ -34,6 +35,16 @@ class WebsiteStarterFactory(DjangoModelFactory):
 
     class Meta:
         model = WebsiteStarter
+
+    class Params:
+        is_course = factory.Trait(
+            config=factory.LazyAttribute(
+                lambda _: yaml.load(
+                    (Path(settings.BASE_DIR) / FACTORY_COURSE_CONFIG_PATH).read_text(),
+                    Loader=yaml.SafeLoader,
+                )
+            )
+        )
 
 
 class WebsiteFactory(DjangoModelFactory):
@@ -56,6 +67,9 @@ class WebsiteFactory(DjangoModelFactory):
         model = Website
 
     class Params:
+        is_course = factory.Trait(
+            starter=factory.SubFactory(WebsiteStarterFactory, is_course=True)
+        )
         with_url_path = factory.Trait(
             url_path=factory.Sequence(lambda n: f"courses/site-path-{n}")
         )
