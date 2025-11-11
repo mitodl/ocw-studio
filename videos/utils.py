@@ -124,12 +124,10 @@ def get_course_tag(website: Website) -> str:
         str: The course URL slug (e.g., '18-01-fall-2020')
     """
     url_path = website.url_path or ""
-    root_path = website.get_site_root_path()
+    root_url_path = website.get_site_root_path() or settings.DEFAULT_SITE_ROOT_URL_PATH
 
-    # Strip the root path prefix if present (e.g., "courses/")
-    if root_path and url_path.startswith(f"{root_path}/"):
-        return url_path[len(root_path) + 1 :]
-
+    if root_url_path and url_path.startswith(f"{root_url_path}/"):
+        return url_path.removeprefix(f"{root_url_path}/")
     return url_path
 
 

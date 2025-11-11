@@ -263,10 +263,10 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
 def test_update_youtube_tags_add_course_tag(mock_youtube_api):
     """Test adding course URL slug as a tag"""
     website = WebsiteFactory.create(
-        is_course=True,
         name="course-with-videos",
         short_id="cwv",
         url_path="courses/course-with-videos",
+        starter=None,
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -301,7 +301,7 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
     """Test adding course URL slug as a tag when no existing tags"""
     website = WebsiteFactory.create(
-        is_course=True, name="test-course-123", url_path="courses/test-course-123"
+        name="test-course-123", url_path="courses/test-course-123", starter=None
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -335,7 +335,7 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
 def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     """Test that course URL slug isn't duplicated if already in tags"""
     website = WebsiteFactory.create(
-        is_course=True, name="my-course", url_path="courses/my-course"
+        name="my-course", url_path="courses/my-course", starter=None
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -370,7 +370,7 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
 def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     """Test that merged tags are saved to the database"""
     website = WebsiteFactory.create(
-        is_course=True, name="test-course", url_path="courses/test-course"
+        name="test-course", url_path="courses/test-course", starter=None
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -416,9 +416,7 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
 
 def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
     """Test that dry-run mode doesn't save metadata to database"""
-    website = WebsiteFactory.create(
-        is_course=True, name="test-course", url_path="courses/test-course"
-    )
+    website = WebsiteFactory.create(name="test-course", url_path="courses/test-course")
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
         video=video,
