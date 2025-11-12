@@ -208,6 +208,7 @@ class YouTubeApi:
         videofile: VideoFile,
         privacy="unlisted",
         notify_subscribers=False,  # noqa: FBT002
+        existing_tags="",
     ):
         """
         Transfer the video's original video file from S3 to YouTube.
@@ -215,12 +216,14 @@ class YouTubeApi:
         https://www.youtube.com/verify
 
         Args:
-            video(Video): The Video object whose original source file will be uploaded'
+            video(Video): The Video object whose original source file will be uploaded
             privacy(str): The privacy level to set the YouTube video to.
             notify_subscribers(bool): whether subscribers should be notified
+            existing_tags(str): Existing comma-separated tags from
+                WebsiteContent metadata
 
         Returns:
-            dict: YouTube API response
+            tuple: (YouTube API response dict, merged tags string)
 
         """
         original_name = videofile.video.source_key.split("/")[-1]
@@ -235,10 +238,13 @@ class YouTubeApi:
             "status": {"privacyStatus": privacy},
         }
 
+        merged_tags = None
         if course_slug := get_course_tag(videofile.video.website):
-            request_body["snippet"]["tags"] = parse_tags(
-                get_tags_with_course(videofile.video.metadata, course_slug)
+            # Merge existing tags with course tag
+            merged_tags = (
+                f"{existing_tags}, {course_slug}" if existing_tags else course_slug
             )
+            request_body["snippet"]["tags"] = merged_tags
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
             request = self.client.videos().insert(
@@ -250,7 +256,7 @@ class YouTubeApi:
                 ),
             )
 
-        return resumable_upload(request)
+        return resumable_upload(request), merged_tags
 
     def update_privacy(self, youtube_id: str, privacy: str):
         """Update the privacy level of a video"""

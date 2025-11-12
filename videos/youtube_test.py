@@ -21,7 +21,7 @@ from videos.constants import (
 )
 from videos.factories import VideoFactory, VideoFileFactory
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
-from videos.utils import get_course_tag
+from videos.utils import get_course_tag, parse_tags
 from videos.youtube import (
     CAPTION_UPLOAD_NAME,
     YouTubeApi,
@@ -129,7 +129,7 @@ def test_upload_video(youtube_mocker):
         (None, None),
         (None, video_upload_response),
     ]
-    response = YouTubeApi().upload_video(videofile)
+    response, _ = YouTubeApi().upload_video(videofile)
     assert response == video_upload_response
 
 
@@ -184,7 +184,7 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
     # Verify course slug is included as tag
     course_slug = get_course_tag(video_file.video.website)
-    assert called_kwargs["body"]["snippet"]["tags"] == [course_slug]
+    assert called_kwargs["body"]["snippet"]["tags"] == course_slug
 
 
 @pytest.mark.parametrize("notify", [True, False])
@@ -225,8 +225,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
 
     expected_title = f"{' '.join([title.replace('>', '') for _ in range(9)])}..."
     expected_desc = f"{' '.join([description.replace('>', '') for _ in range(499)])}..."
-    # Course URL slug should be automatically added to tags
-    expected_tags = f"{tags}, {get_course_tag(content.website)}"
+    # Course URL slug should be automatically added to tags (as a list)
+    expected_tags = parse_tags(f"{tags}, {get_course_tag(content.website)}")
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
     assert (
