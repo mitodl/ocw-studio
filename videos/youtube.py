@@ -224,18 +224,21 @@ class YouTubeApi:
 
         """
         original_name = videofile.video.source_key.split("/")[-1]
-        course_slug = get_course_tag(videofile.video.website)
         request_body = {
             "snippet": {
                 "title": truncate_words(
                     strip_bad_chars(original_name), YT_MAX_LENGTH_TITLE
                 ),
                 "description": "",
-                "tags": [course_slug],
                 "categoryId": settings.YT_CATEGORY_ID,
             },
             "status": {"privacyStatus": privacy},
         }
+
+        if course_slug := get_course_tag(videofile.video.website):
+            request_body["snippet"]["tags"] = parse_tags(
+                get_tags_with_course(videofile.video.metadata, course_slug)
+            )
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
             request = self.client.videos().insert(
@@ -332,7 +335,7 @@ class YouTubeApi:
                     "description": truncate_words(
                         strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
                     ),
-                    "tags": get_tags_with_course(metadata, course_slug),
+                    "tags": parse_tags(get_tags_with_course(metadata, course_slug)),
                     "categoryId": settings.YT_CATEGORY_ID,
                 },
             },
@@ -366,8 +369,7 @@ class YouTubeApi:
         current_snippet = video_response["items"][0]["snippet"]
 
         # Update only the tags field
-        tag_list = parse_tags(tags)
-        current_snippet["tags"] = tag_list
+        current_snippet["tags"] = parse_tags(tags)
 
         # Update the video with modified snippet
         return (

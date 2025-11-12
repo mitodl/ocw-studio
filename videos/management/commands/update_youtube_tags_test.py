@@ -19,11 +19,10 @@ from websites.factories import (
 pytestmark = pytest.mark.django_db
 
 # Load OCW course config for tests
-COURSE_STARTER_CONFIG = yaml.load(
+COURSE_STARTER_CONFIG = yaml.safe_load(
     (
         Path(settings.BASE_DIR) / "localdev/configs/ocw-course-site-config.yml"
-    ).read_text(),
-    Loader=yaml.SafeLoader,
+    ).read_text()
 )
 
 
@@ -64,8 +63,6 @@ def video_content_with_tags():
 
 def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
     """Test that dry-run mode doesn't actually update YouTube"""
-    _content, _video_file = video_content_with_tags
-
     call_command(
         "update_youtube_tags",
         filter="test-course",
@@ -77,8 +74,6 @@ def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
 
 def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
     """Test that the command successfully updates YouTube tags"""
-    _content, _video_file = video_content_with_tags
-
     call_command(
         "update_youtube_tags",
         filter="test-course",
@@ -191,7 +186,6 @@ def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
 
 def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags):
     """Test handling of YouTube API errors"""
-    _content, _video_file = video_content_with_tags
     mock_youtube_api.update_video_tags.side_effect = Exception("YouTube API error")
 
     call_command(
@@ -309,7 +303,7 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify the tags were merged with the course URL slug (alphabetically sorted)
+    # Verify the tags were merged with the course URL slug
     mock_youtube_api.update_video_tags.assert_called_once_with(
         "youtube_test_123", "python, django, course-with-videos"
     )
@@ -384,7 +378,7 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify course URL slug wasn't duplicated (alphabetically sorted)
+    # Verify course URL slug wasn't duplicated
     mock_youtube_api.update_video_tags.assert_called_once_with(
         "yt_existing", "python, my-course, django"
     )
@@ -433,7 +427,7 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     content.refresh_from_db()
     updated_tags = content.metadata["video_metadata"]["video_tags"]
 
-    # Verify tags were merged and saved to database (alphabetically sorted)
+    # Verify tags were merged and saved to database
     assert "test-course" in updated_tags
     assert "python" in updated_tags
     assert "django" in updated_tags
