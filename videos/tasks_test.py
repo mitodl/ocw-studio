@@ -238,13 +238,13 @@ def test_upload_youtube_videos_saves_tags_to_metadata(mocker, mocked_celery):
     mock_youtube_id = "test_youtube_id_123"
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
     mock_uploader = mock_youtube.return_value.upload_video
-    # upload_video now returns a tuple (response, course_tag)
+    # upload_video now returns a tuple (response, merged_tags)
     mock_uploader.return_value = (
         {
             "id": mock_youtube_id,
             "status": {"uploadStatus": "uploaded"},
         },
-        "test-course-fall-2020",  # course_tag
+        "python, django, test-course-fall-2020",  # merged tags
     )
 
     # Run the upload task
