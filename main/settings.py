@@ -1122,13 +1122,6 @@ OCW_MASS_BUILD_MAX_IN_FLIGHT = get_int(
     description="The amount of sites to build simultaneously in each job created by MassBuildSitesPipelineDefinition",  # noqa: E501
 )
 
-DEFAULT_SITE_ROOT_URL_PATH = get_string(
-    name="DEFAULT_SITE_ROOT_URL_PATH",
-    default="courses",
-    description="The default root URL path for websites (used when website has no starter config)",  # noqa: E501
-    required=False,
-)
-
 ROOT_WEBSITE_NAME = get_string(
     name="ROOT_WEBSITE_NAME",
     default="ocw-www",

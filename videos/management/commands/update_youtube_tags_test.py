@@ -1,14 +1,30 @@
 """Tests for the update_youtube_tags management command"""
 
+from pathlib import Path
+
 import pytest
+import yaml
+from django.conf import settings
 from django.core.management import call_command
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFactory, VideoFileFactory
 from websites.constants import RESOURCE_TYPE_VIDEO
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 
 pytestmark = pytest.mark.django_db
+
+# Load OCW course config for tests
+COURSE_STARTER_CONFIG = yaml.load(
+    (
+        Path(settings.BASE_DIR) / "localdev/configs/ocw-course-site-config.yml"
+    ).read_text(),
+    Loader=yaml.SafeLoader,
+)
 
 
 @pytest.fixture
@@ -262,11 +278,12 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
 
 def test_update_youtube_tags_add_course_tag(mock_youtube_api):
     """Test adding course URL slug as a tag"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
         name="course-with-videos",
         short_id="cwv",
         url_path="courses/course-with-videos",
-        starter=None,
+        starter=starter,
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -300,8 +317,11 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
 
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
     """Test adding course URL slug as a tag when no existing tags"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
-        name="test-course-123", url_path="courses/test-course-123", starter=None
+        name="test-course-123",
+        url_path="courses/test-course-123",
+        starter=starter,
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -334,8 +354,11 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
 
 def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     """Test that course URL slug isn't duplicated if already in tags"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
-        name="my-course", url_path="courses/my-course", starter=None
+        name="my-course",
+        url_path="courses/my-course",
+        starter=starter,
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -369,8 +392,11 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
 
 def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     """Test that merged tags are saved to the database"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
-        name="test-course", url_path="courses/test-course", starter=None
+        name="test-course",
+        url_path="courses/test-course",
+        starter=starter,
     )
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
