@@ -154,7 +154,7 @@ If this completes successfully, the `VideoJob` status in Django admin should be 
 
 Existing caption (`.vtt`) and transcript (`.pdf`) resources can be associated with a video resource directly in OCW Studio without requiring a new upload or 3Play transcript request.
 
-The `Edit Resource` form includes two fields: `Video Captions Resource` and `Video Transcript Resource`. These fields can be used to select resources that contain the corresponding caption and transcript files. The files associated with the resources are not required to follow the `_captions.vtt` and `_transcript.pdf` naming convention used by Google Drive sync.
+The `Edit Resource` form includes two fields: `Video Captions Resource` and `Video Transcript Resource`. These fields can be used to select resources that contain the corresponding caption and transcript files. _The files associated with the resources are not required to follow the `_captions.vtt` and `_transcript.pdf` naming convention used by Google Drive sync._
 
 When the video resource is saved, the serializer updates the `Video Captions (WebVTT) URL` and `Video Transcript (PDF) URL` fields based on the selected resources. Either field may be populated independently, and existing associations can be cleared by removing the selected resource (by clicking on the `X`) and saving the video resource again.
 
