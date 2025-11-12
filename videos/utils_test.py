@@ -10,6 +10,7 @@ from videos.utils import (
     create_new_content,
     generate_s3_path,
     get_content_dirpath,
+    get_tags_with_course,
     update_metadata,
 )
 from websites.factories import (
@@ -99,3 +100,47 @@ def test_create_new_content(mocker):
     mock_copy_obj_s3.assert_called_once_with(source_content, destination_course)
     mock_get_dirpath_and_filename.assert_called_once_with("new_s3_loc")
     mock_uuid_string.assert_called_once()
+
+
+def test_get_tags_with_course_string_tags():
+    """Test getting tags with course name from string tags."""
+    metadata = {"video_metadata": {"video_tags": "calculus, mathematics"}}
+    course_name = "18-01-fall-2020"
+
+    result = get_tags_with_course(metadata, course_name)
+
+    # Should return merged tags without modifying metadata
+    assert result == "calculus, mathematics, 18-01-fall-2020"
+    assert metadata["video_metadata"]["video_tags"] == "calculus, mathematics"
+
+
+def test_get_tags_with_course_no_existing_tags():
+    """Test getting tags when no existing tags."""
+    metadata = {"video_metadata": {}}
+    course_name = "course-123"
+
+    result = get_tags_with_course(metadata, course_name)
+
+    assert result == "course-123"
+
+
+def test_get_tags_with_course_already_exists():
+    """Test getting tags when course name already in tags."""
+    metadata = {"video_metadata": {"video_tags": "python, my-course, django"}}
+    course_name = "my-course"
+
+    result = get_tags_with_course(metadata, course_name)
+
+    # Should not duplicate
+    assert result == "python, my-course, django"
+    assert metadata["video_metadata"]["video_tags"] == "python, my-course, django"
+
+
+def test_get_tags_with_course_empty_string():
+    """Test getting tags with empty string."""
+    metadata = {"video_metadata": {"video_tags": ""}}
+    course_name = "new-course"
+
+    result = get_tags_with_course(metadata, course_name)
+
+    assert result == "new-course"

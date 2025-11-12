@@ -28,6 +28,7 @@ from videos.constants import (
 )
 from videos.messages import YouTubeUploadFailureMessage, YouTubeUploadSuccessMessage
 from videos.models import VideoFile
+from videos.utils import get_course_tag, get_tags_with_course, parse_tags
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
@@ -207,6 +208,7 @@ class YouTubeApi:
         videofile: VideoFile,
         privacy="unlisted",
         notify_subscribers=False,  # noqa: FBT002
+        existing_tags="",
     ):
         """
         Transfer the video's original video file from S3 to YouTube.
@@ -214,12 +216,14 @@ class YouTubeApi:
         https://www.youtube.com/verify
 
         Args:
-            video(Video): The Video object whose original source file will be uploaded'
+            video(Video): The Video object whose original source file will be uploaded
             privacy(str): The privacy level to set the YouTube video to.
             notify_subscribers(bool): whether subscribers should be notified
+            existing_tags(str): Existing comma-separated tags from
+                WebsiteContent metadata
 
         Returns:
-            dict: YouTube API response
+            tuple: (YouTube API response dict, merged tags string)
 
         """
         original_name = videofile.video.source_key.split("/")[-1]
@@ -234,6 +238,14 @@ class YouTubeApi:
             "status": {"privacyStatus": privacy},
         }
 
+        merged_tags = None
+        if course_slug := get_course_tag(videofile.video.website):
+            # Merge existing tags with course tag
+            merged_tags = (
+                f"{existing_tags}, {course_slug}" if existing_tags else course_slug
+            )
+            request_body["snippet"]["tags"] = merged_tags
+
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
             request = self.client.videos().insert(
                 part=",".join(request_body.keys()),
@@ -244,7 +256,7 @@ class YouTubeApi:
                 ),
             )
 
-        return resumable_upload(request)
+        return resumable_upload(request), merged_tags
 
     def update_privacy(self, youtube_id: str, privacy: str):
         """Update the privacy level of a video"""
@@ -317,6 +329,7 @@ class YouTubeApi:
         if speakers:
             description = f"{description}\n\nSpeakers: {speakers}"
         youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
+        course_slug = get_course_tag(resource.website)
         self.client.videos().update(
             part="snippet",
             body={
@@ -328,7 +341,7 @@ class YouTubeApi:
                     "description": truncate_words(
                         strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
                     ),
-                    "tags": get_dict_field(metadata, settings.YT_FIELD_TAGS),
+                    "tags": parse_tags(get_tags_with_course(metadata, course_slug)),
                     "categoryId": settings.YT_CATEGORY_ID,
                 },
             },
@@ -338,6 +351,44 @@ class YouTubeApi:
 
         if privacy:
             self.update_privacy(youtube_id, privacy=privacy)
+
+    def update_video_tags(self, youtube_id: str, tags: str):
+        """
+        Update only the tags for a YouTube video.
+
+        Args:
+            youtube_id (str): The YouTube video ID
+            tags (str): Comma-separated tags string
+
+        Returns:
+            dict: YouTube API response
+        """
+        # Get current video snippet to preserve other fields
+        video_response = (
+            self.client.videos().list(part="snippet", id=youtube_id).execute()
+        )
+
+        if not video_response.get("items"):
+            msg = f"Video {youtube_id} not found"
+            raise YouTubeUploadException(msg)
+
+        current_snippet = video_response["items"][0]["snippet"]
+
+        # Update only the tags field
+        current_snippet["tags"] = parse_tags(tags)
+
+        # Update the video with modified snippet
+        return (
+            self.client.videos()
+            .update(
+                part="snippet",
+                body={
+                    "id": youtube_id,
+                    "snippet": current_snippet,
+                },
+            )
+            .execute()
+        )
 
     @classmethod
     def get_all_video_captions(
