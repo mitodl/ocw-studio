@@ -100,10 +100,10 @@ class Command(WebsiteFilterCommand):
             # Update only tags on YouTube (not other metadata)
             youtube.update_video_tags(youtube_id, tags or "")
         except Exception as exc:  # noqa: BLE001
-            msg = f"  ✗ Error updating tags for {youtube_id}: {exc!s}"
+            msg = f"Error updating tags for {youtube_id}: {exc!s}"
             return ("error", msg)
         else:
-            msg = f"  ✓ Updated tags for YouTube video {youtube_id}"
+            msg = f"Updated tags for YouTube video {youtube_id}"
             return ("success", msg)
 
     def print_summary(self, success_count, error_count, skipped_count):
