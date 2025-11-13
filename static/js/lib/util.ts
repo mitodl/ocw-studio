@@ -2,7 +2,7 @@ import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 import { SiteFormValue } from "../types/forms"
 import posthog from "posthog-js"
-import { Dispatch, SetStateAction } from "react"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 
 if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   const environment = SETTINGS.environment
@@ -33,12 +33,49 @@ const isFeatureFlagEnabled = (flag: string): boolean => {
   return posthog.isFeatureEnabled(flag) ?? false
 }
 
+/**
+ * Check a PostHog feature flag and update state when flags are loaded.
+ * This function handles the asynchronous nature of feature flag loading.
+ *
+ * @param flag - The feature flag key to check
+ * @param setFlag - State setter function to update with the flag value
+ */
 export const checkFeatureFlag = (
   flag: string,
   setFlag: Dispatch<SetStateAction<boolean>>,
 ) => {
-  const isFlagEnabled = isFeatureFlagEnabled(flag)
-  setFlag(isFlagEnabled)
+  const updateFlag = () => {
+    const isFlagEnabled = isFeatureFlagEnabled(flag)
+    setFlag(isFlagEnabled)
+  }
+
+  // Check if flags are already loaded (e.g., from cache on reload)
+  if (posthog.isFeatureEnabled(flag) !== undefined) {
+    updateFlag()
+  } else {
+    // Flags not loaded yet, wait for them to be fetched
+    posthog.onFeatureFlags(updateFlag)
+  }
+}
+
+/**
+ * React hook to check a PostHog feature flag.
+ * Automatically handles waiting for feature flags to load.
+ *
+ * @param flag - The feature flag key to check
+ * @returns The current value of the feature flag (defaults to false until loaded)
+ *
+ * @example
+ * const isDeleteEnabled = useFeatureFlag("OCW_STUDIO_CONTENT_DELETABLE")
+ */
+export const useFeatureFlag = (flag: string): boolean => {
+  const [isEnabled, setIsEnabled] = useState(false)
+
+  useEffect(() => {
+    checkFeatureFlag(flag, setIsEnabled)
+  }, [flag])
+
+  return isEnabled
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>

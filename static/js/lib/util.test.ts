@@ -142,7 +142,7 @@ describe("util", () => {
       jest.restoreAllMocks()
     })
 
-    it("calls setFlag synchronously with the feature flag status true", () => {
+    it("calls setFlag synchronously when feature flag is already loaded (true)", () => {
       const setFlagMock = jest.fn()
 
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
@@ -153,7 +153,7 @@ describe("util", () => {
       expect(result).toBeUndefined()
     })
 
-    it("calls setFlag synchronously with the feature flag status false", () => {
+    it("calls setFlag synchronously when feature flag is already loaded (false)", () => {
       const setFlagMock = jest.fn()
 
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(false)
@@ -164,7 +164,20 @@ describe("util", () => {
       expect(result).toBeUndefined()
     })
 
-    it("calls setFlag before any asynchronous code", async () => {
+    it("waits for feature flags to load via onFeatureFlags when not yet available", () => {
+      const setFlagMock = jest.fn()
+      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(undefined)
+      const onFeatureFlagsSpy = jest.spyOn(posthog, "onFeatureFlags")
+
+      checkFeatureFlag("test_flag", setFlagMock)
+
+      // Should not call setFlag immediately when flag is undefined
+      expect(setFlagMock).not.toHaveBeenCalled()
+      // Should register a callback for when flags are loaded
+      expect(onFeatureFlagsSpy).toHaveBeenCalledWith(expect.any(Function))
+    })
+
+    it("calls setFlag before any asynchronous code when flag is loaded", async () => {
       expect.assertions(2)
       const setFlagMock = jest.fn()
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
