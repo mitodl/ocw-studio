@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useMemo, useRef, useState } from "react"
 import { CKEditor } from "@ckeditor/ckeditor5-react"
 import { Editor } from "@ckeditor/ckeditor5-core"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
@@ -28,7 +28,7 @@ import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
-import { checkFeatureFlag } from "../../lib/util"
+import { useFeatureFlag } from "../../lib/util"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
 
 export interface Props {
@@ -54,14 +54,9 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
 
-  const [isCustomLinkUIEnabled, setIsCustomLinkUIEnabled] = useState(false)
-
-  useEffect(() => {
-    checkFeatureFlag(
-      "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
-      setIsCustomLinkUIEnabled,
-    )
-  }, [])
+  const isCustomLinkUIEnabled = useFeatureFlag(
+    "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
+  )
 
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {

@@ -2,7 +2,7 @@ import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 import { SiteFormValue } from "../types/forms"
 import posthog from "posthog-js"
-import { Dispatch, SetStateAction } from "react"
+import { useEffect, useState } from "react"
 
 if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   const environment = SETTINGS.environment
@@ -33,12 +33,44 @@ const isFeatureFlagEnabled = (flag: string): boolean => {
   return posthog.isFeatureEnabled(flag) ?? false
 }
 
-export const checkFeatureFlag = (
-  flag: string,
-  setFlag: Dispatch<SetStateAction<boolean>>,
-) => {
-  const isFlagEnabled = isFeatureFlagEnabled(flag)
-  setFlag(isFlagEnabled)
+/**
+ * React hook to check a PostHog feature flag.
+ * Automatically handles waiting for feature flags to load and prevents UI flicker
+ * by initializing with the synchronous value if available.
+ *
+ * @param flag - The feature flag key to check
+ * @returns The current value of the feature flag.
+ *
+ * @example
+ * const isDeleteEnabled = useFeatureFlag("OCW_STUDIO_CONTENT_DELETABLE")
+ */
+export const useFeatureFlag = (flag: string): boolean => {
+  const [isEnabled, setIsEnabled] = useState(() => isFeatureFlagEnabled(flag))
+
+  useEffect(() => {
+    // If flags were not loaded at initialization, they might load later.
+    // We use onFeatureFlags to listen for when they are loaded.
+    if (posthog.isFeatureEnabled(flag) === undefined) {
+      let isMounted = true
+      const updateFlag = () => {
+        if (isMounted) {
+          setIsEnabled(isFeatureFlagEnabled(flag))
+        }
+      }
+      // PostHog's onFeatureFlags returns a cleanup function
+      const cleanup = posthog.onFeatureFlags(updateFlag)
+      return () => {
+        isMounted = false
+        // Call PostHog's cleanup function to unregister the callback
+        if (cleanup && typeof cleanup === "function") {
+          cleanup()
+        }
+      }
+    }
+    return undefined
+  }, [flag])
+
+  return isEnabled
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
