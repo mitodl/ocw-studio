@@ -1,7 +1,8 @@
 import casual from "casual"
 import { ActionPromiseValue } from "redux-query"
 import posthog from "posthog-js"
-import { checkFeatureFlag } from "./util"
+import { renderHook } from "@testing-library/react-hooks"
+import { useFeatureFlag } from "./util"
 
 import {
   filenameFromPath,
@@ -137,57 +138,47 @@ describe("util", () => {
     expect(generateHashCode("http://example.com")).toEqual("-631280213")
   })
 
-  describe("checkFeatureFlag", () => {
+  describe("useFeatureFlag", () => {
     afterEach(() => {
       jest.restoreAllMocks()
     })
 
-    it("calls setFlag synchronously when feature flag is already loaded (true)", () => {
-      const setFlagMock = jest.fn()
-
+    it("returns flag value synchronously when already loaded (true)", () => {
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
 
-      const result = checkFeatureFlag("test_flag", setFlagMock)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      expect(setFlagMock).toHaveBeenCalledWith(true)
-      expect(result).toBeUndefined()
+      expect(result.current).toBe(true)
     })
 
-    it("calls setFlag synchronously when feature flag is already loaded (false)", () => {
-      const setFlagMock = jest.fn()
-
+    it("returns flag value synchronously when already loaded (false)", () => {
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(false)
 
-      const result = checkFeatureFlag("test_flag", setFlagMock)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      expect(setFlagMock).toHaveBeenCalledWith(false)
-      expect(result).toBeUndefined()
+      expect(result.current).toBe(false)
     })
 
-    it("waits for feature flags to load via onFeatureFlags when not yet available", () => {
-      const setFlagMock = jest.fn()
+    it("initializes with false and registers callback when flags not yet loaded", () => {
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(undefined)
       const onFeatureFlagsSpy = jest.spyOn(posthog, "onFeatureFlags")
 
-      checkFeatureFlag("test_flag", setFlagMock)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      // Should not call setFlag immediately when flag is undefined
-      expect(setFlagMock).not.toHaveBeenCalled()
+      // Should initialize with false (from ?? false)
+      expect(result.current).toBe(false)
       // Should register a callback for when flags are loaded
       expect(onFeatureFlagsSpy).toHaveBeenCalledWith(expect.any(Function))
     })
 
-    it("calls setFlag before any asynchronous code when flag is loaded", async () => {
-      expect.assertions(2)
-      const setFlagMock = jest.fn()
+    it("does not call onFeatureFlags when flag is already loaded", () => {
       jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
+      const onFeatureFlagsSpy = jest.spyOn(posthog, "onFeatureFlags")
 
-      checkFeatureFlag("test_flag", setFlagMock)
+      renderHook(() => useFeatureFlag("test_flag"))
 
-      expect(setFlagMock).toHaveBeenCalledWith(true)
-
-      await Promise.resolve()
-      expect(setFlagMock).toHaveBeenCalledTimes(1)
+      // Should not register a callback since flags are already loaded
+      expect(onFeatureFlagsSpy).not.toHaveBeenCalled()
     })
   })
 })
