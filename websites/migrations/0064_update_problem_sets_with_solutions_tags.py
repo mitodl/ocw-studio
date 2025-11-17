@@ -9,7 +9,7 @@ PROBLEM_SET_SOLUTIONS = "Problem Set Solutions"
 
 def update_problem_sets_tags(apps, schema_editor):
     """
-    Update Website and WebsiteContent items tagged with "Problem Set Solutions".
+    Update Website and WebsiteContent items tagged with "Problem Set with Solutions".
 
     Adds both "Problem Sets" and "Problem Set Solutions" tags to items
     that have "Problem Sets with Solutions", then removes "Problem Sets with Solutions".
@@ -70,7 +70,7 @@ def reverse_problem_sets_tags(apps, schema_editor):
         contents_to_update = WebsiteContent.objects.filter(
             metadata__learning_resource_types__contains=[
                 PROBLEM_SETS,
-                PROBLEM_SET_SOLUTIONS
+                PROBLEM_SET_SOLUTIONS,
             ]
         ).exclude(
             metadata__learning_resource_types__contains=[PROBLEM_SETS_WITH_SOLUTIONS]
@@ -109,8 +109,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            update_problem_sets_tags,
-            reverse_problem_sets_tags,
-        ),
+        migrations.RunPython(update_problem_sets_tags, reverse_problem_sets_tags)
     ]
