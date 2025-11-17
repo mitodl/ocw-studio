@@ -59,7 +59,7 @@ posthog = "^6.0.0"
 mitol-django-transcoding = "^2025.5.21"
 
 [tool.poetry.group.dev.dependencies]
-bpython = "^0.25"
+bpython = "^0.26"
 ddt = "^1.6.0"
 django-debug-toolbar = "^6.0.0"
 factory-boy = "^3.3.0"
