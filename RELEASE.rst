@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.168.0
+Version 0.168.0 (Released November 17, 2025)
 ---------------
 
 - fix: stream to s3 for edited gdrive files (#2777)
