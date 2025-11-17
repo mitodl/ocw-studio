@@ -2,7 +2,7 @@
 
 from django.db import migrations, transaction
 
-PROBLEM_SETS_WITH_SOLUTIONS = "Problem Sets Solutions"
+PROBLEM_SETS_WITH_SOLUTIONS = "Problem Sets with Solutions"
 PROBLEM_SETS = "Problem Sets"
 PROBLEM_SET_SOLUTIONS = "Problem Set Solutions"
 
@@ -12,7 +12,7 @@ def update_problem_sets_tags(apps, schema_editor):
     Update Website and WebsiteContent items tagged with "Problem Set Solutions".
 
     Adds both "Problem Sets" and "Problem Set Solutions" tags to items
-    that have "Problem Sets With Solutions", then removes "Problem Sets With Solutions".
+    that have "Problem Sets with Solutions", then removes "Problem Sets with Solutions".
     """
     Website = apps.get_model("websites", "Website")
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
@@ -43,7 +43,7 @@ def update_learning_resource_types(items):
         if PROBLEM_SET_SOLUTIONS not in learning_resource_types:
             learning_resource_types.append(PROBLEM_SET_SOLUTIONS)
 
-        # Remove "Problem Sets With Solutions"
+        # Remove "Problem Sets with Solutions"
         learning_resource_types.remove(PROBLEM_SETS_WITH_SOLUTIONS)
 
         metadata["learning_resource_types"] = learning_resource_types
@@ -53,7 +53,7 @@ def update_learning_resource_types(items):
 
 def reverse_problem_sets_tags(apps, schema_editor):
     """
-    Reverse the migration by restoring the original "Problem Sets With Solutions" tag.
+    Reverse the migration by restoring the original "Problem Sets with Solutions" tag.
     """
     Website = apps.get_model("websites", "Website")
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
@@ -86,7 +86,7 @@ def restore_learning_resource_types(items):
         metadata = item.metadata or {}
         learning_resource_types = metadata.get("learning_resource_types", [])
 
-        # Add "Problem Sets With Solutions" back
+        # Add "Problem Sets with Solutions" back
         if PROBLEM_SETS_WITH_SOLUTIONS not in learning_resource_types:
             learning_resource_types.append(PROBLEM_SETS_WITH_SOLUTIONS)
 
