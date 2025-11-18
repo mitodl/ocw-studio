@@ -12,7 +12,7 @@ def remove_image_gallery_lrt_from_resources(apps, schema_editor):
     with transaction.atomic():
         resources_to_update = WebsiteContent.objects.filter(
             metadata__learning_resource_types__contains=IMAGE_GALLERY_LRT,
-        )
+        ).exclude(type__in=["sitemetadata", "website"])
 
         for resource in resources_to_update.iterator():
             metadata = resource.metadata or {}
