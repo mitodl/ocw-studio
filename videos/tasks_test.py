@@ -162,10 +162,14 @@ def test_upload_youtube_videos(
     settings.YT_UPLOAD_LIMIT = max_uploads
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
     mock_uploader = mock_youtube.return_value.upload_video
-    mock_uploader.return_value = {
-        "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),  # noqa: S311
-        "status": {"uploadStatus": "uploaded"},
-    }
+    # upload_video now returns a tuple (response, course_tag)
+    mock_uploader.return_value = (
+        {
+            "id": "".join([choice(string.ascii_lowercase) for n in range(8)]),  # noqa: S311
+            "status": {"uploadStatus": "uploaded"},
+        },
+        None,  # course_tag
+    )
 
     upload_youtube_videos.delay()
     assert mock_uploader.call_count == (min(3, max_uploads) if is_enabled else 0)
@@ -191,6 +195,76 @@ def test_upload_youtube_videos_error(mocker, youtube_video_files_new):
     for video_file in youtube_video_files_new:
         video_file.refresh_from_db()
         assert video_file.status == VideoFileStatus.FAILED
+
+
+def test_upload_youtube_videos_saves_tags_to_metadata(mocker, mocked_celery):
+    """
+    Test that tags (including course tag) are saved back to WebsiteContent metadata after upload
+    """
+    # Create a website with course configuration
+    website = WebsiteFactory.create(
+        name="test-course",
+        url_path="courses/test-course-fall-2020",
+    )
+
+    # Create a video associated with the website
+    video = VideoFactory.create(website=website)
+
+    # Create WebsiteContent with video metadata (this is the resource linked via DriveFile)
+    video_content = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "video_metadata": {
+                "video_tags": "python, django",
+            }
+        },
+    )
+
+    # Create DriveFile linking the video to the WebsiteContent resource
+    DriveFileFactory.create(
+        video=video,
+        resource=video_content,
+    )
+
+    # Create VideoFile for upload
+    video_file = VideoFileFactory.create(
+        video=video,
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=None,
+    )
+
+    # Mock the YouTube upload to return a video ID
+    mock_youtube_id = "test_youtube_id_123"
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    mock_uploader = mock_youtube.return_value.upload_video
+    # upload_video now returns a tuple (response, merged_tags)
+    mock_uploader.return_value = (
+        {
+            "id": mock_youtube_id,
+            "status": {"uploadStatus": "uploaded"},
+        },
+        "python, django, test-course-fall-2020",  # merged tags
+    )
+
+    # Run the upload task
+    upload_youtube_videos.delay()
+
+    # Refresh from database
+    video_file.refresh_from_db()
+    video_content.refresh_from_db()
+
+    # Verify video was uploaded successfully
+    assert video_file.destination_id == mock_youtube_id
+    assert video_file.status == VideoFileStatus.UPLOADED
+
+    # Verify tags were saved to metadata with course tag appended
+    saved_tags = video_content.metadata["video_metadata"]["video_tags"]
+    assert "python" in saved_tags
+    assert "django" in saved_tags
+    assert "test-course-fall-2020" in saved_tags
+
+    assert saved_tags == "python, django, test-course-fall-2020"
 
 
 def test_upload_youtube_videos_no_videos(mocker):

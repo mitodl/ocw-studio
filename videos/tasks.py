@@ -86,10 +86,27 @@ def upload_youtube_videos():
     for video_file in yt_queue:
         error_msg = None
         try:
-            response = youtube.upload_video(video_file)
+            # Get existing tags from WebsiteContent before upload
+            existing_tags = None
+            drive_file = DriveFile.objects.filter(video=video_file.video).first()
+            if drive_file and drive_file.resource:
+                existing_tags = get_dict_field(
+                    drive_file.resource.metadata, settings.YT_FIELD_TAGS
+                )
+
+            response, merged_tags = youtube.upload_video(video_file, existing_tags)
             video_file.destination_id = response["id"]
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED
+
+            # Save the merged tags back to the video metadata
+            if merged_tags and drive_file and drive_file.resource:
+                video_resource = drive_file.resource
+                set_dict_field(
+                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
+                )
+                video_resource.save()
+
         except HttpError as error:
             error_msg = error.content.decode("utf-8")
             if API_QUOTA_ERROR_MSG in error_msg:

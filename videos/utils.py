@@ -12,6 +12,7 @@ from django.conf import settings
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
 from websites.models import Website, WebsiteContent, WebsiteStarter
+from websites.utils import get_dict_field
 
 
 def generate_s3_path(file_or_webcontent, website):
@@ -110,3 +111,54 @@ def update_metadata(source_obj, new_uid, new_s3_path):
     new_metadata["uid"] = new_uid
     new_metadata["file"] = str(new_s3_path).lstrip("/")
     return new_metadata
+
+
+def get_course_tag(website: Website) -> str:
+    """
+    Get the course URL slug from the website's url_path.
+
+    Args:
+        website: Website instance
+
+    Returns:
+        str: The course URL slug (e.g., '18-01-fall-2020')
+    """
+    url_path = website.url_path or ""
+    root_url_path = website.get_site_root_path()
+
+    if root_url_path and url_path.startswith(f"{root_url_path}/"):
+        return url_path.removeprefix(f"{root_url_path}/")
+    return url_path
+
+
+def parse_tags(tags: str) -> list[str]:
+    """
+    Parse a comma-separated tag string into a list of cleaned tags.
+
+    Args:
+        tags (str): Comma-separated tag string
+
+    Returns:
+        list[str]: List of cleaned, non-empty tags
+    """
+    return [tag.strip() for tag in tags.split(",") if tag.strip()]
+
+
+def get_tags_with_course(metadata: dict, course_slug: str) -> str:
+    """
+    Get video tags with the course URL slug appended.
+
+    Args:
+        metadata (dict): The WebsiteContent metadata dictionary
+        course_slug (str): The course URL slug to add as a tag
+
+    Returns:
+        str: Comma-separated tags with course slug appended
+    """
+    existing_tags = get_dict_field(metadata, settings.YT_FIELD_TAGS) or ""
+    tag_list = parse_tags(existing_tags)
+
+    if course_slug not in tag_list:
+        tag_list.append(course_slug)
+
+    return ", ".join(tag_list)
