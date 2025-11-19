@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.170.0
+---------------
+
+- fix(deps): update dependency sentry-sdk to v2.45.0 (#2794)
+- feat: management command to append tags in existing videos (#2782)
+
 Version 0.169.0 (Released November 19, 2025)
 ---------------
 
