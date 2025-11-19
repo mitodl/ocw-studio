@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.169.0 (Released November 19, 2025)
+---------------
+
+- chore(deps): update dependency bpython to ^0.26 (#2793)
+- fix(deps): update dependency boto3 to v1.40.74 (#2792)
+- chore(deps): update dependency turndown to v7.2.2 (#2785)
+- chore(deps): update yarn to v4.11.0 (#2787)
+- Update Video Documentation with Instructions on Adding Existing Captions/Transcript (#2783)
+- Remove Tools course learning resource type (#2789)
+- fix(deps): update dependency sentry-sdk to v2.43.0 (#2788)
+- fix(deps): update dependency boto3 to v1.40.69 (#2786)
+- chore(deps): update node.js to v22.21.1 (#2781)
+
 Version 0.168.0 (Released November 17, 2025)
 ---------------
 
