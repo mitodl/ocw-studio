@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.169.0
+Version 0.169.0 (Released November 19, 2025)
 ---------------
 
 - chore(deps): update dependency bpython to ^0.26 (#2793)
