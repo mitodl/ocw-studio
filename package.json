@@ -69,6 +69,7 @@
     "@types/url-assembler": "^2.1.1",
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@use-it/interval": "^1.0.0",
+    "add": "^2.0.6",
     "autoprefixer": "10",
     "bootstrap": "4",
     "casual": "^1.6.2",
@@ -108,8 +109,8 @@
     "raf": "^3.4.1",
     "ramda": "^0.31.0",
     "raw-loader": "^4.0.2",
-    "react": "16.14.0",
-    "react-dom": "16.14.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-ga": "^3.3.0",
     "react-hot-loader": "^4.13.0",
     "react-nestable": "^2.0.0",
@@ -149,6 +150,7 @@
     "webpack-cli": "^6.0.0",
     "webpack-dev-middleware": "^7.0.0",
     "webpack-hot-middleware": "^2.25.0",
+    "yarn": "^1.22.22",
     "yup": "^1.0.0"
   },
   "engines": {
@@ -179,5 +181,8 @@
     "@types/react": "^16.9.46",
     "@types/react-dom": "^16.9.8"
   },
-  "packageManager": "yarn@4.11.0"
+  "packageManager": "yarn@4.11.0",
+  "devDependencies": {
+    "@types/add": "^2"
+  }
 }
