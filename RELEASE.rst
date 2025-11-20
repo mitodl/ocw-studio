@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.170.0
+Version 0.170.0 (Released November 20, 2025)
 ---------------
 
 - fix(deps): update dependency sentry-sdk to v2.45.0 (#2794)
