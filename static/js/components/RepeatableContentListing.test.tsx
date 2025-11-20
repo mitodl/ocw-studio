@@ -55,9 +55,9 @@ jest.mock("@use-it/interval", () => ({
   default: jest.fn(),
 }))
 
-//mock the OCW_STUDIO_CONTENT_DELETABLE feature flag as set to true
-jest.mock("posthog-js", () => ({
-  isFeatureEnabled: jest.fn().mockReturnValue(true),
+//mock the PostHog React hooks for feature flags
+jest.mock("posthog-js/react", () => ({
+  useFeatureFlagEnabled: jest.fn().mockReturnValue(true),
 }))
 
 describe("RepeatableContentListing", () => {
