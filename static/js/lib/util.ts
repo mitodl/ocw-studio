@@ -2,7 +2,7 @@ import { isEmpty, isNil } from "ramda"
 import { ActionPromiseValue } from "redux-query"
 import { SiteFormValue } from "../types/forms"
 import posthog from "posthog-js"
-import { Dispatch, SetStateAction } from "react"
+import { useFeatureFlagEnabled } from "posthog-js/react"
 
 if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   const environment = SETTINGS.environment
@@ -29,16 +29,20 @@ if (SETTINGS.posthog_api_host && SETTINGS.posthog_project_api_key) {
   }
 }
 
-const isFeatureFlagEnabled = (flag: string): boolean => {
-  return posthog.isFeatureEnabled(flag) ?? false
-}
-
-export const checkFeatureFlag = (
-  flag: string,
-  setFlag: Dispatch<SetStateAction<boolean>>,
-) => {
-  const isFlagEnabled = isFeatureFlagEnabled(flag)
-  setFlag(isFlagEnabled)
+/**
+ * React hook to check a PostHog feature flag. This is a wrapper
+ * around PostHog's useFeatureFlagEnabled hook that ensures a boolean
+ * return value.
+ *
+ * @param flag - The feature flag key to check
+ * @returns The current value of the feature flag (false if undefined).
+ *
+ * @example
+ * import { FEATURE_FLAG_CONTENT_DELETABLE } from "../common/feature_flags"
+ * const isDeleteEnabled = useFeatureFlag(FEATURE_FLAG_CONTENT_DELETABLE)
+ */
+export const useFeatureFlag = (flag: string): boolean => {
+  return useFeatureFlagEnabled(flag) ?? false
 }
 
 export const isErrorStatusCode = (statusCode: number): boolean =>
