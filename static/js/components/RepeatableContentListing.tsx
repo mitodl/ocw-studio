@@ -38,6 +38,10 @@ import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
 import Dialog from "./Dialog"
 import { useFeatureFlag } from "../lib/util"
+import {
+  FEATURE_FLAG_CONTENT_DELETABLE,
+  FEATURE_FLAG_ADD_VIDEO_RESOURCE,
+} from "../common/feature_flags"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -48,8 +52,8 @@ export default function RepeatableContentListing(props: {
 
   const website = useWebsite()
 
-  const isContentDeletable = useFeatureFlag("OCW_STUDIO_CONTENT_DELETABLE")
-  const isAddVideoEnabled = useFeatureFlag("OCW_STUDIO_ADD_VIDEO_RESOURCE")
+  const isContentDeletable = useFeatureFlag(FEATURE_FLAG_CONTENT_DELETABLE)
+  const isAddVideoEnabled = useFeatureFlag(FEATURE_FLAG_ADD_VIDEO_RESOURCE)
 
   const isDeletable =
     isContentDeletable &&

@@ -29,6 +29,7 @@ import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { useFeatureFlag } from "../../lib/util"
+import { FEATURE_FLAG_CUSTOM_LINKUI } from "../../common/feature_flags"
 import CustomLink from "../../lib/ckeditor/plugins/CustomLink"
 
 export interface Props {
@@ -54,9 +55,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const throwSynchronously = useThrowSynchronously()
   const website = useWebsite()
 
-  const isCustomLinkUIEnabled = useFeatureFlag(
-    "OCW_STUDIO_CUSTOM_LINKUI_ENABLE",
-  )
+  const isCustomLinkUIEnabled = useFeatureFlag(FEATURE_FLAG_CUSTOM_LINKUI)
 
   const editor = useRef<Editor>()
   const onReady = useCallback((editorInstance: Editor) => {
