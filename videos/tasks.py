@@ -87,14 +87,16 @@ def upload_youtube_videos():
         error_msg = None
         try:
             # Get existing tags from WebsiteContent before upload
-            existing_tags = None
+            existing_tags = ""
             drive_file = DriveFile.objects.filter(video=video_file.video).first()
             if drive_file and drive_file.resource:
                 existing_tags = get_dict_field(
                     drive_file.resource.metadata, settings.YT_FIELD_TAGS
                 )
 
-            response, merged_tags = youtube.upload_video(video_file, existing_tags)
+            response, merged_tags = youtube.upload_video(
+                video_file, existing_tags=existing_tags
+            )
             video_file.destination_id = response["id"]
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED

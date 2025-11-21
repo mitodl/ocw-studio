@@ -267,6 +267,71 @@ def test_upload_youtube_videos_saves_tags_to_metadata(mocker, mocked_celery):
     assert saved_tags == "python, django, test-course-fall-2020"
 
 
+def test_upload_youtube_videos_passes_existing_tags_as_kwarg(mocker, mocked_celery):
+    """
+    Test that existing_tags is passed as a keyword argument to upload_video.
+    """
+    # Create a website with course configuration
+    website = WebsiteFactory.create(
+        name="test-course",
+        url_path="courses/test-course-fall-2020",
+    )
+
+    # Create a video associated with the website
+    video = VideoFactory.create(website=website)
+
+    # Create WebsiteContent with video metadata including tags
+    video_content = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "video_metadata": {
+                "video_tags": "machine learning, ai",
+            }
+        },
+    )
+
+    # Create DriveFile linking the video to the WebsiteContent resource
+    DriveFileFactory.create(
+        video=video,
+        resource=video_content,
+    )
+
+    # Create VideoFile for upload
+    video_file = VideoFileFactory.create(
+        video=video,
+        status=VideoStatus.CREATED,
+        destination=DESTINATION_YOUTUBE,
+        destination_id=None,
+    )
+
+    # Mock the YouTube upload
+    mock_youtube_id = "test_youtube_id_kwarg"
+    mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
+    mock_uploader = mock_youtube.return_value.upload_video
+    mock_uploader.return_value = (
+        {
+            "id": mock_youtube_id,
+            "status": {"uploadStatus": "uploaded"},
+        },
+        "machine learning, ai, test-course-fall-2020",
+    )
+
+    # Run the upload task
+    upload_youtube_videos.delay()
+
+    # Verify upload_video was called with existing_tags as keyword argument
+    mock_uploader.assert_called_once()
+    call_args = mock_uploader.call_args
+
+    # Check positional args - should only be the video_file
+    assert len(call_args.args) == 1
+    assert call_args.args[0] == video_file
+
+    # Check that existing_tags was passed as keyword argument (not positional)
+    assert "existing_tags" in call_args.kwargs
+    assert call_args.kwargs["existing_tags"] == "machine learning, ai"
+
+
 def test_upload_youtube_videos_no_videos(mocker):
     """YouTube API shoould not be instantiated if there are no videos to upload"""
     mock_youtube = mocker.patch("videos.tasks.YouTubeApi")
