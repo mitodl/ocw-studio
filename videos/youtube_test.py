@@ -202,6 +202,62 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     assert called_kwargs["notifySubscribers"] is notify
 
 
+def test_upload_video_prevents_duplicate_course_tag(mocker, youtube_mocker):
+    """
+    Test that upload_video doesn't add duplicate course tag if it already exists in existing_tags.
+    """
+    video_file = VideoFileFactory.create()
+    course_slug = get_course_tag(video_file.video.website)
+
+    # existing_tags already contains the course slug
+    existing_tags_with_course = f"python, django, {course_slug}"
+
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+
+    YouTubeApi().upload_video(video_file, existing_tags=existing_tags_with_course)
+
+    _, called_kwargs = mock_upload.call_args
+
+    # Verify the course tag appears only once in the final tags
+    final_tags = called_kwargs["body"]["snippet"]["tags"]
+    tag_list = parse_tags(final_tags)
+
+    # Count occurrences of course_slug
+    course_tag_count = tag_list.count(course_slug)
+    assert course_tag_count == 1, (
+        f"Course tag '{course_slug}' should appear exactly once, but appears {course_tag_count} times"
+    )
+
+
+def test_upload_video_handles_duplicate_tags_in_existing(mocker, youtube_mocker):
+    """
+    Test that upload_video handles duplicate tags within existing_tags properly.
+    """
+    video_file = VideoFileFactory.create()
+    course_slug = get_course_tag(video_file.video.website)
+
+    # existing_tags has duplicate tags
+    existing_tags = "python, django, python, ai"
+
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+
+    YouTubeApi().upload_video(video_file, existing_tags=existing_tags)
+
+    _, called_kwargs = mock_upload.call_args
+
+    # Verify tags are sent to YouTube
+    final_tags = called_kwargs["body"]["snippet"]["tags"]
+    tag_list = parse_tags(final_tags)
+
+    # Verify course tag was added
+    assert course_slug in tag_list
+
+    # verify duplicates were not affected
+    assert tag_list.count("python") == 2
+
+
 @pytest.mark.parametrize("privacy", [None, "public"])
 def test_update_video(settings, mocker, youtube_mocker, privacy):
     """update_video should send the correct data in a request to update YouTube metadata"""
@@ -261,6 +317,44 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
         )
 
     mock_update_caption.assert_called_once_with(content, youtube_id)
+
+
+def test_update_video_prevents_duplicate_course_tag(settings, mocker, youtube_mocker):
+    """
+    Test that update_video doesn't add duplicate course tag if it already exists in video_tags.
+    """
+    course_slug = "test-course-fall-2020"
+    youtube_id = "test_video_update_dupes"
+
+    # Tags already include the course slug
+    tags_with_course = f"python, django, {course_slug}"
+
+    content = WebsiteContentFactory.create(
+        website__url_path=f"courses/{course_slug}",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_description": "Test video description",
+                "youtube_id": youtube_id,
+                "video_tags": tags_with_course,
+            },
+        },
+    )
+
+    mocker.patch("videos.youtube.YouTubeApi.update_captions")
+
+    YouTubeApi().update_video(content)
+
+    # Get the tags that were sent in the update call
+    calls = youtube_mocker().videos.return_value.update.call_args_list
+    snippet_call = next(call for call in calls if call[1]["part"] == "snippet")
+    sent_tags = snippet_call[1]["body"]["snippet"]["tags"]
+
+    # Verify course tag appears only once
+    course_tag_count = sent_tags.count(course_slug)
+    assert course_tag_count == 1, (
+        f"Course tag '{course_slug}' should appear exactly once, but appears {course_tag_count} times"
+    )
 
 
 def test_update_video_tags(youtube_mocker):
