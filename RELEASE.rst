@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.171.0
+---------------
+
+- chore(deps): update yarn to v4.12.0 (#2804)
+- fix(deps): update dependency yamale to v6.1.0 (#2806)
+- fix(deps): update dependency boto3 to v1.41.2 (#2805)
+- chore(deps): update actions/checkout digest to 93cb6ef (#2803)
+- fix(deps): update dependency posthog to v7 (#2796)
+- chore(deps): update dependency pytest to v9 (#2795)
+- chore: refactor to load flags in async for first page load (#2790)
+
 Version 0.170.0 (Released November 20, 2025)
 ---------------
 
