@@ -1,12 +1,22 @@
-"""Remove Simulations learning resource type from resource-level content."""
+"""
+Remove `Simulations` learning resource type from resource and course
+level content.
+"""
+
+import logging
 
 from django.db import migrations, transaction
 
 SIMULATIONS_LRT = "Simulations"
 
+logger = logging.getLogger(__name__)
+
 
 def remove_simulations_lrt_from_resources(apps, schema_editor):
-    """Remove 'Simulations' from learning_resource_types for resource content only."""
+    """
+    Remove 'Simulations' from learning_resource_types for resource and course
+    levels.
+    """
     Website = apps.get_model("websites", "Website")
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
 
@@ -28,7 +38,7 @@ def update_learning_resource_types(items):
     for resource in items.iterator():
         metadata = resource.metadata or {}
         lrts = metadata.get("learning_resource_types")
-        if isinstance(lrts, list) and SIMULATIONS_LRT in lrts:
+        if isinstance(lrts, list):
             lrts.remove(SIMULATIONS_LRT)
             metadata["learning_resource_types"] = lrts
             resource.metadata = metadata
@@ -43,12 +53,17 @@ def restore_simulations_lrt_to_resources(apps, schema_editor):
     in their learning_resource_types.
     """
 
+    logger.warning(
+        "Backward migration for adding `Simulations` LRT is not implemented. "
+        "This will not return the DB to original state."
+    )
+
 
 class Migration(migrations.Migration):
     """Remove Simulations LRT from resources."""
 
     dependencies = [
-        ("websites", "0063_alter_website_latest_build_id_draft_and_more"),
+        ("websites", "0065_remove_image_gallery_lrt_from_resources"),
     ]
 
     operations = [
