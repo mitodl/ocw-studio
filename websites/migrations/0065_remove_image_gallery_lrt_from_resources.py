@@ -20,7 +20,7 @@ def remove_image_gallery_lrt_from_resources(apps, schema_editor):
         for resource in resources_to_update.iterator():
             metadata = resource.metadata or {}
             lrts = metadata.get("learning_resource_types")
-            if isinstance(lrts, list) and IMAGE_GALLERY_LRT in lrts:
+            if isinstance(lrts, list):
                 lrts.remove(IMAGE_GALLERY_LRT)
                 metadata["learning_resource_types"] = lrts
                 resource.metadata = metadata
