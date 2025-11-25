@@ -271,6 +271,8 @@ def test_upload_youtube_videos_passes_existing_tags_as_kwarg(mocker, mocked_cele
     """
     Test that existing_tags is passed as a keyword argument to upload_video.
     """
+    tags = "machine learning, ai"
+
     # Create a website with course configuration
     website = WebsiteFactory.create(
         name="test-course",
@@ -281,14 +283,9 @@ def test_upload_youtube_videos_passes_existing_tags_as_kwarg(mocker, mocked_cele
     video = VideoFactory.create(website=website)
 
     # Create WebsiteContent with video metadata including tags
-    video_content = WebsiteContentFactory.create(
-        website=website,
-        metadata={
-            "video_metadata": {
-                "video_tags": "machine learning, ai",
-            }
-        },
-    )
+    video_content = WebsiteContentFactory.create(website=website)
+    set_dict_field(video_content.metadata, settings.YT_FIELD_TAGS, tags)
+    video_content.save()
 
     # Create DriveFile linking the video to the WebsiteContent resource
     DriveFileFactory.create(
@@ -329,7 +326,7 @@ def test_upload_youtube_videos_passes_existing_tags_as_kwarg(mocker, mocked_cele
 
     # Check that existing_tags was passed as keyword argument (not positional)
     assert "existing_tags" in call_args.kwargs
-    assert call_args.kwargs["existing_tags"] == "machine learning, ai"
+    assert call_args.kwargs["existing_tags"] == tags
 
 
 def test_upload_youtube_videos_no_videos(mocker):
