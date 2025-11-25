@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.172.0
+---------------
+
+- chore: fixed invalid value error for privacy_status (#2802)
+- chore: removed simulation lrt from course and resource level (#2799)
+- chore: removed image gallery lrt from resource level (#2798)
+- feat: added problem set solutions LRT (#2791)
+- chore(deps): update dependency pypdf to v6.4.0 [security] (#2807)
+
 Version 0.171.0 (Released November 25, 2025)
 ---------------
 
