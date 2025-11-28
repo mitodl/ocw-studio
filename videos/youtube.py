@@ -19,6 +19,8 @@ from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from main.feature_flags import FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE
+from main.posthog import is_feature_enabled
 from main.s3_utils import get_boto3_client
 from main.utils import truncate_words
 from videos.constants import (
@@ -495,6 +497,13 @@ def get_video_privacy_status(
 def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
     """Update YouTube video metadata via the API"""
     if not is_youtube_enabled() or not is_ocw_site(website):
+        return
+    # Check PostHog feature flag to disable YouTube updates
+    if is_feature_enabled(FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE):
+        log.info(
+            "YouTube metadata updates disabled by feature flag for website %s",
+            website.name,
+        )
         return
     query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
     video_resources = website.websitecontent_set.filter(

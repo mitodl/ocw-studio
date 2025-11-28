@@ -12,6 +12,7 @@ from django.utils import timezone
 from googleapiclient.errors import HttpError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from main.feature_flags import FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import (
@@ -711,6 +712,36 @@ def test_update_youtube_metadata_error(mocker, youtube_website):
     mock_log.assert_any_call(
         "Unexpected error updating metadata for video resource %d", mocker.ANY
     )
+
+
+def test_update_youtube_metadata_disabled_by_feature_flag(mocker, youtube_website):
+    """Test that YouTube metadata updates are disabled when feature flag is enabled"""
+    mock_log = mocker.patch("videos.youtube.log.info")
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    mock_update_video = mock_youtube.return_value.update_video
+    mocker.patch("videos.youtube.is_ocw_site", return_value=True)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mock_feature_flag = mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=True
+    )
+
+    VideoFileFactory.create(
+        video=VideoFactory.create(website=youtube_website),
+        destination=DESTINATION_YOUTUBE,
+        destination_id="abc123",
+    )
+
+    update_youtube_metadata(youtube_website, version=VERSION_DRAFT)
+
+    # Verify that the feature flag was checked with the correct constant
+    mock_feature_flag.assert_called_once_with(FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE)
+    # Verify that the metadata update was skipped
+    mock_log.assert_called_once_with(
+        "YouTube metadata updates disabled by feature flag for website %s",
+        youtube_website.name,
+    )
+    mock_youtube.assert_not_called()
+    mock_update_video.assert_not_called()
 
 
 def test_update_youtube_metadata_no_videos(mocker):
