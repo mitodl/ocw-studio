@@ -528,6 +528,33 @@ POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS=<3000 by default>
 POSTHOG_MAX_RETRIES=<3 by default>
 ```
 
+## Feature Flag Constants
+
+To maintain consistency and prevent typos, feature flags should use constants instead of string literals:
+
+- **Backend feature flags**: Define constants in `main/feature_flags.py`
+- **Frontend feature flags**: Define constants in `static/js/common/feature_flags.ts`
+
+Example backend usage:
+
+```python
+# In main/feature_flags.py
+FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE = "OCW_STUDIO_DISABLE_YOUTUBE_UPDATE"
+
+# In your code
+from main.feature_flags import FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE
+from main.posthog import is_feature_enabled
+
+if is_feature_enabled(FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE):
+    # Feature-gated behavior
+    pass
+```
+
+Current backend feature flags:
+
+- `FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE` - Disables automatic YouTube metadata updates during publish
+- `FEATURE_FLAG_CONTENT_DELETABLE_REFERENCES` - Prevents deletion of content that is referenced elsewhere
+
 # Production to RC Data Cloning
 
 For information on duplicating OCW Studio data from production to RC/staging environments, see the [Production to RC Data Cloning Guide](docs/production-to-rc-data-cloning.md).

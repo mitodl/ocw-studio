@@ -41,6 +41,18 @@ The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that
 
 Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/youtube.py). The [YouTube upload success notification](/videos/templates/mail/youtube_upload_success/body.html) is sent by email when the [`update_youtube_statuses`](/videos/tasks.py) task is complete; exceptions in this task trigger the [YouTube upload failure notification](/videos/templates/mail/youtube_upload_failure/body.html). When the course is published to draft/staging, the video is set to `unlisted`. However, when it is published to live/production, the video is made public on YouTube, via the [`update_youtube_metadata` function](/videos/youtube.py). When a video is made public on YouTube, all YouTube subscribers will be notified. There are nearly 5 million subscribers to the OCW YouTube channel, so be careful with this setting. Subsequently republishing the course to draft/staging will not change the visibility of the YouTube video. However, if the video resource is set to "Draft" and the course is republished, the video will again be set to `unlisted`.
 
+## Disabling YouTube Metadata Updates
+
+The PostHog feature flag `FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE` (defined in [`main/feature_flags.py`](/main/feature_flags.py)) can be enabled to prevent automatic YouTube metadata updates during publish. This is useful for:
+
+- Preventing unwanted notifications to YouTube subscribers during bulk publishing or testing
+- Temporarily disabling YouTube updates while troubleshooting issues
+- Running mass publish operations without triggering subscriber notifications
+
+When this flag is enabled, the [`update_youtube_metadata` function](/videos/youtube.py) will skip updating YouTube video metadata, titles, descriptions, and visibility settings. The feature flag is checked at the beginning of the function and returns early if enabled.
+
+To enable this flag in PostHog, set `OCW_STUDIO_DISABLE_YOUTUBE_UPDATE` to `true` for the desired user group or rollout percentage.
+
 # Captioning and 3Play Transcript Request
 
 If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](/videos/threeplay_api.py).
