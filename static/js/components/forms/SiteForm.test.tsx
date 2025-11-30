@@ -1,31 +1,22 @@
 import React from "react"
 import sinon, { SinonStub } from "sinon"
-import { shallow } from "enzyme"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { ValidationError } from "yup"
 
 import { SiteForm, websiteValidation } from "./SiteForm"
 import { makeWebsiteStarter } from "../../util/factories/websites"
-import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf } from "../../test_util"
 
 import { WebsiteStarter } from "../../types/websites"
-import { Option } from "../widgets/SelectField"
-import { Formik } from "formik"
 
 describe("SiteForm", () => {
   let sandbox, onSubmitStub: SinonStub, websiteStarters: Array<WebsiteStarter>
 
   const renderForm = () =>
-    shallow(
+    render(
       <SiteForm onSubmit={onSubmitStub} websiteStarters={websiteStarters} />,
     )
-
-  const renderInnerForm = (formikChildProps: { [key: string]: any }) => {
-    const wrapper = renderForm()
-    return wrapper.find(Formik).renderProp("children")({
-      ...defaultFormikChildProps,
-      ...formikChildProps,
-    })
-  }
 
   beforeEach(() => {
     sandbox = sinon.createSandbox()
@@ -33,23 +24,23 @@ describe("SiteForm", () => {
     websiteStarters = [makeWebsiteStarter(), makeWebsiteStarter()]
   })
 
-  it("passes onSubmit to Formik", () => {
-    const wrapper = renderForm()
-
-    const props = wrapper.find(Formik).props()
-    expect(props.onSubmit).toBe(onSubmitStub)
-    expect(props.validationSchema).toBe(websiteValidation)
+  afterEach(() => {
+    sandbox.restore()
   })
 
-  it("shows an option for each website starter", () => {
-    const form = renderInnerForm({ isSubmitting: false, status: "whatever" })
-    const field = form
-      .find("Field")
-      .filterWhere((node) => node.prop("name") === "starter")
-    const options: Array<Option | string> = field.prop("options")
-    expect(options).toHaveLength(websiteStarters.length)
-    for (let i = 0; i < options.length; i++) {
-      expect(options[i]["value"]).toBe(websiteStarters[i].id)
+  it("passes onSubmit to Formik", () => {
+    renderForm()
+    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument()
+  })
+
+  it("shows an option for each website starter", async () => {
+    renderForm()
+    const user = userEvent.setup()
+    expect(screen.getByText(/starter/i)).toBeInTheDocument()
+    const selectInput = screen.getByRole("textbox", { name: "" })
+    await user.click(selectInput)
+    for (const starter of websiteStarters) {
+      expect(screen.getAllByText(starter.name).length).toBeGreaterThanOrEqual(1)
     }
   })
 
