@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.172.0
+Version 0.172.0 (Released December 01, 2025)
 ---------------
 
 - chore: fixed invalid value error for privacy_status (#2802)
