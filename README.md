@@ -436,6 +436,10 @@ _Note: The steps below describe the process for setting up YouTube integration f
 - You will then be prompted to choose an account or brand account. Choose whichever is appropriate.
 - After clicking through these and allowing any requested permissions, you should be redirected back to an API response containing values for YT_ACCESS_TOKEN and YT_REFRESH_TOKEN. Add these to your .env file.
 
+## Testing YouTube Updates on RC/Staging
+
+For information on metadata updates for YouTube videos, see [Testing YouTube Updates on RC/Staging](/videos/README.md#testing-youtube-updates-on-rcstaging)
+
 # Enabling Google Drive integration
 
 With Google Drive integration enabled, a folder on the specified Team Drive will be created for each new website.

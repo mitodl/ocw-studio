@@ -53,6 +53,24 @@ When this flag is enabled, the [`update_youtube_metadata` function](/videos/yout
 
 To enable this flag in PostHog, set `OCW_STUDIO_DISABLE_YOUTUBE_UPDATE` to `true` for the desired user group or rollout percentage.
 
+## Testing YouTube Updates on RC/Staging
+
+For testing YouTube metadata updates on RC or staging environments without affecting production videos, set `YT_TEST_VIDEO_IDS` in your `.env` file to a comma-separated list of YouTube video IDs:
+
+```bash
+YT_TEST_VIDEO_IDS=abc123,def456,ghi789
+```
+
+**Important:** Videos in this list will **bypass the PostHog feature flag** (`FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE`) and always have their metadata updated. This is useful for:
+
+- Testing YouTube integration changes with specific test videos on RC while the feature flag is enabled
+- Running mass publish operations without affecting production videos (enable the feature flag, add test video IDs to the list)
+
+When `YT_TEST_VIDEO_IDS` is configured:
+
+- Videos with IDs **in the list**: Always updated (bypasses feature flag)
+- Videos with IDs **not in the list**: Subject to feature flag check (skipped if flag is enabled)
+
 # Captioning and 3Play Transcript Request
 
 If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](/videos/threeplay_api.py).
