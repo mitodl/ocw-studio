@@ -1,93 +1,101 @@
 import React from "react"
-import { shallow, ShallowWrapper } from "enzyme"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import sinon, { SinonStub } from "sinon"
 
 import Dialog from "./Dialog"
 
-interface ExtraProps {
-  open: boolean
-  acceptText?: string
-  cancelText?: string
-  headerContent: JSX.Element | string
-  bodyContent: JSX.Element | string
-  wrapClassName?: string
-  modalClassName?: string
-  backdropClassName?: string
-  contentClassName?: string
-}
-
 describe("Dialog", () => {
-  let onCancelStub: SinonStub,
-    onAcceptStub: SinonStub,
-    headerContent: JSX.Element | string,
-    bodyContent: JSX.Element | string,
-    render: (props: ExtraProps) => ShallowWrapper
+  let onCancelStub: SinonStub, onAcceptStub: SinonStub
 
   beforeEach(() => {
     onCancelStub = sinon.stub()
     onAcceptStub = sinon.stub()
-    render = (props: ExtraProps) =>
-      shallow(
-        <Dialog onAccept={onAcceptStub} onCancel={onCancelStub} {...props} />,
-      )
   })
 
-  it("renders a Dialog with expected content, functional buttons and default button text", () => {
-    headerContent = "Header"
-    bodyContent = <div>Body</div>
-    const wrapper = render({ open: true, headerContent, bodyContent })
-    expect(wrapper.find("Modal").prop("isOpen")).toBe(true)
-    expect(wrapper.find("Modal").prop("toggle")).toBe(onCancelStub)
-    expect(wrapper.find("ModalBody").childAt(0).text()).toBe("Body")
-    expect(wrapper.find("ModalHeader").childAt(0).text()).toBe(headerContent)
+  afterEach(() => {
+    sinon.restore()
+  })
 
-    const cancelButton = wrapper.find("ModalFooter").find("Button").at(0)
-    expect(cancelButton.childAt(0).text()).toBe("Cancel")
-    cancelButton.simulate("click")
+  it("renders a Dialog with expected content, functional buttons, and default button text", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(
+      <Dialog
+        onAccept={onAcceptStub}
+        onCancel={onCancelStub}
+        open={true}
+        headerContent="Header"
+        bodyContent={<div>Body</div>}
+      />,
+    )
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByText("Body")).toBeInTheDocument()
+    expect(screen.getByText("Header")).toBeInTheDocument()
+
+    const cancelButton = screen.getByRole("button", { name: "Cancel" })
+    await user.click(cancelButton)
     sinon.assert.calledOnce(onCancelStub)
 
-    const okButton = wrapper.find("ModalFooter").find("Button").at(1)
-    expect(okButton.childAt(0).text()).toBe("OK")
-    okButton.simulate("click")
+    const okButton = screen.getByRole("button", { name: "OK" })
+    await user.click(okButton)
     sinon.assert.calledOnce(onAcceptStub)
+
+    unmount()
   })
 
   it("renders a Dialog with passed button text", () => {
-    headerContent = <h1>Header</h1>
-    bodyContent = <div>Body</div>
-    const acceptText = "Save"
-    const cancelText = "Back"
-    const wrapper = render({
-      open: false,
-      headerContent,
-      bodyContent,
-      acceptText,
-      cancelText,
-    })
-    expect(wrapper.find("Modal").prop("isOpen")).toBe(false)
+    const { unmount } = render(
+      <Dialog
+        onAccept={onAcceptStub}
+        onCancel={onCancelStub}
+        open={true}
+        headerContent={<span>Header</span>}
+        bodyContent={<div>Body</div>}
+        acceptText="Save"
+        cancelText="Back"
+      />,
+    )
 
-    const cancelButton = wrapper.find("ModalFooter").find("Button").at(0)
-    expect(cancelButton.childAt(0).text()).toBe(cancelText)
+    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument()
 
-    const okButton = wrapper.find("ModalFooter").find("Button").at(1)
-    expect(okButton.childAt(0).text()).toBe(acceptText)
+    unmount()
+  })
+
+  it("does not render when open is false", () => {
+    const { unmount } = render(
+      <Dialog
+        onAccept={onAcceptStub}
+        onCancel={onCancelStub}
+        open={false}
+        headerContent="Header"
+        bodyContent={<div>Body</div>}
+      />,
+    )
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+
+    unmount()
   })
 
   it("sets various classnames", () => {
-    headerContent = "Header"
-    bodyContent = <div>Body</div>
-    const wrapper = render({
-      headerContent,
-      bodyContent,
-      open: true,
-      wrapClassName: "wrap",
-      modalClassName: "modal",
-      backdropClassName: "backdrop",
-      contentClassName: "content",
-    })
-    expect(wrapper.find("Modal").prop("wrapClassName")).toBe("wrap")
-    expect(wrapper.find("Modal").prop("modalClassName")).toBe("modal")
-    expect(wrapper.find("Modal").prop("backdropClassName")).toBe("backdrop")
-    expect(wrapper.find("Modal").prop("contentClassName")).toBe("content")
+    const { unmount } = render(
+      <Dialog
+        onAccept={onAcceptStub}
+        onCancel={onCancelStub}
+        open={true}
+        headerContent="Header"
+        bodyContent={<div>Body</div>}
+        wrapClassName="wrap"
+        modalClassName="modal"
+        backdropClassName="backdrop"
+        contentClassName="content"
+      />,
+    )
+
+    expect(screen.getByRole("dialog")).toHaveClass("modal")
+
+    unmount()
   })
 })
