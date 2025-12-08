@@ -16,6 +16,7 @@ export interface Additional {
 
 interface Props {
   name: string
+  id?: string
   classNamePrefix?: string
   value?: null | undefined | string | string[]
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
@@ -37,6 +38,7 @@ export default function SelectField(props: Props): JSX.Element {
     value,
     onChange,
     name,
+    id,
     classNamePrefix,
     options,
     loadOptions,
@@ -137,6 +139,7 @@ export default function SelectField(props: Props): JSX.Element {
   const commonSelectOptions = {
     className: "w-100 form-input",
     classNamePrefix,
+    inputId: id,
     value: selected,
     isMulti: multiple,
     options: selectOptions,
