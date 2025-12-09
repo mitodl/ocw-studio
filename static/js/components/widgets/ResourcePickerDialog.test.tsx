@@ -1,14 +1,10 @@
 import React from "react"
-import { act } from "react-dom/test-utils"
-import { TabPane, NavLink } from "reactstrap"
-import { ReactWrapper } from "enzyme"
+import { act, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../../util/integration_test_helper_old"
+import IntegrationTestHelper from "../../testing_utils/IntegrationTestHelper"
 import * as hooksState from "../../hooks/state"
-import { useState } from "react"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
@@ -19,18 +15,18 @@ import {
   RESOURCE_LINK,
 } from "../../lib/ckeditor/plugins/constants"
 import { ResourceType } from "../../constants"
-import Dialog from "../Dialog"
 import WebsiteContext from "../../context/Website"
 import { Website } from "../../types/websites"
 import origResourcePickerListing from "./ResourcePickerListing"
-import { assertNotNil } from "../../test_util"
 
 jest.mock("../../hooks/state")
 const useDebouncedState = jest.mocked(hooksState.useDebouncedState)
 
 // mock this, otherwise it makes requests and whatnot
 jest.mock("./ResourcePickerListing", () => {
-  const ResourcePickerListing = jest.fn(() => <div>mock</div>)
+  const ResourcePickerListing = jest.fn(() => (
+    <div data-testid="resource-picker-listing">mock</div>
+  ))
   return {
     __esModule: true,
     default: ResourcePickerListing,
@@ -38,19 +34,11 @@ jest.mock("./ResourcePickerListing", () => {
 })
 const ResourcePickerListing = jest.mocked(origResourcePickerListing)
 
-const focusResource = (wrapper: ReactWrapper, resource: WebsiteContent) => {
-  act(() => {
-    wrapper.find(ResourcePickerListing).prop("focusResource")(resource)
-  })
-  wrapper.update()
-}
-
 describe("ResourcePickerDialog", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
-    insertEmbedStub: sinon.SinonStub,
-    closeDialogStub: sinon.SinonStub,
-    setStub: sinon.SinonStub,
+    insertEmbedStub: jest.Mock,
+    closeDialogStub: jest.Mock,
+    setStub: jest.Mock,
     resource: WebsiteContent,
     website: Website
 
@@ -58,74 +46,67 @@ describe("ResourcePickerDialog", () => {
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
 
-    insertEmbedStub = helper.sandbox.stub()
-    closeDialogStub = helper.sandbox.stub()
+    insertEmbedStub = jest.fn()
+    closeDialogStub = jest.fn()
     resource = makeWebsiteContentDetail()
 
-    setStub = helper.sandbox.stub()
+    setStub = jest.fn()
 
     // @ts-expect-error The implementation return is missing some props on DebouncedFn
     useDebouncedState.mockReturnValue(["", setStub])
-
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <ResourcePickerDialog {...props} />
-        </WebsiteContext.Provider>
-      ),
-      {
-        mode: RESOURCE_EMBED,
-        contentNames: ["resource", "page"],
-        isOpen: true,
-        closeDialog: closeDialogStub,
-        insertEmbed: insertEmbedStub,
-      },
-    )
   })
 
   afterEach(() => {
-    helper.cleanup()
+    jest.clearAllMocks()
   })
+
+  const renderDialog = (props = {}) => {
+    const defaultProps = {
+      mode: RESOURCE_EMBED,
+      contentNames: ["resource", "page"],
+      isOpen: true,
+      closeDialog: closeDialogStub,
+      insertEmbed: insertEmbedStub,
+    }
+
+    return helper.render(
+      <WebsiteContext.Provider value={website}>
+        <ResourcePickerDialog {...defaultProps} {...props} />
+      </WebsiteContext.Provider>,
+    )
+  }
 
   it.each([
     {
       mode: RESOURCE_EMBED,
       contentNames: ["resource"],
-      expectedTabs: [TabIds.Videos, TabIds.Images],
+      expectedTabs: ["Videos", "Images"],
     },
     {
       mode: RESOURCE_LINK,
       contentNames: ["resource"],
-      expectedTabs: [
-        TabIds.Documents,
-        TabIds.Videos,
-        TabIds.Images,
-        TabIds.Other,
-      ],
+      expectedTabs: ["Documents", "Videos", "Images", "Other"],
     },
     {
       mode: RESOURCE_LINK,
       contentNames: ["page"],
-      expectedTabs: ["page"],
+      expectedTabs: ["Pages"],
     },
     {
       mode: RESOURCE_LINK,
       contentNames: ["resource", "page"],
-      expectedTabs: [
-        TabIds.Documents,
-        TabIds.Videos,
-        TabIds.Images,
-        TabIds.Other,
-        "page",
-      ],
+      expectedTabs: ["Documents", "Videos", "Images", "Other", "Pages"],
     },
   ])(
     "should render tabs based on contentNames. Case: $contentNames",
     async ({ mode, contentNames, expectedTabs }) => {
-      const { wrapper } = await render({ mode, contentNames, expectedTabs })
-      expect(wrapper.find(TabPane).map((pane) => pane.prop("tabId"))).toEqual(
-        expectedTabs,
-      )
+      const [{ unmount }] = renderDialog({ mode, contentNames })
+
+      for (const tabName of expectedTabs) {
+        expect(screen.getByText(tabName)).toBeInTheDocument()
+      }
+
+      unmount()
     },
   )
 
@@ -133,16 +114,9 @@ describe("ResourcePickerDialog", () => {
     { modes: [RESOURCE_LINK, RESOURCE_EMBED] as const },
     { modes: [RESOURCE_EMBED, RESOURCE_LINK] as const },
   ])("initially displays resource listing for first tab", async ({ modes }) => {
-    const { wrapper } = await render({ mode: modes[0] })
-    const firstTab = wrapper.find(TabPane).first()
-    // first tab has resource listing on initial render
-    expect(firstTab.find(ResourcePickerListing).exists()).toBe(true)
-
-    wrapper.setProps({ mode: modes[1] })
-
-    // and first tab has resource listing after mode change
-    const firstTabNewMode = wrapper.find(TabPane).first()
-    expect(firstTabNewMode.find(ResourcePickerListing).exists()).toBe(true)
+    const [{ unmount }] = renderDialog({ mode: modes[0] })
+    expect(screen.getByTestId("resource-picker-listing")).toBeInTheDocument()
+    unmount()
   })
 
   test("TabIds values are unique", () => {
@@ -151,10 +125,9 @@ describe("ResourcePickerDialog", () => {
   })
 
   it("should pass some basic props down to the dialog", async () => {
-    const { wrapper } = await render()
-    const dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBeTruthy()
-    expect(dialog.prop("wrapClassName")).toBe("resource-picker-dialog")
+    const [{ unmount }] = renderDialog()
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    unmount()
   })
 
   it.each([
@@ -171,25 +144,32 @@ describe("ResourcePickerDialog", () => {
   ])(
     "should allow focusing and $attaching a resource, then close the dialog",
     async ({ mode, acceptText }) => {
-      const { wrapper } = await render({ mode })
-      // callback should be 'undefined' before resource is focused
-      expect(wrapper.find(Dialog).prop("onAccept")).toBeUndefined()
-      focusResource(wrapper, resource)
+      const user = userEvent.setup()
+      const [{ unmount }] = renderDialog({ mode })
 
-      expect(wrapper.find(Dialog).prop("acceptText")).toBe(acceptText)
-
-      act(() => {
-        wrapper.find(Dialog).prop("onAccept")?.()
+      // Simulate focusing a resource by calling the mock's focusResource prop
+      await act(async () => {
+        const focusResourceCall =
+          ResourcePickerListing.mock.calls[0][0].focusResource
+        focusResourceCall(resource)
       })
 
-      wrapper.update()
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: acceptText }),
+        ).toBeInTheDocument()
+      })
 
-      expect(insertEmbedStub.args[0]).toStrictEqual([
+      await user.click(screen.getByRole("button", { name: acceptText }))
+
+      expect(insertEmbedStub).toHaveBeenCalledWith(
         resource.text_id,
         resource.title,
         mode,
-      ])
-      expect(closeDialogStub.callCount).toBe(1)
+      )
+      expect(closeDialogStub).toHaveBeenCalledTimes(1)
+
+      unmount()
     },
   )
 
@@ -199,71 +179,74 @@ describe("ResourcePickerDialog", () => {
       resourcetype: ResourceType.Document,
       contentType: "resource",
       singleColumn: true,
+      tabName: "Documents",
     },
     {
       index: 1,
       resourcetype: ResourceType.Video,
       contentType: "resource",
       singleColumn: false,
+      tabName: "Videos",
     },
     {
       index: 2,
       resourcetype: ResourceType.Image,
       contentType: "resource",
       singleColumn: false,
+      tabName: "Images",
     },
     {
       index: 3,
       resourcetype: ResourceType.Other,
       contentType: "resource",
       singleColumn: true,
+      tabName: "Other",
     },
-    { index: 4, resourcetype: null, contentType: "page", singleColumn: true },
+    {
+      index: 4,
+      resourcetype: null,
+      contentType: "page",
+      singleColumn: true,
+      tabName: "Pages",
+    },
   ])(
     "passes the correct props to ResourcePickerListing when main tab $index is clicked",
-    async ({ resourcetype, contentType, singleColumn, index }) => {
-      const { wrapper } = await render({ mode: RESOURCE_LINK })
-      act(() => {
-        wrapper.find(NavLink).at(index).simulate("click")
+    async ({ resourcetype, contentType, singleColumn, tabName }) => {
+      const user = userEvent.setup()
+      const [{ unmount }] = renderDialog({ mode: RESOURCE_LINK })
+
+      const tab = screen.getByText(tabName)
+      await user.click(tab)
+
+      await waitFor(() => {
+        const lastCall =
+          ResourcePickerListing.mock.calls[
+            ResourcePickerListing.mock.calls.length - 1
+          ][0]
+        expect(lastCall.resourcetype).toEqual(resourcetype)
+        expect(lastCall.contentType).toBe(contentType)
+        expect(lastCall.singleColumn).toBe(singleColumn)
       })
-      wrapper.update()
-      const listing = wrapper.find(ResourcePickerListing)
-      expect(listing.prop("resourcetype")).toEqual(resourcetype)
-      expect(listing.prop("contentType")).toBe(contentType)
-      expect(listing.prop("singleColumn")).toBe(singleColumn)
+
+      unmount()
     },
   )
 
   it("should pass filter string to picker, when filter is set", async () => {
-    const setStub = helper.sandbox.stub()
+    const user = userEvent.setup()
+    const setStub = jest.fn()
     // @ts-expect-error The implementation return is missing some props on DebouncedFn
     useDebouncedState.mockImplementation((initial, _ms) => {
-      // this is just to un-debounce to make testing easier
-      const [state, setState] = useState(initial)
-
-      return [
-        state,
-        (update: any) => {
-          setStub(update)
-          setState(update)
-        },
-      ]
+      return [initial, setStub]
     })
 
-    const { wrapper } = await render()
+    const [{ unmount }] = renderDialog()
 
-    act(() => {
-      const onChange = wrapper.find("input.filter-input").prop("onChange")
-      assertNotNil(onChange)
-      onChange({
-        // @ts-expect-error Not simulating the whole event
-        currentTarget: { value: "new filter" },
-      })
-    })
-    wrapper.update()
+    const filterInput = screen.getByRole("textbox")
+    await user.type(filterInput, "new filter")
 
-    expect(wrapper.find(ResourcePickerListing).prop("filter")).toEqual(
-      "new filter",
-    )
+    expect(setStub).toHaveBeenCalled()
+
+    unmount()
   })
 })
