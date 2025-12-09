@@ -1,10 +1,9 @@
-import sinon, { SinonStub } from "sinon"
-import { act } from "react-dom/test-utils"
+import React from "react"
+import { screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import SiteCreationPage from "./SiteCreationPage"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import IntegrationTestHelper from "../testing_utils/IntegrationTestHelper"
 import {
   makeWebsiteDetail,
   makeWebsiteStarter,
@@ -12,27 +11,9 @@ import {
 import { siteDetailUrl, siteApi, startersApi } from "../lib/urls"
 
 import { Website, WebsiteStarter } from "../types/websites"
-import { assertNotNil } from "../test_util"
-import { ReactWrapper } from "enzyme"
-import { SiteForm, SiteFormProps } from "../components/forms/SiteForm"
-import { FormikHelpers } from "formik"
-
-const simulateSubmit = (
-  wrapper: ReactWrapper<SiteFormProps>,
-  formikStubs: Partial<Record<keyof FormikHelpers<any>, jest.Mock>>,
-  data: any,
-) => {
-  const onSubmit = wrapper.prop("onSubmit")
-  assertNotNil(onSubmit)
-  return act(async () => {
-    // @ts-expect-error using Partial on FormikHelpers... we don't need all of them
-    onSubmit(data, formikStubs)
-  })
-}
 
 describe("SiteCreationPage", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     starters: Array<WebsiteStarter>,
     website: Website,
     historyPushStub: jest.Mock
@@ -42,112 +23,103 @@ describe("SiteCreationPage", () => {
     starters = [makeWebsiteStarter(), makeWebsiteStarter()]
     website = makeWebsiteDetail()
     historyPushStub = jest.fn()
-    render = helper.configureRenderer(SiteCreationPage, {
-      history: { push: historyPushStub },
-      entities: {
-        starters: [],
-      },
-      queries: {},
-    })
 
     helper.mockGetRequest(startersApi.toString(), starters)
   })
 
-  afterEach(() => {
-    helper.cleanup()
-  })
+  const renderPage = () => {
+    const [result, { history }] = helper.render(
+      <SiteCreationPage history={{ push: historyPushStub } as any} />,
+    )
+    return { ...result, history }
+  }
 
   it("renders a form with the right props", async () => {
-    const { wrapper } = await render()
-    const form = wrapper.find("SiteForm")
-    expect(form.exists()).toBe(true)
-    expect(form.prop("websiteStarters")).toBe(starters)
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
+    })
+    expect(screen.getByLabelText(/short id/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/starter/i)).toBeInTheDocument()
   })
 
   it("sets the page title", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      "OCW Studio | New Site",
-    )
+    renderPage()
+    await waitFor(() => {
+      expect(document.title).toContain("New Site")
+    })
   })
 
   describe("passes a form submit function", () => {
     const errorMsg = "Error"
-    let formikStubs: { [key: string]: jest.Mock }, createWebsiteStub: SinonStub
-
-    beforeEach(() => {
-      formikStubs = {
-        setErrors: jest.fn(),
-        setSubmitting: jest.fn(),
-        setStatus: jest.fn(),
-      }
-    })
 
     it("that creates a new site and redirect on success", async () => {
-      createWebsiteStub = helper.mockPostRequest(siteApi.toString(), website)
-      const { wrapper } = await render()
-      const form = wrapper.find(SiteForm)
-      await simulateSubmit(form, formikStubs, {
-        title: "My Title",
-        short_id: "My-Title",
-        starter: 1,
+      const user = userEvent.setup()
+      helper.mockPostRequest(siteApi.toString(), website)
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      expect(formikStubs.setSubmitting).toHaveBeenCalledTimes(1)
-      expect(formikStubs.setSubmitting).toHaveBeenCalledWith(false)
-      expect(historyPushStub).toHaveBeenCalledTimes(1)
+
+      await user.type(screen.getByLabelText(/title/i), "My Title")
+      await user.type(screen.getByLabelText(/short id/i), "My-Title")
+
+      await user.click(screen.getByRole("button", { name: /save/i }))
+
+      await waitFor(() => {
+        expect(historyPushStub).toHaveBeenCalledTimes(1)
+      })
       expect(historyPushStub).toHaveBeenCalledWith(
         siteDetailUrl.param({ name: website.name }).toString(),
       )
     })
 
     it("that sets form errors if the API request fails", async () => {
+      const user = userEvent.setup()
       const errorResp = {
         errors: {
           title: errorMsg,
         },
       }
-      createWebsiteStub = helper.mockPostRequest(
-        siteApi.toString(),
-        errorResp,
-        400,
-      )
-      const { wrapper } = await render()
-      const form = wrapper.find(SiteForm)
-      await simulateSubmit(form, formikStubs, {
-        title: errorMsg,
-        short_id: "my-site",
-        starter: 1,
+      helper.mockPostRequest(siteApi.toString(), errorResp, 400)
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      expect(formikStubs.setErrors).toHaveBeenCalledTimes(1)
-      expect(formikStubs.setErrors).toHaveBeenCalledWith({
-        ...errorResp.errors,
-        short_id: undefined,
-        starter: undefined,
+
+      await user.type(screen.getByLabelText(/title/i), errorMsg)
+      await user.type(screen.getByLabelText(/short id/i), "my-site")
+
+      await user.click(screen.getByRole("button", { name: /save/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(errorMsg)).toBeInTheDocument()
       })
       expect(historyPushStub).not.toHaveBeenCalled()
     })
 
     it("that sets a status if the API request fails with a string error message", async () => {
+      const user = userEvent.setup()
       const errorResp = {
         errors: errorMsg,
       }
-      createWebsiteStub = helper.mockPostRequest(
-        siteApi.toString(),
-        errorResp,
-        400,
-      )
-      const { wrapper } = await render()
-      const form = wrapper.find(SiteForm)
-      await simulateSubmit(form, formikStubs, {
-        title: "My Title",
-        short_id: "My-Title",
-        starter: 1,
+      helper.mockPostRequest(siteApi.toString(), errorResp, 400)
+      renderPage()
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
       })
-      sinon.assert.calledOnce(createWebsiteStub)
-      expect(formikStubs.setStatus).toHaveBeenCalledTimes(1)
-      expect(formikStubs.setStatus).toHaveBeenCalledWith(errorMsg)
+
+      await user.type(screen.getByLabelText(/title/i), "My Title")
+      await user.type(screen.getByLabelText(/short id/i), "My-Title")
+
+      await user.click(screen.getByRole("button", { name: /save/i }))
+
+      await waitFor(() => {
+        expect(screen.getByText(errorMsg)).toBeInTheDocument()
+      })
       expect(historyPushStub).not.toHaveBeenCalled()
     })
   })
