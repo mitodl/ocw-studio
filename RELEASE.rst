@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.173.0 (Released December 10, 2025)
+---------------
+
+- fix(deps): update dependency boto3 to v1.42.4 (#2821)
+- chore(deps): update dependency faker to v38 (#2819)
+- chore(deps): update actions/checkout action to v6 (#2818)
+- chore(deps): update actions/setup-node digest to 395ad32 (#2813)
+- chore(deps): update actions/setup-python digest to 83679a8 (#2814)
+- fix(deps): update dependency sentry-sdk to v2.47.0 (#2816)
+- fix(deps): update dependency boto3 to v1.42.3 (#2815)
+- fix(deps): update dependency django to v4.2.27 [security] (#2812)
+- chore(deps): update postgres docker tag to v18 (#2772)
+
 Version 0.172.0 (Released December 01, 2025)
 ---------------
 
