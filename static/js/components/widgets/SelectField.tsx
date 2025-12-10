@@ -31,6 +31,7 @@ interface Props {
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
   isClearable?: boolean
+  "aria-label"?: string
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -50,6 +51,7 @@ export default function SelectField(props: Props): JSX.Element {
     preserveSearchText = false,
     cacheUniques,
     isClearable,
+    "aria-label": ariaLabel,
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
@@ -154,6 +156,7 @@ export default function SelectField(props: Props): JSX.Element {
     isOptionDisabled,
     isOptionSelected,
     isClearable,
+    "aria-label": ariaLabel,
     styles: {
       control: (base: any) => ({
         ...base,
