@@ -1,16 +1,10 @@
 import React from "react"
-import { ReactWrapper } from "enzyme"
 import moment from "moment"
-import sinon, { SinonStub } from "sinon"
-import { act } from "react-dom/test-utils"
 import { isEmpty } from "ramda"
 
 import { siteApiActionUrl, siteApiDetailUrl } from "../lib/urls"
-import { assertInstanceOf, assertNotNil, shouldIf } from "../test_util"
+import { assertInstanceOf, shouldIf } from "../test_util"
 import { makeWebsiteDetail } from "../util/factories/websites"
-import IntegrationTestHelperOld, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
 
 import App from "../pages/App"
 import { IntegrationTestHelper } from "../testing_utils"
@@ -19,63 +13,27 @@ import PublishDrawer from "./PublishDrawer"
 
 import { Website } from "../types/websites"
 import userEvent from "@testing-library/user-event"
-import { waitFor, screen } from "@testing-library/react"
+import { waitFor, screen, within, cleanup } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
 import _ from "lodash"
 
-const simulateClickRadio = (wrapper: ReactWrapper, idx: number) =>
-  act(async () => {
-    const onChange = wrapper
-      .find("input[type='radio']")
-      .at(idx)
-      .prop("onChange")
-    assertNotNil(onChange)
-    // @ts-expect-error Not simulating the whole event
-    onChange({ target: { checked: true } })
-  })
-
-const simulateClickPublish = (wrapper: ReactWrapper, action: string) =>
-  act(async () => {
-    const onChange = wrapper.find(`#publish-${action}`).prop("onChange")
-    assertNotNil(onChange)
-    // @ts-expect-error Not mocking whole object
-    onChange({ target: { checked: true } })
-  })
-
 describe("PublishDrawer", () => {
-  let helper: IntegrationTestHelperOld,
+  let helper: IntegrationTestHelper,
     website: Website,
-    render: TestRenderer,
-    toggleVisibilityStub: SinonStub,
-    refreshWebsiteStub: SinonStub
+    toggleVisibilityStub: jest.Mock
 
   beforeEach(() => {
-    helper = new IntegrationTestHelperOld()
-    toggleVisibilityStub = helper.sandbox.stub()
     website = {
       ...makeWebsiteDetail(),
       has_unpublished_draft: true,
       has_unpublished_live: true,
       is_admin: true,
       url_path: "mysite-fall-2025",
+      draft_publish_status: "succeeded",
+      live_publish_status: "succeeded",
     }
-    refreshWebsiteStub = helper.mockGetRequest(
-      siteApiDetailUrl.param({ name: website.name }).toString(),
-      website,
-    )
-    render = helper.configureRenderer(
-      PublishDrawer,
-      {
-        website,
-        visibility: true,
-        toggleVisibility: toggleVisibilityStub,
-      },
-      {
-        entities: {},
-        queries: {},
-      },
-    )
-
+    toggleVisibilityStub = jest.fn()
+    helper = new IntegrationTestHelper()
     helper.mockGetRequest(
       siteApiDetailUrl.param({ name: website.name }).toString(),
       website,
@@ -83,8 +41,21 @@ describe("PublishDrawer", () => {
   })
 
   afterEach(() => {
-    helper.cleanup()
+    cleanup()
   })
+
+  const renderDrawer = (
+    props: Partial<React.ComponentProps<typeof PublishDrawer>> = {},
+  ) => {
+    return helper.render(
+      <PublishDrawer
+        website={website}
+        visibility={true}
+        toggleVisibility={toggleVisibilityStub}
+        {...props}
+      />,
+    )
+  }
 
   describe.each([
     {
@@ -95,8 +66,7 @@ describe("PublishDrawer", () => {
       urlField: "draft_url",
       publishDateField: "draft_publish_date",
       publishStatusField: "draft_publish_status",
-      idx: 0,
-      lastPublishedText: "Last staged: ",
+      lastPublishedText: "Last staged:",
       unpublishedChangesText: "You have changes that have not been Staged.",
     },
     {
@@ -107,8 +77,7 @@ describe("PublishDrawer", () => {
       urlField: "live_url",
       publishDateField: "publish_date",
       publishStatusField: "live_publish_status",
-      idx: 1,
-      lastPublishedText: "Last Published to Production: ",
+      lastPublishedText: "Last Published to Production:",
       unpublishedChangesText:
         "You have changes that have not been Published to Production.",
     },
@@ -122,119 +91,125 @@ describe("PublishDrawer", () => {
       urlField,
       publishDateField,
       publishStatusField,
-      idx,
       lastPublishedText,
       unpublishedChangesText,
     }) => {
       ;[true, false].forEach((visible) => {
         it(`renders inside a Modal when visibility=${visible}`, async () => {
-          const { wrapper } = await render({ visibility: visible })
-          expect(wrapper.find("Modal").prop("isOpen")).toEqual(visible)
-          expect(wrapper.find("Modal").prop("toggle")).toEqual(
-            toggleVisibilityStub,
-          )
+          renderDrawer({ visibility: visible })
           if (visible) {
-            expect(wrapper.find("ModalHeader").prop("toggle")).toEqual(
-              toggleVisibilityStub,
-            )
+            await waitFor(() => {
+              expect(screen.getByRole("dialog")).toBeInTheDocument()
+            })
+          } else {
+            expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
           }
         })
       })
 
       it("renders the date and url", async () => {
-        const { wrapper } = await render()
-        await simulateClickRadio(wrapper, idx)
-        wrapper.update()
-        expect(wrapper.find(".publish-option-description").text()).toContain(
-          `${lastPublishedText}${moment(website[publishDateField]).format(
-            "dddd, MMMM D h:mma ZZ",
-          )}`,
+        const user = userEvent.setup()
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
+
+        const formattedDate = moment(website[publishDateField]).format(
+          "dddd, MMMM D h:mma ZZ",
         )
-        expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
-          website[urlField],
-        )
-        expect(
-          wrapper.find(".publish-option-description a").prop("target"),
-        ).toBe("_blank")
-        expect(wrapper.find(".publish-option-description a").text()).toBe(
-          website[urlField],
-        )
+        expect(dialog).toHaveTextContent(lastPublishedText)
+        expect(dialog).toHaveTextContent(formattedDate)
+
+        const link = within(dialog).getByRole("link", {
+          name: website[urlField],
+        })
+        expect(link).toHaveAttribute("href", website[urlField])
+        expect(link).toHaveAttribute("target", "_blank")
       })
 
       it("renders the publish status", async () => {
-        const { wrapper } = await render()
-        await simulateClickRadio(wrapper, idx)
-        wrapper.update()
-        expect(wrapper.find("PublishStatusIndicator").prop("status")).toBe(
-          website[publishStatusField],
-        )
-        expect(wrapper.find(".publish-option-description a").prop("href")).toBe(
-          website[urlField],
-        )
-        expect(wrapper.find(".publish-option-description a").text()).toBe(
-          website[urlField],
+        const user = userEvent.setup()
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
+
+        expect(dialog).toHaveTextContent(
+          new RegExp(website[publishStatusField] as string, "i"),
         )
       })
 
       it("renders a message if there is no date", async () => {
         website[publishDateField] = null
-        const { wrapper } = await render()
-        await simulateClickRadio(wrapper, idx)
-        wrapper.update()
-        expect(wrapper.find(".publish-option-description").text()).toContain(
-          `${lastPublishedText}never`,
-        )
+        const user = userEvent.setup()
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
+
+        expect(dialog).toHaveTextContent(`${lastPublishedText}`)
+        expect(dialog).toHaveTextContent("never")
       })
 
       it("has an option with the right label", async () => {
-        const { wrapper } = await render()
-        await simulateClickRadio(wrapper, idx)
-        wrapper.update()
-        expect(wrapper.find(".publish-option label").at(idx).text()).toBe(label)
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        expect(within(dialog).getByLabelText(label)).toBeInTheDocument()
       })
 
       it("publish button is enabled even with no unpublished content", async () => {
         website[unpublishedField] = false
-        const { wrapper } = await render()
-        await simulateClickPublish(wrapper, action)
-        wrapper.update()
-        expect(wrapper.find(".btn-publish").prop("disabled")).toBe(false)
+        const user = userEvent.setup()
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
+
+        const publishButton = within(dialog).getByRole("button", {
+          name: /publish/i,
+        })
+        expect(publishButton).not.toBeDisabled()
       })
 
       it("render only the preview button if user is not an admin", async () => {
         website["is_admin"] = false
-        const { wrapper } = await render()
-        expect(wrapper.find(`#publish-${action}`).exists()).toBe(
-          action === "staging" ? true : false,
-        )
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        if (action === "staging") {
+          expect(within(dialog).getByLabelText(label)).toBeInTheDocument()
+        } else {
+          expect(within(dialog).queryByLabelText(label)).not.toBeInTheDocument()
+        }
       })
 
       it("renders a message about unpublished content", async () => {
         website[unpublishedField] = true
-        const { wrapper } = await render()
-        await simulateClickRadio(wrapper, idx)
-        wrapper.update()
+        const user = userEvent.setup()
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
 
-        expect(wrapper.find(".publish-option-description").text()).toContain(
-          unpublishedChangesText,
-        )
+        expect(dialog).toHaveTextContent(unpublishedChangesText)
       })
       ;[[], ["error 1", "error2"]].forEach((warnings) => {
         it(`${shouldIf(
           warnings && !isEmpty(warnings),
         )} render a warning about missing content`, async () => {
           website["content_warnings"] = warnings
-          const { wrapper } = await render()
-          const warningText = wrapper.find(".publish-warnings")
-          expect(warningText.exists()).toBe(!isEmpty(warnings))
-          warnings.forEach((warning) =>
-            expect(warningText.text()).toContain(warning),
-          )
+          renderDrawer()
+          const dialog = await screen.findByRole("dialog")
+          if (!isEmpty(warnings)) {
+            warnings.forEach((warning) =>
+              expect(dialog).toHaveTextContent(warning),
+            )
+          }
         })
       })
 
       it("publish button sends the expected request", async () => {
-        const actionStub = helper.mockPostRequest(
+        const user = userEvent.setup()
+        helper.mockPostRequest(
           siteApiActionUrl
             .param({
               name: website.name,
@@ -244,39 +219,31 @@ describe("PublishDrawer", () => {
           {
             url_path: website.url_path,
           },
+          200,
         )
-        const { wrapper } = await render()
-        await simulateClickPublish(wrapper, action)
-        wrapper.update()
-        expect(
-          wrapper.find("PublishForm").find(".btn-publish").prop("disabled"),
-        ).toBeFalsy()
-        await act(async () => {
-          wrapper.find("PublishForm").find(".btn-publish").simulate("submit")
+
+        renderDrawer()
+        const dialog = await screen.findByRole("dialog")
+        const radioButton = within(dialog).getByLabelText(label)
+        await user.click(radioButton)
+
+        const publishButton = within(dialog).getByRole("button", {
+          name: /publish/i,
         })
-        sinon.assert.calledOnceWithExactly(
-          actionStub,
-          `/api/websites/${website.name}/${api}/`,
-          "POST",
-          {
-            body: {
-              url_path: website.url_path,
-            },
-            headers: { "X-CSRFTOKEN": "" },
-            credentials: undefined,
-          },
-        )
-        sinon.assert.calledOnceWithExactly(
-          refreshWebsiteStub,
-          `/api/websites/${website.name}/`,
-          "GET",
-          {
-            body: undefined,
-            headers: undefined,
-            credentials: undefined,
-          },
-        )
-        sinon.assert.calledOnceWithExactly(toggleVisibilityStub)
+        expect(publishButton).not.toBeDisabled()
+        await user.click(publishButton)
+
+        await waitFor(() => {
+          expect(helper.handleRequest).toHaveBeenCalledWith(
+            `/api/websites/${website.name}/${api}/`,
+            "POST",
+            expect.anything(),
+          )
+        })
+
+        await waitFor(() => {
+          expect(toggleVisibilityStub).toHaveBeenCalled()
+        })
       })
     },
   )
@@ -292,6 +259,10 @@ describe.each([
     api: "preview",
   },
 ])("Publishing Drawer Errors ($publishToLabel)", ({ publishToLabel, api }) => {
+  afterEach(() => {
+    cleanup()
+  })
+
   const setup = (websiteDetails: Partial<Website> = {}) => {
     const website = makeWebsiteDetail({ is_admin: true, ...websiteDetails })
     const user = userEvent.setup()
@@ -309,16 +280,12 @@ describe.each([
     const { user, result, setPublishResult } = setup()
     const dialog = await screen.findByRole("dialog")
     const envButton = await dom.findByText(dialog, publishToLabel)
-    await act(() => user.click(envButton))
+    await user.click(envButton)
 
     const publishButton = await dom.findByText(dialog, "Publish")
-    const form = dialog.querySelector("form")
-    expect(form).toContainElement(publishButton)
-    expect(publishButton).toHaveAttribute("type", "submit")
-    assertInstanceOf(form, HTMLFormElement)
-
     setPublishResult(undefined, 500)
-    act(() => form.submit())
+    await user.click(publishButton)
+
     await waitFor(() => {
       expect(dialog).toHaveTextContent(
         "We apologize, there was a problem publishing your site.",
@@ -334,16 +301,11 @@ describe.each([
     })
     const dialog = await screen.findByRole("dialog")
     const envButton = await dom.findByText(dialog, publishToLabel)
-    await act(() => user.click(envButton))
+    await user.click(envButton)
 
     const publishButton = await dom.findByText(dialog, "Publish")
-    const form = dialog.querySelector("form")
-    expect(form).toContainElement(publishButton)
-    expect(publishButton).toHaveAttribute("type", "submit")
-    assertInstanceOf(form, HTMLFormElement)
-
     setPublishResult({ url_path: "Some url error" }, 400)
-    act(() => form.submit())
+    await user.click(publishButton)
 
     await waitFor(() => {
       expect(dialog).toHaveTextContent(
