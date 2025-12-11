@@ -159,7 +159,13 @@ export default class IntegrationTestHelper {
   render = (ui: React.ReactElement, options?: RenderOptions) => {
     const initialStoreState = getInitialState(this.initialStorePatch)
     const store = configureStore(initialStoreState)
-    const history = createMemoryHistory({ initialEntries: this.initialEntries })
+    const history = createMemoryHistory({
+      initialEntries: this.initialEntries,
+      getUserConfirmation: (message, callback) => {
+        const result = window.confirm(message)
+        callback(result)
+      },
+    })
     const renderResult = render(
       <Provider store={store}>
         <ReduxQueryProvider queriesSelector={getQueries}>
