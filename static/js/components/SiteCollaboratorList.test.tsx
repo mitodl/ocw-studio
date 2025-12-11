@@ -1,7 +1,6 @@
 import React from "react"
-import { act } from "react-dom/test-utils"
-import { concat } from "ramda"
-import sinon, { SinonStub } from "sinon"
+import { screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import SiteCollaboratorList from "./SiteCollaboratorList"
 import {
@@ -13,25 +12,17 @@ import {
   makeWebsiteDetail,
   makeWebsiteCollaborators,
 } from "../util/factories/websites"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 import WebsiteContext from "../context/Website"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
-import SiteCollaboratorDrawer from "./SiteCollaboratorDrawer"
-import {
-  WebsiteCollaboratorListingResponse,
-  collaboratorListingKey,
-} from "../query-configs/websites"
+import { WebsiteCollaboratorListingResponse } from "../query-configs/websites"
 
 describe("SiteCollaboratorList", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     website: Website,
     collaborators: WebsiteCollaborator[],
     permanentAdmin: WebsiteCollaborator[],
-    deleteCollaboratorStub: SinonStub,
     apiResponse: WebsiteCollaboratorListingResponse
 
   beforeEach(() => {
@@ -39,20 +30,13 @@ describe("SiteCollaboratorList", () => {
     website = makeWebsiteDetail()
     collaborators = makeWebsiteCollaborators()
     permanentAdmin = [makePermanentWebsiteCollaborator()]
-    collaborators = concat(collaborators, permanentAdmin)
+    collaborators = [...collaborators, ...permanentAdmin]
 
-    const listingParams = {
-      name: website.name,
-      offset: 0,
-    }
     apiResponse = {
       results: collaborators,
       count: 6,
       next: null,
       previous: null,
-    }
-    const collaboratorListingState = {
-      [collaboratorListingKey(listingParams)]: { ...apiResponse },
     }
     helper.mockGetRequest(
       siteApiCollaboratorsUrl
@@ -63,69 +47,73 @@ describe("SiteCollaboratorList", () => {
         .toString(),
       apiResponse,
     )
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <SiteCollaboratorList {...props} />
-        </WebsiteContext.Provider>
-      ),
-      {},
-      {
-        entities: {
-          collaborators: collaboratorListingState,
-        },
-        queries: {},
-      },
-    )
   })
 
-  afterEach(() => {
-    helper.cleanup()
-  })
+  const renderList = async () => {
+    const [result, { history }] = helper.render(
+      <WebsiteContext.Provider value={website}>
+        <SiteCollaboratorList />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(collaborators[0].name)).toBeInTheDocument()
+    })
+
+    return { result, history }
+  }
 
   it("sets the document title", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      `OCW Studio | ${website.title} | Collaborators`,
-    )
+    await renderList()
+
+    await waitFor(() => {
+      expect(document.title).toContain(website.title)
+      expect(document.title).toContain("Collaborators")
+    })
   })
 
   it("renders the collaborators list with expected number of items", async () => {
-    const { wrapper } = await render()
+    await renderList()
+
     const numCollaborators = collaborators.length
-    const items = wrapper.find("StudioListItem")
-    expect(items.length).toBe(numCollaborators)
-    // First collaborator in list should be editable
-    expect(items.at(0).prop("menuOptions")).toHaveLength(2)
-    // Last collaborator in list should not be editable
-    expect(items.at(numCollaborators - 1).prop("menuOptions")).toHaveLength(0)
-    // Should be 6 StudioListItems but only 5 menu buttons (none for the permanent admin)
-    expect(items.length).toBe(6)
-    expect(wrapper.find(".transparent-button").length).toBe(5)
+
+    for (const collaborator of collaborators) {
+      expect(screen.getByText(collaborator.name)).toBeInTheDocument()
+    }
+
+    const menuButtons = screen.getAllByRole("button", { name: /more_vert/i })
+    expect(menuButtons).toHaveLength(numCollaborators - 1)
   })
 
   it("the edit collaborator icon sets correct state and opens the modal", async () => {
-    const { wrapper } = await render()
-    wrapper.find(".transparent-button").at(0).simulate("click")
+    const user = userEvent.setup()
+    await renderList()
 
-    act(() => {
-      wrapper.find("button.dropdown-item").at(0).simulate("click")
-    })
-    wrapper.update()
-    const component = wrapper.find(SiteCollaboratorDrawer)
-    expect(component.prop("collaborator")).toStrictEqual(collaborators[0])
-    expect(component.prop("visibility")).toBe(true)
+    const menuButtons = screen.getAllByRole("button", { name: /more_vert/i })
+    await user.click(menuButtons[0])
 
-    act(() => {
-      component.prop("toggleVisibility")()
+    const editButton = await screen.findByRole("button", { name: /settings/i })
+    await user.click(editButton)
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toBeInTheDocument()
+    expect(
+      within(dialog).getByText(new RegExp(collaborators[0].email)),
+    ).toBeInTheDocument()
+
+    const closeButton = within(dialog).getByRole("button", { name: /close/i })
+    await user.click(closeButton)
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
-    wrapper.update()
-    expect(wrapper.find(SiteCollaboratorDrawer).prop("visibility")).toBe(false)
   })
 
   it("the delete collaborator dialog works as expected", async () => {
+    const user = userEvent.setup()
     const collaborator = collaborators[0]
-    deleteCollaboratorStub = helper.mockDeleteRequest(
+
+    helper.mockDeleteRequest(
       siteApiCollaboratorsDetailUrl
         .param({
           name: website.name,
@@ -134,41 +122,59 @@ describe("SiteCollaboratorList", () => {
         .toString(),
       {},
     )
-    const { wrapper } = await render()
-    wrapper.find(".transparent-button").at(0).simulate("click")
-    wrapper.update()
-    act(() => {
-      wrapper.find("button.dropdown-item").at(1).simulate("click")
+
+    await renderList()
+
+    const menuButtons = screen.getAllByRole("button", { name: /more_vert/i })
+    await user.click(menuButtons[0])
+
+    const deleteButton = await screen.findByRole("button", { name: /delete/i })
+    await user.click(deleteButton)
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toBeInTheDocument()
+    expect(dialog).toHaveTextContent(collaborator.name)
+
+    const confirmButton = within(dialog)
+      .getAllByRole("button")
+      .find((btn) => btn.textContent?.toLowerCase().includes("delete"))
+    expect(confirmButton).toBeInTheDocument()
+    await user.click(confirmButton!)
+
+    await waitFor(() => {
+      expect(helper.handleRequest).toHaveBeenCalledWith(
+        siteApiCollaboratorsDetailUrl
+          .param({
+            name: website.name,
+            userId: collaborator.user_id,
+          })
+          .toString(),
+        "DELETE",
+        expect.anything(),
+      )
     })
-    wrapper.update()
-    let dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBe(true)
-    expect(dialog.prop("bodyContent")).toContain(collaborators[0].name)
-    act(() => {
-      dialog.find("ModalFooter").find("button").at(1).simulate("click")
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
-    wrapper.update()
-    sinon.assert.calledOnce(deleteCollaboratorStub)
-    dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBe(false)
   })
 
   it("the add collaborator button sets correct state and opens the modal", async () => {
-    const { wrapper } = await render()
-    const addLink = wrapper.find("button").at(0)
-    act(() => {
-      // @ts-expect-error Not simulating whole event
-      addLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-    })
-    wrapper.update()
-    const component = wrapper.find(SiteCollaboratorDrawer)
-    expect(component.prop("collaborator")).toBe(null)
-    expect(component.prop("visibility")).toBe(true)
+    const user = userEvent.setup()
+    await renderList()
 
-    act(() => {
-      component.prop("toggleVisibility")()
+    const addButton = screen.getByRole("button", { name: /add/i })
+    await user.click(addButton)
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toBeInTheDocument()
+    expect(within(dialog).getByText(/add collaborator/i)).toBeInTheDocument()
+
+    const closeButton = within(dialog).getByRole("button", { name: /close/i })
+    await user.click(closeButton)
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     })
-    wrapper.update()
-    expect(wrapper.find(SiteCollaboratorDrawer).prop("visibility")).toBe(false)
   })
 })
