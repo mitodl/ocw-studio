@@ -1,18 +1,17 @@
+import React from "react"
+import { screen, waitFor, fireEvent } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+
 import SitesDashboard from "./SitesDashboard"
 
 import { newSiteUrl, siteApiListingUrl, siteDetailUrl } from "../lib/urls"
 import { WebsiteListingResponse } from "../query-configs/websites"
-import { wait } from "../test_util"
 import { makeWebsites } from "../util/factories/websites"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 
 import { Website } from "../types/websites"
-import PaginationControls from "../components/PaginationControls"
 import * as searchHooks from "../hooks/search"
-import React from "react"
-import { render, fireEvent } from "@testing-library/react"
+import { render } from "@testing-library/react"
 import { StatusWithDateHover, formatDateTime } from "./SitesDashboard"
 import { PublishStatus } from "../constants"
 
@@ -26,7 +25,6 @@ jest.mock("../hooks/search", () => {
 describe("SitesDashboard", () => {
   let helper: IntegrationTestHelper,
     response: WebsiteListingResponse,
-    render: TestRenderer,
     websites: Website[],
     websitesLookup: Record<string, Website>
 
@@ -47,46 +45,33 @@ describe("SitesDashboard", () => {
       siteApiListingUrl.param({ offset: 0 }).toString(),
       response,
     )
-
-    render = helper.configureRenderer(
-      SitesDashboard,
-      {},
-      {
-        entities: {
-          websitesListing: {
-            ["0"]: {
-              ...response,
-              results: websites.map((site) => site.name),
-            },
+    helper.patchInitialReduxState({
+      entities: {
+        websitesListing: {
+          ["0"]: {
+            ...response,
+            results: websites.map((site) => site.name),
           },
-          websiteDetails: websitesLookup,
         },
-        queries: {},
+        websiteDetails: websitesLookup,
       },
-    )
-  })
-
-  afterEach(() => {
-    helper.cleanup()
+      queries: {},
+    })
   })
 
   test("lists a page", async () => {
-    const { wrapper } = await render()
-    let idx = 0
+    helper.render(<SitesDashboard />)
     for (const website of websites) {
-      const li = wrapper.find("StudioListItem").at(idx)
-      expect(li.prop("to")).toBe(
+      const link = screen.getByRole("link", { name: website.title })
+      expect(link).toHaveAttribute(
+        "href",
         siteDetailUrl.param({ name: website.name }).toString(),
       )
-      expect(li.find("Link").text()).toBe(website.title)
-      expect(li.prop("subtitle")).toBe(website.short_id)
-      idx++
+      expect(screen.getByText(website.short_id)).toBeInTheDocument()
     }
   })
 
   test("lets the user filter the sites", async () => {
-    const { wrapper } = await render()
-    const filterInput = wrapper.find(".site-search-input")
     helper.mockGetRequest(
       siteApiListingUrl
         .param({ offset: 0, search: "my-search-string" })
@@ -98,79 +83,103 @@ describe("SitesDashboard", () => {
         count: 0,
       },
     )
+    const [, { history }] = helper.render(<SitesDashboard />)
+    const filterInput = screen.getByPlaceholderText(/search/i)
 
-    const event = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      preventDefault() {},
-      target: { value: "my-search-string" },
-    } as React.ChangeEvent<HTMLInputElement>
-    filterInput.simulate("change", event)
-    await wait(800)
-    expect(helper.browserHistory.location.search).toBe("?q=my-search-string")
+    await userEvent.clear(filterInput)
+    await userEvent.type(filterInput, "my-search-string")
+    await waitFor(
+      () => {
+        expect(history.location.search).toBe("?q=my-search-string")
+      },
+      { timeout: 1000 },
+    )
   })
 
   test("should issue a request based on the 'q' param", async () => {
-    helper.browserHistory.replace({
-      pathname: "/",
-      search: "q=searchfilter",
-    })
-    helper.mockGetRequest(
+    const searchHelper = new IntegrationTestHelper("/?q=searchfilter")
+    searchHelper.mockGetRequest(
       siteApiListingUrl
         .param({ offset: 0 })
         .query({ search: "searchfilter" })
         .toString(),
       response,
     )
-    await render()
-    expect(helper.handleRequestStub.args).toStrictEqual([
-      [
+    searchHelper.patchInitialReduxState({
+      entities: {
+        websitesListing: {
+          ["0"]: {
+            ...response,
+            results: websites.map((site) => site.name),
+          },
+        },
+        websiteDetails: websitesLookup,
+      },
+      queries: {},
+    })
+    searchHelper.render(<SitesDashboard />)
+    await waitFor(() => {
+      expect(searchHelper.handleRequest).toHaveBeenCalledWith(
         siteApiListingUrl
           .param({ offset: 0 })
           .query({ search: "searchfilter" })
           .toString(),
         "GET",
         { body: undefined, credentials: undefined, headers: undefined },
-      ],
-    ])
+      )
+    })
   })
 
   test("sets the page title", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      "OCW Studio | Sites",
-    )
+    helper.render(<SitesDashboard />)
+    expect(document.title).toBe("OCW Studio | Sites")
   })
 
   test("has an add link to the new site page", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find(`Link.add-new`).prop("to")).toBe(newSiteUrl.toString())
+    helper.render(<SitesDashboard />)
+    const addLink = screen.getByRole("link", { name: /add/i })
+    expect(addLink).toHaveAttribute("href", newSiteUrl.toString())
   })
 
   it("paginates the site results", async () => {
-    /**
-     * SitesDashboard uses the same usePagination hook as RepeatableContentListing.
-     * The hook is tested pretty thoroughly through its usage in that component.
-     * Let's just assert that this component uses the hook and passes its results
-     * to the pagination controls.
-     */
     response.count = 250
     const startingOffset = 70
-    helper.mockGetRequest(
+    const paginationHelper = new IntegrationTestHelper(
+      `/path/to/page?offset=${startingOffset}`,
+    )
+    paginationHelper.mockGetRequest(
       siteApiListingUrl.query({ offset: startingOffset }).toString(),
       response,
     )
-    helper.browserHistory.replace({
-      pathname: "/path/to/page",
-      search: `offset=${startingOffset}`,
+    paginationHelper.patchInitialReduxState({
+      entities: {
+        websitesListing: {
+          [String(startingOffset)]: {
+            ...response,
+            results: websites.map((site) => site.name),
+          },
+        },
+        websiteDetails: websitesLookup,
+      },
+      queries: {},
     })
 
     const usePagination = jest.spyOn(searchHooks, "usePagination")
-    const { wrapper } = await render()
-    const paginationControls = wrapper.find(PaginationControls)
-    expect(usePagination).toHaveBeenCalledTimes(2) // once on initial render, once after api call resolves
-    const { next, previous } = usePagination.mock.results[1].value
-    expect(paginationControls.prop("next")).toBe(next)
-    expect(paginationControls.prop("previous")).toBe(previous)
+    const [{ container }] = paginationHelper.render(<SitesDashboard />)
+    await waitFor(() => {
+      expect(usePagination).toHaveBeenCalled()
+    })
+    const { next, previous } = usePagination.mock.results[0].value
+    const nextLink = container.querySelector("a.next")
+    const previousLink = container.querySelector("a.previous")
+    expect(nextLink).toHaveAttribute(
+      "href",
+      `${next.pathname}?${next.search.replace("?", "")}`,
+    )
+    expect(previousLink).toHaveAttribute(
+      "href",
+      `${previous.pathname}?${previous.search.replace("?", "")}`,
+    )
   })
 })
 
@@ -266,7 +275,6 @@ describe("Site status indicators", () => {
     const testHelper = new IntegrationTestHelper()
     const testWebsites = makeWebsites(5)
 
-    // Never published site - no publish dates or statuses
     const neverPublishedSite = {
         ...testWebsites[0],
         name: "never-published-site",
@@ -276,7 +284,6 @@ describe("Site status indicators", () => {
         live_publish_status: null,
         unpublished: false,
       },
-      // Unpublished site - has publish_date but marked as unpublished
       unpublishedSite = {
         ...testWebsites[1],
         name: "unpublished-site",
@@ -287,8 +294,6 @@ describe("Site status indicators", () => {
         unpublish_status_updated_on: "2023-01-15T12:30:45Z",
         updated_on: "2023-01-15T12:30:45Z",
       },
-      // Draft site - has draft_publish_status and draft_publish_date
-      // but no publish_date and unpublished is false
       draftSite = {
         ...testWebsites[2],
         name: "draft-site",
@@ -300,7 +305,6 @@ describe("Site status indicators", () => {
         unpublished: false,
         updated_on: "2023-01-15T12:30:45Z",
       },
-      // Published site - has publish_date and live_publish_status
       publishedSite = {
         ...testWebsites[3],
         name: "published-site",
@@ -310,7 +314,6 @@ describe("Site status indicators", () => {
         unpublished: false,
         updated_on: "2023-01-15T12:30:45Z",
       },
-      // Failed site - has live_publish_status marked as errored
       failedSite = {
         ...testWebsites[4],
         name: "failed-site",
@@ -345,32 +348,24 @@ describe("Site status indicators", () => {
       websitesLookup[site.name] = site
     }
 
-    const testRender = testHelper.configureRenderer(
-      SitesDashboard,
-      {},
-      {
-        entities: {
-          websitesListing: {
-            ["0"]: {
-              ...testResponse,
-              results: statusSites.map((site) => site.name),
-            },
+    testHelper.patchInitialReduxState({
+      entities: {
+        websitesListing: {
+          ["0"]: {
+            ...testResponse,
+            results: statusSites.map((site) => site.name),
           },
-          websiteDetails: websitesLookup,
         },
-        queries: {},
+        websiteDetails: websitesLookup,
       },
-    )
+      queries: {},
+    })
 
-    const { wrapper } = await testRender()
+    testHelper.render(<SitesDashboard />)
 
-    // Check for status text
-    expect(wrapper.text()).toContain("Never Staged")
-    expect(wrapper.text()).toContain("Unpublished")
-    expect(wrapper.text()).toContain("Draft")
-    expect(wrapper.text()).toContain("Published")
-
-    // Cleanup
-    testHelper.cleanup()
+    expect(screen.getAllByText("Never Staged").length).toBeGreaterThan(0)
+    expect(screen.getByText("Unpublished")).toBeInTheDocument()
+    expect(screen.getByText("Draft")).toBeInTheDocument()
+    expect(screen.getByText("Published")).toBeInTheDocument()
   })
 })
