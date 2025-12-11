@@ -62,11 +62,7 @@ def create_gdrive_resource_content_batch(
     Creates WebsiteContent resources from a Google Drive files identified by `drive_file_ids`.
 
     `drive_file_ids` are expected to be results from `process_drive_file` tasks.
-
-    Returns:
-        list[str]: List of drive_file_ids for videos that need transcoding
     """  # noqa: D401, E501
-    video_file_ids = []
 
     for drive_file_id in drive_file_ids:
         if drive_file_id is None:
@@ -82,36 +78,30 @@ def create_gdrive_resource_content_batch(
             )
         else:
             api.create_gdrive_resource_content(drive_file, user_pk=user_pk)
-            if drive_file.is_video():
-                video_file_ids.append(drive_file_id)
 
-    return video_file_ids
+    return drive_file_ids
 
 
 @app.task()
-def transcode_gdrive_videos_batch(video_file_ids: list[str]):
+def transcode_gdrive_videos_batch(drive_file_ids: list[str]):
     """
-    Transcodes Google Drive videos identified by `video_file_ids`.
+    Transcodes Google Drive videos identified by `drive_file_ids`.
+    """
+    for drive_file_id in drive_file_ids:
+        if drive_file_id is None:
+            continue
 
-    This task is meant to run after resources have been created.
-    """
-    for drive_file_id in video_file_ids:
         try:
             drive_file = DriveFile.objects.get(file_id=drive_file_id)
             if drive_file.is_video():
                 api.transcode_gdrive_video(drive_file)
-        except DriveFile.DoesNotExist as exc:
+        except DriveFile.DoesNotExist:
             log.exception(
                 "Attempted to transcode video for drive file %s which does not exist.",
                 drive_file_id,
-                exc_info=exc,
             )
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            log.exception(
-                "Error transcoding video for drive file %s",
-                drive_file_id,
-                exc_info=exc,
-            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            log.exception("Error transcoding video for drive file %s", drive_file_id)
 
 
 @app.task()
@@ -210,7 +200,6 @@ def import_website_files(self, name: str, user_pk=None):
     workflow_steps = []
 
     if file_tasks:
-        # Create resources and collect video file IDs
         resource_creation_step = chord(
             celery.group(*file_tasks),
             create_gdrive_resource_content_batch.s(user_pk=user_pk),
