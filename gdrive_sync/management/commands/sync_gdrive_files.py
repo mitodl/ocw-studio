@@ -3,7 +3,11 @@
 import logging
 
 from content_sync.api import get_sync_backend
-from gdrive_sync.api import create_gdrive_resource_content, process_file_result
+from gdrive_sync.api import (
+    create_gdrive_resource_content,
+    process_file_result,
+    transcode_gdrive_video,
+)
 from gdrive_sync.models import DriveFile
 from gdrive_sync.tasks import _get_gdrive_files, process_drive_file
 from main.management.commands.filter import WebsiteFilterCommand
@@ -68,6 +72,10 @@ class Command(WebsiteFilterCommand):
                         # Get the related drive file and update status
                         drive_file = DriveFile.objects.get(file_id=gdrive_file["id"])
                         create_gdrive_resource_content(drive_file)
+
+                        # Transcode video if this is a video file
+                        if drive_file.is_video():
+                            transcode_gdrive_video(drive_file)
 
                     except:  # pylint:disable=bare-except  # noqa: E722
                         self.stderr.write(
