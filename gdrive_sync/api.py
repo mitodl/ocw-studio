@@ -548,7 +548,6 @@ def transcode_gdrive_video(drive_file: DriveFile):
             drive_file.video = video
             drive_file.save()
             create_media_convert_job(video)
-            drive_file.update_status(DriveFileStatus.TRANSCODING)
         except Exception as exc:
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
