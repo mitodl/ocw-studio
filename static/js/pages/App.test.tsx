@@ -1,9 +1,8 @@
-import sinon from "sinon"
+import React from "react"
+import { screen, waitFor } from "@testing-library/react"
 
 import App from "./App"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { siteApiDetailUrl, sitesBaseUrl } from "../lib/urls"
 
@@ -11,14 +10,12 @@ import { Website } from "../types/websites"
 
 describe("App", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     website: Website,
     siteDetailApiUrl: string,
     siteDetailUrl: string
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
-    render = helper.configureRenderer(App)
 
     website = makeWebsiteDetail()
     siteDetailApiUrl = siteApiDetailUrl.param({ name: website.name }).toString()
@@ -26,49 +23,77 @@ describe("App", () => {
     helper.mockGetRequest(siteDetailApiUrl, website)
   })
 
-  afterEach(() => {
-    helper.cleanup()
-  })
-
   it("should render", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find("App").exists()).toBeTruthy()
+    helper.render(<App />)
+
+    await waitFor(() => {
+      expect(document.querySelector(".app")).toBeInTheDocument()
+    })
   })
 
   it("should render 404 when no match", async () => {
-    helper.browserHistory.push("/nonsense")
-    const { wrapper } = await render()
-    expect(wrapper.find("ErrorComponent").exists()).toBeTruthy()
+    helper = new IntegrationTestHelper("/nonsense")
+    helper.render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/that's a 404/i)).toBeInTheDocument()
+    })
   })
 
   it("should render the site header", async () => {
-    const { wrapper } = await render()
-    const app = wrapper.find("App")
-    const header = app.find("Header")
-    expect(header.exists()).toBeTruthy()
+    helper.render(<App />)
+
+    await waitFor(() => {
+      expect(document.querySelector("header")).toBeInTheDocument()
+    })
   })
 
   it("should not make a request for website detail", async () => {
-    await render()
-    sinon.assert.notCalled(helper.handleRequestStub)
+    helper.render(<App />)
+
+    await waitFor(() => {
+      expect(document.querySelector(".app")).toBeInTheDocument()
+    })
+
+    expect(helper.handleRequest).not.toHaveBeenCalledWith(
+      siteDetailApiUrl,
+      "GET",
+      expect.anything(),
+    )
   })
 
   describe("when on a website detail URL", () => {
     it("should load website from the API and render the SitePage component", async () => {
-      helper.browserHistory.push(siteDetailUrl)
-      const { wrapper } = await render()
-      sinon.assert.calledWith(helper.handleRequestStub, siteDetailApiUrl, "GET")
-      const sitePageComponent = wrapper.find("SitePage")
-      expect(sitePageComponent.exists()).toBe(true)
+      helper = new IntegrationTestHelper(siteDetailUrl)
+      helper.mockGetRequest(siteDetailApiUrl, website)
+
+      helper.render(<App />)
+
+      await waitFor(() => {
+        expect(helper.handleRequest).toHaveBeenCalledWith(
+          siteDetailApiUrl,
+          "GET",
+          expect.anything(),
+        )
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(website.title)).toBeInTheDocument()
+      })
     })
 
     it("should show a 404 if the website doesn't come back", async () => {
+      helper = new IntegrationTestHelper(siteDetailUrl)
       helper.mockGetRequest(siteDetailApiUrl, {}, 404)
-      helper.browserHistory.push(siteDetailUrl)
-      const { wrapper } = await render()
-      const notFound = wrapper.find("ErrorComponent")
-      expect(notFound.exists()).toBeTruthy()
-      expect(notFound.find("Link").prop("to")).toBe(sitesBaseUrl.toString())
+
+      helper.render(<App />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/that's a 404/i)).toBeInTheDocument()
+      })
+
+      const backLink = screen.getByRole("link", { name: /site index/i })
+      expect(backLink).toHaveAttribute("href", sitesBaseUrl.toString())
     })
   })
 })
