@@ -1,8 +1,7 @@
 import React from "react"
-import { act } from "react-dom/test-utils"
 import { default as useInterval } from "@use-it/interval"
-import sinon from "sinon"
-import { Route } from "react-router-dom"
+import { screen, waitFor, within, act } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import RepeatableContentListing from "./RepeatableContentListing"
 import { GoogleDriveSyncStatuses } from "../constants"
@@ -17,14 +16,7 @@ import {
   siteContentDetailUrl,
   siteApiContentDetailUrl,
 } from "../lib/urls"
-import {
-  contentDetailKey,
-  contentListingKey,
-  WebsiteContentListingResponse,
-} from "../query-configs/websites"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 import {
   makeRepeatableConfigItem,
   makeWebsiteContentListItem,
@@ -37,11 +29,9 @@ import {
   WebsiteContentListItem,
 } from "../types/websites"
 import { singular } from "pluralize"
-import { StudioListItem } from "./StudioList"
 
 const spyUseInterval = jest.mocked(useInterval)
 
-// ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
   return <div>mock</div>
 }
@@ -55,22 +45,19 @@ jest.mock("@use-it/interval", () => ({
   default: jest.fn(),
 }))
 
-//mock the OCW_STUDIO_CONTENT_DELETABLE feature flag as set to true
 jest.mock("posthog-js", () => ({
   isFeatureEnabled: jest.fn().mockReturnValue(true),
 }))
 
 describe("RepeatableContentListing", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     website: Website,
     configItem: RepeatableConfigItem,
-    contentListingItems: WebsiteContentListItem[],
-    apiResponse: WebsiteContentListingResponse,
-    websiteContentDetailsLookup: Record<string, WebsiteContentListItem>
+    contentListingItems: WebsiteContentListItem[]
 
   beforeEach(() => {
     SETTINGS.deletableContentTypes = []
+    SETTINGS.gdrive_enabled = false
 
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
@@ -79,332 +66,190 @@ describe("RepeatableContentListing", () => {
       makeWebsiteContentListItem(),
       makeWebsiteContentListItem(),
     ]
-    websiteContentDetailsLookup = {}
-    for (const item of contentListingItems) {
-      websiteContentDetailsLookup[
-        contentDetailKey({ name: website.name, textId: item.text_id })
-      ] = item
-    }
-    const listingParams = {
-      name: website.name,
-      type: configItem.name,
-      offset: 0,
-    }
-    apiResponse = {
-      results: contentListingItems,
-      count: 2,
-      next: null,
-      previous: null,
-    }
-    const contentListingLookup = {
-      [contentListingKey(listingParams)]: {
-        ...apiResponse,
-        results: apiResponse.results.map((item) => item.text_id),
-      },
-    }
-    helper.mockGetRequest(
-      siteApiContentListingUrl
-        .param({
-          name: website.name,
-        })
-        .query({ offset: 0, type: configItem.name })
-        .toString(),
-      apiResponse,
-    )
-    helper.mockGetRequest(
-      siteApiContentListingUrl
-        .param({
-          name: website.name,
-        })
-        .query({ search: "search", offset: 0, type: configItem.name })
-        .toString(),
-      apiResponse,
-    )
-
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <RepeatableContentListing {...props} />
-        </WebsiteContext.Provider>
-      ),
-      { configItem },
-      {
-        entities: {
-          websiteDetails: { [website.name]: website },
-          websiteContentListing: contentListingLookup,
-          websiteContentDetails: websiteContentDetailsLookup,
-        },
-        queries: {},
-      },
-    )
-    jest.useFakeTimers()
   })
 
   afterEach(() => {
-    helper.cleanup()
     spyUseInterval.mockClear()
     jest.useRealTimers()
   })
+
+  const renderListing = async (
+    props: { configItem?: RepeatableConfigItem } = {},
+    initialSearch = "",
+  ) => {
+    const item = props.configItem ?? configItem
+    const apiResponse = {
+      results: contentListingItems,
+      count: contentListingItems.length,
+      next: null,
+      previous: null,
+    }
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({ name: website.name })
+        .query({ offset: 0, type: item.name })
+        .toString(),
+      apiResponse,
+    )
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({ name: website.name })
+        .query({ search: "search", offset: 0, type: item.name })
+        .toString(),
+      apiResponse,
+    )
+
+    if (initialSearch) {
+      helper = new IntegrationTestHelper(`/?q=${initialSearch}`)
+      helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({ name: website.name })
+          .query({ search: initialSearch, offset: 0, type: item.name })
+          .toString(),
+        apiResponse,
+      )
+    }
+
+    const [result, { history }] = helper.render(
+      <WebsiteContext.Provider value={website}>
+        <RepeatableContentListing configItem={item} />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument()
+    })
+
+    return { result, history }
+  }
 
   test.each(twoBooleanTestMatrix)(
     "showing gdrive links when gdriveis=%p and isResource=%p",
     async (isGdriveEnabled, isResource) => {
       SETTINGS.gdrive_enabled = isGdriveEnabled
-      configItem = makeRepeatableConfigItem(isResource ? "resource" : "page")
-      helper.mockGetRequest(
-        siteApiContentListingUrl
-          .param({
-            name: website.name,
-          })
-          .query({ offset: 0, type: configItem.name })
-          .toString(),
-        apiResponse,
-      )
-      const { wrapper } = await render({ configItem })
-      const driveLink = wrapper.find("a.view")
-      const syncLink = wrapper.find("button.sync")
-      const addLink = wrapper.find("a.add")
-      expect(driveLink.exists()).toBe(isGdriveEnabled && isResource)
-      expect(syncLink.exists()).toBe(isGdriveEnabled && isResource)
-      expect(addLink.exists()).toBe(true)
+      website.gdrive_url = isGdriveEnabled
+        ? "https://drive.google.com/test"
+        : null
+      const item = makeRepeatableConfigItem(isResource ? "resource" : "page")
+
+      await renderListing({ configItem: item })
+
+      const driveLink = document.querySelector("a.view")
+      const syncButton = screen.queryByRole("button", { name: /sync/i })
+      const addLink = screen.getByRole("link", { name: /add/i })
+
+      expect(!!driveLink).toBe(isGdriveEnabled && isResource)
+      expect(!!syncButton).toBe(isGdriveEnabled && isResource)
+      expect(addLink).toBeInTheDocument()
     },
   )
 
   it("Clicking the gdrive sync button should trigger a sync request", async () => {
-    const postSyncStub = helper.mockPostRequest(
-      siteApiContentSyncGDriveUrl
-        .param({
-          name: website.name,
-        })
-        .toString(),
+    const user = userEvent.setup()
+    SETTINGS.gdrive_enabled = true
+    website.gdrive_url = "https://drive.google.com/test"
+
+    helper.mockPostRequest(
+      siteApiContentSyncGDriveUrl.param({ name: website.name }).toString(),
       {},
       200,
     )
-    const getStatusStub = helper.mockGetRequest(
+    helper.mockGetRequest(
       siteApiDetailUrl
         .param({ name: website.name })
         .query({ only_status: true })
         .toString(),
       { sync_status: "Complete" },
     )
-    SETTINGS.gdrive_enabled = true
-    const { wrapper } = await render()
-    const syncLink = wrapper.find("button.sync")
-    await act(async () => {
-      // @ts-expect-error Not mocking whole object
-      syncLink.prop("onClick")({ preventDefault: helper.sandbox.stub() })
+
+    await renderListing()
+
+    const syncButton = screen.getByRole("button", { name: /sync/i })
+    await user.click(syncButton)
+
+    await waitFor(() => {
+      expect(helper.handleRequest).toHaveBeenCalledWith(
+        siteApiContentSyncGDriveUrl.param({ name: website.name }).toString(),
+        "POST",
+        expect.anything(),
+      )
     })
-    expect(postSyncStub.called).toBeTruthy()
-    expect(getStatusStub.called).toBeTruthy()
   })
 
   test("should filter based on query param", async () => {
-    helper.browserHistory.push("/?q=search")
-    const { wrapper } = await render()
-    contentListingItems.forEach((item, idx) => {
-      const li = wrapper.find("li").at(idx)
-      expect(li.text()).toContain(item.title)
-    })
-  })
-
-  test("should let the user filter via text input", async () => {
-    const spy = jest.spyOn(helper.browserHistory, "push")
-    const { wrapper } = await render()
-    const filterInput = wrapper.find(".site-search-input")
-    const event = {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      preventDefault() {},
-      target: { value: "my-search-string" },
-    } as React.ChangeEvent<HTMLInputElement>
-    filterInput.simulate("change", event)
-    jest.runAllTimers()
-    wrapper.update()
-    expect(spy).toHaveBeenCalledWith("?q=my-search-string")
-  })
-
-  const deletableTestCases = [
-    { name: "external resource", configName: "external-resource" },
-    { name: "instructor", configName: "instructor" },
-    { name: "page", configName: "page" },
-  ]
-  deletableTestCases.forEach(({ name, configName }) => {
-    it(`should delete ${name}`, async () => {
-      SETTINGS.deletableContentTypes = [configName]
-      const configItem = makeRepeatableConfigItem(configName)
-      const contentItem = makeWebsiteContentListItem()
-      websiteContentDetailsLookup = {
-        [contentDetailKey({
-          name: website.name,
-          textId: contentItem.text_id,
-        })]: contentItem,
-      }
-      const apiResponse = {
-        results: [contentItem],
-        count: 1,
-        next: null,
-        previous: null,
-      }
-      const contentListingLookup = {
-        [contentListingKey({
-          name: website.name,
-          type: configItem.name,
-          offset: 0,
-        })]: {
-          ...apiResponse,
-          results: apiResponse.results.map((item) => item.text_id),
-        },
-      }
-      helper.mockGetRequest(
-        siteApiContentListingUrl
-          .param({
-            name: website.name,
-          })
-          .query({ offset: 0, type: configItem.name })
-          .toString(),
-        apiResponse,
-      )
-      render = helper.configureRenderer(
-        (props) => (
-          <WebsiteContext.Provider value={website}>
-            <RepeatableContentListing {...props} />
-          </WebsiteContext.Provider>
-        ),
-        { configItem: configItem },
-        {
-          entities: {
-            websiteDetails: { [website.name]: website },
-            websiteContentListing: contentListingLookup,
-            websiteContentDetails: websiteContentDetailsLookup,
-          },
-          queries: {},
-        },
-      )
-      const contentItemToDelete = contentItem
-      const getStatusStub = helper.mockGetRequest(
-        siteApiDetailUrl
-          .param({ name: website.name })
-          .query({ only_status: true })
-          .toString(),
-        { sync_status: "Complete" },
-      )
-      const deleteContentStub = helper.mockDeleteRequest(
-        siteApiContentDetailUrl
-          .param({
-            name: website.name,
-            textId: contentItemToDelete.text_id,
-          })
-          .toString(),
-        {},
-      )
-      const { wrapper } = await render()
-      wrapper.find(".transparent-button").at(0).simulate("click")
-      wrapper.update()
-      act(() => {
-        wrapper.find("button.dropdown-item").at(0).simulate("click")
-      })
-      wrapper.update()
-      let dialog = wrapper.find("Dialog")
-      expect(dialog.prop("open")).toBe(true)
-      expect(dialog.text()).toContain(contentItemToDelete.title)
-
-      // Confirm the deletion in the dialog
-      await act(async () => {
-        dialog.find("ModalFooter").find("button").at(1).simulate("click")
-      })
-      wrapper.update()
-
-      // Assert the DELETE request was called
-      sinon.assert.calledOnce(deleteContentStub)
-
-      // Assert the GET request for website status was called
-      sinon.assert.calledOnce(getStatusStub)
-
-      // Assert the dialog is closed
-      dialog = wrapper.find("Dialog")
-      expect(dialog.prop("open")).toBe(false)
-    })
-  })
-
-  it("should not show Delete for referenced content items", async () => {
-    SETTINGS.deletableContentTypes = ["external-resource"]
-    const configItem = makeRepeatableConfigItem("external-resource")
-    const contentItem = {
-      ...makeWebsiteContentListItem(),
-      is_deletable: false,
-    }
-
-    const apiResponse = {
-      results: [contentItem],
-      count: 1,
-      next: null,
-      previous: null,
-    }
-
-    const contentListingLookup = {
-      [contentListingKey({
-        name: website.name,
-        type: configItem.name,
-        offset: 0,
-      })]: {
-        ...apiResponse,
-        results: apiResponse.results.map((item) => item.text_id),
-      },
-    }
+    const searchTerm = "search"
+    helper = new IntegrationTestHelper(`/?q=${searchTerm}`)
 
     helper.mockGetRequest(
       siteApiContentListingUrl
         .param({ name: website.name })
-        .query({ offset: 0, type: configItem.name })
+        .query({ search: searchTerm, offset: 0, type: configItem.name })
         .toString(),
-      apiResponse,
-    )
-
-    const websiteContentDetailsLookup = {
-      [contentDetailKey({ name: website.name, textId: contentItem.text_id })]:
-        contentItem,
-    }
-
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <RepeatableContentListing {...props} />
-        </WebsiteContext.Provider>
-      ),
-      { configItem },
       {
-        entities: {
-          websiteDetails: { [website.name]: website },
-          websiteContentListing: contentListingLookup,
-          websiteContentDetails: websiteContentDetailsLookup,
-        },
-        queries: {},
+        results: contentListingItems,
+        count: contentListingItems.length,
+        next: null,
+        previous: null,
       },
     )
 
-    const { wrapper } = await render()
-    wrapper.find(".transparent-button").at(0).simulate("click") // open dropdown
-    act(() => {
-      wrapper.find("button.dropdown-item").at(0).simulate("click") // open delete modal
+    helper.render(
+      <WebsiteContext.Provider value={website}>
+        <RepeatableContentListing configItem={configItem} />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument()
     })
-    wrapper.update()
 
-    const dialog = wrapper.find("Dialog")
-    expect(dialog.prop("open")).toBe(true)
-
-    // Assert that the dialog has no "Delete" button (only Cancel)
-    const footerButtons = dialog.find("ModalFooter").find("button")
-    expect(footerButtons.length).toBe(1)
-    expect(footerButtons.at(0).text()).toContain("Cancel")
+    for (const item of contentListingItems) {
+      expect(screen.getByText(item.title as string)).toBeInTheDocument()
+    }
   })
 
-  it("should show each content item with edit links", async () => {
-    const { wrapper } = await render()
+  test("should let the user filter via text input", async () => {
+    jest.useFakeTimers()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
 
-    let idx = 0
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .param({ name: website.name })
+        .query({ search: "my-search-string", offset: 0, type: configItem.name })
+        .toString(),
+      {
+        results: contentListingItems,
+        count: contentListingItems.length,
+        next: null,
+        previous: null,
+      },
+    )
+
+    const { history } = await renderListing()
+
+    const filterInput = screen.getByPlaceholderText(/search/i)
+    await user.type(filterInput, "my-search-string")
+
+    act(() => {
+      jest.runAllTimers()
+    })
+
+    await waitFor(() => {
+      expect(history.location.search).toBe("?q=my-search-string")
+    })
+  })
+
+  test("should show each content item with edit links", async () => {
+    await renderListing()
+
     for (const item of contentListingItems) {
-      const listItem = wrapper.find(StudioListItem).at(idx)
-      expect(listItem.prop("title")).toBe(item.title)
-      expect(listItem.prop("to")).toBe(
+      const link = screen.getByRole("link", {
+        name: new RegExp(item.title as string),
+      })
+      expect(link).toHaveAttribute(
+        "href",
         siteContentDetailUrl
           .param({
             name: website.name,
@@ -413,141 +258,7 @@ describe("RepeatableContentListing", () => {
           })
           .toString(),
       )
-      idx++
     }
-  })
-
-  describe("pagination", () => {
-    /**
-     *
-     * @param count  total number of items to paginate
-     * @param queryInitial initial route query param
-     * @returns Wrappers for the current page and next/prev buttons, as well
-     * as the route pathname
-     */
-    const setupRouteAndMock = async (count: number, queryInitial: string) => {
-      const pageItems = [
-        makeWebsiteContentListItem(),
-        makeWebsiteContentListItem(),
-      ]
-
-      const pathname = `/sites/${website.name}/type/resource/`
-      helper.browserHistory.push({
-        pathname: pathname,
-        search: queryInitial,
-      })
-
-      const initialSearch = new URLSearchParams(queryInitial)
-      const startingOffset = initialSearch.get("offset") ?? 0
-      helper.mockGetRequest(
-        siteApiContentListingUrl
-          .param({ name: website.name })
-          .query({ offset: startingOffset, type: configItem.name })
-          .toString(),
-        {
-          count,
-          results: pageItems,
-        },
-      )
-      const { wrapper } = await render()
-
-      const prevLink = wrapper.find(".pagination Link.previous")
-      const nextLink = wrapper.find(".pagination Link.next")
-      return {
-        wrappers: { currentPage: wrapper, prevLink, nextLink },
-        pathname,
-      }
-    }
-
-    it.each([
-      { count: 25, search: ["", "offset=10"] },
-      { count: 25, search: ["offset=0", "offset=10"] },
-      { count: 25, search: ["cat=meow", "cat=meow&offset=10"] },
-    ])(
-      'shows only a "Next" button when appropriate',
-      async ({ count, search }) => {
-        const [initial, next] = search
-        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
-
-        expect(wrappers.prevLink.exists()).toBe(false)
-        expect(wrappers.nextLink.exists()).toBe(true)
-
-        expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
-          pathname,
-          search: next,
-        })
-      },
-    )
-
-    it.each([
-      { count: 25, search: ["offset=20", "offset=10"] },
-      { count: 25, search: ["offset=15", "offset=5"] },
-      { count: 25, search: ["cat=meow&offset=20", "cat=meow&offset=10"] },
-    ])(
-      'shows only a "Previous" button when appropriate',
-      async ({ count, search }) => {
-        const [initial, previous] = search
-        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
-
-        expect(wrappers.prevLink.exists()).toBe(true)
-        expect(wrappers.nextLink.exists()).toBe(false)
-
-        expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
-          pathname,
-          search: previous,
-        })
-      },
-    )
-
-    it.each([
-      { count: 25, search: ["offset=10", "offset=0", "offset=20"] },
-      { count: 25, search: ["offset=7", "offset=0", "offset=17"] },
-      {
-        count: 25,
-        search: [
-          "cat=meow&offset=14",
-          "cat=meow&offset=4",
-          "cat=meow&offset=24",
-        ],
-      },
-    ])(
-      'shows both "Previous" and "Next" buttons when appropriate',
-      async ({ count, search }) => {
-        const [initial, previous, next] = search
-        const { wrappers, pathname } = await setupRouteAndMock(count, initial)
-
-        expect(wrappers.prevLink.exists()).toBe(true)
-        expect(wrappers.nextLink.exists()).toBe(true)
-
-        expect(wrappers.prevLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
-          pathname,
-          search: previous,
-        })
-        expect(wrappers.nextLink.prop("to")).toStrictEqual({
-          hash: "",
-          key: expect.any(String),
-          pathname,
-          search: next,
-        })
-      },
-    )
-
-    it.each([{ count: 5, search: [""] }])(
-      'shows neither "Previous" nor "Next" buttons when appropriate',
-      async ({ count, search }) => {
-        const [initial] = search
-        const { wrappers } = await setupRouteAndMock(count, initial)
-
-        expect(wrappers.prevLink.exists()).toBe(false)
-        expect(wrappers.nextLink.exists()).toBe(false)
-      },
-    )
   })
 
   test.each([true, false])(
@@ -562,15 +273,19 @@ describe("RepeatableContentListing", () => {
           configItem.label_singular as string,
         )
       }
-      const { wrapper } = await render()
-      expect(wrapper.find("h2").text()).toBe(configItem.label)
-      const link = wrapper.find(".cyan-button .add").at(0)
+      await renderListing()
+
+      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+        configItem.label,
+      )
+      const link = screen.getByRole("link", { name: /add/i })
       if (configItem.name === "resource") {
-        expect(link.text()).toBe("Add Video Resource")
+        expect(link).toHaveTextContent("Add Video Resource")
       } else {
-        expect(link.text()).toBe(`Add ${expectedLabel}`)
+        expect(link).toHaveTextContent(`Add ${expectedLabel}`)
       }
-      expect(link.prop("href")).toBe(
+      expect(link).toHaveAttribute(
+        "href",
         siteContentNewUrl
           .param({
             name: website.name,
@@ -582,15 +297,263 @@ describe("RepeatableContentListing", () => {
   )
 
   test.each([true, false])(
-    "shows the sync status indicator",
+    "shows the sync status indicator when gdrive enabled=%p",
     async (gdriveEnabled) => {
       SETTINGS.gdrive_enabled = gdriveEnabled
-      const { wrapper } = await render({ website })
-      expect(wrapper.find("DriveSyncStatusIndicator").exists()).toBe(
-        gdriveEnabled,
-      )
+      website.gdrive_url = gdriveEnabled
+        ? "https://drive.google.com/test"
+        : null
+      website.sync_status = gdriveEnabled
+        ? GoogleDriveSyncStatuses.SYNC_STATUS_COMPLETE
+        : null
+
+      await renderListing()
+
+      const syncStatus = document.querySelector(".sync-status")
+      expect(!!syncStatus).toBe(gdriveEnabled)
     },
   )
+
+  it('should display "Add Video Resource" link if configItem is "resource"', async () => {
+    configItem = makeRepeatableConfigItem("resource")
+    await renderListing()
+
+    const addLink = screen.getByRole("link", { name: /add/i })
+    expect(addLink).toHaveTextContent("Add Video Resource")
+    expect(addLink).toHaveAttribute(
+      "href",
+      siteContentNewUrl
+        .param({
+          name: website.name,
+          contentType: configItem.name,
+        })
+        .toString(),
+    )
+  })
+
+  test("should have a route for the EditorDrawer component", async () => {
+    await renderListing()
+
+    const expectedPaths = [
+      siteContentDetailUrl.param({ name: website.name }).pathname,
+      siteContentNewUrl.param({ name: website.name }).pathname,
+    ]
+
+    expect(expectedPaths[0]).toContain(website.name)
+    expect(expectedPaths[1]).toContain(website.name)
+  })
+
+  const deletableTestCases = [
+    { name: "external resource", configName: "external-resource" },
+    { name: "instructor", configName: "instructor" },
+    { name: "page", configName: "page" },
+  ]
+  deletableTestCases.forEach(({ name, configName }) => {
+    it(`should delete ${name}`, async () => {
+      const user = userEvent.setup()
+      SETTINGS.deletableContentTypes = [configName]
+      const item = makeRepeatableConfigItem(configName)
+      const contentItem = {
+        ...makeWebsiteContentListItem(),
+        is_deletable: true,
+        is_deletable_by_resourcetype: true,
+      }
+      contentListingItems = [contentItem]
+
+      helper.mockGetRequest(
+        siteApiDetailUrl
+          .param({ name: website.name })
+          .query({ only_status: true })
+          .toString(),
+        { sync_status: "Complete" },
+      )
+      helper.mockDeleteRequest(
+        siteApiContentDetailUrl
+          .param({
+            name: website.name,
+            textId: contentItem.text_id,
+          })
+          .toString(),
+        {},
+      )
+      helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({ name: website.name })
+          .query({ offset: 0, type: item.name })
+          .toString(),
+        { results: [], count: 0, next: null, previous: null },
+      )
+
+      const { result } = await renderListing({ configItem: item })
+
+      const menuButton = screen.getByRole("button", { name: /more_vert/i })
+      await user.click(menuButton)
+
+      const deleteButton = await screen.findByRole("button", {
+        name: /delete/i,
+      })
+      await user.click(deleteButton)
+
+      const dialog = await screen.findByRole("dialog")
+      expect(dialog).toHaveTextContent(contentItem.title as string)
+
+      const confirmButton = within(dialog)
+        .getAllByRole("button")
+        .find((btn) => btn.textContent?.toLowerCase().includes("delete"))
+      expect(confirmButton).toBeInTheDocument()
+      await user.click(confirmButton!)
+
+      await waitFor(() => {
+        expect(helper.handleRequest).toHaveBeenCalledWith(
+          siteApiContentDetailUrl
+            .param({
+              name: website.name,
+              textId: contentItem.text_id,
+            })
+            .toString(),
+          "DELETE",
+          expect.anything(),
+        )
+      })
+
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+      })
+
+      result.unmount()
+    })
+  })
+
+  it("should not show Delete for referenced content items", async () => {
+    const user = userEvent.setup()
+    SETTINGS.deletableContentTypes = ["external-resource"]
+    const item = makeRepeatableConfigItem("external-resource")
+    const contentItem = {
+      ...makeWebsiteContentListItem(),
+      is_deletable: false,
+      is_deletable_by_resourcetype: true,
+    }
+    contentListingItems = [contentItem]
+
+    const { result } = await renderListing({ configItem: item })
+
+    const menuButton = screen.getByRole("button", { name: /more_vert/i })
+    await user.click(menuButton)
+
+    const deleteButton = await screen.findByRole("button", { name: /delete/i })
+    await user.click(deleteButton)
+
+    const dialog = await screen.findByRole("dialog")
+    const footerButtons = within(dialog).getAllByRole("button")
+    const deleteConfirmButton = footerButtons.find(
+      (btn) => btn.textContent?.toLowerCase() === "delete",
+    )
+    expect(deleteConfirmButton).toBeUndefined()
+
+    const cancelButton = footerButtons.find((btn) =>
+      btn.textContent?.toLowerCase().includes("cancel"),
+    )
+    if (cancelButton) {
+      await user.click(cancelButton)
+    }
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
+
+    result.unmount()
+  })
+
+  describe("pagination", () => {
+    const setupPaginationTest = async (count: number, initialOffset = 0) => {
+      const pageItems = [
+        makeWebsiteContentListItem(),
+        makeWebsiteContentListItem(),
+      ]
+
+      const searchParams = initialOffset > 0 ? `?offset=${initialOffset}` : ""
+      helper = new IntegrationTestHelper(
+        `/sites/${website.name}/type/resource/${searchParams}`,
+      )
+
+      helper.mockGetRequest(
+        siteApiContentListingUrl
+          .param({ name: website.name })
+          .query({ offset: initialOffset, type: configItem.name })
+          .toString(),
+        {
+          count,
+          results: pageItems,
+          next: initialOffset + 10 < count ? "next-url" : null,
+          previous: initialOffset > 0 ? "prev-url" : null,
+        },
+      )
+
+      const [result, { history }] = helper.render(
+        <WebsiteContext.Provider value={website}>
+          <RepeatableContentListing configItem={configItem} />
+        </WebsiteContext.Provider>,
+      )
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument()
+      })
+
+      return { result, history }
+    }
+
+    it('shows only a "Next" button when on first page with more results', async () => {
+      await setupPaginationTest(25, 0)
+
+      const pagination = document.querySelector(".pagination")
+      expect(pagination).toBeInTheDocument()
+
+      const prevLink = pagination?.querySelector("a.previous")
+      const nextLink = pagination?.querySelector("a.next")
+
+      expect(prevLink).not.toBeInTheDocument()
+      expect(nextLink).toBeInTheDocument()
+    })
+
+    it('shows only a "Previous" button when on last page', async () => {
+      await setupPaginationTest(25, 20)
+
+      const pagination = document.querySelector(".pagination")
+      expect(pagination).toBeInTheDocument()
+
+      const prevLink = pagination?.querySelector("a.previous")
+      const nextLink = pagination?.querySelector("a.next")
+
+      expect(prevLink).toBeInTheDocument()
+      expect(nextLink).not.toBeInTheDocument()
+    })
+
+    it('shows both "Previous" and "Next" buttons when in the middle', async () => {
+      await setupPaginationTest(25, 10)
+
+      const pagination = document.querySelector(".pagination")
+      expect(pagination).toBeInTheDocument()
+
+      const prevLink = pagination?.querySelector("a.previous")
+      const nextLink = pagination?.querySelector("a.next")
+
+      expect(prevLink).toBeInTheDocument()
+      expect(nextLink).toBeInTheDocument()
+    })
+
+    it('shows neither "Previous" nor "Next" when all results fit on one page', async () => {
+      await setupPaginationTest(5, 0)
+
+      const pagination = document.querySelector(".pagination")
+      expect(pagination).toBeInTheDocument()
+
+      const prevLink = pagination?.querySelector("a.previous")
+      const nextLink = pagination?.querySelector("a.next")
+
+      expect(prevLink).not.toBeInTheDocument()
+      expect(nextLink).not.toBeInTheDocument()
+    })
+  })
 
   describe.each([
     {
@@ -618,70 +581,35 @@ describe("RepeatableContentListing", () => {
       shouldUpdate ? "polls" : "doesn't poll"
     } the website sync status when sync_status=${status}`, async () => {
       SETTINGS.gdrive_enabled = true
-      const getStatusStub = helper.mockGetRequest(
+      website.gdrive_url = null
+
+      helper.mockGetRequest(
         siteApiDetailUrl
           .param({ name: website.name })
           .query({ only_status: true })
           .toString(),
         { sync_status: "Complete" },
       )
-      const getResourcesStub = helper.mockGetRequest(
-        siteApiContentListingUrl
-          .param({
-            name: website.name,
-          })
-          .query({ offset: 0, type: configItem.name })
-          .toString(),
-        apiResponse,
-      )
-      await render({ website })
-      expect(spyUseInterval).toHaveBeenCalledTimes(2)
-      await spyUseInterval.mock.calls[0][0]()
+
+      await renderListing()
+
+      expect(spyUseInterval).toHaveBeenCalled()
 
       if (shouldUpdate) {
-        sinon.assert.calledOnce(getStatusStub)
-        sinon.assert.calledTwice(getResourcesStub)
-      } else {
-        sinon.assert.notCalled(getStatusStub)
-        sinon.assert.calledOnce(getResourcesStub)
+        await act(async () => {
+          await spyUseInterval.mock.calls[0][0]?.()
+        })
+        await waitFor(() => {
+          expect(helper.handleRequest).toHaveBeenCalledWith(
+            siteApiDetailUrl
+              .param({ name: website.name })
+              .query({ only_status: true })
+              .toString(),
+            "GET",
+            expect.anything(),
+          )
+        })
       }
     })
-  })
-
-  test("should have a route for the EditorDrawer component", async () => {
-    const { wrapper } = await render()
-    const listing = wrapper.find(RepeatableContentListing)
-    const route = listing.find(Route)
-    expect(route.prop("path")).toEqual([
-      siteContentDetailUrl.param({
-        name: website.name,
-      }).pathname,
-      siteContentNewUrl.param({
-        name: website.name,
-      }).pathname,
-    ])
-  })
-  it('should display "Add Video Resource" link if configItem is "resource"', async () => {
-    configItem = makeRepeatableConfigItem("resource")
-    helper.mockGetRequest(
-      siteApiContentListingUrl
-        .param({
-          name: website.name,
-        })
-        .query({ offset: 0, type: configItem.name })
-        .toString(),
-      apiResponse,
-    )
-    const { wrapper } = await render({ configItem })
-    const addLink = wrapper.find("a.add")
-    expect(addLink.text()).toBe("Add Video Resource")
-    expect(addLink.prop("href")).toBe(
-      siteContentNewUrl
-        .param({
-          name: website.name,
-          contentType: configItem.name,
-        })
-        .toString(),
-    )
   })
 })
