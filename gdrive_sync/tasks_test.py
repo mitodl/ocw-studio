@@ -134,6 +134,9 @@ def test_import_website_files(
         )
 
     mock_process_gdrive_file = mocker.patch("gdrive_sync.tasks.process_drive_file.s")
+    mock_transcode_videos = mocker.patch(
+        "gdrive_sync.tasks.transcode_gdrive_videos_batch.s"
+    )
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
     mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
@@ -146,10 +149,12 @@ def test_import_website_files(
         # skipped by process_drive_file i.e their
         # sync_to_s3 and related steps should not be called
         mock_process_gdrive_file.assert_not_called()
+        mock_transcode_videos.assert_not_called()
     else:
         # When process_file_result returns drive files, process_drive_file should be called for each
         for drive_file in drive_files:
             mock_process_gdrive_file.assert_any_call(drive_file.file_id)
+        mock_transcode_videos.assert_called_once()
 
     mock_sync_content.assert_called_once_with(website.name)
     website.refresh_from_db()
