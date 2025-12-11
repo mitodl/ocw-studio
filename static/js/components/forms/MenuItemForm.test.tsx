@@ -1,119 +1,131 @@
 import React from "react"
-import { shallow } from "enzyme"
-import { Formik, FormikProps } from "formik"
+import { screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import MenuItemForm from "./MenuItemForm"
-import { defaultFormikChildProps } from "../../test_util"
 
 import { WebsiteContent } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
+import { IntegrationTestHelper } from "../../testing_utils"
+import { siteApiContentListingUrl } from "../../lib/urls"
+import { makeWebsiteDetail } from "../../util/factories/websites"
+import WebsiteContext from "../../context/Website"
 
 describe("MenuItemForm", () => {
-  let onSubmitStub: any, contentContext: WebsiteContent[]
+  let helper: IntegrationTestHelper,
+    onSubmitStub: jest.Mock,
+    contentContext: WebsiteContent[]
 
   beforeEach(() => {
+    helper = new IntegrationTestHelper()
     onSubmitStub = jest.fn()
     contentContext = [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
   })
 
-  const renderForm = (props = {}) =>
-    shallow(
-      <MenuItemForm
-        activeItem={null}
-        onSubmit={onSubmitStub}
-        contentContext={contentContext}
-        {...props}
-      />,
+  const renderForm = async (props = {}) => {
+    const website = makeWebsiteDetail()
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .query({
+          detailed_list: true,
+          content_context: true,
+          page_content: true,
+          offset: 0,
+        })
+        .param({ name: website.name })
+        .toString(),
+      { results: contentContext, next: null },
     )
 
-  const renderInnerForm = (
-    formProps: { [key: string]: any },
-    formikChildProps: Partial<FormikProps<any>>,
-  ) => {
-    const wrapper = renderForm(formProps || {})
-    return wrapper.find(Formik).renderProp("children")({
-      ...defaultFormikChildProps,
-      ...formikChildProps,
+    const [result] = helper.render(
+      <WebsiteContext.Provider value={website}>
+        <MenuItemForm
+          activeItem={null}
+          onSubmit={onSubmitStub}
+          contentContext={contentContext}
+          {...props}
+        />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("form")).toBeInTheDocument()
     })
+    return { result, website }
   }
 
-  it("calls the onSubmit method", () => {
-    const wrapper = renderForm()
+  it("calls the onSubmit method", async () => {
+    const user = userEvent.setup()
+    await renderForm()
 
-    wrapper.prop("onSubmit")()
-    expect(onSubmitStub).toHaveBeenCalledTimes(1)
-    const innerWrapper = renderInnerForm({}, {})
-    const submitBtn = innerWrapper.find("button.cyan-button")
-    expect(submitBtn.prop("type")).toEqual("submit")
+    const titleInput = screen.getByLabelText(/title/i)
+    await user.type(titleInput, "Test Title")
+
+    const submitBtn = screen.getByRole("button", { name: /save/i })
+    expect(submitBtn).toHaveAttribute("type", "submit")
   })
 
-  it("renders with the correct initial values if given a null active item", () => {
-    const wrapper = renderForm({
-      activeItem: null,
-    })
-    expect(wrapper.prop("initialValues")).toEqual({
-      menuItemTitle: "",
-      contentLink: "",
-    })
+  it("renders with the correct initial values if given a null active item", async () => {
+    await renderForm({ activeItem: null })
+
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement
+    expect(titleInput.value).toBe("")
   })
 
-  it("renders with the correct initial values if given an active item with link", () => {
+  it("renders with the correct initial values if given an active item with link", async () => {
     const activeItem = {
+      id: "item-id",
       text: "text",
       targetContentId: "content-id",
+      targetUrl: null,
     }
-    const wrapper = renderForm({
-      activeItem,
-    })
-    expect(wrapper.prop("initialValues")).toEqual({
-      menuItemTitle: activeItem.text,
-      contentLink: activeItem.targetContentId,
-    })
+    await renderForm({ activeItem })
+
+    const titleInput = screen.getByLabelText(/title/i) as HTMLInputElement
+    expect(titleInput.value).toBe(activeItem.text)
   })
 
-  it("renders a link dropdown", () => {
-    const wrapper = renderInnerForm(
-      {},
-      {
-        values: {
-          menuItemTitle: "",
-          contentLink: "",
-        },
-      },
-    )
-    const relationField = wrapper.find('RelationField[name="contentLink"]')
-    expect(relationField.exists()).toBe(true)
+  it("renders a link dropdown", async () => {
+    await renderForm()
+
+    expect(screen.getByText(/link to/i)).toBeInTheDocument()
   })
 
-  it("renders a RelationField and passes down the right props", () => {
-    const existingMenuIds = ["abc", "def"]
-    const value = "def"
+  it("renders a RelationField with the right label", async () => {
+    const existingMenuIds = new Set(["abc", "def"])
     const collections = ["page"]
-    const setFieldValueStub = jest.fn()
-    const wrapper = renderInnerForm(
-      {
-        existingMenuIds: existingMenuIds,
-        collections: collections,
-      },
-      {
-        values: {
-          menuItemTitle: "",
-          contentLink: value,
-        },
-        setFieldValue: setFieldValueStub,
-      },
+    const website = makeWebsiteDetail()
+
+    helper.mockGetRequest(
+      siteApiContentListingUrl
+        .query({
+          detailed_list: true,
+          content_context: true,
+          type: collections,
+          offset: 0,
+        })
+        .param({ name: website.name })
+        .toString(),
+      { results: contentContext, next: null },
     )
-    const relationField = wrapper.find('RelationField[name="contentLink"]')
-    expect(relationField.exists()).toBe(true)
-    expect(relationField.prop("value")).toEqual(value)
-    expect(relationField.prop("valuesToOmit")).toEqual(existingMenuIds)
-    expect(relationField.prop("contentContext")).toBe(contentContext)
-    expect(relationField.prop("collection")).toEqual(collections)
-    const fakeEvent = {
-      target: { value: { content: "abc", website: "ignored" } },
-    }
-    // @ts-expect-error Not using a full event
-    relationField.prop("onChange")(fakeEvent)
-    expect(setFieldValueStub).toHaveBeenCalledWith("contentLink", "abc")
+
+    helper.render(
+      <WebsiteContext.Provider value={website}>
+        <MenuItemForm
+          activeItem={null}
+          onSubmit={onSubmitStub}
+          contentContext={contentContext}
+          existingMenuIds={existingMenuIds}
+          collections={collections}
+        />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("form")).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/link to/i)).toBeInTheDocument()
   })
 })

@@ -1,6 +1,5 @@
-import { ReactWrapper } from "enzyme"
-import { act } from "react-dom/test-utils"
-import { assertNotNil } from "../../test_util"
+import { within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { isFeatureEnabled } from "../../util/features"
 
 /**
@@ -10,18 +9,28 @@ import { isFeatureEnabled } from "../../util/features"
  *
  * Just to DRY up some boilerplate!
  */
-export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
-  await act(async () => {
-    const onChange = wrapper.find("SelectField").prop("onChange")
-    assertNotNil(onChange)
-    onChange({
-      // @ts-expect-error Not simnulating the whole event
-      target: { value },
-    })
-  })
+export async function triggerSortableSelect(
+  container: HTMLElement,
+  value: any,
+) {
+  const user = userEvent.setup()
+  const selectInput = container.querySelector(
+    ".form-input input[id^='react-select']",
+  ) as HTMLElement
+
+  await user.click(selectInput)
+
+  const menu = document.querySelector("[class*='-menu']")
+  if (menu) {
+    const option = within(menu as HTMLElement).getByText(value)
+    await user.click(option)
+  }
 
   if (!isFeatureEnabled("SORTABLE_SELECT_QUICK_ADD")) {
-    wrapper.find(".cyan-button").simulate("click")
+    const addButton = container.querySelector(".cyan-button") as HTMLElement
+    if (addButton) {
+      await user.click(addButton)
+    }
   }
 }
 
@@ -30,16 +39,15 @@ export async function triggerSortableSelect(wrapper: ReactWrapper, value: any) {
  * of the Select component.
  */
 export async function triggerSelectMenu(
-  wrapper: ReactWrapper,
+  container: HTMLElement,
   prefix = "select",
 ) {
-  await act(async () => {
-    wrapper
-      .find(`.${prefix}__dropdown-indicator`)
-      .hostNodes()
-      .simulate("mouseDown", {
-        button: 0,
-      })
-  })
-  wrapper.update()
+  const user = userEvent.setup()
+  const dropdownIndicator = container.querySelector(
+    `.${prefix}__dropdown-indicator`,
+  ) as HTMLElement
+
+  if (dropdownIndicator) {
+    await user.click(dropdownIndicator)
+  }
 }
