@@ -55,15 +55,23 @@ describe("MenuItemForm", () => {
     return { result, website }
   }
 
-  it("calls the onSubmit method", async () => {
+  it("calls the onSubmit method when form is submitted with valid data", async () => {
     const user = userEvent.setup()
-    await renderForm()
-
-    const titleInput = screen.getByLabelText(/title/i)
-    await user.type(titleInput, "Test Title")
+    const activeItem = {
+      id: "item-id",
+      text: "Test Title",
+      targetContentId: contentContext[0].text_id,
+      targetUrl: null,
+    }
+    await renderForm({ activeItem })
 
     const submitBtn = screen.getByRole("button", { name: /save/i })
     expect(submitBtn).toHaveAttribute("type", "submit")
+    await user.click(submitBtn)
+
+    await waitFor(() => {
+      expect(onSubmitStub).toHaveBeenCalled()
+    })
   })
 
   it("renders with the correct initial values if given a null active item", async () => {
@@ -92,25 +100,21 @@ describe("MenuItemForm", () => {
     expect(screen.getByText(/link to/i)).toBeInTheDocument()
   })
 
-  it("renders a RelationField with the right label", async () => {
+  it("renders a RelationField and accepts collections and existingMenuIds props", async () => {
     const existingMenuIds = new Set(["abc", "def"])
     const collections = ["page"]
     const website = makeWebsiteDetail()
 
-    helper.mockGetRequest(
-      siteApiContentListingUrl
-        .query({
-          detailed_list: true,
-          content_context: true,
-          type: collections,
-          offset: 0,
-        })
-        .param({ name: website.name })
-        .toString(),
-      { results: contentContext, next: null },
-    )
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          results: contentContext,
+          next: null,
+        }),
+    } as Response)
 
-    helper.render(
+    const [{ unmount }] = helper.render(
       <WebsiteContext.Provider value={website}>
         <MenuItemForm
           activeItem={null}
@@ -127,5 +131,18 @@ describe("MenuItemForm", () => {
     })
 
     expect(screen.getByText(/link to/i)).toBeInTheDocument()
+
+    const fetchMock = global.fetch as jest.Mock
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled()
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("type%5B0%5D=page"),
+      expect.anything(),
+    )
+
+    unmount()
+    jest.restoreAllMocks()
   })
 })
