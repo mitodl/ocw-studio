@@ -1,11 +1,49 @@
 import React from "react"
-import { screen, waitFor, within } from "@testing-library/react"
+import { screen, waitFor, within, act } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import MenuField, { HugoItem } from "./MenuField"
+import MenuField, { HugoItem, SortableMenuItem } from "./MenuField"
 
 import { WebsiteContent } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
 import IntegrationTestHelper from "../../testing_utils/IntegrationTestHelper"
+
+let capturedOnChange: ((params: { items: SortableMenuItem[] }) => void) | null =
+  null
+jest.mock("react-nestable", () => {
+  return {
+    __esModule: true,
+    default: ({
+      items,
+      renderItem,
+      onChange,
+    }: {
+      items: SortableMenuItem[]
+      renderItem: (props: { item: SortableMenuItem }) => React.ReactNode
+      onChange: (params: { items: SortableMenuItem[] }) => void
+    }) => {
+      capturedOnChange = onChange
+      return (
+        <div data-testid="nestable-mock">
+          {items.map((item) => (
+            <div key={item.id} className="nestable-item">
+              {renderItem({ item })}
+              {item.children?.map((child) => (
+                <div key={child.id} className="nestable-item">
+                  {renderItem({ item: child })}
+                  {child.children?.map((grandchild) => (
+                    <div key={grandchild.id} className="nestable-item">
+                      {renderItem({ item: grandchild })}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )
+    },
+  }
+})
 
 const dummyHugoItems: HugoItem[] = [
   {
@@ -222,6 +260,54 @@ describe("MenuField", () => {
     )
     expect(updatedItem).toBeDefined()
     expect(updatedItem.parent).toBe("32629a02-3dc5-4128-8e43-0392b51e7b61")
+
+    unmount()
+  })
+
+  it("should pass the correct reorder function to the nestable component", () => {
+    const dummyContentMenuItems: SortableMenuItem[] = [
+      {
+        id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        text: "Unit 1",
+        children: [
+          {
+            id: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            text: "Unit 1 - Subunit 1",
+            children: [
+              {
+                id: "32629a02-3dc5-4128-8e43-0392b51e7b63",
+                text: "Unit 1 - Sub-subunit 1",
+                children: [],
+                targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
+                targetUrl: null,
+              },
+            ],
+            targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            targetUrl: null,
+          },
+        ],
+        targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        targetUrl: null,
+      },
+    ]
+
+    const [{ unmount }] = renderMenuField()
+
+    const updatedMenuItems = [dummyContentMenuItems[0]]
+    expect(capturedOnChange).not.toBeNull()
+    act(() => {
+      capturedOnChange!({ items: updatedMenuItems })
+    })
+
+    expect(onChangeStub).toHaveBeenCalledTimes(1)
+    expect(onChangeStub.mock.calls[0][0].target.value).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+          name: "Unit 1",
+        }),
+      ]),
+    )
 
     unmount()
   })
