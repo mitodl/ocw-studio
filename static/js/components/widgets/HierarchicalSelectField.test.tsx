@@ -1,5 +1,5 @@
 import React from "react"
-import { sortBy, times } from "lodash"
+import { sortBy } from "lodash"
 import casual from "casual"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -18,10 +18,11 @@ describe("HierarchicalSelectField", () => {
 
   beforeEach(() => {
     name = casual.name
-    levels = times(3, () => ({
-      name: casual.name,
-      label: casual.word,
-    }))
+    levels = [
+      { name: "level0", label: "Level 0" },
+      { name: "level1", label: "Level 1" },
+      { name: "level2", label: "Level 2" },
+    ]
     value = null
     onChangeStub = jest.fn()
     optionsMap = {
