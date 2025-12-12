@@ -9,7 +9,10 @@ import {
   makeWebsiteDetail,
   makeWebsiteCollaborator,
 } from "../util/factories/websites"
-import { siteApiCollaboratorsDetailUrl } from "../lib/urls"
+import {
+  siteApiCollaboratorsDetailUrl,
+  siteApiCollaboratorsUrl,
+} from "../lib/urls"
 
 import { Website, WebsiteCollaborator } from "../types/websites"
 
@@ -209,6 +212,44 @@ describe("SiteCollaboratorDrawerTest", () => {
         expect(
           screen.getByText(/role is a required field/i),
         ).toBeInTheDocument()
+      })
+
+      unmount()
+    })
+
+    it("creates a new collaborator and closes the dialog on success", async () => {
+      const user = userEvent.setup()
+      const newCollaborator = makeWebsiteCollaborator()
+      const fetchWebsiteCollaboratorListing = jest.fn()
+
+      helper.mockPostRequest(
+        siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+        newCollaborator,
+        201,
+      )
+
+      const [{ unmount }] = renderDrawer({ fetchWebsiteCollaboratorListing })
+
+      const emailInput = screen.getByLabelText(/email/i)
+      await user.type(emailInput, newCollaborator.email)
+      const roleSelect = screen.getByLabelText(/role/i)
+      await user.click(roleSelect)
+      const editorOption = await screen.findByText(/editor/i)
+      await user.click(editorOption)
+
+      const submitButton = screen.getByRole("button", { name: /save/i })
+      await user.click(submitButton)
+
+      await waitFor(() => {
+        expect(helper.handleRequest).toHaveBeenCalledWith(
+          siteApiCollaboratorsUrl.param({ name: website.name }).toString(),
+          "POST",
+          expect.anything(),
+        )
+      })
+
+      await waitFor(() => {
+        expect(toggleVisibilityStub.called).toBe(true)
       })
 
       unmount()
