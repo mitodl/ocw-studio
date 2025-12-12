@@ -37,7 +37,7 @@ describe("SiteForm", () => {
     renderForm()
     const user = userEvent.setup()
     expect(screen.getByText(/starter/i)).toBeInTheDocument()
-    const selectInput = screen.getByRole("textbox", { name: "" })
+    const selectInput = screen.getByRole("textbox", { name: "Starter*" })
     await user.click(selectInput)
     for (const starter of websiteStarters) {
       expect(screen.getAllByText(starter.name).length).toBeGreaterThanOrEqual(1)
