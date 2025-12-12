@@ -238,7 +238,11 @@ describe("PublishDrawer", () => {
           expect(helper.handleRequest).toHaveBeenCalledWith(
             `/api/websites/${website.name}/${api}/`,
             "POST",
-            expect.anything(),
+            expect.objectContaining({
+              body: {
+                url_path: website.url_path,
+              },
+            }),
           )
         })
 
