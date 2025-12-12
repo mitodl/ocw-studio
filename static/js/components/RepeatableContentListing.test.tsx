@@ -176,6 +176,17 @@ describe("RepeatableContentListing", () => {
         expect.anything(),
       )
     })
+
+    await waitFor(() => {
+      expect(helper.handleRequest).toHaveBeenCalledWith(
+        siteApiDetailUrl
+          .param({ name: website.name })
+          .query({ only_status: true })
+          .toString(),
+        "GET",
+        expect.anything(),
+      )
+    })
   })
 
   test("should filter based on query param", async () => {
@@ -412,6 +423,17 @@ describe("RepeatableContentListing", () => {
             })
             .toString(),
           "DELETE",
+          expect.anything(),
+        )
+      })
+
+      await waitFor(() => {
+        expect(helper.handleRequest).toHaveBeenCalledWith(
+          siteApiDetailUrl
+            .param({ name: website.name })
+            .query({ only_status: true })
+            .toString(),
+          "GET",
           expect.anything(),
         )
       })
