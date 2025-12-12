@@ -94,6 +94,19 @@ describe("SiteCollaboratorDrawerTest", () => {
       await user.click(submitButton)
 
       await waitFor(() => {
+        expect(helper.handleRequest).toHaveBeenCalledWith(
+          siteApiCollaboratorsDetailUrl
+            .param({
+              name: website.name,
+              userId: collaborator.user_id,
+            })
+            .toString(),
+          "PATCH",
+          expect.anything(),
+        )
+      })
+
+      await waitFor(() => {
         expect(toggleVisibilityStub.called).toBe(true)
       })
 
