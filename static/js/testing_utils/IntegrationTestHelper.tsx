@@ -95,7 +95,7 @@ export default class IntegrationTestHelper {
         executeAsync()
       },
       abort: () => {
-        throw new Error("Aborts currently unhandled")
+        // no-op
       },
     }))
   }

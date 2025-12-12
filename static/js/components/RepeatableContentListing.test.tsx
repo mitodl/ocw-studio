@@ -45,8 +45,8 @@ jest.mock("@use-it/interval", () => ({
   default: jest.fn(),
 }))
 
-jest.mock("posthog-js", () => ({
-  isFeatureEnabled: jest.fn().mockReturnValue(true),
+jest.mock("posthog-js/react", () => ({
+  useFeatureFlagEnabled: jest.fn().mockReturnValue(true),
 }))
 
 describe("RepeatableContentListing", () => {

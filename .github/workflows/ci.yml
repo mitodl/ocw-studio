@@ -13,7 +13,7 @@ jobs:
 
     services:
       db:
-        image: postgres:16.10
+        image: postgres:18.1
         # Health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -44,7 +44,7 @@ jobs:
         - 9200:9200
 
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: update
       run: sudo apt-get update -y
@@ -60,7 +60,7 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Set up Python
-      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c   # v6
+      uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548   # v6
       with:
         python-version: "3.13.7"
         cache: "poetry"
@@ -106,12 +106,12 @@ jobs:
   frontend-tests:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
     - name: Setup NodeJS
-      uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903   # v6
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f   # v6
       with:
-        node-version: 22
+        node-version: 24
         cache: yarn
 
     - name: Install dependencies

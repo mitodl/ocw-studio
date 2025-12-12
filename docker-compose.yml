@@ -28,7 +28,7 @@ networks:
       - subnet: "10.1.0.0/24"
 services:
   db:
-    image: postgres:16.10
+    image: postgres:18.1
     ports:
     - "5431:5432"
     environment:
@@ -101,7 +101,7 @@ services:
     - django_media:/var/media
 
   watch:
-    image: node:22.21.1
+    image: node:24.11.1
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'

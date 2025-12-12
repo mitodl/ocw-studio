@@ -1,6 +1,58 @@
 Release Notes
 =============
 
+Version 0.173.0 (Released December 10, 2025)
+---------------
+
+- fix(deps): update dependency boto3 to v1.42.4 (#2821)
+- chore(deps): update dependency faker to v38 (#2819)
+- chore(deps): update actions/checkout action to v6 (#2818)
+- chore(deps): update actions/setup-node digest to 395ad32 (#2813)
+- chore(deps): update actions/setup-python digest to 83679a8 (#2814)
+- fix(deps): update dependency sentry-sdk to v2.47.0 (#2816)
+- fix(deps): update dependency boto3 to v1.42.3 (#2815)
+- fix(deps): update dependency django to v4.2.27 [security] (#2812)
+- chore(deps): update postgres docker tag to v18 (#2772)
+
+Version 0.172.0 (Released December 01, 2025)
+---------------
+
+- chore: fixed invalid value error for privacy_status (#2802)
+- chore: removed simulation lrt from course and resource level (#2799)
+- chore: removed image gallery lrt from resource level (#2798)
+- feat: added problem set solutions LRT (#2791)
+- chore(deps): update dependency pypdf to v6.4.0 [security] (#2807)
+
+Version 0.171.0 (Released November 25, 2025)
+---------------
+
+- chore(deps): update yarn to v4.12.0 (#2804)
+- fix(deps): update dependency yamale to v6.1.0 (#2806)
+- fix(deps): update dependency boto3 to v1.41.2 (#2805)
+- chore(deps): update actions/checkout digest to 93cb6ef (#2803)
+- fix(deps): update dependency posthog to v7 (#2796)
+- chore(deps): update dependency pytest to v9 (#2795)
+- chore: refactor to load flags in async for first page load (#2790)
+
+Version 0.170.0 (Released November 20, 2025)
+---------------
+
+- fix(deps): update dependency sentry-sdk to v2.45.0 (#2794)
+- feat: management command to append tags in existing videos (#2782)
+
+Version 0.169.0 (Released November 19, 2025)
+---------------
+
+- chore(deps): update dependency bpython to ^0.26 (#2793)
+- fix(deps): update dependency boto3 to v1.40.74 (#2792)
+- chore(deps): update dependency turndown to v7.2.2 (#2785)
+- chore(deps): update yarn to v4.11.0 (#2787)
+- Update Video Documentation with Instructions on Adding Existing Captions/Transcript (#2783)
+- Remove Tools course learning resource type (#2789)
+- fix(deps): update dependency sentry-sdk to v2.43.0 (#2788)
+- fix(deps): update dependency boto3 to v1.40.69 (#2786)
+- chore(deps): update node.js to v22.21.1 (#2781)
+
 Version 0.168.0 (Released November 17, 2025)
 ---------------
 

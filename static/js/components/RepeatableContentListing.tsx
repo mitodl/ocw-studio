@@ -2,7 +2,6 @@ import React, {
   MouseEvent as ReactMouseEvent,
   useCallback,
   useState,
-  useEffect,
 } from "react"
 import { Link, Route, useLocation } from "react-router-dom"
 import { useMutation, useRequest } from "redux-query-react"
@@ -38,7 +37,11 @@ import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { useWebsite } from "../context/Website"
 import { formatUpdatedOn } from "../util/websites"
 import Dialog from "./Dialog"
-import posthog from "posthog-js"
+import { useFeatureFlag } from "../lib/util"
+import {
+  FEATURE_FLAG_CONTENT_DELETABLE,
+  FEATURE_FLAG_ADD_VIDEO_RESOURCE,
+} from "../common/feature_flags"
 
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
@@ -49,21 +52,8 @@ export default function RepeatableContentListing(props: {
 
   const website = useWebsite()
 
-  const [isContentDeletable, setIsContentDeletable] = useState(false)
-  const [isAddVideoEnabled, setIsAddVideoEnabled] = useState(false)
-
-  useEffect(() => {
-    const checkFeatureFlags = async () => {
-      const deletableFlag =
-        posthog.isFeatureEnabled("OCW_STUDIO_CONTENT_DELETABLE") ?? false
-      setIsContentDeletable(deletableFlag)
-
-      const addVideoResourceFlag =
-        posthog.isFeatureEnabled("OCW_STUDIO_ADD_VIDEO_RESOURCE") ?? false
-      setIsAddVideoEnabled(addVideoResourceFlag)
-    }
-    checkFeatureFlags()
-  }, [])
+  const isContentDeletable = useFeatureFlag(FEATURE_FLAG_CONTENT_DELETABLE)
+  const isAddVideoEnabled = useFeatureFlag(FEATURE_FLAG_ADD_VIDEO_RESOURCE)
 
   const isDeletable =
     isContentDeletable &&

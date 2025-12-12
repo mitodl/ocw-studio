@@ -238,11 +238,13 @@ class YouTubeApi:
             "status": {"privacyStatus": privacy},
         }
 
-        merged_tags = None
+        merged_tags = ""
         if course_slug := get_course_tag(videofile.video.website):
-            # Merge existing tags with course tag
+            # Merge existing tags with course tag avoiding duplicates
             merged_tags = (
-                f"{existing_tags}, {course_slug}" if existing_tags else course_slug
+                f"{existing_tags}, {course_slug}"
+                if existing_tags and course_slug not in existing_tags
+                else course_slug
             )
             request_body["snippet"]["tags"] = merged_tags
 

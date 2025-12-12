@@ -83,7 +83,6 @@ collections:
     - "Design Assignments with Examples"
     - Exams
     - "Exams with Solutions"
-    - "Image Gallery"
     - "Laboratory Assignments"
     - "Lecture Audio"
     - "Lecture Notes"
@@ -99,7 +98,7 @@ collections:
     - "Presentation Assignments"
     - "Presentation Assignments with Examples"
     - "Problem Sets"
-    - "Problem Sets with Solutions"
+    - "Problem Set Solutions"
     - "Problem-solving Notes"
     - "Problem-solving Videos"
     - "Programming Assignments"
@@ -108,7 +107,6 @@ collections:
     - "Projects with Examples"
     - Readings
     - "Simulation Videos"
-    - Simulations
     - "Supplemental Exam Materials"
     - Tools
     - "Tutorial Videos"
@@ -301,7 +299,7 @@ collections:
       - "Presentation Assignments"
       - "Presentation Assignments with Examples"
       - "Problem Sets"
-      - "Problem Sets with Solutions"
+      - "Problem Set Solutions"
       - "Problem-solving Notes"
       - "Problem-solving Videos"
       - "Programming Assignments"
@@ -310,7 +308,6 @@ collections:
       - "Projects with Examples"
       - Readings
       - "Simulation Videos"
-      - Simulations
       - "Supplemental Exam Materials"
       - "Tutorial Videos"
       - "Video Materials"

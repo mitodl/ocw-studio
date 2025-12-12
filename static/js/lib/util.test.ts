@@ -1,7 +1,16 @@
 import casual from "casual"
 import { ActionPromiseValue } from "redux-query"
-import posthog from "posthog-js"
-import { checkFeatureFlag } from "./util"
+import { renderHook } from "@testing-library/react"
+
+// Mock posthog before importing the module that uses it
+jest.mock("posthog-js/react")
+
+import { useFeatureFlag } from "./util"
+import { useFeatureFlagEnabled } from "posthog-js/react"
+
+const mockUseFeatureFlagEnabled = useFeatureFlagEnabled as jest.MockedFunction<
+  typeof useFeatureFlagEnabled
+>
 
 import {
   filenameFromPath,
@@ -137,44 +146,33 @@ describe("util", () => {
     expect(generateHashCode("http://example.com")).toEqual("-631280213")
   })
 
-  describe("checkFeatureFlag", () => {
+  describe("useFeatureFlag", () => {
     afterEach(() => {
       jest.restoreAllMocks()
     })
 
-    it("calls setFlag synchronously with the feature flag status true", () => {
-      const setFlagMock = jest.fn()
+    it("returns true when PostHog hook returns true", () => {
+      mockUseFeatureFlagEnabled.mockReturnValue(true)
 
-      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      const result = checkFeatureFlag("test_flag", setFlagMock)
-
-      expect(setFlagMock).toHaveBeenCalledWith(true)
-      expect(result).toBeUndefined()
+      expect(result.current).toBe(true)
     })
 
-    it("calls setFlag synchronously with the feature flag status false", () => {
-      const setFlagMock = jest.fn()
+    it("returns false when PostHog hook returns false", () => {
+      mockUseFeatureFlagEnabled.mockReturnValue(false)
 
-      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(false)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      const result = checkFeatureFlag("test_flag", setFlagMock)
-
-      expect(setFlagMock).toHaveBeenCalledWith(false)
-      expect(result).toBeUndefined()
+      expect(result.current).toBe(false)
     })
 
-    it("calls setFlag before any asynchronous code", async () => {
-      expect.assertions(2)
-      const setFlagMock = jest.fn()
-      jest.spyOn(posthog, "isFeatureEnabled").mockReturnValue(true)
+    it("returns false when PostHog hook returns undefined", () => {
+      mockUseFeatureFlagEnabled.mockReturnValue(undefined)
 
-      checkFeatureFlag("test_flag", setFlagMock)
+      const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
-      expect(setFlagMock).toHaveBeenCalledWith(true)
-
-      await Promise.resolve()
-      expect(setFlagMock).toHaveBeenCalledTimes(1)
+      expect(result.current).toBe(false)
     })
   })
 })
