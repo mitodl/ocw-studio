@@ -342,16 +342,37 @@ describe("RepeatableContentListing", () => {
     )
   })
 
-  test("should have a route for the EditorDrawer component", async () => {
+  test("Add link has correct route for EditorDrawer", async () => {
     await renderListing()
 
-    const expectedPaths = [
-      siteContentDetailUrl.param({ name: website.name }).pathname,
-      siteContentNewUrl.param({ name: website.name }).pathname,
-    ]
+    const addLink = screen.getByRole("link", { name: /add/i })
+    const expectedPath = siteContentNewUrl
+      .param({
+        name: website.name,
+        contentType: configItem.name,
+      })
+      .toString()
 
-    expect(expectedPaths[0]).toContain(website.name)
-    expect(expectedPaths[1]).toContain(website.name)
+    expect(addLink).toHaveAttribute("href", expectedPath)
+  })
+
+  test("content item links have correct routes for EditorDrawer", async () => {
+    await renderListing()
+
+    for (const item of contentListingItems) {
+      const link = screen.getByRole("link", {
+        name: new RegExp(item.title as string),
+      })
+      const expectedPath = siteContentDetailUrl
+        .param({
+          name: website.name,
+          contentType: configItem.name,
+          uuid: item.text_id,
+        })
+        .toString()
+
+      expect(link).toHaveAttribute("href", expectedPath)
+    }
   })
 
   const deletableTestCases = [
