@@ -1,5 +1,5 @@
 import React from "react"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import * as yup from "yup"
 
@@ -33,9 +33,16 @@ describe("SiteCollaboratorForm", () => {
   })
 
   describe("add a new collaborator", () => {
-    it("passes onSubmit to Formik", () => {
+    it("passes onSubmit to Formik", async () => {
+      const user = userEvent.setup()
       renderForm(null)
-      expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument()
+      await user.type(screen.getByLabelText(/email/i), "test@example.com")
+      await user.click(screen.getByLabelText(/role/i))
+      await user.click(screen.getByText("Administrator"))
+      await user.click(screen.getByRole("button", { name: /save/i }))
+      await waitFor(() => {
+        expect(onSubmitStub).toHaveBeenCalled()
+      })
     })
 
     it("shows an option for each role, plus an empty option", async () => {
@@ -67,9 +74,13 @@ describe("SiteCollaboratorForm", () => {
       expect(onCancelStub).toHaveBeenCalled()
     })
 
-    it("passes onSubmit to Formik", () => {
+    it("passes onSubmit to Formik", async () => {
+      const user = userEvent.setup()
       renderForm(collaborator)
-      expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument()
+      await user.click(screen.getByRole("button", { name: /save/i }))
+      await waitFor(() => {
+        expect(onSubmitStub).toHaveBeenCalled()
+      })
     })
 
     it("has current role selected", () => {
