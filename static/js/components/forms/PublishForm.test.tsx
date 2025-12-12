@@ -1,6 +1,7 @@
 import React from "react"
 import sinon, { SinonStub } from "sinon"
-import { render, screen } from "@testing-library/react"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { ValidationError } from "yup"
 
 import PublishForm, { websiteUrlValidation } from "./PublishForm"
@@ -31,9 +32,15 @@ describe("PublishForm", () => {
     sinon.restore()
   })
 
-  it("passes onSubmit to Formik", () => {
+  it("passes onSubmit to Formik", async () => {
+    const user = userEvent.setup()
+    website.publish_date = "2025-01-01"
     renderForm()
-    expect(screen.getByRole("button", { name: /publish/i })).toBeInTheDocument()
+    const button = screen.getByRole("button", { name: /publish/i })
+    await user.click(button)
+    await waitFor(() => {
+      expect(onSubmitStub.called).toBe(true)
+    })
   })
 
   it.each([
