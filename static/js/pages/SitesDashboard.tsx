@@ -156,10 +156,11 @@ export const getMostRecentStatus = (
   ]
 
   const activeStatuses = statuses
-    .filter((s) => s.active && s.dateTime)
+    .filter(
+      (s): s is typeof s & { dateTime: string } => !!s.active && !!s.dateTime,
+    )
     .sort(
-      (a, b) =>
-        new Date(b.dateTime!).getTime() - new Date(a.dateTime!).getTime(),
+      (a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime(),
     )
 
   // Return the most recent status
