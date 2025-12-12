@@ -105,7 +105,7 @@ export default function SelectField(props: Props): JSX.Element {
   }
 
   const handleInputChanged = useCallback(
-    (input, reason) => {
+    (input: string, reason: { action: string }) => {
       if (reason.action === "input-blur") {
         return
       } else if (reason.action === "input-change" && input === "") {

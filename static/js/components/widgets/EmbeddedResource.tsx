@@ -69,7 +69,7 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
           <div>
             <h3 className="m-2 title">{title}</h3>
             <span className="font-italic mx-2 text-gray description resource-info d-block">
-              {resource.metadata?.description ?? ""}
+              {String(resource.metadata?.description ?? "")}
             </span>
           </div>
         </div>,

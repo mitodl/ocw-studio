@@ -26,7 +26,7 @@ export default function ObjectField(props: Props): JSX.Element {
 
   const [collapsed, setCollapsed] = useState(field.collapsed ?? false)
   const toggleCollapse = useCallback(
-    (e) => {
+    (e: React.MouseEvent) => {
       e.preventDefault()
       setCollapsed(!collapsed)
     },

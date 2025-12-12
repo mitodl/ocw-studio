@@ -62,7 +62,7 @@ describe("ResourcePickerDialog", () => {
 
   const renderDialog = (props = {}) => {
     const defaultProps = {
-      mode: RESOURCE_EMBED,
+      mode: RESOURCE_EMBED as const,
       contentNames: ["resource", "page"],
       isOpen: true,
       closeDialog: closeDialogStub,

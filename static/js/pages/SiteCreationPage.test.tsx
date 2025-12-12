@@ -29,7 +29,11 @@ describe("SiteCreationPage", () => {
 
   const renderPage = () => {
     const [result, { history }] = helper.render(
-      <SiteCreationPage history={{ push: historyPushStub } as any} />,
+      <SiteCreationPage
+        history={{ push: historyPushStub } as any}
+        location={{} as any}
+        match={{ params: {}, isExact: true, path: "", url: "" }}
+      />,
     )
     return { ...result, history }
   }

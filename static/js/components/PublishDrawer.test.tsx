@@ -16,6 +16,7 @@ import userEvent from "@testing-library/user-event"
 import { waitFor, screen, within, cleanup } from "@testing-library/react"
 import * as dom from "@testing-library/dom"
 import _ from "lodash"
+import { PublishStatus } from "../constants"
 
 describe("PublishDrawer", () => {
   let helper: IntegrationTestHelper,
@@ -29,8 +30,8 @@ describe("PublishDrawer", () => {
       has_unpublished_live: true,
       is_admin: true,
       url_path: "mysite-fall-2025",
-      draft_publish_status: "succeeded",
-      live_publish_status: "succeeded",
+      draft_publish_status: PublishStatus.Success,
+      live_publish_status: PublishStatus.Success,
     }
     toggleVisibilityStub = jest.fn()
     helper = new IntegrationTestHelper()

@@ -11,7 +11,9 @@ import { assertInstanceOf } from "../../test_util"
 import { WebsiteStarter } from "../../types/websites"
 
 describe("SiteForm", () => {
-  let sandbox, onSubmitStub: SinonStub, websiteStarters: Array<WebsiteStarter>
+  let sandbox: sinon.SinonSandbox,
+    onSubmitStub: SinonStub,
+    websiteStarters: Array<WebsiteStarter>
 
   const renderForm = () =>
     render(

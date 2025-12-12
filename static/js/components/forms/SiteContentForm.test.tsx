@@ -229,10 +229,11 @@ describe("SiteContentForm", () => {
       <SiteContentForm {...data} configItem={configItem} />,
       data.website,
     )
-
-    configField.fields.forEach((nestedField) => {
-      expect(screen.getByText(nestedField.label)).toBeInTheDocument()
-    })
+    ;(configField as { fields: Array<{ label: string }> }).fields.forEach(
+      (nestedField) => {
+        expect(screen.getByText(nestedField.label)).toBeInTheDocument()
+      },
+    )
   })
 
   test.each`

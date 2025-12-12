@@ -37,14 +37,16 @@ describe("MenuField", () => {
     helper = new IntegrationTestHelper()
     onChangeStub = jest.fn()
     contentContext = [
-      makeWebsiteContentDetail({
+      {
+        ...makeWebsiteContentDetail(),
         title: "Content Item 1",
         text_id: "content-1",
-      }),
-      makeWebsiteContentDetail({
+      },
+      {
+        ...makeWebsiteContentDetail(),
         title: "Content Item 2",
         text_id: "content-2",
-      }),
+      },
     ]
   })
 

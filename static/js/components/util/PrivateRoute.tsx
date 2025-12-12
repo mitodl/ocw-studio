@@ -9,9 +9,9 @@ function PrivateRoute({ children, ...rest }: RouteProps): React.ReactElement {
   return (
     <Route
       {...rest}
-      render={() => {
-        return user ? children : <Redirect to={loginUrl.toString()} />
-      }}
+      render={() =>
+        user ? <>{children}</> : <Redirect to={loginUrl.toString()} />
+      }
     />
   )
 }
