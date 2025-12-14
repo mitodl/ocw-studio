@@ -137,16 +137,11 @@ class SitePipelineDefinitionConfig:
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
 
-    _URL_PARTS_WITH_SUBPATH = 2
-
     @staticmethod
     def get_v3_url_path(base_url: str) -> str:
         if not base_url:
             return ""
-        parts = base_url.split("/", 1)
-        if len(parts) == SitePipelineDefinitionConfig._URL_PARTS_WITH_SUBPATH:
-            return f"{parts[0]}-v3/{parts[1]}"
-        return f"{parts[0]}-v3"
+        return base_url.replace("courses/", "courses-v3/", 1)
 
     def __init__(  # noqa: PLR0913 PLR0915
         self,

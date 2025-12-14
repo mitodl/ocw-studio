@@ -26,11 +26,15 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     BUILD_OFFLINE_SITE_IDENTIFIER,
+    BUILD_OFFLINE_SITE_V3_IDENTIFIER,
     BUILD_ONLINE_SITE_IDENTIFIER,
+    BUILD_ONLINE_SITE_V3_IDENTIFIER,
     CLEAR_CDN_CACHE_IDENTIFIER,
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     UPLOAD_OFFLINE_BUILD_IDENTIFIER,
+    UPLOAD_OFFLINE_BUILD_V3_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
+    UPLOAD_ONLINE_BUILD_V3_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
 )
@@ -40,6 +44,20 @@ from websites.factories import WebsiteFactory, WebsiteStarterFactory
 from websites.models import Website, WebsiteStarter
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.mark.parametrize(
+    ("base_url", "expected"),
+    [
+        ("", ""),
+        ("courses/18-01", "courses-v3/18-01"),
+        ("courses/18-01/resources", "courses-v3/18-01/resources"),
+        ("prefix/courses/18-01", "prefix/courses-v3/18-01"),
+        ("some-path/without-courses", "some-path/without-courses"),
+    ],
+)
+def test_get_v3_url_path(base_url, expected):
+    assert SitePipelineDefinitionConfig.get_v3_url_path(base_url) == expected
 
 
 @pytest.fixture(scope="module", params=["test-site", "root-website"])
@@ -706,6 +724,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["s3_path"] == website.s3_path
     assert dummy_vars["url_path"] == website.get_url_path()
     assert dummy_vars["base_url"] == config.base_url
+    assert dummy_vars["base_url_v3"] == config.base_url_v3
     assert (
         dummy_vars["static_resources_subdirectory"]
         == config.static_resources_subdirectory
@@ -727,7 +746,88 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["hugo_args_online"] == config.hugo_args_online
     assert f"--baseURL /{prefix.lstrip('/')}" in dummy_vars["hugo_args_online"]
     assert dummy_vars["hugo_args_offline"] == config.hugo_args_offline
+    assert dummy_vars["hugo_args_online_v3"] == config.hugo_args_online_v3
+    assert dummy_vars["hugo_args_offline_v3"] == config.hugo_args_offline_v3
     assert dummy_vars["prefix"] == expected_prefix
+
+    is_root_website = website.name == "root-website"
+    if not is_root_website:
+        build_online_site_v3_task = None
+        upload_online_build_v3_task = None
+        for task in online_site_tasks:
+            if "try" in task and "task" in task["try"]:
+                if task["try"]["task"] == BUILD_ONLINE_SITE_V3_IDENTIFIER:
+                    build_online_site_v3_task = task["try"]
+                elif task["try"]["task"] == UPLOAD_ONLINE_BUILD_V3_IDENTIFIER:
+                    upload_online_build_v3_task = task["try"]
+        assert build_online_site_v3_task is not None
+        assert upload_online_build_v3_task is not None
+        assert (
+            build_online_site_v3_task["config"]["image_resource"]["source"][
+                "repository"
+            ]
+            == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
+        )
+        build_online_site_v3_command = "\n".join(
+            build_online_site_v3_task["config"]["run"]["args"]
+        )
+        assert (
+            f"hugo {config.vars['hugo_args_online_v3']}" in build_online_site_v3_command
+        )
+        assert "output-online-v3" in build_online_site_v3_command
+        assert (
+            upload_online_build_v3_task["config"]["image_resource"]["source"][
+                "repository"
+            ]
+            == AWS_CLI_REGISTRY_IMAGE.source.repository
+        )
+        upload_online_build_v3_command = "\n".join(
+            upload_online_build_v3_task["config"]["run"]["args"]
+        )
+        assert "output-online-v3" in upload_online_build_v3_command
+        assert config.vars["base_url_v3"] in upload_online_build_v3_command
+
+        build_offline_site_v3_task = None
+        upload_offline_build_v3_task = None
+        for task in offline_site_tasks:
+            if "try" in task and "task" in task["try"]:
+                if task["try"]["task"] == BUILD_OFFLINE_SITE_V3_IDENTIFIER:
+                    build_offline_site_v3_task = task["try"]
+                elif task["try"]["task"] == UPLOAD_OFFLINE_BUILD_V3_IDENTIFIER:
+                    upload_offline_build_v3_task = task["try"]
+        assert build_offline_site_v3_task is not None
+        assert upload_offline_build_v3_task is not None
+        assert (
+            build_offline_site_v3_task["config"]["image_resource"]["source"][
+                "repository"
+            ]
+            == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
+        )
+        build_offline_site_v3_command = "\n".join(
+            build_offline_site_v3_task["config"]["run"]["args"]
+        )
+        assert (
+            f"hugo {config.vars['hugo_args_offline_v3']}"
+            in build_offline_site_v3_command
+        )
+        assert "output-offline-v3" in build_offline_site_v3_command
+        assert (
+            build_offline_site_v3_command.count(
+                f"hugo {config.vars['hugo_args_offline_v3']}"
+            )
+            == 2
+        )
+        assert (
+            upload_offline_build_v3_task["config"]["image_resource"]["source"][
+                "repository"
+            ]
+            == AWS_CLI_REGISTRY_IMAGE.source.repository
+        )
+        upload_offline_build_v3_command = "\n".join(
+            upload_offline_build_v3_task["config"]["run"]["args"]
+        )
+        assert "output-offline-v3" in upload_offline_build_v3_command
+        assert config.vars["base_url_v3"] in upload_offline_build_v3_command
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
