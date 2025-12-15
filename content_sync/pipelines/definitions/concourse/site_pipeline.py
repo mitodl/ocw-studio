@@ -75,10 +75,6 @@ FILTER_WEBPACK_ARTIFACTS_IDENTIFIER = Identifier("filter-webpack-artifacts").roo
 BUILD_OFFLINE_SITE_IDENTIFIER = Identifier("build-offline-site").root
 UPLOAD_OFFLINE_BUILD_IDENTIFIER = Identifier("upload-offline-build").root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
-BUILD_ONLINE_SITE_V3_IDENTIFIER = Identifier("build-online-site-v3").root
-UPLOAD_ONLINE_BUILD_V3_IDENTIFIER = Identifier("upload-online-build-v3").root
-BUILD_OFFLINE_SITE_V3_IDENTIFIER = Identifier("build-offline-site-v3").root
-UPLOAD_OFFLINE_BUILD_V3_IDENTIFIER = Identifier("upload-offline-build-v3").root
 
 
 def get_site_pipeline_definition_vars(namespace: str):
@@ -89,7 +85,6 @@ def get_site_pipeline_definition_vars(namespace: str):
         "s3_path": f"(({namespace}s3_path))",
         "url_path": f"(({namespace}url_path))",
         "base_url": f"(({namespace}base_url))",
-        "base_url_v3": f"(({namespace}base_url_v3))",
         "static_resources_subdirectory": f"(({namespace}static_resources_subdirectory))",  # noqa: E501
         "delete_flag": f"(({namespace}delete_flag))",
         "noindex": f"(({namespace}noindex))",
@@ -109,8 +104,6 @@ def get_site_pipeline_definition_vars(namespace: str):
         "ocw_studio_url": f"(({namespace}ocw_studio_url))",
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
-        "hugo_args_online_v3": f"(({namespace}hugo_args_online_v3))",
-        "hugo_args_offline_v3": f"(({namespace}hugo_args_offline_v3))",
         "prefix": f"(({namespace}prefix))",
     }
 
@@ -136,12 +129,6 @@ class SitePipelineDefinitionConfig:
         prefix(str): (Optional) A prefix to deploy the site at
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
-
-    @staticmethod
-    def get_v3_url_path(base_url: str) -> str:
-        if not base_url:
-            return ""
-        return base_url.replace("courses/", "courses-v3/", 1)
 
     def __init__(  # noqa: PLR0913 PLR0915
         self,
@@ -240,40 +227,6 @@ class SitePipelineDefinitionConfig:
         )
         self.hugo_args_online = hugo_args_online
         self.hugo_args_offline = hugo_args_offline
-
-        self.base_url_v3 = self.get_v3_url_path(self.base_url)
-        starter_slug_v3 = starter_slug.replace("-v2", "-v3")
-        base_online_args_v3 = base_hugo_args.copy()
-        base_online_args_v3.update(
-            {
-                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug_v3}/config.yaml",  # noqa: E501
-                "--baseURL": f"/{self.prefix}{self.base_url_v3}",
-                "--destination": "output-online-v3",
-            }
-        )
-        base_offline_args_v3 = base_hugo_args.copy()
-        base_offline_args_v3.update(
-            {
-                "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug_v3}/config-offline.yaml",  # noqa: E501
-                "--baseURL": "/",
-                "--destination": "output-offline-v3",
-            }
-        )
-        hugo_args_online_v3 = get_hugo_arg_string(
-            TARGET_ONLINE,
-            pipeline_name,
-            base_online_args_v3,
-            hugo_override_args,
-        )
-        hugo_args_offline_v3 = get_hugo_arg_string(
-            TARGET_OFFLINE,
-            pipeline_name,
-            base_offline_args_v3,
-            hugo_override_args,
-        )
-        self.hugo_args_online_v3 = hugo_args_online_v3
-        self.hugo_args_offline_v3 = hugo_args_offline_v3
-
         self.instance_vars = instance_vars
         self.namespace = namespace
         self.vars = get_site_pipeline_definition_vars(namespace=namespace)
@@ -284,7 +237,6 @@ class SitePipelineDefinitionConfig:
             "s3_path": site.s3_path,
             "url_path": self.url_path,
             "base_url": self.base_url,
-            "base_url_v3": self.base_url_v3,
             "static_resources_subdirectory": self.static_resources_subdirectory,
             "delete_flag": self.delete_flag,
             "noindex": self.noindex,
@@ -304,8 +256,6 @@ class SitePipelineDefinitionConfig:
             "ocw_studio_url": self.ocw_studio_url,
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
-            "hugo_args_online_v3": hugo_args_online_v3,
-            "hugo_args_offline_v3": hugo_args_offline_v3,
             "prefix": self.prefix,
         }
 
@@ -910,219 +860,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             self.append(clear_cdn_cache_offline_step)
 
 
-class SitePipelineOnlineV3Tasks(list[StepModifierMixin]):
-    def __init__(self, pipeline_vars: dict):
-        base_urls_v3 = []
-        if pipeline_vars["prefix"] != "":
-            base_urls_v3.append(pipeline_vars["prefix"])
-        if pipeline_vars["base_url_v3"] != "":
-            base_urls_v3.append(pipeline_vars["base_url_v3"])
-        base_url_v3 = "/".join(base_urls_v3) if len(base_urls_v3) > 0 else ""
-
-        build_online_site_v3_step = TaskStep(
-            task=BUILD_ONLINE_SITE_V3_IDENTIFIER,
-            timeout="20m",
-            attempts=3,
-            params={
-                "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-                "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
-                "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
-                "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"],
-                "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
-                "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                "NOINDEX": "true",
-            },
-            config=TaskConfig(
-                platform="linux",
-                image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                inputs=[
-                    Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
-                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
-                    Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
-                    Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER),
-                ],
-                outputs=[
-                    Output(name=SITE_CONTENT_GIT_IDENTIFIER),
-                    Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                ],
-                run=Command(
-                    dir=SITE_CONTENT_GIT_IDENTIFIER,
-                    path="sh",
-                    args=[
-                        "-exc",
-                        f"""
-                        cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
-                        hugo {pipeline_vars["hugo_args_online_v3"]}
-                        cp -r -n ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./output-online-v3{pipeline_vars["static_resources_subdirectory"]}
-                        """,  # noqa: E501
-                    ],
-                ),
-            ),
-        )
-        if is_dev():
-            build_online_site_v3_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID
-            )
-            build_online_site_v3_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY
-            )
-
-        online_sync_v3_command = rf"""
-        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
-        aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online-v3 "s3://{pipeline_vars["web_bucket"]}/{base_url_v3}" --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
-        """  # noqa: E501
-
-        upload_online_build_v3_step = TaskStep(
-            task=UPLOAD_ONLINE_BUILD_V3_IDENTIFIER,
-            timeout="40m",
-            params={
-                "AWS_MAX_CONCURRENT_CONNECTIONS": str(
-                    settings.AWS_MAX_CONCURRENT_CONNECTIONS
-                ),
-            },
-            config=TaskConfig(
-                platform="linux",
-                image_resource=AWS_CLI_REGISTRY_IMAGE,
-                inputs=[Input(name=SITE_CONTENT_GIT_IDENTIFIER)],
-                run=Command(path="sh", args=["-exc", online_sync_v3_command]),
-            ),
-        )
-        if is_dev():
-            upload_online_build_v3_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID or ""
-            )
-            upload_online_build_v3_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY or ""
-            )
-
-        self.extend([build_online_site_v3_step, upload_online_build_v3_step])
-
-
-class SitePipelineOfflineV3Tasks(list[StepModifierMixin]):
-    def __init__(self, pipeline_vars: dict):
-        build_offline_site_v3_command = f"""
-        cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
-        mkdir -p ./content/static_resources
-        mkdir -p ./static/static_resources
-        mkdir -p ./static/static_shared
-        mkdir -p ../videos-v3
-        cp -r ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./content/static_resources
-        HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
-        if [ $HTML_COUNT != 0 ];
-        then
-        mv ./content/static_resources/*.html ./static/static_resources
-        fi
-        MP4_COUNT="$(ls -1 ./content/static_resources/*.mp4 2>/dev/null | wc -l)"
-        if [ $MP4_COUNT != 0 ];
-        then
-        mv ./content/static_resources/*.mp4 ../videos-v3
-        fi
-        touch ./content/static_resources/_index.md
-        cp -r ../{WEBPACK_ARTIFACTS_IDENTIFIER}/static_shared/. ./static/static_shared/
-        hugo {pipeline_vars["hugo_args_offline_v3"]}
-        cd output-offline-v3
-        zip -r ../../{BUILD_OFFLINE_SITE_V3_IDENTIFIER}/{pipeline_vars["short_id"]}.zip ./
-        rm -rf ./*
-        cd ..
-        if [ $MP4_COUNT != 0 ];
-        then
-            mv ../videos-v3/* ./content/static_resources
-        fi
-        hugo {pipeline_vars["hugo_args_offline_v3"]}
-        cd output-offline-v3
-        zip -r ../../{BUILD_OFFLINE_SITE_V3_IDENTIFIER}/{pipeline_vars["short_id"]}-video.zip ./
-        """  # noqa: E501
-
-        build_offline_site_v3_step = TaskStep(
-            task=BUILD_OFFLINE_SITE_V3_IDENTIFIER,
-            timeout="120m",
-            attempts=3,
-            params={
-                "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-                "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
-                "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
-                "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
-                "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
-                "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"] or "",
-                "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
-                "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
-                "NOINDEX": "true",
-            },
-            config=TaskConfig(
-                platform="linux",
-                image_resource=OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
-                inputs=[
-                    Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
-                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
-                    Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
-                    Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER),
-                    Input(name=WEBPACK_ARTIFACTS_IDENTIFIER),
-                ],
-                outputs=[
-                    Output(name=SITE_CONTENT_GIT_IDENTIFIER),
-                    Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                    Output(name=BUILD_OFFLINE_SITE_V3_IDENTIFIER),
-                ],
-                run=Command(
-                    dir=SITE_CONTENT_GIT_IDENTIFIER,
-                    path="sh",
-                    args=[
-                        "-exc",
-                        build_offline_site_v3_command,
-                    ],
-                ),
-            ),
-        )
-        if is_dev():
-            build_offline_site_v3_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID or ""
-            )
-            build_offline_site_v3_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY or ""
-            )
-
-        offline_sync_v3_command = f"""
-        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
-        aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline-v3/ s3://{pipeline_vars["offline_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url_v3"]} --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
-        aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_V3_IDENTIFIER}/ s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url_v3"]} --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
-        """  # noqa: E501
-
-        upload_offline_build_v3_step = TaskStep(
-            task=UPLOAD_OFFLINE_BUILD_V3_IDENTIFIER,
-            timeout="120m",
-            params={
-                "AWS_MAX_CONCURRENT_CONNECTIONS": str(
-                    settings.AWS_MAX_CONCURRENT_CONNECTIONS
-                ),
-            },
-            config=TaskConfig(
-                platform="linux",
-                image_resource=AWS_CLI_REGISTRY_IMAGE,
-                inputs=[
-                    Input(name=SITE_CONTENT_GIT_IDENTIFIER),
-                    Input(name=BUILD_OFFLINE_SITE_V3_IDENTIFIER),
-                    Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
-                ],
-                run=Command(path="sh", args=["-exc", offline_sync_v3_command]),
-            ),
-        )
-        if is_dev():
-            upload_offline_build_v3_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID
-            )
-            upload_offline_build_v3_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY
-            )
-
-        self.extend([build_offline_site_v3_step, upload_offline_build_v3_step])
-
-
 class SitePipelineDefinition(Pipeline):
     """
     The Pipeline object representing an individual site pipeline
@@ -1191,7 +928,6 @@ class SitePipelineDefinition(Pipeline):
                     "s3_path": config.values["s3_path"],
                     "url_path": config.values["url_path"],
                     "base_url": config.values["base_url"],
-                    "base_url_v3": config.values["base_url_v3"],
                     "static_resources_subdirectory": config.values[
                         "static_resources_subdirectory"
                     ],
@@ -1215,8 +951,6 @@ class SitePipelineDefinition(Pipeline):
                     "ocw_studio_url": config.values["ocw_studio_url"],
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
-                    "hugo_args_online_v3": config.values["hugo_args_online_v3"],
-                    "hugo_args_offline_v3": config.values["hugo_args_offline_v3"],
                     "prefix": config.values["prefix"],
                 }
             ),
@@ -1344,11 +1078,6 @@ class SitePipelineDefinition(Pipeline):
                     build_type="online",
                 )
         steps.extend(online_tasks)
-
-        if not config.is_root_website:
-            online_v3_tasks = SitePipelineOnlineV3Tasks(pipeline_vars=config.vars)
-            steps.extend(TryStep(try_=task) for task in online_v3_tasks)
-
         return Job(
             name=self._online_site_job_identifier,
             serial=True,
@@ -1373,11 +1102,6 @@ class SitePipelineDefinition(Pipeline):
                 pipeline_name=config.pipeline_name,
             )
         )
-
-        if not config.is_root_website:
-            offline_v3_tasks = SitePipelineOfflineV3Tasks(pipeline_vars=config.vars)
-            steps.extend(TryStep(try_=task) for task in offline_v3_tasks)
-
         return Job(
             name=self._offline_site_job_identifier,
             serial=True,
