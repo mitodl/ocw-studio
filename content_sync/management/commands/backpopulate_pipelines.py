@@ -89,7 +89,11 @@ class Command(WebsiteFilterCommand):
             self.stdout.write("Deleting all existing site pipelines first")
             api = get_pipeline_api()
             if api:
-                api.delete_pipelines(names=[VERSION_LIVE, VERSION_DRAFT])
+                pipeline_names = [VERSION_LIVE, VERSION_DRAFT]
+                for theme_slug in settings.OCW_EXTRA_COURSE_THEMES:
+                    pipeline_names.append(f"{VERSION_DRAFT}-{theme_slug}")
+                    pipeline_names.append(f"{VERSION_LIVE}-{theme_slug}")
+                api.delete_pipelines(names=pipeline_names)
                 self.stdout.write("Deleted all site pipelines")
             else:
                 self.stdout.error("No pipeline api configured")
