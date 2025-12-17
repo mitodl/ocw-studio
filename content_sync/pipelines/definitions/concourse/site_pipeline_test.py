@@ -449,6 +449,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         "build_id": "$BUILD_ID",
         "build_type": "online",
         "is_cdn_cache_step": False,
+        "theme_slug": config.vars["theme_slug"],
     }
     if is_dev:
         assert set(

@@ -105,6 +105,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
+        "theme_slug": f"(({namespace}theme_slug))",
     }
 
 
@@ -264,6 +265,7 @@ class SitePipelineDefinitionConfig:
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": self.prefix,
+            "theme_slug": theme_slug,
         }
 
 
@@ -353,6 +355,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
         )
         ocw_hugo_themes_get_step = add_error_handling(
             step=GetStep(
@@ -366,6 +369,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
         )
         ocw_hugo_projects_get_step = add_error_handling(
             step=GetStep(
@@ -379,6 +383,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
         )
         site_content_get_step = add_error_handling(
             step=GetStep(
@@ -392,6 +397,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
         )
         get_steps = [
             webpack_manifest_get_step,
@@ -476,6 +482,7 @@ class StaticResourcesTaskStep(TaskStep):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type=build_type,
+            theme_slug=pipeline_vars["theme_slug"],
         )
         if is_dev():
             self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
@@ -564,6 +571,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         if is_dev():
             build_online_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -608,6 +616,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         if is_dev():
             upload_online_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -627,6 +636,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         clear_cdn_cache_online_on_success_steps = []
         if not skip_search_index_update and pipeline_name == "live":
@@ -648,6 +658,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 status="succeeded",
                 build_type="online",
                 is_cdn_cache_step=True,
+                theme_slug=pipeline_vars["theme_slug"],
             )
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -761,6 +772,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         if is_dev():
             build_offline_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -807,6 +819,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         if is_dev():
             upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -826,6 +839,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
         )
         clear_cdn_cache_offline_on_success_steps = []
 
@@ -846,6 +860,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 status="succeeded",
                 build_type="offline",
                 is_cdn_cache_step=True,
+                theme_slug=pipeline_vars["theme_slug"],
             )
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
@@ -918,6 +933,7 @@ class SitePipelineDefinition(Pipeline):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type="offline",
+            theme_slug=config.vars["theme_slug"],
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)
         dummy_var_source = DummyVarSource(
@@ -954,6 +970,7 @@ class SitePipelineDefinition(Pipeline):
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
                     "prefix": config.values["prefix"],
+                    "theme_slug": config.values["theme_slug"],
                 }
             ),
         )
@@ -1062,6 +1079,7 @@ class SitePipelineDefinition(Pipeline):
             pipeline_name=config.vars["pipeline_name"],
             status="started",
             build_type="online",
+            theme_slug=config.vars["theme_slug"],
         )
         steps = [ocw_studio_webhook_started_step]
         steps.extend(SitePipelineBaseTasks(config=config, build_type="online"))
@@ -1078,6 +1096,7 @@ class SitePipelineDefinition(Pipeline):
                     pipeline_name=config.vars["pipeline_name"],
                     status="succeeded",
                     build_type="online",
+                    theme_slug=config.vars["theme_slug"],
                 )
         steps.extend(online_tasks)
         return Job(
