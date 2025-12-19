@@ -11,7 +11,11 @@ from mitol.common.utils import now_in_utc
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
@@ -201,7 +205,14 @@ def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
     import_string_mock = mocker.patch("content_sync.pipelines.concourse.SitePipeline")
     website = WebsiteFactory.create()
     api.get_site_pipeline(website, hugo_args=hugo_args, api=pipeline_api)
-    import_string_mock.assert_any_call(website, hugo_args=hugo_args, api=pipeline_api)
+    import_string_mock.assert_any_call(
+        website,
+        hugo_args=hugo_args,
+        api=pipeline_api,
+        theme_slug=None,
+        prefix="",
+        noindex=None,
+    )
 
 
 @pytest.mark.parametrize("prepublish", [True, False])
@@ -329,3 +340,88 @@ def test_get_pipeline_api_no_backend(settings):
     """get_general_pipeline should return None if no backend is specified"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = None
     assert api.get_pipeline_api() is None
+
+
+@pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+@pytest.mark.parametrize("publish_date", [None, now_in_utc()])
+def test_publish_website_with_extra_themes(settings, mocker, version, publish_date):
+    """publish_website should trigger extra theme pipelines for OCW course sites"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    settings.PREPUBLISH_ACTIONS = []
+
+    mocker.patch("content_sync.api.get_sync_backend")
+    mock_get_pipeline = mocker.patch("content_sync.api.get_site_pipeline")
+    mocker.patch("content_sync.api.tasks.update_mass_build_pipelines_on_publish")
+
+    ocw_starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    website = WebsiteFactory.create(starter=ocw_starter, publish_date=publish_date)
+
+    mock_pipeline = mocker.Mock()
+    mock_pipeline.trigger_pipeline_build.return_value = 12345
+    mock_get_pipeline.return_value = mock_pipeline
+
+    api.publish_website(website.name, version, trigger_pipeline=True)
+
+    assert mock_get_pipeline.call_count == 3
+
+    call_args_list = mock_get_pipeline.call_args_list
+
+    assert call_args_list[0][0][0] == website
+    assert call_args_list[0][1]["api"] is None
+
+    assert call_args_list[1][0][0] == website
+    assert call_args_list[1][1]["theme_slug"] == "ocw-course-v3"
+    assert call_args_list[1][1]["prefix"] == "ocw-course-v3"
+    assert call_args_list[1][1]["noindex"] is True
+
+    assert call_args_list[2][0][0] == website
+    assert call_args_list[2][1]["theme_slug"] == "ocw-course-v4"
+    assert call_args_list[2][1]["prefix"] == "ocw-course-v4"
+    assert call_args_list[2][1]["noindex"] is True
+
+    expected_upsert_calls = 0 if publish_date else 3
+    assert mock_pipeline.upsert_pipeline.call_count == expected_upsert_calls
+    assert mock_pipeline.unpause_pipeline.call_count == 3
+    assert mock_pipeline.trigger_pipeline_build.call_count == 3
+
+    unpause_calls = [
+        call[0][0] for call in mock_pipeline.unpause_pipeline.call_args_list
+    ]
+    trigger_calls = [
+        call[0][0] for call in mock_pipeline.trigger_pipeline_build.call_args_list
+    ]
+
+    assert version in unpause_calls
+    assert f"{version}-ocw-course-v3" in unpause_calls
+    assert f"{version}-ocw-course-v4" in unpause_calls
+
+    assert version in trigger_calls
+    assert f"{version}-ocw-course-v3" in trigger_calls
+    assert f"{version}-ocw-course-v4" in trigger_calls
+
+
+def test_publish_website_no_extra_themes_for_non_ocw_site(settings, mocker):
+    """publish_website should not trigger extra theme pipelines for non-OCW sites"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    settings.PREPUBLISH_ACTIONS = []
+
+    mocker.patch("content_sync.api.get_sync_backend")
+    mock_get_pipeline = mocker.patch("content_sync.api.get_site_pipeline")
+    mocker.patch("content_sync.api.tasks.update_mass_build_pipelines_on_publish")
+
+    other_starter = WebsiteStarterFactory.create(slug="other-starter")
+    website = WebsiteFactory.create(starter=other_starter)
+
+    mock_pipeline = mocker.Mock()
+    mock_pipeline.trigger_pipeline_build.return_value = 12345
+    mock_get_pipeline.return_value = mock_pipeline
+
+    api.publish_website(website.name, VERSION_LIVE, trigger_pipeline=True)
+
+    assert mock_get_pipeline.call_count == 1

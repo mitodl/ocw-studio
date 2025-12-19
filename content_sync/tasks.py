@@ -147,6 +147,29 @@ def upsert_website_pipeline_batch(
                 VERSION_DRAFT,
             ]:
                 pipeline.unpause_pipeline(version)
+
+        is_default_theme_site = (
+            website.starter
+            and website.starter.slug == settings.OCW_DEFAULT_COURSE_THEME
+        )
+        if is_default_theme_site and settings.OCW_EXTRA_COURSE_THEMES:
+            for theme_slug in settings.OCW_EXTRA_COURSE_THEMES:
+                theme_pipeline = api.get_site_pipeline(
+                    website,
+                    hugo_args=hugo_args,
+                    api=api_instance,
+                    theme_slug=theme_slug,
+                    prefix=theme_slug,
+                    noindex=True,
+                )
+                theme_pipeline.upsert_pipeline()
+                if unpause:
+                    for version in [
+                        VERSION_LIVE,
+                        VERSION_DRAFT,
+                    ]:
+                        theme_pipeline_name = f"{version}-{theme_slug}"
+                        theme_pipeline.unpause_pipeline(theme_pipeline_name)
     return True
 
 
