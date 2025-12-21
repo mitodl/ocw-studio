@@ -76,15 +76,12 @@ export default function EmbeddedResource(props: Props): JSX.Element | null {
         el,
       )
     }
-
     return createPortal(
       <div className="embedded-resource my-2">
-        <>
-          <h3 className="ml-2 title">{title}</h3>
-          <span className="font-italic ml-2 text-gray resource-info">
-            {`Resourcetype: ${resourcetype}`}
-          </span>
-        </>
+        <h3 className="ml-2 title">{title}</h3>
+        <span className="font-italic ml-2 text-gray resource-info">
+          {`Resourcetype: ${resourcetype}`}
+        </span>
       </div>,
       el,
     )
