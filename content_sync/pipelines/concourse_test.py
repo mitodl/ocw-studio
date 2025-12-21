@@ -836,3 +836,109 @@ def test_api_auth(  # noqa: PLR0913
         and get_status == 200
         and post_status == 200
     )
+
+
+@pytest.mark.parametrize("theme_slug", [None, "ocw-course-v2", "ocw-course-v3"])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_upsert_pipeline_with_theme_slug(  # noqa: PLR0913
+    settings, pipeline_settings, mocker, mock_auth, theme_slug, version
+):
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="test-theme-slug-starter",
+    )
+    starter.config["root-url-path"] = "courses"
+    starter.save()
+    website = WebsiteFactory.create(
+        starter=starter, name="theme-test-site", url_path="courses/theme-test"
+    )
+
+    is_default_theme = theme_slug is None or theme_slug == "ocw-course-v2"
+    expected_suffix = "" if is_default_theme else f"-{theme_slug}"
+    expected_pipeline_name = f"{version}{expected_suffix}"
+
+    instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{expected_pipeline_name}/config?vars={instance_vars}"
+
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+
+    pipeline = SitePipeline(
+        website, theme_slug=theme_slug, prefix="courses-v3" if theme_slug else ""
+    )
+    pipeline.upsert_pipeline()
+
+    mock_get.assert_any_call(url_path)
+    mock_put_headers.assert_any_call(url_path, data=mocker.ANY, headers=None)
+
+    if version == VERSION_DRAFT:
+        _, kwargs = mock_put_headers.call_args_list[0]
+    else:
+        _, kwargs = mock_put_headers.call_args_list[1]
+    config_str = json.dumps(kwargs)
+
+    if theme_slug:
+        assert f"/{theme_slug}/config.yaml" in config_str
+    else:
+        assert f"/{starter.slug}/config.yaml" in config_str
+
+
+@pytest.mark.parametrize("noindex", [None, True, False])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_upsert_pipeline_with_noindex(  # noqa: PLR0913
+    settings, pipeline_settings, mocker, mock_auth, noindex, version
+):
+    settings.ENV_NAME = "prod"
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="test-noindex-starter",
+    )
+    starter.config["root-url-path"] = "courses"
+    starter.save()
+    website = WebsiteFactory.create(
+        starter=starter, name="noindex-test-site", url_path="courses/noindex-test"
+    )
+
+    instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}/config?vars={instance_vars}"
+
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+
+    pipeline = SitePipeline(website, noindex=noindex)
+    pipeline.upsert_pipeline()
+
+    mock_get.assert_any_call(url_path)
+
+    if version == VERSION_DRAFT:
+        _, kwargs = mock_put_headers.call_args_list[0]
+    else:
+        _, kwargs = mock_put_headers.call_args_list[1]
+    config_str = json.dumps(kwargs)
+
+    if noindex is True:
+        assert '\\"noindex\\": \\"true\\"' in config_str
+    elif noindex is False:
+        if version == VERSION_LIVE:
+            assert '\\"noindex\\": \\"false\\"' in config_str
+        else:
+            assert '\\"noindex\\": \\"false\\"' in config_str
+    elif version == VERSION_DRAFT:
+        assert '\\"noindex\\": \\"true\\"' in config_str
+    else:
+        assert '\\"noindex\\": \\"false\\"' in config_str

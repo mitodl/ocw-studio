@@ -30,7 +30,11 @@ from websites.constants import (
     PUBLISH_STATUS_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
@@ -389,6 +393,7 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
     settings.GITHUB_RATE_LIMIT_CHECK = check_limit
+    settings.OCW_EXTRA_COURSE_THEMES = []  # No extra themes for this test
     mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
     mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_site_pipeline")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
@@ -418,6 +423,48 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
         mock_pipeline.unpause_pipeline.assert_any_call(VERSION_LIVE)
     else:
         mock_pipeline.unpause_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("unpause", [True, False])
+def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpause):
+    """upsert_website_pipeline_batch should create extra theme pipelines for OCW sites"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+
+    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_site_pipeline")
+
+    ocw_starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    other_starter = WebsiteStarterFactory.create(slug="other-site-type")
+
+    ocw_website = WebsiteFactory.create(starter=ocw_starter)
+    other_website = WebsiteFactory.create(starter=other_starter)
+
+    website_names = [ocw_website.name, other_website.name]
+    tasks.upsert_website_pipeline_batch(website_names, unpause=unpause)
+
+    assert mock_get_pipeline.call_count == 4
+
+    mock_get_pipeline.assert_any_call(other_website, hugo_args="", api=mocker.ANY)
+    mock_get_pipeline.assert_any_call(ocw_website, hugo_args="", api=mocker.ANY)
+
+    mock_get_pipeline.assert_any_call(
+        ocw_website,
+        hugo_args="",
+        api=mocker.ANY,
+        theme_slug="ocw-course-v3",
+        prefix="ocw-course-v3",
+        noindex=True,
+    )
+    mock_get_pipeline.assert_any_call(
+        ocw_website,
+        hugo_args="",
+        api=mocker.ANY,
+        theme_slug="ocw-course-v4",
+        prefix="ocw-course-v4",
+        noindex=True,
+    )
 
 
 @pytest.mark.parametrize("prepublish", [True, False])

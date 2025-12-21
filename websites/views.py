@@ -329,8 +329,10 @@ class WebsiteViewSet(
         build_id = data.get("build_id")
         build_type = data.get("build_type")
         is_cdn_cache_step = data.get("is_cdn_cache_step", False)
+        theme_slug = data.get("theme_slug")
+        is_extra_theme = theme_slug in settings.OCW_EXTRA_COURSE_THEMES
 
-        if build_type != "offline":
+        if build_type != "offline" and not is_extra_theme:
             update_website_status(
                 website,
                 version,
