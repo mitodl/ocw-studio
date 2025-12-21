@@ -84,7 +84,7 @@ describe("SingletonsContentListing", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("tablist")).toBeInTheDocument()
+      expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
     })
 
     return { result, history }
@@ -132,7 +132,7 @@ describe("SingletonsContentListing", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("tablist")).toBeInTheDocument()
+      expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
     })
 
     const tabs = screen.getAllByRole("tab")
@@ -188,7 +188,7 @@ describe("SingletonsContentListing", () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByRole("tablist")).toBeInTheDocument()
+        expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
       })
 
       const tabs = screen.getAllByRole("tab")
