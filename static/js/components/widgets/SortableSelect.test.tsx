@@ -209,9 +209,7 @@ describe("SortableSelect", () => {
 
     renderSortableSelect({ value })
 
-    await waitFor(() => {
-      expect(screen.getByText(value[0].title)).toBeInTheDocument()
-    })
+    await screen.findByText(value[0].title)
 
     const onDragEnd = (global as any).__testOnDragEnd
     expect(onDragEnd).toBeDefined()
@@ -237,9 +235,7 @@ describe("SortableSelect", () => {
 
     renderSortableSelect({ value })
 
-    await waitFor(() => {
-      expect(screen.getByText(value[0].title)).toBeInTheDocument()
-    })
+    await screen.findByText(value[0].title)
 
     const deleteButtons = screen.getAllByText("remove_circle_outline")
     await user.click(deleteButtons[0])

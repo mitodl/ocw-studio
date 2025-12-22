@@ -56,9 +56,7 @@ describe("SiteCollaboratorList", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByText(collaborators[0].name)).toBeInTheDocument()
-    })
+    await screen.findByText(collaborators[0].name)
 
     return { result, history }
   }

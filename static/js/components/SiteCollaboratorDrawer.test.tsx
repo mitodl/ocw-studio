@@ -136,9 +136,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       const submitButton = screen.getByRole("button", { name: /save/i })
       await user.click(submitButton)
 
-      await waitFor(() => {
-        expect(screen.getByText(errorMsg)).toBeInTheDocument()
-      })
+      await screen.findByText(errorMsg)
 
       expect(toggleVisibilityStub.called).toBe(false)
 
@@ -166,9 +164,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       const submitButton = screen.getByRole("button", { name: /save/i })
       await user.click(submitButton)
 
-      await waitFor(() => {
-        expect(screen.getByText(errorMsg)).toBeInTheDocument()
-      })
+      await screen.findByText(errorMsg)
 
       expect(toggleVisibilityStub.called).toBe(false)
 
@@ -221,11 +217,7 @@ describe("SiteCollaboratorDrawerTest", () => {
       const submitButton = screen.getByRole("button", { name: /save/i })
       await user.click(submitButton)
 
-      await waitFor(() => {
-        expect(
-          screen.getByText(/role is a required field/i),
-        ).toBeInTheDocument()
-      })
+      await screen.findByText(/role is a required field/i)
 
       unmount()
     })

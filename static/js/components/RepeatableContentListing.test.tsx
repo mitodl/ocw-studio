@@ -118,9 +118,7 @@ describe("RepeatableContentListing", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument()
-    })
+    await screen.findByRole("heading", { level: 2 })
 
     return { result, history }
   }
@@ -212,9 +210,7 @@ describe("RepeatableContentListing", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument()
-    })
+    await screen.findByRole("heading", { level: 2 })
 
     for (const item of contentListingItems) {
       expect(screen.getByText(item.title as string)).toBeInTheDocument()

@@ -40,9 +40,7 @@ describe("SiteCreationPage", () => {
 
   it("renders a form with the right props", async () => {
     renderPage()
-    await waitFor(() => {
-      expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
-    })
+    await screen.findByLabelText(/title/i)
     expect(screen.getByLabelText(/short id/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/starter/i)).toBeInTheDocument()
   })
@@ -62,9 +60,7 @@ describe("SiteCreationPage", () => {
       helper.mockPostRequest(siteApi.toString(), website)
       renderPage()
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
-      })
+      await screen.findByLabelText(/title/i)
 
       await user.type(screen.getByLabelText(/title/i), "My Title")
       await user.type(screen.getByLabelText(/short id/i), "My-Title")
@@ -89,18 +85,14 @@ describe("SiteCreationPage", () => {
       helper.mockPostRequest(siteApi.toString(), errorResp, 400)
       renderPage()
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
-      })
+      await screen.findByLabelText(/title/i)
 
       await user.type(screen.getByLabelText(/title/i), errorMsg)
       await user.type(screen.getByLabelText(/short id/i), "my-site")
 
       await user.click(screen.getByRole("button", { name: /save/i }))
 
-      await waitFor(() => {
-        expect(screen.getByText(errorMsg)).toBeInTheDocument()
-      })
+      await screen.findByText(errorMsg)
       expect(historyPushStub).not.toHaveBeenCalled()
     })
 
@@ -112,18 +104,14 @@ describe("SiteCreationPage", () => {
       helper.mockPostRequest(siteApi.toString(), errorResp, 400)
       renderPage()
 
-      await waitFor(() => {
-        expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
-      })
+      await screen.findByLabelText(/title/i)
 
       await user.type(screen.getByLabelText(/title/i), "My Title")
       await user.type(screen.getByLabelText(/short id/i), "My-Title")
 
       await user.click(screen.getByRole("button", { name: /save/i }))
 
-      await waitFor(() => {
-        expect(screen.getByText(errorMsg)).toBeInTheDocument()
-      })
+      await screen.findByText(errorMsg)
       expect(historyPushStub).not.toHaveBeenCalled()
     })
   })

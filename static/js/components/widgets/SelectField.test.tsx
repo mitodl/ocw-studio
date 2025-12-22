@@ -105,9 +105,7 @@ describe("SelectField", () => {
     const input = screen.getByRole("textbox")
     await user.click(input)
 
-    await waitFor(() => {
-      expect(screen.getByText("Default Option")).toBeInTheDocument()
-    })
+    await screen.findByText("Default Option")
   })
 
   it("should use AsyncSelect if loadOptions is supplied and infinite scroll is disabled", async () => {
@@ -122,9 +120,7 @@ describe("SelectField", () => {
     const input = screen.getByRole("textbox")
     await user.click(input)
 
-    await waitFor(() => {
-      expect(screen.getByText("Default Option")).toBeInTheDocument()
-    })
+    await screen.findByText("Default Option")
   })
 
   it("should disable options when isOptionDisabled returns true", async () => {

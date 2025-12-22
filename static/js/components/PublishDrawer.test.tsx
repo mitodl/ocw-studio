@@ -99,9 +99,7 @@ describe("PublishDrawer", () => {
         it(`renders inside a Modal when visibility=${visible}`, async () => {
           renderDrawer({ visibility: visible })
           if (visible) {
-            await waitFor(() => {
-              expect(screen.getByRole("dialog")).toBeInTheDocument()
-            })
+            await screen.findByRole("dialog")
           } else {
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
           }

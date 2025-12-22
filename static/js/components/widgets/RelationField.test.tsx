@@ -549,9 +549,7 @@ describe("RelationField", () => {
         value,
       })
 
-      await waitFor(() => {
-        expect(screen.getByTestId("sortable-select")).toBeInTheDocument()
-      })
+      await screen.findByTestId("sortable-select")
 
       expect(capturedSortableSelectProps).not.toBeNull()
       expect(capturedSortableSelectProps.value).toStrictEqual(

@@ -69,11 +69,7 @@ describe("DriveSyncStatusIndicator", () => {
       const statusDiv = screen.getByText(/Sync status:/)
       await user.click(statusDiv)
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("Google Drive Sync Details"),
-        ).toBeInTheDocument()
-      })
+      await screen.findByText("Google Drive Sync Details")
 
       syncErrors.forEach((error: string) => {
         expect(screen.getByText(error)).toBeInTheDocument()

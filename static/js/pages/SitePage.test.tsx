@@ -101,11 +101,7 @@ describe("SitePage", () => {
 
     renderSitePage()
 
-    await waitFor(() => {
-      expect(
-        screen.getByRole("heading", { name: /collaborators/i }),
-      ).toBeInTheDocument()
-    })
+    await screen.findByRole("heading", { name: /collaborators/i })
   })
 
   it("renders a SiteContentListing component when the browser URL matches", async () => {

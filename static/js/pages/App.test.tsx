@@ -35,9 +35,7 @@ describe("App", () => {
     helper = new IntegrationTestHelper("/nonsense")
     helper.render(<App />)
 
-    await waitFor(() => {
-      expect(screen.getByText(/that's a 404/i)).toBeInTheDocument()
-    })
+    await screen.findByText(/that's a 404/i)
   })
 
   it("should render the site header", async () => {
@@ -77,9 +75,7 @@ describe("App", () => {
         )
       })
 
-      await waitFor(() => {
-        expect(screen.getByText(website.title)).toBeInTheDocument()
-      })
+      await screen.findByText(website.title)
     })
 
     it("should show a 404 if the website doesn't come back", async () => {
@@ -88,9 +84,7 @@ describe("App", () => {
 
       helper.render(<App />)
 
-      await waitFor(() => {
-        expect(screen.getByText(/that's a 404/i)).toBeInTheDocument()
-      })
+      await screen.findByText(/that's a 404/i)
 
       const backLink = screen.getByRole("link", { name: /site index/i })
       expect(backLink).toHaveAttribute("href", sitesBaseUrl.toString())

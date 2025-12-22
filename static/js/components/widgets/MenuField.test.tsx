@@ -212,9 +212,7 @@ describe("MenuField", () => {
     const selectInput = within(selectContainer).getByRole("textbox")
     await user.click(selectInput)
 
-    await waitFor(() => {
-      expect(screen.getByText(contentItem.title!)).toBeInTheDocument()
-    })
+    await screen.findByText(contentItem.title!)
     await user.click(screen.getByText(contentItem.title!))
 
     const submitButton = screen.getByRole("button", { name: /save/i })

@@ -83,9 +83,7 @@ describe("SingletonsContentListing", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
-    })
+    await screen.findByTestId("singletons-nav")
 
     return { result, history }
   }
@@ -131,9 +129,7 @@ describe("SingletonsContentListing", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
-    })
+    await screen.findByTestId("singletons-nav")
 
     const tabs = screen.getAllByRole("tab")
 
@@ -187,9 +183,7 @@ describe("SingletonsContentListing", () => {
         </WebsiteContext.Provider>,
       )
 
-      await waitFor(() => {
-        expect(screen.getByTestId("singletons-nav")).toBeInTheDocument()
-      })
+      await screen.findByTestId("singletons-nav")
 
       const tabs = screen.getAllByRole("tab")
 

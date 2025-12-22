@@ -49,9 +49,7 @@ describe("MenuItemForm", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByRole("form")).toBeInTheDocument()
-    })
+    await screen.findByRole("form")
     return { result, website }
   }
 
@@ -126,9 +124,7 @@ describe("MenuItemForm", () => {
       </WebsiteContext.Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByRole("form")).toBeInTheDocument()
-    })
+    await screen.findByRole("form")
 
     expect(screen.getByText(/link to/i)).toBeInTheDocument()
 

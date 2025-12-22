@@ -180,9 +180,7 @@ describe("SiteContentForm", () => {
 
     await user.click(screen.getByRole("button", { name: /save/i }))
 
-    await waitFor(() => {
-      expect(screen.getByText("testing status")).toBeInTheDocument()
-    })
+    await screen.findByText("testing status")
   })
 
   test.each([true, false])(

@@ -154,11 +154,7 @@ describe("ResourcePickerDialog", () => {
         focusResourceCall(resource)
       })
 
-      await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: acceptText }),
-        ).toBeInTheDocument()
-      })
+      await screen.findByRole("button", { name: acceptText })
 
       await user.click(screen.getByRole("button", { name: acceptText }))
 
