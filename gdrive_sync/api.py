@@ -154,7 +154,6 @@ def _get_or_create_drive_file(
             DriveFileStatus.COMPLETE,
             DriveFileStatus.UPLOADING,
             DriveFileStatus.UPLOAD_COMPLETE,
-            DriveFileStatus.TRANSCODING,
         )
     ):
         # For inexplicable reasons, sometimes Google Drive continuously updates
@@ -548,13 +547,12 @@ def transcode_gdrive_video(drive_file: DriveFile):
             drive_file.video = video
             drive_file.save()
             create_media_convert_job(video)
-            drive_file.update_status(DriveFileStatus.TRANSCODING)
         except Exception as exc:
             log.exception("Error creating transcode job for %s", video.source_key)
             video.status = VideoStatus.FAILED
             video.save()
             drive_file.sync_error = f"Error transcoding video {drive_file.name}: {exc}"
-            drive_file.update_status(DriveFileStatus.TRANSCODE_FAILED)
+            drive_file.save()
             raise
 
 
