@@ -3,15 +3,20 @@ import { Route, RouteProps, Redirect } from "react-router"
 import { useAppSelector } from "../../hooks/redux"
 import { loginUrl } from "../../lib/urls"
 
-function PrivateRoute({ children, ...rest }: RouteProps): React.ReactElement {
+interface PrivateRouteProps extends Omit<RouteProps, "children"> {
+  children: React.ReactNode
+}
+
+function PrivateRoute({
+  children,
+  ...rest
+}: PrivateRouteProps): React.ReactElement {
   const { user } = useAppSelector((state) => state.user)
 
   return (
     <Route
       {...rest}
-      render={() => {
-        return user ? children : <Redirect to={loginUrl.toString()} />
-      }}
+      render={() => (user ? children : <Redirect to={loginUrl.toString()} />)}
     />
   )
 }
