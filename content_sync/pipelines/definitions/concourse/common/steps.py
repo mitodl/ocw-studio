@@ -39,6 +39,7 @@ def add_error_handling(  # noqa: PLR0913
     short_id: str,  # noqa: ARG001
     instance_vars: str,
     build_type: str | None = None,
+    theme_slug: str | None = None,
 ):
     """
     Add error handling steps to any Step-like object
@@ -73,6 +74,7 @@ def add_error_handling(  # noqa: PLR0913
         step_description=step_description,
         concourse_url=concourse_url,
         build_type=build_type,
+        theme_slug=theme_slug,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -81,6 +83,7 @@ def add_error_handling(  # noqa: PLR0913
         step_description=step_description,
         concourse_url=concourse_url,
         build_type=build_type,
+        theme_slug=theme_slug,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -89,6 +92,7 @@ def add_error_handling(  # noqa: PLR0913
         step_description=step_description,
         concourse_url=concourse_url,
         build_type=build_type,
+        theme_slug=theme_slug,
     )
     return step
 
@@ -106,6 +110,7 @@ class ErrorHandlingStep(TryStep):
         step_description: str,
         concourse_url: str,
         build_type: str | None = None,
+        theme_slug: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -116,6 +121,7 @@ class ErrorHandlingStep(TryStep):
                             pipeline_name=pipeline_name,
                             status=status,
                             build_type=build_type,
+                            theme_slug=theme_slug,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -204,6 +210,7 @@ class OcwStudioWebhookStep(TryStep):
         build_type: (str, optional): The type of build ('online' or 'offline')
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
+        theme_slug(str, optional): The theme slug for the build
     """
 
     def __init__(
@@ -212,6 +219,7 @@ class OcwStudioWebhookStep(TryStep):
         status: str,
         build_type: str | None = None,
         is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
+        theme_slug: str | None = None,
         **kwargs,
     ):
         webhook_data = {
@@ -220,6 +228,7 @@ class OcwStudioWebhookStep(TryStep):
             "build_id": "$BUILD_ID",
             "build_type": build_type,
             "is_cdn_cache_step": is_cdn_cache_step,
+            "theme_slug": theme_slug,
         }
 
         super().__init__(

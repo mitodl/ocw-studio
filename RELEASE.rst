@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.174.0
+---------------
+
+- Add individual site pipelines for course-v3 theme (#2826)
+- fix(deps): update node.js to v24 (#2822)
+
 Version 0.173.0 (Released December 10, 2025)
 ---------------
 

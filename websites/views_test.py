@@ -1404,6 +1404,9 @@ def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_t
         ({"build_type": "offline"}, False, False),
         ({"build_type": "online"}, True, False),
         ({}, True, False),
+        ({"theme_slug": "ocw-course-v3"}, False, False),
+        ({"theme_slug": "ocw-course-v2"}, True, False),
+        ({"theme_slug": None}, True, False),
     ],
 )
 @patch("websites.views.update_website_status")
@@ -1418,6 +1421,7 @@ def test_pipeline_status_build_type(  # noqa: PLR0913
     """Test that pipeline_status processes builds based on build_type"""
     website = WebsiteFactory.create()
     settings.API_BEARER_TOKEN = "test_token"  # noqa: S105
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
     drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
     base_data = {
         "version": "draft",

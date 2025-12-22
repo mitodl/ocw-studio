@@ -43,13 +43,25 @@ def get_pipeline_api() -> BasePipeline:
 
 
 @is_publish_pipeline_enabled
-def get_site_pipeline(
-    website: Website, hugo_args: str | None = "", api: object | None = None
+def get_site_pipeline(  # noqa: PLR0913
+    website: Website,
+    hugo_args: str | None = "",
+    api: object | None = None,
+    theme_slug: str | None = None,
+    prefix: str = "",
+    noindex: bool | None = None,  # noqa: FBT001
 ) -> BasePipeline:
     """Get the configured sync publishing pipeline"""
     return import_string(
         f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.SitePipeline"
-    )(website, hugo_args=hugo_args, api=api)
+    )(
+        website,
+        hugo_args=hugo_args,
+        api=api,
+        theme_slug=theme_slug,
+        prefix=prefix,
+        noindex=noindex,
+    )
 
 
 @is_publish_pipeline_enabled
@@ -181,6 +193,25 @@ def publish_website(  # pylint: disable=too-many-arguments
             pipeline.unpause_pipeline(version)
             build_id = pipeline.trigger_pipeline_build(version)
             update_kwargs[f"latest_build_id_{version}"] = build_id
+
+            is_default_theme_site = (
+                website.starter
+                and website.starter.slug == settings.OCW_DEFAULT_COURSE_THEME
+            )
+            if is_default_theme_site and settings.OCW_EXTRA_COURSE_THEMES:
+                for theme_slug in settings.OCW_EXTRA_COURSE_THEMES:
+                    theme_pipeline = get_site_pipeline(
+                        website,
+                        api=pipeline.api,
+                        theme_slug=theme_slug,
+                        prefix=theme_slug,
+                        noindex=True,
+                    )
+                    theme_pipeline_name = f"{version}-{theme_slug}"
+                    if not website.publish_date:
+                        theme_pipeline.upsert_pipeline()
+                    theme_pipeline.unpause_pipeline(theme_pipeline_name)
+                    theme_pipeline.trigger_pipeline_build(theme_pipeline_name)
 
         # Need to update additional fields
         update_kwargs = {

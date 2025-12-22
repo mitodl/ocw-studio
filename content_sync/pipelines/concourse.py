@@ -416,17 +416,23 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         website: Website,
         hugo_args: str | None = None,
         api: PipelineApi | None = None,
+        theme_slug: str | None = None,
+        prefix: str = "",
+        noindex: bool | None = None,  # noqa: FBT001
     ):
         """Initialize the pipeline API instance"""
         super().__init__(api=api)
         self.WEBSITE = website
         self.BRANCH = get_theme_branch()
         self.HUGO_ARGS = hugo_args
+        self.THEME_SLUG = theme_slug
+        self.PREFIX = prefix
+        self.NOINDEX = noindex
         self.set_instance_vars({"site": self.WEBSITE.name})
 
     def upsert_pipeline(
@@ -451,6 +457,12 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             # Invalid github url, so skip
             return
 
+        is_default_theme = (
+            self.THEME_SLUG is None
+            or self.THEME_SLUG == settings.OCW_DEFAULT_COURSE_THEME
+        )
+        pipeline_name_suffix = "" if is_default_theme else f"-{self.THEME_SLUG}"
+
         pipeline_vars = get_common_pipeline_vars()
         for branch_vars in [
             {
@@ -464,7 +476,8 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         ]:
             pipeline_vars.update(branch_vars)
             branch = pipeline_vars["branch"]
-            pipeline_name = pipeline_vars["pipeline_name"]
+            base_pipeline_name = pipeline_vars["pipeline_name"]
+            pipeline_name = f"{base_pipeline_name}{pipeline_name_suffix}"
             storage_bucket = pipeline_vars["storage_bucket_name"]
             artifacts_bucket = pipeline_vars["artifacts_bucket_name"]
             if branch == settings.GIT_BRANCH_PREVIEW:
@@ -479,7 +492,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 resource_base_url = pipeline_vars["resource_base_url_live"]
             pipeline_config = SitePipelineDefinitionConfig(
                 site=self.WEBSITE,
-                pipeline_name=pipeline_name,
+                pipeline_name=base_pipeline_name,
                 instance_vars=self.instance_vars,
                 site_content_branch=branch,
                 static_api_url=static_api_base_url,
@@ -491,6 +504,9 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                 ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                 hugo_override_args=self.HUGO_ARGS,
+                prefix=self.PREFIX,
+                noindex=self.NOINDEX,
+                theme_slug=self.THEME_SLUG,
             )
             self.upsert_config(
                 SitePipelineDefinition(config=pipeline_config).json(), pipeline_name
