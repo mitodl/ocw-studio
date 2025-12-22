@@ -61,7 +61,7 @@ export default function MenuItemForm({
     >
       {({ isSubmitting, status, setFieldValue, values }) => {
         return (
-          <Form className="row">
+          <Form className="row" data-testid="menu-item-form">
             <div className="form-group w-100">
               <label className="px-2" htmlFor="menuItemTitle">
                 Title
