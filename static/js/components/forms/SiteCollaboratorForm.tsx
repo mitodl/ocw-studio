@@ -58,6 +58,7 @@ export default function SiteCollaboratorForm({
               <label htmlFor="email">Email</label>
               <Field
                 name="email"
+                id="email"
                 className="form-control"
                 type="email"
                 value={values.email}
@@ -70,6 +71,7 @@ export default function SiteCollaboratorForm({
             <Field
               as={SelectField}
               name="role"
+              id="role"
               className="form-control"
               options={[
                 { label: "-----", value: "" },

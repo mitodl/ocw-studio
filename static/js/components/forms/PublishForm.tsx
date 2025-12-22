@@ -74,7 +74,12 @@ const PublishForm: React.FC<Props> = ({
               ) : (
                 <span>{`${partialUrl}`}</span>
               )}
-              <Field type="text" name="url_path" className="form-control" />
+              <Field
+                type="text"
+                name="url_path"
+                className="form-control"
+                id="url_path"
+              />
               <ErrorMessage name="url_path" component={FormError} />
             </div>
           ) : (

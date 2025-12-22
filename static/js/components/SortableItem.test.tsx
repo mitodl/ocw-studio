@@ -1,13 +1,24 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import SortableItem from "./SortableItem"
+
+jest.mock("@dnd-kit/sortable", () => ({
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: jest.fn(),
+    transform: null,
+    transition: null,
+  }),
+}))
 
 describe("SortableItem", () => {
   let deleteStub: jest.Mock<any, any>
 
   const renderItem = () =>
-    shallow(
+    render(
       <SortableItem
         deleteItem={deleteStub}
         item="item-id"
@@ -21,16 +32,17 @@ describe("SortableItem", () => {
   })
 
   it("should display the title and a drag handle", () => {
-    const wrapper = renderItem()
-    expect(wrapper.find(".material-icons").at(0).text()).toBe("drag_indicator")
-    expect(wrapper.find(".title").text()).toBe("A TITLE")
+    renderItem()
+    expect(screen.getByText("drag_indicator")).toBeInTheDocument()
+    expect(screen.getByText("A TITLE")).toBeInTheDocument()
   })
 
-  it("should include a delete button", () => {
-    const wrapper = renderItem()
-    const deleteButton = wrapper.find(".material-icons").at(1)
-    expect(deleteButton.text()).toBe("remove_circle_outline")
-    deleteButton.simulate("click")
+  it("should include a delete button", async () => {
+    const user = userEvent.setup()
+    renderItem()
+    const deleteButton = screen.getByText("remove_circle_outline")
+    expect(deleteButton).toBeInTheDocument()
+    await user.click(deleteButton)
     expect(deleteStub).toHaveBeenCalledWith("item-id")
   })
 })

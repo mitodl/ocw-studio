@@ -7,16 +7,13 @@ import SiteContentListing, {
   singletonTitle,
 } from "./SiteContentListing"
 
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 import {
   makeRepeatableConfigItem,
   makeSingletonsConfigItem,
   makeWebsiteConfigField,
   makeWebsiteDetail,
 } from "../util/factories/websites"
-import WebsiteContext from "../context/Website"
 
 import {
   RepeatableConfigItem,
@@ -24,35 +21,42 @@ import {
   Website,
   WidgetVariant,
 } from "../types/websites"
+import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
+import { assertNotNil } from "../test_util"
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
   useRouteMatch: () => mockUseRouteMatch(),
 }))
 
+let capturedRepeatableProps: { configItem: RepeatableConfigItem } | null = null
+let capturedSingletonsProps: { configItem: SingletonsConfigItem } | null = null
+
 jest.mock("./RepeatableContentListing", () => ({
   __esModule: true,
-  default: () => <div>MockComponent</div>,
+  default: (props: { configItem: RepeatableConfigItem }) => {
+    capturedRepeatableProps = props
+    return <div data-testid="repeatable-content-listing">MockRepeatable</div>
+  },
 }))
 
 jest.mock("./SingletonsContentListing", () => ({
   __esModule: true,
-  default: () => <div>MockComponent</div>,
+  default: (props: { configItem: SingletonsConfigItem }) => {
+    capturedSingletonsProps = props
+    return <div data-testid="singletons-content-listing">MockSingletons</div>
+  },
 }))
-
-import MockRepeatable from "./RepeatableContentListing"
-import MockSingletons from "./SingletonsContentListing"
-import { DEFAULT_TITLE_FIELD } from "../lib/site_content"
-import { assertNotNil } from "../test_util"
 
 describe("SiteContentListing", () => {
   let helper: IntegrationTestHelper,
     website: Website,
-    render: TestRenderer,
     repeatableConfigItem: RepeatableConfigItem,
     singletonsConfigItem: SingletonsConfigItem
 
   beforeEach(() => {
+    capturedRepeatableProps = null
+    capturedSingletonsProps = null
     helper = new IntegrationTestHelper()
     repeatableConfigItem = makeRepeatableConfigItem("repeatable_test_content")
     singletonsConfigItem = makeSingletonsConfigItem("singleton_test_content")
@@ -64,15 +68,6 @@ describe("SiteContentListing", () => {
         collections: [repeatableConfigItem, singletonsConfigItem],
       },
     }
-    render = helper.configureRenderer((props) => (
-      <WebsiteContext.Provider value={website}>
-        <SiteContentListing {...props} />
-      </WebsiteContext.Provider>
-    ))
-  })
-
-  afterEach(() => {
-    helper.cleanup()
   })
 
   it("title funcs should be reasonable", () => {
@@ -86,44 +81,61 @@ describe("SiteContentListing", () => {
     })
   })
 
-  const childCases = [
-    { name: "repeatable", child: MockRepeatable },
-    { name: "singleton", child: MockSingletons },
-  ]
-
-  it.each(childCases)(
-    `renders $name with the correct props`,
-    async ({ child }) => {
-      const configItem =
-        child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
-
-      const params = { name: website.name, contentType: configItem.name }
-      mockUseRouteMatch.mockImplementation(() => ({
-        params,
-      }))
-      const { wrapper } = await render()
-
-      const listing = wrapper.find(child)
-      expect(listing.exists()).toBe(true)
-      expect(listing.props()).toEqual({
-        configItem,
-      })
-    },
-  )
-
-  it.each(childCases)("sets an appropriate title", async ({ child, name }) => {
-    const configItem =
-      child === MockRepeatable ? repeatableConfigItem : singletonsConfigItem
-
-    const params = { name: website.name, contentType: configItem.name }
+  it("renders repeatable with the correct props", async () => {
+    const params = {
+      name: website.name,
+      contentType: repeatableConfigItem.name,
+    }
     mockUseRouteMatch.mockImplementation(() => ({
       params,
     }))
-    const { wrapper } = await render()
-    expect(wrapper.find("DocumentTitle").prop("title")).toBe(
-      name === "repeatable"
-        ? `OCW Studio | ${website.title} | Repeatable Test Contents`
-        : `OCW Studio | ${website.title} | Singleton Test Content`,
+    helper.renderWithWebsite(<SiteContentListing />, website)
+
+    expect(capturedRepeatableProps).not.toBeNull()
+    expect(capturedRepeatableProps?.configItem).toEqual(repeatableConfigItem)
+  })
+
+  it("renders singleton with the correct props", async () => {
+    const params = {
+      name: website.name,
+      contentType: singletonsConfigItem.name,
+    }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params,
+    }))
+    helper.renderWithWebsite(<SiteContentListing />, website)
+
+    expect(capturedSingletonsProps).not.toBeNull()
+    expect(capturedSingletonsProps?.configItem).toEqual(singletonsConfigItem)
+  })
+
+  it("sets an appropriate title for repeatable", async () => {
+    const params = {
+      name: website.name,
+      contentType: repeatableConfigItem.name,
+    }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params,
+    }))
+    helper.renderWithWebsite(<SiteContentListing />, website)
+
+    expect(document.title).toBe(
+      `OCW Studio | ${website.title} | Repeatable Test Contents`,
+    )
+  })
+
+  it("sets an appropriate title for singleton", async () => {
+    const params = {
+      name: website.name,
+      contentType: singletonsConfigItem.name,
+    }
+    mockUseRouteMatch.mockImplementation(() => ({
+      params,
+    }))
+    helper.renderWithWebsite(<SiteContentListing />, website)
+
+    expect(document.title).toBe(
+      `OCW Studio | ${website.title} | Singleton Test Content`,
     )
   })
 
@@ -147,12 +159,11 @@ describe("SiteContentListing", () => {
       ],
     })
     repeatableConfigItem.fields = [objectField]
-    const { wrapper } = await render()
-    const listing = wrapper.find(MockRepeatable)
-    expect(listing.prop("configItem").fields).toStrictEqual([
-      // Title field should be added by default
+    helper.renderWithWebsite(<SiteContentListing />, website)
+
+    expect(capturedRepeatableProps).not.toBeNull()
+    expect(capturedRepeatableProps?.configItem.fields).toStrictEqual([
       DEFAULT_TITLE_FIELD,
-      // Nested object field should be not renamed
       objectField,
     ])
   })

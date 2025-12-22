@@ -1,6 +1,7 @@
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../../util/integration_test_helper_old"
+import React from "react"
+import { waitFor } from "@testing-library/react"
+
+import { IntegrationTestHelper } from "../../testing_utils"
 import WebsiteCollectionField, {
   formatOptionsLabelWithShortId,
 } from "./WebsiteCollectionField"
@@ -8,8 +9,6 @@ import WebsiteCollectionField, {
 import * as websiteHooks from "../../hooks/websites"
 import { Website } from "../../types/websites"
 import { makeWebsites } from "../../util/factories/websites"
-import { triggerSortableSelect } from "./test_util"
-import SortableSelect from "./SortableSelect"
 
 jest.mock("../../hooks/websites", () => ({
   ...jest.requireActual("../../hooks/websites"),
@@ -19,9 +18,37 @@ const useWebsiteSelectOptions = jest.mocked(
   websiteHooks.useWebsiteSelectOptions,
 )
 
+let capturedSortableSelectProps: any = null
+jest.mock("./SortableSelect", () => {
+  return {
+    __esModule: true,
+    default: (props: any) => {
+      capturedSortableSelectProps = props
+      return (
+        <div data-testid="sortable-select">
+          {props.value?.map((item: any) => (
+            <span key={item.id} data-testid={`sortable-item-${item.id}`}>
+              {item.title}
+            </span>
+          ))}
+          <button
+            data-testid="add-item"
+            onClick={() => {
+              if (props.options?.[0]) {
+                props.onChange([props.options[0].value])
+              }
+            }}
+          >
+            Add
+          </button>
+        </div>
+      )
+    },
+  }
+})
+
 describe("WebsiteCollectionField", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     onChange: jest.Mock,
     websites: Website[],
     websiteOptions: websiteHooks.WebsiteOption[],
@@ -30,11 +57,6 @@ describe("WebsiteCollectionField", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
     onChange = jest.fn()
-    render = helper.configureRenderer(WebsiteCollectionField, {
-      onChange,
-      name: "test-site-collection",
-      value: [],
-    })
     websites = makeWebsites()
     websiteOptions = websiteHooks.formatWebsiteOptions(websites, "name")
     selectWebsiteOptions = formatOptionsLabelWithShortId(websiteOptions)
@@ -42,36 +64,57 @@ describe("WebsiteCollectionField", () => {
       options: websiteOptions,
       loadOptions: jest.fn().mockReturnValue({ options: [] }),
     })
-  })
-
-  afterEach(() => {
-    helper.cleanup()
+    capturedSortableSelectProps = null
   })
 
   it("should pass published=true to the useWebsiteSelectOptions", async () => {
-    await render()
-    expect(useWebsiteSelectOptions).toHaveBeenCalledWith("url_path", true)
+    helper.render(
+      <WebsiteCollectionField
+        onChange={onChange}
+        name="test-site-collection"
+        value={[]}
+      />,
+    )
+    await waitFor(() => {
+      expect(useWebsiteSelectOptions).toHaveBeenCalledWith("url_path", true)
+    })
   })
 
   it("should pass things down to SortableSelect", async () => {
     const value = websites.map((website) => ({
-      id: website.url_path,
+      id: website.url_path ?? website.name,
       title: website.title,
     }))
 
-    const { wrapper } = await render({
-      value,
+    helper.render(
+      <WebsiteCollectionField
+        onChange={onChange}
+        name="test-site-collection"
+        value={value}
+      />,
+    )
+    await waitFor(() => {
+      expect(capturedSortableSelectProps).not.toBeNull()
     })
-    const sortableSelect = wrapper.find(SortableSelect)
-    expect(sortableSelect.prop("value")).toStrictEqual(value)
-    expect(sortableSelect.prop("options")).toEqual(selectWebsiteOptions)
-    expect(sortableSelect.prop("defaultOptions")).toEqual(selectWebsiteOptions)
+    expect(capturedSortableSelectProps.value).toStrictEqual(value)
+    expect(capturedSortableSelectProps.options).toEqual(selectWebsiteOptions)
+    expect(capturedSortableSelectProps.defaultOptions).toEqual(
+      selectWebsiteOptions,
+    )
   })
 
   it("should let the user add a website, with UUID and title", async () => {
-    const { wrapper } = await render()
-    wrapper.update()
-    await triggerSortableSelect(wrapper, websites[0].name)
+    helper.render(
+      <WebsiteCollectionField
+        onChange={onChange}
+        name="test-site-collection"
+        value={[]}
+      />,
+    )
+    await waitFor(() => {
+      expect(capturedSortableSelectProps).not.toBeNull()
+    })
+    capturedSortableSelectProps.onChange([websites[0].name])
     expect(onChange).toHaveBeenCalledWith({
       target: {
         name: "test-site-collection",
@@ -91,12 +134,19 @@ describe("WebsiteCollectionField", () => {
       id: website.name,
       title: website.title,
     }))
-    const { wrapper } = await render({ value })
-    const isOptionEnabled = wrapper
-      .find(SortableSelect)
-      .prop("isOptionDisabled")!
-    expect(isOptionEnabled).toBeDefined()
+    helper.render(
+      <WebsiteCollectionField
+        onChange={onChange}
+        name="test-site-collection"
+        value={value}
+      />,
+    )
+    await waitFor(() => {
+      expect(capturedSortableSelectProps).not.toBeNull()
+    })
+    const isOptionDisabled = capturedSortableSelectProps.isOptionDisabled!
+    expect(isOptionDisabled).toBeDefined()
     const expected = [false, false, ...Array(8).fill(true)]
-    expect(websiteOptions.map(isOptionEnabled)).toEqual(expected)
+    expect(websiteOptions.map(isOptionDisabled)).toEqual(expected)
   })
 })

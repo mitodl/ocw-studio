@@ -1,4 +1,7 @@
-import sinon from "sinon"
+import React from "react"
+import { waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+
 import { siteApiContentListingUrl } from "../../lib/urls"
 import {
   Website,
@@ -9,9 +12,7 @@ import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
 } from "../../util/factories/websites"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../../testing_utils"
 import * as websiteContext from "../../context/Website"
 import ResourcePickerListing from "./ResourcePickerListing"
 import { ResourceType } from "../../constants"
@@ -29,9 +30,7 @@ const apiResponse = (results: WebsiteContentListItem[]) => ({
 
 describe("ResourcePickerListing", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
-    focusResourceStub: any,
-    setOpenStub: any,
+    focusResourceMock: jest.Mock,
     website: Website,
     contentListingItems: {
       videos: WebsiteContent[]
@@ -43,16 +42,7 @@ describe("ResourcePickerListing", () => {
   beforeEach(() => {
     helper = new IntegrationTestHelper()
 
-    focusResourceStub = helper.sandbox.stub()
-    setOpenStub = helper.sandbox.stub()
-
-    render = helper.configureRenderer(ResourcePickerListing, {
-      focusResource: focusResourceStub,
-      setOpen: setOpenStub,
-      contentType: "resource",
-      filter: null,
-      resourcetype: ResourceType.Video,
-    })
+    focusResourceMock = jest.fn()
 
     website = makeWebsiteDetail()
 
@@ -125,50 +115,88 @@ describe("ResourcePickerListing", () => {
     )
   })
 
-  afterEach(() => {
-    helper.cleanup()
-  })
-
   it("should fetch and display resources", async () => {
-    const { wrapper } = await render()
-    expect(
-      wrapper
-        .find(".resource-picker-listing .resource-item")
-        .map((el) => el.find("h4").text()),
-    ).toEqual(contentListingItems.videos.map((item) => item.title))
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+      />,
+    )
+    await waitFor(() => {
+      const items = container.querySelectorAll(
+        ".resource-picker-listing .resource-item h4",
+      )
+      expect(Array.from(items).map((el) => el.textContent)).toEqual(
+        contentListingItems.videos.map((item) => item.title),
+      )
+    })
   })
 
   it("should call focusResource prop with resources", async () => {
-    const { wrapper } = await render()
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+      />,
+    )
+    await waitFor(() => {
+      expect(
+        container.querySelector(".resource-picker-listing .resource-item"),
+      ).toBeInTheDocument()
+    })
 
-    wrapper
-      .find(".resource-picker-listing .resource-item")
-      .at(0)
-      .simulate("click")
-    expect(
-      focusResourceStub.calledWith(contentListingItems.videos[0]),
-    ).toBeTruthy()
-    wrapper.update()
+    const firstItem = container.querySelector(
+      ".resource-picker-listing .resource-item",
+    )!
+    await userEvent.click(firstItem)
+    expect(focusResourceMock).toHaveBeenCalledWith(
+      contentListingItems.videos[0],
+    )
   })
 
   it("should put a class on if a resource is focused", async () => {
-    const { wrapper } = await render({
-      focusedResource: contentListingItems.videos[0],
-    })
-
-    expect(wrapper.find(".resource-item").at(0).prop("className")).toBe(
-      "resource-item focused",
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={contentListingItems.videos[0]}
+        singleColumn={false}
+      />,
     )
+    await waitFor(() => {
+      const firstItem = container.querySelector(".resource-item")
+      expect(firstItem?.className).toBe("resource-item focused")
+    })
   })
 
   it("should display an image for images", async () => {
     assertNotNil(contentListingItems.videos[0].metadata)
     contentListingItems.videos[0].metadata.resourcetype = ResourceType.Image
     contentListingItems.videos[0].file = "/path/to/image.jpg"
-    const { wrapper } = await render()
-    expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
-      "/path/to/image.jpg",
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+      />,
     )
+    await waitFor(() => {
+      const img = container.querySelector(".resource-item img")
+      expect(img?.getAttribute("src")).toBe("/path/to/image.jpg")
+    })
   })
 
   it("should display a thumbnail for videos", async () => {
@@ -177,25 +205,43 @@ describe("ResourcePickerListing", () => {
     contentListingItems.videos[0].metadata.video_files = {
       video_thumbnail_file: "/path/to/image.jpg",
     }
-    const { wrapper } = await render()
-    expect(wrapper.find(".resource-item").at(0).find("img").prop("src")).toBe(
-      "/path/to/image.jpg",
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+      />,
     )
+    await waitFor(() => {
+      const img = container.querySelector(".resource-item img")
+      expect(img?.getAttribute("src")).toBe("/path/to/image.jpg")
+    })
   })
 
   it("should fetch and display pages", async () => {
-    const { wrapper } = await render({
-      contentType: "page",
-      resourcetype: null,
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="page"
+        filter={null}
+        resourcetype={null}
+        focusedResource={null}
+        singleColumn={false}
+      />,
+    )
+    await waitFor(() => {
+      const items = container.querySelectorAll(
+        ".resource-picker-listing .resource-item h4",
+      )
+      expect(Array.from(items).map((el) => el.textContent)).toEqual(
+        contentListingItems.pages.map((item) => item.title),
+      )
     })
-    expect(
-      wrapper
-        .find(".resource-picker-listing .resource-item")
-        .map((el) => el.find("h4").text()),
-    ).toEqual(contentListingItems.pages.map((item) => item.title))
 
-    sinon.assert.calledWith(
-      helper.handleRequestStub,
+    expect(helper.handleRequest).toHaveBeenCalledWith(
       siteApiContentListingUrl
         .param({ name: website.name })
         .query({
@@ -204,23 +250,33 @@ describe("ResourcePickerListing", () => {
           detailed_list: true,
         })
         .toString(),
+      "GET",
+      expect.anything(),
     )
   })
 
   it("should fetch and display content collections", async () => {
-    const { wrapper } = await render({
-      contentType: "course-collection",
-      resourcetype: null,
-      sourceWebsiteName: "ocw-www",
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="course-collection"
+        filter={null}
+        resourcetype={null}
+        focusedResource={null}
+        singleColumn={false}
+        sourceWebsiteName="ocw-www"
+      />,
+    )
+    await waitFor(() => {
+      const items = container.querySelectorAll(
+        ".resource-picker-listing .resource-item h4",
+      )
+      expect(Array.from(items).map((el) => el.textContent)).toEqual(
+        contentListingItems.courseLists.map((item) => item.title),
+      )
     })
-    expect(
-      wrapper
-        .find(".resource-picker-listing .resource-item")
-        .map((el) => el.find("h4").text()),
-    ).toEqual(contentListingItems.courseLists.map((item) => item.title))
 
-    sinon.assert.calledWith(
-      helper.handleRequestStub,
+    expect(helper.handleRequest).toHaveBeenCalledWith(
       siteApiContentListingUrl
         .param({ name: "ocw-www" })
         .query({
@@ -229,41 +285,73 @@ describe("ResourcePickerListing", () => {
           detailed_list: true,
         })
         .toString(),
+      "GET",
+      expect.anything(),
     )
   })
 
   it.each([false, true])(
     "displays pages in a single column iff singleColumn: true (case: %s)",
     async (singleColumn) => {
-      const { wrapper } = await render({ singleColumn })
-      expect(
-        wrapper.find(".resource-picker-listing").hasClass("column-view"),
-      ).toBe(singleColumn)
+      const [{ container }] = helper.render(
+        <ResourcePickerListing
+          focusResource={focusResourceMock}
+          contentType="resource"
+          filter={null}
+          resourcetype={ResourceType.Video}
+          focusedResource={null}
+          singleColumn={singleColumn}
+        />,
+      )
+      await waitFor(() => {
+        const listing = container.querySelector(".resource-picker-listing")
+        expect(listing?.classList.contains("column-view")).toBe(singleColumn)
+      })
     },
   )
 
   it.each([false, true])(
     "Includes 'Updated ...' iff singleColumn: true (case: %s)",
     async (singleColumn) => {
-      const { wrapper } = await render({ singleColumn })
-      expect(
-        wrapper
-          .find(".resource-picker-listing .resource-item")
-          .map((el) => el.find("h4").text().includes("Updated")),
-      ).toStrictEqual([singleColumn, singleColumn])
+      const [{ container }] = helper.render(
+        <ResourcePickerListing
+          focusResource={focusResourceMock}
+          contentType="resource"
+          filter={null}
+          resourcetype={ResourceType.Video}
+          focusedResource={null}
+          singleColumn={singleColumn}
+        />,
+      )
+      await waitFor(() => {
+        const items = container.querySelectorAll(
+          ".resource-picker-listing .resource-item h4",
+        )
+        expect(
+          Array.from(items).map((el) => el.textContent?.includes("Updated")),
+        ).toStrictEqual([singleColumn, singleColumn])
+      })
     },
   )
 
   it("should allow the user to filter, sort resourcetype", async () => {
-    const { wrapper } = await render({
-      filter: "newfilter",
-      resourcetype: ResourceType.Document,
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter="newfilter"
+        resourcetype={ResourceType.Document}
+        focusedResource={null}
+        singleColumn={false}
+      />,
+    )
+    await waitFor(() => {
+      const items = container.querySelectorAll(
+        ".resource-picker-listing .resource-item h4",
+      )
+      expect(Array.from(items).map((el) => el.textContent)).toEqual(
+        contentListingItems.documents.map((item) => item.title),
+      )
     })
-
-    expect(
-      wrapper
-        .find(".resource-picker-listing .resource-item")
-        .map((el) => el.find("h4").text()),
-    ).toEqual(contentListingItems.documents.map((item) => item.title))
   })
 })
