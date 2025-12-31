@@ -621,7 +621,7 @@ YT_TEST_VIDEO_IDS = get_delimited_list(
     default=[],
     description=(
         "Comma-separated list of YouTube video IDs for testing on RC/staging. "
-        "Videos in this list bypass the FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE flag "
+        "Videos in this list bypass the FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE flag "
         "and are always updated."
     ),
 )

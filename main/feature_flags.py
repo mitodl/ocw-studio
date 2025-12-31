@@ -2,11 +2,11 @@
 
 # PostHog Feature Flags
 
-# Controls whether YouTube video metadata updates are disabled.
-# When enabled, disables automatic YouTube metadata updates during publish.
-# This can be used to prevent unwanted notifications to YouTube subscribers
-# during bulk publishing or testing.
-FEATURE_FLAG_DISABLE_YOUTUBE_UPDATE = "OCW_STUDIO_DISABLE_YOUTUBE_UPDATE"
+# Controls whether YouTube video metadata updates are enabled.
+# YouTube updates are blocked by default. When this flag is True,
+# automatic YouTube metadata updates are enabled during publish.
+# Test videos in YT_TEST_VIDEO_IDS always bypass this flag.
+FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE = "OCW_STUDIO_ENABLE_YOUTUBE_UPDATE"
 
 # Controls whether content deletion should check for references.
 # When enabled, prevents deletion of content that is referenced elsewhere
