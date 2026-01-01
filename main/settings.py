@@ -616,6 +616,15 @@ YT_FIELD_TRANSCRIPT_RESOURCE = get_string(
     description="The site config metadata field for the transcript resource",
 )
 
+YT_TEST_VIDEO_IDS = get_delimited_list(
+    name="YT_TEST_VIDEO_IDS",
+    default=[],
+    description=(
+        "Comma-separated list of YouTube video IDs for testing on RC/staging. "
+        "Videos in this list bypass the FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE flag "
+        "and are always updated."
+    ),
+)
 
 UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY = get_int(
     name="UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY",
