@@ -97,6 +97,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa:
     starter: str | None = "",
     offline: bool | None = False,
     hugo_args: str | None = "",
+    theme_slug: str | None = "",
 ) -> object:
     """Get the mass build sites pipeline if the backend has one"""
     return import_string(
@@ -110,6 +111,7 @@ def get_mass_build_sites_pipeline(  # pylint:disable=too-many-arguments  # noqa:
         starter=starter,
         offline=offline,
         hugo_args=hugo_args,
+        theme_slug=theme_slug,
     )
 
 

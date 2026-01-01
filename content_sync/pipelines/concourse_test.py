@@ -695,6 +695,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         "prefix": "",
         "starter": starter,
         "offline": offline,
+        "theme_slug": None,
     }
     instance_vars_str = f"?vars={quote(json.dumps(instance_vars))}"
     url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseMassBuildSitesPipeline.PIPELINE_NAME}/config{instance_vars_str}"
@@ -727,6 +728,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         offline=offline,
         prefix="",
         instance_vars=instance_vars_str,
+        theme_slug=None,
     )
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
