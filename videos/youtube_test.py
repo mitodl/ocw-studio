@@ -651,6 +651,9 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
+    mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=True
+    )  # Enable updates
     youtube_website.publish_date = timezone.now() if previously_published else None
     youtube_website.unpublish_status = None
     youtube_website.save()
@@ -703,6 +706,9 @@ def test_update_youtube_metadata_error(mocker, youtube_website):
     )
     mocker.patch("videos.youtube.is_ocw_site", return_value=True)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=True
+    )  # Enable updates
     VideoFileFactory.create(
         video=VideoFactory.create(website=youtube_website),
         destination=DESTINATION_YOUTUBE,
