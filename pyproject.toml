@@ -46,7 +46,7 @@ python-magic = "^0.4.27"
 pyyaml = "^6.0.1"
 redis = "^4.5.5"
 requests = "2.32.5"
-sentry-sdk = "2.47.0"
+sentry-sdk = "2.48.0"
 smart-open = {extras = ["s3"], version = "^7.0.0"}
 social-auth-app-django = "5.4.3"
 social-auth-core = {version = "^4", extras = ["saml"]}
