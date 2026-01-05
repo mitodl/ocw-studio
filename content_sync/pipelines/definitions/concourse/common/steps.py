@@ -52,9 +52,12 @@ def add_error_handling(  # noqa: PLR0913
         short_id(str): The short_id of the site the status is in reference to
         instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
         build_type(str, optional): The type of build ('online' or 'offline')
+        theme_slug(str | None, optional): The theme slug for the build. None is
+            treated as empty string (default theme).
+        is_extra_theme(bool, optional): Whether this is an extra theme build
 
     Returns:
-        None
+        The step with error handling added
     """  # noqa: E501
     step_type = type(step)
     if not issubclass(step_type, StepModifierMixin):
@@ -216,7 +219,8 @@ class OcwStudioWebhookStep(TryStep):
         build_type: (str, optional): The type of build ('online' or 'offline')
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
-        theme_slug(str): The theme slug for the build (empty string for default theme)
+        theme_slug(str | None): The theme slug for the build. None is treated as
+            empty string (default theme).
         is_extra_theme(bool): Whether this is an extra theme build
                               (skips webhook if True)
     """
@@ -231,6 +235,7 @@ class OcwStudioWebhookStep(TryStep):
         is_extra_theme: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
+        theme_slug = theme_slug or ""
         if is_extra_theme:
             try_step = TaskStep(
                 task=Identifier("skip-webhook-extra-theme"),
