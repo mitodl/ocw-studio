@@ -206,6 +206,7 @@ def test_webhook_step_extra_theme_flag(is_extra_theme):
         ("ocw-course-v3", ["ocw-course-v3"], True),
         ("ocw-course-v4", ["ocw-course-v3", "ocw-course-v4"], True),
         ("", ["ocw-course-v3"], False),
+        (None, ["ocw-course-v3"], False),
     ],
 )
 def test_webhook_step_is_extra_theme(settings, theme_slug, extra_themes, expect_skip):

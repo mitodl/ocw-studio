@@ -232,16 +232,13 @@ class OcwStudioWebhookStep(TryStep):
         **kwargs,
     ):
         if is_extra_theme:
-            super().__init__(
-                try_=TaskStep(
-                    task=Identifier("skip-webhook-extra-theme"),
-                    config=TaskConfig(
-                        platform="linux",
-                        image_resource=CURL_REGISTRY_IMAGE,
-                        run=Command(path="true"),
-                    ),
+            try_step = TaskStep(
+                task=Identifier("skip-webhook-extra-theme"),
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=CURL_REGISTRY_IMAGE,
+                    run=Command(path="true"),
                 ),
-                **kwargs,
             )
         else:
             webhook_data = {
@@ -252,21 +249,18 @@ class OcwStudioWebhookStep(TryStep):
                 "is_cdn_cache_step": is_cdn_cache_step,
                 "theme_slug": theme_slug,
             }
-
-            super().__init__(
-                try_=PutStep(
-                    put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
-                    timeout="1m",
-                    attempts=3,
-                    params={
-                        "text": json.dumps(webhook_data),
-                        "build_metadata": ["body"],
-                    },
-                    inputs=[],
-                    no_get=True,
-                ),
-                **kwargs,
+            try_step = PutStep(
+                put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+                timeout="1m",
+                attempts=3,
+                params={
+                    "text": json.dumps(webhook_data),
+                    "build_metadata": ["body"],
+                },
+                inputs=[],
+                no_get=True,
             )
+        super().__init__(try_=try_step, **kwargs)
         self.model_rebuild()
 
 
