@@ -265,7 +265,7 @@ class SitePipelineDefinitionConfig:
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": self.prefix,
-            "theme_slug": theme_slug,
+            "theme_slug": theme_slug or "",
         }
 
 

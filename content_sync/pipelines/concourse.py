@@ -529,6 +529,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         *,
         offline: bool | None = None,
         hugo_args: str | None = None,
+        theme_slug: str | None = None,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
@@ -558,6 +559,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         self.STARTER = starter
         self.OFFLINE = offline
         self.HUGO_ARGS = hugo_args
+        self.THEME_SLUG = theme_slug
         self.set_instance_vars(
             {
                 "version": version,
@@ -566,6 +568,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
                 "prefix": self.PREFIX,
                 "starter": self.STARTER,
                 "offline": self.OFFLINE,
+                "theme_slug": self.THEME_SLUG,
             }
         )
 
@@ -583,6 +586,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
             offline=self.OFFLINE,
             prefix=self.PREFIX,
             instance_vars=self.instance_vars,
+            theme_slug=self.THEME_SLUG,
         )
         pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)

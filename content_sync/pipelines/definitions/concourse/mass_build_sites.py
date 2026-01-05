@@ -73,6 +73,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         starter(WebsiteStarter): (Optional) Filter the sites to be built by a WebsiteStarter
         prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
+        theme_slug(str): (Optional) Override for the theme slug to use in the builds
     """  # noqa: E501
 
     def __init__(  # noqa: PLR0913
@@ -87,6 +88,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         starter: WebsiteStarter | None = None,
         prefix: str | None = "",
         hugo_arg_overrides: str | None = None,
+        theme_slug: str | None = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
         sites = list(get_publishable_sites(version, is_offline=offline))
@@ -102,6 +104,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.offline = offline
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
+        self.theme_slug = theme_slug or ""
         self.web_bucket = (
             vars["preview_bucket_name"]
             if version == VERSION_DRAFT
@@ -300,6 +303,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,
                     prefix=config.prefix,
+                    theme_slug=config.theme_slug,
                 )
                 across_var_values.append(site_config.values)
 
