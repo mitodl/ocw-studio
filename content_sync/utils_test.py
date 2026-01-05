@@ -50,8 +50,8 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(
     ("has_missing_name", "is_bad_config_item"),
     [
-        [True, False],  # noqa: PT007
-        [False, True],  # noqa: PT007
+        (True, False),
+        (False, True),
     ],
 )
 def test_get_destination_filepath_errors(mocker, has_missing_name, is_bad_config_item):
@@ -105,16 +105,16 @@ def test_get_destination_url_errors(mocker):
 @pytest.mark.parametrize(
     ("is_page_content", "dirpath", "filename", "expected"),
     [
-        [True, "content/pages", "_index", "/pages/"],  # noqa: PT007
-        [True, "content/pages", "hx_network", "/pages/hx_network"],  # noqa: PT007
-        [  # noqa: PT007
+        (True, "content/pages", "_index", "/pages/"),
+        (True, "content/pages", "hx_network", "/pages/hx_network"),
+        (
             True,
             "content/pages/lecture-notes",
             "java_3d_lecture",
             "/pages/lecture-notes/java_3d_lecture",
-        ],
-        [True, "content/resources", "image", "/resources/image"],  # noqa: PT007
-        [False, "", "", None],  # noqa: PT007
+        ),
+        (True, "content/resources", "image", "/resources/image"),
+        (False, "", "", None),
     ],
 )
 def test_get_destination_url(is_page_content, dirpath, filename, expected):
@@ -131,27 +131,27 @@ def test_get_destination_url(is_page_content, dirpath, filename, expected):
 @pytest.mark.parametrize(
     ("is_page_content", "dirpath", "filename", "expected"),
     [
-        [True, "content/pages", "_index", "content/pages/_index.md"],  # noqa: PT007
-        [  # noqa: PT007
+        (True, "content/pages", "_index", "content/pages/_index.md"),
+        (
             True,
             "content/pages",
             "hx_network",
             "content/pages/hx_network.md",
-        ],
-        [  # noqa: PT007
+        ),
+        (
             True,
             "content/pages/lecture-notes",
             "java_3d_lecture",
             "content/pages/lecture-notes/java_3d_lecture.md",
-        ],
-        [  # noqa: PT007
+        ),
+        (
             True,
             "content/resources",
             "image",
             "content/resources/image.md",
-        ],
-        [False, "", "", None],  # noqa: PT007
-        [False, "config/_default/menus.yaml", "menus.yaml", None],  # noqa: PT007
+        ),
+        (False, "", "", None),
+        (False, "config/_default/menus.yaml", "menus.yaml", None),
     ],
 )
 def test_get_destination_filepath(is_page_content, dirpath, filename, expected):
@@ -350,8 +350,8 @@ def test_check_matching_tags():
 @pytest.mark.parametrize(
     ("start_tag", "end_tag", "expected"),
     [
-        [DEV_START, DEV_END, EXPECTED_REMAINING_STRING_DEV],  # noqa: PT007
-        [NON_DEV_START, NON_DEV_END, EXPECTED_REMAINING_STRING_NON_DEV],  # noqa: PT007
+        (DEV_START, DEV_END, EXPECTED_REMAINING_STRING_DEV),
+        (NON_DEV_START, NON_DEV_END, EXPECTED_REMAINING_STRING_NON_DEV),
     ],
 )
 def test_strip_lines_between(start_tag, end_tag, expected):
@@ -370,13 +370,13 @@ def test_strip_lines_between(start_tag, end_tag, expected):
 @pytest.mark.parametrize(
     ("start_tag", "end_tag"),
     [
-        ["# DEV START", "# DEV END"],  # noqa: PT007
-        ["# STARTT DEV", "# END DEV"],  # noqa: PT007
-        ["# START DEV", "# ENDD DEV"],  # noqa: PT007
-        ["#START DEV", "# END DEV"],  # noqa: PT007
-        ["# START DEV", "#END DEV"],  # noqa: PT007
-        ["# START PROD", "# END DEV"],  # noqa: PT007
-        ["# START DEV", "# END PROD"],  # noqa: PT007
+        ("# DEV START", "# DEV END"),
+        ("# STARTT DEV", "# END DEV"),
+        ("# START DEV", "# ENDD DEV"),
+        ("#START DEV", "# END DEV"),
+        ("# START DEV", "#END DEV"),
+        ("# START PROD", "# END DEV"),
+        ("# START DEV", "# END PROD"),
     ],
 )
 def test_bad_tags(start_tag, end_tag):
