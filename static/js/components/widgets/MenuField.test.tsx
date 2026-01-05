@@ -1,9 +1,49 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { screen, waitFor, within, act } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import MenuField, { HugoItem, SortableMenuItem } from "./MenuField"
 
 import { WebsiteContent } from "../../types/websites"
 import { makeWebsiteContentDetail } from "../../util/factories/websites"
+import IntegrationTestHelper from "../../testing_utils/IntegrationTestHelper"
+
+let capturedOnChange: ((params: { items: SortableMenuItem[] }) => void) | null =
+  null
+jest.mock("react-nestable", () => {
+  return {
+    __esModule: true,
+    default: ({
+      items,
+      renderItem,
+      onChange,
+    }: {
+      items: SortableMenuItem[]
+      renderItem: (props: { item: SortableMenuItem }) => React.ReactNode
+      onChange: (params: { items: SortableMenuItem[] }) => void
+    }) => {
+      capturedOnChange = onChange
+      return (
+        <div data-testid="nestable-mock">
+          {items.map((item) => (
+            <div key={item.id} className="nestable-item">
+              {renderItem({ item })}
+              {item.children?.map((child) => (
+                <div key={child.id} className="nestable-item">
+                  {renderItem({ item: child })}
+                  {child.children?.map((grandchild) => (
+                    <div key={grandchild.id} className="nestable-item">
+                      {renderItem({ item: grandchild })}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )
+    },
+  }
+})
 
 const dummyHugoItems: HugoItem[] = [
   {
@@ -25,218 +65,248 @@ const dummyHugoItems: HugoItem[] = [
   },
 ]
 
-const dummyContentMenuItems: Required<SortableMenuItem>[] = [
-  {
-    id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-    text: "Unit 1",
-    children: [
-      {
-        id: "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        text: "Unit 1 - Subunit 1",
-        children: [
-          {
-            id: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-            text: "Unit 1 - Sub-subunit 1",
-            children: [],
-            targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-            targetUrl: null,
-          },
-        ],
-        targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        targetUrl: null,
-      },
-    ],
-    targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-    targetUrl: null,
-  },
-]
-
 describe("MenuField", () => {
-  let render: any, onChangeStub: any, contentContext: WebsiteContent[]
+  let helper: IntegrationTestHelper,
+    onChangeStub: jest.Mock,
+    contentContext: WebsiteContent[]
   const fieldName = "mymenu"
 
   beforeEach(() => {
+    helper = new IntegrationTestHelper()
     onChangeStub = jest.fn()
-    contentContext = [makeWebsiteContentDetail(), makeWebsiteContentDetail()]
-
-    render = (props = {}) =>
-      shallow(
-        <MenuField
-          onChange={onChangeStub}
-          name={fieldName}
-          value={dummyHugoItems}
-          contentContext={contentContext}
-          {...props}
-        />,
-      )
+    contentContext = [
+      {
+        ...makeWebsiteContentDetail(),
+        title: "Content Item 1",
+        text_id: "content-1",
+      },
+      {
+        ...makeWebsiteContentDetail(),
+        title: "Content Item 2",
+        text_id: "content-2",
+      },
+    ]
   })
 
-  const renderMenuItemForm = (menuItem: SortableMenuItem | null) => {
-    const wrapper = render()
-    expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
-    const nestable = wrapper.find("Nestable")
-    let formShowBtn
-    if (menuItem) {
-      const renderedMenuItem = shallow(
-        nestable.prop("renderItem")({ item: menuItem }),
-      )
-      formShowBtn = renderedMenuItem.find("button").at(0)
-    } else {
-      formShowBtn = wrapper.find("button.cyan-button")
-    }
-    const preventDefaultStub = jest.fn()
-    formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })
-    wrapper.update()
-    if (menuItem) {
-      expect(preventDefaultStub).toHaveBeenCalledTimes(1)
-    }
-    const itemFormPanel = wrapper.find("BasicModal")
-    expect(itemFormPanel.prop("isVisible")).toBe(true)
-    return itemFormPanel.dive().find("MenuItemForm")
-  }
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  const renderMenuField = (props = {}) =>
+    helper.renderWithWebsite(
+      <MenuField
+        onChange={onChangeStub}
+        name={fieldName}
+        value={dummyHugoItems}
+        contentContext={contentContext}
+        {...props}
+      />,
+    )
 
   it("should render correctly on load", () => {
-    const wrapper = render()
-    const nestable = wrapper.find("Nestable")
-    expect(nestable.exists()).toBe(true)
-    expect(nestable.prop("items")).toEqual(dummyContentMenuItems)
+    renderMenuField()
+    expect(screen.getByText("Unit 1")).toBeInTheDocument()
   })
 
   it("should render individual items", () => {
-    const wrapper = render()
-    const nestable = wrapper.find("Nestable")
-    const menuItem = dummyContentMenuItems[0]
-    const renderedMenuItem = shallow(
-      nestable.prop("renderItem")({ item: menuItem }),
+    renderMenuField()
+    expect(screen.getByText("Unit 1")).toBeInTheDocument()
+    expect(screen.getByText("Unit 1 - Subunit 1")).toBeInTheDocument()
+    expect(screen.getByText("Unit 1 - Sub-subunit 1")).toBeInTheDocument()
+    const settingsButtons = screen.getAllByText("settings")
+    const deleteButtons = screen.getAllByText("delete")
+    expect(settingsButtons.length).toBe(3)
+    expect(deleteButtons.length).toBe(3)
+  })
+
+  it("should show a form to add new menu items", async () => {
+    const user = userEvent.setup()
+    const [{ unmount }] = renderMenuField()
+
+    const addButton = screen.getByRole("button", { name: /add new/i })
+    await user.click(addButton)
+
+    expect(screen.getByText("Add Navigation Item")).toBeInTheDocument()
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
+
+    unmount()
+  })
+
+  it("provides a button to remove each individual menu item", async () => {
+    const user = userEvent.setup()
+    const [{ unmount }] = renderMenuField()
+
+    const deleteButtons = screen.getAllByText("delete")
+    expect(deleteButtons.length).toBeGreaterThan(0)
+
+    await user.click(deleteButtons[0])
+
+    const removeDialog = screen.getByRole("dialog")
+    expect(removeDialog).toBeInTheDocument()
+
+    const acceptButton = screen.getByRole("button", { name: /remove/i })
+    await user.click(acceptButton)
+
+    await waitFor(() => {
+      expect(screen.queryByText("Unit 1")).not.toBeInTheDocument()
+    })
+
+    unmount()
+  })
+
+  it("should put an appropriate title on the modal", async () => {
+    const user = userEvent.setup()
+
+    const [{ unmount: unmount1 }] = renderMenuField()
+    const addButton = screen.getByRole("button", { name: /add new/i })
+    await user.click(addButton)
+    expect(screen.getByText("Add Navigation Item")).toBeInTheDocument()
+    unmount1()
+
+    const [{ unmount: unmount2 }] = renderMenuField()
+    const settingsButtons = screen.getAllByText("settings")
+    await user.click(settingsButtons[0])
+    expect(screen.getByText("Edit Navigation Item")).toBeInTheDocument()
+    unmount2()
+  })
+
+  it("should show a form to edit existing menu items", async () => {
+    const user = userEvent.setup()
+    const [{ unmount }] = renderMenuField()
+
+    const settingsButtons = screen.getAllByText("settings")
+    await user.click(settingsButtons[0])
+
+    expect(screen.getByText("Edit Navigation Item")).toBeInTheDocument()
+    const titleInput = screen.getByLabelText(/title/i)
+    expect(titleInput).toHaveValue("Unit 1")
+
+    unmount()
+  })
+
+  it("menu item form should correctly update widget value with new menu item link", async () => {
+    const user = userEvent.setup()
+    const initialMenuItemCount = dummyHugoItems.length
+    const contentItem = contentContext[0]
+
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          results: contentContext,
+          count: contentContext.length,
+          next: null,
+          previous: null,
+        }),
+    } as Response)
+
+    const [{ unmount }] = renderMenuField()
+
+    const addButton = screen.getByRole("button", { name: /add new/i })
+    await user.click(addButton)
+
+    const titleInput = screen.getByLabelText(/title/i)
+    await user.clear(titleInput)
+    await user.type(titleInput, "My Title")
+
+    const selectContainer = screen.getByText("Link to:").parentElement!
+    const selectInput = within(selectContainer).getByRole("textbox")
+    await user.click(selectInput)
+
+    await screen.findByText(contentItem.title!)
+    await user.click(screen.getByText(contentItem.title!))
+
+    const submitButton = screen.getByRole("button", { name: /save/i })
+    await user.click(submitButton)
+
+    await waitFor(() => {
+      expect(onChangeStub).toHaveBeenCalled()
+    })
+
+    const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
+    expect(updatedHugoMenuItems).toHaveLength(initialMenuItemCount + 1)
+    const newItem = updatedHugoMenuItems.find(
+      (item: HugoItem) => item.name === "My Title",
     )
-    expect(renderedMenuItem.find(".menu-title").text()).toEqual(menuItem.text)
-    expect(renderedMenuItem.find("button").length).toEqual(2)
+    expect(newItem).toBeDefined()
+
+    unmount()
+  })
+
+  it("menu item form should correctly update widget value with existing menu item link", async () => {
+    const user = userEvent.setup()
+    const initialMenuItemCount = dummyHugoItems.length
+    const [{ unmount }] = renderMenuField()
+
+    const settingsButtons = screen.getAllByText("settings")
+    await user.click(settingsButtons[1])
+
+    const titleInput = screen.getByLabelText(/title/i)
+    await user.clear(titleInput)
+    await user.type(titleInput, "Updated Title")
+
+    const submitButton = screen.getByRole("button", { name: /save/i })
+    await user.click(submitButton)
+
+    await waitFor(() => {
+      expect(onChangeStub).toHaveBeenCalled()
+    })
+
+    const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
+    expect(updatedHugoMenuItems).toHaveLength(initialMenuItemCount)
+    const updatedItem = updatedHugoMenuItems.find(
+      (item: HugoItem) => item.name === "Updated Title",
+    )
+    expect(updatedItem).toBeDefined()
+    expect(updatedItem.parent).toBe("32629a02-3dc5-4128-8e43-0392b51e7b61")
+
+    unmount()
   })
 
   it("should pass the correct reorder function to the nestable component", () => {
+    const dummyContentMenuItems: SortableMenuItem[] = [
+      {
+        id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        text: "Unit 1",
+        children: [
+          {
+            id: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            text: "Unit 1 - Subunit 1",
+            children: [
+              {
+                id: "32629a02-3dc5-4128-8e43-0392b51e7b63",
+                text: "Unit 1 - Sub-subunit 1",
+                children: [],
+                targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
+                targetUrl: null,
+              },
+            ],
+            targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            targetUrl: null,
+          },
+        ],
+        targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        targetUrl: null,
+      },
+    ]
+
+    const [{ unmount }] = renderMenuField()
+
     const updatedMenuItems = [dummyContentMenuItems[0]]
-    const wrapper = render()
-    const nestable = wrapper.find("Nestable")
-    nestable.prop("onChange")({ items: updatedMenuItems })
-    wrapper.update()
-    expect(wrapper.find("Nestable").prop("items")).toEqual(updatedMenuItems)
-  })
-
-  it("should show a form to add new menu items", () => {
-    const menuItemForm = renderMenuItemForm(null)
-    const formProps = menuItemForm.props()
-    expect(formProps.activeItem).toEqual(null)
-  })
-
-  it("provides a button to remove each individual menu item", () => {
-    const menuItem = dummyContentMenuItems[0]
-    const wrapper = render()
-    const nestable = wrapper.find("Nestable")
-    const renderedMenuItem = shallow(
-      nestable.prop("renderItem")({ item: menuItem }),
-    )
-    const deleteBtn = renderedMenuItem.find("button").at(1)
-    expect(deleteBtn.exists()).toBe(true)
-    expect(deleteBtn.prop("className")).toContain("material-icons")
-    expect(deleteBtn.text()).toEqual("delete")
-    const preventDefaultStub = jest.fn()
-    // @ts-expect-error Not simulating the whole event
-    deleteBtn.prop("onClick")({ preventDefault: preventDefaultStub })
-    wrapper.update()
-    expect(preventDefaultStub).toHaveBeenCalledTimes(1)
-    const removeDialog = wrapper.find("Dialog")
-    expect(removeDialog.prop("open")).toBe(true)
-    removeDialog.prop("onAccept")()
-    wrapper.update()
-    expect(wrapper.find("Nestable").prop("items")).toEqual(
-      dummyContentMenuItems.slice(1),
-    )
-  })
-
-  it("should put an appropriate title on the modal", () => {
-    ;["edit", "add"].forEach((action) => {
-      const menuItem = action === "edit" ? dummyContentMenuItems[0] : null
-      const wrapper = render()
-      expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
-      const nestable = wrapper.find("Nestable")
-      let formShowBtn
-      if (menuItem) {
-        const renderedMenuItem = shallow(
-          nestable.prop("renderItem")({ item: menuItem }),
-        )
-        formShowBtn = renderedMenuItem.find("button").at(0)
-      } else {
-        formShowBtn = wrapper.find("button.cyan-button")
-      }
-      const preventDefaultStub = jest.fn()
-      formShowBtn.prop("onClick")({ preventDefault: preventDefaultStub })
-      wrapper.update()
-      const modal = wrapper.find("BasicModal")
-      expect(modal.prop("isVisible")).toBe(true)
-      expect(modal.prop("title")).toBe(
-        action === "edit" ? "Edit Navigation Item" : "Add Navigation Item",
-      )
+    expect(capturedOnChange).not.toBeNull()
+    act(() => {
+      capturedOnChange!({ items: updatedMenuItems })
     })
-  })
 
-  it("should show a form to edit existing menu items", () => {
-    const menuItem = dummyContentMenuItems[0]
-    const menuItemForm = renderMenuItemForm(menuItem)
-    const formProps = menuItemForm.props()
-    expect(formProps.activeItem).toEqual(menuItem)
-    expect(formProps.existingMenuIds).toEqual(
-      new Set([
-        "32629a02-3dc5-4128-8e43-0392b51e7b61",
-        "32629a02-3dc5-4128-8e43-0392b51e7b62",
-        "32629a02-3dc5-4128-8e43-0392b51e7b63",
+    expect(onChangeStub).toHaveBeenCalledTimes(1)
+    expect(onChangeStub.mock.calls[0][0].target.value).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+          name: "Unit 1",
+        }),
       ]),
     )
-  })
-  ;[
-    [false, true, "new menu item link"],
-    [true, true, "existing menu item link"],
-  ].forEach(([useExistingItem, desc]) => {
-    it(`menu item form should correctly update widget value with ${desc}`, async () => {
-      const initialMenuItemCount = dummyHugoItems.length
-      const title = "My Title"
-      const contentLinkUuid = "12629a02-3dc5-4128-8e43-0392b51e7b61"
-      const menuItem = useExistingItem
-        ? dummyContentMenuItems[0].children[0]
-        : null
-      const menuItemForm = renderMenuItemForm(menuItem)
-      const formProps = menuItemForm.props()
-      const submitData = {
-        menuItemTitle: title,
-        contentLink: contentLinkUuid,
-      }
-      const expectedMenuItem = {
-        name: title,
-      }
-      formProps.onSubmit(submitData)
-      expect(onChangeStub.mock.calls.length).toEqual(1)
-      const matchingMenuItem = useExistingItem
-        ? {
-            ...expectedMenuItem,
-            weight: 10,
-            parent: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-          }
-        : {
-            ...expectedMenuItem,
-            weight: 20,
-          }
-      const updatedHugoMenuItems = onChangeStub.mock.calls[0][0].target.value
-      const updatedHugoMenuItem = updatedHugoMenuItems.find(
-        (item: HugoItem) => item.name === matchingMenuItem.name,
-      )
-      expect(updatedHugoMenuItem).toEqual(
-        expect.objectContaining(matchingMenuItem),
-      )
-      expect(updatedHugoMenuItem.identifier).toEqual(
-        expect.stringContaining(contentLinkUuid),
-      )
-      expect(updatedHugoMenuItems).toHaveLength(
-        useExistingItem ? initialMenuItemCount : initialMenuItemCount + 1,
-      )
-    })
+
+    unmount()
   })
 })

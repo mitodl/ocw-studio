@@ -64,12 +64,22 @@ export const SiteForm = ({
         <Form>
           <div className="form-group">
             <label htmlFor="title">Title*</label>
-            <Field type="text" name="title" className="form-control" />
+            <Field
+              type="text"
+              name="title"
+              className="form-control"
+              id="title"
+            />
             <ErrorMessage name="title" component={FormError} />
           </div>
           <div className="form-group">
             <label htmlFor="short_id">Short ID*</label>
-            <Field type="text" name="short_id" className="form-control" />
+            <Field
+              type="text"
+              name="short_id"
+              className="form-control"
+              id="short_id"
+            />
             <span className="help-text">
               Less then 100 characters, e.g: 6.01-fall-2021
             </span>
@@ -81,6 +91,7 @@ export const SiteForm = ({
               as={SelectField}
               name="starter"
               className="form-control"
+              id="starter"
               options={
                 websiteStarters.length > 0
                   ? websiteStarters.map((starter) => ({

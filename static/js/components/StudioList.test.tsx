@@ -1,5 +1,5 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { render, screen } from "@testing-library/react"
 import { StudioListItem } from "./StudioList"
 
 const mockUseLocationValue = {
@@ -18,18 +18,18 @@ jest.mock("react-router", () => ({
 
 describe("StudioListItem", () => {
   it("does not have hover-pointer class if onClick not provided", () => {
-    const wrapper = shallow(
-      <StudioListItem title="some-titlle" subtitle="meow" />,
-    )
+    render(<StudioListItem title="some-titlle" subtitle="meow" />)
 
-    expect(wrapper.find("li").hasClass("hover-pointer")).toBe(false)
+    const listItem = screen.getByRole("listitem")
+    expect(listItem).not.toHaveClass("hover-pointer")
   })
 
   it("does have hover-pointer class if onClick is provided", () => {
-    const wrapper = shallow(
+    render(
       <StudioListItem title="some-titlle" subtitle="meow" onClick={jest.fn} />,
     )
 
-    expect(wrapper.find("li").hasClass("hover-pointer")).toBe(true)
+    const listItem = screen.getByRole("listitem")
+    expect(listItem).toHaveClass("hover-pointer")
   })
 })

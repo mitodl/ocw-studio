@@ -1,3 +1,6 @@
+import React from "react"
+import { screen } from "@testing-library/react"
+
 import SiteSidebar from "./SiteSidebar"
 
 import {
@@ -6,32 +9,21 @@ import {
 } from "../util/factories/websites"
 import { times } from "lodash"
 import { siteCollaboratorsUrl, siteContentListingUrl } from "../lib/urls"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 
 import { Website } from "../types/websites"
 
 describe("SiteSidebar", () => {
-  let website: Website, helper: IntegrationTestHelper, render: TestRenderer
+  let website: Website, helper: IntegrationTestHelper
 
   beforeEach(() => {
     website = makeWebsiteDetail()
     helper = new IntegrationTestHelper()
-    render = helper.configureRenderer(SiteSidebar, { website })
-  })
-
-  afterEach(() => {
-    helper.cleanup()
   })
   ;[true, false].forEach((isAdminUser) => {
     it(`renders ${isAdminUser ? "all" : "non-admin"} links`, async () => {
       website.is_admin = isAdminUser
-      const { wrapper } = await render()
-
-      const links = wrapper
-        .find("NavLink")
-        .map((link) => [link.text(), link.prop("to")])
+      helper.renderWithWebsite(<SiteSidebar website={website} />, website)
 
       const expected = [
         [
@@ -73,21 +65,26 @@ describe("SiteSidebar", () => {
             .toString(),
         ])
       }
-      expect(links).toEqual(expect.arrayContaining(expected))
+
+      for (const [text, href] of expected) {
+        const link = screen.getByRole("link", { name: text })
+        expect(link).toHaveAttribute("href", href)
+      }
     })
   })
 
   it("should pad all .config-sections excepting the last one", async () => {
-    website.is_admin = false // Prevent an extra section getting added if true
+    website.is_admin = false
     website.starter!.config!.collections = times(5).map((idx) =>
       makeTopLevelConfigItem(`foobar${idx}`, null, `category${idx}`),
     )
-    const { wrapper } = await render()
-    expect(
-      wrapper
-        .find("SidebarSection")
-        .map((wrapper) => wrapper.find("div").prop("className")),
-    ).toEqual([
+    const [{ container }] = helper.renderWithWebsite(
+      <SiteSidebar website={website} />,
+      website,
+    )
+    const sections = container.querySelectorAll(".sidebar-section")
+    const classNames = Array.from(sections).map((el) => el.className)
+    expect(classNames).toEqual([
       "sidebar-section pb-4",
       "sidebar-section pb-4",
       "sidebar-section pb-4",
@@ -98,11 +95,12 @@ describe("SiteSidebar", () => {
 
   it("renders a collaborators link if the user is an admin for the given website", async () => {
     website.is_admin = true
-    const { wrapper } = await render()
+    helper.renderWithWebsite(<SiteSidebar website={website} />, website)
 
     const collaboratorLinkUrl = siteCollaboratorsUrl
       .param({ name: website.name })
       .toString()
-    expect(wrapper.find("NavLink").some({ to: collaboratorLinkUrl })).toBe(true)
+    const collaboratorLink = screen.getByRole("link", { name: "Collaborators" })
+    expect(collaboratorLink).toHaveAttribute("href", collaboratorLinkUrl)
   })
 })

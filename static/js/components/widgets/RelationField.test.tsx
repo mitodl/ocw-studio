@@ -1,15 +1,14 @@
 import React from "react"
-import { act } from "react-dom/test-utils"
+import { screen, waitFor } from "@testing-library/react"
+import { act } from "@testing-library/react"
 import R from "ramda"
 
 import RelationField from "./RelationField"
 import * as apiUtil from "../../lib/api/util"
 import WebsiteContext from "../../context/Website"
-import SelectField, { Additional, Option } from "./SelectField"
+import { Option } from "./SelectField"
 
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../../testing_utils"
 
 import {
   makeWebsiteContentDetail,
@@ -24,11 +23,7 @@ import {
   Website,
   WebsiteContent,
 } from "../../types/websites"
-import { FormError } from "../forms/FormError"
 import * as websiteHooks from "../../hooks/websites"
-import SortableSelect from "./SortableSelect"
-import { assertNotNil } from "../../test_util"
-import { LoadOptions } from "react-select-async-paginate"
 
 jest.mock("../../lib/api/util", () => ({
   ...jest.requireActual("../../lib/api/util"),
@@ -45,10 +40,49 @@ const useWebsiteSelectOptions = jest.mocked(
   websiteHooks.useWebsiteSelectOptions,
 )
 
+let capturedSortableSelectProps: any = null
+jest.mock("./SortableSelect", () => {
+  return {
+    __esModule: true,
+    default: (props: any) => {
+      capturedSortableSelectProps = props
+      return (
+        <div data-testid="sortable-select">
+          {props.value?.map((item: any) => (
+            <span key={item.id} data-testid={`sortable-item-${item.id}`}>
+              {item.title}
+            </span>
+          ))}
+        </div>
+      )
+    },
+  }
+})
+
+let capturedSelectFieldProps: any[] = []
+jest.mock("./SelectField", () => {
+  return {
+    __esModule: true,
+    default: (props: any) => {
+      capturedSelectFieldProps.push(props)
+      return (
+        <div data-testid="select-field" data-name={props.name}>
+          <input
+            data-testid={`select-input-${props.name}`}
+            onChange={(e) =>
+              props.onChange({
+                target: { value: e.target.value, name: props.name },
+              })
+            }
+          />
+        </div>
+      )
+    },
+  }
+})
+
 describe("RelationField", () => {
   let website: Website,
-    render: TestRenderer,
-    _render: TestRenderer,
     helper: IntegrationTestHelper,
     onChange: jest.Mock,
     contentListingItems: WebsiteContent[],
@@ -59,20 +93,8 @@ describe("RelationField", () => {
     website = makeWebsiteDetail()
     helper = new IntegrationTestHelper()
     onChange = jest.fn()
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <RelationField {...props} />
-        </WebsiteContext.Provider>
-      ),
-      {
-        collection: "page",
-        display_field: "title",
-        name: "relation_field",
-        multiple: true,
-        onChange,
-      },
-    )
+    capturedSelectFieldProps = []
+    capturedSortableSelectProps = null
 
     contentListingItems = R.times(
       () => ({
@@ -103,12 +125,29 @@ describe("RelationField", () => {
   })
 
   afterEach(() => {
-    helper.cleanup()
-
     debouncedFetch.mockClear()
     global.mockFetch.mockClear()
     useWebsiteSelectOptions.mockReset()
   })
+
+  const renderRelationField = (
+    props: Partial<React.ComponentProps<typeof RelationField>> = {},
+  ) => {
+    const defaultProps = {
+      collection: "page",
+      display_field: "title",
+      name: "relation_field",
+      multiple: true,
+      onChange,
+      value: [] as string[],
+      contentContext: null,
+    }
+    return helper.render(
+      <WebsiteContext.Provider value={website}>
+        <RelationField {...defaultProps} {...props} />
+      </WebsiteContext.Provider>,
+    )
+  }
 
   const asOption = (item: WebsiteContent) => ({
     value: item.text_id,
@@ -131,9 +170,14 @@ describe("RelationField", () => {
             ? [makeWebsiteContentDetail()]
             : null
 
-          const { wrapper } = await render({
+          const combinedListing = [
+            ...(contentContext ?? []),
+            ...contentListingItems,
+          ]
+
+          renderRelationField({
             value: contentListingItems.map((item) => item.text_id),
-            website: websiteNameProp,
+            website: websiteNameProp || undefined,
             contentContext,
             filter: withResourcetypeFilter
               ? {
@@ -141,17 +185,19 @@ describe("RelationField", () => {
                   field: "resourcetype",
                   value: "Image",
                 }
-              : null,
+              : undefined,
           })
-          wrapper.update()
-          const combinedListing = [
-            ...(contentContext ?? []),
-            ...contentListingItems,
-          ]
-          expect(wrapper.find("SelectField").prop("options")).toEqual(
-            combinedListing.map(asOption),
-          )
-          expect(wrapper.find("SelectField").prop("defaultOptions")).toEqual(
+
+          await waitFor(() => {
+            const lastProps =
+              capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+            expect(lastProps?.options?.length).toBe(combinedListing.length)
+          })
+
+          const lastProps =
+            capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+          expect(lastProps.options).toEqual(combinedListing.map(asOption))
+          expect(lastProps.defaultOptions).toEqual(
             contentListingItems.map(asOption),
           )
 
@@ -182,8 +228,14 @@ describe("RelationField", () => {
 
   describe("cross_site option", () => {
     it("should present default options for websites", async () => {
-      const { wrapper } = await render({ cross_site: true, value: [] })
-      expect(wrapper.find("SelectField").at(0).prop("defaultOptions")).toEqual(
+      renderRelationField({ cross_site: true, value: [] })
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const firstSelectProps = capturedSelectFieldProps[0]
+      expect(firstSelectProps.defaultOptions).toEqual(
         formatWebsiteOptions(websites, "name"),
       )
     })
@@ -191,10 +243,15 @@ describe("RelationField", () => {
     it.each(["ocw-www", null])(
       "should not filter on published if website is not set",
       async (websiteName) => {
-        await render({
+        renderRelationField({
           ...(websiteName ? { website: websiteName } : {}),
           value: [],
         })
+
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalled()
+        })
+
         expect(global.fetch).toHaveBeenCalledWith(
           siteApiContentListingUrl
             .query({
@@ -212,35 +269,42 @@ describe("RelationField", () => {
     )
 
     it("should let the user pick a website and then content within that website", async () => {
-      const { wrapper } = await render({ cross_site: true, value: [] })
-      await act(async () => {
-        wrapper.find(SelectField).at(0).prop("onChange")({
-          // @ts-expect-error Not fully simulating event
-          target: { value: "new-uuid" },
-        })
-        wrapper.update()
+      renderRelationField({ cross_site: true, value: [] })
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
       })
 
-      // website is now set, so a request is issued for content within
-      // that website
-      expect(global.fetch).toHaveBeenCalledWith(
-        siteApiContentListingUrl
-          .query({
-            detailed_list: true,
-            content_context: true,
-            type: "page",
-            published: true,
-            offset: 0,
-          })
-          .param({
-            name: "new-uuid",
-          })
-          .toString(),
-        { credentials: "include" },
-      )
+      const firstSelectProps = capturedSelectFieldProps[0]
+      await act(async () => {
+        firstSelectProps.onChange({
+          target: { value: "new-uuid" },
+        })
+      })
 
-      // UI now shows content
-      expect(wrapper.find("SelectField").at(1).prop("options")).toEqual(
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          siteApiContentListingUrl
+            .query({
+              detailed_list: true,
+              content_context: true,
+              type: "page",
+              published: true,
+              offset: 0,
+            })
+            .param({
+              name: "new-uuid",
+            })
+            .toString(),
+          { credentials: "include" },
+        )
+      })
+
+      await waitFor(() => {
+        expect(capturedSortableSelectProps?.options?.length).toBeGreaterThan(0)
+      })
+
+      expect(capturedSortableSelectProps?.options).toEqual(
         contentListingItems.map((item) => ({
           value: item.text_id,
           label: item.title,
@@ -248,10 +312,9 @@ describe("RelationField", () => {
       )
 
       await act(async () => {
-        wrapper.find(SortableSelect).prop("onChange")([
-          contentListingItems[0].text_id,
-        ])
-        wrapper.update()
+        if (capturedSortableSelectProps?.onChange) {
+          capturedSortableSelectProps.onChange([contentListingItems[0].text_id])
+        }
       })
 
       // this expect call is a regression test for the fix for
@@ -273,27 +336,47 @@ describe("RelationField", () => {
   //
   ;[true, false].forEach((multiple) => {
     it(`should pass the 'multiple===${multiple}' down to the SelectField`, async () => {
-      const { wrapper } = await render({ multiple })
-      expect(wrapper.find("SelectField").prop("multiple")).toBe(multiple)
+      renderRelationField({ multiple })
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const lastProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+      expect(lastProps.multiple).toBe(multiple)
     })
   })
 
   it("should pass a value down to the SelectField", async () => {
-    const { wrapper } = await render({ value: "foobar" })
-    expect(wrapper.find("SelectField").prop("value")).toBe("foobar")
+    renderRelationField({ value: "foobar" })
+
+    await waitFor(() => {
+      expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+    })
+
+    const lastProps =
+      capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+    expect(lastProps.value).toBe("foobar")
   })
 
   it("should filter results", async () => {
     contentListingItems[0].metadata!.testfield = "testvalue"
-    const { wrapper } = await render({
+    renderRelationField({
       filter: {
         field: "testfield",
-        filter_type: "equals",
+        filter_type: RelationFilterVariant.Equals,
         value: "testvalue",
       },
     })
-    wrapper.update()
-    expect(wrapper.find("SelectField").prop("options")).toEqual([
+
+    await waitFor(() => {
+      expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+    })
+
+    const lastProps =
+      capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+    expect(lastProps.options).toEqual([
       {
         label: contentListingItems[0].title,
         value: contentListingItems[0].text_id,
@@ -308,16 +391,21 @@ describe("RelationField", () => {
   ].forEach(([name, expectedName]) => {
     it(`should accept an onChange prop with name=${name}, which gets modified then passed to the child select component`, async () => {
       const onChangeStub = jest.fn()
-      const { wrapper } = await render({
+      renderRelationField({
         onChange: onChangeStub,
         name,
       })
-      const select = wrapper.find("SelectField")
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const lastProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
       const numbers = ["one", "two", "three"]
       const fakeEvent = { target: { value: numbers, name } }
       await act(async () => {
-        // @ts-expect-error Not fully simulating the event
-        select.prop("onChange")(fakeEvent)
+        lastProps.onChange(fakeEvent)
       })
       expect(onChangeStub).toHaveBeenCalledWith({
         target: {
@@ -336,20 +424,24 @@ describe("RelationField", () => {
     it(`should have a loadOptions prop which triggers a debounced fetch of results, ${
       withResourcetypeFilter ? "with" : "without"
     } a resourcetype filter`, async () => {
-      let loadOptionsResponse: { options: [] }[] = []
-      const { wrapper } = await render({
+      let loadOptionsResponse: { options: Option[] }[] = []
+      renderRelationField({
         filter: withResourcetypeFilter
           ? {
               filter_type: RelationFilterVariant.Equals,
               field: "resourcetype",
               value: "Image",
             }
-          : null,
+          : undefined,
       })
-      wrapper.update()
-      const loadOptions: LoadOptions<Option, Option, Additional> = wrapper
-        .find("SelectField")
-        .prop("loadOptions")
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const lastProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+      const loadOptions = lastProps.loadOptions
       const searchString1 = "searchstring1",
         searchString2 = "searchstring2"
 
@@ -398,7 +490,7 @@ describe("RelationField", () => {
     it(`should omit items listed by valuesToOmit, except those already selected, when value ${
       valueIsArray ? "is" : "is not"
     } an array`, async () => {
-      let loadOptionsResponse = { options: [] }
+      let loadOptionsResponse = { options: [] as Option[] }
       const valuesToOmit = new Set([
         contentListingItems[0].text_id,
         contentListingItems[2].text_id,
@@ -412,12 +504,16 @@ describe("RelationField", () => {
       )
       const expectedOptions = expectedResults.map(asOption)
 
-      const { wrapper } = await render({ valuesToOmit, value })
+      renderRelationField({ valuesToOmit, value })
 
-      wrapper.update()
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
 
-      const loadOptions = wrapper.find(SelectField).prop("loadOptions")
-      assertNotNil(loadOptions)
+      const lastProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+      const loadOptions = lastProps.loadOptions
+      expect(loadOptions).toBeDefined()
       await act(async () => {
         loadOptionsResponse = await loadOptions("", [])
       })
@@ -428,30 +524,35 @@ describe("RelationField", () => {
 
   it("should display an error message", async () => {
     global.mockFetch.mockClear()
-    const fakeResponse = {
+    const errorResponse = {
       results: undefined,
       count: 0,
       next: null,
       previous: null,
     }
-    global.mockFetch.mockResolvedValue({ json: async () => fakeResponse })
-    const { wrapper } = await render()
-    wrapper.update()
-    const error = wrapper.find(FormError)
-    expect(error.text()).toBe("Unable to fetch entries for this field.")
+    global.mockFetch.mockResolvedValue({ json: async () => errorResponse })
+    renderRelationField()
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to fetch entries for this field."),
+      ).toBeInTheDocument()
+    })
   })
 
   describe("sortable UI", () => {
     it("should show a sortable UI when the prop is passed", async () => {
       const value = contentListingItems.map((item) => item.text_id)
-      const { wrapper } = await render({
+      renderRelationField({
         multiple: true,
         sortable: true,
         value,
       })
-      const sortableSelect = wrapper.find("SortableSelect")
-      expect(sortableSelect.exists()).toBeTruthy()
-      expect(sortableSelect.prop("value")).toStrictEqual(
+
+      await screen.findByTestId("sortable-select")
+
+      expect(capturedSortableSelectProps).not.toBeNull()
+      expect(capturedSortableSelectProps.value).toStrictEqual(
         value.map((id) => ({
           id,
           title: id,
@@ -465,32 +566,50 @@ describe("RelationField", () => {
         value: item.text_id,
         label: item.title ?? "title",
       }))
-      const { wrapper } = await render({
+      renderRelationField({
         multiple: true,
         sortable: true,
         value,
       })
 
-      const isOptionEnabled = wrapper
-        .find(SortableSelect)
-        .prop("isOptionDisabled")!
-      expect(isOptionEnabled).toBeDefined()
+      await waitFor(() => {
+        expect(capturedSortableSelectProps).not.toBeNull()
+      })
+
+      const isOptionDisabled = capturedSortableSelectProps.isOptionDisabled!
+      expect(isOptionDisabled).toBeDefined()
       const expected = [false, false, false, ...Array(7).fill(true)]
-      expect(options.map(isOptionEnabled)).toEqual(expected)
+      expect(options.map(isOptionDisabled)).toEqual(expected)
     })
 
     it("should be clearable for single select but not multiple", async () => {
-      const { wrapper: singleWrapper } = await render({
+      renderRelationField({
         multiple: false,
         value: contentListingItems[0].text_id,
       })
-      expect(singleWrapper.find("SelectField").prop("isClearable")).toBe(true)
 
-      const { wrapper: multiWrapper } = await render({
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const singleSelectProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+      expect(singleSelectProps.isClearable).toBe(true)
+
+      capturedSelectFieldProps = []
+
+      renderRelationField({
         multiple: true,
         value: [contentListingItems[0].text_id],
       })
-      expect(multiWrapper.find("SelectField").prop("isClearable")).toBe(false)
+
+      await waitFor(() => {
+        expect(capturedSelectFieldProps.length).toBeGreaterThan(0)
+      })
+
+      const multiSelectProps =
+        capturedSelectFieldProps[capturedSelectFieldProps.length - 1]
+      expect(multiSelectProps.isClearable).toBe(false)
     })
   })
 })

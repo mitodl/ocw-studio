@@ -1,4 +1,5 @@
 import React from "react"
+import { flushSync } from "react-dom"
 import { useMutation, useRequest } from "redux-query-react"
 import { useSelector, useStore } from "react-redux"
 import { FormikHelpers } from "formik"
@@ -150,7 +151,12 @@ export default function SiteContentEditor(
     // update the publish status
     refreshWebsiteStatus()
 
-    setDirty(false)
+    flushSync(() => {
+      // Immediately clear dirty state so that dismiss()
+      // doesn't trigger a confirmation. Required since
+      // React 18+ batches state updates.
+      setDirty(false)
+    })
     if (dismiss) {
       // turn off modal on success
       dismiss()

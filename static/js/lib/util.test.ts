@@ -1,6 +1,6 @@
 import casual from "casual"
 import { ActionPromiseValue } from "redux-query"
-import { renderHook } from "@testing-library/react-hooks"
+import { renderHook } from "@testing-library/react"
 
 // Mock posthog before importing the module that uses it
 jest.mock("posthog-js/react")

@@ -16,6 +16,7 @@ export interface Additional {
 
 interface Props {
   name: string
+  id?: string
   classNamePrefix?: string
   value?: null | undefined | string | string[]
   onChange: (event: ChangeEvent<HTMLSelectElement>) => void
@@ -30,6 +31,7 @@ interface Props {
   isOptionDisabled?: (option: Option) => boolean
   isOptionSelected?: (option: Option) => boolean
   isClearable?: boolean
+  "aria-label"?: string
 }
 
 export default function SelectField(props: Props): JSX.Element {
@@ -37,6 +39,7 @@ export default function SelectField(props: Props): JSX.Element {
     value,
     onChange,
     name,
+    id,
     classNamePrefix,
     options,
     loadOptions,
@@ -48,6 +51,7 @@ export default function SelectField(props: Props): JSX.Element {
     preserveSearchText = false,
     cacheUniques,
     isClearable,
+    "aria-label": ariaLabel,
   } = props
   const [searchText, setSearchText] = useState("")
   const [placeholder, setPlaceholder] = useState("")
@@ -101,7 +105,7 @@ export default function SelectField(props: Props): JSX.Element {
   }
 
   const handleInputChanged = useCallback(
-    (input, reason) => {
+    (input: string, reason: { action: string }) => {
       if (reason.action === "input-blur") {
         return
       } else if (reason.action === "input-change" && input === "") {
@@ -137,6 +141,7 @@ export default function SelectField(props: Props): JSX.Element {
   const commonSelectOptions = {
     className: "w-100 form-input",
     classNamePrefix,
+    inputId: id,
     value: selected,
     isMulti: multiple,
     options: selectOptions,
@@ -151,6 +156,7 @@ export default function SelectField(props: Props): JSX.Element {
     isOptionDisabled,
     isOptionSelected,
     isClearable,
+    "aria-label": ariaLabel,
     styles: {
       control: (base: any) => ({
         ...base,

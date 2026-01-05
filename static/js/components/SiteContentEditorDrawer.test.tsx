@@ -1,13 +1,9 @@
 import React from "react"
-import { act } from "react-dom/test-utils"
+import { act, screen, waitFor } from "@testing-library/react"
 import * as rrDOM from "react-router-dom"
 
-import WebsiteContext from "../context/Website"
-
 import { siteApiContentDetailUrl } from "../lib/urls"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../testing_utils"
 import {
   makeRepeatableConfigItem,
   makeWebsiteContentDetail,
@@ -19,15 +15,13 @@ import {
   Website,
   WebsiteContent,
 } from "../types/websites"
-import SiteContentEditor from "./SiteContentEditor"
 import SiteContentEditorDrawer from "./SiteContentEditorDrawer"
 import { Editing } from "../types/modal_state"
-import ConfirmDiscardChanges from "./util/ConfirmDiscardChanges"
-import BasicModal from "./BasicModal"
+import { SiteContentEditorProps } from "./SiteContentEditor"
+import { WebsiteContentModalState } from "../types/websites"
 
 const { useParams } = rrDOM as jest.Mocked<typeof rrDOM>
 
-// ckeditor is not working properly in tests, but we don't need to test it here so just mock it away
 function mocko() {
   return <div>mock</div>
 }
@@ -42,15 +36,62 @@ jest.mock("react-router-dom", () => ({
   useParams: jest.fn(),
 }))
 
+jest.mock("./BasicModal", () => ({
+  __esModule: true,
+  default: ({
+    isVisible,
+    hideModal,
+    children,
+  }: {
+    isVisible: boolean
+    hideModal: () => void
+    title: string
+    className?: string
+    children: (props: { hideModal: () => void }) => JSX.Element | null
+  }) => {
+    if (!isVisible) return null
+    return (
+      <div data-testid="basic-modal">
+        <button aria-label="close" onClick={hideModal}>
+          Close
+        </button>
+        {children({ hideModal })}
+      </div>
+    )
+  },
+}))
+
+interface CapturedEditorProps {
+  setDirty: (dirty: boolean) => void
+  dismiss?: () => void
+  editorState: WebsiteContentModalState
+  fetchWebsiteContentListing?: any
+}
+
+let capturedEditorProps: CapturedEditorProps | null = null
+
+jest.mock("./SiteContentEditor", () => ({
+  __esModule: true,
+  default: (props: SiteContentEditorProps) => {
+    capturedEditorProps = {
+      setDirty: props.setDirty,
+      dismiss: props.dismiss,
+      editorState: props.editorState,
+      fetchWebsiteContentListing: props.fetchWebsiteContentListing,
+    }
+    return <div data-testid="site-content-editor">Mock Editor</div>
+  },
+}))
+
 describe("SiteContentEditorDrawer", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     website: Website,
     configItem: RepeatableConfigItem,
     contentItem: WebsiteContent,
-    fetchWebsiteContentListing: any
+    fetchWebsiteContentListing: jest.Mock
 
   beforeEach(() => {
+    capturedEditorProps = null
     helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     configItem = makeRepeatableConfigItem("resource")
@@ -70,32 +111,58 @@ describe("SiteContentEditorDrawer", () => {
         .toString(),
       contentItem,
     )
-
-    render = helper.configureRenderer(
-      (props) => (
-        <WebsiteContext.Provider value={website}>
-          <SiteContentEditorDrawer {...props} />
-        </WebsiteContext.Provider>
-      ),
-      { configItem, fetchWebsiteContentListing },
-    )
   })
 
   afterEach(() => {
-    helper.cleanup()
+    jest.restoreAllMocks()
   })
 
-  it("sets `when` on ConfirmDiscardChanges based on dirtyness", async () => {
-    const { wrapper } = await render()
-    const siteContentEditor = wrapper.find(SiteContentEditor)
-
-    expect(wrapper.find(ConfirmDiscardChanges).prop("when")).toBe(false)
-    act(() => siteContentEditor.prop("setDirty")(true))
-    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(true)
-    act(() => siteContentEditor.prop("setDirty")(false))
-    expect(wrapper.update().find(ConfirmDiscardChanges).prop("when")).toBe(
-      false,
+  const renderComponent = async () => {
+    const [result, { history }] = helper.renderWithWebsite(
+      <SiteContentEditorDrawer
+        configItem={configItem}
+        fetchWebsiteContentListing={fetchWebsiteContentListing}
+      />,
+      website,
     )
+
+    await waitFor(() => {
+      expect(capturedEditorProps).not.toBeNull()
+    })
+
+    return { result, history }
+  }
+
+  it("sets `when` on ConfirmDiscardChanges based on dirtyness", async () => {
+    const { history } = await renderComponent()
+    const initialLocation = history.location
+
+    window.mockConfirm.mockReturnValue(false)
+    act(() => capturedEditorProps!.setDirty(false))
+    act(() => {
+      history.push("/other-page")
+    })
+    expect(history.location.pathname).toBe("/other-page")
+    expect(window.mockConfirm).not.toHaveBeenCalled()
+
+    act(() => {
+      history.push(initialLocation.pathname)
+    })
+
+    act(() => capturedEditorProps!.setDirty(true))
+    act(() => {
+      history.push("/another-page")
+    })
+    expect(window.mockConfirm).toHaveBeenCalled()
+    expect(history.location.pathname).toBe(initialLocation.pathname)
+
+    window.mockConfirm.mockClear()
+    act(() => capturedEditorProps!.setDirty(false))
+    act(() => {
+      history.push("/yet-another-page")
+    })
+    expect(window.mockConfirm).not.toHaveBeenCalled()
+    expect(history.location.pathname).toBe("/yet-another-page")
   })
 
   describe("closing the drawer", () => {
@@ -106,21 +173,23 @@ describe("SiteContentEditorDrawer", () => {
       dirty: boolean
       closeFrom: "modal" | "editor"
     }) => {
-      const { wrapper } = await render({ website })
-      const siteContentEditor = wrapper.find(SiteContentEditor)
-      const initialLocation = helper.browserHistory.location
-      act(() => siteContentEditor.prop("setDirty")(dirty))
+      const { history } = await renderComponent()
+      const initialLocation = history.location
+
+      act(() => capturedEditorProps!.setDirty(dirty))
+
       if (closeFrom === "modal") {
+        const closeButton = screen.getByRole("button", { name: /close/i })
         act(() => {
-          wrapper.find(BasicModal).prop("hideModal")()
+          closeButton.click()
         })
       } else {
         act(() => {
-          wrapper.find(SiteContentEditor).prop("dismiss")!()
+          capturedEditorProps!.dismiss!()
         })
       }
 
-      return { initialLocation, wrapper }
+      return { initialLocation, history }
     }
 
     it.each([
@@ -130,13 +199,13 @@ describe("SiteContentEditorDrawer", () => {
       "does not close the modal if dirty and confirmation is denied [closed from $closeFrom]",
       async ({ closeFrom }) => {
         window.mockConfirm.mockReturnValueOnce(false)
-        const { wrapper, initialLocation } = await setup({
+        const { history, initialLocation } = await setup({
           dirty: true,
           closeFrom,
         })
 
-        expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(true)
-        expect(helper.browserHistory.location).toBe(initialLocation)
+        expect(screen.getByTestId("site-content-editor")).toBeInTheDocument()
+        expect(history.location).toBe(initialLocation)
       },
     )
 
@@ -146,14 +215,13 @@ describe("SiteContentEditorDrawer", () => {
     ])(
       "closes the modal without confirmation if not dirty",
       async ({ closeFrom }) => {
-        const { wrapper, initialLocation } = await setup({
+        const { history, initialLocation } = await setup({
           dirty: false,
           closeFrom,
         })
 
         expect(initialLocation.pathname).toBe("/")
-        expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(false)
-        expect(helper.browserHistory.location.pathname).toBe(
+        expect(history.location.pathname).toBe(
           `/sites/${website.name}/type/resource/`,
         )
         expect(window.mockConfirm).not.toHaveBeenCalled()
@@ -165,14 +233,13 @@ describe("SiteContentEditorDrawer", () => {
       { closeFrom: "editor" as const },
     ])("closes the modal with confirmation if dirty", async ({ closeFrom }) => {
       window.mockConfirm.mockReturnValueOnce(true)
-      const { wrapper, initialLocation } = await setup({
+      const { history, initialLocation } = await setup({
         dirty: true,
         closeFrom,
       })
 
       expect(initialLocation.pathname).toBe("/")
-      expect(wrapper.update().find(BasicModal).prop("isVisible")).toBe(false)
-      expect(helper.browserHistory.location.pathname).toBe(
+      expect(history.location.pathname).toBe(
         `/sites/${website.name}/type/resource/`,
       )
     })
@@ -180,18 +247,18 @@ describe("SiteContentEditorDrawer", () => {
 
   it("gets uuid prop for editing", async () => {
     useParams.mockReturnValue({ uuid: contentItem.text_id })
-    const { wrapper } = await render()
-    const editor = wrapper.find(SiteContentEditor)
-    expect(editor.prop("editorState").editing()).toBeTruthy()
-    expect((editor.prop("editorState") as Editing<string>).wrapped).toBe(
+    await renderComponent()
+
+    expect(capturedEditorProps!.editorState.editing()).toBeTruthy()
+    expect((capturedEditorProps!.editorState as Editing<string>).wrapped).toBe(
       contentItem.text_id,
     )
   })
 
   it("should pass fetchWebsiteContentListing to the Editor", async () => {
-    const { wrapper } = await render()
-    expect(
-      wrapper.find(SiteContentEditor).prop("fetchWebsiteContentListing"),
-    ).toBe(fetchWebsiteContentListing)
+    await renderComponent()
+    expect(capturedEditorProps!.fetchWebsiteContentListing).toBe(
+      fetchWebsiteContentListing,
+    )
   })
 })

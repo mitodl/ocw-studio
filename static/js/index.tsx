@@ -1,9 +1,9 @@
 import React, { ComponentType } from "react"
-import ReactDOM from "react-dom"
+import { createRoot, Root } from "react-dom/client"
 import { AppContainer } from "react-hot-loader"
 
 import { store } from "./store"
-import Root, { RootProps } from "./Root"
+import RootComponent, { RootProps } from "./Root"
 
 import * as Sentry from "@sentry/react"
 
@@ -18,17 +18,20 @@ Sentry.init({
 })
 
 const rootEl = document.getElementById("container")
+if (!rootEl) {
+  throw new Error("Root element not found")
+}
+const root: Root = createRoot(rootEl)
 
 const renderApp = (Component: ComponentType<RootProps>): void => {
-  ReactDOM.render(
+  root.render(
     <AppContainer>
       <Component store={store} />
     </AppContainer>,
-    rootEl,
   )
 }
 
-renderApp(Root)
+renderApp(RootComponent)
 
 if ((module as any).hot) {
   ;(module as any).hot.accept("./Root", () => {

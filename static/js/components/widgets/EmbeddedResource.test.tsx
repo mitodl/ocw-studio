@@ -1,7 +1,8 @@
+import React from "react"
+import { waitFor } from "@testing-library/react"
+
 import EmbeddedResource from "./EmbeddedResource"
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../../util/integration_test_helper_old"
+import { IntegrationTestHelper } from "../../testing_utils"
 import * as contextWebsite from "../../context/Website"
 import {
   makeWebsiteContentDetail,
@@ -17,10 +18,9 @@ const useWebsite = jest.mocked(contextWebsite.useWebsite)
 
 describe("EmbeddedResource", () => {
   let helper: IntegrationTestHelper,
-    render: TestRenderer,
     website: Website,
     content: WebsiteContent,
-    el
+    el: HTMLElement
 
   beforeEach(() => {
     helper = new IntegrationTestHelper()
@@ -37,47 +37,54 @@ describe("EmbeddedResource", () => {
     )
 
     el = document.createElement("div")
-    render = helper.configureRenderer(EmbeddedResource, {
-      uuid: content.text_id,
-      el,
-    })
+    document.body.appendChild(el)
   })
 
   afterEach(() => {
-    helper.cleanup()
+    document.body.removeChild(el)
   })
 
   it("should render, and display basic info about the resource", async () => {
-    const { wrapper } = await render()
-    expect(wrapper.find(".title").text()).toBe(content.title)
+    helper.render(<EmbeddedResource uuid={content.text_id} el={el} />)
+    await waitFor(() => {
+      expect(el.querySelector(".title")?.textContent).toBe(content.title)
+    })
   })
 
   it("should render a resourcetype if it's there in the metadata", async () => {
     content.metadata!.resourcetype = ResourceType.Document
-    const { wrapper } = await render()
-    expect(wrapper.find(".resource-info").text()).toBe("Resourcetype: Document")
+    helper.render(<EmbeddedResource uuid={content.text_id} el={el} />)
+    await waitFor(() => {
+      expect(el.querySelector(".resource-info")?.textContent).toBe(
+        "Resourcetype: Document",
+      )
+    })
   })
 
   it("should render an image", async () => {
     content.metadata!.resourcetype = ResourceType.Image
     content.file = "https://example.com/foo/bar/baz.png"
-    const { wrapper } = await render()
-    expect(wrapper.find(".resource-info").text()).toBe("baz.png")
-    expect(wrapper.find("h3").text()).toBe(content.title)
-    expect(wrapper.find("img").prop("src")).toBe(content.file)
+    helper.render(<EmbeddedResource uuid={content.text_id} el={el} />)
+    await waitFor(() => {
+      expect(el.querySelector(".resource-info")?.textContent).toBe("baz.png")
+      expect(el.querySelector("h3")?.textContent).toBe(content.title)
+      expect(el.querySelector("img")?.getAttribute("src")).toBe(content.file)
+    })
   })
 
   it("should render a video", async () => {
     content.metadata!.resourcetype = ResourceType.Video
     content.metadata!.description = "My Video!!!"
     content.metadata!.video_metadata = { youtube_id: "2XID_W4neJo" }
-    const { wrapper } = await render()
-    expect(wrapper.find(".title").text()).toBe(content.title)
-    expect(wrapper.find(".description").text()).toBe(
-      content.metadata!.description,
-    )
-    expect(wrapper.find("iframe").prop("src")).toBe(
-      "https://www.youtube-nocookie.com/embed/2XID_W4neJo",
-    )
+    helper.render(<EmbeddedResource uuid={content.text_id} el={el} />)
+    await waitFor(() => {
+      expect(el.querySelector(".title")?.textContent).toBe(content.title)
+      expect(el.querySelector(".description")?.textContent).toBe(
+        content.metadata!.description,
+      )
+      expect(el.querySelector("iframe")?.getAttribute("src")).toBe(
+        "https://www.youtube-nocookie.com/embed/2XID_W4neJo",
+      )
+    })
   })
 })

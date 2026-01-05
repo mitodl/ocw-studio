@@ -1,14 +1,9 @@
 // Define globals we would usually get from Django
-import ReactDOM from "react-dom"
-import Adapter from "enzyme-adapter-react-16"
-import Enzyme from "enzyme"
 import failOnConsole from "jest-fail-on-console"
 // Adds some dom-related matches to jest
 import "@testing-library/jest-dom"
 
 failOnConsole()
-
-Enzyme.configure({ adapter: new Adapter() })
 
 const _createSettings = (): typeof SETTINGS => ({
   reactGaDebug: "",
@@ -61,10 +56,6 @@ afterEach(function () {
    */
   jest.clearAllMocks()
   jest.useRealTimers()
-  const node = document.querySelector("#integration_test_div")
-  if (node) {
-    ReactDOM.unmountComponentAtNode(node)
-  }
   document.body.innerHTML = ""
   global.SETTINGS = _createSettings()
 })

@@ -1,20 +1,19 @@
 import React from "react"
 import sinon, { SinonStub } from "sinon"
-import { shallow } from "enzyme"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { ValidationError } from "yup"
 
 import PublishForm, { websiteUrlValidation } from "./PublishForm"
 import { PublishingEnv } from "../../constants"
-import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf } from "../../test_util"
 import { makeWebsiteDetail } from "../../util/factories/websites"
-import { Formik, FormikProps } from "formik"
 
 describe("PublishForm", () => {
-  let sandbox, onSubmitStub: SinonStub
-  const website = makeWebsiteDetail()
+  let onSubmitStub: SinonStub, website: ReturnType<typeof makeWebsiteDetail>
 
   const renderForm = (props = {}) =>
-    shallow(
+    render(
       <PublishForm
         onSubmit={onSubmitStub}
         disabled={false}
@@ -24,27 +23,24 @@ describe("PublishForm", () => {
       />,
     )
 
-  const renderInnerForm = (
-    formikChildProps: Partial<FormikProps<any>>,
-    wrapperProps: { [key: string]: any },
-  ) => {
-    const wrapper = renderForm(wrapperProps)
-    return wrapper.find(Formik).renderProp("children")({
-      ...defaultFormikChildProps,
-      ...formikChildProps,
-    })
-  }
-
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    onSubmitStub = sandbox.stub()
+    onSubmitStub = sinon.stub()
+    website = makeWebsiteDetail()
   })
 
-  it("passes onSubmit to Formik", () => {
-    const wrapper = renderForm()
+  afterEach(() => {
+    sinon.restore()
+  })
 
-    const props = wrapper.find("Formik").props()
-    expect(props.onSubmit).toBe(onSubmitStub)
+  it("passes onSubmit to Formik", async () => {
+    const user = userEvent.setup()
+    website.publish_date = "2025-01-01"
+    renderForm()
+    const button = screen.getByRole("button", { name: /publish/i })
+    await user.click(button)
+    await waitFor(() => {
+      expect(onSubmitStub.called).toBe(true)
+    })
   })
 
   it.each([
@@ -55,25 +51,20 @@ describe("PublishForm", () => {
     ({ urlPath }) => {
       website.publish_date = null
       website.url_path = urlPath
-      const wrapper = renderForm()
-      expect(wrapper.prop("initialValues")).toEqual({
-        url_path: website.url_path ? "5.2-my-course" : website.url_suggestion,
-      })
+      renderForm()
+      const input = screen.getByLabelText(/url/i) as HTMLInputElement
+      if (urlPath) {
+        expect(input).toHaveValue("5.2-my-course")
+      } else {
+        expect(input).toHaveValue(website.url_suggestion)
+      }
     },
   )
 
   it("shows a field for URL Path if website is not published", () => {
     website.publish_date = null
-    const form = renderInnerForm(
-      { isSubmitting: false, status: "whatever" },
-      {},
-    )
-    expect(
-      form
-        .find("Field")
-        .filterWhere((node) => node.prop("name") === "url_path")
-        .exists(),
-    ).toBeTruthy()
+    renderForm()
+    expect(screen.getByLabelText(/url/i)).toBeInTheDocument()
   })
 
   it.each([PublishingEnv.Staging, PublishingEnv.Production])(
@@ -81,17 +72,11 @@ describe("PublishForm", () => {
     (option) => {
       website.publish_date = "2020-01-01"
       website.url_path = "courses/my-url-fall-2028"
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        { option: option },
-      )
-      expect(
-        form
-          .find("Field")
-          .filterWhere((node) => node.prop("name") === "url_path")
-          .exists(),
-      ).toBeFalsy()
-      expect(form.find("a").prop("href")).toEqual(
+      renderForm({ option: option })
+      expect(screen.queryByLabelText(/url/i)).not.toBeInTheDocument()
+      const link = screen.getByRole("link")
+      expect(link).toHaveAttribute(
+        "href",
         option === PublishingEnv.Staging ? website.draft_url : website.live_url,
       )
     },
@@ -100,12 +85,9 @@ describe("PublishForm", () => {
   it("shows a text-only live url for unpublished site", () => {
     website.publish_date = null
     website.url_path = "courses/my-url-fall-2028"
-    const form = renderInnerForm(
-      { isSubmitting: false, status: "whatever" },
-      { option: PublishingEnv.Production },
-    )
-    //expect(form.find("a").exists()).toBeFalsy()
-    expect(form.find("span").text()).toEqual(`${website.live_url}`)
+    renderForm({ option: PublishingEnv.Production })
+    expect(screen.queryByRole("link")).not.toBeInTheDocument()
+    expect(screen.getByText(website.live_url)).toBeInTheDocument()
   })
 
   describe("validation", () => {

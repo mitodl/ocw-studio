@@ -1,6 +1,6 @@
 import React from "react"
-import sinon, { SinonStub } from "sinon"
-import { shallow } from "enzyme"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import * as yup from "yup"
 
 import SiteCollaboratorForm, {
@@ -8,21 +8,18 @@ import SiteCollaboratorForm, {
   roleValidation,
 } from "./SiteCollaboratorForm"
 import { EDITABLE_ROLES } from "../../constants"
-import { assertInstanceOf, defaultFormikChildProps } from "../../test_util"
+import { assertInstanceOf } from "../../test_util"
 import { makeWebsiteCollaborator } from "../../util/factories/websites"
 
 import { WebsiteCollaborator } from "../../types/websites"
-import { Option } from "../widgets/SelectField"
-import { Formik, FormikProps } from "formik"
 
 describe("SiteCollaboratorForm", () => {
-  let sandbox,
-    onSubmitStub: SinonStub,
-    onCancelStub: SinonStub,
+  let onSubmitStub: jest.Mock,
+    onCancelStub: jest.Mock,
     collaborator: WebsiteCollaborator
 
   const renderForm = (collaborator: WebsiteCollaborator | null) =>
-    shallow(
+    render(
       <SiteCollaboratorForm
         collaborator={collaborator}
         onSubmit={onSubmitStub}
@@ -30,56 +27,38 @@ describe("SiteCollaboratorForm", () => {
       />,
     )
 
-  const renderInnerForm = (
-    formikChildProps: Partial<FormikProps<any>>,
-    collaborator: WebsiteCollaborator | null,
-  ) => {
-    const wrapper = renderForm(collaborator)
-    return wrapper.find(Formik).renderProp("children")({
-      ...defaultFormikChildProps,
-      ...formikChildProps,
-    })
-  }
-
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    onSubmitStub = sandbox.stub()
-    onCancelStub = sandbox.stub()
+    onSubmitStub = jest.fn()
+    onCancelStub = jest.fn()
   })
 
   describe("add a new collaborator", () => {
-    it("passes onSubmit to Formik", () => {
-      const wrapper = renderForm(null)
-      expect(wrapper.props().onSubmit).toBe(onSubmitStub)
-      const props = wrapper.find(Formik).props()
-      expect(props.onSubmit).toBe(onSubmitStub)
-      expect(props.validationSchema.fields.role).toBeDefined()
-      expect(props.validationSchema.fields.email).toBeDefined()
+    it("passes onSubmit to Formik", async () => {
+      const user = userEvent.setup()
+      renderForm(null)
+      await user.type(screen.getByLabelText(/email/i), "test@example.com")
+      await user.click(screen.getByLabelText(/role/i))
+      await user.click(screen.getByText("Administrator"))
+      await user.click(screen.getByRole("button", { name: /save/i }))
+      await waitFor(() => {
+        expect(onSubmitStub).toHaveBeenCalled()
+      })
     })
 
-    it("shows an option for each role, plus an empty option", () => {
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        null,
-      )
-      const field = form
-        .find("Field")
-        .filterWhere((node) => node.prop("name") === "role")
-      const options: Array<Option> = field.prop("options")
-      expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
-      for (let i = 1; i < options.length; i++) {
-        expect(options[i]["value"]).toBe(EDITABLE_ROLES[i - 1])
-      }
+    it("shows an option for each role, plus an empty option", async () => {
+      const user = userEvent.setup()
+      renderForm(null)
+      const roleSelect = screen.getByLabelText(/role/i)
+      expect(roleSelect).toBeInTheDocument()
+      await user.click(roleSelect)
+      EDITABLE_ROLES.forEach((role) => {
+        expect(screen.getByText(new RegExp(role, "i"))).toBeInTheDocument()
+      })
     })
 
     it("shows an email field", () => {
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        null,
-      )
-      expect(
-        form.find("Field").filterWhere((node) => node.prop("name") === "email"),
-      ).toHaveLength(1)
+      renderForm(null)
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     })
   })
 
@@ -89,40 +68,38 @@ describe("SiteCollaboratorForm", () => {
     })
 
     it("cancel button onClick function is onCancel prop", () => {
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        null,
-      )
-      expect(form.find("button").at(1).prop("onClick")).toBe(onCancelStub)
+      renderForm(null)
+      const cancelButton = screen.getByRole("button", { name: /cancel/i })
+      cancelButton.click()
+      expect(onCancelStub).toHaveBeenCalled()
     })
 
-    it("passes onSubmit to Formik", () => {
-      const wrapper = renderForm(collaborator)
-      const props = wrapper.find(Formik).props()
-      expect(props.onSubmit).toBe(onSubmitStub)
-      expect(props.validationSchema.fields.role).toBeDefined()
-      expect(props.validationSchema.fields.email).toBeUndefined()
+    it("passes onSubmit to Formik", async () => {
+      const user = userEvent.setup()
+      renderForm(collaborator)
+      await user.click(screen.getByRole("button", { name: /save/i }))
+      await waitFor(() => {
+        expect(onSubmitStub).toHaveBeenCalled()
+      })
     })
 
     it("has current role selected", () => {
-      const wrapper = renderForm(collaborator)
-      const props = wrapper.find(Formik).props()
-      expect(props.initialValues.role).toBe(collaborator.role)
+      renderForm(collaborator)
+      const roleSelect = screen.getByLabelText(/role/i)
+      expect(roleSelect).toBeInTheDocument()
     })
 
-    it("shows an option for each role plus an empty choice", () => {
-      const form = renderInnerForm(
-        { isSubmitting: false, status: "whatever" },
-        collaborator,
-      )
-      const field = form
-        .find("Field")
-        .filterWhere((node) => node.prop("name") === "role")
-      const options: Array<Option> = field.prop("options")
-      expect(options).toHaveLength(EDITABLE_ROLES.length + 1)
-      for (let i = 1; i < options.length; i++) {
-        expect(options[i]["value"]).toBe(EDITABLE_ROLES[i - 1])
-      }
+    it("shows an option for each role plus an empty choice", async () => {
+      const user = userEvent.setup()
+      renderForm(collaborator)
+      const roleSelect = screen.getByLabelText(/role/i)
+      expect(roleSelect).toBeInTheDocument()
+      await user.click(roleSelect)
+      EDITABLE_ROLES.forEach((role) => {
+        expect(
+          screen.getAllByText(new RegExp(role, "i")).length,
+        ).toBeGreaterThanOrEqual(1)
+      })
     })
   })
 

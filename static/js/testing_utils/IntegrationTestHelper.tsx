@@ -1,6 +1,7 @@
 import React from "react"
 import { cloneDeep, defaultsDeep } from "lodash"
 import { render, RenderOptions } from "@testing-library/react"
+import { act } from "@testing-library/react"
 import { Provider } from "react-redux"
 import { Provider as ReduxQueryProvider } from "redux-query-react"
 import { createMemoryHistory, InitialEntry } from "history"
@@ -29,8 +30,7 @@ jest.mock("../store/network_interface")
 
 export type ReduxPatch = DeepPartial<ReduxState>
 
-// Exported for use in integration_test_helper_old. Remove export once that's gone.
-export const getInitialState = (patch: ReduxPatch = {}): ReduxState => {
+const getInitialState = (patch: ReduxPatch = {}): ReduxState => {
   const empty = cloneDeep({
     user: user.getInitialState(),
     entities: {
@@ -79,18 +79,23 @@ export default class IntegrationTestHelper {
     const mockMakeRequest = jest.spyOn(networkInterfaceFuncs, "makeRequest")
     mockMakeRequest.mockClear()
     mockMakeRequest.mockImplementation((url, method, options) => ({
-      execute: async (callback) => {
-        const response = await this.handleRequest(url, method, options)
-        const err = null
-        const resStatus = response.status ?? 0
-        const resBody = response.body ?? undefined
-        const resText = response.text ?? undefined
-        const resHeaders = response.headers ?? undefined
+      execute: (callback) => {
+        const executeAsync = async () => {
+          const response = await this.handleRequest(url, method, options)
+          const err = null
+          const resStatus = response.status ?? 0
+          const resBody = response.body ?? undefined
+          const resText = response.text ?? undefined
+          const resHeaders = response.headers ?? undefined
 
-        callback(err, resStatus, resBody, resText, resHeaders)
+          act(() => {
+            callback(err, resStatus, resBody, resText, resHeaders)
+          })
+        }
+        executeAsync()
       },
       abort: () => {
-        throw new Error("Aborts currently unhandled")
+        // no-op
       },
     }))
   }
@@ -154,7 +159,13 @@ export default class IntegrationTestHelper {
   render = (ui: React.ReactElement, options?: RenderOptions) => {
     const initialStoreState = getInitialState(this.initialStorePatch)
     const store = configureStore(initialStoreState)
-    const history = createMemoryHistory({ initialEntries: this.initialEntries })
+    const history = createMemoryHistory({
+      initialEntries: this.initialEntries,
+      getUserConfirmation: (message, callback) => {
+        const result = window.confirm(message)
+        callback(result)
+      },
+    })
     const renderResult = render(
       <Provider store={store}>
         <ReduxQueryProvider queriesSelector={getQueries}>

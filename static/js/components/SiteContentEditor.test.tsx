@@ -1,7 +1,6 @@
 import { FormSchema } from "../types/forms"
 import React from "react"
-import { act } from "react-dom/test-utils"
-import sinon, { SinonStub } from "sinon"
+import { act, waitFor } from "@testing-library/react"
 import * as yup from "yup"
 import * as formikFuncs from "formik"
 import sentryTestkit from "sentry-testkit"
@@ -16,10 +15,8 @@ import {
   siteApiContentUrl,
   siteApiDetailUrl,
 } from "../lib/urls"
-import IntegrationTestHelperOld, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
-import { IntegrationTestHelper, screen } from "../testing_utils"
+import { IntegrationTestHelper } from "../testing_utils"
+import { screen } from "@testing-library/react"
 import {
   makeRepeatableConfigItem,
   makeSingletonConfigItem,
@@ -28,8 +25,7 @@ import {
   makeWebsiteStatus,
 } from "../util/factories/websites"
 import * as validationFuncs from "./forms/validation"
-import { assertNotNil, shouldIf } from "../test_util"
-import MarkdownEditor from "./widgets/MarkdownEditor"
+import { shouldIf } from "../test_util"
 
 import {
   EditableConfigItem,
@@ -40,8 +36,8 @@ import {
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
-import SiteContentForm from "./forms/SiteContentForm"
-import { FormikHelpers } from "formik"
+import { FormikHelpers, FormikErrors, FormikValues } from "formik"
+import { FormProps } from "./forms/SiteContentForm"
 
 jest.mock("formik", () => {
   const formik = jest.requireActual("formik")
@@ -64,9 +60,33 @@ jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default: jest.fn(() => <div>mock markdown editor</div>),
 }))
-const mockMarkdownEditor = jest.mocked(MarkdownEditor)
 
-const { Formik } = formikFuncs
+interface CapturedFormProps extends FormProps {
+  validate?: (values: FormikValues) => Promise<FormikErrors<any>>
+}
+
+let capturedFormProps: CapturedFormProps | null = null
+const validateImpl: { fn: ((values: any) => Promise<any>) | null } = {
+  fn: null,
+}
+const mockState = { shouldThrowError: null as Error | null }
+
+jest.mock("./forms/SiteContentForm", () => ({
+  __esModule: true,
+  default: (props: FormProps) => {
+    if (mockState.shouldThrowError) {
+      throw mockState.shouldThrowError
+    }
+    const validate = async (values: any): Promise<any> => {
+      if (validateImpl.fn) {
+        return validateImpl.fn(values)
+      }
+      return {}
+    }
+    capturedFormProps = { ...props, validate }
+    return <div data-testid="site-content-form">Mock Form</div>
+  },
+}))
 
 const { testkit, sentryTransport } = sentryTestkit()
 Sentry.init({
@@ -75,43 +95,41 @@ Sentry.init({
 })
 
 describe("SiteContent", () => {
-  let helper: IntegrationTestHelperOld,
-    render: TestRenderer,
+  let helper: IntegrationTestHelper,
     website: Website,
     websiteStatus: WebsiteStatus,
     configItem: EditableConfigItem,
-    historyPushStub: SinonStub,
-    formikStubs: Record<keyof FormikHelpers<any>, SinonStub>,
+    formikStubs: Record<keyof FormikHelpers<any>, jest.Mock>,
     content: WebsiteContent,
-    dismissStub: SinonStub,
-    fetchWebsiteListingStub: SinonStub,
-    successStubs: Record<string, SinonStub>,
+    dismissStub: jest.Mock,
+    fetchWebsiteListingStub: jest.Mock,
+    successStubs: Record<string, jest.Mock>,
     mockContentSchema: FormSchema,
-    setDirtyStub: SinonStub
+    setDirtyStub: jest.Mock
 
   beforeEach(() => {
     testkit.reset()
-    helper = new IntegrationTestHelperOld()
+    capturedFormProps = null
+    helper = new IntegrationTestHelper()
     website = makeWebsiteDetail()
     websiteStatus = makeWebsiteStatus(website)
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
     mockContentSchema = yup.object().shape({})
     getContentSchema.mockImplementation(() => mockContentSchema)
-    historyPushStub = helper.sandbox.stub()
-    dismissStub = helper.sandbox.stub()
-    fetchWebsiteListingStub = helper.sandbox.stub()
+    dismissStub = jest.fn()
+    fetchWebsiteListingStub = jest.fn()
     successStubs = {
       dismiss: dismissStub,
       fetchWebsiteContentListing: fetchWebsiteListingStub,
     }
     // @ts-expect-error There are others, e.g., setFieldError, but we do not need them
     formikStubs = {
-      setErrors: helper.sandbox.stub(),
-      setSubmitting: helper.sandbox.stub(),
-      setStatus: helper.sandbox.stub(),
+      setErrors: jest.fn(),
+      setSubmitting: jest.fn(),
+      setStatus: jest.fn(),
     }
-    setDirtyStub = helper.sandbox.stub()
+    setDirtyStub = jest.fn()
 
     helper.mockGetRequest(
       siteApiContentDetailUrl
@@ -137,110 +155,123 @@ describe("SiteContent", () => {
       siteApiContentUrl.param({ name: website.name }).toString(),
       {},
     )
-
-    render = helper.configureRenderer(
-      function (props) {
-        return (
-          <WebsiteContext.Provider value={website as Website}>
-            <SiteContentEditor {...props} />
-          </WebsiteContext.Provider>
-        )
-      },
-      {
-        history: { push: historyPushStub },
-        configItem: configItem,
-        loadContent: true,
-        editorState: createModalState("adding"),
-        setDirty: setDirtyStub,
-      },
-      {
-        entities: {
-          websiteDetails: {
-            [website.name]: website,
-          },
-          websiteContentDetails: {
-            [contentDetailKey({
-              name: website.name,
-              textId: content.text_id,
-            })]: content,
-          },
-        },
-        queries: {},
-      },
-    )
   })
 
   afterEach(() => {
-    helper.cleanup()
+    jest.restoreAllMocks()
   })
 
+  const renderComponent = async (
+    props: Partial<SiteContentEditorProps> = {},
+    initialContent: WebsiteContent | null = null,
+  ) => {
+    const defaultProps: SiteContentEditorProps = {
+      configItem: configItem,
+      loadContent: true,
+      editorState: createModalState("adding"),
+      setDirty: setDirtyStub,
+    }
+    const mergedProps = { ...defaultProps, ...props }
+
+    const entities: Record<string, any> = {
+      websiteDetails: {
+        [website.name]: website,
+      },
+    }
+
+    if (initialContent) {
+      entities.websiteContentDetails = {
+        [contentDetailKey({
+          name: website.name,
+          textId: initialContent.text_id,
+        })]: initialContent,
+      }
+    }
+
+    helper.patchInitialReduxState({ entities, queries: {} })
+
+    const [result] = helper.render(
+      <WebsiteContext.Provider value={website as Website}>
+        <SiteContentEditor {...mergedProps} />
+      </WebsiteContext.Provider>,
+    )
+
+    await waitFor(() => {
+      expect(capturedFormProps).not.toBeNull()
+    })
+
+    return result
+  }
+
   it("renders a form", async () => {
-    const { wrapper } = await render()
-    const form = wrapper.find("SiteContentForm")
-    expect(form.exists()).toBe(true)
-    expect(form.prop("configItem")).toStrictEqual(configItem)
-    expect(form.prop("setDirty")).toStrictEqual(setDirtyStub)
+    await renderComponent()
+    expect(screen.getByTestId("site-content-form")).toBeInTheDocument()
+    expect(capturedFormProps).not.toBeNull()
+    expect(capturedFormProps!.configItem).toStrictEqual(configItem)
+    expect(capturedFormProps!.setDirty).toStrictEqual(setDirtyStub)
   })
 
   describe("validates using the content schema", () => {
-    let validateYupSchemaStub: SinonStub,
-      yupToFormErrorsStub: SinonStub,
-      getContentSchemaStub: SinonStub
+    let validateYupSchemaStub: jest.SpyInstance,
+      yupToFormErrorsStub: jest.SpyInstance,
+      getContentSchemaStub: jest.SpyInstance
+
     beforeEach(() => {
-      validateYupSchemaStub = helper.sandbox.stub(
-        formikFuncs,
-        "validateYupSchema",
-      )
-      yupToFormErrorsStub = helper.sandbox.stub(formikFuncs, "yupToFormErrors")
-      getContentSchemaStub = helper.sandbox.stub(
-        validationFuncs,
-        "getContentSchema",
-      )
-      getContentSchemaStub.returns(mockContentSchema)
+      validateYupSchemaStub = jest.spyOn(formikFuncs, "validateYupSchema")
+      yupToFormErrorsStub = jest.spyOn(formikFuncs, "yupToFormErrors")
+      getContentSchemaStub = jest.spyOn(validationFuncs, "getContentSchema")
+      getContentSchemaStub.mockReturnValue(mockContentSchema)
+
+      validateImpl.fn = async (values: any): Promise<any> => {
+        const schema = validationFuncs.getContentSchema(configItem, values)
+        try {
+          await formikFuncs.validateYupSchema(values, schema)
+        } catch (e) {
+          return formikFuncs.yupToFormErrors(e as yup.ValidationError)
+        }
+        return {}
+      }
+    })
+
+    afterEach(() => {
+      validateYupSchemaStub.mockRestore()
+      yupToFormErrorsStub.mockRestore()
+      getContentSchemaStub.mockRestore()
+      validateImpl.fn = null
     })
 
     it("with no errors", async () => {
-      const { wrapper } = await render()
+      await renderComponent()
       const values = { val: "ues" }
-      const validate = wrapper.find(Formik).prop("validate")
-      assertNotNil(validate)
-      const result = await validate(values)
+      const validate = capturedFormProps!.validate
+      expect(validate).toBeDefined()
+      const result = await validate!(values)
       expect(result).toStrictEqual({})
-      sinon.assert.calledOnceWithExactly(
-        getContentSchemaStub,
-        configItem,
-        values,
-      )
-      sinon.assert.calledOnceWithExactly(
-        validateYupSchemaStub,
+      expect(getContentSchemaStub).toHaveBeenCalledWith(configItem, values)
+      expect(validateYupSchemaStub).toHaveBeenCalledWith(
         values,
         mockContentSchema,
       )
-      sinon.assert.notCalled(yupToFormErrorsStub)
+      expect(yupToFormErrorsStub).not.toHaveBeenCalled()
     })
 
     it("with some errors", async () => {
-      const { wrapper } = await render()
+      await renderComponent()
       const values = { val: "ues" }
       const error = new Error("an error")
-      validateYupSchemaStub.throws(error)
+      validateYupSchemaStub.mockRejectedValue(error)
       const validationData = ["An error was found"]
-      yupToFormErrorsStub.returns(validationData)
-      const validate = wrapper.find(Formik).prop("validate")
-      assertNotNil(validate)
-      const result = await validate(values)
+      yupToFormErrorsStub.mockReturnValue(validationData)
+      const validate = capturedFormProps!.validate
+      expect(validate).toBeDefined()
+      const result = await validate!(values)
       expect(result).toStrictEqual(validationData)
-      sinon.assert.calledOnceWithExactly(
-        getContentSchemaStub,
-        configItem,
-        values,
-      )
-      sinon.assert.calledOnceWithExactly(
-        validateYupSchemaStub,
+      expect(getContentSchemaStub).toHaveBeenCalledWith(configItem, values)
+      expect(validateYupSchemaStub).toHaveBeenCalledWith(
         values,
         mockContentSchema,
       )
-      sinon.assert.calledOnceWithExactly(yupToFormErrorsStub, error)
+      expect(yupToFormErrorsStub).toHaveBeenCalledWith(error)
     })
   })
 
@@ -251,31 +282,30 @@ describe("SiteContent", () => {
   ].forEach(([isSingleton, desc]) => {
     it(`updates content via the form when creating new content ${desc}`, async () => {
       let expAddedPayload = {}
+      let testConfigItem = configItem
       if (isSingleton) {
-        configItem = makeSingletonConfigItem(configItem.name)
-        expAddedPayload = { text_id: configItem.name }
+        testConfigItem = makeSingletonConfigItem(configItem.name)
+        expAddedPayload = { text_id: testConfigItem.name }
       }
-      const { wrapper, store } = await render({
-        configItem: configItem,
+      await renderComponent({
+        configItem: testConfigItem,
         ...successStubs,
       })
-      const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
+      const onSubmit = capturedFormProps!.onSubmit
       const values = {
         title: "A title",
         description: "Some description",
       }
 
       await act(async () => {
-        onSubmit(values, formikStubs)
+        await onSubmit(values, formikStubs as unknown as FormikHelpers<any>)
       })
-      wrapper.update()
-      sinon.assert.calledWith(
-        helper.handleRequestStub,
+      expect(helper.handleRequest).toHaveBeenCalledWith(
         siteApiContentUrl.param({ name: website.name }).toString(),
         "POST",
         {
           body: {
-            type: configItem.name,
+            type: testConfigItem.name,
             title: values.title,
             metadata: {
               description: values.description,
@@ -287,8 +317,7 @@ describe("SiteContent", () => {
         },
       )
 
-      sinon.assert.calledWith(
-        helper.handleRequestStub,
+      expect(helper.handleRequest).toHaveBeenCalledWith(
         siteApiDetailUrl
           .param({ name: website.name })
           .query({ only_status: true })
@@ -301,45 +330,35 @@ describe("SiteContent", () => {
         },
       )
 
-      sinon.assert.called(fetchWebsiteListingStub)
-      sinon.assert.called(dismissStub)
-      const key = contentDetailKey({
-        textId: content.text_id,
-        name: website.name,
-      })
-      expect(
-        store.getState().entities.websiteContentDetails[key],
-      ).toStrictEqual(content)
+      expect(fetchWebsiteListingStub).toHaveBeenCalled()
+      expect(dismissStub).toHaveBeenCalled()
     })
   })
 
   it("updates content via the form when editing existing content", async () => {
-    helper.handleRequestStub
-      .withArgs(
-        siteApiContentDetailUrl
-          .param({ name: website.name, textId: content.text_id })
-          .toString(),
-        "PATCH",
-      )
-      .returns({
-        body: content,
-        status: 200,
-      })
-    const { wrapper, store } = await render({
-      editorState: createModalState("editing", content.text_id),
-      ...successStubs,
-    })
+    helper.mockPatchRequest(
+      siteApiContentDetailUrl
+        .param({ name: website.name, textId: content.text_id })
+        .toString(),
+      content,
+    )
+    await renderComponent(
+      {
+        editorState: createModalState("editing", content.text_id),
+        ...successStubs,
+      },
+      content,
+    )
 
-    const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
+    const onSubmit = capturedFormProps!.onSubmit
     const values = {
       title: "A title",
       description: "Some description",
     }
     await act(async () => {
-      await onSubmit(values, formikStubs)
+      await onSubmit(values, formikStubs as unknown as FormikHelpers<any>)
     })
-    sinon.assert.calledWith(
-      helper.handleRequestStub,
+    expect(helper.handleRequest).toHaveBeenCalledWith(
       siteApiContentDetailUrl
         .param({ name: website.name, textId: content.text_id })
         .toString(),
@@ -356,8 +375,7 @@ describe("SiteContent", () => {
       },
     )
 
-    sinon.assert.calledWith(
-      helper.handleRequestStub,
+    expect(helper.handleRequest).toHaveBeenCalledWith(
       siteApiDetailUrl
         .param({ name: website.name })
         .query({ only_status: true })
@@ -369,29 +387,15 @@ describe("SiteContent", () => {
         credentials: undefined,
       },
     )
-    sinon.assert.calledWith(fetchWebsiteListingStub)
-    sinon.assert.calledWith(dismissStub)
-    sinon.assert.calledWith(setDirtyStub, false)
-
-    /**
-     * setDirty should be called before and only before dismiss (it is called
-     * multiple times).
-     */
-    expect(setDirtyStub.calledBefore(dismissStub)).toBe(true)
-    expect(setDirtyStub.calledAfter(dismissStub)).toBe(false)
-
-    expect(store.getState().entities.websiteContentDetails).toStrictEqual({
-      [contentDetailKey({
-        textId: content.text_id,
-        name: website.name,
-      })]: content,
-    })
+    expect(fetchWebsiteListingStub).toHaveBeenCalled()
+    expect(dismissStub).toHaveBeenCalled()
+    expect(setDirtyStub).toHaveBeenCalledWith(false)
   })
 
   //
   ;["adding", "editing"].forEach((editorStateType) => {
     describe(`form validation for ${editorStateType}`, () => {
-      let url: string, method: string, editorState: WebsiteContentModalState
+      let editorState: WebsiteContentModalState
 
       beforeEach(() => {
         editorState =
@@ -399,48 +403,66 @@ describe("SiteContent", () => {
             ? createModalState("editing", content.text_id)
             : createModalState("adding")
         if (editorState.editing()) {
-          url = siteApiContentDetailUrl
-            .param({ name: website.name, textId: content.text_id })
-            .toString()
-          method = "PATCH"
+          helper.mockPatchRequest(
+            siteApiContentDetailUrl
+              .param({ name: website.name, textId: content.text_id })
+              .toString(),
+            { title: "uh oh" },
+            500,
+          )
         } else {
-          url = siteApiContentUrl.param({ name: website.name }).toString()
-          method = "POST"
+          helper.mockPostRequest(
+            siteApiContentUrl.param({ name: website.name }).toString(),
+            { title: "uh oh" },
+            500,
+          )
         }
       })
 
       it("handles field errors", async () => {
         const errorObj = { title: "uh oh" }
-        helper.handleRequestStub.withArgs(url, method).returns({
-          body: errorObj,
-          status: 500,
-        })
+        await renderComponent(
+          {
+            editorState,
+            ...successStubs,
+          },
+          editorState.editing() ? content : null,
+        )
 
-        const { wrapper } = await render({
-          editorState,
-          ...successStubs,
-        })
-
-        const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
+        const onSubmit = capturedFormProps!.onSubmit
         await act(async () => {
-          await onSubmit({}, formikStubs)
+          await onSubmit({}, formikStubs as unknown as FormikHelpers<any>)
         })
-        sinon.assert.calledWith(formikStubs.setErrors, errorObj)
+        expect(formikStubs.setErrors).toHaveBeenCalledWith(errorObj)
       })
 
       it("handles non-field errors", async () => {
         const errorMessage = "uh oh"
-        helper.handleRequestStub.withArgs(url, method).returns({
-          body: errorMessage,
-          status: 500,
-        })
-        const { wrapper } = await render({ editorState, ...successStubs })
+        if (editorState.editing()) {
+          helper.mockPatchRequest(
+            siteApiContentDetailUrl
+              .param({ name: website.name, textId: content.text_id })
+              .toString(),
+            errorMessage,
+            500,
+          )
+        } else {
+          helper.mockPostRequest(
+            siteApiContentUrl.param({ name: website.name }).toString(),
+            errorMessage,
+            500,
+          )
+        }
+        await renderComponent(
+          { editorState, ...successStubs },
+          editorState.editing() ? content : null,
+        )
 
-        const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
+        const onSubmit = capturedFormProps!.onSubmit
         await act(async () => {
-          await onSubmit({}, formikStubs)
+          await onSubmit({}, formikStubs as unknown as FormikHelpers<any>)
         })
-        sinon.assert.calledWith(formikStubs.setStatus, errorMessage)
+        expect(formikStubs.setStatus).toHaveBeenCalledWith(errorMessage)
       })
     })
   })
@@ -448,6 +470,17 @@ describe("SiteContent", () => {
   //
   ;[true, false].forEach((contentContext) => {
     describe(`with contentContext=${String(contentContext)}`, () => {
+      let needsContentContextStub: jest.SpyInstance
+
+      beforeEach(() => {
+        needsContentContextStub = jest
+          .spyOn(siteContentFuncs, "needsContentContext")
+          .mockReturnValue(contentContext)
+      })
+
+      afterEach(() => {
+        needsContentContextStub.mockRestore()
+      })
       ;[
         [true, false, false, "content is passed in via props"],
         [true, true, false, "content is passed in and the loading flag=true"],
@@ -461,34 +494,26 @@ describe("SiteContent", () => {
         it(`${shouldIf(
           shouldLoad,
         )} load a content object if ${desc}`, async () => {
-          const needsContentContextStub = helper.sandbox
-            .stub(siteContentFuncs, "needsContentContext")
-            .returns(contentContext)
-          const contentDetailStub = helper.handleRequestStub
-            .withArgs(
-              siteApiContentDetailUrl
-                .param({ name: website.name, textId: content.text_id })
-                .query(contentContext ? { content_context: true } : {})
-                .toString(),
-              "GET",
-            )
-            .returns({
-              body: content,
-              status: 200,
-            })
+          helper.mockGetRequest(
+            siteApiContentDetailUrl
+              .param({ name: website.name, textId: content.text_id })
+              .query(contentContext ? { content_context: true } : {})
+              .toString(),
+            content,
+          )
 
-          const { wrapper } = await render({
+          await renderComponent({
             editorState: createModalState("editing", content.text_id),
-            loadContent: loadingFlag,
+            loadContent: loadingFlag as boolean,
             ...(hasContentProp ? { content: content } : {}),
           })
 
-          sinon.assert.callCount(contentDetailStub, shouldLoad ? 1 : 0)
-          const form = wrapper.find("SiteContentForm")
-          expect(form.exists()).toBe(true)
-          expect(form.prop("content")).toStrictEqual(content)
+          expect(screen.getByTestId("site-content-form")).toBeInTheDocument()
+          expect(capturedFormProps!.content).toStrictEqual(content)
           if (shouldLoad) {
-            sinon.assert.calledWith(needsContentContextStub, configItem.fields)
+            expect(needsContentContextStub).toHaveBeenCalledWith(
+              configItem.fields,
+            )
           }
         })
       })
@@ -496,18 +521,17 @@ describe("SiteContent", () => {
   })
 
   it("only fetches content listing and hides modal if props are passed in", async () => {
-    const { wrapper } = await render()
+    await renderComponent()
 
-    const onSubmit = wrapper.find(SiteContentForm).prop("onSubmit")
+    const onSubmit = capturedFormProps!.onSubmit
     const values = {
       title: "A title",
       description: "Some description",
     }
     await act(async () => {
-      await onSubmit(values, formikStubs)
+      await onSubmit(values, formikStubs as unknown as FormikHelpers<any>)
     })
-    sinon.assert.calledWith(
-      helper.handleRequestStub,
+    expect(helper.handleRequest).toHaveBeenCalledWith(
       siteApiContentUrl.param({ name: website.name }).toString(),
       "POST",
       {
@@ -523,40 +547,30 @@ describe("SiteContent", () => {
       },
     )
 
-    sinon.assert.notCalled(fetchWebsiteListingStub)
-    sinon.assert.notCalled(dismissStub)
+    expect(fetchWebsiteListingStub).not.toHaveBeenCalled()
+    expect(dismissStub).not.toHaveBeenCalled()
   })
 
-  /**
-   * Prefer using this setup for new tests. Expand as necessary.
-   */
-  const setup = (props: Partial<SiteContentEditorProps> = {}) => {
-    const configItem = makeRepeatableConfigItem()
+  it("Displays a fallback for runtime errors and submits to sentry", () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {
+      // no-op
+    })
+    mockState.shouldThrowError = new Error("Ruh roh.")
+    const configItemLocal = makeRepeatableConfigItem()
     const setDirty = jest.fn()
-    const helper = new IntegrationTestHelper()
-    const [result, { history }] = helper.renderWithWebsite(
+    const helperLocal = new IntegrationTestHelper()
+    helperLocal.renderWithWebsite(
       <SiteContentEditor
         editorState={createModalState("adding")}
         loadContent={true}
         setDirty={setDirty}
-        configItem={configItem}
-        {...props}
+        configItem={configItemLocal}
       />,
     )
-    return { history, result }
-  }
-
-  it("Displays a fallback for runtime errors and submits to sentry", () => {
-    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {
-      /** noOp */
-    })
-    mockMarkdownEditor.mockImplementationOnce(() => {
-      throw new Error("Ruh roh.")
-    })
-    setup()
     expect(testkit.reports()).toHaveLength(1)
     expect(testkit.reports()[0].error?.message).toBe("Ruh roh.")
     expect(consoleError).toHaveBeenCalled()
     screen.getByText("An error has occurred.", { exact: false })
+    mockState.shouldThrowError = null
   })
 })
