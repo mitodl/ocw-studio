@@ -299,7 +299,8 @@ class SitePipelineResources(list[Resource]):
     def __init__(
         self,
         config: SitePipelineDefinitionConfig,
-        is_extra_theme: bool = False,  # noqa: FBT001, FBT002
+        *,
+        is_extra_theme: bool = False,
     ):
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,

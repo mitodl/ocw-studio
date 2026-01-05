@@ -401,6 +401,6 @@ def strip_online_lines(pipeline_config):
     return strip_lines_between(pipeline_config, ONLINE_START, ONLINE_END)
 
 
-def is_extra_theme(theme_slug: str) -> bool:
+def is_extra_theme(theme_slug: str | None) -> bool:
     """Check whether theme_slug is in OCW_EXTRA_COURSE_THEMES."""
     return bool(theme_slug and theme_slug in settings.OCW_EXTRA_COURSE_THEMES)
