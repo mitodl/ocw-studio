@@ -399,3 +399,12 @@ def strip_online_lines(pipeline_config):
         str: The contents of pipeline_config with the lines between ONLINE_START and ONLINE_END stripped out
     """  # noqa: D401, E501
     return strip_lines_between(pipeline_config, ONLINE_START, ONLINE_END)
+
+
+def is_extra_theme(theme_slug: str) -> bool:
+    """Check whether theme_slug is in OCW_EXTRA_COURSE_THEMES."""
+    return (
+        theme_slug is not None
+        and theme_slug != ""
+        and theme_slug in settings.OCW_EXTRA_COURSE_THEMES
+    )

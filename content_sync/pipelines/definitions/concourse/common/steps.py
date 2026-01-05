@@ -40,6 +40,7 @@ def add_error_handling(  # noqa: PLR0913
     instance_vars: str,
     build_type: str | None = None,
     theme_slug: str | None = None,
+    is_extra_theme: bool = False,  # noqa: FBT001,FBT002
 ):
     """
     Add error handling steps to any Step-like object
@@ -75,6 +76,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        is_extra_theme=is_extra_theme,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -84,6 +86,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        is_extra_theme=is_extra_theme,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -93,6 +96,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        is_extra_theme=is_extra_theme,
     )
     return step
 
@@ -111,6 +115,7 @@ class ErrorHandlingStep(TryStep):
         concourse_url: str,
         build_type: str | None = None,
         theme_slug: str | None = None,
+        is_extra_theme: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         super().__init__(
@@ -122,6 +127,7 @@ class ErrorHandlingStep(TryStep):
                             status=status,
                             build_type=build_type,
                             theme_slug=theme_slug,
+                            is_extra_theme=is_extra_theme,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -210,41 +216,57 @@ class OcwStudioWebhookStep(TryStep):
         build_type: (str, optional): The type of build ('online' or 'offline')
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
-        theme_slug(str, optional): The theme slug for the build
+        theme_slug(str): The theme slug for the build (empty string for default theme)
+        is_extra_theme(bool): Whether this is an extra theme build
+                              (skips webhook if True)
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
         is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         theme_slug: str | None = None,
+        is_extra_theme: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
-        webhook_data = {
-            "version": pipeline_name,
-            "status": status,
-            "build_id": "$BUILD_ID",
-            "build_type": build_type,
-            "is_cdn_cache_step": is_cdn_cache_step,
-            "theme_slug": theme_slug,
-        }
+        if is_extra_theme:
+            super().__init__(
+                try_=TaskStep(
+                    task=Identifier("skip-webhook-extra-theme"),
+                    config=TaskConfig(
+                        platform="linux",
+                        image_resource=CURL_REGISTRY_IMAGE,
+                        run=Command(path="true"),
+                    ),
+                ),
+                **kwargs,
+            )
+        else:
+            webhook_data = {
+                "version": pipeline_name,
+                "status": status,
+                "build_id": "$BUILD_ID",
+                "build_type": build_type,
+                "is_cdn_cache_step": is_cdn_cache_step,
+                "theme_slug": theme_slug,
+            }
 
-        super().__init__(
-            try_=PutStep(
-                put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
-                timeout="1m",
-                attempts=3,
-                params={
-                    "text": json.dumps(webhook_data),
-                    "build_metadata": ["body"],
-                },
-                inputs=[],
-                no_get=True,
-            ),
-            **kwargs,
-        )
+            super().__init__(
+                try_=PutStep(
+                    put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+                    timeout="1m",
+                    attempts=3,
+                    params={
+                        "text": json.dumps(webhook_data),
+                        "build_metadata": ["body"],
+                    },
+                    inputs=[],
+                    no_get=True,
+                ),
+                **kwargs,
+            )
         self.model_rebuild()
 
 

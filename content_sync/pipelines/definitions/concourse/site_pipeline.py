@@ -63,6 +63,7 @@ from content_sync.utils import (
     get_cli_endpoint_url,
     get_hugo_arg_string,
     get_ocw_studio_api_url,
+    is_extra_theme,
 )
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
@@ -201,6 +202,7 @@ class SitePipelineDefinitionConfig:
             if self.is_root_website:
                 self.url_path = site.name
         starter_slug = theme_slug if theme_slug else site.starter.slug
+        self.is_extra_theme = is_extra_theme(theme_slug)
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
         base_url_path = (
@@ -514,6 +516,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         filter_videos: bool = False,
         skip_cache_clear: bool = False,
         skip_search_index_update: bool = False,
+        is_extra_theme: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
@@ -659,6 +662,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 build_type="online",
                 is_cdn_cache_step=True,
                 theme_slug=pipeline_vars["theme_slug"],
+                is_extra_theme=is_extra_theme,
             )
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -685,7 +689,14 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
     """  # noqa: E501
 
-    def __init__(self, pipeline_vars: dict, fastly_var: str, pipeline_name: str):
+    def __init__(
+        self,
+        pipeline_vars: dict,
+        fastly_var: str,
+        pipeline_name: str,
+        *,
+        is_extra_theme: bool = False,
+    ):
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars, build_type="offline"
         )
@@ -861,6 +872,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 build_type="offline",
                 is_cdn_cache_step=True,
                 theme_slug=pipeline_vars["theme_slug"],
+                is_extra_theme=is_extra_theme,
             )
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
@@ -1080,6 +1092,7 @@ class SitePipelineDefinition(Pipeline):
             status="started",
             build_type="online",
             theme_slug=config.vars["theme_slug"],
+            is_extra_theme=config.is_extra_theme,
         )
         steps = [ocw_studio_webhook_started_step]
         steps.extend(SitePipelineBaseTasks(config=config, build_type="online"))
@@ -1089,6 +1102,7 @@ class SitePipelineDefinition(Pipeline):
             fastly_var=config.pipeline_name,
             pipeline_name=config.pipeline_name,
             skip_cache_clear=skip_cache_clear,
+            is_extra_theme=config.is_extra_theme,
         )
         for task in online_tasks:
             if hasattr(task, "task") and task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
@@ -1097,6 +1111,7 @@ class SitePipelineDefinition(Pipeline):
                     status="succeeded",
                     build_type="online",
                     theme_slug=config.vars["theme_slug"],
+                    is_extra_theme=config.is_extra_theme,
                 )
         steps.extend(online_tasks)
         return Job(
@@ -1121,6 +1136,7 @@ class SitePipelineDefinition(Pipeline):
                 pipeline_vars=config.vars,
                 fastly_var=config.pipeline_name,
                 pipeline_name=config.pipeline_name,
+                is_extra_theme=config.is_extra_theme,
             )
         )
         return Job(
