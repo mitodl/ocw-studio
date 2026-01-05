@@ -33,6 +33,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
+    SitePipelineResources,
 )
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
@@ -1015,3 +1016,63 @@ def test_site_pipeline_definition_config_theme_slug(settings, mocker, theme_slug
     expected_slug = theme_slug if theme_slug else starter.slug
     assert f"/{expected_slug}/config.yaml" in config.hugo_args_online
     assert f"/{expected_slug}/config-offline.yaml" in config.hugo_args_offline
+
+
+@pytest.mark.parametrize(
+    ("theme_slug", "extra_themes", "expect_webhook_resource"),
+    [
+        (None, ["ocw-course-v3"], True),
+        ("ocw-course", ["ocw-course-v3"], True),
+        ("ocw-course-v3", ["ocw-course-v3"], False),
+        ("ocw-course-v3", ["ocw-course-v3", "another-theme"], False),
+        ("another-theme", ["ocw-course-v3", "another-theme"], False),
+    ],
+)
+def test_site_pipeline_resources_webhook_resource_inclusion(
+    settings, mocker, theme_slug, extra_themes, expect_webhook_resource
+):
+    """
+    SitePipelineResources should include OcwStudioWebhookResource only when
+    is_extra_theme is False (i.e., theme_slug is not in OCW_EXTRA_COURSE_THEMES)
+    """
+    settings.OCW_EXTRA_COURSE_THEMES = extra_themes
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="webhook-resource-test",
+    )
+    website = WebsiteFactory.create(starter=starter)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        theme_slug=theme_slug,
+    )
+
+    resources = SitePipelineResources(
+        config=config, is_extra_theme=config.is_extra_theme
+    )
+
+    webhook_resources = [
+        r for r in resources if r.name == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+    ]
+
+    if expect_webhook_resource:
+        assert len(webhook_resources) == 1
+    else:
+        assert len(webhook_resources) == 0

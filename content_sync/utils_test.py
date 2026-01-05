@@ -35,6 +35,7 @@ from content_sync.utils import (
     get_ocw_studio_api_url,
     get_publishable_sites,
     get_site_content_branch,
+    is_extra_theme,
     move_s3_object,
     strip_lines_between,
 )
@@ -391,3 +392,20 @@ def test_bad_tags(start_tag, end_tag):
         test_config = test_config_file.read()
         with pytest.raises(ValueError):  # noqa: PT011
             check_matching_tags(test_config, start_tag, end_tag)
+
+
+@pytest.mark.parametrize(
+    ("theme_slug", "extra_themes", "expected"),
+    [
+        (None, ["ocw-course-v3"], False),
+        ("", ["ocw-course-v3"], False),
+        ("ocw-course-v3", ["ocw-course-v3"], True),
+        ("ocw-course-v3", ["ocw-course-v3", "ocw-course-v4"], True),
+        ("ocw-course-v2", ["ocw-course-v3"], False),
+        ("ocw-course-v3", [], False),
+    ],
+)
+def test_is_extra_theme(settings, theme_slug, extra_themes, expected):
+    """is_extra_theme should return True only if theme_slug is in OCW_EXTRA_COURSE_THEMES"""
+    settings.OCW_EXTRA_COURSE_THEMES = extra_themes
+    assert is_extra_theme(theme_slug) == expected
