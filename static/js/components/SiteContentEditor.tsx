@@ -152,6 +152,9 @@ export default function SiteContentEditor(
     refreshWebsiteStatus()
 
     flushSync(() => {
+      // Immediately clear dirty state so that dismiss()
+      // doesn't trigger a confirmation. Required since
+      // React 18+ batches state updates.
       setDirty(false)
     })
     if (dismiss) {
