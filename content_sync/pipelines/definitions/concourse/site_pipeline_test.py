@@ -1064,9 +1064,7 @@ def test_site_pipeline_resources_webhook_resource_inclusion(
         theme_slug=theme_slug,
     )
 
-    resources = SitePipelineResources(
-        config=config, is_extra_theme=config.is_extra_theme
-    )
+    resources = SitePipelineResources(config=config)
 
     webhook_resources = [
         r for r in resources if r.name == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER

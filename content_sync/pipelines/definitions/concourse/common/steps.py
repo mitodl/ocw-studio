@@ -22,6 +22,7 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     get_ocw_catalog_identifier,
@@ -29,7 +30,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
-from content_sync.utils import get_ocw_studio_api_url
+from content_sync.utils import get_ocw_studio_api_url, is_extra_theme
 
 
 def add_error_handling(  # noqa: PLR0913
@@ -40,7 +41,6 @@ def add_error_handling(  # noqa: PLR0913
     instance_vars: str,
     build_type: str | None = None,
     theme_slug: str | None = None,
-    is_extra_theme: bool = False,  # noqa: FBT001,FBT002
 ):
     """
     Add error handling steps to any Step-like object
@@ -52,9 +52,7 @@ def add_error_handling(  # noqa: PLR0913
         short_id(str): The short_id of the site the status is in reference to
         instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
         build_type(str, optional): The type of build ('online' or 'offline')
-        theme_slug(str | None, optional): The theme slug for the build. None is
-            treated as empty string (default theme).
-        is_extra_theme(bool, optional): Whether this is an extra theme build
+        theme_slug(str | None, optional): The theme slug for the build.
 
     Returns:
         The step with error handling added
@@ -79,7 +77,6 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        is_extra_theme=is_extra_theme,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -89,7 +86,6 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        is_extra_theme=is_extra_theme,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -99,7 +95,6 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        is_extra_theme=is_extra_theme,
     )
     return step
 
@@ -118,7 +113,6 @@ class ErrorHandlingStep(TryStep):
         concourse_url: str,
         build_type: str | None = None,
         theme_slug: str | None = None,
-        is_extra_theme: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         super().__init__(
@@ -130,7 +124,6 @@ class ErrorHandlingStep(TryStep):
                             status=status,
                             build_type=build_type,
                             theme_slug=theme_slug,
-                            is_extra_theme=is_extra_theme,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -211,7 +204,9 @@ class ClearCdnCacheStep(TaskStep):
 
 class OcwStudioWebhookStep(TryStep):
     """
-    A PutStep to the ocw-studio api resource that sets a status on a given pipeline
+    A PutStep to the ocw-studio api resource that sets a status on a given pipeline.
+    For extra themes (theme_slug in OCW_EXTRA_COURSE_THEMES), this step is skipped
+    with a no-op task.
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
@@ -219,26 +214,22 @@ class OcwStudioWebhookStep(TryStep):
         build_type: (str, optional): The type of build ('online' or 'offline')
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
-        theme_slug(str | None): The theme slug for the build. None is treated as
-            empty string (default theme).
-        is_extra_theme(bool): Whether this is an extra theme build
-                              (skips webhook if True)
+        theme_slug(str | None): The theme slug for the build.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
         is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         theme_slug: str | None = None,
-        is_extra_theme: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         theme_slug = theme_slug or ""
-        if is_extra_theme:
+        if is_extra_theme(theme_slug):
             try_step = TaskStep(
-                task=Identifier("skip-webhook-extra-theme"),
+                task=OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
                 config=TaskConfig(
                     platform="linux",
                     image_resource=CURL_REGISTRY_IMAGE,

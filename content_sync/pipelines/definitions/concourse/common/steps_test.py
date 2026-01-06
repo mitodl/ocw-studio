@@ -24,7 +24,6 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     SlackAlertStep,
     add_error_handling,
 )
-from content_sync.utils import is_extra_theme
 
 
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
@@ -184,22 +183,6 @@ def test_no_get_property_on_put_steps():
     assert open_catalog_json["try_"]["no_get"] is True
 
 
-@pytest.mark.parametrize("is_extra_theme", [True, False])
-def test_webhook_step_extra_theme_flag(is_extra_theme):
-    """OcwStudioWebhookStep should skip webhook for extra themes"""
-    step = OcwStudioWebhookStep(
-        pipeline_name="test_pipeline",
-        status="succeeded",
-        theme_slug="ocw-course-v3",
-        is_extra_theme=is_extra_theme,
-    )
-    step_json = json.loads(step.model_dump_json())
-    if is_extra_theme:
-        assert step_json["try_"]["task"] == "skip-webhook-extra-theme"
-    else:
-        assert step_json["try_"]["put"] is not None
-
-
 @pytest.mark.parametrize(
     ("theme_slug", "extra_themes", "expect_skip"),
     [
@@ -207,11 +190,15 @@ def test_webhook_step_extra_theme_flag(is_extra_theme):
         ("ocw-course-v4", ["ocw-course-v3", "ocw-course-v4"], True),
         ("", ["ocw-course-v3"], False),
         (None, ["ocw-course-v3"], False),
+        ("default-theme", ["ocw-course-v3"], False),
     ],
 )
-def test_webhook_step_is_extra_theme(settings, theme_slug, extra_themes, expect_skip):
+def test_webhook_step_extra_theme_detection(
+    settings, theme_slug, extra_themes, expect_skip
+):
     """
-    Test that is_extra_theme detection works correctly with actual settings values.
+    Test that OcwStudioWebhookStep correctly detects extra themes based on theme_slug
+    and OCW_EXTRA_COURSE_THEMES setting, and skips the webhook accordingly.
     """
     settings.OCW_EXTRA_COURSE_THEMES = extra_themes
 
@@ -219,12 +206,11 @@ def test_webhook_step_is_extra_theme(settings, theme_slug, extra_themes, expect_
         pipeline_name="test_pipeline",
         status="succeeded",
         theme_slug=theme_slug,
-        is_extra_theme=is_extra_theme(theme_slug),
     )
     step_json = json.loads(step.model_dump_json())
 
     if expect_skip:
-        assert step_json["try_"]["task"] == "skip-webhook-extra-theme"
+        assert step_json["try_"]["task"] == "ocw-studio-webhook-skipped"
         assert "put" not in step_json["try_"]
     else:
         assert step_json["try_"]["put"] is not None
