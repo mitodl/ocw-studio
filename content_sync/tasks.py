@@ -566,7 +566,7 @@ def update_website_in_root_website(website, version):
         )
         (
             website_content,
-            created,  # pylint:disable=unused-variable
+            _created,
         ) = WebsiteContent.all_objects.update_or_create(
             website=root_website,
             dirpath=WEBSITE_LISTING_DIRPATH,
