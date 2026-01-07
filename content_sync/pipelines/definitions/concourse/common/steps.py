@@ -30,7 +30,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
 )
-from content_sync.utils import get_ocw_studio_api_url, is_extra_theme
+from content_sync.utils import get_ocw_studio_api_url
 
 
 def add_error_handling(  # noqa: PLR0913
@@ -41,6 +41,7 @@ def add_error_handling(  # noqa: PLR0913
     instance_vars: str,
     build_type: str | None = None,
     theme_slug: str | None = None,
+    skip: bool = False,  # noqa: FBT001, FBT002
 ):
     """
     Add error handling steps to any Step-like object
@@ -77,6 +78,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip=skip,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -86,6 +88,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip=skip,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -95,6 +98,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip=skip,
     )
     return step
 
@@ -113,6 +117,7 @@ class ErrorHandlingStep(TryStep):
         concourse_url: str,
         build_type: str | None = None,
         theme_slug: str | None = None,
+        skip: bool = False,  # noqa: FBT001, FBT002
         **kwargs,
     ):
         super().__init__(
@@ -124,6 +129,7 @@ class ErrorHandlingStep(TryStep):
                             status=status,
                             build_type=build_type,
                             theme_slug=theme_slug,
+                            skip=skip,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -205,8 +211,6 @@ class ClearCdnCacheStep(TaskStep):
 class OcwStudioWebhookStep(TryStep):
     """
     A PutStep to the ocw-studio api resource that sets a status on a given pipeline.
-    For extra themes (theme_slug in OCW_EXTRA_COURSE_THEMES), this step is skipped
-    with a no-op task.
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
@@ -215,19 +219,21 @@ class OcwStudioWebhookStep(TryStep):
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
         theme_slug(str | None): The theme slug for the build.
+        skip(bool): Whether to skip the webhook with a no-op task.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
         is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         theme_slug: str | None = None,
+        skip: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
         theme_slug = theme_slug or ""
-        if is_extra_theme(theme_slug):
+        if skip:
             try_step = TaskStep(
                 task=OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
                 config=TaskConfig(

@@ -183,33 +183,18 @@ def test_no_get_property_on_put_steps():
     assert open_catalog_json["try_"]["no_get"] is True
 
 
-@pytest.mark.parametrize(
-    ("theme_slug", "extra_themes", "expect_skip"),
-    [
-        ("ocw-course-v3", ["ocw-course-v3"], True),
-        ("ocw-course-v4", ["ocw-course-v3", "ocw-course-v4"], True),
-        ("", ["ocw-course-v3"], False),
-        (None, ["ocw-course-v3"], False),
-        ("default-theme", ["ocw-course-v3"], False),
-    ],
-)
-def test_webhook_step_extra_theme_detection(
-    settings, theme_slug, extra_themes, expect_skip
-):
-    """
-    Test that OcwStudioWebhookStep correctly detects extra themes based on theme_slug
-    and OCW_EXTRA_COURSE_THEMES setting, and skips the webhook accordingly.
-    """
-    settings.OCW_EXTRA_COURSE_THEMES = extra_themes
-
+@pytest.mark.parametrize("skip", [True, False])
+def test_webhook_step_skip(skip):
+    """Test that OcwStudioWebhookStep skips the webhook when skip=True."""
     step = OcwStudioWebhookStep(
         pipeline_name="test_pipeline",
         status="succeeded",
-        theme_slug=theme_slug,
+        theme_slug="some-theme",
+        skip=skip,
     )
     step_json = json.loads(step.model_dump_json())
 
-    if expect_skip:
+    if skip:
         assert step_json["try_"]["task"] == "ocw-studio-webhook-skipped"
         assert "put" not in step_json["try_"]
     else:
