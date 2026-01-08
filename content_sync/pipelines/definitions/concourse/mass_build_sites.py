@@ -52,6 +52,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineOfflineTasks,
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
+    is_extra_theme,
 )
 from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
 from main.utils import is_dev
@@ -168,12 +169,13 @@ class MassBuildSitesResources(list[Resource]):
         self.append(ocw_hugo_themes_resource)
         self.append(ocw_hugo_projects_resource)
         self.append(ocw_hugo_projects_trigger_resource)
-        self.append(
-            OcwStudioWebhookResource(
-                site_name=site_pipeline_vars["site_name"],
-                api_token=settings.API_BEARER_TOKEN or "",
+        if not is_extra_theme(config.theme_slug):
+            self.append(
+                OcwStudioWebhookResource(
+                    site_name=site_pipeline_vars["site_name"],
+                    api_token=settings.API_BEARER_TOKEN or "",
+                )
             )
-        )
         self.append(SlackAlertResource())
         if not is_dev() and config.version == "live":
             self.extend(
@@ -321,6 +323,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         pipeline_name=config.version,
                         destructive_sync=False,
                         filter_videos=True,
+                        skip_webhooks=is_extra_theme(config.theme_slug),
                     )
                 )
             else:
@@ -329,6 +332,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         pipeline_vars=site_pipeline_vars,
                         fastly_var=config.version,
                         pipeline_name=config.version,
+                        skip_webhooks=is_extra_theme(config.theme_slug),
                     )
                 )
             if batch_number > 1:

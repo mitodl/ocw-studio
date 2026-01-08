@@ -22,6 +22,7 @@ from ol_concourse.lib.models.pipeline import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
+    OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     get_ocw_catalog_identifier,
@@ -40,6 +41,7 @@ def add_error_handling(  # noqa: PLR0913
     instance_vars: str,
     build_type: str | None = None,
     theme_slug: str | None = None,
+    skip_webhooks: bool = False,  # noqa: FBT001, FBT002
 ):
     """
     Add error handling steps to any Step-like object
@@ -51,9 +53,10 @@ def add_error_handling(  # noqa: PLR0913
         short_id(str): The short_id of the site the status is in reference to
         instance_vars(str): A query string of the instance vars from the pipeline to build a URL with
         build_type(str, optional): The type of build ('online' or 'offline')
+        theme_slug(str | None, optional): The theme slug for the build.
 
     Returns:
-        None
+        The step with error handling added
     """  # noqa: E501
     step_type = type(step)
     if not issubclass(step_type, StepModifierMixin):
@@ -75,6 +78,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip_webhooks=skip_webhooks,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -84,6 +88,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip_webhooks=skip_webhooks,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -93,6 +98,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
+        skip_webhooks=skip_webhooks,
     )
     return step
 
@@ -111,6 +117,7 @@ class ErrorHandlingStep(TryStep):
         concourse_url: str,
         build_type: str | None = None,
         theme_slug: str | None = None,
+        skip_webhooks: bool = False,  # noqa: FBT001, FBT002
         **kwargs,
     ):
         super().__init__(
@@ -122,6 +129,7 @@ class ErrorHandlingStep(TryStep):
                             status=status,
                             build_type=build_type,
                             theme_slug=theme_slug,
+                            skip=skip_webhooks,
                         ),
                         SlackAlertStep(
                             alert_type=status,
@@ -202,7 +210,7 @@ class ClearCdnCacheStep(TaskStep):
 
 class OcwStudioWebhookStep(TryStep):
     """
-    A PutStep to the ocw-studio api resource that sets a status on a given pipeline
+    A PutStep to the ocw-studio api resource that sets a status on a given pipeline.
 
     Args:
         pipeline_name(str): The name of the pipeline to set the status on
@@ -210,29 +218,40 @@ class OcwStudioWebhookStep(TryStep):
         build_type: (str, optional): The type of build ('online' or 'offline')
         is_cdn_cache_step(bool, optional): Whether this step is being called from
                                            a cdn cache purge step
-        theme_slug(str, optional): The theme slug for the build
+        theme_slug(str | None): The theme slug for the build.
+        skip(bool): Whether to skip the webhook with a no-op task.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         pipeline_name: str,
         status: str,
         build_type: str | None = None,
         is_cdn_cache_step: bool = False,  # noqa: FBT001,FBT002
         theme_slug: str | None = None,
+        skip: bool = False,  # noqa: FBT001,FBT002
         **kwargs,
     ):
-        webhook_data = {
-            "version": pipeline_name,
-            "status": status,
-            "build_id": "$BUILD_ID",
-            "build_type": build_type,
-            "is_cdn_cache_step": is_cdn_cache_step,
-            "theme_slug": theme_slug,
-        }
-
-        super().__init__(
-            try_=PutStep(
+        theme_slug = theme_slug or ""
+        if skip:
+            try_step = TaskStep(
+                task=OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=CURL_REGISTRY_IMAGE,
+                    run=Command(path="true"),
+                ),
+            )
+        else:
+            webhook_data = {
+                "version": pipeline_name,
+                "status": status,
+                "build_id": "$BUILD_ID",
+                "build_type": build_type,
+                "is_cdn_cache_step": is_cdn_cache_step,
+                "theme_slug": theme_slug,
+            }
+            try_step = PutStep(
                 put=OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
                 timeout="1m",
                 attempts=3,
@@ -242,9 +261,8 @@ class OcwStudioWebhookStep(TryStep):
                 },
                 inputs=[],
                 no_get=True,
-            ),
-            **kwargs,
-        )
+            )
+        super().__init__(try_=try_step, **kwargs)
         self.model_rebuild()
 
 

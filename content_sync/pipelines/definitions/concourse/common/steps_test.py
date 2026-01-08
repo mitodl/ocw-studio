@@ -181,3 +181,22 @@ def test_no_get_property_on_put_steps():
     assert slack_json["try_"]["do"][0]["no_get"] is True
     assert ocw_studio_json["try_"]["no_get"] is True
     assert open_catalog_json["try_"]["no_get"] is True
+
+
+@pytest.mark.parametrize("skip", [True, False])
+def test_webhook_step_skip(skip):
+    """Test that OcwStudioWebhookStep skips the webhook when skip=True."""
+    step = OcwStudioWebhookStep(
+        pipeline_name="test_pipeline",
+        status="succeeded",
+        theme_slug="some-theme",
+        skip=skip,
+    )
+    step_json = json.loads(step.model_dump_json())
+
+    if skip:
+        assert step_json["try_"]["task"] == "ocw-studio-webhook-skipped"
+        assert "put" not in step_json["try_"]
+    else:
+        assert step_json["try_"]["put"] is not None
+        assert "task" not in step_json["try_"]
