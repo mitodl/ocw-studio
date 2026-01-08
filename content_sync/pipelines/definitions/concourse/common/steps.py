@@ -41,7 +41,7 @@ def add_error_handling(  # noqa: PLR0913
     instance_vars: str,
     build_type: str | None = None,
     theme_slug: str | None = None,
-    skip: bool = False,  # noqa: FBT001, FBT002
+    skip_webhooks: bool = False,  # noqa: FBT001, FBT002
 ):
     """
     Add error handling steps to any Step-like object
@@ -78,7 +78,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        skip=skip,
+        skip_webhooks=skip_webhooks,
     )
     step.on_error = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -88,7 +88,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        skip=skip,
+        skip_webhooks=skip_webhooks,
     )
     step.on_abort = ErrorHandlingStep(
         pipeline_name=pipeline_name,
@@ -98,7 +98,7 @@ def add_error_handling(  # noqa: PLR0913
         concourse_url=concourse_url,
         build_type=build_type,
         theme_slug=theme_slug,
-        skip=skip,
+        skip_webhooks=skip_webhooks,
     )
     return step
 
@@ -117,7 +117,7 @@ class ErrorHandlingStep(TryStep):
         concourse_url: str,
         build_type: str | None = None,
         theme_slug: str | None = None,
-        skip: bool = False,  # noqa: FBT001, FBT002
+        skip_webhooks: bool = False,  # noqa: FBT001, FBT002
         **kwargs,
     ):
         super().__init__(
@@ -129,7 +129,7 @@ class ErrorHandlingStep(TryStep):
                             status=status,
                             build_type=build_type,
                             theme_slug=theme_slug,
-                            skip=skip,
+                            skip=skip_webhooks,
                         ),
                         SlackAlertStep(
                             alert_type=status,
