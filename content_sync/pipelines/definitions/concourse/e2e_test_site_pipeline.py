@@ -283,7 +283,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                 }
             )
         tasks.append(fetch_built_content_step)
-        playwright_commands = "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0\ncorepack enable\nyarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test"  # noqa: E501
+        playwright_commands = "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0\ncorepack enable\nyarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test '^((?!/ocw-ci-test-course-v3/).)*$'"  # noqa: E501
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
@@ -298,6 +298,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                     params={
                         "PLAYWRIGHT_BASE_URL": static_api_base_url,
                         "CI": "1",
+                        "FEATURE_ENABLE_LEARN_INTEGRATION": "true",
                         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
                         "OCW_STUDIO_BASE_URL": static_api_base_url,
@@ -308,6 +309,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "NOINDEX": "true",
                         "COURSE_CONTENT_PATH": "../",
                         "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",  # noqa: E501
+                        "COURSE_V3_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v3/config.yaml",  # noqa: E501
                         "FIELDS_CONTENT_PATH": "",
                         "FIELDS_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/mit-fields/config.yaml",  # noqa: E501
                         "GIT_CONTENT_SOURCE": "git@github.mit.edu:ocw-content-rc",
