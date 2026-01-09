@@ -38,10 +38,11 @@ export default function SingletonsContentListing(props: {
   return (
     <div>
       <ConfirmDiscardChanges when={dirty} />
-      <Nav tabs>
+      <Nav tabs data-testid="singletons-nav">
         {configItem.files.map((fileConfigItem, i) => (
           <NavItem key={i}>
             <NavLink
+              role="tab"
               className={activeTab === i ? "active" : ""}
               onClick={() => toggle(i)}
             >

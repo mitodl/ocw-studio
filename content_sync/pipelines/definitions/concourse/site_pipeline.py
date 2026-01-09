@@ -63,6 +63,7 @@ from content_sync.utils import (
     get_cli_endpoint_url,
     get_hugo_arg_string,
     get_ocw_studio_api_url,
+    is_extra_theme,
 )
 from main.constants import PRODUCTION_NAMES
 from main.utils import is_dev
@@ -105,6 +106,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "hugo_args_online": f"(({namespace}hugo_args_online))",
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
+        "theme_slug": f"(({namespace}theme_slug))",
     }
 
 
@@ -148,6 +150,8 @@ class SitePipelineDefinitionConfig:
         sitemap_domain: str | None = settings.SITEMAP_DOMAIN,
         prefix: str = "",
         namespace: str = "site:",
+        noindex: bool | None = None,  # noqa: FBT001
+        theme_slug: str | None = None,
     ):
         self.site = site
         self.pipeline_name = pipeline_name
@@ -163,11 +167,13 @@ class SitePipelineDefinitionConfig:
         self.offline_bucket = offline_bucket
         self.static_api_url = static_api_url
         self.sitemap_domain = sitemap_domain
-        self.prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
+        self.prefix = prefix.strip("/") if prefix else ""
         self.url_path = site.get_url_path()
         self.resource_base_url = resource_base_url
         self.ocw_studio_url = get_ocw_studio_api_url()
-        if (
+        if noindex is not None:
+            self.noindex = "true" if noindex else "false"
+        elif (
             self.site_content_branch == settings.GIT_BRANCH_PREVIEW
             or settings.ENV_NAME not in PRODUCTION_NAMES
         ):
@@ -182,7 +188,7 @@ class SitePipelineDefinitionConfig:
             self.delete_flag = ""
             self.static_resources_subdirectory = f"/{site.get_url_path()}/"
         else:
-            self.base_url = site.get_url_path()
+            self.base_url = site.get_url_path().lstrip("/")
             self.static_resources_subdirectory = "/"
             self.delete_flag = " --delete"
         if self.is_test_website:
@@ -195,13 +201,17 @@ class SitePipelineDefinitionConfig:
             self.ocw_studio_url = self.static_api_url if self.is_root_website else ""
             if self.is_root_website:
                 self.url_path = site.name
-        starter_slug = site.starter.slug
+        self.is_extra_theme = is_extra_theme(theme_slug)
+        starter_slug = theme_slug if theme_slug else site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
+        base_url_path = (
+            f"/{self.prefix}/{self.base_url}" if self.prefix else f"/{self.base_url}"
+        )
         base_online_args.update(
             {
                 "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",  # noqa: E501
-                "--baseURL": f"/{self.prefix}{self.base_url}",
+                "--baseURL": base_url_path,
                 "--destination": "output-online",
             }
         )
@@ -257,6 +267,7 @@ class SitePipelineDefinitionConfig:
             "hugo_args_online": hugo_args_online,
             "hugo_args_offline": hugo_args_offline,
             "prefix": self.prefix,
+            "theme_slug": theme_slug or "",
         }
 
 
@@ -283,7 +294,10 @@ class SitePipelineResources(list[Resource]):
         config(SitePipelineDefinitionConfig): The site pipeline configuration object
     """
 
-    def __init__(self, config: SitePipelineDefinitionConfig):
+    def __init__(
+        self,
+        config: SitePipelineDefinitionConfig,
+    ):
         webpack_manifest_resource = WebpackManifestResource(
             name=WEBPACK_MANIFEST_S3_IDENTIFIER,
             bucket=config.vars["artifacts_bucket"],
@@ -301,25 +315,25 @@ class SitePipelineResources(list[Resource]):
             branch=config.vars["site_content_branch"],
             short_id=config.vars["short_id"],
         )
-        ocw_studio_webhook_resource = OcwStudioWebhookResource(
-            site_name=config.vars["site_name"],
-            api_token=settings.API_BEARER_TOKEN or "",
-        )
         ocw_studio_webhook_offline_gate_resource = OcwStudioOfflineGateResource(
             site_name=config.vars["site_name"],
             api_token=settings.API_BEARER_TOKEN or "",
         )
-        self.extend(
-            [
-                webpack_manifest_resource,
-                site_content_resource,
-                ocw_hugo_themes_resource,
-                ocw_hugo_projects_resource,
-                ocw_studio_webhook_resource,
-                ocw_studio_webhook_offline_gate_resource,
-                SlackAlertResource(),
-            ]
-        )
+        resources = [
+            webpack_manifest_resource,
+            site_content_resource,
+            ocw_hugo_themes_resource,
+            ocw_hugo_projects_resource,
+            ocw_studio_webhook_offline_gate_resource,
+            SlackAlertResource(),
+        ]
+        if not config.is_extra_theme:
+            ocw_studio_webhook_resource = OcwStudioWebhookResource(
+                site_name=config.vars["site_name"],
+                api_token=settings.API_BEARER_TOKEN or "",
+            )
+            resources.append(ocw_studio_webhook_resource)
+        self.extend(resources)
         if not is_dev() and config.values["pipeline_name"] == "live":
             self.extend(
                 [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
@@ -333,6 +347,7 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
         gated: bool = False,  # noqa: FBT001, FBT002
         passed_identifier: Identifier = None,
         build_type: str | None = None,
+        skip_webhooks: bool = False,  # noqa: FBT001, FBT002
     ):
         webpack_manifest_get_step = add_error_handling(
             step=GetStep(
@@ -346,6 +361,8 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         ocw_hugo_themes_get_step = add_error_handling(
             step=GetStep(
@@ -359,6 +376,8 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         ocw_hugo_projects_get_step = add_error_handling(
             step=GetStep(
@@ -372,6 +391,8 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         site_content_get_step = add_error_handling(
             step=GetStep(
@@ -385,6 +406,8 @@ class SitePipelineBaseTasks(list[StepModifierMixin]):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type=build_type,
+            theme_slug=config.vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         get_steps = [
             webpack_manifest_get_step,
@@ -442,6 +465,7 @@ class StaticResourcesTaskStep(TaskStep):
         *,
         filter_videos: bool = False,
         build_type: str | None = None,
+        skip_webhooks: bool = False,
     ):
         video_filter = " --exclude *.mp4" if filter_videos else ""
         super().__init__(
@@ -469,6 +493,8 @@ class StaticResourcesTaskStep(TaskStep):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type=build_type,
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         if is_dev():
             self.params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
@@ -500,12 +526,14 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         filter_videos: bool = False,
         skip_cache_clear: bool = False,
         skip_search_index_update: bool = False,
+        skip_webhooks: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
             filter_videos=filter_videos,
             build_type="online",
+            skip_webhooks=skip_webhooks,
         )
         build_online_site_step = add_error_handling(
             step=TaskStep(
@@ -557,6 +585,8 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         if is_dev():
             build_online_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -566,23 +596,17 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY
             )
 
-        base_urls = []
-        if pipeline_vars["prefix"] != "":
-            base_urls.append(pipeline_vars["prefix"])
-        if pipeline_vars["base_url"] != "":
-            base_urls.append(pipeline_vars["base_url"])
-        base_url = "/".join(base_urls) if len(base_urls) > 0 else ""
         online_sync_command = rf"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             # Sync directories with --delete, excluding the static_shared directory
             for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
-                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars["web_bucket"]}{base_url}$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
             done
             # Copy only files at the root (exclude directories)
-            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars["web_bucket"]}{base_url}" --metadata site-id={pipeline_vars["site_name"]} \;
+            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}" --metadata site-id={pipeline_vars["site_name"]} \;
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars["web_bucket"]}{base_url}" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -607,6 +631,8 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         if is_dev():
             upload_online_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -626,6 +652,8 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="online",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         clear_cdn_cache_online_on_success_steps = []
         if not skip_search_index_update and pipeline_name == "live":
@@ -647,6 +675,8 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 status="succeeded",
                 build_type="online",
                 is_cdn_cache_step=True,
+                theme_slug=pipeline_vars["theme_slug"],
+                skip=skip_webhooks,
             )
         )
         clear_cdn_cache_online_step.on_success = TryStep(
@@ -673,9 +703,18 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
     """  # noqa: E501
 
-    def __init__(self, pipeline_vars: dict, fastly_var: str, pipeline_name: str):
+    def __init__(
+        self,
+        pipeline_vars: dict,
+        fastly_var: str,
+        pipeline_name: str,
+        *,
+        skip_webhooks: bool = False,
+    ):
         static_resources_task_step = StaticResourcesTaskStep(
-            pipeline_vars=pipeline_vars, build_type="offline"
+            pipeline_vars=pipeline_vars,
+            build_type="offline",
+            skip_webhooks=skip_webhooks,
         )
         build_offline_site_command = f"""
         cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
@@ -760,6 +799,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         if is_dev():
             build_offline_site_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -768,6 +809,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             build_offline_site_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
+
         offline_sync_command = f"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
@@ -805,6 +847,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         if is_dev():
             upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
@@ -824,6 +868,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],
             build_type="offline",
+            theme_slug=pipeline_vars["theme_slug"],
+            skip_webhooks=skip_webhooks,
         )
         clear_cdn_cache_offline_on_success_steps = []
 
@@ -844,6 +890,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 status="succeeded",
                 build_type="offline",
                 is_cdn_cache_step=True,
+                theme_slug=pipeline_vars["theme_slug"],
+                skip=skip_webhooks,
             )
         )
         clear_cdn_cache_offline_step.on_success = TryStep(
@@ -916,6 +964,8 @@ class SitePipelineDefinition(Pipeline):
             short_id=config.vars["short_id"],
             instance_vars=config.vars["instance_vars"],
             build_type="offline",
+            theme_slug=config.vars["theme_slug"],
+            skip_webhooks=config.is_extra_theme,
         )
         offline_job.plan.insert(0, offline_build_gate_get_step)
         dummy_var_source = DummyVarSource(
@@ -952,6 +1002,7 @@ class SitePipelineDefinition(Pipeline):
                     "hugo_args_online": config.values["hugo_args_online"],
                     "hugo_args_offline": config.values["hugo_args_offline"],
                     "prefix": config.values["prefix"],
+                    "theme_slug": config.values["theme_slug"],
                 }
             ),
         )
@@ -1060,15 +1111,24 @@ class SitePipelineDefinition(Pipeline):
             pipeline_name=config.vars["pipeline_name"],
             status="started",
             build_type="online",
+            theme_slug=config.vars["theme_slug"],
+            skip=config.is_extra_theme,
         )
         steps = [ocw_studio_webhook_started_step]
-        steps.extend(SitePipelineBaseTasks(config=config, build_type="online"))
+        steps.extend(
+            SitePipelineBaseTasks(
+                config=config,
+                build_type="online",
+                skip_webhooks=config.is_extra_theme,
+            )
+        )
         skip_cache_clear = is_test_site(config.site.name)
         online_tasks = SitePipelineOnlineTasks(
             pipeline_vars=config.vars,
             fastly_var=config.pipeline_name,
             pipeline_name=config.pipeline_name,
             skip_cache_clear=skip_cache_clear,
+            skip_webhooks=config.is_extra_theme,
         )
         for task in online_tasks:
             if hasattr(task, "task") and task.task == UPLOAD_ONLINE_BUILD_IDENTIFIER:
@@ -1076,6 +1136,8 @@ class SitePipelineDefinition(Pipeline):
                     pipeline_name=config.vars["pipeline_name"],
                     status="succeeded",
                     build_type="online",
+                    theme_slug=config.vars["theme_slug"],
+                    skip=config.is_extra_theme,
                 )
         steps.extend(online_tasks)
         return Job(
@@ -1092,6 +1154,7 @@ class SitePipelineDefinition(Pipeline):
                 gated=True,
                 passed_identifier=self._online_site_job_identifier,
                 build_type="offline",
+                skip_webhooks=config.is_extra_theme,
             )
         )
         steps.append(FilterWebpackArtifactsStep(web_bucket=config.vars["web_bucket"]))
@@ -1100,6 +1163,7 @@ class SitePipelineDefinition(Pipeline):
                 pipeline_vars=config.vars,
                 fastly_var=config.pipeline_name,
                 pipeline_name=config.pipeline_name,
+                skip_webhooks=config.is_extra_theme,
             )
         )
         return Job(

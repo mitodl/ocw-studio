@@ -52,6 +52,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineOfflineTasks,
     SitePipelineOnlineTasks,
     get_site_pipeline_definition_vars,
+    is_extra_theme,
 )
 from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
 from main.utils import is_dev
@@ -73,6 +74,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         starter(WebsiteStarter): (Optional) Filter the sites to be built by a WebsiteStarter
         prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
+        theme_slug(str): (Optional) Override for the theme slug to use in the builds
     """  # noqa: E501
 
     def __init__(  # noqa: PLR0913
@@ -87,6 +89,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         starter: WebsiteStarter | None = None,
         prefix: str | None = "",
         hugo_arg_overrides: str | None = None,
+        theme_slug: str | None = None,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
         sites = list(get_publishable_sites(version, is_offline=offline))
@@ -102,6 +105,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.offline = offline
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
+        self.theme_slug = theme_slug or ""
         self.web_bucket = (
             vars["preview_bucket_name"]
             if version == VERSION_DRAFT
@@ -165,12 +169,13 @@ class MassBuildSitesResources(list[Resource]):
         self.append(ocw_hugo_themes_resource)
         self.append(ocw_hugo_projects_resource)
         self.append(ocw_hugo_projects_trigger_resource)
-        self.append(
-            OcwStudioWebhookResource(
-                site_name=site_pipeline_vars["site_name"],
-                api_token=settings.API_BEARER_TOKEN or "",
+        if not is_extra_theme(config.theme_slug):
+            self.append(
+                OcwStudioWebhookResource(
+                    site_name=site_pipeline_vars["site_name"],
+                    api_token=settings.API_BEARER_TOKEN or "",
+                )
             )
-        )
         self.append(SlackAlertResource())
         if not is_dev() and config.version == "live":
             self.extend(
@@ -300,6 +305,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     ocw_hugo_projects_branch=config.ocw_hugo_projects_branch,
                     namespace=namespace,
                     prefix=config.prefix,
+                    theme_slug=config.theme_slug,
                 )
                 across_var_values.append(site_config.values)
 
@@ -317,6 +323,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         pipeline_name=config.version,
                         destructive_sync=False,
                         filter_videos=True,
+                        skip_webhooks=is_extra_theme(config.theme_slug),
                     )
                 )
             else:
@@ -325,6 +332,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         pipeline_vars=site_pipeline_vars,
                         fastly_var=config.version,
                         pipeline_name=config.version,
+                        skip_webhooks=is_extra_theme(config.theme_slug),
                     )
                 )
             if batch_number > 1:

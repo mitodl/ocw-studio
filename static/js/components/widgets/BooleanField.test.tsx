@@ -1,16 +1,17 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 
 import BooleanField from "./BooleanField"
 
 describe("BooleanField", () => {
-  let render: any, onChangeStub: any
+  let renderComponent: any, onChangeStub: any
 
   beforeEach(() => {
     onChangeStub = jest.fn()
 
-    render = (props = {}) =>
-      shallow(
+    renderComponent = (props = {}) =>
+      render(
         <BooleanField
           name="name"
           value={false}
@@ -21,41 +22,52 @@ describe("BooleanField", () => {
   })
 
   it("should render two radio inputs", () => {
-    const wrapper = render()
-    wrapper.find("input").map((input: any) => {
-      const { name, type, id, value } = input.props()
-      expect(name).toBe("name")
-      expect(type).toBe("radio")
-      expect(id).toBe(value === "true" ? "name_true" : "name_false")
+    renderComponent()
+    const inputs = screen.getAllByRole("radio")
+    expect(inputs).toHaveLength(2)
+    inputs.forEach((input) => {
+      expect(input).toHaveAttribute("name", "name")
+      expect(input).toHaveAttribute("type", "radio")
+      const value = input.getAttribute("value")
+      expect(input).toHaveAttribute(
+        "id",
+        value === "true" ? "name_true" : "name_false",
+      )
     })
   })
 
   it("should set 'checked' prop on the radio corresponding to current value", () => {
     ;[true, false].forEach((value) => {
-      const wrapper = render({ value })
-      expect(
-        wrapper.find(`#name_${value.toString()}`).prop("checked"),
-      ).toBeTruthy()
-      expect(
-        wrapper.find(`#name_${(!value).toString()}`).prop("checked"),
-      ).toBeFalsy()
+      const { unmount } = renderComponent({ value })
+      const checkedRadio = screen.getByRole("radio", {
+        name: value ? "True" : "False",
+      })
+      const uncheckedRadio = screen.getByRole("radio", {
+        name: value ? "False" : "True",
+      })
+
+      expect(checkedRadio).toBeChecked()
+      expect(uncheckedRadio).not.toBeChecked()
+      unmount()
     })
   })
 
-  it("clicking on a radio option should call setFieldValue", () => {
-    const wrapper = render()
-    const name = "name"
-    wrapper
-      .find("input")
-      .at(0)
-      .simulate("change", { target: { name, value: "true" } })
+  it("clicking on a radio option should call setFieldValue", async () => {
+    const user = userEvent.setup()
+
+    const { unmount } = renderComponent({ value: false })
+    const yesRadio = screen.getByRole("radio", { name: "True" })
+    await user.click(yesRadio)
     expect(onChangeStub).toHaveBeenCalledWith({
       target: { name: "name", value: true },
     })
-    wrapper
-      .find("input")
-      .at(1)
-      .simulate("change", { target: { name, value: "false" } })
+
+    unmount()
+    onChangeStub.mockClear()
+
+    renderComponent({ value: true })
+    const noRadio = screen.getByRole("radio", { name: "False" })
+    await user.click(noRadio)
     expect(onChangeStub).toHaveBeenCalledWith({
       target: { name: "name", value: false },
     })
