@@ -283,7 +283,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                 }
             )
         tasks.append(fetch_built_content_step)
-        playwright_commands = "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0\ncorepack enable\nyarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test"  # noqa: E501
+        playwright_commands = "export COREPACK_ENABLE_DOWNLOAD_PROMPT=0\ncorepack enable\nyarn install\nnpx playwright install firefox --with-deps\nnpx playwright install chrome --with-deps\nnpx playwright test '^((?!/ocw-ci-test-course-v3/).)*$'"  # noqa: E501
         tasks.append(
             TaskStep(
                 task=playwright_task_identifier,
@@ -298,7 +298,6 @@ class EndToEndTestPipelineDefinition(Pipeline):
                     params={
                         "PLAYWRIGHT_BASE_URL": static_api_base_url,
                         "CI": "1",
-                        "IGNORE_V3_TESTS": "true",
                         "FEATURE_ENABLE_LEARN_INTEGRATION": "true",
                         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
