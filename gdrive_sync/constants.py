@@ -54,8 +54,6 @@ class DriveFileStatus:
     UPLOADING = "Uploading"
     UPLOAD_FAILED = "Upload Failed"
     UPLOAD_COMPLETE = "Upload Complete"
-    TRANSCODING = "Transcoding"
-    TRANSCODE_FAILED = "Transcode Failed"
     COMPLETE = "Complete"
     FAILED = "Failed"
     ALL_STATUSES = [
@@ -63,8 +61,6 @@ class DriveFileStatus:
         UPLOADING,
         UPLOAD_FAILED,
         UPLOAD_COMPLETE,
-        TRANSCODING,
-        TRANSCODE_FAILED,
         COMPLETE,
         FAILED,
     ]

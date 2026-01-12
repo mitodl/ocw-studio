@@ -31,7 +31,7 @@ The high-level description of the process is below, and each subsequent section 
 
 # Google Drive Sync and AWS Transcoding
 
-Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the [is_video property](/gdrive_sync/models.py). The file is processed using the [process_drive_file function](/gdrive_sync/tasks.py), which triggers the [`stream_to_s3` and `transcode_gdrive_video` functions](/gdrive_sync/api.py), which submit the AWS MediaConvert transcoding job.
+Users upload videos in a valid video format to the `videos_final` folder. Whether a file is located in this folder is used for defining the [is_video property](/gdrive_sync/models.py). The file is processed using the [process_drive_file function](/gdrive_sync/tasks.py), which triggers the [`stream_to_s3` function](/gdrive_sync/api.py) to upload the file to S3. After all resources are created via [`create_gdrive_resource_content_batch`](/gdrive_sync/tasks.py), videos are then transcoded via [`transcode_gdrive_videos_batch`](/gdrive_sync/tasks.py), which calls [`transcode_gdrive_video`](/gdrive_sync/api.py) to submit the AWS MediaConvert transcoding job.
 
 The parameters of the AWS transcode request are defined through the AWS interface, and the role is defined [here](https://github.com/mitodl/ol-infrastructure/blob/main/src/ol_infrastructure/applications/ocw_studio/__main__.py). Some example JSONs used for triggering MediaConvert job are in [this folder](/test_videos_webhook/).
 
