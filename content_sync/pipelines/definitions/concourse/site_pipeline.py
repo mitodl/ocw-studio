@@ -819,16 +819,15 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
 
         offline_sync_command = f"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
-        OFFLINE_S3_PATH="{pipeline_vars["offline_bucket"]}"
-        WEB_S3_PATH="{pipeline_vars["web_bucket"]}"
+        SUB_PATH=""
         if [ -n "{pipeline_vars["prefix"]}" ]; then
-            OFFLINE_S3_PATH="$OFFLINE_S3_PATH/{pipeline_vars["prefix"]}"
-            WEB_S3_PATH="$WEB_S3_PATH/{pipeline_vars["prefix"]}"
+            SUB_PATH="$SUB_PATH/{pipeline_vars["prefix"]}"
         fi
         if [ -n "{pipeline_vars["base_url"]}" ]; then
-            OFFLINE_S3_PATH="$OFFLINE_S3_PATH/{pipeline_vars["base_url"]}"
-            WEB_S3_PATH="$WEB_S3_PATH/{pipeline_vars["base_url"]}"
+            SUB_PATH="$SUB_PATH/{pipeline_vars["base_url"]}"
         fi
+        OFFLINE_S3_PATH="{pipeline_vars["offline_bucket"]}$SUB_PATH"
+        WEB_S3_PATH="{pipeline_vars["web_bucket"]}$SUB_PATH"
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         else
