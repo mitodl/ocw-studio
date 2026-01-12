@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from urllib.parse import quote, urljoin
 
 import pytest
@@ -1074,3 +1075,75 @@ def test_site_pipeline_resources_webhook_resource_inclusion(
         assert len(webhook_resources) == 1
     else:
         assert len(webhook_resources) == 0
+
+
+@pytest.mark.parametrize(
+    ("prefix", "base_url"),
+    [
+        ("", "courses/test-site"),
+        ("", ""),
+        ("myprefix", "courses/test-site"),
+        ("myprefix", ""),
+    ],
+)
+def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
+    """S3 sync commands should not contain double slashes in paths."""
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="double-slash-test-starter",
+    )
+    website = WebsiteFactory.create(starter=starter, name="double-slash-test")
+    settings.ROOT_WEBSITE_NAME = "other-root"
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web-bucket",
+        offline_bucket="test-offline-bucket",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        prefix=prefix,
+    )
+    config.base_url = base_url
+    config.values["base_url"] = base_url
+    config.values["prefix"] = prefix
+
+    pipeline = SitePipelineDefinition(config=config)
+    rendered = json.loads(pipeline.json())
+
+    online_job = next(j for j in rendered["jobs"] if j["name"] == "online-site-job")
+    offline_job = next(j for j in rendered["jobs"] if j["name"] == "offline-site-job")
+
+    online_upload_task = next(
+        t for t in online_job["plan"] if t.get("task") == UPLOAD_ONLINE_BUILD_IDENTIFIER
+    )
+    offline_upload_task = next(
+        t
+        for t in offline_job["plan"]
+        if t.get("task") == UPLOAD_OFFLINE_BUILD_IDENTIFIER
+    )
+
+    online_command = online_upload_task["config"]["run"]["args"][1]
+    offline_command = offline_upload_task["config"]["run"]["args"][1]
+
+    adjacent_vars_pattern = r"/\(\([^)]+\)\)/\(\([^)]+\)\)"
+    assert not re.search(adjacent_vars_pattern, online_command), (
+        f"Adjacent vars with slashes would cause double slashes: {online_command}"
+    )
+    assert not re.search(adjacent_vars_pattern, offline_command), (
+        f"Adjacent vars with slashes would cause double slashes: {offline_command}"
+    )
