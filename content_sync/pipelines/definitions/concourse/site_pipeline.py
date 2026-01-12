@@ -598,15 +598,22 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
 
         online_sync_command = rf"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
+        S3_PATH="{pipeline_vars["web_bucket"]}"
+        if [ -n "{pipeline_vars["prefix"]}" ]; then
+            S3_PATH="$S3_PATH/{pipeline_vars["prefix"]}"
+        fi
+        if [ -n "{pipeline_vars["base_url"]}" ]; then
+            S3_PATH="$S3_PATH/{pipeline_vars["base_url"]}"
+        fi
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             # Sync directories with --delete, excluding the static_shared directory
             for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
-                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
             done
             # Copy only files at the root (exclude directories)
-            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}" --metadata site-id={pipeline_vars["site_name"]} \;
+            find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://$S3_PATH/" --metadata site-id={pipeline_vars["site_name"]} \;
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}/{pipeline_vars["base_url"]}" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -812,13 +819,22 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
 
         offline_sync_command = f"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
+        SUB_PATH=""
+        if [ -n "{pipeline_vars["prefix"]}" ]; then
+            SUB_PATH="$SUB_PATH/{pipeline_vars["prefix"]}"
+        fi
+        if [ -n "{pipeline_vars["base_url"]}" ]; then
+            SUB_PATH="$SUB_PATH/{pipeline_vars["base_url"]}"
+        fi
+        OFFLINE_S3_PATH="{pipeline_vars["offline_bucket"]}$SUB_PATH"
+        WEB_S3_PATH="{pipeline_vars["web_bucket"]}$SUB_PATH"
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars["offline_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
+            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{pipeline_vars["offline_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         fi
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{pipeline_vars["web_bucket"]}/{pipeline_vars["prefix"]}{pipeline_vars["base_url"]} --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
+            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
         fi
         """  # noqa: E501
         upload_offline_build_step = add_error_handling(
