@@ -21,6 +21,7 @@ from gdrive_sync.tasks import (
     populate_file_sizes,
     populate_file_sizes_bulk,
     process_drive_file,
+    transcode_gdrive_videos_batch,
     update_website_status,
 )
 from users.factories import UserFactory
@@ -133,6 +134,9 @@ def test_import_website_files(
         )
 
     mock_process_gdrive_file = mocker.patch("gdrive_sync.tasks.process_drive_file.s")
+    mock_transcode_videos = mocker.patch(
+        "gdrive_sync.tasks.transcode_gdrive_videos_batch.s"
+    )
     mock_sync_content = mocker.patch("gdrive_sync.tasks.sync_website_content.si")
     mock_update_status = mocker.patch("gdrive_sync.tasks.update_website_status.si")
     with pytest.raises(mocked_celery.replace_exception_class):
@@ -145,10 +149,12 @@ def test_import_website_files(
         # skipped by process_drive_file i.e their
         # sync_to_s3 and related steps should not be called
         mock_process_gdrive_file.assert_not_called()
+        mock_transcode_videos.assert_not_called()
     else:
         # When process_file_result returns drive files, process_drive_file should be called for each
         for drive_file in drive_files:
             mock_process_gdrive_file.assert_any_call(drive_file.file_id)
+        mock_transcode_videos.assert_called_once()
 
     mock_sync_content.assert_called_once_with(website.name)
     website.refresh_from_db()
@@ -274,14 +280,15 @@ def test_process_drive_file(mocker, is_video, has_error):
     else:
         process_drive_file.delay(drive_file.file_id)
     assert mock_stream_s3.call_count == 1
-    assert mock_transcode.call_count == (1 if is_video and not has_error else 0)
+    # Transcoding is no longer done in process_drive_file
+    assert mock_transcode.call_count == 0
     assert mock_log.call_count == (1 if has_error else 0)
 
 
 @pytest.mark.parametrize("has_user", [True, False])
 @pytest.mark.parametrize("drive_file_count", [0, 5])
 def test_create_gdrive_resource_content_batch(mocker, has_user, drive_file_count):
-    """This batch task should call create_gdrive_resource_content for each valid file."""
+    """This batch task should call create_gdrive_resource_content for each valid file"""
     mock_create_resource = mocker.patch(
         "gdrive_sync.tasks.api.create_gdrive_resource_content"
     )
@@ -294,10 +301,44 @@ def test_create_gdrive_resource_content_batch(mocker, has_user, drive_file_count
     user = UserFactory.create() if has_user else None
     user_pk = user.pk if user else None
 
-    create_gdrive_resource_content_batch.delay(drive_file_ids, user_pk=user_pk)
+    result = create_gdrive_resource_content_batch.delay(drive_file_ids, user_pk=user_pk)
     assert mock_create_resource.call_count == len(drive_files)
     for drive_file in drive_files:
         mock_create_resource.assert_any_call(drive_file, user_pk=user_pk)
+
+    assert result.get() == drive_file_ids
+
+
+def test_transcode_gdrive_videos_batch(mocker):
+    """This batch task should call transcode_gdrive_video for each video file."""
+    mock_transcode = mocker.patch("gdrive_sync.tasks.api.transcode_gdrive_video")
+
+    # Create some video files
+    video_files = []
+    for i in range(3):
+        drive_file = DriveFileFactory.create(
+            drive_path=f"some/path/{DRIVE_FOLDER_VIDEOS_FINAL}/video{i}.mp4",
+            mime_type="video/mp4",
+        )
+        video_files.append(drive_file)
+
+    # Create a non-video file (should not be transcoded)
+    non_video_file = DriveFileFactory.create(
+        drive_path=f"some/path/{DRIVE_FOLDER_FILES_FINAL}/document.pdf",
+        mime_type="application/pdf",
+    )
+
+    video_file_ids = [vf.file_id for vf in video_files] + [
+        non_video_file.file_id,
+        "nonexistent_id",
+    ]
+
+    transcode_gdrive_videos_batch.delay(video_file_ids)
+
+    # Should only transcode actual video files
+    assert mock_transcode.call_count == len(video_files)
+    for video_file in video_files:
+        mock_transcode.assert_any_call(video_file)
 
 
 @pytest.mark.parametrize("has_user", [True, False])

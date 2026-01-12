@@ -120,7 +120,8 @@ export default function SortableSelect(props: Props) {
   )
 
   const isOptionSelected = useCallback(
-    (option) => Boolean(value.find((item) => item.id === option.value)),
+    (option: { value: string }) =>
+      Boolean(value.find((item) => item.id === option.value)),
     [value],
   )
 

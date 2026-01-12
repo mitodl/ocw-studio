@@ -8,6 +8,7 @@ HTTP_RESOURCE_TYPE_IDENTIFIER = Identifier("http-resource").root
 KEYVAL_RESOURCE_TYPE_IDENTIFIER = Identifier("keyval").root
 S3_IAM_RESOURCE_TYPE_IDENTIFIER = Identifier("s3-resource-iam").root
 OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER = Identifier("ocw-studio-webhook").root
+OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER = Identifier("ocw-studio-webhook-skipped").root
 OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER = Identifier("ocw-studio-webhook-curl").root
 OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER = Identifier("offline-build-gate").root
 SLACK_ALERT_RESOURCE_IDENTIFIER = Identifier("slack-alert").root

@@ -71,6 +71,13 @@ class Command(BaseCommand):
             default="",
             help="If specified, override Hugo command line arguments with supplied args",  # noqa: E501
         )
+        parser.add_argument(
+            "-ts",
+            "--theme-slug",
+            dest="theme_slug",
+            default="",
+            help="Optional override for the theme slug to use in the builds",
+        )
 
     def handle(self, *args, **options):  # noqa: ARG002
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -87,6 +94,7 @@ class Command(BaseCommand):
         starter = options["starter"]
         offline = options["offline"]
         hugo_args = options["hugo_args"]
+        theme_slug = options["theme_slug"]
         start = now_in_utc()
 
         if delete_all:
@@ -107,6 +115,7 @@ class Command(BaseCommand):
                 starter=starter,
                 offline=offline,
                 hugo_args=hugo_args,
+                theme_slug=theme_slug,
             )
             pipeline.upsert_pipeline()
             self.stdout.write(f"Created {version} mass build pipeline")

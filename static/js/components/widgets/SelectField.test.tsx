@@ -1,13 +1,10 @@
 import React from "react"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import sinon, { SinonSandbox, SinonStub } from "sinon"
-import { ReactWrapper, mount } from "enzyme"
-import Select from "react-select"
-import { AsyncPaginate, LoadOptions } from "react-select-async-paginate"
-import AsyncSelect from "react-select/async"
+import { LoadOptions } from "react-select-async-paginate"
 
 import SelectField, { Additional, Option } from "./SelectField"
-import { act } from "react-dom/test-utils"
-import { triggerSelectMenu } from "./test_util"
 
 describe("SelectField", () => {
   let sandbox: SinonSandbox,
@@ -15,7 +12,6 @@ describe("SelectField", () => {
     name: string,
     options: Array<string | Option>,
     loadOptions: LoadOptions<Option, Option, Additional>,
-    expectedOptions: Option[],
     classNamePrefix: string,
     min: number,
     max: number
@@ -23,13 +19,14 @@ describe("SelectField", () => {
   beforeEach(() => {
     sandbox = sinon.createSandbox()
     onChangeStub = sandbox.stub()
-    loadOptions = jest.fn().mockReturnValue({ options: [] })
+    loadOptions = jest.fn().mockResolvedValue({
+      options: [
+        { label: "Async One", value: "async-one" },
+        { label: "Async Two", value: "async-two" },
+      ],
+    })
+    name = "test-select"
     options = ["one", "two", { label: "Three", value: "3" }]
-    expectedOptions = [
-      { label: "one", value: "one" },
-      { label: "two", value: "two" },
-      { label: "Three", value: "3" },
-    ]
     classNamePrefix = "select"
     min = 1
     max = 3
@@ -39,266 +36,261 @@ describe("SelectField", () => {
     sandbox.restore()
   })
 
-  const render = async (props: any = {}) => {
-    let wrapper: ReactWrapper
-
-    await act(async () => {
-      wrapper = mount(
-        <SelectField
-          onChange={onChangeStub}
-          name={name}
-          min={min}
-          max={max}
-          options={options}
-          classNamePrefix={classNamePrefix}
-          {...props}
-        />,
-      )
-    })
-
-    return wrapper!
+  const renderSelect = (props: any = {}) => {
+    return render(
+      <SelectField
+        onChange={onChangeStub}
+        name={name}
+        min={min}
+        max={max}
+        options={options}
+        classNamePrefix={classNamePrefix}
+        {...props}
+      />,
+    )
   }
 
   it("should pass placeholder to Select", async () => {
-    const wrapper = await render({
+    renderSelect({
       placeholder: "This place is held!",
     })
-    expect(wrapper.find("Select").prop("placeholder")).toBe(
-      "This place is held!",
-    )
-  })
-  ;[true, false].forEach((isInfiniteScroll) =>
-    it(`should pass defaultOptions to ${
-      isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
-    }`, async () => {
-      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = isInfiniteScroll
-
-      const wrapper = await render({
-        defaultOptions: "options",
-        loadOptions,
-      })
-
-      expect(
-        wrapper
-          .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
-          .prop("defaultOptions"),
-      ).toBe("options")
-    }),
-  )
-
-  it("should pass isOptionDisabled down to the Select", async () => {
-    const isOptionDisabled = jest.fn()
-    const wrapper = await render({ isOptionDisabled })
-    expect(wrapper.find(Select).prop("isOptionDisabled")).toBe(isOptionDisabled)
-  })
-  ;[true, false].forEach((isInfiniteScroll) =>
-    it(`should pass isOptionDisabled down to the ${
-      isInfiniteScroll ? "AsyncPaginate" : "AsyncSelect"
-    }`, async () => {
-      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = isInfiniteScroll
-
-      const isOptionDisabled = jest.fn()
-      const wrapper = await render({
-        isOptionDisabled,
-        loadOptions,
-      })
-      expect(
-        wrapper
-          .find(isInfiniteScroll ? AsyncPaginate : AsyncSelect)
-          .prop("isOptionDisabled"),
-      ).toBe(isOptionDisabled)
-    }),
-  )
-
-  it("should use AsyncPaginate if a loadOptions callback is supplied and infinite scroll is enabled", async () => {
-    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
-
-    const wrapper = await render({
-      loadOptions,
-    })
-
-    const select = wrapper.find(AsyncPaginate)
-    expect(select.exists()).toBeTruthy()
-
-    expect(select.prop("loadOptions")).toBe(loadOptions)
+    expect(screen.getByText("This place is held!")).toBeInTheDocument()
   })
 
-  it.each(["select", "async-select", "async-paginate"])(
-    "should render options in menu",
-    async (component) => {
-      SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL =
-        component === "async-paginate"
+  it("should render options in menu when clicked", async () => {
+    const user = userEvent.setup()
+    renderSelect()
 
-      const wrapper = await render({
-        loadOptions: component !== "select" ? loadOptions : undefined,
-        defaultOptions: options,
-      })
+    const input = screen.getByRole("textbox")
+    await user.click(input)
 
-      await triggerSelectMenu(wrapper)
-
-      const renderedOptions = wrapper
-        .find(`.${classNamePrefix}__option`)
-        .hostNodes()
-        .map((x) => x.text())
-
-      const expectedOptions = options.map(
-        (x) => (x as Option).label ?? (component !== "select" ? "" : x),
-      )
-
-      expect(renderedOptions).toEqual(expectedOptions)
-    },
-  )
-
-  it("should preserve search text on menu close", async () => {
-    const searchText = "An"
-    const wrapper = await render({
-      preserveSearchText: true,
+    await waitFor(() => {
+      expect(screen.getByText("one")).toBeInTheDocument()
+      expect(screen.getByText("two")).toBeInTheDocument()
+      expect(screen.getByText("Three")).toBeInTheDocument()
     })
-
-    await triggerSelectMenu(wrapper)
-
-    await act(async () => {
-      wrapper.find(Select).prop("onInputChange")(searchText, {
-        reason: "test",
-      })
-    })
-
-    // Close and open the menu again
-    await triggerSelectMenu(wrapper)
-    await triggerSelectMenu(wrapper)
-
-    const value = wrapper.find("input").hostNodes().prop("value")
-    expect(value).toEqual(searchText)
-  })
-
-  it("should preserve search text on option selection", async () => {
-    const searchText = "An"
-    const wrapper = await render({
-      preserveSearchText: true,
-    })
-
-    await triggerSelectMenu(wrapper)
-
-    await act(async () => {
-      wrapper.find(Select).prop("onInputChange")(searchText, {
-        reason: "test",
-      })
-    })
-
-    // select an option.
-    await act(async () => {
-      wrapper
-        .find(`.${classNamePrefix}__option`)
-        .hostNodes()
-        .first()
-        .simulate("click")
-    })
-    wrapper.update()
-
-    // Open the menu again because selection closes it.
-    await triggerSelectMenu(wrapper)
-
-    const value = wrapper.find("input").hostNodes().prop("value")
-    expect(value).toEqual(searchText)
-  })
-
-  it("should pass isOptionSelected down to the Select", async () => {
-    const isOptionSelected = jest.fn()
-    const wrapper = await render({ isOptionSelected })
-    expect(wrapper.find(Select).prop("isOptionSelected")).toBe(isOptionSelected)
   })
 
   it("should only show unselected menu items when hideSelectedOptions is true", async () => {
-    const wrapper = await render({
+    const user = userEvent.setup()
+    const { container } = renderSelect({
       hideSelectedOptions: true,
       options: [
-        {
-          label: "Not selected",
-          value: "not-selected",
-        },
-        {
-          label: "Selected",
-          value: "selected",
-        },
+        { label: "Not selected", value: "not-selected" },
+        { label: "Selected", value: "selected" },
       ],
       value: "selected",
     })
 
-    await triggerSelectMenu(wrapper)
+    const input = screen.getByRole("textbox")
+    await user.click(input)
 
-    const selectedNode = wrapper
-      .find(`.${classNamePrefix}__option`)
-      .find({ children: "Selected" })
-    const notSelectedNode = wrapper
-      .find(`.${classNamePrefix}__option`)
-      .find({ children: "Not selected" })
+    await waitFor(() => {
+      const menu = container.querySelector(".select__menu")
+      expect(menu).toBeInTheDocument()
+      expect(menu).toHaveTextContent("Not selected")
+      expect(menu).not.toHaveTextContent("Selected")
+    })
+  })
 
-    expect(selectedNode.exists()).toBeFalsy()
-    expect(notSelectedNode.exists()).toBeTruthy()
+  it("should use AsyncPaginate if loadOptions is supplied and infinite scroll is enabled", async () => {
+    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
+    const user = userEvent.setup()
+
+    renderSelect({
+      loadOptions,
+      defaultOptions: [{ label: "Default Option", value: "default" }],
+    })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await screen.findByText("Default Option")
+  })
+
+  it("should use AsyncSelect if loadOptions is supplied and infinite scroll is disabled", async () => {
+    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = false
+    const user = userEvent.setup()
+
+    renderSelect({
+      loadOptions,
+      defaultOptions: [{ label: "Default Option", value: "default" }],
+    })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await screen.findByText("Default Option")
+  })
+
+  it("should disable options when isOptionDisabled returns true", async () => {
+    const user = userEvent.setup()
+    const isOptionDisabled = (option: Option) => option.value === "two"
+
+    const { container } = renderSelect({ isOptionDisabled })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await waitFor(() => {
+      const disabledOption = container.querySelector(
+        ".select__option--is-disabled",
+      )
+      expect(disabledOption).toBeInTheDocument()
+      expect(disabledOption).toHaveTextContent("two")
+    })
+  })
+
+  it("should disable options in AsyncPaginate when isOptionDisabled returns true", async () => {
+    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = true
+    const user = userEvent.setup()
+    const isOptionDisabled = (option: Option) => option.value === "default"
+
+    const { container } = renderSelect({
+      loadOptions,
+      defaultOptions: [{ label: "Default Option", value: "default" }],
+      isOptionDisabled,
+    })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await waitFor(() => {
+      const disabledOption = container.querySelector(
+        ".select__option--is-disabled",
+      )
+      expect(disabledOption).toBeInTheDocument()
+      expect(disabledOption).toHaveTextContent("Default Option")
+    })
+  })
+
+  it("should disable options in AsyncSelect when isOptionDisabled returns true", async () => {
+    SETTINGS.features.SELECT_FIELD_INFINITE_SCROLL = false
+    const user = userEvent.setup()
+    const isOptionDisabled = (option: Option) => option.value === "default"
+
+    const { container } = renderSelect({
+      loadOptions,
+      defaultOptions: [{ label: "Default Option", value: "default" }],
+      isOptionDisabled,
+    })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await waitFor(() => {
+      const disabledOption = container.querySelector(
+        ".select__option--is-disabled",
+      )
+      expect(disabledOption).toBeInTheDocument()
+      expect(disabledOption).toHaveTextContent("Default Option")
+    })
+  })
+
+  it("should preserve search text on menu close and reopen", async () => {
+    const user = userEvent.setup()
+    renderSelect({ preserveSearchText: true })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+    await user.type(input, "An")
+
+    await user.keyboard("{Escape}")
+
+    await user.click(input)
+
+    expect(input).toHaveValue("An")
+  })
+
+  it("should preserve search text on option selection", async () => {
+    const user = userEvent.setup()
+    renderSelect({ preserveSearchText: true })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+    await user.type(input, "on")
+
+    const option = await screen.findByText("one")
+    await user.click(option)
+
+    await user.click(input)
+
+    expect(input).toHaveValue("on")
+  })
+
+  it("should mark option as selected when isOptionSelected returns true", async () => {
+    const user = userEvent.setup()
+    const isOptionSelected = (option: Option) => option.value === "two"
+
+    const { container } = renderSelect({ isOptionSelected })
+
+    const input = screen.getByRole("textbox")
+    await user.click(input)
+
+    await waitFor(() => {
+      const selectedOption = container.querySelector(
+        ".select__option--is-selected",
+      )
+      expect(selectedOption).toBeInTheDocument()
+      expect(selectedOption).toHaveTextContent("two")
+    })
   })
 
   describe("not multiple choice", () => {
-    it("renders a select widget", async () => {
-      const value = "initial"
-      const wrapper = await render({
-        value,
-      })
-      const props = wrapper.find(Select).props()
-      expect(props.value).toStrictEqual({
-        label: value,
-        value: value,
-      })
-      expect(props.isMulti).toBeFalsy()
-      expect(props.options).toStrictEqual(expectedOptions)
+    it("renders a select widget with initial value", async () => {
+      const value = "one"
+      renderSelect({ value })
+      expect(screen.getByText("one")).toBeInTheDocument()
+    })
 
-      const newValue = "newValue"
-      props.onChange({ value: newValue })
+    it("calls onChange when option is selected", async () => {
+      const user = userEvent.setup()
+      renderSelect()
+
+      const input = screen.getByRole("textbox")
+      await user.click(input)
+
+      const option = await screen.findByText("two")
+      await user.click(option)
+
       sinon.assert.calledWith(onChangeStub, {
-        target: { value: newValue, name: name },
+        target: { value: "two", name: name },
       })
     })
 
     it("handles an empty value gracefully", async () => {
-      const wrapper = await render({
-        value: null,
-      })
-      const props = wrapper.find(Select).props()
-      expect(props.value).toBeNull()
+      renderSelect({ value: null })
+      expect(screen.queryByText("one")).not.toBeInTheDocument()
+      expect(screen.queryByText("two")).not.toBeInTheDocument()
     })
   })
 
   describe("multiple choice", () => {
-    it("renders a select widget", async () => {
-      const value = ["initial", "values", "3", "4"]
-      const expectedValue = [
-        { label: "initial", value: "initial" },
-        { label: "values", value: "values" },
-        { label: "Three", value: "3" },
-        { label: "4", value: "4" },
-      ]
-      const wrapper = await render({
-        value,
-        multiple: true,
-      })
-      const props = wrapper.find(Select).props()
-      expect(props.value).toStrictEqual(expectedValue)
-      expect(props.isMulti).toBeTruthy()
-      expect(props.options).toStrictEqual(expectedOptions)
+    it("renders a select widget with initial values", async () => {
+      const value = ["one", "3"]
+      renderSelect({ value, multiple: true })
+      expect(screen.getByText("one")).toBeInTheDocument()
+      expect(screen.getByText("Three")).toBeInTheDocument()
+    })
 
-      const newValue = ["newValue", "value2"]
-      props.onChange(newValue.map((_value) => ({ value: _value })))
+    it("calls onChange with array when option is selected", async () => {
+      const user = userEvent.setup()
+      renderSelect({ value: ["one"], multiple: true })
+
+      const input = screen.getByRole("textbox")
+      await user.click(input)
+
+      const option = await screen.findByText("two")
+      await user.click(option)
+
       sinon.assert.calledWith(onChangeStub, {
-        target: { value: newValue, name: name },
+        target: { value: ["one", "two"], name: name },
       })
     })
 
     it("handles an empty value gracefully", async () => {
-      const wrapper = await render({
-        value: null,
-        multiple: true,
-      })
-      const props = wrapper.find(Select).props()
-      expect(props.value).toStrictEqual([])
+      renderSelect({ value: null, multiple: true })
+      expect(screen.queryByText("one")).not.toBeInTheDocument()
     })
   })
 })

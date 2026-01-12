@@ -438,7 +438,6 @@ def test_process_file_result_update(settings, mocker, status, same_checksum, sam
         in (
             DriveFileStatus.UPLOADING,
             DriveFileStatus.UPLOAD_COMPLETE,
-            DriveFileStatus.TRANSCODING,
             DriveFileStatus.COMPLETE,
         )
     )

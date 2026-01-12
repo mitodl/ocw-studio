@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from urllib.parse import quote, urljoin
 
 import pytest
@@ -33,6 +34,7 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
+    SitePipelineResources,
 )
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
@@ -409,29 +411,27 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["config"]["run"]["args"]
     )
 
-    base_url = "/".join(
-        (
-            config.vars["prefix"],
-            config.vars["base_url"],
-        )
-    )
+    assert f'S3_PATH="{config.vars["web_bucket"]}"' in upload_online_build_command
+    assert f'if [ -n "{config.vars["prefix"]}" ]; then' in upload_online_build_command
+    assert f'if [ -n "{config.vars["base_url"]}" ]; then' in upload_online_build_command
+
     # root-website: sync each subdirectory (excluding static_shared) with --delete
     assert (
         f'for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do'
         in upload_online_build_command
     )
     assert (
-        f'aws s3{cli_endpoint_url} sync "$dir" "s3://{config.vars["web_bucket"]}{base_url}$(basename "$dir")" --delete --metadata site-id={config.vars["site_name"]}'
+        f'aws s3{cli_endpoint_url} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --delete --metadata site-id={config.vars["site_name"]}'
         in upload_online_build_command
     )
     # root-website: copy only root-level files
     assert (
-        f'find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{cli_endpoint_url} cp {{}} "s3://{config.vars["web_bucket"]}{base_url}" --metadata site-id={config.vars["site_name"]} \\;'
+        f'find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{cli_endpoint_url} cp {{}} "s3://$S3_PATH/" --metadata site-id={config.vars["site_name"]} \\;'
         in upload_online_build_command
     )
     # non-root: fallback to a single sync
     assert (
-        f'aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://{config.vars["web_bucket"]}{base_url}"'
+        f'aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH"'
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
@@ -449,6 +449,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         "build_id": "$BUILD_ID",
         "build_type": "online",
         "is_cdn_cache_step": False,
+        "theme_slug": config.vars["theme_slug"],
     }
     if is_dev:
         assert set(
@@ -626,16 +627,29 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     upload_offline_build_command = "\n".join(
         upload_offline_build_task["config"]["run"]["args"]
     )
+    assert 'SUB_PATH=""' in upload_offline_build_command
+    assert f'if [ -n "{config.vars["prefix"]}" ]; then' in upload_offline_build_command
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f'if [ -n "{config.vars["base_url"]}" ]; then' in upload_offline_build_command
+    )
+    assert (
+        f'OFFLINE_S3_PATH="{config.vars["offline_bucket"]}$SUB_PATH"'
         in upload_offline_build_command
     )
     assert (
-        f"else\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://{config.vars['offline_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        f'WEB_S3_PATH="{config.vars["web_bucket"]}$SUB_PATH"'
         in upload_offline_build_command
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://{config.vars['web_bucket']}/{config.vars['prefix']}{config.vars['base_url']} --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_offline_build_command
+    )
+    assert (
+        f"else\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_offline_build_command
+    )
+    assert (
+        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
         in upload_offline_build_command
     )
     upload_offline_build_expected_inputs = [
@@ -696,7 +710,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
                 == config.vars["pipeline_name"]
             )
 
-    expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
+    expected_prefix = prefix.strip("/") if prefix != "" else prefix
     site_dummy_var_source = get_dict_list_item_by_field(
         rendered_definition["var_sources"], "name", "site"
     )
@@ -933,4 +947,214 @@ def test_offline_build_gate_cleanup_task(
     # Verify no on_success handler - root website rebuild is triggered from OCW Studio, not inline
     assert "on_success" not in remove_content_task, (
         "Should not have on_success handler - root website rebuild is triggered from OCW Studio"
+    )
+
+
+@pytest.mark.parametrize("noindex", [None, True, False])
+@pytest.mark.parametrize("env_name", ["dev", "prod"])
+@pytest.mark.parametrize("pipeline_name", [VERSION_DRAFT, VERSION_LIVE])
+def test_site_pipeline_definition_config_noindex(
+    settings, mocker, noindex, env_name, pipeline_name
+):
+    settings.ENV_NAME = env_name
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="noindex-config-test",
+    )
+    website = WebsiteFactory.create(starter=starter)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=pipeline_name,
+        instance_vars="?vars={}",
+        site_content_branch="preview" if pipeline_name == VERSION_DRAFT else "release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        noindex=noindex,
+    )
+
+    if noindex is True:
+        assert config.noindex == "true"
+    elif noindex is False:
+        assert config.noindex == "false"
+    elif pipeline_name == VERSION_DRAFT or env_name != "prod":
+        assert config.noindex == "true"
+    else:
+        assert config.noindex == "false"
+
+
+@pytest.mark.parametrize("theme_slug", [None, "ocw-course-v3"])
+def test_site_pipeline_definition_config_theme_slug(settings, mocker, theme_slug):
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="theme-slug-config-test",
+    )
+    website = WebsiteFactory.create(starter=starter)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        theme_slug=theme_slug,
+    )
+
+    expected_slug = theme_slug if theme_slug else starter.slug
+    assert f"/{expected_slug}/config.yaml" in config.hugo_args_online
+    assert f"/{expected_slug}/config-offline.yaml" in config.hugo_args_offline
+
+
+@pytest.mark.parametrize(
+    ("theme_slug", "extra_themes", "expect_webhook_resource"),
+    [
+        (None, ["ocw-course-v3"], True),
+        ("ocw-course", ["ocw-course-v3"], True),
+        ("ocw-course-v3", ["ocw-course-v3"], False),
+        ("ocw-course-v3", ["ocw-course-v3", "another-theme"], False),
+        ("another-theme", ["ocw-course-v3", "another-theme"], False),
+    ],
+)
+def test_site_pipeline_resources_webhook_resource_inclusion(
+    settings, mocker, theme_slug, extra_themes, expect_webhook_resource
+):
+    """
+    SitePipelineResources should include OcwStudioWebhookResource only when
+    is_extra_theme is False (i.e., theme_slug is not in OCW_EXTRA_COURSE_THEMES)
+    """
+    settings.OCW_EXTRA_COURSE_THEMES = extra_themes
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="webhook-resource-test",
+    )
+    website = WebsiteFactory.create(starter=starter)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        theme_slug=theme_slug,
+    )
+
+    resources = SitePipelineResources(config=config)
+
+    webhook_resources = [
+        r for r in resources if r.name == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
+    ]
+
+    if expect_webhook_resource:
+        assert len(webhook_resources) == 1
+    else:
+        assert len(webhook_resources) == 0
+
+
+@pytest.mark.parametrize(
+    ("prefix", "base_url"),
+    [
+        ("", "courses/test-site"),
+        ("", ""),
+        ("myprefix", "courses/test-site"),
+        ("myprefix", ""),
+    ],
+)
+def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
+    """S3 sync commands should not contain double slashes in paths."""
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="double-slash-test-starter",
+    )
+    website = WebsiteFactory.create(starter=starter, name="double-slash-test")
+    settings.ROOT_WEBSITE_NAME = "other-root"
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web-bucket",
+        offline_bucket="test-offline-bucket",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        prefix=prefix,
+    )
+    config.base_url = base_url
+    config.values["base_url"] = base_url
+    config.values["prefix"] = prefix
+
+    pipeline = SitePipelineDefinition(config=config)
+    rendered = json.loads(pipeline.json())
+
+    online_job = next(j for j in rendered["jobs"] if j["name"] == "online-site-job")
+    offline_job = next(j for j in rendered["jobs"] if j["name"] == "offline-site-job")
+
+    online_upload_task = next(
+        t for t in online_job["plan"] if t.get("task") == UPLOAD_ONLINE_BUILD_IDENTIFIER
+    )
+    offline_upload_task = next(
+        t
+        for t in offline_job["plan"]
+        if t.get("task") == UPLOAD_OFFLINE_BUILD_IDENTIFIER
+    )
+
+    online_command = online_upload_task["config"]["run"]["args"][1]
+    offline_command = offline_upload_task["config"]["run"]["args"][1]
+
+    adjacent_vars_pattern = r"/\(\([^)]+\)\)/\(\([^)]+\)\)"
+    assert not re.search(adjacent_vars_pattern, online_command), (
+        f"Adjacent vars with slashes would cause double slashes: {online_command}"
+    )
+    assert not re.search(adjacent_vars_pattern, offline_command), (
+        f"Adjacent vars with slashes would cause double slashes: {offline_command}"
     )

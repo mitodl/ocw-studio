@@ -1,5 +1,7 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { Formik, Form } from "formik"
 
 import * as siteContent from "../../lib/site_content"
 import ObjectField from "./ObjectField"
@@ -15,15 +17,23 @@ import {
 } from "../../types/websites"
 import { SiteFormValues } from "../../types/forms"
 
-jest.mock("../../lib/site_content")
+jest.mock("../../lib/site_content", () => ({
+  ...jest.requireActual("../../lib/site_content"),
+  fieldIsVisible: jest.fn(),
+}))
+
+jest.mock("./SelectField", () => ({
+  __esModule: true,
+  default: () => <div>mock select</div>,
+}))
+
 const mockSiteContent = siteContent as jest.Mocked<typeof siteContent>
 
 describe("ObjectField", () => {
-  let render: any,
-    field: ObjectConfigField,
+  let field: ObjectConfigField,
     contentContext: WebsiteContent[],
     values: SiteFormValues,
-    onChangeStub: any
+    onChangeStub: jest.Mock
 
   beforeEach(() => {
     field = makeWebsiteConfigField({
@@ -36,53 +46,66 @@ describe("ObjectField", () => {
     contentContext = [otherContent]
     values = { some: "values" }
     onChangeStub = jest.fn()
-
-    render = (props = {}) =>
-      shallow(
-        <ObjectField
-          field={field}
-          contentContext={contentContext}
-          values={values}
-          onChange={onChangeStub}
-          {...props}
-        />,
-      )
   })
 
+  const renderObjectField = (props = {}) =>
+    render(
+      <Formik initialValues={values} onSubmit={jest.fn()}>
+        <Form>
+          <ObjectField
+            field={field}
+            contentContext={contentContext}
+            values={values}
+            onChange={onChangeStub}
+            {...props}
+          />
+        </Form>
+      </Formik>,
+    )
+
   it("should render an Object field, by passing sub-fields to SiteContentField", () => {
-    const wrapper = render()
-    wrapper.find("SiteContentField").forEach((field: any) => {
-      expect(field.prop("contentContext")).toStrictEqual(contentContext)
-      expect(field.prop("onChange")).toStrictEqual(onChangeStub)
+    renderObjectField()
+    field.fields.forEach((innerField) => {
+      expect(screen.getByText(innerField.label)).toBeInTheDocument()
     })
-    expect(
-      wrapper.find("SiteContentField").map((field: any) => field.prop("field")),
-    ).toEqual(field.fields)
   })
 
   it("should collapse if it's a collapsed widget", () => {
     field.collapsed = true
-    const wrapper = render()
-    expect(wrapper.find("SiteContentField").exists()).toBeFalsy()
+    renderObjectField()
+    field.fields.forEach((innerField) => {
+      expect(screen.queryByText(innerField.label)).not.toBeInTheDocument()
+    })
   })
 
-  it("should allow expanding / collapsing", () => {
-    const wrapper = render()
-    expect(wrapper.find("SiteContentField").exists()).toBeTruthy()
-    wrapper.find(".object-field-label").simulate("click", new Event("click"))
-    expect(wrapper.find("SiteContentField").exists()).toBeFalsy()
-    wrapper.find(".object-field-label").simulate("click", new Event("click"))
-    expect(wrapper.find("SiteContentField").exists()).toBeTruthy()
+  it("should allow expanding / collapsing", async () => {
+    const user = userEvent.setup()
+    renderObjectField()
+    field.fields.forEach((innerField) => {
+      expect(screen.getByText(innerField.label)).toBeInTheDocument()
+    })
+    await user.click(screen.getByText(field.label))
+    field.fields.forEach((innerField) => {
+      expect(screen.queryByText(innerField.label)).not.toBeInTheDocument()
+    })
+    await user.click(screen.getByText(field.label))
+    field.fields.forEach((innerField) => {
+      expect(screen.getByText(innerField.label)).toBeInTheDocument()
+    })
   })
 
   //
   ;[true, false].forEach((isVisible) => {
     it(`should hide fields which are ${isVisible ? "" : "not "}visible`, () => {
       mockSiteContent.fieldIsVisible.mockReturnValue(isVisible)
-      const wrapper = render()
-      expect(wrapper.find("SiteContentField")).toHaveLength(
-        isVisible ? field.fields.length : 0,
-      )
+      renderObjectField()
+      field.fields.forEach((innerField) => {
+        if (isVisible) {
+          expect(screen.getByText(innerField.label)).toBeInTheDocument()
+        } else {
+          expect(screen.queryByText(innerField.label)).not.toBeInTheDocument()
+        }
+      })
       for (const innerField of field.fields) {
         expect(mockSiteContent.fieldIsVisible).toHaveBeenCalledWith(
           innerField,

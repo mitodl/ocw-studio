@@ -180,7 +180,7 @@ def test_upload_video_long_fields(mocker, youtube_mocker):
     mocker.patch("videos.youtube.resumable_upload")
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file)
-    called_args, called_kwargs = mock_upload.call_args
+    _called_args, called_kwargs = mock_upload.call_args
     assert called_kwargs["body"]["snippet"]["title"] == f"{name[:97]}..."
     # Verify course slug is included as tag
     course_slug = get_course_tag(video_file.video.website)
@@ -198,7 +198,7 @@ def test_upload_notify_subscribers(mocker, youtube_mocker, notify):
     mocker.patch("videos.youtube.resumable_upload")
     mock_upload = youtube_mocker().videos.return_value.insert
     YouTubeApi().upload_video(video_file, notify_subscribers=notify)
-    called_args, called_kwargs = mock_upload.call_args
+    _called_args, called_kwargs = mock_upload.call_args
     assert called_kwargs["notifySubscribers"] is notify
 
 
@@ -405,7 +405,7 @@ def test_update_video_tags_not_found(youtube_mocker):
         "items": []
     }
 
-    with pytest.raises(YouTubeUploadException, match="Video .* not found"):
+    with pytest.raises(YouTubeUploadException, match=r"Video .* not found"):
         YouTubeApi().update_video_tags(youtube_id, "test-tag")
 
 

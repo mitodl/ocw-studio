@@ -308,8 +308,6 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "NOINDEX": "true",
                         "COURSE_CONTENT_PATH": "../",
                         "COURSE_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v2/config.yaml",  # noqa: E501
-                        "FIELDS_CONTENT_PATH": "",
-                        "FIELDS_HUGO_CONFIG_PATH": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/mit-fields/config.yaml",  # noqa: E501
                         "GIT_CONTENT_SOURCE": "git@github.mit.edu:ocw-content-rc",
                         "OCW_TEST_COURSE": course_content_git_identifier,
                         "POSTHOG_ENV": "development",

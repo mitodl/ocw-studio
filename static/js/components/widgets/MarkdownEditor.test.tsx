@@ -1,7 +1,6 @@
 import React from "react"
-import { shallow } from "enzyme"
+import { render, screen, act } from "@testing-library/react"
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
-import { CKEditor } from "@ckeditor/ckeditor5-react"
 import sinon, { SinonSandbox } from "sinon"
 import { omit } from "ramda"
 
@@ -20,7 +19,6 @@ import {
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
 } from "../../lib/ckeditor/plugins/constants"
-import ResourcePickerDialog from "../../components/widgets/ResourcePickerDialog"
 import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
 import { makeWebsiteDetail } from "../../util/factories/websites"
@@ -46,12 +44,34 @@ jest.mock("../../context/Website", () => {
 
 jest.mock("@ckeditor/ckeditor5-inspector")
 
+let lastCKEditorProps: any = null
 jest.mock("@ckeditor/ckeditor5-react", () => ({
-  CKEditor: () => <div />,
+  CKEditor: (props: any) => {
+    lastCKEditorProps = props
+    return <div data-testid="ckeditor" />
+  },
 }))
 
-const render = (props: any = {}) => {
-  return shallow(
+let lastResourcePickerProps: any = null
+jest.mock("../../components/widgets/ResourcePickerDialog", () => ({
+  __esModule: true,
+  default: (props: any) => {
+    lastResourcePickerProps = props
+    return props.isOpen ? <div data-testid="resource-picker" /> : null
+  },
+}))
+
+jest.mock("./EmbeddedResource", () => ({
+  __esModule: true,
+  default: ({ uuid }: { uuid: string }) => (
+    <div data-testid="embedded-resource">{uuid}</div>
+  ),
+}))
+
+const renderMarkdownEditor = (props: any = {}) => {
+  lastCKEditorProps = null
+  lastResourcePickerProps = null
+  return render(
     <MarkdownEditor allowedHtml={[]} link={[]} embed={[]} {...props} />,
   )
 }
@@ -86,7 +106,7 @@ describe("MarkdownEditor", () => {
   ])(
     "Uses the $configLabel when minimal=$minimal",
     ({ minimal, expectedConfig, otherProps }) => {
-      const wrapper = render({
+      renderMarkdownEditor({
         minimal,
         /**
          * MarkdownEditor dynamically modifies the config a bit.
@@ -97,9 +117,8 @@ describe("MarkdownEditor", () => {
         link: ["page"],
         ...otherProps,
       })
-      const ckWrapper = wrapper.find(CKEditor)
-      expect(ckWrapper.prop("editor")).toBe(ClassicEditor)
-      const rawConfig = ckWrapper.prop("config") as any
+      expect(lastCKEditorProps.editor).toBe(ClassicEditor)
+      const rawConfig = lastCKEditorProps.config
       const config = omit(
         [
           CKEDITOR_RESOURCE_UTILS,
@@ -119,26 +138,25 @@ describe("MarkdownEditor", () => {
   ])(
     "renders CKEditor with data=$expectedData when value=$value",
     ({ value, expectedData }) => {
-      const wrapper = render({ value })
-      const ckWrapper = wrapper.find(CKEditor)
-      expect(ckWrapper.prop("data")).toBe(expectedData)
+      renderMarkdownEditor({ value })
+      expect(lastCKEditorProps.data).toBe(expectedData)
     },
   )
 
   it("should delegate to ResourceLink.createResourceLink when inserting a link", async () => {
-    const wrapper = render({ link: ["page"] })
-    const editorComponent = wrapper.find<{ onReady: (e: unknown) => void }>(
-      CKEditor,
-    )
+    renderMarkdownEditor({ link: ["page"] })
     const editor = getMockEditor()
     const resourceLinkPlugin = { createResourceLink: jest.fn() }
     editor.plugins.get.mockImplementation((val: unknown) => {
       if (val === ResourceLink) return resourceLinkPlugin
       return null
     })
-    editorComponent.prop("onReady")(editor)
-    const picker = wrapper.find(ResourcePickerDialog)
-    picker.prop("insertEmbed")("best-uuid-ever", "some title", "resourceLink")
+    lastCKEditorProps.onReady(editor)
+    lastResourcePickerProps.insertEmbed(
+      "best-uuid-ever",
+      "some title",
+      "resourceLink",
+    )
     expect(resourceLinkPlugin.createResourceLink).toHaveBeenCalledWith(
       "best-uuid-ever",
       "some title",
@@ -153,22 +171,26 @@ describe("MarkdownEditor", () => {
   ])(
     "should render ResourcePickerDialog iff link or embed are nonempty",
     ({ link, embed, shouldExist }) => {
-      const wrapper = render({ link, embed })
-      const resourcePicker = wrapper.find("ResourcePickerDialog")
-      expect(resourcePicker.exists()).toBe(shouldExist)
+      renderMarkdownEditor({ link, embed })
+      expect(lastResourcePickerProps !== null).toBe(shouldExist)
     },
   )
 
-  it("should render resources with using EmbeddedResource", () => {
-    const wrapper = render()
-    const editor = wrapper.find("CKEditor").prop("config")
+  it("should render resources with using EmbeddedResource", async () => {
+    renderMarkdownEditor()
     const el = document.createElement("div")
-    // @ts-expect-error CKEditor types are a work in progress
-    editor[CKEDITOR_RESOURCE_UTILS].renderResource("resource-uuid", el)
-    wrapper.update()
-    expect(wrapper.find("EmbeddedResource").at(0).prop("uuid")).toEqual(
+    document.body.appendChild(el)
+    await act(async () => {
+      lastCKEditorProps.config[CKEDITOR_RESOURCE_UTILS].renderResource(
+        "resource-uuid",
+        el,
+      )
+    })
+    expect(screen.getByTestId("embedded-resource")).toBeInTheDocument()
+    expect(screen.getByTestId("embedded-resource")).toHaveTextContent(
       "resource-uuid",
     )
+    document.body.removeChild(el)
   })
 
   it.each([
@@ -177,12 +199,10 @@ describe("MarkdownEditor", () => {
   ])(
     'should show "add resource" iff embed is nonempty. Case: $embed',
     ({ embed, hasTool }) => {
-      const wrapper = render({ embed })
-      const editorConfig = wrapper.find("CKEditor").prop("config")
-      // @ts-expect-error CKEditor types are a work in progress
-      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_EMBED)).toBe(
-        hasTool,
-      )
+      renderMarkdownEditor({ embed })
+      expect(
+        lastCKEditorProps.config.toolbar.items.includes(ADD_RESOURCE_EMBED),
+      ).toBe(hasTool)
     },
   )
 
@@ -192,12 +212,10 @@ describe("MarkdownEditor", () => {
   ])(
     'should show "add link" iff link is nonempty. Case: $link',
     ({ link, hasTool }) => {
-      const wrapper = render({ link })
-      const editorConfig = wrapper.find("CKEditor").prop("config")
-      // @ts-expect-error CKEditor types are a work in progress
-      expect(editorConfig.toolbar.items.includes(ADD_RESOURCE_LINK)).toBe(
-        hasTool,
-      )
+      renderMarkdownEditor({ link })
+      expect(
+        lastCKEditorProps.config.toolbar.items.includes(ADD_RESOURCE_LINK),
+      ).toBe(hasTool)
     },
   )
 
@@ -209,37 +227,41 @@ describe("MarkdownEditor", () => {
   ])(
     "includes $toolbar if and only if $tag is allowed. Allowed html: $allowedHtml",
     ({ tool, hasTool, allowedHtml }) => {
-      const wrapper = render({ minimal: false, allowedHtml })
-      const ckWrapper = wrapper.find(CKEditor)
-      const items = (ckWrapper.prop("config") as any).toolbar.items
+      renderMarkdownEditor({ minimal: false, allowedHtml })
+      const items = lastCKEditorProps.config.toolbar.items
 
       expect(items.includes(tool)).toBe(hasTool)
     },
   )
 
   it("recreates CKEditor when editorConfig changes", () => {
-    const wrapper = shallow(
+    const { rerender } = render(
       <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
     )
-    const initialKey = wrapper.find("div").first()
-    wrapper.setProps({ embed: ["resource"] })
-    wrapper.update()
-    const newKey = wrapper.find("div").first().key()
-    expect(newKey).not.toEqual(initialKey)
+    const initialConfig = JSON.stringify(lastCKEditorProps.config)
+    rerender(
+      <MarkdownEditor
+        embed={["resource"]}
+        link={[]}
+        allowedHtml={[]}
+        minimal={false}
+      />,
+    )
+    const newConfig = JSON.stringify(lastCKEditorProps.config)
+    expect(newConfig).not.toEqual(initialConfig)
   })
   ;[RESOURCE_EMBED, RESOURCE_LINK].forEach((resourceNodeType) => {
-    it(`should open the resource picker for ${resourceNodeType}`, () => {
-      const wrapper = render({
+    it(`should open the resource picker for ${resourceNodeType}`, async () => {
+      renderMarkdownEditor({
         embed: ["resource"],
         link: ["resource", "page"],
       })
-      const editor = wrapper.find("CKEditor").prop("config")
-      // @ts-expect-error CKEditor types are a work in progress
-      editor[CKEDITOR_RESOURCE_UTILS].openResourcePicker(resourceNodeType)
-      wrapper.update()
-      expect(wrapper.find("ResourcePickerDialog").at(0).prop("mode")).toBe(
-        resourceNodeType,
-      )
+      await act(async () => {
+        lastCKEditorProps.config[CKEDITOR_RESOURCE_UTILS].openResourcePicker(
+          resourceNodeType,
+        )
+      })
+      expect(lastResourcePickerProps.mode).toBe(resourceNodeType)
     })
   })
 
@@ -251,18 +273,18 @@ describe("MarkdownEditor", () => {
     ;[true, false].forEach((hasOnChange) => {
       it(`triggers ${
         hasOnChange ? "with" : "without"
-      } an onChange when name=${String(name)}`, () => {
+      } an onChange when name=${String(name)}`, async () => {
         const onChangeStub = sandbox.stub()
-        const wrapper = render({
+        renderMarkdownEditor({
           name,
           onChange: hasOnChange ? onChangeStub : null,
         })
-        const ckWrapper = wrapper.find("CKEditor")
 
         const data = "some data"
         const editor = { getData: sandbox.stub().returns(data) }
-        // @ts-expect-error CKEditor types are a work in progress
-        ckWrapper.prop("onChange")(null, editor)
+        await act(async () => {
+          lastCKEditorProps.onChange(null, editor)
+        })
         if (hasOnChange) {
           sinon.assert.calledOnceWithExactly(onChangeStub, {
             target: { value: data, name: expectedPropName },

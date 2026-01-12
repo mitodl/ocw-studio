@@ -1,22 +1,23 @@
-import { act } from "react-dom/test-utils"
+import React from "react"
+import { screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import moment from "moment"
 
-import IntegrationTestHelper, {
-  TestRenderer,
-} from "../util/integration_test_helper_old"
+import IntegrationTestHelper from "../testing_utils/IntegrationTestHelper"
 import DriveSyncStatusIndicator from "./DriveSyncStatusIndicator"
 import { GoogleDriveSyncStatuses } from "../constants"
 import { makeWebsiteDetail } from "../util/factories/websites"
 import { Website } from "../types/websites"
 
 describe("DriveSyncStatusIndicator", () => {
-  let helper: IntegrationTestHelper, render: TestRenderer, website: Website
+  let helper: IntegrationTestHelper, website: Website
+
   beforeEach(() => {
     helper = new IntegrationTestHelper()
   })
 
   afterEach(() => {
-    helper.cleanup()
+    document.body.innerHTML = ""
   })
 
   describe.each([
@@ -48,48 +49,56 @@ describe("DriveSyncStatusIndicator", () => {
         sync_errors: syncErrors,
         synced_on: "2021-01-01",
       }
-      render = helper.configureRenderer(DriveSyncStatusIndicator, {
-        website,
-      })
     })
 
-    afterEach(() => {
-      helper.cleanup()
-    })
-
-    it(`renders for status=${status}`, async () => {
-      const { wrapper } = await render()
-      expect(wrapper.text()).toContain(status)
-      expect(wrapper.find(".status-indicator").prop("className")).toContain(
-        status.toString().toLowerCase(),
-      )
+    it(`renders for status=${status}`, () => {
+      helper.render(<DriveSyncStatusIndicator website={website} />)
+      expect(screen.getByText(new RegExp(status))).toBeInTheDocument()
+      const statusIndicator = document.querySelector(".status-indicator")
+      expect(statusIndicator?.className).toContain(status.toLowerCase())
     })
 
     it(`shows details with sync date and ${syncErrors.length} errors in side drawer`, async () => {
-      const { wrapper } = await render()
-      expect(wrapper.find("BasicModal").prop("isVisible")).toBe(false)
+      const user = userEvent.setup()
+      helper.render(<DriveSyncStatusIndicator website={website} />)
 
-      const statusDiv = wrapper.find(".sync-status")
-      act(() => {
-        // @ts-expect-error Not mocking the whole event
-        statusDiv.prop("onClick")({ preventDefault: helper.sandbox.stub() })
-      })
-      wrapper.update()
-      const drawer = wrapper.find("BasicModal").at(0)
-      expect(drawer.prop("isVisible")).toBe(true)
+      expect(
+        screen.queryByText("Google Drive Sync Details"),
+      ).not.toBeInTheDocument()
 
-      syncErrors.forEach((error: string, idx: number) => {
-        expect(drawer.find("li").at(idx).text()).toBe(error)
+      const statusDiv = screen.getByText(/Sync status:/)
+      await user.click(statusDiv)
+
+      await screen.findByText("Google Drive Sync Details")
+
+      syncErrors.forEach((error: string) => {
+        expect(screen.getByText(error)).toBeInTheDocument()
       })
-      expect(drawer.find("li").length).toBe(syncErrors.length)
+
+      const errorItems = document.querySelectorAll("li")
+      expect(errorItems.length).toBe(syncErrors.length)
+
       if (syncErrors.length === 0) {
-        expect(drawer.find(".sync-success").at(0).text()).toContain(
-          "The latest Google Drive sync was successful.",
-        )
+        expect(
+          screen.getByText(/The latest Google Drive sync was successful./),
+        ).toBeInTheDocument()
       }
-      expect(drawer.find(".sync-time").text()).toContain(
-        moment(website.synced_on).format("dddd, MMMM D h:mma ZZ"),
+
+      const formattedDate = moment(website.synced_on).format(
+        "dddd, MMMM D h:mma ZZ",
       )
+      const syncTimeElement = document.querySelector(".sync-time")
+      expect(syncTimeElement).toBeInTheDocument()
+      expect(syncTimeElement?.textContent).toContain(formattedDate)
+
+      const closeButton = screen.getByLabelText("Close")
+      await user.click(closeButton)
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Google Drive Sync Details"),
+        ).not.toBeInTheDocument()
+      })
     })
   })
 })

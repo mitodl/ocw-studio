@@ -140,6 +140,7 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
               }}
               options={options[levelIdx]}
               placeholder={level.label}
+              aria-label={level.label}
             />
           </div>
         ))}
@@ -147,10 +148,11 @@ export default function HierarchicalSelectField(props: Props): JSX.Element {
           Add
         </button>
       </div>
-      <div className="py-2 values">
+      <div className="py-2 values" role="list" aria-label="Selected values">
         {(value ?? []).map((tuple: HierarchicalSelection, idx: number) => (
           <div
             key={idx}
+            role="listitem"
             className="d-flex flex-direction-row align-items-center py-1"
           >
             {describeSelection(tuple)}

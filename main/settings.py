@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.173.0"
+VERSION = "0.174.0"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -1261,6 +1261,18 @@ OCW_HUGO_THEMES_BRANCH = get_string(
     description="The branch to use in development of ocw-hugo-themes",
     required=False,
     dev_only=True,
+)
+OCW_DEFAULT_COURSE_THEME = get_string(
+    name="OCW_DEFAULT_COURSE_THEME",
+    default="ocw-course-v2",
+    description="The default Hugo theme to use for OCW course sites",
+    required=False,
+)
+OCW_EXTRA_COURSE_THEMES = get_delimited_list(
+    name="OCW_EXTRA_COURSE_THEMES",
+    default=[],
+    description="Additional Hugo themes to build for OCW course sites",
+    required=False,
 )
 OCW_HUGO_PROJECTS_BRANCH = get_string(
     name="OCW_HUGO_PROJECTS_BRANCH",

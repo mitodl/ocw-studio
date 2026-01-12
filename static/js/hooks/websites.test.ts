@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react-hooks"
+import { act, renderHook, waitFor } from "@testing-library/react"
 
 import { Website } from "../types/websites"
 import { makeWebsites } from "../util/factories/websites"
@@ -33,9 +33,9 @@ describe("website hooks", () => {
     })
 
     it("should fetch options on startup by default", async () => {
-      const { result, waitForNextUpdate } = renderHook(useWebsiteSelectOptions)
-      await act(async () => {
-        await waitForNextUpdate()
+      const { result } = renderHook(() => useWebsiteSelectOptions())
+      await waitFor(() => {
+        expect(result.current.options.length).toBeGreaterThan(0)
       })
       expect(global.fetch).toHaveBeenCalledWith(
         siteApiListingUrl.query({ offset: 0 }).param({ search: "" }).toString(),
@@ -51,28 +51,27 @@ describe("website hooks", () => {
       it(`should set published=${String(
         published,
       )} if you pass the option`, async () => {
-        const { waitForNextUpdate } = renderHook(() =>
-          useWebsiteSelectOptions("uuid", published),
-        )
-        await act(async () => {
-          await waitForNextUpdate()
+        renderHook(() => useWebsiteSelectOptions("uuid", published))
+        await waitFor(() => {
+          expect(global.fetch).toHaveBeenCalledWith(
+            siteApiListingUrl
+              .query({ offset: 0 })
+              .param({ search: "" })
+              .param({ published })
+              .toString(),
+            { credentials: "include" },
+          )
         })
-        expect(global.fetch).toHaveBeenCalledWith(
-          siteApiListingUrl
-            .query({ offset: 0 })
-            .param({ search: "" })
-            .param({ published })
-            .toString(),
-          { credentials: "include" },
-        )
       })
     })
 
     it("should let you issue a debounced request with a search param if you pass a callback", async () => {
-      const { result, waitForNextUpdate } = renderHook(useWebsiteSelectOptions)
+      const { result } = renderHook(() => useWebsiteSelectOptions())
       const cb = jest.fn()
+      await waitFor(() => {
+        expect(result.current.options.length).toBeGreaterThan(0)
+      })
       await act(async () => {
-        await waitForNextUpdate()
         await result.current.loadOptions("search string", [], { callback: cb })
       })
       expect(debouncedFetch).toHaveBeenCalledWith(

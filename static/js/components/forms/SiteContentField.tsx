@@ -34,6 +34,7 @@ export default function SiteContentField({
       <Field
         as={component}
         name={field.name}
+        id={field.name}
         className="form-control"
         onChange={onChange}
         {...extraProps}
