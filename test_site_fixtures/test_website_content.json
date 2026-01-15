@@ -44,7 +44,11 @@
         "department_numbers": ["8", "6", "18"],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
-        "learning_resource_types": ["Activity Assignments", "Exam Solutions"]
+        "learning_resource_types": [
+          "Activity Assignments",
+          "Exams",
+          "Exam Solutions"
+        ]
       },
       "is_page_content": false,
       "filename": "",
