@@ -99,14 +99,14 @@ The `markdown_cleanup` command is used to convert legacy external links to exter
 - **Safety-first defaults**: Commands run in dry-run mode by default; use `--commit` flag to save changes to database.
 - **Referencing content tracking**: Automatically establishes relationships between content and the external resources they reference.
 - **External License Warning Control**: The command provides three-state control over external license warnings:
-  - **Default behavior**: Domains matching the `SITEMAP_DOMAIN` setting (defaults to `ocw.mit.edu`) show no warnings; external domains show warnings
+  - **Default behavior**: External license warnings are disabled for all domains (`has_external_license_warning: false`)
   - **Force enable**: Use `--add-external-license-warning` to show warnings for ALL domains (including the `SITEMAP_DOMAIN`)
     - Use case: Migration scenarios where you want consistent warning behavior across all external links
   - **Force disable**: Use `--no-external-license-warning` to hide warnings for ALL domains
-    - Use case: Environments where license warnings are not needed
+    - Use case: Explicitly confirming the default behavior
   - **Mutual exclusion**: The two license warning flags cannot be used together
 - **Internal reference support**: Navigation items that reference internal content are tracked with proper referencing relationships.
-- **External license warnings**: Non-`SITEMAP_DOMAIN` URLs automatically get `has_external_license_warning: true`.
+- **External license warnings**: External resources automatically get `has_external_license_warning: false` by default.
 - **Deduplication**: Existing external resources with the same URL are reused rather than creating duplicates.
 - **Course content only**: Rules only apply to websites using the OCW course starter.
 
@@ -128,7 +128,7 @@ All methods create external resource objects with:
 
 - Unique UUID identifiers
 - Automatic filename generation based on title
-- External license warnings for non-OCW domains
+- External license warnings disabled by default (can be enabled via flags or overrides)
 - Metadata populated from site configuration defaults
 
 # Enabling Tasks
@@ -243,7 +243,7 @@ Three management commands are available to interact with external resources:
     # Force license warnings for ALL domains (including OCW domains)
     ./manage.py markdown_cleanup link_to_external_resource --add-external-license-warning --commit
 
-    # Disable license warnings for ALL domains
+    # Disable license warnings for ALL domains (this is the default behavior now)
     ./manage.py markdown_cleanup link_to_external_resource --no-external-license-warning --commit
 
     # Use license warning control with published-only processing
