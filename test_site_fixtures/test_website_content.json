@@ -46,7 +46,8 @@
         "primary_course_number": "123",
         "learning_resource_types": [
           "Activity Assignments",
-          "Exams with Solutions"
+          "Exams",
+          "Exam Solutions"
         ]
       },
       "is_page_content": false,
