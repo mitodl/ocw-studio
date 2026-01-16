@@ -86,7 +86,7 @@ class CustomLinkCommand extends LinkCommand {
  * - When a user creates a link with an external URL, it automatically:
  *   a) Creates an "external-resource" content item via the OCW Studio API
  *   b) Replaces the external URL with a resource link pointing to that item
- *   c) Adds appropriate license warnings based on domain analysis
+ *   c) Sets license warnings to false by default (configurable if needed)
  * - Existing resource links (internal references) are left unchanged
  * - Monitors document changes to catch paste operations and direct href modifications
  *
@@ -97,7 +97,7 @@ class CustomLinkCommand extends LinkCommand {
  *
  * CONTENT EDITORS BENEFIT:
  * - Can simply paste external URLs - no manual resource creation needed
- * - All external links get proper license warnings automatically
+ * - External links do not trigger license warnings by default
  * - Centralized management of all external references
  * - Backup URL support for link rot prevention
  */
@@ -211,14 +211,14 @@ export default class CustomLink extends Plugin {
  *
  * This function handles the core logic of external resource creation:
  *
- * 1. DOMAIN ANALYSIS: Determines if the URL is external by comparing its hostname
- *    to SETTINGS.sitemapDomain. Same-domain URLs get no license warning.
+ * 1. DOMAIN ANALYSIS: Verifies URL validity but no longer uses domain
+ *    to automatically determine license warnings.
  *
  * 2. PAYLOAD CONSTRUCTION: Creates an "external-resource" content item with:
  *    - Title: Uses provided title or truncated URL as fallback
  *    - External URL: The original URL for reference
  *    - License: Defaults to "All rights reserved"
- *    - Warning flag: Set based on domain analysis
+ *    - Warning flag: false by default
  *    - Backup URL: Empty by default, can be filled later for link rot prevention
  *
  * 3. API INTERACTION: Posts to the OCW Studio content API with CSRF protection
@@ -235,9 +235,10 @@ export async function getExternalResource(
   linkValue: string,
   title: string,
 ): Promise<{ title: string; textId: string } | null> {
-  let hasWarning = true
+  const hasWarning = false
+
   try {
-    hasWarning = new URL(linkValue).hostname !== SETTINGS.sitemapDomain
+    new URL(linkValue)
   } catch (error) {
     console.log("Invalid URL provided!")
   }
