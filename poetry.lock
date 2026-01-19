@@ -996,14 +996,14 @@ django = ">=3.2"
 
 [[package]]
 name = "django-hijack"
-version = "3.7.4"
+version = "3.7.6"
 description = "Enable users to hijack (=login as) and work on behalf of another user."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "django_hijack-3.7.4-py3-none-any.whl", hash = "sha256:73ede036db49b13e615994e28e98446345d27400bdc54100be218a20cb3130aa"},
-    {file = "django_hijack-3.7.4.tar.gz", hash = "sha256:08419f130b9ab95b605b30b1bad30a01412cf58b1ff56c67e51527b25383ea64"},
+    {file = "django_hijack-3.7.6-py3-none-any.whl", hash = "sha256:b43703b57b77b17a2f754dced65356899178d8d3664b36e7e26a7d414fd61e7f"},
+    {file = "django_hijack-3.7.6.tar.gz", hash = "sha256:a1f3b16d0eae3d72c27988692453f0a923c665d96783325034798a8020f0ceb4"},
 ]
 
 [package.dependencies]
@@ -1011,7 +1011,7 @@ django = ">=4.2"
 
 [package.extras]
 docs = ["mkdocs (==1.6.1)"]
-lint = ["msgcheck (==4.1.0)", "ruff (==0.12.7)"]
+lint = ["msgcheck (==4.1.0)", "ruff (==0.14.10)"]
 test = ["pytest", "pytest-cov", "pytest-django"]
 
 [[package]]
@@ -3871,4 +3871,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "870e684034057a25989cfcd86c8d5e2dc1d9a1cac67ab2391e804fac8205baa2"
+content-hash = "b154b3fb5762353e6c01938e497192b0820d48d53c0caa49ed5b3e5089fb05d7"
