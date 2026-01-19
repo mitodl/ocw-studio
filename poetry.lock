@@ -1139,14 +1139,14 @@ typing-extensions = "*"
 
 [[package]]
 name = "django-webpack-loader"
-version = "3.2.1"
+version = "3.2.3"
 description = "Transparently use webpack with django"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "django_webpack_loader-3.2.1-py2.py3-none-any.whl", hash = "sha256:b7e505bcdf7af8f75433f13d54010e0a95c61a8b80890a700a598602656e09bf"},
-    {file = "django_webpack_loader-3.2.1.tar.gz", hash = "sha256:d4bfaca9a640f087e7feeeb2ca6afd3d0a644bce3925b3d430448989c1673774"},
+    {file = "django_webpack_loader-3.2.3-py2.py3-none-any.whl", hash = "sha256:d070bfe8ea5bd6ed48810a8d247204bb7f672573bdb6a7b589f6b75998a45993"},
+    {file = "django_webpack_loader-3.2.3.tar.gz", hash = "sha256:81092499af8e0c9b3a0bad21324aca6e2ad786133b19248dae213eb9661a17f7"},
 ]
 
 [[package]]
@@ -3871,4 +3871,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "ca50ad5ccf9eaca0ef23d8884bb7a832f411d66c27a570e99f43368323798635"
+content-hash = "870e684034057a25989cfcd86c8d5e2dc1d9a1cac67ab2391e804fac8205baa2"
