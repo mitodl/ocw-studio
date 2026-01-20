@@ -67,6 +67,7 @@ RUN apt-get update \
         libxmlsec1 \
         libjpeg62-turbo \
         zlib1g \
+        libmagic1 \
         net-tools \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*
@@ -74,7 +75,7 @@ RUN apt-get update \
 # Add non-root user
 RUN adduser --disabled-password --gecos "" --uid 1001 mitodl \
     && mkdir -p /src /var/media \
-    && chown -R mitodl:mitodl /var/media
+    && chown -R mitodl:mitodl /src /var/media
 
 # Copy virtual environment from builder
 COPY --from=builder --chown=mitodl:mitodl /opt/venv /opt/venv
@@ -86,10 +87,6 @@ RUN find /src -type f -name "*.py" -exec chmod 644 {} \; \
     && find /src -type d -exec chmod 755 {} \;
 
 USER mitodl
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8043/status/ || exit 1
 
 EXPOSE 8043
 ENV PORT=8043

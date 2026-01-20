@@ -12,6 +12,3 @@ build-essential
 libxml2-dev
 libxslt1-dev
 pkg-config
-# Runtime requirements
-libxml2
-libxslt1.1
