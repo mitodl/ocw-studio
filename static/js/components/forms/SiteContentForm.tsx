@@ -57,9 +57,6 @@ export default function SiteContentForm(props: FormProps): JSX.Element {
             ...(configItem.name === "resource"
               ? { resourcetype: "Video" }
               : {}),
-            ...(configItem.name === "external-resource"
-              ? { has_external_license_warning: false }
-              : {}),
           }
         : contentInitialValues(
             content as WebsiteContent,
