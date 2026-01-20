@@ -1,6 +1,25 @@
 Release Notes
 =============
 
+Version 0.174.0 (Released January 20, 2026)
+---------------
+
+- Remove double slashes in pipeline S3 paths when prefix is empty (#2840)
+- Remove MIT Fields WebsiteStarter and e2e pipeline vars (#2838)
+- fix: trigger transcoding after video resource creation (#2824)
+- chore(deps): update dependency pypdf to v6.6.0 [security] (#2837)
+- Skip webhook step for extra themes (#2834)
+- [pre-commit.ci] pre-commit autoupdate (#2686)
+- chore(deps): update dependency faker to v40 (#2833)
+- chore(deps): update node.js to v24.12.0 (#2830)
+- fix(deps): update dependency sentry-sdk to v2.48.0 (#2832)
+- Upgrade to React 18 and migrate all tests from enzyme to RTL (#2825)
+- Add theme_slug argument to mass build pipelines (#2828)
+- fix(deps): update dependency dj-database-url to v3.1.0 (#2831)
+- fix(deps): update dependency boto3 to v1.42.21 (#2829)
+- Add individual site pipelines for course-v3 theme (#2826)
+- fix(deps): update node.js to v24 (#2822)
+
 Version 0.173.0 (Released December 10, 2025)
 ---------------
 
