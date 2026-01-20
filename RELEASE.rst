@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.174.0
+Version 0.174.0 (Released January 20, 2026)
 ---------------
 
 - Remove double slashes in pipeline S3 paths when prefix is empty (#2840)
