@@ -1,57 +1,97 @@
-FROM python:3.13.7
-LABEL maintainer "ODL DevOps <mitx-devops@mit.edu>"
+# Build stage
+FROM python:3.13.7-slim as builder
+LABEL maintainer="ODL DevOps <mitx-devops@mit.edu>"
 
-# Add package files, install updated node and pip
+# Set environment variables for build
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install build dependencies
 WORKDIR /tmp
-
-# Install packages and add repo needed for postgres 16.3
 COPY apt.txt /tmp/apt.txt
-RUN apt-get update
-RUN apt-get install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ")
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        $(grep -vE "^\s*#" apt.txt | tr "\n" " ") \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /tmp/apt.txt
 
 # pip
 RUN curl --silent --location https://bootstrap.pypa.io/get-pip.py | python3 -
 
 # Add, and run as, non-root user.
-RUN mkdir /src
-RUN adduser --disabled-password --gecos "" mitodl
-RUN mkdir /var/media && chown -R mitodl:mitodl /var/media
+RUN mkdir /src \
+    && adduser --disabled-password --gecos "" --uid 1001 mitodl \
+    && mkdir /var/media && chown -R mitodl:mitodl /var/media
 
 # Install Python packages
 ## Set some poetry config
-ENV  \
-  POETRY_VERSION=2.1.4 \
-  POETRY_VIRTUALENVS_CREATE=false \
-  POETRY_CACHE_DIR='/tmp/cache/poetry' \
-  POETRY_HOME='/home/mitodl/.local' \
-  VIRTUAL_ENV="/opt/venv"
+ENV POETRY_VERSION=2.1.4 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_CACHE_DIR='/tmp/cache/poetry' \
+    POETRY_HOME='/home/mitodl/.local' \
+    VIRTUAL_ENV="/opt/venv"
 ENV PATH="$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
 
 COPY pyproject.toml poetry.toml /src/
-RUN chown -R mitodl:mitodl /src
-RUN mkdir ${VIRTUAL_ENV} && chown -R mitodl:mitodl ${VIRTUAL_ENV}
+RUN chown -R mitodl:mitodl /src \
+    && mkdir ${VIRTUAL_ENV} && chown -R mitodl:mitodl ${VIRTUAL_ENV}
 
 ## Install poetry itself, and pre-create a venv with predictable name
 USER mitodl
 RUN curl -sSL https://install.python-poetry.org \
-  | \
-  POETRY_VERSION=${POETRY_VERSION} \
-  POETRY_HOME=${POETRY_HOME} \
-  python3 -q
+    | POETRY_VERSION=${POETRY_VERSION} POETRY_HOME=${POETRY_HOME} python3 -q
 WORKDIR /src
-RUN python3 -m venv $VIRTUAL_ENV
-RUN poetry install
+RUN python3 -m venv $VIRTUAL_ENV \
+    && poetry install --only=main
+
+# Runtime stage
+FROM python:3.13.7-slim as runtime
+
+# Set environment variables for production
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    VIRTUAL_ENV="/opt/venv"
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install only runtime dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        libxml2 \
+        libxslt1.1 \
+        libpq5 \
+        libxmlsec1 \
+        libjpeg62-turbo \
+        zlib1g \
+        net-tools \
+        postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add non-root user
+RUN adduser --disabled-password --gecos "" --uid 1001 mitodl \
+    && mkdir -p /src /var/media \
+    && chown -R mitodl:mitodl /var/media
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=mitodl:mitodl /opt/venv /opt/venv
 
 # Add project
-USER root
-COPY . /src
+COPY --chown=mitodl:mitodl . /src
 WORKDIR /src
-RUN chown -R mitodl:mitodl /src
-
-RUN apt-get clean && apt-get purge
+RUN find /src -type f -name "*.py" -exec chmod 644 {} \; \
+    && find /src -type d -exec chmod 755 {} \;
 
 USER mitodl
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8043/status/ || exit 1
+
 EXPOSE 8043
-ENV PORT 8043
-CMD uwsgi uwsgi.ini
+ENV PORT=8043
+
+CMD ["uwsgi", "uwsgi.ini"]

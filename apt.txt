@@ -7,3 +7,11 @@ net-tools
 libpq-dev
 postgresql-client
 libxmlsec1-dev
+# Build requirements
+build-essential
+libxml2-dev
+libxslt1-dev
+pkg-config
+# Runtime requirements
+libxml2
+libxslt1.1
