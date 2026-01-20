@@ -250,7 +250,7 @@ describe("CustomLink Plugin", () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: expect.stringContaining('"has_external_license_warning":true'),
+          body: expect.stringContaining('"has_external_license_warning":false'),
         }),
       )
     })
@@ -315,7 +315,7 @@ describe("CustomLink Plugin", () => {
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: expect.stringContaining('"has_external_license_warning":true'),
+          body: expect.stringContaining('"has_external_license_warning":false'),
         }),
       )
 
@@ -541,7 +541,7 @@ describe("CustomLink Plugin", () => {
         expect.objectContaining({
           external_url: "https://external.com/foo",
           license: "https://en.wikipedia.org/wiki/All_rights_reserved",
-          has_external_license_warning: true,
+          has_external_license_warning: false,
           is_broken: "",
           backup_url: "",
         }),

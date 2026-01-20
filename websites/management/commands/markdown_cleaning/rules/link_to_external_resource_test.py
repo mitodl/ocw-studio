@@ -118,7 +118,7 @@ def test_build_external_resource():
 
     assert external_resource.title == title
     assert external_resource.metadata["external_url"] == url
-    assert external_resource.metadata["has_external_license_warning"] is True
+    assert external_resource.metadata["has_external_license_warning"] is False
 
 
 @pytest.mark.django_db
@@ -154,7 +154,10 @@ def test_get_or_build_external_resource(content_exists):
 
     assert external_resource.title == title
     assert external_resource.metadata["external_url"] == url
-    assert external_resource.metadata["has_external_license_warning"] is True
+    if content_exists:
+        assert external_resource.metadata["has_external_license_warning"] is True
+    else:
+        assert external_resource.metadata["has_external_license_warning"] is False
 
     if content_exists:
         assert existing_content.id == external_resource.id
@@ -743,9 +746,9 @@ def test_navitem_internal_references_functionality():
         # When parameter is False: force no warning for all domains
         ("https://ocw.mit.edu", False, False),
         ("https://example.com", False, False),
-        # When parameter is None: use hostname-based logic
+        # When parameter is None: use default (False)
         ("https://ocw.mit.edu", None, False),
-        ("https://example.com", None, True),
+        ("https://example.com", None, False),
     ],
 )
 @patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
@@ -756,7 +759,7 @@ def test_build_external_resource_with_license_warning_override(
 
     When has_external_license_warning=True, it forces the warning regardless of domain.
     When has_external_license_warning=False, it forces no warning regardless of domain.
-    When has_external_license_warning=None, it uses hostname-based logic.
+    When has_external_license_warning=None, it defaults to False.
     """
     starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
     website = WebsiteFactory.create(starter=starter)
@@ -784,9 +787,9 @@ def test_build_external_resource_with_license_warning_override(
         # When parameter is False: force no warning for all domains
         ("https://ocw.mit.edu", False, False),
         ("https://example.com", False, False),
-        # When parameter is None: use hostname-based logic
+        # When parameter is None: use default (False)
         ("https://ocw.mit.edu", None, False),
-        ("https://example.com", None, True),
+        ("https://example.com", None, False),
     ],
 )
 @patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
@@ -797,7 +800,7 @@ def test_link_to_external_resource_rule_with_license_warning_override(
 
     When True, forces warning regardless of domain.
     When False, forces no warning regardless of domain.
-    When None, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    When None, it defaults to False.
     """
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)
@@ -842,9 +845,9 @@ def test_link_to_external_resource_rule_with_license_warning_override(
         # When parameter is False: force no warning for all domains
         ("https://ocw.mit.edu", False, False),
         ("https://example.com", False, False),
-        # When parameter is None: use hostname-based logic
+        # When parameter is None: use default (False)
         ("https://ocw.mit.edu", None, False),
-        ("https://example.com", None, True),
+        ("https://example.com", None, False),
     ],
 )
 @patch("django.conf.settings.SITEMAP_DOMAIN", "ocw.mit.edu")
@@ -855,7 +858,7 @@ def test_nav_item_to_external_resource_rule_with_license_warning_override(
 
     When True, forces warning regardless of domain.
     When False, forces no warning regardless of domain.
-    When None, uses hostname-based logic (OCW domain = no warning, external domain = warning).
+    When None, it defaults to False.
     """
     with patch("external_resources.signals.submit_url_to_wayback_task.delay"):
         starter = WebsiteStarterFactory.create(config=SAMPLE_SITE_CONFIG)

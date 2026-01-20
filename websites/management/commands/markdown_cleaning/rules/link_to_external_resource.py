@@ -63,7 +63,7 @@ def build_external_resource(
     metadata["has_external_license_warning"] = (
         has_external_license_warning
         if has_external_license_warning is not None
-        else (not is_ocw_domain_url(url))
+        else False
     )
 
     # title is a special field. By default the value of title
