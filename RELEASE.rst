@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.175.0
+---------------
+
+- chore: set the has_license_warning to False by default (#2844)
+- fix(deps): update dependency sentry-sdk to v2.49.0 (#2850)
+- fix(deps): update dependency django-hijack to v3.7.6 (#2847)
+- fix(deps): update dependency django-webpack-loader to v3.2.3 (#2848)
+- chore(deps): update node.js to v24.13.0 (#2849)
+- fix(deps): update dependency boto3 to v1.42.30 (#2846)
+- chore(deps): update actions/setup-node digest to 6044e13 (#2845)
+- Migrate Exams with Solutions LRT to Exam Solutions (#2843)
+- fix: add missing vars (#2835)
+
 Version 0.174.0 (Released January 20, 2026)
 ---------------
 
