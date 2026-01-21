@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.175.0
+Version 0.175.0 (Released January 21, 2026)
 ---------------
 
 - chore: set the has_license_warning to False by default (#2844)
