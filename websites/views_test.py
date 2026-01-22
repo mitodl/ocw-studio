@@ -442,6 +442,10 @@ def test_websites_endpoint_unpublish(drf_client, mocker):
     mock_unpublished_removal = mocker.patch(
         "websites.views.trigger_unpublished_removal"
     )
+    mock_update_mass_build_pipelines = mocker.patch(
+        "content_sync.tasks.api.get_mass_build_sites_pipeline"
+    )
+
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create()
@@ -459,6 +463,7 @@ def test_websites_endpoint_unpublish(drf_client, mocker):
     assert website.unpublished is True
     assert website.unpublish_status == constants.PUBLISH_STATUS_NOT_STARTED
     assert website.last_unpublished_by == admin
+    assert mock_update_mass_build_pipelines.return_value.upsert_pipeline.call_count == 2
 
 
 def test_websites_endpoint_unpublish_denied(drf_client, mocker):
