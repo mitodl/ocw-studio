@@ -122,15 +122,15 @@ def test_update_mass_build_pipelines(api_mock, mocker):
     website = WebsiteFactory.create()
     mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
     fake_date = factory.Faker("date_time", tzinfo=pytz.utc)
-    website.draft_publish_date = None
-    website.publish_date = None
+    website.draft_build_date = None
+    website.live_build_date = None
     tasks.update_mass_build_pipelines_on_publish.delay(
         version=VERSION_DRAFT, website_pk=website.pk
     )
     api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_DRAFT)
     api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_DRAFT, offline=True)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 2
-    website.draft_publish_date = fake_date
+    website.draft_build_date = fake_date
     tasks.update_mass_build_pipelines_on_publish.delay(
         version=VERSION_DRAFT, website_pk=website.pk
     )
@@ -141,7 +141,7 @@ def test_update_mass_build_pipelines(api_mock, mocker):
     api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_LIVE)
     api_mock.get_mass_build_sites_pipeline.assert_any_call(VERSION_LIVE, offline=True)
     assert api_mock.get_mass_build_sites_pipeline.call_count == 4
-    website.publish_date = fake_date
+    website.live_build_date = fake_date
     tasks.update_mass_build_pipelines_on_publish.delay(
         version=VERSION_LIVE, website_pk=website.pk
     )

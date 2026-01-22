@@ -30,6 +30,9 @@ def mock_api_funcs(settings, mocker):
         mock_get_backend=mocker.patch("content_sync.api.get_sync_backend"),
         mock_get_pipeline=mocker.patch("content_sync.api.get_site_pipeline"),
         mock_import_string=mocker.patch("content_sync.api.import_string"),
+        mock_get_mass_build_pipeline=mocker.patch(
+            "content_sync.tasks.api.get_mass_build_sites_pipeline"
+        ),
     )
 
 
@@ -239,6 +242,8 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     website = WebsiteFactory.create(publish_date=publish_date)
     setattr(website, f"{version}_publish_status", status)
     setattr(website, f"has_unpublished_{version}", status == PUBLISH_STATUS_NOT_STARTED)
+    build_date = publish_date + timedelta(minutes=5) if publish_date else None
+    setattr(website, f"{version}_build_date", build_date)
     if status:
         setattr(website, f"{version}_publish_status_updated_on", now_in_utc())
     website.save()
@@ -280,6 +285,19 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         mock_api_funcs.mock_import_string.assert_any_call("some.Action")
         mock_api_funcs.mock_import_string.return_value.assert_any_call(
             website, version=version
+        )
+
+    # Verify that mass build site pipelines are updated in case this is the first publish
+    # attempt, which is indicated by the absence of a build date
+    if not build_date:
+        assert (
+            mock_api_funcs.mock_get_mass_build_pipeline.return_value.upsert_pipeline.call_count
+            == 2
+        )
+    else:
+        assert (
+            mock_api_funcs.mock_get_mass_build_pipeline.return_value.upsert_pipeline.call_count
+            == 0
         )
 
 

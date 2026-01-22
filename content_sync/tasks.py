@@ -274,19 +274,20 @@ def sync_website_content(website_name: str):
 def update_mass_build_pipelines_on_publish(version: str, website_pk: int):
     """
     Update the mass-build-sites pipeline definitions upon publishing of a new website,
-    but only do so if the site has never been published before or has been unpublished
+    but only do so if the site has never been built before or has been unpublished
 
     Args:
         version(str): The version (draft / live) to update
-        website(Website): The website being published to check publish_date against
+        website_pk(int): The primary key of the website being published to check build
+                         date against
     """
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        publish_date_field = (
-            "publish_date" if version == VERSION_LIVE else "draft_publish_date"
+        build_date_field = (
+            "live_build_date" if version == VERSION_LIVE else "draft_build_date"
         )
         website = Website.objects.get(pk=website_pk)
-        publish_date = getattr(website, publish_date_field)
-        if not publish_date or website.unpublish_status:
+        build_date = getattr(website, build_date_field)
+        if not build_date or website.unpublish_status:
             pipeline = api.get_mass_build_sites_pipeline(version)
             pipeline.upsert_pipeline()
             offline_pipeline = api.get_mass_build_sites_pipeline(version, offline=True)
