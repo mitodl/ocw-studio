@@ -65,6 +65,7 @@ RUN apt-get update \
         libxslt1.1 \
         libpq5 \
         libxmlsec1 \
+        libxmlsec1-openssl \
         libjpeg62-turbo \
         zlib1g \
         libmagic1 \
