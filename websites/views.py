@@ -804,13 +804,10 @@ class WebsiteContentViewSet(
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def _referencing_content(self, instance: WebsiteContent):
-        """
-        Add referencing content to the instance if `referencing_content` is provided.
-        """
-
-        if references := compile_referencing_content(instance):
-            references = WebsiteContent.objects.filter(text_id__in=references).all()
-            instance.referenced_by.set(references)
+        """Update instance.referenced_by based on the referencing content"""
+        references = compile_referencing_content(instance)
+        content_refs = WebsiteContent.objects.filter(text_id__in=references).all()
+        instance.referenced_by.set(content_refs)
         instance.save()
 
     def perform_update(self, serializer):
