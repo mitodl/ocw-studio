@@ -1438,3 +1438,49 @@ def test_pipeline_status_build_type(  # noqa: PLR0913
         mock_update_website_status.assert_called_once()
     else:
         mock_update_website_status.assert_not_called()
+
+
+def test_referencing_content_clears_when_references_removed(
+    drf_client, global_admin_user
+):
+    """Updating content to remove all references should clear referenced_content."""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+
+    resource = WebsiteContentFactory.create(website=website, type="resource")
+
+    page = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=f'{{{{%  resource_link "{resource.text_id}" "Link" %}}}}',
+    )
+
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": website.name,
+                "text_id": str(page.text_id),
+            },
+        ),
+        data={"markdown": page.markdown},
+    )
+    assert resp.status_code == 200
+
+    page.refresh_from_db()
+    assert resource in page.referenced_by.all()
+
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": website.name,
+                "text_id": str(page.text_id),
+            },
+        ),
+        data={"markdown": "No more references"},
+    )
+    assert resp.status_code == 200
+
+    page.refresh_from_db()
+    assert page.referenced_by.count() == 0
