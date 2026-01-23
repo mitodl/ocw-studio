@@ -808,7 +808,6 @@ class WebsiteContentViewSet(
         references = compile_referencing_content(instance)
         content_refs = WebsiteContent.objects.filter(text_id__in=references).all()
         instance.referenced_by.set(content_refs)
-        instance.save()
 
     def perform_update(self, serializer):
         """
