@@ -242,6 +242,9 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
     website = WebsiteFactory.create(publish_date=publish_date)
     setattr(website, f"{version}_publish_status", status)
     setattr(website, f"has_unpublished_{version}", status == PUBLISH_STATUS_NOT_STARTED)
+
+    # In case a site is already published, the build_date is a point in time after
+    # the publish date. The timedelta is chosen arbitrarily here.
     build_date = publish_date + timedelta(minutes=5) if publish_date else None
     setattr(website, f"{version}_build_date", build_date)
     if status:
