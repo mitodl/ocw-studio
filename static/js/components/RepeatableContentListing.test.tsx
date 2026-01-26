@@ -489,11 +489,11 @@ describe("RepeatableContentListing", () => {
     )
     expect(deleteConfirmButton).toBeUndefined()
 
-    const cancelButton = footerButtons.find((btn) =>
-      btn.textContent?.toLowerCase().includes("cancel"),
+    const okButton = footerButtons.find((btn) =>
+      btn.textContent?.toLowerCase().includes("ok"),
     )
-    if (cancelButton) {
-      await user.click(cancelButton)
+    if (okButton) {
+      await user.click(okButton)
     }
 
     await waitFor(() => {

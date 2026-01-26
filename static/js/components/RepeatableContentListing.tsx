@@ -43,6 +43,9 @@ import {
   FEATURE_FLAG_ADD_VIDEO_RESOURCE,
 } from "../common/feature_flags"
 
+const REFERENCED_CONTENT_ERROR =
+  "This is currently being used elsewhere and cannot be deleted."
+
 export default function RepeatableContentListing(props: {
   configItem: RepeatableConfigItem
 }): JSX.Element | null {
@@ -156,9 +159,7 @@ export default function RepeatableContentListing(props: {
       event.preventDefault()
       setSelectedContent(content)
       if (content.is_deletable === false) {
-        setDeleteError(
-          "This item is referenced by other items and cannot be deleted.",
-        )
+        setDeleteError(REFERENCED_CONTENT_ERROR)
       } else {
         setDeleteError(null)
       }
@@ -182,8 +183,7 @@ export default function RepeatableContentListing(props: {
 
     if (response?.status >= 400) {
       setDeleteError(
-        "This item is referenced by other items and cannot be deleted." +
-          " Please visit the resource page for more details.",
+        `${REFERENCED_CONTENT_ERROR} Please visit the resource page for more details.`,
       )
     } else {
       setDeleteError(null)
@@ -195,11 +195,12 @@ export default function RepeatableContentListing(props: {
 
   const getDialogBodyContent = () => (
     <>
-      {`Are you sure you want to remove ${
-        selectedContent && selectedContent.title
-          ? selectedContent.title
-          : "this content"
-      }?`}
+      {selectedContent?.is_deletable !== false &&
+        `Are you sure you want to remove ${
+          selectedContent && selectedContent.title
+            ? selectedContent.title
+            : "this content"
+        }?`}
       {deleteError && (
         <div
           className="error-message"
@@ -305,6 +306,7 @@ export default function RepeatableContentListing(props: {
         }}
         headerContent={`Remove ${labelSingular}`}
         bodyContent={getDialogBodyContent()}
+        cancelText={selectedContent?.is_deletable === false ? "OK" : undefined}
         {...(selectedContent?.is_deletable && {
           acceptText: "Delete",
           onAccept: onDelete,
