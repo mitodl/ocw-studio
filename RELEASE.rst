@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.175.1 (Released January 26, 2026)
+---------------
+
+- fix: ensure mass build pipeline updated on first studio publish (#2855)
+
 Version 0.175.0 (Released January 21, 2026)
 ---------------
 
