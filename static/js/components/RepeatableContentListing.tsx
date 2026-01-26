@@ -195,7 +195,7 @@ export default function RepeatableContentListing(props: {
 
   const getDialogBodyContent = () => (
     <>
-      {selectedContent?.is_deletable !== false &&
+      {selectedContent?.is_deletable === true &&
         `Are you sure you want to remove ${selectedContent?.title || "this content"}?`}
       {deleteError && (
         <div
