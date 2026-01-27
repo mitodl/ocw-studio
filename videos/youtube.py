@@ -32,7 +32,7 @@ from videos.utils import get_course_tag, get_tags_with_course, parse_tags
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import Website, WebsiteContent
-from websites.utils import get_dict_field, get_dict_query_field
+from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
 
 log = logging.getLogger(__name__)
 
@@ -238,14 +238,13 @@ class YouTubeApi:
             "status": {"privacyStatus": privacy},
         }
 
-        merged_tags = ""
+        merged_tags = None
         if course_slug := get_course_tag(videofile.video.website):
             # Merge existing tags with course tag avoiding duplicates
-            merged_tags = (
-                f"{existing_tags}, {course_slug}"
-                if existing_tags and course_slug not in existing_tags
-                else course_slug
-            )
+            tag_list = parse_tags(existing_tags or "")
+            if course_slug not in tag_list:
+                tag_list.append(course_slug)
+            merged_tags = ", ".join(tag_list)
             request_body["snippet"]["tags"] = merged_tags
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:
@@ -332,6 +331,10 @@ class YouTubeApi:
             description = f"{description}\n\nSpeakers: {speakers}"
         youtube_id = get_dict_field(metadata, settings.YT_FIELD_ID)
         course_slug = get_course_tag(resource.website)
+
+        # Get merged tags with course slug
+        merged_tags = get_tags_with_course(metadata, course_slug)
+
         self.client.videos().update(
             part="snippet",
             body={
@@ -343,7 +346,7 @@ class YouTubeApi:
                     "description": truncate_words(
                         strip_bad_chars(description), YT_MAX_LENGTH_DESCRIPTION
                     ),
-                    "tags": parse_tags(get_tags_with_course(metadata, course_slug)),
+                    "tags": parse_tags(merged_tags),
                     "categoryId": settings.YT_CATEGORY_ID,
                 },
             },
@@ -353,6 +356,10 @@ class YouTubeApi:
 
         if privacy:
             self.update_privacy(youtube_id, privacy=privacy)
+
+        # Save merged tags back to database only on success
+        set_dict_field(metadata, settings.YT_FIELD_TAGS, merged_tags)
+        resource.save()
 
     def update_video_tags(self, youtube_id: str, tags: str):
         """
@@ -520,7 +527,7 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
                     previously_published=previously_published,
                 )
                 youtube.update_video(video_resource, privacy=privacy)
-            except:  # pylint:disable=bare-except  # noqa: E722
+            except Exception:
                 log.exception(
                     "Unexpected error updating metadata for video resource %d",
                     video_resource.id,

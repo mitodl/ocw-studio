@@ -32,7 +32,23 @@ def mock_youtube_api(mocker):
     mock_api_cls = mocker.patch(
         "videos.management.commands.update_youtube_tags.YouTubeApi"
     )
-    return mock_api_cls.return_value
+    mock_api = mock_api_cls.return_value
+
+    # Mock the client.videos().list() chain to return current YouTube tags
+    mock_list_response = {
+        "items": [
+            {
+                "snippet": {
+                    "tags": []  # Default: no tags on YouTube
+                }
+            }
+        ]
+    }
+    mock_api.client.videos.return_value.list.return_value.execute.return_value = (
+        mock_list_response
+    )
+
+    return mock_api
 
 
 @pytest.fixture
@@ -62,26 +78,54 @@ def video_content_with_tags():
 
 
 def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
-    """Test that dry-run mode doesn't actually update YouTube"""
+    """Test that dry-run mode doesn't actually update YouTube or save to DB"""
+    content, _ = video_content_with_tags
+    initial_tags = content.metadata["video_metadata"]["video_tags"]
+
+    # Mock YouTube returning some tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["youtube-tag"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
         dry_run=True,
     )
 
+    # Should fetch from YouTube but not update
+    assert mock_youtube_api.client.videos.return_value.list.called
     mock_youtube_api.update_video_tags.assert_not_called()
+
+    # Verify DB was not modified
+    content.refresh_from_db()
+    assert content.metadata["video_metadata"]["video_tags"] == initial_tags
 
 
 def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
-    """Test that the command successfully updates YouTube tags"""
+    """Test that the command successfully merges and updates YouTube tags"""
+    content, _ = video_content_with_tags
+
+    # Mock YouTube already having some tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["existing-youtube-tag"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
     )
 
+    # Should merge YouTube tags (existing-youtube-tag) with DB tags (python, django, testing)
+    # Tags are sorted alphabetically
     mock_youtube_api.update_video_tags.assert_called_once_with(
-        "test_youtube_id_123", "python, django, testing"
+        "test_youtube_id_123", "django, existing-youtube-tag, python, testing"
     )
+
+    # Verify merged tags saved to DB
+    content.refresh_from_db()
+    assert "existing-youtube-tag" in content.metadata["video_metadata"]["video_tags"]
+    assert "python" in content.metadata["video_metadata"]["video_tags"]
 
 
 def test_update_youtube_tags_specific_video(mock_youtube_api):
@@ -125,17 +169,24 @@ def test_update_youtube_tags_specific_video(mock_youtube_api):
         },
     )
 
+    # Mock YouTube response for youtube_id_1
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["youtube-tag"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         youtube_id="youtube_id_1",
     )
 
-    # Should only update the video with youtube_id_1
-    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_id_1", "tag1")
+    # Should only update the video with youtube_id_1, merging its tags (alphabetically sorted)
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "youtube_id_1", "tag1, youtube-tag"
+    )
 
 
 def test_update_youtube_tags_no_tags(mock_youtube_api):
-    """Test handling of videos without tags"""
+    """Test handling of videos without tags in DB or YouTube"""
     website = WebsiteFactory.create(name="test-course")
     video = VideoFactory.create(website=website)
     VideoFileFactory.create(
@@ -154,13 +205,18 @@ def test_update_youtube_tags_no_tags(mock_youtube_api):
         },
     )
 
+    # Mock YouTube also having no tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": []}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
     )
 
-    # Should still update, even with empty tags
-    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_id_no_tags", "")
+    # Should skip update when no tags in either location
+    mock_youtube_api.update_video_tags.assert_not_called()
 
 
 def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
@@ -186,17 +242,18 @@ def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
 
 def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags):
     """Test handling of YouTube API errors"""
-    mock_youtube_api.update_video_tags.side_effect = Exception("YouTube API error")
+    # Mock YouTube list call failing
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.side_effect = Exception(
+        "YouTube API error"
+    )
 
     call_command(
         "update_youtube_tags",
         filter="test-course",
     )
 
-    # Should have attempted to call update despite error
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "test_youtube_id_123", "python, django, testing"
-    )
+    # Should not call update if list() fails
+    mock_youtube_api.update_video_tags.assert_not_called()
 
 
 def test_update_youtube_tags_youtube_not_enabled(mocker):
@@ -261,17 +318,24 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
         },
     )
 
+    # Mock YouTube having different tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["yt-tag"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         exclude="course-2",
     )
 
-    # Should only update video from course-1
-    mock_youtube_api.update_video_tags.assert_called_once_with("youtube_1", "tag1")
+    # Should only update video from course-1, merging tags (alphabetically sorted)
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "youtube_1", "tag1, yt-tag"
+    )
 
 
 def test_update_youtube_tags_add_course_tag(mock_youtube_api):
-    """Test adding course URL slug as a tag"""
+    """Test adding course URL slug as a tag while merging YouTube and DB tags"""
     starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
         name="course-with-videos",
@@ -297,20 +361,25 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
         },
     )
 
+    # Mock YouTube having additional tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["machine-learning"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="course-with-videos",
         add_course_tag=True,
     )
 
-    # Verify the tags were merged with the course URL slug
+    # Verify the tags were merged: YouTube tags + DB tags + course slug (alphabetically sorted)
     mock_youtube_api.update_video_tags.assert_called_once_with(
-        "youtube_test_123", "python, django, course-with-videos"
+        "youtube_test_123", "course-with-videos, django, machine-learning, python"
     )
 
 
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
-    """Test adding course URL slug as a tag when no existing tags"""
+    """Test adding course URL slug when no tags in DB but some on YouTube"""
     starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
         name="test-course-123",
@@ -334,20 +403,25 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
         },
     )
 
+    # Mock YouTube having some tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["existing-yt-tag"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course-123",
         add_course_tag=True,
     )
 
-    # Verify course URL slug was added as the only tag
+    # Verify YouTube tag + course slug were merged (alphabetically sorted)
     mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_id_789", "test-course-123"
+        "yt_id_789", "existing-yt-tag, test-course-123"
     )
 
 
 def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
-    """Test that course URL slug isn't duplicated if already in tags"""
+    """Test that course URL slug isn't duplicated if already on YouTube"""
     starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
         name="my-course",
@@ -367,10 +441,15 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
             "resourcetype": RESOURCE_TYPE_VIDEO,
             "video_metadata": {
                 "youtube_id": "yt_existing",
-                "video_tags": "python, my-course, django",
+                "video_tags": "python, django",
             },
         },
     )
+
+    # Mock YouTube already having the course tag
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["my-course", "machine-learning"]}}]
+    }
 
     call_command(
         "update_youtube_tags",
@@ -378,14 +457,14 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify course URL slug wasn't duplicated
+    # Verify course URL slug wasn't duplicated, tags properly merged (alphabetically sorted)
     mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_existing", "python, my-course, django"
+        "yt_existing", "django, machine-learning, my-course, python"
     )
 
 
 def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
-    """Test that merged tags are saved to the database"""
+    """Test that merged YouTube + DB tags are saved to the database"""
     starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
     website = WebsiteFactory.create(
         name="test-course",
@@ -414,24 +493,34 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     initial_tags = content.metadata["video_metadata"]["video_tags"]
     assert initial_tags == "python, django"
 
+    # Mock YouTube having additional tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["ai", "machine-learning"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
         add_course_tag=True,
     )
 
-    # Verify YouTube API was called
+    # Verify YouTube API was called with merged tags (alphabetically sorted)
     assert mock_youtube_api.update_video_tags.called
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "yt_save_test", "ai, django, machine-learning, python, test-course"
+    )
 
     # Refresh from database to verify persistence
     content.refresh_from_db()
     updated_tags = content.metadata["video_metadata"]["video_tags"]
 
-    # Verify tags were merged and saved to database
+    # Verify all tags were merged and saved to database (alphabetically sorted)
     assert "test-course" in updated_tags
     assert "python" in updated_tags
     assert "django" in updated_tags
-    assert updated_tags == "python, django, test-course"
+    assert "ai" in updated_tags
+    assert "machine-learning" in updated_tags
+    assert updated_tags == "ai, django, machine-learning, python, test-course"
 
 
 def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
@@ -457,6 +546,11 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
 
     initial_tags = content.metadata["video_metadata"]["video_tags"]
 
+    # Mock YouTube having different tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["ai", "ml"]}}]
+    }
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
@@ -475,3 +569,180 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
     assert tags_after_dry_run == initial_tags
     assert tags_after_dry_run == "python, django"
     assert "test-course" not in tags_after_dry_run
+    assert "ai" not in tags_after_dry_run
+    assert "ml" not in tags_after_dry_run
+
+
+def test_update_youtube_tags_skips_when_no_changes(mock_youtube_api):
+    """Test that videos are skipped when tags are already in sync"""
+    website = WebsiteFactory.create(name="test-course")
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_no_changes",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        title="Video Already Synced",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_no_changes",
+                "video_tags": "python, django",
+            },
+        },
+    )
+
+    # Mock YouTube having exactly the same tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["python", "django"]}}]
+    }
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+    )
+
+    # Should skip update when tags are identical
+    mock_youtube_api.update_video_tags.assert_not_called()
+
+
+def test_update_youtube_tags_merges_youtube_priority(mock_youtube_api):
+    """Test that YouTube tags take priority in ordering when merging"""
+    website = WebsiteFactory.create(name="test-course")
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_merge_test",
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        title="Video Merge Test",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_merge_test",
+                "video_tags": "tag1, tag2, tag3",
+            },
+        },
+    )
+
+    # Mock YouTube having different tags, some overlap
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["yt-tag1", "tag2", "yt-tag2"]}}]
+    }
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+    )
+
+    # Should merge all tags and sort alphabetically
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "yt_merge_test", "tag1, tag2, tag3, yt-tag1, yt-tag2"
+    )
+
+    # Verify merged tags saved to DB
+    content.refresh_from_db()
+    updated_tags = content.metadata["video_metadata"]["video_tags"]
+    assert updated_tags == "tag1, tag2, tag3, yt-tag1, yt-tag2"
+
+
+def test_update_youtube_tags_handles_poorly_formatted_youtube_tags(mock_youtube_api):
+    """Test handling of YouTube tags that contain commas (poorly formatted)"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
+    website = WebsiteFactory.create(
+        name="test-course",
+        url_path="courses/test-course",
+        starter=starter,
+    )
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_comma_test",
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        title="Test Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_comma_test",
+                "video_tags": "proper-tag1, proper-tag2",
+            },
+        },
+    )
+
+    # Mock YouTube returning a single tag that contains commas (poorly formatted)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [
+            {"snippet": {"tags": ["game design, critique, game theory, discussion"]}}
+        ]
+    }
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+    )
+
+    # Should split the poorly formatted tag and merge with DB tags
+    # All individual parts should be present and sorted alphabetically
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "yt_comma_test",
+        "critique, discussion, game design, game theory, proper-tag1, proper-tag2",
+    )
+
+    # Verify merged tags saved to DB
+    content.refresh_from_db()
+    updated_tags = content.metadata["video_metadata"]["video_tags"]
+    assert "critique" in updated_tags
+    assert "game design" in updated_tags
+    assert "proper-tag1" in updated_tags
+
+
+def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
+    """Test that merged tags are saved to DB even when YouTube update skipped (normal mode only)"""
+    starter = WebsiteStarterFactory.create(config=COURSE_STARTER_CONFIG)
+    website = WebsiteFactory.create(
+        name="test-course",
+        url_path="courses/test-course",
+        starter=starter,
+    )
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_skip_test",
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        title="Test Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_skip_test",
+                "video_tags": "python",  # DB has only python
+            },
+        },
+    )
+
+    # Mock YouTube already having both tags (python + django)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["python", "django"]}}]
+    }
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+    )
+
+    # YouTube update should be skipped since merged tags match YouTube tags
+    mock_youtube_api.update_video_tags.assert_not_called()
+
+    # Merged tags should still be saved to DB in normal mode (not dry-run)
+    content.refresh_from_db()
+    updated_tags = content.metadata["video_metadata"]["video_tags"]
+    assert updated_tags == "django, python"  # DB should now have both tags

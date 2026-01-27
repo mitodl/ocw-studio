@@ -68,7 +68,7 @@ log = logging.getLogger()
 
 @app.task
 @single_task(timeout=settings.YT_UPLOAD_FREQUENCY, raise_block=False)
-def upload_youtube_videos():
+def upload_youtube_videos():  # noqa: C901
     """
     Upload public videos one at a time to YouTube (if not already there) until the daily maximum is reached.
     """  # noqa: E501
@@ -101,14 +101,6 @@ def upload_youtube_videos():
             video_file.destination_status = response["status"]["uploadStatus"]
             video_file.status = VideoFileStatus.UPLOADED
 
-            # Save the merged tags back to the video metadata
-            if merged_tags and drive_file and drive_file.resource:
-                video_resource = drive_file.resource
-                set_dict_field(
-                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
-                )
-                video_resource.save()
-
         except HttpError as error:
             error_msg = error.content.decode("utf-8")
             if API_QUOTA_ERROR_MSG in error_msg:
@@ -118,6 +110,16 @@ def upload_youtube_videos():
         except:  # pylint: disable=bare-except  # noqa: E722
             log.exception("Error uploading video to Youtube: %s", video_file.s3_key)
             video_file.status = VideoFileStatus.FAILED
+        else:
+            # Save the merged tags back to the video metadata (only on success)
+            if merged_tags and drive_file and drive_file.resource:
+                video_resource = drive_file.resource
+                set_dict_field(
+                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
+                )
+                video_resource.save()
+
+        # Always save video_file status
         video_file.save()
         if error_msg:
             mail_youtube_upload_failure(video_file)
