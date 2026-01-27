@@ -516,23 +516,30 @@ def test_get_metadata_content_key():
     content_resource_list = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_LIST
     )
-    assert get_metadata_content_key(content_resource_list) == ["description"]
+    assert get_metadata_content_key(content_resource_list) == [
+        constants.METADATA_FIELD_DESCRIPTION
+    ]
 
     # Test RESOURCE_COLLECTION type
     content_resource_collection = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_COLLECTION
     )
-    assert get_metadata_content_key(content_resource_collection) == ["description"]
+    assert get_metadata_content_key(content_resource_collection) == [
+        constants.METADATA_FIELD_DESCRIPTION
+    ]
 
     # Test METADATA type
     content_metadata = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_METADATA)
-    assert get_metadata_content_key(content_metadata) == ["course_description"]
+    assert get_metadata_content_key(content_metadata) == [
+        constants.METADATA_FIELD_COURSE_DESCRIPTION,
+        constants.INSTRUCTORS_FIELD_CONTENT,
+    ]
 
     # Test RESOURCE type (new case)
     content_resource = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_RESOURCE)
     assert get_metadata_content_key(content_resource) == [
-        "image_metadata.caption",
-        "image_metadata.credit",
+        constants.METADATA_FIELD_IMAGE_CAPTION,
+        constants.METADATA_FIELD_IMAGE_CREDIT,
     ]
 
     # Test unknown/unsupported type
