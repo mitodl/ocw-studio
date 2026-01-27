@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.175.2 (Released January 27, 2026)
+---------------
+
+- fix(deps): update dependency @testing-library/dom to v10 (#2549)
+- fix(deps): update dependency sentry-sdk to v2.50.0 (#2860)
+- Fix: Allow Resources to be Deleted by Properly Clearing Referencing Content (#2856)
+- Update "Buy at MIT Press" images to text (#2853)
+- chore(deps): update actions/setup-python digest to a309ff8 (#2858)
+- fix(deps): update dependency boto3 to v1.42.34 (#2859)
+
 Version 0.175.1 (Released January 26, 2026)
 ---------------
 
