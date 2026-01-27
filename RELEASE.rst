@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.175.2
+Version 0.175.2 (Released January 27, 2026)
 ---------------
 
 - fix(deps): update dependency @testing-library/dom to v10 (#2549)
