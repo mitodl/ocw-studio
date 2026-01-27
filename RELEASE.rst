@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.175.3
+---------------
+
+- Productionalize ocw-studio dockerfile  (#2852)
+- Update dialog for non-deletable items (#2862)
+- chore(deps): update dependency pypdf to v6.6.2 [security] (#2863)
+- fix(deps): update dependency @types/sinon to v21 (#2820)
+
 Version 0.175.2 (Released January 27, 2026)
 ---------------
 
