@@ -509,6 +509,24 @@ def test_compile_referencing_content_empty_and_none():
     assert compile_referencing_content(content_plain) == []
 
 
+def test_compile_referencing_content_unexpected_metadata_type(caplog):
+    """Test compile_referencing_content logs warning for unexpected metadata types"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": 12345,
+        },
+    )
+
+    result = compile_referencing_content(content)
+
+    assert result == []
+    assert "Unexpected metadata type" in caplog.text
+    assert "int" in caplog.text
+    assert "course_description" in caplog.text
+
+
 def test_get_metadata_content_key():
     """Test get_metadata_content_key returns correct keys based on content type."""
 

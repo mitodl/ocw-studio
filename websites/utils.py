@@ -1,5 +1,6 @@
 """Websites utils"""
 
+import logging
 import re
 from typing import Any
 
@@ -7,6 +8,8 @@ from django.conf import settings
 from django.db.models import Q
 
 from websites import constants
+
+log = logging.getLogger(__name__)
 
 
 def permissions_group_name_for_role(role, website):
@@ -202,6 +205,13 @@ def compile_referencing_content(content) -> list[str]:
                 if resource_data := get_dict_field(content.metadata, content_key):
                     if isinstance(resource_data, list):
                         references.extend(resource_data)
-                    else:
+                    elif isinstance(resource_data, str):
                         references.extend(parse_resource_uuid(resource_data))
+                    else:
+                        log.warning(
+                            "Unexpected metadata type %s for key '%s' in content %s",
+                            type(resource_data).__name__,
+                            content_key,
+                            content.text_id,
+                        )
     return references
