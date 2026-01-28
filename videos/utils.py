@@ -133,32 +133,39 @@ def get_course_tag(website: Website) -> str:
 
 def parse_tags(tags: str) -> list[str]:
     """
-    Parse a comma-separated tag string into a list of cleaned tags.
+    Parse a comma-separated tag string into a list of cleaned, normalized tags.
 
     Args:
         tags (str): Comma-separated tag string
 
     Returns:
-        list[str]: List of cleaned, non-empty tags
+        list[str]: List of cleaned, non-empty, lowercase tags
     """
-    return [tag.strip() for tag in tags.split(",") if tag.strip()]
+    return [tag.strip().lower() for tag in tags.split(",") if tag.strip()]
 
 
 def get_tags_with_course(metadata: dict, course_slug: str) -> str:
     """
     Get video tags with the course URL slug appended.
+    Tags are normalized (lowercased, stripped) and deduplicated.
 
     Args:
         metadata (dict): The WebsiteContent metadata dictionary
         course_slug (str): The course URL slug to add as a tag
 
     Returns:
-        str: Comma-separated tags with course slug appended
+        str: Comma-separated tags with course slug appended,
+             sorted alphabetically (lowercase)
     """
     existing_tags = get_dict_field(metadata, settings.YT_FIELD_TAGS) or ""
-    tag_list = parse_tags(existing_tags)
 
-    if course_slug not in tag_list:
-        tag_list.append(course_slug)
+    # remove duplicates and empty tags
+    all_tags = set(parse_tags(existing_tags))
 
-    return ", ".join(tag_list)
+    # Add course slug if provided and not empty
+    if course_slug and course_slug not in all_tags:
+        all_tags.add(course_slug)
+
+    # Sort alphabetically (tags are already lowercase)
+    sorted_tags = sorted(all_tags)
+    return ", ".join(sorted_tags)

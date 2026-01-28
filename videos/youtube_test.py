@@ -209,8 +209,8 @@ def test_upload_video_prevents_duplicate_course_tag(mocker, youtube_mocker):
     video_file = VideoFileFactory.create()
     course_slug = get_course_tag(video_file.video.website)
 
-    # existing_tags already contains the course slug
-    existing_tags_with_course = f"python, django, {course_slug}"
+    # existing_tags already contains the course slug in different case
+    existing_tags_with_course = f"Python, Django, {course_slug.upper()}"
 
     mocker.patch("videos.youtube.resumable_upload")
     mock_upload = youtube_mocker().videos.return_value.insert
@@ -223,11 +223,15 @@ def test_upload_video_prevents_duplicate_course_tag(mocker, youtube_mocker):
     final_tags = called_kwargs["body"]["snippet"]["tags"]
     tag_list = parse_tags(final_tags)
 
-    # Count occurrences of course_slug
-    course_tag_count = tag_list.count(course_slug)
+    # Count occurrences of normalized course_slug
+    normalized_course_slug = course_slug.lower()
+    course_tag_count = tag_list.count(normalized_course_slug)
     assert course_tag_count == 1, (
-        f"Course tag '{course_slug}' should appear exactly once, but appears {course_tag_count} times"
+        f"Course tag '{normalized_course_slug}' should appear exactly once, but appears {course_tag_count} times"
     )
+
+    # Verify tags are sorted alphabetically
+    assert tag_list == sorted(tag_list)
 
 
 def test_upload_video_handles_duplicate_tags_in_existing(mocker, youtube_mocker):
@@ -237,8 +241,8 @@ def test_upload_video_handles_duplicate_tags_in_existing(mocker, youtube_mocker)
     video_file = VideoFileFactory.create()
     course_slug = get_course_tag(video_file.video.website)
 
-    # existing_tags has duplicate tags
-    existing_tags = "python, django, python, ai"
+    # existing_tags has duplicate tags in different cases and with whitespace
+    existing_tags = "Python, django, PYTHON,  AI  , Django"
 
     mocker.patch("videos.youtube.resumable_upload")
     mock_upload = youtube_mocker().videos.return_value.insert
@@ -251,11 +255,90 @@ def test_upload_video_handles_duplicate_tags_in_existing(mocker, youtube_mocker)
     final_tags = called_kwargs["body"]["snippet"]["tags"]
     tag_list = parse_tags(final_tags)
 
-    # Verify course tag was added
-    assert course_slug in tag_list
+    # Verify course tag was added (normalized)
+    normalized_course_slug = course_slug.lower()
+    assert normalized_course_slug in tag_list
 
-    # verify duplicates were not affected
-    assert tag_list.count("python") == 2
+    # Verify duplicates were removed (case-insensitive)
+    assert tag_list.count("python") == 1
+    assert tag_list.count("django") == 1
+    assert tag_list.count("ai") == 1
+
+    # Verify tags are sorted alphabetically
+    assert tag_list == sorted(tag_list)
+
+
+def test_upload_video_normalizes_all_tags(mocker, youtube_mocker):
+    """
+    Test that upload_video normalizes all tags (lowercase, strip whitespace).
+    """
+    video_file = VideoFileFactory.create()
+    course_slug = get_course_tag(video_file.video.website)
+
+    # existing_tags with mixed case and whitespace
+    existing_tags = "  Machine Learning  , Deep-LEARNING, AI  "
+
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+
+    YouTubeApi().upload_video(video_file, existing_tags=existing_tags)
+
+    _, called_kwargs = mock_upload.call_args
+
+    final_tags = called_kwargs["body"]["snippet"]["tags"]
+    tag_list = parse_tags(final_tags)
+
+    # All tags should be lowercase and sorted
+    expected_tags = sorted(
+        ["machine learning", "deep-learning", "ai", course_slug.lower()]
+    )
+    assert tag_list == expected_tags
+
+
+def test_upload_video_handles_no_existing_tags_only_course_slug(mocker, youtube_mocker):
+    """
+    Test that upload_video properly handles case where only course slug exists.
+    """
+    video_file = VideoFileFactory.create()
+    course_slug = get_course_tag(video_file.video.website)
+
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+
+    # No existing tags provided
+    YouTubeApi().upload_video(video_file, existing_tags=None)
+
+    _, called_kwargs = mock_upload.call_args
+
+    final_tags = called_kwargs["body"]["snippet"]["tags"]
+    tag_list = parse_tags(final_tags)
+
+    # Should only contain normalized course slug
+    assert tag_list == [course_slug.lower()]
+
+
+def test_upload_video_handles_existing_tags_no_course_slug(mocker, youtube_mocker):
+    """
+    Test that upload_video handles existing tags when website has no course slug.
+    """
+    video_file = VideoFileFactory.create()
+    # Mock get_course_tag to return None
+    mocker.patch("videos.youtube.get_course_tag", return_value=None)
+
+    existing_tags = "Python, Django, AI"
+
+    mocker.patch("videos.youtube.resumable_upload")
+    mock_upload = youtube_mocker().videos.return_value.insert
+
+    YouTubeApi().upload_video(video_file, existing_tags=existing_tags)
+
+    _, called_kwargs = mock_upload.call_args
+
+    final_tags = called_kwargs["body"]["snippet"]["tags"]
+    tag_list = parse_tags(final_tags)
+
+    # Should contain normalized existing tags (no course slug)
+    assert tag_list == ["ai", "django", "python"]
 
 
 @pytest.mark.parametrize("privacy", [None, "public"])
@@ -281,8 +364,8 @@ def test_update_video(settings, mocker, youtube_mocker, privacy):
 
     expected_title = f"{' '.join([title.replace('>', '') for _ in range(9)])}..."
     expected_desc = f"{' '.join([description.replace('>', '') for _ in range(499)])}..."
-    # Course URL slug should be automatically added to tags (as a list)
-    expected_tags = parse_tags(f"{tags}, {get_course_tag(content.website)}")
+    # Course URL slug should be automatically added to tags (as a sorted list)
+    expected_tags = sorted(parse_tags(f"{tags}, {get_course_tag(content.website)}"))
 
     assert len(content.title) > YT_MAX_LENGTH_TITLE
     assert (

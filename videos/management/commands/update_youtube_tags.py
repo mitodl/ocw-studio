@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import Q
 
 from main.management.commands.filter import WebsiteFilterCommand
-from videos.utils import get_course_tag, get_tags_with_course
+from videos.utils import get_course_tag, parse_tags
 from videos.youtube import YouTubeApi, is_youtube_enabled
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import WebsiteContent
@@ -15,9 +15,9 @@ VERBOSITY_DETAILED = 2
 
 
 class Command(WebsiteFilterCommand):
-    """Update YouTube video tags for existing videos without re-uploading"""
+    """Update YouTube video tags by merging YouTube and DB tags"""
 
-    help = "Update YouTube video tags for existing videos without re-uploading"
+    help = "Update YouTube video tags by merging current YouTube tags with DB tags"
 
     def add_arguments(self, parser):
         """Add command-specific arguments"""
@@ -62,6 +62,64 @@ class Command(WebsiteFilterCommand):
 
         return video_resources
 
+    def flatten_tags(self, tags: list[str]) -> set[str]:
+        """
+        Flatten and normalize a list of tags, handling poorly formatted tags.
+        Returns a set of cleaned, lowercase tags.
+
+        Args:
+            tags (list[str]): List of tags, some of which may contain commas
+        Returns:
+            set[str]: Set of cleaned, lowercase tags
+        """
+
+        tags_set = set()
+
+        for tag in tags:
+            if "," in tag:
+                # Poorly formatted tag - split it
+                tags_set.update(t.strip().lower() for t in tag.split(","))
+            else:
+                tags_set.add(tag.strip().lower())
+
+        return {tag for tag in tags_set if tag}  # Remove empty tags
+
+    def merge_tags(
+        self,
+        youtube_tags: list[str],
+        db_tags: list[str],
+        course_slug: str,
+        *,
+        add_course_tag: bool,
+    ) -> tuple[str, bool]:
+        """
+        Merge tags from YouTube and database.
+
+        Returns tuple: (merged_tags_str, tags_changed)
+
+        """
+
+        # Flatten and normalize YouTube tags
+        youtube_tags_set = self.flatten_tags(youtube_tags)
+
+        # Normalize DB tags
+        db_tags_set = self.flatten_tags(db_tags)
+
+        # Merge: YouTube tags and DB tags
+        merged_tags = youtube_tags_set.union(db_tags_set)
+
+        # Add course tag if requested and not already present
+        if add_course_tag and course_slug and course_slug not in merged_tags:
+            merged_tags.add(course_slug)
+
+        # Sort alphabetically
+        sorted_tags = sorted(merged_tags)
+
+        return (
+            ", ".join(sorted_tags) if sorted_tags else "",
+            merged_tags != youtube_tags_set,
+        )
+
     def process_video(
         self, video_resource, youtube, dry_run, add_course_tag, verbosity
     ):
@@ -74,37 +132,73 @@ class Command(WebsiteFilterCommand):
         course_slug = get_course_tag(video_resource.website)
         website_name = video_resource.website.name
 
-        # Merge course slug into tags if requested
-        if add_course_tag:
-            merged_tags = get_tags_with_course(video_resource.metadata, course_slug)
-            set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags)
-            if not dry_run:
+        try:
+            # Fetch current tags from YouTube
+            video_response = (
+                youtube.client.videos().list(part="snippet", id=youtube_id).execute()
+            )
+
+            if not video_response.get("items"):
+                msg = f"Video {youtube_id} not found on YouTube"
+                return ("error", msg)
+
+            # Get current tags from YouTube
+            youtube_tags = video_response["items"][0]["snippet"].get("tags", [])
+
+            # Get tags from DB and parse to list
+            db_tags_str = get_dict_field(
+                video_resource.metadata, settings.YT_FIELD_TAGS
+            )
+            db_tags = parse_tags(db_tags_str or "")
+
+            # Merge tags
+            merged_tags, tags_changed = self.merge_tags(
+                youtube_tags, db_tags, course_slug, add_course_tag=add_course_tag
+            )
+
+            # Display detailed info only at verbosity level 2+
+            if verbosity >= VERBOSITY_DETAILED:
+                self.stdout.write(
+                    f"\nProcessing: {video_resource.title} ({website_name})"
+                )
+                self.stdout.write(f"  YouTube ID: {youtube_id}")
+                self.stdout.write(
+                    f"  Current YouTube tags: {', '.join(youtube_tags) or '(no tags)'}"
+                )
+                self.stdout.write(f"  Current DB tags: {db_tags_str or '(no tags)'}")
+                self.stdout.write(f"  Merged tags: {merged_tags or '(no tags)'}")
+                if add_course_tag and course_slug:
+                    self.stdout.write(f"  Course tag: {course_slug}")
+                if tags_changed:
+                    self.stdout.write("  Tags will be updated")
+                else:
+                    self.stdout.write("  No tag changes needed")
+
+            # Initialize status and message
+            status = "skip"
+            message = f"  No tag changes for {youtube_id}"
+
+            if dry_run:
+                # Dry run mode - don't update anything
+                status = "success"
+                message = f"  [DRY RUN] Would update tags to: {merged_tags}"
+            else:
+                if tags_changed:
+                    # Update tags on YouTube
+                    youtube.update_video_tags(youtube_id, merged_tags)
+                    status = "success"
+                    message = f"Updated tags for YouTube video {youtube_id}"
+
+                # Always save merged tags to DB in normal mode
+                set_dict_field(
+                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
+                )
                 video_resource.save()
 
-        # Get tags after potential merge
-        tags = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
-
-        # Display detailed info only at verbosity level 2+
-        if verbosity >= VERBOSITY_DETAILED:
-            tag_display = tags if tags else "(no tags)"
-            self.stdout.write(f"\nProcessing: {video_resource.title} ({website_name})")
-            self.stdout.write(f"  YouTube ID: {youtube_id}")
-            self.stdout.write(f"  Tags: {tag_display}")
-            if add_course_tag:
-                self.stdout.write(f"  Course tag added: {course_slug}")
-
-        if dry_run:
-            return ("success", "  [DRY RUN] Would not update tags on YouTube")
-
-        try:
-            # Update only tags on YouTube (not other metadata)
-            youtube.update_video_tags(youtube_id, tags or "")
         except Exception as exc:  # noqa: BLE001
-            msg = f"Error updating tags for {youtube_id}: {exc!s}"
-            return ("error", msg)
-        else:
-            msg = f"Updated tags for YouTube video {youtube_id}"
-            return ("success", msg)
+            status, message = "error", f"Error updating tags for {youtube_id}: {exc!s}"
+
+        return status, message
 
     def print_summary(self, success_count, error_count, skipped_count):
         """Print summary of processing results"""
