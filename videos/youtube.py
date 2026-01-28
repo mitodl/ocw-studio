@@ -239,12 +239,20 @@ class YouTubeApi:
         }
 
         merged_tags = None
-        if course_slug := get_course_tag(videofile.video.website):
-            # Merge existing tags with course tag avoiding duplicates
-            tag_list = parse_tags(existing_tags or "")
-            if course_slug not in tag_list:
-                tag_list.append(course_slug)
-            merged_tags = ", ".join(tag_list)
+        course_slug = get_course_tag(videofile.video.website)
+
+        # Process tags if we have either existing tags or a course slug
+        if existing_tags or course_slug:
+            # parse_tags returns lowercased and stripped tags
+            all_tags = set(parse_tags(existing_tags or ""))
+
+            # Normalize and add course slug if provided and not empty
+            if course_slug and course_slug not in all_tags:
+                all_tags.add(course_slug)
+
+            # Sort alphabetically
+            merged_tags = ", ".join(sorted(all_tags))
+
             request_body["snippet"]["tags"] = merged_tags
 
         with Reader(settings.AWS_STORAGE_BUCKET_NAME, videofile.s3_key) as s3_stream:

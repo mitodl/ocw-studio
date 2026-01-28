@@ -62,36 +62,62 @@ class Command(WebsiteFilterCommand):
 
         return video_resources
 
-    def merge_tags(self, youtube_tags, db_tags, course_slug, add_course_tag):
+    def flatten_tags(self, tags: list[str]) -> set[str]:
+        """
+        Flatten and normalize a list of tags, handling poorly formatted tags.
+        Returns a set of cleaned, lowercase tags.
+
+        Args:
+            tags (list[str]): List of tags, some of which may contain commas
+        Returns:
+            set[str]: Set of cleaned, lowercase tags
+        """
+
+        tags_set = set()
+
+        for tag in tags:
+            if "," in tag:
+                # Poorly formatted tag - split it
+                tags_set.update(t.strip().lower() for t in tag.split(","))
+            else:
+                tags_set.add(tag.strip().lower())
+
+        return {tag for tag in tags_set if tag}  # Remove empty tags
+
+    def merge_tags(
+        self,
+        youtube_tags: list[str],
+        db_tags: list[str],
+        course_slug: str,
+        *,
+        add_course_tag: bool,
+    ) -> tuple[str, bool]:
         """
         Merge tags from YouTube and database.
 
         Returns tuple: (merged_tags_str, tags_changed)
-        """
-        # Handle poorly formatted YouTube tags that contain commas
-        # Split each tag by comma and flatten
-        youtube_tags_flat = []
-        for tag in youtube_tags:
-            if "," in tag:
-                # Poorly formatted tag - split it
-                youtube_tags_flat.extend(t.strip() for t in tag.split(","))
-            else:
-                youtube_tags_flat.append(tag.strip())
 
-        youtube_tags_set = {tag for tag in youtube_tags_flat if tag}
+        """
+
+        # Flatten and normalize YouTube tags
+        youtube_tags_set = self.flatten_tags(youtube_tags)
+
+        # Normalize DB tags
+        db_tags_set = self.flatten_tags(db_tags)
 
         # Merge: YouTube tags and DB tags
-        merged_tags = youtube_tags_set.union(db_tags)
+        merged_tags = youtube_tags_set.union(db_tags_set)
 
         # Add course tag if requested and not already present
         if add_course_tag and course_slug and course_slug not in merged_tags:
             merged_tags.add(course_slug)
 
-        # Sort alphabetically and lowercase for consistency
-        sorted_tags = sorted(merged_tags, key=lambda s: s.lower())
+        # Sort alphabetically
+        sorted_tags = sorted(merged_tags)
+
         return (
             ", ".join(sorted_tags) if sorted_tags else "",
-            bool(merged_tags != youtube_tags_set),
+            merged_tags != youtube_tags_set,
         )
 
     def process_video(
@@ -127,7 +153,7 @@ class Command(WebsiteFilterCommand):
 
             # Merge tags
             merged_tags, tags_changed = self.merge_tags(
-                youtube_tags, db_tags, course_slug, add_course_tag
+                youtube_tags, db_tags, course_slug, add_course_tag=add_course_tag
             )
 
             # Display detailed info only at verbosity level 2+
@@ -169,13 +195,10 @@ class Command(WebsiteFilterCommand):
                 )
                 video_resource.save()
 
-            return status, message
-
         except Exception as exc:  # noqa: BLE001
-            msg = f"Error updating tags for {youtube_id}: {exc!s}"
-        else:
-            return status, message
-        return ("error", msg)
+            status, message = "error", f"Error updating tags for {youtube_id}: {exc!s}"
+
+        return status, message
 
     def print_summary(self, success_count, error_count, skipped_count):
         """Print summary of processing results"""

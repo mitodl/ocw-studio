@@ -9,6 +9,7 @@ from django.core.management import call_command
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFactory, VideoFileFactory
+from videos.management.commands.update_youtube_tags import Command
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.factories import (
     WebsiteContentFactory,
@@ -746,3 +747,80 @@ def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
     content.refresh_from_db()
     updated_tags = content.metadata["video_metadata"]["video_tags"]
     assert updated_tags == "django, python"  # DB should now have both tags
+
+
+def test_flatten_tags_basic():
+    """Test flatten_tags with simple list of tags"""
+    command = Command()
+    tags = ["Python", "Django", "AI"]
+    result = command.flatten_tags(tags)
+
+    assert result == {"python", "django", "ai"}
+
+
+def test_flatten_tags_with_commas():
+    """Test flatten_tags handles poorly formatted tags containing commas"""
+    command = Command()
+    tags = ["Python", "Django, AI", "Machine Learning"]
+    result = command.flatten_tags(tags)
+
+    # Should split the "Django, AI" tag and normalize all
+    assert result == {"python", "django", "ai", "machine learning"}
+
+
+def test_flatten_tags_with_whitespace():
+    """Test flatten_tags strips whitespace from tags"""
+    command = Command()
+    tags = ["  Python  ", "  Django  ", "AI"]
+    result = command.flatten_tags(tags)
+
+    assert result == {"python", "django", "ai"}
+
+
+def test_flatten_tags_with_whitespace_and_commas():
+    """Test flatten_tags handles tags with both whitespace and commas"""
+    command = Command()
+    tags = ["Python", "  Django , AI  ", "  Machine Learning  "]
+    result = command.flatten_tags(tags)
+
+    # Should split comma-separated tags and strip all whitespace
+    assert result == {"python", "django", "ai", "machine learning"}
+
+
+def test_flatten_tags_removes_empty_strings():
+    """Test flatten_tags removes empty strings"""
+    command = Command()
+    tags = ["Python", "", "  ", "Django"]
+    result = command.flatten_tags(tags)
+
+    # Empty strings should be filtered out
+    assert result == {"python", "django"}
+
+
+def test_flatten_tags_with_duplicates():
+    """Test flatten_tags handles duplicates (case-insensitive)"""
+    command = Command()
+    tags = ["Python", "PYTHON", "python", "Django"]
+    result = command.flatten_tags(tags)
+
+    # Duplicates should be removed (case-insensitive)
+    assert result == {"python", "django"}
+
+
+def test_flatten_tags_mixed_case_duplicates_with_commas():
+    """Test flatten_tags handles complex case with duplicates, commas, and mixed case"""
+    command = Command()
+    tags = ["Python, PYTHON", "django", "Django, AI", "ai"]
+    result = command.flatten_tags(tags)
+
+    # Should handle all edge cases: split commas, normalize case, remove duplicates
+    assert result == {"python", "django", "ai"}
+
+
+def test_flatten_tags_empty_list():
+    """Test flatten_tags with empty list"""
+    command = Command()
+    tags = []
+    result = command.flatten_tags(tags)
+
+    assert result == set()
