@@ -1,5 +1,7 @@
 """Tests for the update_youtube_tags management command"""
 
+import csv
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -16,6 +18,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
+from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
@@ -125,8 +128,13 @@ def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
 
     # Verify merged tags saved to DB
     content.refresh_from_db()
-    assert "existing-youtube-tag" in content.metadata["video_metadata"]["video_tags"]
-    assert "python" in content.metadata["video_metadata"]["video_tags"]
+    final_db_tags = content.metadata["video_metadata"]["video_tags"]
+    assert "existing-youtube-tag" in final_db_tags
+    assert "python" in final_db_tags
+    assert "django" in final_db_tags
+    assert "testing" in final_db_tags
+    # Verify exact final state: normalized (lowercase), sorted, no duplicates
+    assert final_db_tags == "django, existing-youtube-tag, python, testing"
 
 
 def test_update_youtube_tags_specific_video(mock_youtube_api):
@@ -184,6 +192,120 @@ def test_update_youtube_tags_specific_video(mock_youtube_api):
     mock_youtube_api.update_video_tags.assert_called_once_with(
         "youtube_id_1", "tag1, youtube-tag"
     )
+
+    # Verify tags saved to DB for video 1
+    content1 = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="youtube_id_1"
+    )
+    content1.refresh_from_db()
+    assert content1.metadata["video_metadata"]["video_tags"] == "tag1, youtube-tag"
+
+    # Verify video 2 was NOT updated
+    content2 = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="youtube_id_2"
+    )
+    content2.refresh_from_db()
+    assert content2.metadata["video_metadata"]["video_tags"] == "tag2"
+
+
+def test_update_youtube_tags_multiple_youtube_ids(mock_youtube_api):
+    """Test updating multiple videos with comma-separated YouTube IDs"""
+    website = WebsiteFactory.create(name="test-course")
+
+    # Create three videos
+    video1 = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video1,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="youtube_id_1",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        title="Video 1",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "youtube_id_1",
+                "video_tags": "tag1",
+            },
+        },
+    )
+
+    video2 = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video2,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="youtube_id_2",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        title="Video 2",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "youtube_id_2",
+                "video_tags": "tag2",
+            },
+        },
+    )
+
+    video3 = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video3,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="youtube_id_3",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        title="Video 3",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "youtube_id_3",
+                "video_tags": "tag3",
+            },
+        },
+    )
+
+    def mock_list(*args, **kwargs):
+        youtube_id = kwargs.get("id")
+        mock_execute = (
+            mock_youtube_api.client.videos.return_value.list.return_value.execute
+        )
+
+        if youtube_id == "youtube_id_1":
+            mock_execute.return_value = {
+                "items": [{"snippet": {"tags": ["youtube-tag1"]}}]
+            }
+        elif youtube_id == "youtube_id_2":
+            mock_execute.return_value = {
+                "items": [{"snippet": {"tags": ["youtube-tag2"]}}]
+            }
+        else:
+            mock_execute.return_value = {"items": [{"snippet": {"tags": []}}]}
+
+        return mock_youtube_api.client.videos.return_value.list.return_value
+
+    mock_youtube_api.client.videos.return_value.list.side_effect = mock_list
+
+    # Test with comma-separated YouTube IDs
+    call_command(
+        "update_youtube_tags",
+        youtube_id="youtube_id_1, youtube_id_2",  # Note the space after comma
+    )
+
+    # Should update both videos (but not video 3)
+    assert mock_youtube_api.update_video_tags.call_count == 2
+
+    # Verify the calls were made with correct merged tags
+    calls = mock_youtube_api.update_video_tags.call_args_list
+    call_args = {call[0][0]: call[0][1] for call in calls}
+
+    assert "youtube_id_1" in call_args
+    assert call_args["youtube_id_1"] == "tag1, youtube-tag1"
+
+    assert "youtube_id_2" in call_args
+    assert call_args["youtube_id_2"] == "tag2, youtube-tag2"
 
 
 def test_update_youtube_tags_no_tags(mock_youtube_api):
@@ -420,6 +542,16 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
         "yt_id_789", "existing-yt-tag, test-course-123"
     )
 
+    # Verify final tags in DB include both YouTube tag and course slug
+    content = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="yt_id_789"
+    )
+    content.refresh_from_db()
+    final_db_tags = content.metadata["video_metadata"]["video_tags"]
+    assert final_db_tags == "existing-yt-tag, test-course-123"
+    assert "existing-yt-tag" in final_db_tags
+    assert "test-course-123" in final_db_tags
+
 
 def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     """Test that course URL slug isn't duplicated if already on YouTube"""
@@ -462,6 +594,16 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     mock_youtube_api.update_video_tags.assert_called_once_with(
         "yt_existing", "django, machine-learning, my-course, python"
     )
+
+    # Verify final tags in DB: all tags merged, no duplicates, alphabetically sorted
+    content = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="yt_existing"
+    )
+    content.refresh_from_db()
+    final_db_tags = content.metadata["video_metadata"]["video_tags"]
+    assert final_db_tags == "django, machine-learning, my-course, python"
+    # Ensure course tag appears only once (not duplicated)
+    assert final_db_tags.count("my-course") == 1
 
 
 def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
@@ -702,6 +844,11 @@ def test_update_youtube_tags_handles_poorly_formatted_youtube_tags(mock_youtube_
     assert "critique" in updated_tags
     assert "game design" in updated_tags
     assert "proper-tag1" in updated_tags
+    # Verify exact final DB state: all tags properly split, normalized, sorted
+    assert (
+        updated_tags
+        == "critique, discussion, game design, game theory, proper-tag1, proper-tag2"
+    )
 
 
 def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
@@ -747,6 +894,89 @@ def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
     content.refresh_from_db()
     updated_tags = content.metadata["video_metadata"]["video_tags"]
     assert updated_tags == "django, python"  # DB should now have both tags
+
+
+def test_update_youtube_tags_csv_export(mock_youtube_api, tmp_path):
+    """Test CSV export functionality with --out parameter"""
+    website = WebsiteFactory.create(
+        name="test-course",
+        short_id="Course-123",
+        publish_date=datetime(2023, 1, 1, tzinfo=UTC),
+        metadata={"resourcetype": "Course"},
+    )
+
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="youtube_id_1",
+    )
+
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        markdown="",
+        title="Test Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "youtube_id_1",
+                "video_tags": "existing-db-tag",  # Initial DB tags
+            },
+        },
+    )
+
+    # Mock YouTube returning different tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
+        "items": [{"snippet": {"tags": ["youtube-tag", "common-tag"]}}]
+    }
+
+    csv_file = tmp_path / "test_output.csv"
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        output_file=str(csv_file),
+    )
+
+    # Verify CSV file was created and contains correct data
+    assert csv_file.exists()
+
+    with csv_file.open(encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+
+    assert len(rows) == 1
+    row = rows[0]
+
+    # Verify all required columns are present
+    assert "vid_resource_id" in row
+    assert "existing_yt_tags" in row
+    assert "existing_db_tags" in row
+    assert "final_tags_yt" in row
+    assert "final_tags_db" in row
+
+    # Verify content
+    assert row["vid_resource_id"] == str(content.id)
+    assert row["existing_yt_tags"] == "youtube-tag, common-tag"
+    assert row["existing_db_tags"] == "existing-db-tag"
+    # Final tags should be merged (common-tag, existing-db-tag, youtube-tag)
+    assert "common-tag" in row["final_tags_yt"]
+    assert "existing-db-tag" in row["final_tags_yt"]
+    assert "youtube-tag" in row["final_tags_yt"]
+    # Verify exact final tags: normalized, sorted alphabetically
+    assert row["final_tags_yt"] == "common-tag, existing-db-tag, youtube-tag"
+    assert row["final_tags_db"] == "common-tag, existing-db-tag, youtube-tag"
+
+    # Verify YouTube API was called with correct merged tags
+    mock_youtube_api.update_video_tags.assert_called_once_with(
+        "youtube_id_1", "common-tag, existing-db-tag, youtube-tag"
+    )
+
+    # Verify final tags actually saved to database
+    content.refresh_from_db()
+    final_db_tags = content.metadata["video_metadata"]["video_tags"]
+    assert final_db_tags == "common-tag, existing-db-tag, youtube-tag"
 
 
 def test_flatten_tags_basic():

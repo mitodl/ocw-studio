@@ -1,5 +1,8 @@
 """Management command to update YouTube video tags without re-uploading videos"""
 
+import csv
+from pathlib import Path
+
 from django.conf import settings
 from django.db.models import Q
 
@@ -32,13 +35,26 @@ class Command(WebsiteFilterCommand):
             "--youtube-id",
             dest="youtube_id",
             default=None,
-            help="Update only the video with this specific YouTube ID",
+            help=(
+                "Update videos with specific YouTube ID(s). Supports "
+                "comma-separated list (e.g., 'id1,id2,id3')"
+            ),
         )
         parser.add_argument(
             "--add-course-tag",
             action="store_true",
             default=False,
             help="Automatically add course name (URL slug) as a tag",
+        )
+        parser.add_argument(
+            "--out",
+            dest="output_file",
+            default=None,
+            help=(
+                "Export results to CSV file with columns: vid_resource_id, "
+                "existing_yt_tags, existing_db_tags, final_tags_yt, "
+                "final_tags_db"
+            ),
         )
 
     def get_video_resources(self, youtube_id_filter):
@@ -56,9 +72,14 @@ class Command(WebsiteFilterCommand):
         video_resources = self.filter_website_contents(video_resources)
 
         if youtube_id_filter:
-            video_resources = video_resources.filter(
-                **{query_id_field: youtube_id_filter}
-            )
+            # Handle comma-separated YouTube IDs
+            youtube_ids = [
+                yt_id.strip() for yt_id in youtube_id_filter.split(",") if yt_id.strip()
+            ]
+            if youtube_ids:
+                video_resources = video_resources.filter(
+                    **{f"{query_id_field}__in": youtube_ids}
+                )
 
         return video_resources
 
@@ -126,7 +147,10 @@ class Command(WebsiteFilterCommand):
         """
         Process a single video resource to update its tags.
 
-        Returns tuple: (status, message) where status is 'success', 'error', or 'skip'
+        Returns tuple: (status, message, csv_data) where:
+        - status is 'success', 'error', or 'skip'
+        - message is a string describing the result
+        - csv_data is a dict with CSV export data (or None on error)
         """
         youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
         course_slug = get_course_tag(video_resource.website)
@@ -150,6 +174,10 @@ class Command(WebsiteFilterCommand):
                 video_resource.metadata, settings.YT_FIELD_TAGS
             )
             db_tags = parse_tags(db_tags_str or "")
+
+            # Store initial tags for CSV export
+            initial_yt_tags = ", ".join(youtube_tags)
+            initial_db_tags = db_tags_str or ""
 
             # Merge tags
             merged_tags, tags_changed = self.merge_tags(
@@ -195,10 +223,20 @@ class Command(WebsiteFilterCommand):
                 )
                 video_resource.save()
 
+            # Prepare CSV data
+            csv_data = {
+                "vid_resource_id": video_resource.id,
+                "existing_yt_tags": initial_yt_tags,
+                "existing_db_tags": initial_db_tags,
+                "final_tags_yt": merged_tags if tags_changed else initial_yt_tags,
+                "final_tags_db": merged_tags,
+            }
+
         except Exception as exc:  # noqa: BLE001
             status, message = "error", f"Error updating tags for {youtube_id}: {exc!s}"
+            csv_data = None
 
-        return status, message
+        return status, message, csv_data
 
     def print_summary(self, success_count, error_count, skipped_count):
         """Print summary of processing results"""
@@ -228,6 +266,10 @@ class Command(WebsiteFilterCommand):
         dry_run = options["dry_run"]
         youtube_id_filter = options["youtube_id"]
         add_course_tag = options["add_course_tag"]
+        output_file = options["output_file"]
+
+        # Initialize CSV data collection if output file specified
+        csv_rows = [] if output_file else None
 
         if verbosity >= 1:
             self.stdout.write("Starting YouTube tag update...")
@@ -265,9 +307,13 @@ class Command(WebsiteFilterCommand):
         skipped_count = 0
 
         for video_resource in video_resources:
-            status, message = self.process_video(
+            status, message, csv_data = self.process_video(
                 video_resource, youtube, dry_run, add_course_tag, verbosity
             )
+
+            # Collect CSV data if output file specified
+            if csv_rows is not None and csv_data:
+                csv_rows.append(csv_data)
 
             if verbosity >= VERBOSITY_DETAILED:
                 if status == "success":
@@ -300,3 +346,28 @@ class Command(WebsiteFilterCommand):
 
         if verbosity >= VERBOSITY_DETAILED:
             self.print_summary(success_count, error_count, skipped_count)
+
+        # Write CSV file if specified
+        if output_file and csv_rows:
+            try:
+                output_path = Path(output_file)
+                with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+                    fieldnames = [
+                        "vid_resource_id",
+                        "existing_yt_tags",
+                        "existing_db_tags",
+                        "final_tags_yt",
+                        "final_tags_db",
+                    ]
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(csv_rows)
+
+                if verbosity >= 1:
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Exported {len(csv_rows)} records to {output_file}"
+                        )
+                    )
+            except Exception as exc:  # noqa: BLE001
+                self.stdout.write(self.style.ERROR(f"Error writing CSV file: {exc!s}"))
