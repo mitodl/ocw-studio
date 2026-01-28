@@ -1,5 +1,6 @@
 """Websites utils"""
 
+import logging
 import re
 from typing import Any
 
@@ -7,6 +8,8 @@ from django.conf import settings
 from django.db.models import Q
 
 from websites import constants
+
+log = logging.getLogger(__name__)
 
 
 def permissions_group_name_for_role(role, website):
@@ -107,11 +110,17 @@ def get_metadata_content_key(content) -> list:
             constants.CONTENT_TYPE_RESOURCE_LIST
             | constants.CONTENT_TYPE_RESOURCE_COLLECTION
         ):
-            content_keys = ["description"]
+            content_keys = [constants.METADATA_FIELD_DESCRIPTION]
         case constants.CONTENT_TYPE_METADATA:
-            content_keys = ["course_description"]
+            content_keys = [
+                constants.METADATA_FIELD_COURSE_DESCRIPTION,
+                constants.INSTRUCTORS_FIELD_CONTENT,
+            ]
         case constants.CONTENT_TYPE_RESOURCE:
-            content_keys = ["image_metadata.caption", "image_metadata.credit"]
+            content_keys = [
+                constants.METADATA_FIELD_IMAGE_CAPTION,
+                constants.METADATA_FIELD_IMAGE_CREDIT,
+            ]
         case _:
             content_keys = []
 
@@ -194,5 +203,15 @@ def compile_referencing_content(content) -> list[str]:
             content_keys = get_metadata_content_key(content)
             for content_key in content_keys:
                 if resource_data := get_dict_field(content.metadata, content_key):
-                    references.extend(parse_resource_uuid(resource_data))
+                    if isinstance(resource_data, list):
+                        references.extend(resource_data)
+                    elif isinstance(resource_data, str):
+                        references.extend(parse_resource_uuid(resource_data))
+                    else:
+                        log.warning(
+                            "Unexpected metadata type %s for key '%s' in content %s",
+                            type(resource_data).__name__,
+                            content_key,
+                            content.text_id,
+                        )
     return references
