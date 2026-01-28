@@ -6,7 +6,7 @@ nav_order: 0
 
 ---
 
-Documentation can be viewed at [https://mitodl.github.io/ocw-studio/](https://mitodl.github.io/ocw-studio/)
+Documentation gets published via Github pages to [https://mitodl.github.io/ocw-studio/](https://mitodl.github.io/ocw-studio/)
 
 ## Running locally
 
@@ -24,5 +24,5 @@ To run this locally, you need Ruby and the bunder gem installed.
 To run this locally, run the following commands
 
 - `cd docs` (in not already in this directory)
-- `bundler install` - installs jekyll and its dependencies
+- `bundler install` - installs github's flavor of jekyll and its dependencies
 - `bundler exec jekyll serve` - runs the site at [http://localhost:4000/](http://localhost:4000/)
