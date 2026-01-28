@@ -7,7 +7,12 @@ import pytest
 from django.core.management import call_command
 from django.test import TestCase
 
-from websites.constants import CONTENT_TYPE_PAGE, CONTENT_TYPE_RESOURCE
+from websites.constants import (
+    CONTENT_TYPE_INSTRUCTOR,
+    CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_RESOURCE,
+)
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.backpopulate_referencing_content import Command
 
@@ -253,3 +258,77 @@ class BackpopulateReferencingContentCommandIntegrationTest(TestCase):
         assert len(referenced_content) == 2
         assert self.resource1 in referenced_content
         assert self.resource2 in referenced_content
+
+
+@pytest.fixture
+def ocw_www():
+    return WebsiteFactory.create(name="ocw-www")
+
+
+@pytest.fixture
+def course_website():
+    return WebsiteFactory.create()
+
+
+@pytest.fixture
+def instructors(ocw_www):
+    return [
+        WebsiteContentFactory.create(
+            website=ocw_www,
+            type=CONTENT_TYPE_INSTRUCTOR,
+            title="Dr. Test Instructor",
+        ),
+        WebsiteContentFactory.create(
+            website=ocw_www,
+            type=CONTENT_TYPE_INSTRUCTOR,
+            title="Prof. Another Instructor",
+        ),
+    ]
+
+
+@pytest.fixture
+def sitemetadata_with_instructors(course_website, instructors):
+    return WebsiteContentFactory.create(
+        website=course_website,
+        type=CONTENT_TYPE_METADATA,
+        metadata={
+            "course_title": "Test Course",
+            "course_description": "A test course description",
+            "instructors": {
+                "content": [i.text_id for i in instructors],
+                "website": "ocw-www",
+            },
+        },
+    )
+
+
+def test_instructor_references_detected(sitemetadata_with_instructors, instructors):
+    """Test that instructor UUIDs in sitemetadata are detected as references"""
+    assert sitemetadata_with_instructors.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    sitemetadata_with_instructors.refresh_from_db()
+    referenced_content = list(sitemetadata_with_instructors.referenced_by.all())
+
+    assert len(referenced_content) == 2
+    for instructor in instructors:
+        assert instructor in referenced_content
+
+
+def test_instructor_references_with_website_filter(
+    course_website, sitemetadata_with_instructors, instructors
+):
+    """Test that sitemetadata correctly processes instructor refs with website filter"""
+    call_command(
+        "backpopulate_referencing_content",
+        verbosity=0,
+        filter=course_website.name,
+    )
+
+    sitemetadata_with_instructors.refresh_from_db()
+    referenced_content = list(sitemetadata_with_instructors.referenced_by.all())
+
+    assert len(referenced_content) == 2
+    for instructor in instructors:
+        assert instructor in referenced_content

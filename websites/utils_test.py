@@ -509,6 +509,24 @@ def test_compile_referencing_content_empty_and_none():
     assert compile_referencing_content(content_plain) == []
 
 
+def test_compile_referencing_content_unexpected_metadata_type(caplog):
+    """Test compile_referencing_content logs warning for unexpected metadata types"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": 12345,
+        },
+    )
+
+    result = compile_referencing_content(content)
+
+    assert result == []
+    assert "Unexpected metadata type" in caplog.text
+    assert "int" in caplog.text
+    assert "course_description" in caplog.text
+
+
 def test_get_metadata_content_key():
     """Test get_metadata_content_key returns correct keys based on content type."""
 
@@ -516,23 +534,30 @@ def test_get_metadata_content_key():
     content_resource_list = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_LIST
     )
-    assert get_metadata_content_key(content_resource_list) == ["description"]
+    assert get_metadata_content_key(content_resource_list) == [
+        constants.METADATA_FIELD_DESCRIPTION
+    ]
 
     # Test RESOURCE_COLLECTION type
     content_resource_collection = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_COLLECTION
     )
-    assert get_metadata_content_key(content_resource_collection) == ["description"]
+    assert get_metadata_content_key(content_resource_collection) == [
+        constants.METADATA_FIELD_DESCRIPTION
+    ]
 
     # Test METADATA type
     content_metadata = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_METADATA)
-    assert get_metadata_content_key(content_metadata) == ["course_description"]
+    assert get_metadata_content_key(content_metadata) == [
+        constants.METADATA_FIELD_COURSE_DESCRIPTION,
+        constants.INSTRUCTORS_FIELD_CONTENT,
+    ]
 
     # Test RESOURCE type (new case)
     content_resource = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_RESOURCE)
     assert get_metadata_content_key(content_resource) == [
-        "image_metadata.caption",
-        "image_metadata.credit",
+        constants.METADATA_FIELD_IMAGE_CAPTION,
+        constants.METADATA_FIELD_IMAGE_CREDIT,
     ]
 
     # Test unknown/unsupported type
