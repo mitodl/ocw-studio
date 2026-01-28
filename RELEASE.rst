@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.175.3
+Version 0.175.3 (Released January 28, 2026)
 ---------------
 
 - Productionalize ocw-studio dockerfile  (#2852)
