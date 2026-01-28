@@ -164,7 +164,7 @@ class Command(WebsiteFilterCommand):
 
             if not video_response.get("items"):
                 msg = f"Video {youtube_id} not found on YouTube"
-                return ("error", msg)
+                return ("error", msg, None)
 
             # Get current tags from YouTube
             youtube_tags = video_response["items"][0]["snippet"].get("tags", [])
@@ -228,7 +228,7 @@ class Command(WebsiteFilterCommand):
                 "vid_resource_id": video_resource.id,
                 "existing_yt_tags": initial_yt_tags,
                 "existing_db_tags": initial_db_tags,
-                "final_tags_yt": merged_tags if tags_changed else initial_yt_tags,
+                "final_tags_yt": merged_tags,
                 "final_tags_db": merged_tags,
             }
 

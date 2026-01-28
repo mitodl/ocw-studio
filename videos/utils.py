@@ -164,7 +164,7 @@ def get_tags_with_course(metadata: dict, course_slug: str) -> str:
 
     # Add course slug if provided and not empty
     if course_slug and course_slug not in all_tags:
-        all_tags.add(course_slug)
+        all_tags.add(course_slug.strip().lower())
 
     # Sort alphabetically (tags are already lowercase)
     sorted_tags = sorted(all_tags)
