@@ -1,5 +1,5 @@
 module.exports = {
-  setupFiles: ["<rootDir>/jest.setup.js"],
+  setupFiles: ["<rootDir>/jest-ckeditor-setup.js", "<rootDir>/jest.setup.js"],
   setupFilesAfterEnv: ["<rootDir>static/js/test_setup.ts"],
   cacheDirectory: ".jest-cache",
   transform: { "^.+\\.(t|j)sx?$": ["@swc/jest"] },
@@ -8,6 +8,10 @@ module.exports = {
       "<rootDir>/static/js/mocks/fileMock.js",
     "\\.(css|less)$": "<rootDir>/static/js/mocks/styleMock.js",
   },
+  // Ensure CKEditor packages are resolved from our root node_modules first
+  // Note: ckeditor5-math v36.0.2 bundles CKEditor v36.0.1, while we use v35.4.0
+  // The version mocking in jest-ckeditor-setup.js handles the compatibility
+  modulePaths: ["<rootDir>/node_modules"],
   // this here is a little bit of hackery! we need to mark a few modules in node_modules
   // not to *ignore* them but actually to include them in the transform. Jest doesn't have
   // a transformIncludePattern option, so this is how they recommend you explicitly include
@@ -25,7 +29,11 @@ module.exports = {
       "|sinon" +
       ")/)",
   ],
-  testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/staticfiles/",
+    "<rootDir>/_site/",
+    "<rootDir>/node_modules/",
+  ],
   testEnvironment: "jsdom",
   watchPlugins: [
     "jest-watch-typeahead/filename",
