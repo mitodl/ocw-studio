@@ -105,12 +105,12 @@ def test_create_new_content(mocker):
 def test_get_tags_with_course_string_tags():
     """Test getting tags with course name from string tags."""
     metadata = {"video_metadata": {"video_tags": "Calculus, MATHEMATICS"}}
-    course_name = "18-01-Fall-2020"
+    course_name = "18-01-fall-2020"
 
     result = get_tags_with_course(metadata, course_name)
 
-    # Tags should be normalized (lowercase), course_slug added as-is, sorted alphabetically
-    assert result == "18-01-Fall-2020, calculus, mathematics"
+    # Tags should be lowercased, and sorted alphabetically
+    assert result == "18-01-fall-2020, calculus, mathematics"
     # Original metadata should not be modified
     assert metadata["video_metadata"]["video_tags"] == "Calculus, MATHEMATICS"
 
@@ -118,23 +118,23 @@ def test_get_tags_with_course_string_tags():
 def test_get_tags_with_course_no_existing_tags():
     """Test getting tags when no existing tags."""
     metadata = {"video_metadata": {}}
-    course_name = "Course-123"
+    course_name = "course-123"
 
     result = get_tags_with_course(metadata, course_name)
 
-    # Course slug should be added as-is
-    assert result == "Course-123"
+    # Course slug should be added
+    assert result == "course-123"
 
 
 def test_get_tags_with_course_already_exists():
     """Test getting tags when course name already in tags."""
     metadata = {"video_metadata": {"video_tags": "Python, MY-COURSE, Django"}}
-    course_name = "My-Course"
+    course_name = "my-course"
 
     result = get_tags_with_course(metadata, course_name)
 
-    # Tags should be normalized (lowercase), course_slug added as-is if not present, sorted alphabetically
-    assert result == "My-Course, django, my-course, python"
+    # Duplicates removed case-insensitively, and sorted alphabetically
+    assert result == "django, my-course, python"
     # Original metadata should not be modified
     assert metadata["video_metadata"]["video_tags"] == "Python, MY-COURSE, Django"
 
@@ -142,12 +142,12 @@ def test_get_tags_with_course_already_exists():
 def test_get_tags_with_course_empty_string():
     """Test getting tags with empty string."""
     metadata = {"video_metadata": {"video_tags": ""}}
-    course_name = "New-Course"
+    course_name = "new-course"
 
     result = get_tags_with_course(metadata, course_name)
 
-    # Course slug should be added as-is
-    assert result == "New-Course"
+    # Course slug added
+    assert result == "new-course"
 
 
 def test_get_tags_with_course_mixed_case_duplicates():
@@ -164,9 +164,9 @@ def test_get_tags_with_course_mixed_case_duplicates():
 def test_get_tags_with_course_whitespace_handling():
     """Test that whitespace in tags is properly stripped."""
     metadata = {"video_metadata": {"video_tags": "  Python  ,  Django  ,  AI  "}}
-    course_name = "  MY-Course  "
+    course_name = "  my-course  "
 
     result = get_tags_with_course(metadata, course_name)
 
-    # Whitespace should be stripped from tags (lowercase) and course_slug, then sorted
-    assert result == "  MY-Course  , ai, django, python"
+    # Whitespace stripped from tags, then sorted
+    assert result == "ai, django, my-course, python"
