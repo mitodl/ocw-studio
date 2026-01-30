@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.175.4 (Released January 30, 2026)
+---------------
+
+- chore(deps): update dependency lodash to v4.17.23 [security] (#2854)
+- Fix: include instructors in referencing content checks (#2866)
+- chore(deps): update dependency github-pages to v232 (#2229)
+
 Version 0.175.3 (Released January 28, 2026)
 ---------------
 
