@@ -133,7 +133,7 @@ def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
     assert "python" in final_db_tags
     assert "django" in final_db_tags
     assert "testing" in final_db_tags
-    # Verify exact final state: normalized (lowercase), sorted, no duplicates
+    # Verify exact final state: lowercased, sorted, no duplicates
     assert final_db_tags == "django, existing-youtube-tag, python, testing"
 
 
@@ -953,20 +953,23 @@ def test_update_youtube_tags_csv_export(mock_youtube_api, tmp_path):
     assert "vid_resource_id" in row
     assert "existing_yt_tags" in row
     assert "existing_db_tags" in row
-    assert "final_tags_yt" in row
-    assert "final_tags_db" in row
+    assert "final_tags" in row
+    assert "youtube_updated" in row
+    assert "db_updated" in row
 
     # Verify content
     assert row["vid_resource_id"] == str(content.id)
     assert row["existing_yt_tags"] == "youtube-tag, common-tag"
     assert row["existing_db_tags"] == "existing-db-tag"
     # Final tags should be merged (common-tag, existing-db-tag, youtube-tag)
-    assert "common-tag" in row["final_tags_yt"]
-    assert "existing-db-tag" in row["final_tags_yt"]
-    assert "youtube-tag" in row["final_tags_yt"]
+    assert "common-tag" in row["final_tags"]
+    assert "existing-db-tag" in row["final_tags"]
+    assert "youtube-tag" in row["final_tags"]
     # Verify exact final tags: normalized, sorted alphabetically
-    assert row["final_tags_yt"] == "common-tag, existing-db-tag, youtube-tag"
-    assert row["final_tags_db"] == "common-tag, existing-db-tag, youtube-tag"
+    assert row["final_tags"] == "common-tag, existing-db-tag, youtube-tag"
+    # Verify update flags
+    assert row["youtube_updated"] == "True"  # CSV writes boolean as string
+    assert row["db_updated"] == "True"
 
     # Verify YouTube API was called with correct merged tags
     mock_youtube_api.update_video_tags.assert_called_once_with(

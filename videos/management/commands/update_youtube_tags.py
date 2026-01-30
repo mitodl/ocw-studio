@@ -228,8 +228,9 @@ class Command(WebsiteFilterCommand):
                 "vid_resource_id": video_resource.id,
                 "existing_yt_tags": initial_yt_tags,
                 "existing_db_tags": initial_db_tags,
-                "final_tags_yt": merged_tags,
-                "final_tags_db": merged_tags,
+                "final_tags": merged_tags,
+                "youtube_updated": tags_changed and not dry_run,
+                "db_updated": not dry_run,
             }
 
         except Exception as exc:  # noqa: BLE001
@@ -356,8 +357,9 @@ class Command(WebsiteFilterCommand):
                         "vid_resource_id",
                         "existing_yt_tags",
                         "existing_db_tags",
-                        "final_tags_yt",
-                        "final_tags_db",
+                        "final_tags",
+                        "youtube_updated",
+                        "db_updated",
                     ]
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                     writer.writeheader()
