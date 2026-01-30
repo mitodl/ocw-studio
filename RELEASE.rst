@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.175.4
+Version 0.175.4 (Released January 30, 2026)
 ---------------
 
 - chore(deps): update dependency lodash to v4.17.23 [security] (#2854)
