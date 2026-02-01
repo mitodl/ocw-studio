@@ -7,6 +7,7 @@ import CKEditorInspector from "@ckeditor/ckeditor5-inspector"
 import {
   FullEditorConfig,
   MinimalEditorConfig,
+  MinimalWithMathEditorConfig,
 } from "../../lib/ckeditor/CKEditor"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 import { checkNotSubAndSup } from "../../lib/ckeditor/attributeChecks"
@@ -23,6 +24,7 @@ import {
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
+  MINIMAL_WITH_MATH,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -37,7 +39,7 @@ export interface Props {
   name?: string
   onChange?: (event: { target: { value: string; name: string } }) => void
   children?: React.ReactNode
-  minimal?: boolean
+  minimal?: boolean | typeof MINIMAL_WITH_MATH
   embed: string[]
   link: string[]
   allowedHtml: string[]
@@ -142,25 +144,30 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       [WEBSITE_NAME]: website.name,
     }
 
+    const baseConfig =
+      minimal === MINIMAL_WITH_MATH
+        ? MinimalWithMathEditorConfig
+        : minimal
+          ? MinimalEditorConfig
+          : FullEditorConfig
+
     // Create a copy of plugins to avoid mutating the original
-    const plugins = minimal
-      ? [...MinimalEditorConfig.plugins]
-      : [...FullEditorConfig.plugins]
+    const plugins = [...baseConfig.plugins]
     if (isCustomLinkUIEnabled) {
       plugins.push(CustomLink)
     }
 
     if (minimal) {
       return {
-        ...MinimalEditorConfig,
+        ...baseConfig,
         plugins,
         [CKEDITOR_RESOURCE_UTILS]: {
           renderResource,
           openResourcePicker,
         },
         toolbar: {
-          ...MinimalEditorConfig.toolbar,
-          items: MinimalEditorConfig.toolbar.items.filter(toolbarItemsFilter),
+          ...baseConfig.toolbar,
+          items: baseConfig.toolbar.items.filter(toolbarItemsFilter),
         },
         ...resourceLink,
       }

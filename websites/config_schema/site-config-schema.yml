@@ -25,7 +25,7 @@ field:
     'object', 'relation', 'menu', 'hierarchical-select', 'website-collection')
   label: str()
   name: str()
-  minimal: bool(required=False)
+  minimal: any(bool(), enum('with-math'), required=False)
   allowed_html: list(str(), required=False)
   required: bool(required=False)
   help: str(required=False)
