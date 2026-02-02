@@ -157,40 +157,21 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       plugins.push(CustomLink)
     }
 
-    if (minimal) {
-      return {
-        ...baseConfig,
-        plugins,
-        [CKEDITOR_RESOURCE_UTILS]: {
-          renderResource,
-          openResourcePicker,
-        },
-        toolbar: {
-          ...baseConfig.toolbar,
-          items: baseConfig.toolbar.items.filter(toolbarItemsFilter),
-        },
-        ...resourceLink,
-      }
-    } else {
-      // this render function is stuck into the editor config
-      // our ResourceEmbed plugin can pull the callback out,
-      // and then use it to render resources within the editor.
-      return {
-        ...FullEditorConfig,
-        plugins,
-        [CKEDITOR_RESOURCE_UTILS]: {
-          renderResource,
-          openResourcePicker,
-        },
-        toolbar: {
-          ...FullEditorConfig.toolbar,
-          items: FullEditorConfig.toolbar.items.filter(toolbarItemsFilter),
-        },
-        [MARKDOWN_CONFIG_KEY]: {
-          allowedHtml,
-        },
-        ...resourceLink,
-      }
+    return {
+      ...baseConfig,
+      plugins,
+      [CKEDITOR_RESOURCE_UTILS]: {
+        renderResource,
+        openResourcePicker,
+      },
+      toolbar: {
+        ...baseConfig.toolbar,
+        items: baseConfig.toolbar.items.filter(toolbarItemsFilter),
+      },
+      [MARKDOWN_CONFIG_KEY]: {
+        allowedHtml,
+      },
+      ...resourceLink,
     }
   }, [
     minimal,
