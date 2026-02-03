@@ -927,18 +927,19 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-anymail"
-version = "13.1"
-description = "Django email backends and webhooks for Amazon SES, Brevo,  MailerSend, Mailgun, Mailjet, Mandrill, Postal, Postmark, Resend,  Scaleway TEM, SendGrid, SparkPost, and Unisender Go  (EmailBackend, transactional email tracking and inbound email signals)"
+version = "14.0"
+description = "Django email backends and webhooks for Amazon SES, Brevo,  MailerSend, Mailgun, Mailjet, Mailtrap, Mandrill, Postal, Postmark, Resend,  Scaleway TEM, SendGrid, SparkPost, and Unisender Go  (EmailBackend, transactional email tracking and inbound email signals)"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django_anymail-13.1-py3-none-any.whl", hash = "sha256:63e48402ec8258f17640eb73c8c64141f16d2f8ae7d448d0fb1c66e82b7cbcf6"},
-    {file = "django_anymail-13.1.tar.gz", hash = "sha256:b51783176f8a8382e958808151551558e4a46d1375fbc343742d1ebd06ce8e9e"},
+    {file = "django_anymail-14.0-py3-none-any.whl", hash = "sha256:98e5575bcff231952a92117b7d0a4dd37fab582333a343de302d415a31dc72b1"},
+    {file = "django_anymail-14.0.tar.gz", hash = "sha256:ca42e52da62d2c96ce92412f9d68ef6d2067d96a384096b6e932d6a247e9fd61"},
 ]
 
 [package.dependencies]
 django = ">=4.0"
+idna = "*"
 requests = ">=2.4.3"
 urllib3 = ">=1.25.0"
 
@@ -947,6 +948,7 @@ amazon-ses = ["boto3 (>=1.24.6)"]
 postal = ["cryptography ; python_version >= \"3.9\""]
 resend = ["svix"]
 sendgrid = ["cryptography ; python_version >= \"3.9\""]
+uts46 = ["uts46"]
 
 [[package]]
 name = "django-bulk-update-or-create"
@@ -3871,4 +3873,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "ec9b1bb6173dc2a6549a78fbdbf9950a09b3a45892ae67648b8b5c7cb9624961"
+content-hash = "fe45b0301c0d9a4bfa4da771cc257fb5bf5236ff000fd865f2171e0d93d77287"
