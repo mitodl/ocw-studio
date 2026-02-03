@@ -172,3 +172,48 @@ export const MinimalEditorConfig = {
   },
   language: "en",
 }
+
+export const MinimalWithMathEditorConfig = {
+  plugins: [
+    EssentialsPlugin,
+    AutoformatPlugin,
+    BoldPlugin,
+    ItalicPlugin,
+    CodePlugin,
+    BlockQuotePlugin,
+    LinkPlugin,
+    ListPlugin,
+    ParagraphPlugin,
+    ResourceEmbed,
+    ResourcePicker,
+    ResourceLink,
+    MathSyntax,
+    MarkdownListSyntax,
+    Mathematics,
+    Markdown,
+    LegacyShortcodes,
+  ],
+  toolbar: {
+    items: [
+      "bold",
+      "italic",
+      "code",
+      "link",
+      "bulletedList",
+      "numberedList",
+      "blockQuote",
+      "math",
+      "undo",
+      "redo",
+      ADD_RESOURCE_LINK,
+      ADD_RESOURCE_EMBED,
+    ],
+  },
+  math: {
+    engine: "mathjax",
+    outputType: "script",
+    forceOutputType: true,
+    enablePreview: true,
+  },
+  language: "en",
+}

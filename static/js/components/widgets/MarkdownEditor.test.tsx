@@ -8,12 +8,14 @@ import MarkdownEditor from "./MarkdownEditor"
 import {
   FullEditorConfig,
   MinimalEditorConfig,
+  MinimalWithMathEditorConfig,
 } from "../../lib/ckeditor/CKEditor"
 import {
   ADD_RESOURCE_EMBED,
   ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
   MARKDOWN_CONFIG_KEY,
+  MINIMAL_WITH_MATH,
   RESOURCE_EMBED,
   RESOURCE_LINK,
   RESOURCE_LINK_CONFIG_KEY,
@@ -102,6 +104,11 @@ describe("MarkdownEditor", () => {
       expectedConfig: FullEditorConfig,
       configLabel: "FullEditorConfig",
       otherProps: { allowedHtml: ["sub", "sup"] },
+    },
+    {
+      minimal: MINIMAL_WITH_MATH,
+      expectedConfig: MinimalWithMathEditorConfig,
+      configLabel: "MinimalWithMathEditorConfig",
     },
   ])(
     "Uses the $configLabel when minimal=$minimal",

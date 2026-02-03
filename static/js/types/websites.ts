@@ -49,9 +49,11 @@ interface ConfigFieldBaseProps {
   condition?: FieldValueCondition
 }
 
+import { MINIMAL_WITH_MATH } from "../lib/ckeditor/plugins/constants"
+
 export interface MarkdownConfigField extends ConfigFieldBaseProps {
   widget: WidgetVariant.Markdown
-  minimal?: boolean
+  minimal?: boolean | typeof MINIMAL_WITH_MATH
   link?: string[]
   embed?: string[]
   allowed_html?: string[]

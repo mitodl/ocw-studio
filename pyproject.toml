@@ -11,12 +11,12 @@ package-mode = false
 python = "~3.13"
 
 beautifulsoup4 = "^4.12.2"
-boto3 = "1.42.34"
+boto3 = "1.42.39"
 celery = "^5.3.0"
 cryptography = "^44.0.0"
 dj-database-url = "3.1.0"
 django = "4.2.27"
-django-anymail = {version = "13.1", extras = ["mailgun"]}
+django-anymail = {version = "14.0", extras = ["mailgun"]}
 django-bulk-update-or-create = "0.3.0"
 django-guardian = "3.2.0"
 django-hijack = "3.7.6"
@@ -46,7 +46,7 @@ python-magic = "^0.4.27"
 pyyaml = "^6.0.1"
 redis = "^4.5.5"
 requests = "2.32.5"
-sentry-sdk = "2.50.0"
+sentry-sdk = "2.51.0"
 smart-open = {extras = ["s3"], version = "^7.0.0"}
 social-auth-app-django = "5.4.3"
 social-auth-core = {version = "^4", extras = ["saml"]}

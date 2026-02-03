@@ -2,6 +2,8 @@ export const ADD_RESOURCE_LINK = "addResourceLink"
 
 export const ADD_RESOURCE_EMBED = "addResourceEmbed"
 
+export const MINIMAL_WITH_MATH = "with-math" as const
+
 export const CKEDITOR_RESOURCE_UTILS = "CKEDITOR_RESOURCE_UTILS"
 
 export const RESOURCE_EMBED = "resourceEmbed"
