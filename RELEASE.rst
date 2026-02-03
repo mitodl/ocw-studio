@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.176.0 (Released February 03, 2026)
+---------------
+
+- feat: added tags checking from YouTube before update (#2864)
+
 Version 0.175.4 (Released January 30, 2026)
 ---------------
 
