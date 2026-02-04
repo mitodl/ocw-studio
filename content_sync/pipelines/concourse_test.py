@@ -114,7 +114,7 @@ def mock_auth(mocker):
 
 @pytest.fixture(params=["test", "dev"])
 def pipeline_settings(settings, request):
-    """Default settings for pipelines"""  # noqa: D401
+    """Default settings for pipelines"""
     env = request.param
     settings.ENVIRONMENT = env
     settings.AWS_ARTIFACTS_BUCKET_NAME = "artifacts_bucket_test"
