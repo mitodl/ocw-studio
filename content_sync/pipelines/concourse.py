@@ -685,4 +685,3 @@ class S3BucketSyncPipeline(BaseS3BucketSyncPipeline, GeneralPipeline):
             sync_interval=settings.AWS_S3_SYNC_INTERVAL,
         )
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
-

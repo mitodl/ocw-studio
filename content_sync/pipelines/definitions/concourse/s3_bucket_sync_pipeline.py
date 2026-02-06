@@ -3,7 +3,6 @@ from ol_concourse.lib.models.pipeline import (
     Command,
     GetStep,
     Identifier,
-    Input,
     Job,
     Pipeline,
     Resource,
@@ -81,8 +80,7 @@ class S3BucketSyncPipelineDefinition(Pipeline):
                     if not is_dev()
                     else {
                         "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
-                        "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY
-                        or "",
+                        "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY or "",
                     }
                 ),
                 run=Command(
