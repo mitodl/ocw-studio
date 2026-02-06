@@ -123,6 +123,14 @@ def get_unpublished_removal_pipeline(api: object | None = None) -> object:
     )(api=api)
 
 
+@is_publish_pipeline_enabled
+def get_s3_bucket_sync_pipeline(api: object | None = None) -> BasePipeline:
+    """Get the S3 bucket sync pipeline"""
+    return import_string(
+        f"content_sync.pipelines.{settings.CONTENT_SYNC_PIPELINE_BACKEND}.S3BucketSyncPipeline"
+    )(api=api)
+
+
 @is_sync_enabled
 def sync_content(sync_state: ContentSyncState):
     """Sync a piece of content based on its sync state"""
