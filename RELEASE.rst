@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.177.0 (Released February 09, 2026)
+---------------
+
+- fix(deps): update dependency django-anymail to v14 (#2873)
+- Add new Minimal with Math Editor for Enabling MathJax (#2869)
+- fix(deps): update dependency sentry-sdk to v2.51.0 (#2872)
+- fix(deps): update dependency boto3 to v1.42.39 (#2871)
+
 Version 0.176.0 (Released February 03, 2026)
 ---------------
 
