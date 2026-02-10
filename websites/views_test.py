@@ -7,10 +7,10 @@ from unittest.mock import patch
 import factory
 import pytest
 import pytz
-from freezegun import freeze_time
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.text import slugify
+from freezegun import freeze_time
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
@@ -1385,7 +1385,7 @@ def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):
     if not unpublished or version == VERSION_DRAFT:
         assert len(site_dict.keys()) == 2
         for expected_site in expected_sites:
-            publish_site = site_dict.get(expected_site.name, None)
+            publish_site = site_dict.get(expected_site.name)
             assert publish_site is not None
             assert publish_site["short_id"] == expected_site.short_id
     else:
@@ -1436,7 +1436,7 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
     site_dict = {site["name"]: site for site in resp.data["sites"]}
     assert len(site_dict.keys()) == 2
     for expected_site in expected_sites:
-        publish_site = site_dict.get(expected_site.name, None)
+        publish_site = site_dict.get(expected_site.name)
         assert publish_site is not None
         assert publish_site["name"] == expected_site.name
         assert publish_site["site_uid"] == expected_site.uuid.hex
