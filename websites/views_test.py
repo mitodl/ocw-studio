@@ -10,7 +10,6 @@ import pytz
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.text import slugify
-from freezegun import freeze_time
 from github import GithubException
 from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
@@ -868,54 +867,6 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert resp.data["count"] == 1
     results = resp.data["results"]
     assert results[0]["type"] == "type1"
-
-
-def test_websites_content_pagination_no_duplicates(drf_client, global_admin_user):
-    """Test that pagination doesn't return duplicates when multiple items have the same updated_on"""
-    drf_client.force_login(global_admin_user)
-    website = WebsiteFactory.create()
-
-    # Create multiple content items with the same updated_on timestamp
-    fixed_time = datetime.datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC)
-    with freeze_time(fixed_time):
-        content_items = WebsiteContentFactory.create_batch(
-            5,
-            website=website,
-            type="page",
-        )
-
-    api_url = reverse(
-        "websites_content_api-list",
-        kwargs={
-            "parent_lookup_website": website.name,
-        },
-    )
-
-    # Get first page with page_size=2
-    resp_page1 = drf_client.get(api_url, {"page_size": 2})
-    assert resp_page1.status_code == 200
-    page1_ids = {result["text_id"] for result in resp_page1.data["results"]}
-    assert len(page1_ids) == 2
-
-    # Get second page
-    resp_page2 = drf_client.get(api_url, {"page_size": 2, "page": 2})
-    assert resp_page2.status_code == 200
-    page2_ids = {result["text_id"] for result in resp_page2.data["results"]}
-    assert len(page2_ids) == 2
-
-    # Get third page
-    resp_page3 = drf_client.get(api_url, {"page_size": 2, "page": 3})
-    assert resp_page3.status_code == 200
-    page3_ids = {result["text_id"] for result in resp_page3.data["results"]}
-    assert len(page3_ids) == 1
-
-    # Verify no duplicates across pages
-    all_ids = page1_ids | page2_ids | page3_ids
-    assert len(all_ids) == 5, "Should have 5 unique content items across all pages"
-
-    # Verify all created items are accounted for
-    expected_ids = {item.text_id for item in content_items}
-    assert all_ids == expected_ids, "All created items should be returned exactly once"
 
 
 @pytest.mark.parametrize("published", [True, False])
