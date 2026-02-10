@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.178.0
+---------------
+
+- chore(deps): update dependency ruby to v4 (#2882)
+- chore(deps): update actions/checkout digest to de0fac2 (#2883)
+- chore(deps): update dependency ruff to ^0.15 (#2880)
+- fix(deps): update dependency sentry-sdk to v2.52.0 (#2881)
+- fix(deps): update dependency boto3 to v1.42.44 (#2879)
+- chore(deps): update dependency webpack to v5.104.1 [security] (#2878)
+- fix(deps): update dependency react-nestable to v3 (#2532)
+- chore(deps): update redis docker tag to v8 (#2669)
+- [pre-commit.ci] pre-commit autoupdate (#2841)
+- fix(deps): update dependency django to v4.2.28 [security] (#2876)
+
 Version 0.177.0 (Released February 09, 2026)
 ---------------
 
