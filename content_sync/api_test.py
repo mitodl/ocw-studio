@@ -446,3 +446,20 @@ def test_publish_website_no_extra_themes_for_non_ocw_site(settings, mocker):
     api.publish_website(website.name, VERSION_LIVE, trigger_pipeline=True)
 
     assert mock_get_pipeline.call_count == 1
+
+
+def test_get_s3_bucket_sync_pipeline(settings, mocker):
+    """get_s3_bucket_sync_pipeline should import the correct pipeline class based on settings"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    import_string_mock = mocker.patch("content_sync.api.import_string")
+    api.get_s3_bucket_sync_pipeline()
+    import_string_mock.assert_called_once_with(
+        "content_sync.pipelines.concourse.S3BucketSyncPipeline"
+    )
+    import_string_mock.return_value.assert_called_once_with(api=None)
+
+
+def test_get_s3_bucket_sync_pipeline_no_backend(settings):
+    """get_s3_bucket_sync_pipeline should return None if no backend is specified"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = None
+    assert api.get_s3_bucket_sync_pipeline() is None

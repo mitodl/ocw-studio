@@ -1010,3 +1010,22 @@ def test_backpopulate_archive_videos(  # pylint:disable=too-many-arguments, unus
             prefix,
             website_names[chunk_size:],
         )
+
+
+@pytest.mark.parametrize("unpause", [True, False])
+def test_upsert_s3_bucket_sync_pipeline(settings, mocker, mocked_celery, unpause):
+    """Calls upsert_s3_bucket_sync_pipeline and unpauses if asked"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_s3_bucket_sync_pipeline")
+    mock_pipeline = mocker.Mock()
+    mock_get_pipeline.return_value = mock_pipeline
+
+    tasks.upsert_s3_bucket_sync_pipeline(unpause=unpause)
+
+    mock_get_pipeline.assert_called_once()
+    mock_pipeline.upsert_pipeline.assert_called_once()
+    if unpause:
+        mock_pipeline.unpause.assert_called_once()
+    else:
+        mock_pipeline.unpause.assert_not_called()

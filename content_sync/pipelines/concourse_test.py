@@ -946,3 +946,50 @@ def test_upsert_pipeline_with_noindex(  # noqa: PLR0913
         assert '\\"noindex\\": \\"true\\"' in config_str
     else:
         assert '\\"noindex\\": \\"false\\"' in config_str
+
+
+def test_s3_bucket_sync_pipeline_mandatory_settings(settings, mocker):
+    """S3BucketSyncPipeline should require mandatory settings"""
+    from content_sync.pipelines.concourse import S3BucketSyncPipeline
+
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.AWS_STORAGE_BUCKET_NAME = None
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+
+    with pytest.raises(ImproperlyConfigured):
+        S3BucketSyncPipeline()
+
+
+def test_s3_bucket_sync_pipeline_upsert(settings, pipeline_settings, mocker, mock_auth):
+    """Test upserting the S3 bucket sync pipeline"""
+    from content_sync.pipelines.concourse import S3BucketSyncPipeline
+    from content_sync.pipelines.definitions.concourse.s3_bucket_sync_pipeline import (
+        S3BucketSyncPipelineDefinition,
+    )
+
+    settings.AWS_STORAGE_BUCKET_NAME = "test-storage-bucket"
+    settings.AWS_IMPORT_STORAGE_BUCKET_NAME = "test-import-bucket"
+    settings.AWS_S3_SYNC_INTERVAL = "12h"
+
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+    mock_pipeline_definition = mocker.patch(
+        "content_sync.pipelines.concourse.S3BucketSyncPipelineDefinition"
+    )
+
+    api = PipelineApi("http://test.edu", "test", "test", "myteam")
+    pipeline = S3BucketSyncPipeline(api=api)
+    pipeline.upsert_pipeline()
+
+    mock_pipeline_definition.assert_called_once_with(
+        import_bucket=settings.AWS_IMPORT_STORAGE_BUCKET_NAME,
+        storage_bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        sync_interval=settings.AWS_S3_SYNC_INTERVAL,
+    )
+    mock_get.assert_called()
+    mock_put_headers.assert_called()

@@ -63,7 +63,17 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         )
 
         # AWS S3 sync task
-        sync_commands = f"""aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/"""
+        sync_commands = f"""
+        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
+        aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/
+        """
+
+        task_params = {
+            "AWS_MAX_CONCURRENT_CONNECTIONS": str(settings.AWS_MAX_CONCURRENT_CONNECTIONS),
+        }
+        if is_dev():
+            task_params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
+            task_params["AWS_SECRET_ACCESS_KEY"] = settings.AWS_SECRET_ACCESS_KEY or ""
 
         s3_sync_task = TaskStep(
             task=s3_sync_task_identifier,
@@ -72,14 +82,7 @@ class S3BucketSyncPipelineDefinition(Pipeline):
             config=TaskConfig(
                 platform="linux",
                 image_resource=AWS_CLI_REGISTRY_IMAGE,
-                params=(
-                    {}
-                    if not is_dev()
-                    else {
-                        "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID or "",
-                        "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY or "",
-                    }
-                ),
+                params=task_params,
                 run=Command(
                     path="sh",
                     args=["-exc", sync_commands],
