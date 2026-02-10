@@ -16,8 +16,12 @@ async function fetchHash(): Promise<string | null> {
 
 /**
  * Checks the deployed app version (via /static/hash.txt) on every
- * route change. If the hash has changed since initial page load,
+ * pathname change. If the hash has changed since initial page load,
  * forces a full page reload so users always get the latest bundle.
+ *
+ * Intentionally scoped to pathname changes only — query param changes
+ * (e.g. ?publish=, pagination, search) are transient UI state and
+ * should not trigger a reload mid-action.
  */
 export default function useAppVersionCheck(): void {
   const initialHash = useRef<string | null>(null)

@@ -50,18 +50,33 @@ describe("useAppVersionCheck", () => {
     })
   })
 
-  it("does not reload when the hash has not changed", async () => {
+  it("does not reload when the hash has not changed after navigation", async () => {
     fetchSpy.mockResolvedValue({
       ok: true,
       text: () => Promise.resolve("abc123\n"),
     })
 
+    const history = createMemoryHistory({ initialEntries: ["/sites"] })
+    const historyWrapper: React.FC<PropsWithChildren> = ({ children }) => (
+      <Router history={history}>
+        <Route path="*">{() => <>{children}</>}</Route>
+      </Router>
+    )
+
     renderHook(() => useAppVersionCheck(), {
-      wrapper,
+      wrapper: historyWrapper,
     })
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalled()
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+    })
+
+    act(() => {
+      history.push("/sites/my-course/type/page")
+    })
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledTimes(2)
     })
 
     expect(reloadMock).not.toHaveBeenCalled()
