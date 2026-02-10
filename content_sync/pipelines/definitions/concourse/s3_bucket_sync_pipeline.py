@@ -44,7 +44,6 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         **kwargs,
     ):
         base = super()
-        base.__init__(**kwargs)
 
         # Time-based trigger resource
         timer_resource = Resource(
@@ -64,9 +63,7 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         )
 
         # AWS S3 sync task
-        sync_commands = f"""
-        aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/
-        """
+        sync_commands = f"""aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/"""
 
         s3_sync_task = TaskStep(
             task=s3_sync_task_identifier,
