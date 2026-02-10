@@ -36,10 +36,22 @@ export default function useAppVersionCheck(): void {
   useEffect(() => {
     if (!hasFetched.current) return
 
+    let active = true
     fetchHash().then((hash) => {
-      if (hash && initialHash.current && hash !== initialHash.current) {
+      if (!active || !hash) return
+
+      if (!initialHash.current) {
+        initialHash.current = hash
+        return
+      }
+
+      if (hash !== initialHash.current) {
         window.location.reload()
       }
     })
+
+    return () => {
+      active = false
+    }
   }, [location.pathname])
 }

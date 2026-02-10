@@ -2,7 +2,7 @@ import { renderHook, waitFor, act } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import React, { PropsWithChildren } from "react"
 import { createMemoryHistory } from "history"
-import { Router } from "react-router"
+import { Router, Route } from "react-router"
 import useAppVersionCheck from "./useAppVersionCheck"
 
 const wrapper: React.FC<PropsWithChildren> = ({ children }) => (
@@ -11,13 +11,26 @@ const wrapper: React.FC<PropsWithChildren> = ({ children }) => (
 
 describe("useAppVersionCheck", () => {
   let fetchSpy: jest.SpyInstance
+  const originalLocation = window.location
+  const reloadMock = jest.fn()
 
   beforeEach(() => {
     fetchSpy = jest.spyOn(global, "fetch")
+    Object.defineProperty(window, "location", {
+      value: { ...originalLocation, reload: reloadMock },
+      writable: true,
+      configurable: true,
+    })
   })
 
   afterEach(() => {
     fetchSpy.mockRestore()
+    reloadMock.mockReset()
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    })
   })
 
   it("fetches the hash on mount", async () => {
@@ -41,12 +54,6 @@ describe("useAppVersionCheck", () => {
     fetchSpy.mockResolvedValue({
       ok: true,
       text: () => Promise.resolve("abc123\n"),
-    })
-
-    const reloadMock = jest.fn()
-    Object.defineProperty(window, "location", {
-      value: { ...window.location, reload: reloadMock },
-      writable: true,
     })
 
     renderHook(() => useAppVersionCheck(), {
@@ -86,15 +93,11 @@ describe("useAppVersionCheck", () => {
         })
       })
 
-      const reloadMock = jest.fn()
-      Object.defineProperty(window, "location", {
-        value: { ...window.location, reload: reloadMock },
-        writable: true,
-      })
-
       const history = createMemoryHistory({ initialEntries: ["/sites"] })
       const historyWrapper: React.FC<PropsWithChildren> = ({ children }) => (
-        <Router history={history}>{children}</Router>
+        <Router history={history}>
+          <Route path="*">{() => <>{children}</>}</Route>
+        </Router>
       )
 
       renderHook(() => useAppVersionCheck(), {
