@@ -1017,7 +1017,9 @@ def test_upsert_s3_bucket_sync_pipeline(settings, mocker, mocked_celery, unpause
     """Calls upsert_s3_bucket_sync_pipeline and unpauses if asked"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
-    mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_s3_bucket_sync_pipeline")
+    mock_get_pipeline = mocker.patch(
+        "content_sync.tasks.api.get_s3_bucket_sync_pipeline"
+    )
     mock_pipeline = mocker.Mock()
     mock_get_pipeline.return_value = mock_pipeline
 

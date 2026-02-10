@@ -9,7 +9,6 @@ from content_sync.pipelines.definitions.concourse.s3_bucket_sync_pipeline import
     s3_sync_task_identifier,
     s3_sync_timer_identifier,
 )
-from main.utils import is_dev
 
 
 def test_generate_s3_bucket_sync_pipeline_definition(mocker):
@@ -47,7 +46,9 @@ def test_generate_s3_bucket_sync_pipeline_definition(mocker):
 
     # Assert that the job exists
     jobs = [
-        job for job in rendered_definition["jobs"] if job["name"] == s3_sync_job_identifier
+        job
+        for job in rendered_definition["jobs"]
+        if job["name"] == s3_sync_job_identifier
     ]
     assert len(jobs) == 1
     job = jobs[0]
@@ -61,7 +62,10 @@ def test_generate_s3_bucket_sync_pipeline_definition(mocker):
     sync_task = sync_tasks[0]
     sync_command = " ".join(sync_task["config"]["run"]["args"])
     assert f"aws s3 sync s3://{import_bucket}/ s3://{storage_bucket}/" in sync_command
-    assert "aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS" in sync_command
+    assert (
+        "aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS"
+        in sync_command
+    )
     # When not in dev mode, should not have endpoint URL
     assert "--endpoint-url" not in sync_command
     # Assert that AWS_MAX_CONCURRENT_CONNECTIONS is in params
@@ -95,7 +99,9 @@ def test_generate_s3_bucket_sync_pipeline_definition_dev_mode(mocker):
 
     # Assert that the job exists
     jobs = [
-        job for job in rendered_definition["jobs"] if job["name"] == s3_sync_job_identifier
+        job
+        for job in rendered_definition["jobs"]
+        if job["name"] == s3_sync_job_identifier
     ]
     assert len(jobs) == 1
     job = jobs[0]
@@ -108,14 +114,22 @@ def test_generate_s3_bucket_sync_pipeline_definition_dev_mode(mocker):
     sync_task = sync_tasks[0]
     sync_command = " ".join(sync_task["config"]["run"]["args"])
     assert f"--endpoint-url {DEV_ENDPOINT_URL}" in sync_command
-    assert f"aws s3 --endpoint-url {DEV_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/" in sync_command
-    assert "aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS" in sync_command
+    assert (
+        f"aws s3 --endpoint-url {DEV_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/"
+        in sync_command
+    )
+    assert (
+        "aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS"
+        in sync_command
+    )
 
     # Assert that AWS credentials and max concurrent connections are in params when in dev mode
     assert "AWS_ACCESS_KEY_ID" in sync_task["config"]["params"]
     assert "AWS_SECRET_ACCESS_KEY" in sync_task["config"]["params"]
     assert "AWS_MAX_CONCURRENT_CONNECTIONS" in sync_task["config"]["params"]
-    assert sync_task["config"]["params"]["AWS_ACCESS_KEY_ID"] == settings.AWS_ACCESS_KEY_ID
+    assert (
+        sync_task["config"]["params"]["AWS_ACCESS_KEY_ID"] == settings.AWS_ACCESS_KEY_ID
+    )
     assert (
         sync_task["config"]["params"]["AWS_SECRET_ACCESS_KEY"]
         == settings.AWS_SECRET_ACCESS_KEY

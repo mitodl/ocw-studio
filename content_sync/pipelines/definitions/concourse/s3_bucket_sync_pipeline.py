@@ -28,7 +28,8 @@ class S3BucketSyncPipelineDefinition(Pipeline):
     A Pipeline that syncs S3 buckets periodically:
 
      - Triggers on a configurable time interval
-     - Uses AWS CLI to sync from AWS_IMPORT_STORAGE_BUCKET_NAME to AWS_STORAGE_BUCKET_NAME
+     - Uses AWS CLI to sync from AWS_IMPORT_STORAGE_BUCKET_NAME to
+       AWS_STORAGE_BUCKET_NAME
 
     Args:
         import_bucket(str): The S3 bucket to sync from (source)
@@ -64,12 +65,16 @@ class S3BucketSyncPipelineDefinition(Pipeline):
 
         # AWS S3 sync task
         sync_commands = f"""
-        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
-        aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/
+        aws configure set default.s3.max_concurrent_requests \
+$AWS_MAX_CONCURRENT_CONNECTIONS
+        aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ \
+s3://{storage_bucket}/
         """
 
         task_params = {
-            "AWS_MAX_CONCURRENT_CONNECTIONS": str(settings.AWS_MAX_CONCURRENT_CONNECTIONS),
+            "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                settings.AWS_MAX_CONCURRENT_CONNECTIONS
+            ),
         }
         if is_dev():
             task_params["AWS_ACCESS_KEY_ID"] = settings.AWS_ACCESS_KEY_ID or ""
