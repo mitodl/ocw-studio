@@ -157,10 +157,9 @@ describe("SortableSelect", () => {
     })
 
     const menu = document.querySelector("[class*='-menu']")
-    if (menu) {
-      const option = within(menu as HTMLElement).getByText(newOptions[0].label)
-      await user.click(option)
-    }
+    expect(menu).toBeInTheDocument()
+    const option = within(menu as HTMLElement).getByText(newOptions[0].label)
+    await user.click(option)
 
     if (!SETTINGS.features?.SORTABLE_SELECT_QUICK_ADD) {
       const addButton = screen.getByRole("button", { name: /add/i })
@@ -190,12 +189,10 @@ describe("SortableSelect", () => {
     })
 
     const menu = document.querySelector("[class*='-menu']")
-    if (menu) {
-      const firstOption = menu.querySelector("[class*='-option']")
-      if (firstOption) {
-        await user.click(firstOption)
-      }
-    }
+    expect(menu).toBeInTheDocument()
+    const firstOption = menu!.querySelector("[class*='-option']")
+    expect(firstOption).toBeInTheDocument()
+    await user.click(firstOption as HTMLElement)
 
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith([options[0].value])
