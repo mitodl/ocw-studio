@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.178.1
+---------------
+
+- Fix pagination duplicates by adding id to WebsiteContentViewSet ordering (#2885)
+- fix(deps): update dependency cryptography to v46 [security] (#2891)
+
 Version 0.178.0 (Released February 11, 2026)
 ---------------
 
