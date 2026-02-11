@@ -155,8 +155,10 @@ describe("SortableSelect", () => {
 
     const menu = document.querySelector("[class*='-menu']")
     if (menu) {
-      const option = within(menu as HTMLElement).getByText(newOptions[0].label)
-      await user.click(option)
+      const matchingOptions = within(menu as HTMLElement).getAllByText(
+        newOptions[0].label,
+      )
+      await user.click(matchingOptions[0])
     }
 
     if (!SETTINGS.features?.SORTABLE_SELECT_QUICK_ADD) {
