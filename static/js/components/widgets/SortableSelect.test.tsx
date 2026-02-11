@@ -51,10 +51,13 @@ jest.mock("@dnd-kit/sortable", () => ({
 const createFakeOptions = (times: number): Option[] =>
   Array(times)
     .fill(0)
-    .map(() => ({
-      value: casual.uuid,
-      label: casual.title,
-    }))
+    .map(() => {
+      const id = casual.uuid
+      return {
+        value: id,
+        label: `${casual.title} ${id}`,
+      }
+    })
 
 describe("SortableSelect", () => {
   let options: Option[],
@@ -155,10 +158,8 @@ describe("SortableSelect", () => {
 
     const menu = document.querySelector("[class*='-menu']")
     if (menu) {
-      const matchingOptions = within(menu as HTMLElement).getAllByText(
-        newOptions[0].label,
-      )
-      await user.click(matchingOptions[0])
+      const option = within(menu as HTMLElement).getByText(newOptions[0].label)
+      await user.click(option)
     }
 
     if (!SETTINGS.features?.SORTABLE_SELECT_QUICK_ADD) {
