@@ -869,6 +869,62 @@ def test_websites_content_list_page_content(drf_client, global_admin_user):
     assert results[0]["type"] == "type1"
 
 
+def test_websites_content_ordering_with_same_updated_on(drf_client, global_admin_user):
+    """Test that pagination returns items in descending ID order when updated_on is the same"""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+
+    # Create multiple content items and set them all to the same updated_on
+    fixed_time = datetime.datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC)
+    content_items = []
+    for _ in range(5):
+        content = WebsiteContentFactory.create(
+            website=website,
+            type="page",
+        )
+        # Manually update the updated_on field to be the same for all items
+        content.updated_on = fixed_time
+        content.save()
+        content_items.append(content)
+
+    api_url = reverse(
+        "websites_content_api-list",
+        kwargs={
+            "parent_lookup_website": website.name,
+        },
+    )
+
+    # Get first page with page_size=2
+    resp_page1 = drf_client.get(api_url, {"page_size": 2})
+    assert resp_page1.status_code == 200
+    page1_results = resp_page1.data["results"]
+    assert len(page1_results) == 2
+
+    # Get second page
+    resp_page2 = drf_client.get(api_url, {"page_size": 2, "page": 2})
+    assert resp_page2.status_code == 200
+    page2_results = resp_page2.data["results"]
+    assert len(page2_results) == 2
+
+    # Get third page
+    resp_page3 = drf_client.get(api_url, {"page_size": 2, "page": 3})
+    assert resp_page3.status_code == 200
+    page3_results = resp_page3.data["results"]
+    assert len(page3_results) == 1
+
+    # Collect all IDs from all pages
+    all_ids = []
+    for result in page1_results + page2_results + page3_results:
+        all_ids.append(result["id"])
+
+    # Assert items are returned in descending ID order
+    expected_ids = sorted([item.id for item in content_items], reverse=True)
+    assert all_ids == expected_ids, "Items should be ordered by descending ID"
+
+    # Also verify no duplicates across pages
+    assert len(set(all_ids)) == 5, "Should have 5 unique content items across all pages"
+
+
 @pytest.mark.parametrize("published", [True, False])
 def test_websites_content_publish_sorting(drf_client, global_admin_user, published):  # pylint: disable=unused-argument
     """Should be able to filter to just published or not"""
