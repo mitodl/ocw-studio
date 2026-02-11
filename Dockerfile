@@ -46,7 +46,7 @@ WORKDIR /src
 RUN python3 -m venv $VIRTUAL_ENV \
     && poetry install
 
-FROM node:24-slim as node_builder
+FROM node:24-slim AS node_builder
 COPY . /src
 WORKDIR /src
 ENV NODE_ENV=production
