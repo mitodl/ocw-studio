@@ -99,7 +99,7 @@ ENV PORT=8043
 
 CMD ["uwsgi", "uwsgi.ini"]
 
-FROM runtime as production
+FROM runtime AS production
 
 COPY --from=node_builder --chown=mitodl:mitodl /src/static /src/static
 COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webpack-stats.json
