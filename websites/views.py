@@ -709,7 +709,7 @@ class WebsiteContentViewSet(
             queryset = queryset.filter(
                 is_page_content=(_parse_bool(self.request.query_params["page_content"]))
             )
-        return queryset.order_by("-updated_on")
+        return queryset.order_by("-updated_on", "-id")
 
     def get_serializer_class(self):
         detailed_list = self.request.query_params.get("detailed_list", False)
