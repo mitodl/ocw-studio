@@ -11,6 +11,8 @@ from websites import constants
 
 log = logging.getLogger(__name__)
 
+UUID_REGEX_STR = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+
 
 def permissions_group_name_for_role(role, website):
     """Get the website group name for a given role"""
@@ -99,6 +101,7 @@ def resource_reference_field_filter(
 
 
 def is_test_site(site_name: str) -> bool:
+    """Return True if the provided site slug is configured as a test site."""
     return site_name in settings.OCW_TEST_SITE_SLUGS
 
 
@@ -110,17 +113,32 @@ def get_metadata_content_key(content) -> list:
             constants.CONTENT_TYPE_RESOURCE_LIST
             | constants.CONTENT_TYPE_RESOURCE_COLLECTION
         ):
-            content_keys = [constants.METADATA_FIELD_DESCRIPTION]
+            content_keys = [
+                constants.METADATA_FIELD_DESCRIPTION,
+                constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
+            ]
+        case constants.CONTENT_TYPE_VIDEO_GALLERY:
+            content_keys = [constants.METADATA_FIELD_VIDEO_GALLERY_VIDEOS]
         case constants.CONTENT_TYPE_METADATA:
             content_keys = [
                 constants.METADATA_FIELD_COURSE_DESCRIPTION,
                 constants.INSTRUCTORS_FIELD_CONTENT,
+                constants.METADATA_FIELD_COURSE_IMAGE,
+                constants.METADATA_FIELD_COURSE_IMAGE_THUMBNAIL,
             ]
         case constants.CONTENT_TYPE_RESOURCE:
             content_keys = [
                 constants.METADATA_FIELD_IMAGE_CAPTION,
                 constants.METADATA_FIELD_IMAGE_CREDIT,
             ]
+        case constants.CONTENT_TYPE_COURSE_COLLECTION:
+            content_keys = [
+                constants.METADATA_FIELD_DESCRIPTION,
+                constants.METADATA_FIELD_COVER_IMAGE,
+                constants.METADATA_FIELD_COURSE_LISTS,
+            ]
+        case constants.CONTENT_TYPE_PROMO | constants.CONTENT_TYPE_TESTIMONIAL:
+            content_keys = [constants.METADATA_FIELD_IMAGE]
         case _:
             content_keys = []
 
@@ -137,15 +155,13 @@ def parse_resource_uuid(text: str) -> list[str]:
     Returns:
         list[str]: A list of extracted UUIDs.
     """
-
     # This regex pattern matches two types of Hugo resource patterns:
     # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}} or
     #    {{% resource_link uuid "title" %}}
-    # 2. Hugo resource syntax: {{< resource uuid="uuid" >}} or
-    #    {{< resource uuid=uuid >}}
+    # 2. Hugo resource/embed syntax: {{< resource ... >}}
     #
     # Pattern breakdown:
-    # - Pattern 1: \{\{%\s+resource_link\s+"?([uuid])"?\s+"([^"]+)"\s+%\}\}
+    # - Pattern 1: \{\{%\s+resource_link\s+"?([uuid])"?\s+"(.+?)"\s+%\}\}
     #   - \{\{%     : Matches literal "{{%"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource_link : Matches literal "resource_link"
@@ -153,37 +169,68 @@ def parse_resource_uuid(text: str) -> list[str]:
     #   - "?([uuid])"? : Captures UUID in group 1 with optional quotes
     #                    (full pattern below)
     #   - \s+       : Matches one or more whitespace characters
-    #   - "([^"]+)" : Captures title text in group 2
+    #   - "(.+?)"   : Captures title text in group 2
     #   - \s+       : Matches one or more whitespace characters
     #   - %\}\}     : Matches literal "%}}"
     #
-    # - Pattern 2: \{\{<\s+resource\s+uuid="?([uuid])"?\s*>\}\}
+    # - Pattern 2: \{\{<\s+resource\s+([^>]*)>\}\}
     #   - \{\{<     : Matches literal "{{<"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource  : Matches literal "resource"
     #   - \s+       : Matches one or more whitespace characters
-    #   - uuid="?([uuid])"? : Captures UUID in group 3 with optional quotes
-    #   - \s*       : Matches zero or more whitespace characters
+    #   - ([^>]*)   : Captures all shortcode attributes in group 3
     #   - >\}\}     : Matches literal ">}}"
     #
     # UUID format: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
     # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
-
-    pattern = r"""
-    \{\{%\s+resource_link\s+"?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"?\s+"([^"]+)"\s+%\}\}
+    pattern = rf"""
+    \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
     |
-    \{\{<\s+resource\s+uuid="?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"?\s*>\}\}
+    \{{\{{<\s+resource\s+([^>]*)>\}}\}}
     """
 
     regex = re.compile(pattern, re.VERBOSE)
     matches = regex.findall(text)
 
-    # Extract UUIDs by checking which group captured the value
-    return [
-        _match[0]
-        or _match[2]  # match[0] for first group UUID, match[2] for second group UUID
-        for _match in matches
-    ]
+    references = []
+    attr_regex = re.compile(
+        rf'(?:^|\s)(?:uuid|href_uuid|href-uuid)\s*=\s*"?({UUID_REGEX_STR})"?(?=\s|$)'
+    )
+    positional_uuid_regex = re.compile(rf'^\s*"?({UUID_REGEX_STR})"?(?=\s|$)')
+    for match in matches:
+        if match[0]:
+            references.append(match[0])
+            continue
+
+        if not match[2]:
+            continue
+
+        attr_references = attr_regex.findall(match[2])
+        if attr_references:
+            references.extend(attr_references)
+            continue
+
+        if positional_match := positional_uuid_regex.search(match[2]):
+            references.append(positional_match.group(1))
+
+    return references
+
+
+def _extract_relation_text_ids(resource_data: list) -> list[str]:
+    """Extract text_id values from relation widget data."""
+    references = []
+    for relation_value in resource_data:
+        if isinstance(relation_value, str):
+            references.append(relation_value)
+        elif (
+            isinstance(relation_value, list)
+            and relation_value
+            and isinstance(relation_value[0], str)
+        ):
+            # Cross-site relation widgets can store entries as
+            # [text_id, website_name].
+            references.append(relation_value[0])
+    return references
 
 
 def compile_referencing_content(content) -> list[str]:
@@ -204,9 +251,13 @@ def compile_referencing_content(content) -> list[str]:
             for content_key in content_keys:
                 if resource_data := get_dict_field(content.metadata, content_key):
                     if isinstance(resource_data, list):
-                        references.extend(resource_data)
+                        references.extend(_extract_relation_text_ids(resource_data))
                     elif isinstance(resource_data, str):
-                        references.extend(parse_resource_uuid(resource_data))
+                        resource_data = resource_data.strip()
+                        if re.fullmatch(UUID_REGEX_STR, resource_data):
+                            references.append(resource_data)
+                        else:
+                            references.extend(parse_resource_uuid(resource_data))
                     else:
                         log.warning(
                             "Unexpected metadata type %s for key '%s' in content %s",

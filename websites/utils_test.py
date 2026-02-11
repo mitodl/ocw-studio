@@ -258,6 +258,42 @@ def test_set_dict_field():
             '{{<    resource    uuid="87654321-dcba-4321-8765-210987654321"    >}}',
             ["87654321-dcba-4321-8765-210987654321"],
         ),
+        # Resource embed with additional attrs should parse both resource UUIDs
+        (
+            '{{< resource uuid="550e8400-e29b-41d4-a716-446655440001" href_uuid="550e8400-e29b-41d4-a716-446655440002" >}}',
+            [
+                "550e8400-e29b-41d4-a716-446655440001",
+                "550e8400-e29b-41d4-a716-446655440002",
+            ],
+        ),
+        # Resource embed with href should parse uuid and ignore URL value
+        (
+            '{{< resource uuid="550e8400-e29b-41d4-a716-446655440008" href="https://www.mit.edu" >}}',
+            ["550e8400-e29b-41d4-a716-446655440008"],
+        ),
+        # Resource embed with dash-form href uuid should also parse
+        (
+            '{{< resource uuid="550e8400-e29b-41d4-a716-446655440004" href-uuid="550e8400-e29b-41d4-a716-446655440005" >}}',
+            [
+                "550e8400-e29b-41d4-a716-446655440004",
+                "550e8400-e29b-41d4-a716-446655440005",
+            ],
+        ),
+        # Positional uuid in resource embed should parse
+        (
+            "{{< resource 550e8400-e29b-41d4-a716-446655440006 >}}",
+            ["550e8400-e29b-41d4-a716-446655440006"],
+        ),
+        # Quoted positional uuid in resource embed should parse
+        (
+            '{{< resource "550e8400-e29b-41d4-a716-446655440007" >}}',
+            ["550e8400-e29b-41d4-a716-446655440007"],
+        ),
+        # Embedded shortcode content inside resource_link title should not block parsing
+        (
+            '{{% resource_link "550e8400-e29b-41d4-a716-446655440003" "APA Style{{< sup "{{< sub \\"R\\" >}}" >}}" %}}',
+            ["550e8400-e29b-41d4-a716-446655440003"],
+        ),
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
@@ -392,6 +428,76 @@ def test_compile_referencing_content_description_metadata():
     assert result_collection == expected
 
 
+def test_compile_referencing_content_resource_list_resources_relation():
+    """RESOURCE_LIST relation field should be treated as referencing content."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_LIST,
+        markdown=None,
+        metadata={
+            "description": "No markdown refs here",
+            "resources": {
+                "content": [
+                    "11111111-2222-3333-4444-555555555555",
+                    "66666666-7777-8888-9999-000000000000",
+                ],
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "11111111-2222-3333-4444-555555555555",
+        "66666666-7777-8888-9999-000000000000",
+    ]
+
+
+def test_compile_referencing_content_video_gallery_videos_relation():
+    """VIDEO_GALLERY relation field should be treated as referencing content."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_VIDEO_GALLERY,
+        markdown=None,
+        metadata={
+            "videos": {
+                "content": [
+                    "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "ffffffff-1111-2222-3333-444444444444",
+                ],
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "ffffffff-1111-2222-3333-444444444444",
+    ]
+
+
+def test_compile_referencing_content_resource_collection_cross_site_relation():
+    """RESOURCE_COLLECTION cross-site relation values should extract text_id values."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+        markdown=None,
+        metadata={
+            "resources": {
+                "content": [
+                    ["11111111-2222-3333-4444-555555555555", "ocw-www"],
+                    ["66666666-7777-8888-9999-000000000000", "ocw-next"],
+                ],
+                "website": "ocw-www",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "11111111-2222-3333-4444-555555555555",
+        "66666666-7777-8888-9999-000000000000",
+    ]
+
+
 def test_compile_referencing_content_metadata_course_description():
     """Test compile_referencing_content with METADATA type having course_description"""
     content = WebsiteContentFactory.build(
@@ -409,6 +515,138 @@ def test_compile_referencing_content_metadata_course_description():
         "ffffeedd-ccbb-aa99-8877-665544332211",
     ]
     assert result == expected
+
+
+def test_compile_referencing_content_metadata_includes_course_home_image_relation():
+    """Course metadata image relation should be treated as referencing content."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": "No references here",
+            "course_image": {
+                "content": "550e8400-e29b-41d4-a716-446655440001",
+                "website": "ocw-ci-test-course",
+            },
+            "course_image_thumbnail": {
+                "content": "550e8400-e29b-41d4-a716-446655440002",
+                "website": "ocw-ci-test-course",
+            },
+            "instructors": {
+                "content": ["550e8400-e29b-41d4-a716-446655440010"],
+                "website": "ocw-www",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+
+    assert result == [
+        "550e8400-e29b-41d4-a716-446655440010",
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002",
+    ]
+
+
+def test_compile_referencing_content_page_with_embedded_href_uuid():
+    """PAGE markdown containing resource embed with href_uuid should capture both UUIDs."""
+    markdown_content = (
+        '{{< resource uuid="550e8400-e29b-41d4-a716-446655440001" '
+        'href_uuid="550e8400-e29b-41d4-a716-446655440002" >}}'
+    )
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=markdown_content,
+        metadata={},
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002",
+    ]
+
+
+def test_compile_referencing_content_video_gallery_with_markdown():
+    """VIDEO_GALLERY with both markdown refs and metadata refs should collect all."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_VIDEO_GALLERY,
+        markdown='{{% resource_link "11111111-2222-3333-4444-555555555555" "Inline Ref" %}}',
+        metadata={
+            "videos": {
+                "content": [
+                    "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                ],
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert "11111111-2222-3333-4444-555555555555" in result
+    assert "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" in result
+    assert len(result) == 2
+
+
+def test_compile_referencing_content_resource_list_with_description_and_resources():
+    """RESOURCE_LIST with both description refs and resource relation should collect all."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_LIST,
+        markdown=None,
+        metadata={
+            "description": '{{< resource uuid="11111111-2222-3333-4444-555555555555" >}}',
+            "resources": {
+                "content": [
+                    "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                    "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+                ],
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "11111111-2222-3333-4444-555555555555",
+        "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+    ]
+
+
+def test_compile_referencing_content_metadata_course_image_as_string_uuid():
+    """Course image stored as a single string UUID should be captured."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": "No references here",
+            "course_image": {
+                "content": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" in result
+
+
+def test_compile_referencing_content_metadata_course_image_thumbnail_as_string_uuid():
+    """Course image thumbnail stored as a single string UUID should be captured."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": "No references here",
+            "course_image_thumbnail": {
+                "content": "99999999-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "website": "ocw-ci-test-course",
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert "99999999-bbbb-cccc-dddd-eeeeeeeeeeee" in result
 
 
 def test_compile_referencing_content_resource_image_metadata():
@@ -535,7 +773,8 @@ def test_get_metadata_content_key():
         type=constants.CONTENT_TYPE_RESOURCE_LIST
     )
     assert get_metadata_content_key(content_resource_list) == [
-        constants.METADATA_FIELD_DESCRIPTION
+        constants.METADATA_FIELD_DESCRIPTION,
+        constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
     ]
 
     # Test RESOURCE_COLLECTION type
@@ -543,7 +782,16 @@ def test_get_metadata_content_key():
         type=constants.CONTENT_TYPE_RESOURCE_COLLECTION
     )
     assert get_metadata_content_key(content_resource_collection) == [
-        constants.METADATA_FIELD_DESCRIPTION
+        constants.METADATA_FIELD_DESCRIPTION,
+        constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
+    ]
+
+    # Test VIDEO_GALLERY type
+    content_video_gallery = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_VIDEO_GALLERY
+    )
+    assert get_metadata_content_key(content_video_gallery) == [
+        constants.METADATA_FIELD_VIDEO_GALLERY_VIDEOS
     ]
 
     # Test METADATA type
@@ -551,6 +799,8 @@ def test_get_metadata_content_key():
     assert get_metadata_content_key(content_metadata) == [
         constants.METADATA_FIELD_COURSE_DESCRIPTION,
         constants.INSTRUCTORS_FIELD_CONTENT,
+        constants.METADATA_FIELD_COURSE_IMAGE,
+        constants.METADATA_FIELD_COURSE_IMAGE_THUMBNAIL,
     ]
 
     # Test RESOURCE type (new case)
@@ -567,3 +817,211 @@ def test_get_metadata_content_key():
     # Test another unsupported type
     content_navmenu = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_NAVMENU)
     assert get_metadata_content_key(content_navmenu) == []
+
+    # Test COURSE_COLLECTION type
+    content_course_collection = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION
+    )
+    assert get_metadata_content_key(content_course_collection) == [
+        constants.METADATA_FIELD_DESCRIPTION,
+        constants.METADATA_FIELD_COVER_IMAGE,
+        constants.METADATA_FIELD_COURSE_LISTS,
+    ]
+
+    # Test PROMO type
+    content_promo = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_PROMO)
+    assert get_metadata_content_key(content_promo) == [constants.METADATA_FIELD_IMAGE]
+
+    # Test TESTIMONIAL type
+    content_testimonial = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL
+    )
+    assert get_metadata_content_key(content_testimonial) == [
+        constants.METADATA_FIELD_IMAGE
+    ]
+
+
+def test_compile_referencing_content_course_collection():
+    """Test compile_referencing_content with COURSE_COLLECTION type"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+    uuid3 = "33445566-7788-99aa-bbcc-ddeeff332233"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION,
+        markdown=f"Collection description with resource {{{{< resource {uuid1} >}}}}",
+        metadata={
+            "title": "My Course Collection",
+            "description": "A collection of courses",
+            "cover-image": {"content": uuid2},
+            "courselists": {"content": [uuid3]},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find: uuid1 from markdown, uuid2 from cover-image, uuid3 from courselists
+    assert sorted(result) == sorted([uuid1, uuid2, uuid3])
+
+
+def test_compile_referencing_content_promo():
+    """Test compile_referencing_content with PROMO type"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=None,
+        metadata={
+            "title": "Promo Title",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_testimonial():
+    """Test compile_referencing_content with TESTIMONIAL type"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=f"Testimonial body with embedded resource {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "John Doe",
+            "image": {"content": uuid1},
+            "body": "This is the testimonial text",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find: uuid1 from image field, uuid2 from markdown
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_course_collection_empty_courselists():
+    """Test course-collection with empty courselists array"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION,
+        markdown=None,
+        metadata={
+            "title": "Empty Collection",
+            "cover-image": {"content": uuid1},
+            "courselists": {"content": []},  # Empty array
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should only find cover-image UUID
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_course_collection_no_cover_image():
+    """Test course-collection with courselists but no cover-image"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION,
+        markdown=None,
+        metadata={
+            "title": "No Cover Collection",
+            "courselists": {"content": [uuid1, uuid2]},
+            # No cover-image field
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_promo_with_markdown():
+    """Test promo with both image field and markdown references"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=f"Promo content with {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "Promo with Markdown",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find both: image field and markdown reference
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_promo_no_image():
+    """Test promo with no image field"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=None,
+        metadata={
+            "title": "Promo without Image",
+            "description": "Some text",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_testimonial_no_markdown():
+    """Test testimonial with only image field, no markdown"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=None,  # No markdown
+        metadata={
+            "title": "Jane Smith",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_testimonial_no_image():
+    """Test testimonial with markdown but no image field"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=f"{{{{< resource {uuid1} >}}}}",
+        metadata={
+            "title": "Bob Johnson",
+            # No image field
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_course_collection_with_description():
+    """Test course-collection with description field containing resource links"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+    uuid3 = "33445566-7788-99aa-bbcc-ddeeff332233"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION,
+        markdown=f"Collection intro {{{{< resource {uuid1} >}}}}",
+        metadata={
+            "title": "Collection with Description",
+            "description": f"Description with link {{{{< resource {uuid2} >}}}}",
+            "cover-image": {"content": uuid3},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find: markdown, description, and cover-image UUIDs
+    assert sorted(result) == sorted([uuid1, uuid2, uuid3])
