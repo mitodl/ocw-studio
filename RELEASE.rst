@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.178.0
+Version 0.178.0 (Released February 11, 2026)
 ---------------
 
 - chore(deps): update dependency ruby to v4 (#2882)
