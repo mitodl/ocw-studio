@@ -23,6 +23,7 @@ from users.factories import UserFactory
 from websites import constants
 from websites.constants import (
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
 )
@@ -880,7 +881,7 @@ def test_websites_content_ordering_with_same_updated_on(drf_client, global_admin
     for _ in range(5):
         content = WebsiteContentFactory.create(
             website=website,
-            type="page",
+            type=CONTENT_TYPE_RESOURCE,
         )
         # Manually update the updated_on field to be the same for all items
         content.updated_on = fixed_time
@@ -894,31 +895,33 @@ def test_websites_content_ordering_with_same_updated_on(drf_client, global_admin
         },
     )
 
-    # Get first page with page_size=2
-    resp_page1 = drf_client.get(api_url, {"page_size": 2})
+    # Get first page
+    resp_page1 = drf_client.get(api_url, {"limit": 2})
     assert resp_page1.status_code == 200
     page1_results = resp_page1.data["results"]
     assert len(page1_results) == 2
 
     # Get second page
-    resp_page2 = drf_client.get(api_url, {"page_size": 2, "page": 2})
+    resp_page2 = drf_client.get(api_url, {"limit": 2, "offset": 2})
     assert resp_page2.status_code == 200
     page2_results = resp_page2.data["results"]
     assert len(page2_results) == 2
 
     # Get third page
-    resp_page3 = drf_client.get(api_url, {"page_size": 2, "page": 3})
+    resp_page3 = drf_client.get(api_url, {"limit": 2, "offset": 4})
     assert resp_page3.status_code == 200
     page3_results = resp_page3.data["results"]
     assert len(page3_results) == 1
 
-    # Collect all IDs from all pages
-    all_ids = []
-    for result in page1_results + page2_results + page3_results:
-        all_ids.append(result["id"])
+    # Collect ids in the order they are returned across pages
+    all_ids = [
+        result["text_id"] for result in page1_results + page2_results + page3_results
+    ]
 
     # Assert items are returned in descending ID order
-    expected_ids = sorted([item.id for item in content_items], reverse=True)
+    expected_ids = [
+        item.text_id for item in sorted(content_items, key=lambda c: c.id, reverse=True)
+    ]
     assert all_ids == expected_ids, "Items should be ordered by descending ID"
 
     # Also verify no duplicates across pages
