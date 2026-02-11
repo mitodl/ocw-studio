@@ -46,6 +46,12 @@ WORKDIR /src
 RUN python3 -m venv $VIRTUAL_ENV \
     && poetry install
 
+FROM node:24-slim AS node_builder
+COPY . /src
+WORKDIR /src
+ENV NODE_ENV=production
+RUN yarn install --immutable && yarn build
+
 # Runtime stage
 FROM python:3.13.7-slim as runtime
 
@@ -80,7 +86,6 @@ RUN adduser --disabled-password --gecos "" --uid 1001 mitodl \
 
 # Copy virtual environment from builder
 COPY --from=builder --chown=mitodl:mitodl /opt/venv /opt/venv
-
 # Add project
 COPY --chown=mitodl:mitodl . /src
 WORKDIR /src
@@ -93,3 +98,8 @@ EXPOSE 8043
 ENV PORT=8043
 
 CMD ["uwsgi", "uwsgi.ini"]
+
+FROM runtime AS production
+
+COPY --from=node_builder --chown=mitodl:mitodl /src/static /src/static
+COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webpack-stats.json
