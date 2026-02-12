@@ -345,7 +345,6 @@ def test_instructor_references_with_website_filter(
         assert instructor in referenced_content
 
 
-@pytest.mark.django_db
 def test_course_image_references_detected():
     """Test that course image fields in sitemetadata are detected as references."""
     website = WebsiteFactory.create()
@@ -384,7 +383,6 @@ def test_course_image_references_detected():
     assert image_thumbnail_resource in referenced_content
 
 
-@pytest.mark.django_db
 def test_video_gallery_references_detected():
     """Test that video UUIDs in video_gallery metadata are detected as references"""
     website = WebsiteFactory.create()
@@ -418,7 +416,6 @@ def test_video_gallery_references_detected():
     assert video2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_resource_list_resources_references_detected():
     """Test that resource UUIDs in resource_list metadata are detected as references"""
     website = WebsiteFactory.create()
@@ -453,7 +450,6 @@ def test_resource_list_resources_references_detected():
     assert resource2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_page_with_embedded_href_uuid_references_detected():
     """Test that href_uuid in embedded resources are detected as references"""
     website = WebsiteFactory.create()
@@ -485,7 +481,6 @@ def test_page_with_embedded_href_uuid_references_detected():
     assert resource2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_course_collection_references_detected():
     """Test that course-collection cover-image and courselists are detected"""
     website = WebsiteFactory.create()
@@ -523,7 +518,6 @@ def test_course_collection_references_detected():
     assert course_list2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_promo_references_detected():
     """Test that promo image field is detected as a reference"""
     website = WebsiteFactory.create()
@@ -550,7 +544,6 @@ def test_promo_references_detected():
     assert resource1 in referenced_content
 
 
-@pytest.mark.django_db
 def test_story_references_detected():
     """Test that story image field and markdown references are detected."""
     website = WebsiteFactory.create()
@@ -583,7 +576,6 @@ def test_story_references_detected():
     assert markdown_resource in referenced_content
 
 
-@pytest.mark.django_db
 def test_ocw_www_featured_promos_and_stories_references_detected():
     """Test featured promos/stories on ocw-www homepage_settings are detected."""
     ocw_www = WebsiteFactory.create(name="ocw-www")
@@ -621,7 +613,6 @@ def test_ocw_www_featured_promos_and_stories_references_detected():
     assert story in referenced_content
 
 
-@pytest.mark.django_db
 def test_testimonial_references_detected():
     """Test that testimonial image field is detected as a reference"""
     website = WebsiteFactory.create()
@@ -648,7 +639,6 @@ def test_testimonial_references_detected():
     assert resource1 in referenced_content
 
 
-@pytest.mark.django_db
 def test_testimonial_with_markdown_references():
     """Test testimonial with both image field and markdown references"""
     website = WebsiteFactory.create()
@@ -681,7 +671,6 @@ def test_testimonial_with_markdown_references():
     assert resource2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_course_collection_with_description_markdown():
     """Test course-collection with description field containing resource links"""
     website = WebsiteFactory.create()
@@ -720,7 +709,6 @@ def test_course_collection_with_description_markdown():
     assert course_list in referenced_content
 
 
-@pytest.mark.django_db
 def test_promo_with_markdown_references():
     """Test promo with both image field and markdown references"""
     website = WebsiteFactory.create()
@@ -753,7 +741,6 @@ def test_promo_with_markdown_references():
     assert resource2 in referenced_content
 
 
-@pytest.mark.django_db
 def test_course_collection_empty_courselists():
     """Test course-collection with empty courselists still populates cover-image"""
     website = WebsiteFactory.create()
@@ -781,7 +768,6 @@ def test_course_collection_empty_courselists():
     assert resource1 in referenced_content
 
 
-@pytest.mark.django_db
 def test_testimonial_no_image_only_markdown():
     """Test testimonial with only markdown references, no image field"""
     website = WebsiteFactory.create()
@@ -808,7 +794,6 @@ def test_testimonial_no_image_only_markdown():
     assert resource1 in referenced_content
 
 
-@pytest.mark.django_db
 def test_promo_no_image_field():
     """Test promo with no image field doesn't create references"""
     website = WebsiteFactory.create()
