@@ -24,32 +24,17 @@ async function fetchHash(): Promise<string | null> {
  * should not trigger a reload mid-action.
  */
 export default function useAppVersionCheck(): void {
-  const initialHash = useRef<string | null>(null)
-  const hasFetched = useRef(false)
+  const hashRef = useRef<string | null>(null)
   const location = useLocation()
 
   useEffect(() => {
-    fetchHash().then((hash) => {
-      if (hash) {
-        initialHash.current = hash
-      }
-      hasFetched.current = true
-    })
-  }, [])
-
-  useEffect(() => {
-    if (!hasFetched.current) return
-
     let active = true
     fetchHash().then((hash) => {
       if (!active || !hash) return
 
-      if (!initialHash.current) {
-        initialHash.current = hash
-        return
-      }
-
-      if (hash !== initialHash.current) {
+      if (!hashRef.current) {
+        hashRef.current = hash
+      } else if (hash !== hashRef.current) {
         window.location.reload()
       }
     })

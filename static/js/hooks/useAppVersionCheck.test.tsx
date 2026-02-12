@@ -57,14 +57,14 @@ describe("useAppVersionCheck", () => {
     })
 
     const history = createMemoryHistory({ initialEntries: ["/sites"] })
-    const historyWrapper: React.FC<PropsWithChildren> = ({ children }) => (
+    const HistoryWrapper: React.FC<PropsWithChildren> = ({ children }) => (
       <Router history={history}>
         <Route path="*">{() => <>{children}</>}</Route>
       </Router>
     )
 
     renderHook(() => useAppVersionCheck(), {
-      wrapper: historyWrapper,
+      wrapper: HistoryWrapper,
     })
 
     await waitFor(() => {
@@ -109,14 +109,14 @@ describe("useAppVersionCheck", () => {
       })
 
       const history = createMemoryHistory({ initialEntries: ["/sites"] })
-      const historyWrapper: React.FC<PropsWithChildren> = ({ children }) => (
+      const HistoryWrapper: React.FC<PropsWithChildren> = ({ children }) => (
         <Router history={history}>
           <Route path="*">{() => <>{children}</>}</Route>
         </Router>
       )
 
       renderHook(() => useAppVersionCheck(), {
-        wrapper: historyWrapper,
+        wrapper: HistoryWrapper,
       })
 
       await waitFor(() => {
