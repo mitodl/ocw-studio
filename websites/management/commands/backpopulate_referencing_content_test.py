@@ -9,12 +9,14 @@ from django.test import TestCase
 
 from websites.constants import (
     CONTENT_TYPE_COURSE_COLLECTION,
+    CONTENT_TYPE_HOMEPAGE_SETTINGS,
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_PROMO,
     CONTENT_TYPE_RESOURCE,
     CONTENT_TYPE_RESOURCE_LIST,
+    CONTENT_TYPE_STORY,
     CONTENT_TYPE_TESTIMONIAL,
     CONTENT_TYPE_VIDEO_GALLERY,
 )
@@ -546,6 +548,77 @@ def test_promo_references_detected():
     referenced_content = list(promo.referenced_by.all())
     assert len(referenced_content) == 1
     assert resource1 in referenced_content
+
+
+@pytest.mark.django_db
+def test_story_references_detected():
+    """Test that story image field and markdown references are detected."""
+    website = WebsiteFactory.create()
+    image_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+    )
+    markdown_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+    )
+    story = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_STORY,
+        markdown=f"Story body {{{{< resource {markdown_resource.text_id} >}}}}",
+        metadata={
+            "title": "Story",
+            "image": {"content": image_resource.text_id},
+        },
+    )
+
+    assert story.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    story.refresh_from_db()
+    referenced_content = list(story.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert image_resource in referenced_content
+    assert markdown_resource in referenced_content
+
+
+@pytest.mark.django_db
+def test_ocw_www_featured_promos_and_stories_references_detected():
+    """Test featured promos/stories on ocw-www homepage_settings are detected."""
+    ocw_www = WebsiteFactory.create(name="ocw-www")
+    promo = WebsiteContentFactory.create(
+        website=ocw_www,
+        type=CONTENT_TYPE_PROMO,
+    )
+    story = WebsiteContentFactory.create(
+        website=ocw_www,
+        type=CONTENT_TYPE_STORY,
+    )
+    homepage_settings = WebsiteContentFactory.create(
+        website=ocw_www,
+        type=CONTENT_TYPE_HOMEPAGE_SETTINGS,
+        metadata={
+            "featured_promos": {
+                "content": [promo.text_id],
+                "website": ocw_www.name,
+            },
+            "featured_stories": {
+                "content": [story.text_id],
+                "website": ocw_www.name,
+            },
+        },
+    )
+
+    assert homepage_settings.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    homepage_settings.refresh_from_db()
+    referenced_content = list(homepage_settings.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert promo in referenced_content
+    assert story in referenced_content
 
 
 @pytest.mark.django_db
