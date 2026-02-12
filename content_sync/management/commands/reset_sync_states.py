@@ -4,9 +4,11 @@ from django.conf import settings
 from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
+from content_sync.api import get_sync_backend
 from content_sync.models import ContentSyncState
 from content_sync.tasks import sync_unsynced_websites
 from main.management.commands.filter import WebsiteFilterCommand
+from websites.api import fetch_website
 
 
 class Command(WebsiteFilterCommand):
@@ -63,6 +65,10 @@ class Command(WebsiteFilterCommand):
         source_str = options["source"].lower()
         skip_sync = options["skip_sync"]
 
+        if self.filter_list:
+            for site_identifier in self.filter_list:
+                fetch_website(site_identifier)
+
         content_sync_state_qset = ContentSyncState.objects.exclude(
             synced_checksum__isnull=True
         )
@@ -92,8 +98,17 @@ class Command(WebsiteFilterCommand):
         if settings.CONTENT_SYNC_BACKEND and not skip_sync:
             self.stdout.write("Syncing all unsynced websites to the designated backend")
             start = now_in_utc()
-            task = sync_unsynced_websites.delay(create_backends=create_backends)
-            self.stdout.write(f"Starting task {task}...")
-            task.get()
+            if self.filter_list:
+                for site_identifier in self.filter_list:
+                    website = fetch_website(site_identifier)
+                    self.stdout.write(f"Syncing website '{website.name}' to backend...")
+                    backend = get_sync_backend(website)
+                    if create_backends or backend.backend_exists():
+                        backend.create_website_in_backend()
+                        backend.sync_all_content_to_backend()
+            else:
+                task = sync_unsynced_websites.delay(create_backends=create_backends)
+                self.stdout.write(f"Starting task {task}...")
+                task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
