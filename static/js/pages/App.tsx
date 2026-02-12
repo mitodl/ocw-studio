@@ -12,6 +12,7 @@ import Footer from "../components/Footer"
 import HomePage from "./HomePage"
 import MarkdownEditorTestPage from "./MarkdownEditorTestPage"
 import useTracker from "../hooks/tracker"
+import useAppVersionCheck from "../hooks/useAppVersionCheck"
 import { websiteDetailRequest } from "../query-configs/websites"
 import { getWebsiteDetailCursor } from "../selectors/websites"
 import WebsiteContext from "../context/Website"
@@ -26,6 +27,7 @@ interface SiteMatchParams {
 
 export default function App(): JSX.Element {
   useTracker()
+  useAppVersionCheck()
 
   let siteName = null
   const siteDetailMatch = useRouteMatch<SiteMatchParams>("/sites/:name")
