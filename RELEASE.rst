@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.178.2
+---------------
+
+- Reload Studio on route change if hash changed (#2888)
+- Fix flaky Router test (#2895)
+- Fix flaky SortableSelect test (#2894)
+- fix: webpack during dockerbuild  (#2889)
+
 Version 0.178.1 (Released February 12, 2026)
 ---------------
 
