@@ -137,8 +137,17 @@ def get_metadata_content_key(content) -> list:
                 constants.METADATA_FIELD_COVER_IMAGE,
                 constants.METADATA_FIELD_COURSE_LISTS,
             ]
-        case constants.CONTENT_TYPE_PROMO | constants.CONTENT_TYPE_TESTIMONIAL:
+        case (
+            constants.CONTENT_TYPE_PROMO
+            | constants.CONTENT_TYPE_TESTIMONIAL
+            | constants.CONTENT_TYPE_STORY
+        ):
             content_keys = [constants.METADATA_FIELD_IMAGE]
+        case constants.CONTENT_TYPE_HOMEPAGE_SETTINGS:
+            content_keys = [
+                constants.METADATA_FIELD_FEATURED_PROMOS,
+                constants.METADATA_FIELD_FEATURED_STORIES,
+            ]
         case _:
             content_keys = []
 

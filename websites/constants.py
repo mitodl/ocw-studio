@@ -14,6 +14,8 @@ CONTENT_TYPE_COURSE_LIST = "course-lists"
 CONTENT_TYPE_COURSE_COLLECTION = "course-collection"
 CONTENT_TYPE_PROMO = "promos"
 CONTENT_TYPE_TESTIMONIAL = "testimonials"
+CONTENT_TYPE_STORY = "stories"
+CONTENT_TYPE_HOMEPAGE_SETTINGS = "homepage_settings"
 CONTENT_TYPE_EXTERNAL_RESOURCE = "external-resource"
 CONTENT_TYPE_WEBSITE = "website"
 
@@ -97,6 +99,8 @@ METADATA_FIELD_DESCRIPTION = "description"
 METADATA_FIELD_COVER_IMAGE = "cover-image.content"
 METADATA_FIELD_COURSE_LISTS = "courselists.content"
 METADATA_FIELD_IMAGE = "image.content"
+METADATA_FIELD_FEATURED_PROMOS = "featured_promos.content"
+METADATA_FIELD_FEATURED_STORIES = "featured_stories.content"
 
 
 EXTERNAL_IDENTIFIER_PREFIX = "external-"

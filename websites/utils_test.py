@@ -840,6 +840,19 @@ def test_get_metadata_content_key():
         constants.METADATA_FIELD_IMAGE
     ]
 
+    # Test STORY type
+    content_story = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_STORY)
+    assert get_metadata_content_key(content_story) == [constants.METADATA_FIELD_IMAGE]
+
+    # Test HOMEPAGE_SETTINGS type
+    content_homepage_settings = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_HOMEPAGE_SETTINGS
+    )
+    assert get_metadata_content_key(content_homepage_settings) == [
+        constants.METADATA_FIELD_FEATURED_PROMOS,
+        constants.METADATA_FIELD_FEATURED_STORIES,
+    ]
+
 
 def test_compile_referencing_content_course_collection():
     """Test compile_referencing_content with COURSE_COLLECTION type"""
@@ -898,6 +911,42 @@ def test_compile_referencing_content_testimonial():
     result = compile_referencing_content(content)
     # Should find: uuid1 from image field, uuid2 from markdown
     assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_story():
+    """Test compile_referencing_content with STORY type."""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_STORY,
+        markdown=f"Story body with embedded resource {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "Story Title",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_ocw_www_featured_promos_and_stories():
+    """HOMEPAGE_SETTINGS content should include featured promos and stories refs."""
+    promo_uuid = "11223344-5566-7788-99aa-bbccddee1111"
+    story_uuid = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_HOMEPAGE_SETTINGS,
+        markdown=None,
+        metadata={
+            "featured_promos": {"content": [promo_uuid]},
+            "featured_stories": {"content": [story_uuid]},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([promo_uuid, story_uuid])
 
 
 def test_compile_referencing_content_course_collection_empty_courselists():
