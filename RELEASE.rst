@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.178.1
+Version 0.178.1 (Released February 12, 2026)
 ---------------
 
 - Fix pagination duplicates by adding id to WebsiteContentViewSet ordering (#2885)
