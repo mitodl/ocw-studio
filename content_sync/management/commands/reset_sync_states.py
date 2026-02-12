@@ -8,7 +8,7 @@ from content_sync.api import get_sync_backend
 from content_sync.models import ContentSyncState
 from content_sync.tasks import sync_unsynced_websites
 from main.management.commands.filter import WebsiteFilterCommand
-from websites.api import fetch_website
+from websites.api import fetch_website, reset_publishing_fields
 
 
 class Command(WebsiteFilterCommand):
@@ -65,9 +65,11 @@ class Command(WebsiteFilterCommand):
         source_str = options["source"].lower()
         skip_sync = options["skip_sync"]
 
+        filtered_websites = []
         if self.filter_list:
-            for site_identifier in self.filter_list:
-                fetch_website(site_identifier)
+            filtered_websites = [
+                fetch_website(site_identifier) for site_identifier in self.filter_list
+            ]
 
         content_sync_state_qset = ContentSyncState.objects.exclude(
             synced_checksum__isnull=True
@@ -96,17 +98,31 @@ class Command(WebsiteFilterCommand):
         )
 
         if settings.CONTENT_SYNC_BACKEND and not skip_sync:
-            self.stdout.write("Syncing all unsynced websites to the designated backend")
             start = now_in_utc()
-            if self.filter_list:
-                for site_identifier in self.filter_list:
-                    website = fetch_website(site_identifier)
-                    self.stdout.write(f"Syncing website '{website.name}' to backend...")
+            if filtered_websites:
+                self.stdout.write(
+                    f"Syncing {len(filtered_websites)} filtered "
+                    "website(s) to the designated backend"
+                )
+                for website in filtered_websites:
                     backend = get_sync_backend(website)
                     if create_backends or backend.backend_exists():
+                        self.stdout.write(
+                            f"Syncing website '{website.title}' to backend..."
+                        )
                         backend.create_website_in_backend()
                         backend.sync_all_content_to_backend()
+                        reset_publishing_fields(website.name)
+                    else:
+                        self.stderr.write(
+                            f"Skipping website '{website.title}': "
+                            "backend does not exist "
+                            "(use --create_backends to create it)"
+                        )
             else:
+                self.stdout.write(
+                    "Syncing all unsynced websites to the designated backend"
+                )
                 task = sync_unsynced_websites.delay(create_backends=create_backends)
                 self.stdout.write(f"Starting task {task}...")
                 task.get()
