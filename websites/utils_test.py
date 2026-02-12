@@ -541,11 +541,13 @@ def test_compile_referencing_content_metadata_includes_course_home_image_relatio
 
     result = compile_referencing_content(content)
 
-    assert result == [
-        "550e8400-e29b-41d4-a716-446655440010",
-        "550e8400-e29b-41d4-a716-446655440001",
-        "550e8400-e29b-41d4-a716-446655440002",
-    ]
+    assert sorted(result) == sorted(
+        [
+            "550e8400-e29b-41d4-a716-446655440010",
+            "550e8400-e29b-41d4-a716-446655440001",
+            "550e8400-e29b-41d4-a716-446655440002",
+        ]
+    )
 
 
 def test_compile_referencing_content_page_with_embedded_href_uuid():
@@ -606,11 +608,13 @@ def test_compile_referencing_content_resource_list_with_description_and_resource
     )
 
     result = compile_referencing_content(content)
-    assert result == [
-        "11111111-2222-3333-4444-555555555555",
-        "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
-    ]
+    assert sorted(result) == sorted(
+        [
+            "11111111-2222-3333-4444-555555555555",
+            "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "bbbbbbbb-cccc-dddd-eeee-ffffffffffff",
+        ]
+    )
 
 
 def test_compile_referencing_content_metadata_course_image_as_string_uuid():

@@ -13,6 +13,20 @@ log = logging.getLogger(__name__)
 
 UUID_REGEX_STR = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
+# Compiled regexes for parse_resource_uuid (module scope for performance)
+_RESOURCE_SHORTCODE_REGEX = re.compile(
+    rf"""
+    \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
+    |
+    \{{\{{<\s+resource\s+([^>]*)>\}}\}}
+    """,
+    re.VERBOSE,
+)
+_ATTR_UUID_REGEX = re.compile(
+    rf'(?:^|\s)(?:uuid|href_uuid|href-uuid)\s*=\s*"?({UUID_REGEX_STR})"?(?=\s|$)'
+)
+_POSITIONAL_UUID_REGEX = re.compile(rf'^\s*"?({UUID_REGEX_STR})"?(?=\s|$)')
+
 
 def permissions_group_name_for_role(role, website):
     """Get the website group name for a given role"""
@@ -192,20 +206,9 @@ def parse_resource_uuid(text: str) -> list[str]:
     #
     # UUID format: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
     # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
-    pattern = rf"""
-    \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
-    |
-    \{{\{{<\s+resource\s+([^>]*)>\}}\}}
-    """
-
-    regex = re.compile(pattern, re.VERBOSE)
-    matches = regex.findall(text)
+    matches = _RESOURCE_SHORTCODE_REGEX.findall(text)
 
     references = []
-    attr_regex = re.compile(
-        rf'(?:^|\s)(?:uuid|href_uuid|href-uuid)\s*=\s*"?({UUID_REGEX_STR})"?(?=\s|$)'
-    )
-    positional_uuid_regex = re.compile(rf'^\s*"?({UUID_REGEX_STR})"?(?=\s|$)')
     for match in matches:
         if match[0]:
             references.append(match[0])
@@ -214,12 +217,13 @@ def parse_resource_uuid(text: str) -> list[str]:
         if not match[2]:
             continue
 
-        attr_references = attr_regex.findall(match[2])
+        attr_references = _ATTR_UUID_REGEX.findall(match[2])
         if attr_references:
             references.extend(attr_references)
             continue
 
-        if positional_match := positional_uuid_regex.search(match[2]):
+        positional_match = _POSITIONAL_UUID_REGEX.match(match[2])
+        if positional_match:
             references.append(positional_match.group(1))
 
     return references
