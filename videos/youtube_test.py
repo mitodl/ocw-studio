@@ -12,6 +12,7 @@ from django.utils import timezone
 from googleapiclient.errors import HttpError
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from main.feature_flags import FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE
 from users.factories import UserFactory
 from videos.conftest import MockHttpErrorResponse
 from videos.constants import (
@@ -733,6 +734,9 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
     mock_update_video = mock_youtube.return_value.update_video
     mocker.patch("videos.youtube.is_ocw_site", return_value=is_ocw)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=youtube_enabled)
+    mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=True
+    )  # Enable updates
     youtube_website.publish_date = timezone.now() if previously_published else None
     youtube_website.unpublish_status = None
     youtube_website.save()
@@ -785,6 +789,9 @@ def test_update_youtube_metadata_error(mocker, youtube_website):
     )
     mocker.patch("videos.youtube.is_ocw_site", return_value=True)
     mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=True
+    )  # Enable updates
     VideoFileFactory.create(
         video=VideoFactory.create(website=youtube_website),
         destination=DESTINATION_YOUTUBE,
@@ -794,6 +801,140 @@ def test_update_youtube_metadata_error(mocker, youtube_website):
     mock_log.assert_any_call(
         "Unexpected error updating metadata for video resource %d", mocker.ANY
     )
+
+
+def test_update_youtube_metadata_blocked_by_default(settings, mocker, youtube_website):
+    """Test that YouTube metadata updates are blocked by default when feature flag is not enabled"""
+    settings.YT_TEST_VIDEO_IDS = []  # No test videos configured
+    mock_log = mocker.patch("videos.youtube.log.info")
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    mock_update_video = mock_youtube.return_value.update_video
+    mocker.patch("videos.youtube.is_ocw_site", return_value=True)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mock_feature_flag = mocker.patch(
+        "videos.youtube.is_feature_enabled", return_value=False
+    )
+
+    # Create video files for the youtube_website fixture's videos
+    for youtube_id in ["abc123", "def456"]:
+        VideoFileFactory.create(
+            video=VideoFactory.create(website=youtube_website),
+            destination=DESTINATION_YOUTUBE,
+            destination_id=youtube_id,
+        )
+
+    update_youtube_metadata(youtube_website, version=VERSION_DRAFT)
+
+    # Verify that the feature flag was checked with the correct constant
+    mock_feature_flag.assert_called_with(FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE)
+    # Verify that metadata updates were skipped for both videos
+    assert mock_log.call_count == 2
+    mock_log.assert_any_call(
+        "Skipping YouTube metadata update for video %s (feature flag not enabled)",
+        "abc123",
+    )
+    mock_log.assert_any_call(
+        "Skipping YouTube metadata update for video %s (feature flag not enabled)",
+        "def456",
+    )
+    mock_update_video.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("test_video_ids", "youtube_id", "feature_flag_enabled", "should_update"),
+    [
+        # Feature flag disabled (default) - all videos blocked
+        ([], "test123", False, False),  # Empty test list, flag off = skip all
+        (
+            ["test123"],
+            "test123",
+            False,
+            True,
+        ),  # In test list, flag off = update (bypass)
+        (
+            ["test123"],
+            "other456",
+            False,
+            False,
+        ),  # Not in test list, flag off = skip
+        # Feature flag enabled scenarios
+        (
+            [],
+            "test123",
+            True,
+            True,
+        ),  # Empty test list, flag on = update all
+        (
+            ["test123"],
+            "test123",
+            True,
+            True,
+        ),  # In test list, flag on = update
+        (
+            ["test123"],
+            "other456",
+            True,
+            True,
+        ),  # Not in test list, flag on = update
+        (
+            ["vid1", "vid2"],
+            "vid2",
+            True,
+            True,
+        ),  # In test list, flag on = update
+        (
+            ["vid1", "vid2"],
+            "vid3",
+            True,
+            True,
+        ),  # Not in test list, flag on = update
+    ],
+)
+def test_update_youtube_metadata_with_test_video_ids(  # noqa: PLR0913
+    settings, mocker, test_video_ids, youtube_id, feature_flag_enabled, should_update
+):
+    """Test that YT_TEST_VIDEO_IDS always bypasses the feature flag for listed videos"""
+    settings.YT_TEST_VIDEO_IDS = test_video_ids
+    mock_log = mocker.patch("videos.youtube.log")
+    mock_youtube = mocker.patch("videos.youtube.YouTubeApi")
+    mock_update_video = mock_youtube.return_value.update_video
+    mocker.patch("videos.youtube.is_ocw_site", return_value=True)
+    mocker.patch("videos.youtube.is_youtube_enabled", return_value=True)
+    mocker.patch("videos.youtube.is_feature_enabled", return_value=feature_flag_enabled)
+
+    website = WebsiteFactory.create(
+        publish_date=timezone.now() - timezone.timedelta(hours=1),
+        unpublish_status=None,
+    )
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": youtube_id},
+        },
+    )
+
+    VideoFileFactory.create(
+        video=VideoFactory.create(website=website),
+        destination=DESTINATION_YOUTUBE,
+        destination_id=youtube_id,
+    )
+
+    update_youtube_metadata(website, version=VERSION_DRAFT)
+
+    if should_update:
+        mock_update_video.assert_called_once()
+        # Verify it was called with the correct video resource
+        call_args = mock_update_video.call_args
+        assert call_args[0][0].id == video_resource.id
+    else:
+        mock_update_video.assert_not_called()
+        # Verify the skip message was logged
+        mock_log.info.assert_called_once_with(
+            "Skipping YouTube metadata update for video %s (feature flag not enabled)",
+            youtube_id,
+        )
 
 
 def test_update_youtube_metadata_no_videos(mocker):
