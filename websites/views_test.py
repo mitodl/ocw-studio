@@ -8,6 +8,7 @@ import factory
 import pytest
 import pytz
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
 from django.utils.text import slugify
 from github import GithubException
@@ -1046,6 +1047,69 @@ def test_websites_content_create(drf_client, global_admin_user):
     assert content.markdown == payload["markdown"]
     assert content.type == payload["type"]
     assert resp.data["text_id"] == str(content.text_id)
+
+
+@override_settings(OCW_COURSE_STARTER_SLUG="course-view-referencing-test")
+def test_websites_content_create_course_list_sets_references(
+    drf_client, global_admin_user
+):
+    """Creating course-lists content should resolve courses/<short_id> references."""
+    drf_client.force_login(global_admin_user)
+    course_starter = WebsiteStarterFactory.create(
+        slug="course-view-referencing-test",
+        config={"root-url-path": "courses"},
+    )
+    ocw_www = WebsiteFactory.create(name="ocw-www")
+    course_site_1 = WebsiteFactory.create(
+        short_id="view-test-course-1",
+        starter=course_starter,
+    )
+    course_site_2 = WebsiteFactory.create(
+        short_id="view-test-course-2",
+        starter=course_starter,
+    )
+    listing_1 = WebsiteContentFactory.create(
+        website=ocw_www,
+        type=constants.CONTENT_TYPE_WEBSITE,
+        filename=course_site_1.short_id,
+    )
+    listing_2 = WebsiteContentFactory.create(
+        website=ocw_www,
+        type=constants.CONTENT_TYPE_WEBSITE,
+        filename=course_site_2.short_id,
+    )
+
+    payload = {
+        "type": constants.CONTENT_TYPE_COURSE_LIST,
+        "metadata": {
+            "draft": False,
+            "description": "",
+            "courses": [
+                {"id": f"courses/{course_site_1.short_id}", "title": "Course 1"},
+                {"id": f"courses/{course_site_2.short_id}", "title": "Course 2"},
+            ],
+        },
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={
+                "parent_lookup_website": ocw_www.name,
+            },
+        ),
+        data=payload,
+        format="json",
+    )
+
+    assert resp.status_code == 201
+    content = WebsiteContent.objects.get(
+        website=ocw_www,
+        text_id=resp.data["text_id"],
+    )
+    assert set(content.referenced_by.values_list("id", flat=True)) == {
+        listing_1.id,
+        listing_2.id,
+    }
 
 
 def test_websites_content_create_with_textid(drf_client, global_admin_user):

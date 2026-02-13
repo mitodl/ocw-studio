@@ -806,7 +806,13 @@ class WebsiteContentViewSet(
     def _referencing_content(self, instance: WebsiteContent):
         """Update instance.referenced_by based on the referencing content"""
         references = compile_referencing_content(instance)
-        content_refs = WebsiteContent.objects.filter(text_id__in=references).all()
+        referenced_content = WebsiteContent.objects.filter(text_id__in=references).only(
+            "id",
+            "text_id",
+        )
+        content_refs = WebsiteContent.objects.filter(
+            id__in=[content.id for content in referenced_content]
+        )
         instance.referenced_by.set(content_refs)
 
     def perform_update(self, serializer):

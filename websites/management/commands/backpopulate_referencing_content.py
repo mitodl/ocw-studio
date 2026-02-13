@@ -162,6 +162,7 @@ class Command(WebsiteFilterCommand):
     ):
         """Update content relationships in a transaction."""
         batch_updated = 0
+
         with transaction.atomic():
             for content_id, reference_uuids in content_references.items():
                 try:
@@ -173,6 +174,8 @@ class Command(WebsiteFilterCommand):
                         for ref_uuid in reference_uuids
                         if ref_uuid in referenced_content_map
                     ]
+
+                    referenced_content_ids = list(set(referenced_content_ids))
 
                     if referenced_content_ids:
                         referenced_objects = WebsiteContent.objects.filter(

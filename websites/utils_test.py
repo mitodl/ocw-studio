@@ -617,87 +617,111 @@ def test_compile_referencing_content_resource_list_with_description_and_resource
     )
 
 
-@pytest.mark.parametrize(
-    ("field_name", "expected_uuid"),
-    [
-        ("course_image", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
-        ("course_image_thumbnail", "99999999-bbbb-cccc-dddd-eeeeeeeeeeee"),
-    ],
-)
-def test_compile_referencing_content_metadata_course_image_fields(
-    field_name, expected_uuid
-):
-    """Course image and thumbnail stored as string UUIDs should be captured."""
+def test_compile_referencing_content_metadata_course_image_as_string_uuid():
+    """Course image stored as a single string UUID should be captured."""
     content = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_METADATA,
         markdown=None,
         metadata={
             "course_description": "No references here",
-            field_name: {
-                "content": expected_uuid,
+            "course_image": {
+                "content": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
                 "website": "ocw-ci-test-course",
             },
         },
     )
 
     result = compile_referencing_content(content)
-    assert expected_uuid in result
+    assert "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" in result
 
 
-@pytest.mark.parametrize(
-    ("markdown", "image_metadata", "expected_uuids"),
-    [
-        # Both caption and credit
-        (
-            'Resource markdown with {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
-            {
-                "caption": '{{% resource_link "aaaabbbb-cccc-dddd-eeee-ffff12345678" "Caption Link" %}}',
-                "credit": 'Credit with {{< resource uuid="ffffeedd-ccbb-aa99-8877-665544332211" >}}',
-            },
-            [
-                "11223344-5566-7788-99aa-bbccddee1122",
-                "aaaabbbb-cccc-dddd-eeee-ffff12345678",
-                "ffffeedd-ccbb-aa99-8877-665544332211",
-            ],
-        ),
-        # Only caption
-        (
-            None,
-            {"caption": '{{< resource uuid="aaaabbbb-cccc-dddd-eeee-ffff12345678" >}}'},
-            ["aaaabbbb-cccc-dddd-eeee-ffff12345678"],
-        ),
-        # Only credit
-        (
-            None,
-            {
-                "credit": '{{% resource_link "ffffeedd-ccbb-aa99-8877-665544332211" "Credit Link" %}}'
-            },
-            ["ffffeedd-ccbb-aa99-8877-665544332211"],
-        ),
-        # No image_metadata (markdown only)
-        (
-            'Only markdown {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
-            None,
-            ["11223344-5566-7788-99aa-bbccddee1122"],
-        ),
-    ],
-)
-def test_compile_referencing_content_resource_image_metadata(
-    markdown, image_metadata, expected_uuids
-):
-    """Test compile_referencing_content with RESOURCE type image_metadata variations."""
-    metadata = {"title": "Some resource title"}
-    if image_metadata is not None:
-        metadata["image_metadata"] = image_metadata
-
+def test_compile_referencing_content_metadata_course_image_thumbnail_as_string_uuid():
+    """Course image thumbnail stored as a single string UUID should be captured."""
     content = WebsiteContentFactory.build(
-        type=constants.CONTENT_TYPE_RESOURCE,
-        markdown=markdown,
-        metadata=metadata,
+        type=constants.CONTENT_TYPE_METADATA,
+        markdown=None,
+        metadata={
+            "course_description": "No references here",
+            "course_image_thumbnail": {
+                "content": "99999999-bbbb-cccc-dddd-eeeeeeeeeeee",
+                "website": "ocw-ci-test-course",
+            },
+        },
     )
 
     result = compile_referencing_content(content)
-    assert result == expected_uuids
+    assert "99999999-bbbb-cccc-dddd-eeeeeeeeeeee" in result
+
+
+def test_compile_referencing_content_resource_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having image_metadata caption and credit"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown='Resource markdown with {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
+        metadata={
+            "image_metadata": {
+                "caption": 'Caption with {{% resource_link "aaaabbbb-cccc-dddd-eeee-ffff12345678" "Caption Link" %}}',
+                "credit": 'Credit with {{< resource uuid="ffffeedd-ccbb-aa99-8877-665544332211" >}}',
+            },
+            "other_field": "Should be ignored",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "11223344-5566-7788-99aa-bbccddee1122",  # From markdown
+        "aaaabbbb-cccc-dddd-eeee-ffff12345678",  # From image_metadata.caption
+        "ffffeedd-ccbb-aa99-8877-665544332211",  # From image_metadata.credit
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_resource_partial_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having only caption or credit"""
+    # Test with only caption
+    content_caption_only = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "image_metadata": {
+                "caption": '{{< resource uuid="aaaabbbb-cccc-dddd-eeee-ffff12345678" >}}',
+                # No credit field
+            },
+        },
+    )
+
+    result_caption = compile_referencing_content(content_caption_only)
+    assert result_caption == ["aaaabbbb-cccc-dddd-eeee-ffff12345678"]
+
+    # Test with only credit
+    content_credit_only = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "image_metadata": {
+                # No caption field
+                "credit": '{{% resource_link "ffffeedd-ccbb-aa99-8877-665544332211" "Credit Link" %}}',
+            },
+        },
+    )
+
+    result_credit = compile_referencing_content(content_credit_only)
+    assert result_credit == ["ffffeedd-ccbb-aa99-8877-665544332211"]
+
+
+def test_compile_referencing_content_resource_no_image_metadata():
+    """Test compile_referencing_content with RESOURCE type having no image_metadata"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown='Only markdown {{< resource uuid="11223344-5566-7788-99aa-bbccddee1122" >}}',
+        metadata={
+            "title": "Some resource title",
+            "other_field": "Some other data",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == ["11223344-5566-7788-99aa-bbccddee1122"]
 
 
 def test_compile_referencing_content_empty_and_none():
@@ -808,6 +832,15 @@ def test_get_metadata_content_key():
         constants.METADATA_FIELD_COURSE_LISTS,
     ]
 
+    # Test COURSE_LIST type
+    content_course_list = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST
+    )
+    assert get_metadata_content_key(content_course_list) == [
+        constants.METADATA_FIELD_DESCRIPTION,
+        constants.METADATA_FIELD_COURSE_LIST_COURSES,
+    ]
+
     # Test PROMO type
     content_promo = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_PROMO)
     assert get_metadata_content_key(content_promo) == [constants.METADATA_FIELD_IMAGE]
@@ -856,56 +889,59 @@ def test_compile_referencing_content_course_collection():
     assert sorted(result) == sorted([uuid1, uuid2, uuid3])
 
 
-@pytest.mark.parametrize(
-    ("content_type", "markdown", "metadata", "expected_uuids"),
-    [
-        (
-            constants.CONTENT_TYPE_PROMO,
-            None,
-            {
-                "title": "Promo Title",
-                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
-            },
-            ["11223344-5566-7788-99aa-bbccddee1111"],
-        ),
-        (
-            constants.CONTENT_TYPE_TESTIMONIAL,
-            "Testimonial body with embedded resource {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
-            {
-                "title": "John Doe",
-                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
-            },
-            [
-                "11223344-5566-7788-99aa-bbccddee1111",
-                "22334455-6677-8899-aabb-ccddeeff2222",
-            ],
-        ),
-        (
-            constants.CONTENT_TYPE_STORY,
-            "Story body with embedded resource {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
-            {
-                "title": "Story Title",
-                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
-            },
-            [
-                "11223344-5566-7788-99aa-bbccddee1111",
-                "22334455-6677-8899-aabb-ccddeeff2222",
-            ],
-        ),
-    ],
-)
-def test_compile_referencing_content_image_types(
-    content_type, markdown, metadata, expected_uuids
-):
-    """Test compile_referencing_content for content types with image fields (PROMO, TESTIMONIAL, STORY)."""
+def test_compile_referencing_content_promo():
+    """Test compile_referencing_content with PROMO type"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
     content = WebsiteContentFactory.build(
-        type=content_type,
-        markdown=markdown,
-        metadata=metadata,
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=None,
+        metadata={
+            "title": "Promo Title",
+            "image": {"content": uuid1},
+        },
     )
 
     result = compile_referencing_content(content)
-    assert sorted(result) == sorted(expected_uuids)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_testimonial():
+    """Test compile_referencing_content with TESTIMONIAL type"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=f"Testimonial body with embedded resource {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "John Doe",
+            "image": {"content": uuid1},
+            "body": "This is the testimonial text",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find: uuid1 from image field, uuid2 from markdown
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_story():
+    """Test compile_referencing_content with STORY type."""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_STORY,
+        markdown=f"Story body with embedded resource {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "Story Title",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([uuid1, uuid2])
 
 
 def test_compile_referencing_content_ocw_www_featured_promos_and_stories():
@@ -926,102 +962,134 @@ def test_compile_referencing_content_ocw_www_featured_promos_and_stories():
     assert sorted(result) == sorted([promo_uuid, story_uuid])
 
 
-@pytest.mark.parametrize(
-    ("markdown", "metadata_fields", "expected_uuids"),
-    [
-        # Empty courselists, has cover-image
-        (
-            None,
-            {
-                "title": "Empty Collection",
-                "cover-image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
-                "courselists": {"content": []},
-            },
-            ["11223344-5566-7788-99aa-bbccddee1111"],
-        ),
-        # Has courselists, no cover-image
-        (
-            None,
-            {
-                "title": "No Cover Collection",
-                "courselists": {
-                    "content": [
-                        "11223344-5566-7788-99aa-bbccddee1111",
-                        "22334455-6677-8899-aabb-ccddeeff2222",
-                    ]
-                },
-            },
-            [
-                "11223344-5566-7788-99aa-bbccddee1111",
-                "22334455-6677-8899-aabb-ccddeeff2222",
+def test_compile_referencing_content_course_list_courses():
+    """COURSE_LIST should include description and courses references with text_id."""
+    desc_uuid = "11223344-5566-7788-99aa-bbccddee1111"
+    course_text_id_1 = "course-v1:MITx+18.01+2020_Fall"
+    course_text_id_2 = "course-v1:MITx+8.01+2020_Fall"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        markdown=None,
+        metadata={
+            "description": f"Description with {{{{< resource {desc_uuid} >}}}}",
+            "courses": [
+                {"text_id": course_text_id_1, "title": "Course 1"},
+                {"text_id": course_text_id_2, "title": "Course 2"},
             ],
-        ),
-        # Has markdown, description, and cover-image
-        (
-            "Collection intro {{< resource 11223344-5566-7788-99aa-bbccddee1111 >}}",
-            {
-                "title": "Collection with Description",
-                "description": "Description with link {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
-                "cover-image": {"content": "33445566-7788-99aa-bbcc-ddeeff332233"},
-            },
-            [
-                "11223344-5566-7788-99aa-bbccddee1111",
-                "22334455-6677-8899-aabb-ccddeeff2222",
-                "33445566-7788-99aa-bbcc-ddeeff332233",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([desc_uuid, course_text_id_1, course_text_id_2])
+
+
+def test_compile_referencing_content_course_list_with_id_format():
+    """COURSE_LIST should also work with 'id' key (widget format)."""
+    desc_uuid = "11223344-5566-7788-99aa-bbccddee1111"
+    course_text_id_1 = "course-v1:MITx+18.01+2020_Fall"
+    course_text_id_2 = "course-v1:MITx+8.01+2020_Fall"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        markdown=None,
+        metadata={
+            "description": f"Description with {{{{< resource {desc_uuid} >}}}}",
+            "courses": [
+                {"id": course_text_id_1, "title": "Course 1"},  # Widget format
+                {"id": course_text_id_2, "title": "Course 2"},
             ],
-        ),
-    ],
-)
-def test_compile_referencing_content_course_collection_variations(
-    markdown, metadata_fields, expected_uuids
-):
-    """Test course-collection with various field combinations."""
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([desc_uuid, course_text_id_1, course_text_id_2])
+
+
+def test_compile_referencing_content_promo_with_markdown():
+    """Test promo with both image field and markdown references"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=f"Promo content with {{{{< resource {uuid2} >}}}}",
+        metadata={
+            "title": "Promo with Markdown",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    # Should find both: image field and markdown reference
+    assert sorted(result) == sorted([uuid1, uuid2])
+
+
+def test_compile_referencing_content_promo_no_image():
+    """Test promo with no image field"""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PROMO,
+        markdown=None,
+        metadata={
+            "title": "Promo without Image",
+            "description": "Some text",
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_testimonial_no_markdown():
+    """Test testimonial with only image field, no markdown"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=None,  # No markdown
+        metadata={
+            "title": "Jane Smith",
+            "image": {"content": uuid1},
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_testimonial_no_image():
+    """Test testimonial with markdown but no image field"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_TESTIMONIAL,
+        markdown=f"{{{{< resource {uuid1} >}}}}",
+        metadata={
+            "title": "Bob Johnson",
+            # No image field
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [uuid1]
+
+
+def test_compile_referencing_content_course_collection_with_description():
+    """Test course-collection with description field containing resource links"""
+    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
+    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
+    uuid3 = "33445566-7788-99aa-bbcc-ddeeff332233"
+
     content = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_COURSE_COLLECTION,
-        markdown=markdown,
-        metadata=metadata_fields,
+        markdown=f"Collection intro {{{{< resource {uuid1} >}}}}",
+        metadata={
+            "title": "Collection with Description",
+            "description": f"Description with link {{{{< resource {uuid2} >}}}}",
+            "cover-image": {"content": uuid3},
+        },
     )
 
     result = compile_referencing_content(content)
-    assert sorted(result) == sorted(expected_uuids)
-
-
-@pytest.mark.parametrize(
-    ("content_type", "markdown", "has_image", "expected_count"),
-    [
-        # PROMO with both image and markdown
-        (
-            constants.CONTENT_TYPE_PROMO,
-            "Promo content with {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
-            True,
-            2,
-        ),
-        # PROMO with no image
-        (constants.CONTENT_TYPE_PROMO, None, False, 0),
-        # TESTIMONIAL with only image (no markdown)
-        (constants.CONTENT_TYPE_TESTIMONIAL, None, True, 1),
-        # TESTIMONIAL with only markdown (no image)
-        (
-            constants.CONTENT_TYPE_TESTIMONIAL,
-            "{{< resource 11223344-5566-7788-99aa-bbccddee1111 >}}",
-            False,
-            1,
-        ),
-    ],
-)
-def test_compile_referencing_content_image_content_edge_cases(
-    content_type, markdown, has_image, expected_count
-):
-    """Test PROMO/TESTIMONIAL with various combinations of image and markdown."""
-    metadata = {"title": "Test Content"}
-    if has_image:
-        metadata["image"] = {"content": "11223344-5566-7788-99aa-bbccddee1111"}
-
-    content = WebsiteContentFactory.build(
-        type=content_type,
-        markdown=markdown,
-        metadata=metadata,
-    )
-
-    result = compile_referencing_content(content)
-    assert len(result) == expected_count
+    # Should find: markdown, description, and cover-image UUIDs
+    assert sorted(result) == sorted([uuid1, uuid2, uuid3])

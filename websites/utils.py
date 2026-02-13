@@ -13,8 +13,8 @@ log = logging.getLogger(__name__)
 
 UUID_REGEX_STR = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
-# Compiled regexes for parse_resource_uuid (module scope for performance)
-_RESOURCE_SHORTCODE_REGEX = re.compile(
+# Compiled regexes for parse_resource_uuid (moved to module scope for performance)
+_RESOURCE_LINK_AND_EMBED_REGEX = re.compile(
     rf"""
     \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
     |
@@ -22,7 +22,7 @@ _RESOURCE_SHORTCODE_REGEX = re.compile(
     """,
     re.VERBOSE,
 )
-_ATTR_UUID_REGEX = re.compile(
+_ATTRIBUTE_UUID_REGEX = re.compile(
     rf'(?:^|\s)(?:uuid|href_uuid|href-uuid)\s*=\s*"?({UUID_REGEX_STR})"?(?=\s|$)'
 )
 _POSITIONAL_UUID_REGEX = re.compile(rf'^\s*"?({UUID_REGEX_STR})"?(?=\s|$)')
@@ -129,7 +129,7 @@ def get_metadata_content_key(content) -> list:
         ):
             content_keys = [
                 constants.METADATA_FIELD_DESCRIPTION,
-                constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
+                constants.METADATA_FIELD_RESOURCES_CONTENT,
             ]
         case constants.CONTENT_TYPE_VIDEO_GALLERY:
             content_keys = [constants.METADATA_FIELD_VIDEO_GALLERY_VIDEOS]
@@ -150,6 +150,11 @@ def get_metadata_content_key(content) -> list:
                 constants.METADATA_FIELD_DESCRIPTION,
                 constants.METADATA_FIELD_COVER_IMAGE,
                 constants.METADATA_FIELD_COURSE_LISTS,
+            ]
+        case constants.CONTENT_TYPE_COURSE_LIST:
+            content_keys = [
+                constants.METADATA_FIELD_DESCRIPTION,
+                constants.METADATA_FIELD_COURSE_LIST_COURSES,
             ]
         case (
             constants.CONTENT_TYPE_PROMO
@@ -206,7 +211,7 @@ def parse_resource_uuid(text: str) -> list[str]:
     #
     # UUID format: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
     # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
-    matches = _RESOURCE_SHORTCODE_REGEX.findall(text)
+    matches = _RESOURCE_LINK_AND_EMBED_REGEX.findall(text)
 
     references = []
     for match in matches:
@@ -217,7 +222,7 @@ def parse_resource_uuid(text: str) -> list[str]:
         if not match[2]:
             continue
 
-        attr_references = _ATTR_UUID_REGEX.findall(match[2])
+        attr_references = _ATTRIBUTE_UUID_REGEX.findall(match[2])
         if attr_references:
             references.extend(attr_references)
             continue
@@ -243,6 +248,11 @@ def _extract_relation_text_ids(resource_data: list) -> list[str]:
             # Cross-site relation widgets can store entries as
             # [text_id, website_name].
             references.append(relation_value[0])
+        elif isinstance(relation_value, dict):
+            # Handle both text_id (course-lists) and id (website-collections)
+            relation_id = relation_value.get("text_id") or relation_value.get("id")
+            if isinstance(relation_id, str):
+                references.append(relation_id)
     return references
 
 
