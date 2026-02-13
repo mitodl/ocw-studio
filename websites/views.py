@@ -2,7 +2,7 @@
 
 import json
 import logging
-import os
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -10,11 +10,13 @@ from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.db.models import Case, CharField, F, OuterRef, Prefetch, Q, Value, When
 from django.utils.functional import cached_property
 from django.utils.text import slugify
+from github import GithubException
 from guardian.shortcuts import get_groups_with_perms, get_objects_for_user
 from mitol.common.utils.datetime import now_in_utc
+from requests import HTTPError
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_extensions.mixins import NestedViewSetMixin
@@ -236,11 +238,34 @@ class WebsiteViewSet(
                 )
             trigger_publish(website.name, version)
             return Response(status=200)
-        except ValidationError as ve:
-            return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error publishing %s version for %s", version, name)
-            return Response(status=500, data={"details": str(exc)})
+        except (ValidationError, PermissionDenied):
+            # Let DRF handle these exceptions
+            raise
+        except GithubException:
+            log.exception(
+                "GitHub error publishing %s version for %s (user: %s)",
+                version,
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={
+                    "error": "Failed to publish website",
+                    "error_type": "github_error",
+                },
+            )
+        except Exception:  # pylint: disable=broad-except
+            log.exception(
+                "Error publishing %s version for %s (user: %s)",
+                version,
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"error": "Failed to publish website", "error_type": "unknown"},
+            )
 
     @action(
         detail=True, methods=["post"], permission_classes=[HasWebsitePreviewPermission]
@@ -314,11 +339,38 @@ class WebsiteViewSet(
                     status=200,
                     data="The site has been submitted for unpublishing.",
                 )
-        except Exception as exc:  # pylint: disable=broad-except
-            log.exception("Error unpublishing %s", name)
-            return Response(status=500, data={"details": str(exc)})
+        except PermissionDenied:
+            # Let DRF handle permission exceptions
+            raise
+        except HTTPError:
+            log.exception(
+                "HTTP error unpublishing %s (user: %s)",
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={
+                    "error": "Failed to unpublish website",
+                    "error_type": "http_error",
+                },
+            )
+        except Exception:  # pylint: disable=broad-except
+            log.exception(
+                "Error unpublishing %s (user: %s)",
+                name,
+                request.user.username if request.user else "anonymous",
+            )
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"error": "Failed to unpublish website", "error_type": "unknown"},
+            )
 
-    @action(detail=True, methods=["post"], permission_classes=[BearerTokenPermission])
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[BearerTokenPermission],
+    )
     def pipeline_status(self, request, name=None):
         """Process webhook requests from concourse pipeline runs"""
         website = get_object_or_404(Website, name=name)
@@ -491,18 +543,40 @@ class WebsiteStarterViewSet(
                         for commit in data["commits"]
                     ]
                     for file in sublist
-                    if os.path.basename(file)  # noqa: PTH119
-                    == settings.OCW_STUDIO_SITE_CONFIG_FILE
+                    if Path(file).name == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 sync_github_website_starters(
                     data["repository"]["html_url"], files, commit=data.get("after")
                 )
-            except Exception as exc:  # pylint: disable=broad-except
-                log.exception("Error syncing config files")
-                return Response(status=500, data={"details": str(exc)})
+            except KeyError:
+                log.exception(
+                    "Key error syncing config files from repo %s, commit: %s",
+                    data.get("repository", {}).get("html_url"),
+                    data.get("after"),
+                )
+                return Response(
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    data={
+                        "error": "Failed to sync site configuration files",
+                        "error_type": "key_error",
+                    },
+                )
+            except Exception:  # pylint: disable=broad-except
+                log.exception(
+                    "Error syncing config files from repo %s, files: %s, commit: %s",
+                    data.get("repository", {}).get("html_url"),
+                    files if "files" in locals() else [],
+                    data.get("after"),
+                )
+                return Response(
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    data={
+                        "error": "Failed to sync site configuration files",
+                        "error_type": "unknown",
+                    },
+                )
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
-            # Only github webhooks are currently supported
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
