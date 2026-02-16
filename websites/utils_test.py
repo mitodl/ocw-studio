@@ -11,6 +11,7 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
+    populate_course_list_text_ids,
     set_dict_field,
 )
 
@@ -1093,3 +1094,98 @@ def test_compile_referencing_content_course_collection_with_description():
     result = compile_referencing_content(content)
     # Should find: markdown, description, and cover-image UUIDs
     assert sorted(result) == sorted([uuid1, uuid2, uuid3])
+
+
+@pytest.mark.django_db
+def test_populate_course_list_text_ids_success():
+    """Test successful population of text_id for course references"""
+    website = WebsiteFactory.create(url_path="courses/test-course")
+    sitemetadata = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_METADATA,
+    )
+
+    # Build without saving to avoid signal
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        metadata={
+            "courses": [
+                {
+                    "id": "courses/test-course",
+                    "title": "Test Course",
+                }
+            ]
+        },
+    )
+
+    result = populate_course_list_text_ids(content)
+
+    assert result is True
+    assert content.metadata["courses"][0]["text_id"] == sitemetadata.text_id
+
+
+@pytest.mark.django_db
+def test_populate_course_list_text_ids_with_normalization():
+    """Test that paths with slashes/whitespace are normalized correctly"""
+    website = WebsiteFactory.create(url_path="courses/test-course")
+    sitemetadata = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_METADATA,
+    )
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        metadata={
+            "courses": [
+                {"id": "/courses/test-course/", "title": "With Slashes"},
+                {"id": "  courses/test-course  ", "title": "With Whitespace"},
+            ]
+        },
+    )
+
+    result = populate_course_list_text_ids(content)
+
+    assert result is True
+    assert content.metadata["courses"][0]["text_id"] == sitemetadata.text_id
+    assert content.metadata["courses"][1]["text_id"] == sitemetadata.text_id
+
+
+def test_populate_course_list_text_ids_skips_existing():
+    """Test that entries with existing text_id are skipped"""
+    existing_uuid = "12345678-1234-1234-1234-123456789012"
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        metadata={
+            "courses": [
+                {
+                    "id": "courses/test",
+                    "title": "Test",
+                    "text_id": existing_uuid,
+                }
+            ]
+        },
+    )
+
+    result = populate_course_list_text_ids(content)
+
+    assert result is False
+    assert content.metadata["courses"][0]["text_id"] == existing_uuid
+
+
+def test_populate_course_list_text_ids_invalid_input():
+    """Test function handles invalid inputs gracefully"""
+    # Non-course-list content
+    content = WebsiteContentFactory.build(type=constants.CONTENT_TYPE_PAGE)
+    assert populate_course_list_text_ids(content) is False
+
+    # No metadata
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST, metadata=None
+    )
+    assert populate_course_list_text_ids(content) is False
+
+    # Empty courses list
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST, metadata={"courses": []}
+    )
+    assert populate_course_list_text_ids(content) is False

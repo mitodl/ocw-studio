@@ -16,7 +16,6 @@ from websites.constants import (
     CONTENT_TYPE_STORY,
     CONTENT_TYPE_TESTIMONIAL,
     CONTENT_TYPE_VIDEO_GALLERY,
-    CONTENT_TYPE_WEBSITE,
 )
 from websites.factories import (
     WebsiteContentFactory,
@@ -522,7 +521,7 @@ def test_course_collection_references_detected():
 
 @override_settings(OCW_COURSE_STARTER_SLUG="course-referencing-test")
 def test_course_list_courses_references_detected():
-    """Course-list course ids like courses/<short_id> should resolve to website listings."""
+    """Course-list course ids should resolve to sitemetadata (consistent for all courses)."""
     course_starter = WebsiteStarterFactory.create(
         slug="course-referencing-test",
         config={"root-url-path": "courses"},
@@ -530,21 +529,22 @@ def test_course_list_courses_references_detected():
     ocw_www = WebsiteFactory.create(name="ocw-www")
     course_site_1 = WebsiteFactory.create(
         short_id="test-course-1",
+        url_path="courses/test-course-1",
         starter=course_starter,
     )
     course_site_2 = WebsiteFactory.create(
         short_id="test-course-2",
+        url_path="courses/test-course-2",
         starter=course_starter,
     )
-    listing_1 = WebsiteContentFactory.create(
-        website=ocw_www,
-        type=CONTENT_TYPE_WEBSITE,
-        filename=course_site_1.short_id,
+    # Create sitemetadata for each course (consistent approach)
+    sitemetadata_1 = WebsiteContentFactory.create(
+        website=course_site_1,
+        type=CONTENT_TYPE_METADATA,
     )
-    listing_2 = WebsiteContentFactory.create(
-        website=ocw_www,
-        type=CONTENT_TYPE_WEBSITE,
-        filename=course_site_2.short_id,
+    sitemetadata_2 = WebsiteContentFactory.create(
+        website=course_site_2,
+        type=CONTENT_TYPE_METADATA,
     )
 
     course_list = WebsiteContentFactory.create(
@@ -553,8 +553,16 @@ def test_course_list_courses_references_detected():
         metadata={
             "description": "No markdown refs here",
             "courses": [
-                {"id": f"courses/{course_site_1.short_id}", "title": "Course 1"},
-                {"id": f"courses/{course_site_2.short_id}", "title": "Course 2"},
+                {
+                    "id": f"courses/{course_site_1.short_id}",
+                    "text_id": sitemetadata_1.text_id,
+                    "title": "Course 1",
+                },
+                {
+                    "id": f"courses/{course_site_2.short_id}",
+                    "text_id": sitemetadata_2.text_id,
+                    "title": "Course 2",
+                },
             ],
         },
     )
@@ -566,8 +574,8 @@ def test_course_list_courses_references_detected():
     course_list.refresh_from_db()
     referenced_content = list(course_list.referenced_by.all())
     assert len(referenced_content) == 2
-    assert listing_1 in referenced_content
-    assert listing_2 in referenced_content
+    assert sitemetadata_1 in referenced_content
+    assert sitemetadata_2 in referenced_content
 
 
 def test_promo_references_detected():

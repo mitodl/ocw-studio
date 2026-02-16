@@ -4,7 +4,6 @@ from django.db import transaction
 
 from main.management.commands.filter import WebsiteFilterCommand
 from websites import constants
-from websites.api import fetch_website
 from websites.models import Website, WebsiteContent
 
 
@@ -81,12 +80,9 @@ class Command(WebsiteFilterCommand):
 
                 # Extract short_id from path like "courses/18-01-fall-2020"
                 course_ref = course_entry["id"]
-                normalized = course_ref.strip().strip("/")
-                short_id = (
-                    normalized.split("/")[-1] if "/" in normalized else normalized
-                )
+                normalized_path = course_ref.strip().strip("/")
 
-                if not short_id:
+                if not normalized_path:
                     if verbosity >= 2:  # noqa: PLR2004
                         msg = "  Skipping empty reference in "
                         msg += course_list.text_id
@@ -95,30 +91,34 @@ class Command(WebsiteFilterCommand):
                     continue
 
                 try:
-                    # Find the website by short_id
-                    website = fetch_website(short_id)
+                    # Find the website by url_path (the id field is url_path)
+                    website = Website.objects.get(url_path=normalized_path)
 
-                    # Find the website-listing content for this course
-                    listing = WebsiteContent.objects.filter(
-                        website_id=course_list.website_id,
-                        type=constants.CONTENT_TYPE_WEBSITE,
-                        filename=website.short_id,
+                    # Find the sitemetadata for this course (consistent for all courses)
+                    sitemetadata = WebsiteContent.objects.filter(
+                        website=website,
+                        type=constants.CONTENT_TYPE_METADATA,
                     ).first()
 
-                    if listing:
+                    if sitemetadata:
                         # Add text_id alongside existing id
-                        updated_entry = {**course_entry, "text_id": listing.text_id}
+                        updated_entry = {
+                            **course_entry,
+                            "text_id": sitemetadata.text_id,
+                        }
                         updated_courses.append(updated_entry)
                         needs_update = True
 
                         if verbosity >= 2:  # noqa: PLR2004
                             msg = "  Added text_id for "
-                            msg += f"{course_entry['id']} → {listing.text_id}"
+                            msg += f"{course_entry['id']} → {sitemetadata.text_id}"
                             self.stdout.write(msg)
                     else:
                         if verbosity >= 2:  # noqa: PLR2004
-                            msg = f"  No listing for course {short_id} "
-                            msg += f"in {course_list.text_id}"
+                            msg = (
+                                f"  No sitemetadata for course with "
+                                f"url_path {normalized_path} in {course_list.text_id}"
+                            )
                             self.stdout.write(self.style.WARNING(msg))
                         updated_courses.append(course_entry)
 
@@ -126,7 +126,7 @@ class Command(WebsiteFilterCommand):
                     if verbosity >= 2:  # noqa: PLR2004
                         self.stdout.write(
                             self.style.WARNING(
-                                f"  Website not found for short_id: {short_id}"
+                                f"  Website not found for url_path: {normalized_path}"
                             )
                         )
                     updated_courses.append(course_entry)

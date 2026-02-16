@@ -249,11 +249,90 @@ def _extract_relation_text_ids(resource_data: list) -> list[str]:
             # [text_id, website_name].
             references.append(relation_value[0])
         elif isinstance(relation_value, dict):
-            # Handle both text_id (course-lists) and id (website-collections)
+            # Handle both text_id (preferred) and id (fallback)
             relation_id = relation_value.get("text_id") or relation_value.get("id")
             if isinstance(relation_id, str):
                 references.append(relation_id)
     return references
+
+
+def _get_sitemetadata_for_course_path(course_id: str) -> str | None:
+    """
+    Get sitemetadata text_id for a course path reference.
+
+    Args:
+        course_id: Course path like "courses/test-spring-2001"
+
+    Returns:
+        The sitemetadata text_id if found, None otherwise
+    """
+    from websites.models import Website  # noqa: PLC0415
+
+    normalized_path = course_id.strip().strip("/")
+
+    try:
+        website = Website.objects.get(url_path=normalized_path)
+        sitemetadata = website.websitecontent_set.filter(
+            type=constants.CONTENT_TYPE_METADATA
+        ).first()
+
+        if sitemetadata:
+            log.info(
+                "Auto-populated text_id for %s → %s",
+                course_id,
+                sitemetadata.text_id,
+            )
+            return sitemetadata.text_id
+    except Website.DoesNotExist:
+        log.debug(
+            "Could not find website for course path: %s",
+            course_id,
+        )
+
+    return None
+
+
+def populate_course_list_text_ids(content) -> bool:
+    """
+    Populate text_id fields in course-list entries based on path references.
+
+    Args:
+        content: WebsiteContent instance
+
+    Returns:
+        True if any changes were made, False otherwise
+    """
+    # Only process course-list content with valid metadata
+    if (
+        content.type != constants.CONTENT_TYPE_COURSE_LIST
+        or not content.metadata
+        or not isinstance(content.metadata, dict)
+    ):
+        return False
+
+    courses = content.metadata.get(constants.METADATA_FIELD_COURSE_LIST_COURSES, [])
+    if not courses:
+        return False
+
+    modified = False
+
+    for course_entry in courses:
+        # Only process dict entries without text_id
+        if not isinstance(course_entry, dict) or course_entry.get("text_id"):
+            continue
+
+        course_id = course_entry.get("id")
+        # Only process path-like string references (e.g., "courses/...")
+        if not isinstance(course_id, str) or "/" not in course_id:
+            continue
+
+        # Try to find and populate text_id
+        text_id = _get_sitemetadata_for_course_path(course_id)
+        if text_id:
+            course_entry["text_id"] = text_id
+            modified = True
+
+    return modified
 
 
 def compile_referencing_content(content) -> list[str]:
