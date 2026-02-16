@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.178.2
+---------------
+
+- chore(deps): update nginx docker tag to v1.29.5 (#2904)
+- Remove Elasticsearch from CI (#2898)
+- chore(deps): update dependency pytest-env to v1.3.2 (#2903)
+- chore(deps): update node.js to v24.13.1 (#2901)
+- fix(deps): update dependency boto3 to v1.42.49 (#2902)
+- Reload Studio on route change if hash changed (#2888)
+- Fix flaky Router test (#2895)
+- Fix flaky SortableSelect test (#2894)
+- fix: webpack during dockerbuild  (#2889)
+
 Version 0.178.1 (Released February 12, 2026)
 ---------------
 
