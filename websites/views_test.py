@@ -1062,21 +1062,22 @@ def test_websites_content_create_course_list_sets_references(
     ocw_www = WebsiteFactory.create(name="ocw-www")
     course_site_1 = WebsiteFactory.create(
         short_id="view-test-course-1",
+        url_path="courses/view-test-course-1",
         starter=course_starter,
     )
     course_site_2 = WebsiteFactory.create(
         short_id="view-test-course-2",
+        url_path="courses/view-test-course-2",
         starter=course_starter,
     )
+    # Create sitemetadata for each course - these are what get referenced
     listing_1 = WebsiteContentFactory.create(
-        website=ocw_www,
-        type=constants.CONTENT_TYPE_WEBSITE,
-        filename=course_site_1.short_id,
+        website=course_site_1,
+        type=constants.CONTENT_TYPE_METADATA,
     )
     listing_2 = WebsiteContentFactory.create(
-        website=ocw_www,
-        type=constants.CONTENT_TYPE_WEBSITE,
-        filename=course_site_2.short_id,
+        website=course_site_2,
+        type=constants.CONTENT_TYPE_METADATA,
     )
 
     payload = {

@@ -160,7 +160,8 @@ class Command(WebsiteFilterCommand):
         for path_ref in path_like_refs:
             # Try to find website by url_path
             try:
-                website = Website.objects.get(url_path=path_ref)
+                normalized_path = path_ref.strip().strip("/")
+                website = Website.objects.get(url_path=normalized_path)
                 # Find representative content from this website (prefer sitemetadata)
                 representative = (
                     WebsiteContent.objects.filter(

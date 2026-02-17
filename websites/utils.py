@@ -249,7 +249,6 @@ def _extract_relation_text_ids(resource_data: list) -> list[str]:
             # [text_id, website_name].
             references.append(relation_value[0])
         elif isinstance(relation_value, dict):
-            # Handle both text_id (preferred) and id (fallback)
             relation_id = relation_value.get("text_id") or relation_value.get("id")
             if isinstance(relation_id, str):
                 references.append(relation_id)
