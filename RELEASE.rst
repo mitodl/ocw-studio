@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.178.2
+Version 0.178.2 (Released February 17, 2026)
 ---------------
 
 - chore(deps): update nginx docker tag to v1.29.5 (#2904)
