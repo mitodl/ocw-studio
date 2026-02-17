@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.conf import settings  # noqa: D100
 from ol_concourse.lib.models.pipeline import (
     Command,
     GetStep,
@@ -28,7 +28,8 @@ class S3BucketSyncPipelineDefinition(Pipeline):
     A Pipeline that syncs S3 buckets periodically:
 
      - Triggers on a configurable time interval
-     - Uses AWS CLI to sync from AWS_IMPORT_STORAGE_BUCKET_NAME to AWS_STORAGE_BUCKET_NAME
+     - Uses AWS CLI to sync from AWS_IMPORT_STORAGE_BUCKET_NAME to
+       AWS_STORAGE_BUCKET_NAME
 
     Args:
         import_bucket(str): The S3 bucket to sync from (source)
@@ -36,7 +37,7 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         sync_interval(str): The time interval for syncing (e.g., "24h", "12h", "6h")
     """
 
-    def __init__(
+    def __init__( # noqa: D107
         self,
         import_bucket: str,
         storage_bucket: str,
