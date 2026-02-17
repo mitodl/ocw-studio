@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.178.3
+---------------
+
+- Update reset_sync_states management command (#2897)
+
 Version 0.178.2 (Released February 17, 2026)
 ---------------
 
