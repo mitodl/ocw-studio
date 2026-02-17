@@ -1,4 +1,4 @@
-from django.conf import settings  # noqa: D100
+from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     Command,
     GetStep,
@@ -37,7 +37,7 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         sync_interval(str): The time interval for syncing (e.g., "24h", "12h", "6h")
     """
 
-    def __init__( # noqa: D107
+    def __init__(
         self,
         import_bucket: str,
         storage_bucket: str,
