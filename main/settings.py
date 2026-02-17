@@ -452,6 +452,16 @@ AWS_OFFLINE_TEST_BUCKET_NAME = get_string(
     default=None,
     description="S3 offline test bucket name.",
 )
+AWS_IMPORT_STORAGE_BUCKET_NAME = get_string(
+    name="AWS_IMPORT_STORAGE_BUCKET_NAME",
+    default=None,
+    description="S3 bucket name to import/sync storage from.",
+)
+AWS_S3_SYNC_INTERVAL = get_string(
+    name="AWS_S3_SYNC_INTERVAL",
+    default="24h",
+    description="Interval for S3 bucket sync pipeline (e.g., '24h', '12h', '6h').",
+)
 AWS_QUERYSTRING_AUTH = get_bool(
     name="AWS_QUERYSTRING_AUTH",
     default=False,

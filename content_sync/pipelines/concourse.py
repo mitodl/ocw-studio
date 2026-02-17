@@ -27,6 +27,7 @@ from content_sync.pipelines.base import (
     BaseGeneralPipeline,
     BaseMassBuildSitesPipeline,
     BasePipelineApi,
+    BaseS3BucketSyncPipeline,
     BaseSitePipeline,
     BaseTestPipeline,
     BaseThemeAssetsPipeline,
@@ -41,6 +42,9 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
 )
 from content_sync.pipelines.definitions.concourse.remove_unpublished_sites import (
     UnpublishedSiteRemovalPipelineDefinition,
+)
+from content_sync.pipelines.definitions.concourse.s3_bucket_sync_pipeline import (
+    S3BucketSyncPipelineDefinition,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
@@ -655,3 +659,29 @@ class TestPipeline(BaseTestPipeline, GeneralPipeline):
             ).json(),
             self.PIPELINE_NAME,
         )
+
+
+class S3BucketSyncPipeline(BaseS3BucketSyncPipeline, GeneralPipeline):
+    """Concourse pipeline to sync S3 buckets periodically"""
+
+    PIPELINE_NAME = BaseS3BucketSyncPipeline.PIPELINE_NAME
+
+    def __init__(self, api: PipelineApi | None = None):
+        """Initialize the pipeline instance"""
+        self.MANDATORY_SETTINGS = [
+            *MANDATORY_CONCOURSE_SETTINGS,
+            "AWS_STORAGE_BUCKET_NAME",
+            "AWS_IMPORT_STORAGE_BUCKET_NAME",
+        ]
+        super().__init__(api=api)
+
+    def upsert_pipeline(self):
+        """
+        Create or update the concourse pipeline
+        """
+        pipeline_definition = S3BucketSyncPipelineDefinition(
+            import_bucket=settings.AWS_IMPORT_STORAGE_BUCKET_NAME,
+            storage_bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            sync_interval=settings.AWS_S3_SYNC_INTERVAL,
+        )
+        self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
