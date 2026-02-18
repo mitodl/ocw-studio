@@ -46,7 +46,7 @@ export const getWebsiteListingCursor = createSelector(
 )
 
 export const startersSelector = (state: ReduxState): Array<WebsiteStarter> =>
-  state.entities?.starters ?? []
+  state.entities?.starters
 
 export interface WebsiteCollaboratorListSelection extends WCSelection {
   results: WebsiteCollaborator[]

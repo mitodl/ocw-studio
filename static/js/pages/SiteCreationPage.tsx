@@ -70,7 +70,7 @@ export default function SiteCreationPage({
     history.push(siteDetailUrl.param({ name: newWebsiteName }).toString())
   }
 
-  const websiteStarters = useSelector(startersSelector)
+  const websiteStarters = useSelector(startersSelector) ?? []
 
   if (starterQueryState.isPending) {
     return (
