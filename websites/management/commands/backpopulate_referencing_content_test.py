@@ -8,9 +8,12 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 
 from websites.constants import (
+    CONTENT_TYPE_COURSE_COLLECTION,
+    CONTENT_TYPE_HOMEPAGE_SETTINGS,
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
+    CONTENT_TYPE_PROMO,
     CONTENT_TYPE_RESOURCE,
     CONTENT_TYPE_RESOURCE_LIST,
     CONTENT_TYPE_STORY,
