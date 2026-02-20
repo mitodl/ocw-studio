@@ -95,67 +95,64 @@ def test_populate_course_list_text_ids_on_save():
 
 
 @pytest.mark.django_db
-def test_populate_course_list_text_ids_skips_existing():
-    """Test that existing text_id values are not overwritten"""
-    # Create a course website with sitemetadata
-    course_website = WebsiteFactory.create(url_path="courses/test-course-2025")
-    sitemetadata = WebsiteContentFactory.create(
-        website=course_website,
-        type=constants.CONTENT_TYPE_METADATA,
-    )
-
-    # Create an ocw-www website for the course-list
+@pytest.mark.parametrize(
+    ("setup_course", "existing_text_id", "expected_behavior"),
+    [
+        (
+            True,
+            "00000000-0000-0000-0000-000000000000",
+            "preserves_existing",
+        ),  # Existing text_id should be preserved
+        (
+            False,
+            None,
+            "missing_website",
+        ),  # Missing website should not add text_id
+    ],
+)
+def test_populate_course_list_text_ids_edge_cases(
+    setup_course, existing_text_id, expected_behavior
+):
+    """Test edge cases: existing text_id preservation and missing website handling"""
     ocw_www = WebsiteFactory.create(name="ocw-www")
+    sitemetadata = None
 
-    # Create a course-list WITH text_id already present
-    existing_text_id = "00000000-0000-0000-0000-000000000000"
+    # Setup course website if needed
+    if setup_course:
+        course_website = WebsiteFactory.create(url_path="courses/test-course-2025")
+        sitemetadata = WebsiteContentFactory.create(
+            website=course_website,
+            type=constants.CONTENT_TYPE_METADATA,
+        )
+
+    # Prepare metadata
+    course_metadata = {
+        "id": "courses/test-course-2025"
+        if setup_course
+        else "courses/non-existent-course",
+        "title": "Test Course 2025" if setup_course else "Non-Existent Course",
+    }
+    if existing_text_id:
+        course_metadata["text_id"] = existing_text_id
+
+    # Create course-list
     course_list = WebsiteContentFactory.create(
         website=ocw_www,
         type=constants.CONTENT_TYPE_COURSE_LIST,
-        metadata={
-            "courses": [
-                {
-                    "id": "courses/test-course-2025",
-                    "title": "Test Course 2025",
-                    "text_id": existing_text_id,  # Already has text_id
-                }
-            ]
-        },
+        metadata={"courses": [course_metadata]},
     )
 
     # Refresh from database
     course_list.refresh_from_db()
 
-    # Verify text_id was NOT changed (existing value preserved)
-    assert course_list.metadata["courses"][0]["text_id"] == existing_text_id
-    assert course_list.metadata["courses"][0]["text_id"] != sitemetadata.text_id
-
-
-@pytest.mark.django_db
-def test_populate_course_list_text_ids_handles_missing_website():
-    """Test that signal handles missing websites gracefully"""
-    ocw_www = WebsiteFactory.create(name="ocw-www")
-
-    # Create a course-list referencing a non-existent course
-    course_list = WebsiteContentFactory.create(
-        website=ocw_www,
-        type=constants.CONTENT_TYPE_COURSE_LIST,
-        metadata={
-            "courses": [
-                {
-                    "id": "courses/non-existent-course",
-                    "title": "Non-Existent Course",
-                    # No text_id
-                }
-            ]
-        },
-    )
-
-    # Refresh from database
-    course_list.refresh_from_db()
-
-    # Verify text_id was NOT added (website doesn't exist)
-    assert "text_id" not in course_list.metadata["courses"][0]
+    # Verify behavior based on test case
+    if expected_behavior == "preserves_existing":
+        # Existing text_id should be preserved
+        assert course_list.metadata["courses"][0]["text_id"] == existing_text_id
+        assert course_list.metadata["courses"][0]["text_id"] != sitemetadata.text_id
+    elif expected_behavior == "missing_website":
+        # Missing website should not add text_id
+        assert "text_id" not in course_list.metadata["courses"][0]
 
 
 @pytest.mark.django_db
