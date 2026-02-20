@@ -169,13 +169,11 @@ class Command(WebsiteFilterCommand):
                     content = WebsiteContent.objects.get(id=content_id)
 
                     # Get valid referenced content objects
-                    referenced_content_ids = [
+                    referenced_content_ids = {
                         referenced_content_map[ref_uuid].id
                         for ref_uuid in reference_uuids
                         if ref_uuid in referenced_content_map
-                    ]
-
-                    referenced_content_ids = list(set(referenced_content_ids))
+                    }
 
                     if referenced_content_ids:
                         referenced_objects = WebsiteContent.objects.filter(
