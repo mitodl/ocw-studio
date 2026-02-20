@@ -95,3 +95,9 @@ class BaseTestPipeline(BasePipeline):
     """Base class for end to end testing"""
 
     PIPELINE_NAME = "e2e-test-pipeline"
+
+
+class BaseS3BucketSyncPipeline(BasePipeline):
+    """Base class for S3 bucket syncing"""
+
+    PIPELINE_NAME = "s3-bucket-sync"

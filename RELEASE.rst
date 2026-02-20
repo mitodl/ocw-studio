@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Version 0.178.3
+---------------
+
+- chore(deps): update dependency pypdf to v6.7.1 [security] (#2907)
+- feat: track referencing_content for missing content types (#2892)
+- Replace polyfill url (#2743)
+- feat: Add S3 content sync pipeline (#2877)
+- Update reset_sync_states management command (#2897)
+
 Version 0.178.2 (Released February 17, 2026)
 ---------------
 

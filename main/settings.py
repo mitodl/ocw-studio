@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.178.2"
+VERSION = "0.178.3"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -451,6 +451,16 @@ AWS_OFFLINE_TEST_BUCKET_NAME = get_string(
     name="AWS_OFFLINE_TEST_BUCKET_NAME",
     default=None,
     description="S3 offline test bucket name.",
+)
+AWS_IMPORT_STORAGE_BUCKET_NAME = get_string(
+    name="AWS_IMPORT_STORAGE_BUCKET_NAME",
+    default=None,
+    description="S3 bucket name to import/sync storage from.",
+)
+AWS_S3_SYNC_INTERVAL = get_string(
+    name="AWS_S3_SYNC_INTERVAL",
+    default="24h",
+    description="Interval for S3 bucket sync pipeline (e.g., '24h', '12h', '6h').",
 )
 AWS_QUERYSTRING_AUTH = get_bool(
     name="AWS_QUERYSTRING_AUTH",

@@ -262,16 +262,19 @@ class BackpopulateReferencingContentCommandIntegrationTest(TestCase):
 
 @pytest.fixture
 def ocw_www():
+    """Create the ocw-www website fixture."""
     return WebsiteFactory.create(name="ocw-www")
 
 
 @pytest.fixture
 def course_website():
+    """Create a course website fixture."""
     return WebsiteFactory.create()
 
 
 @pytest.fixture
 def instructors(ocw_www):
+    """Create instructor content fixtures on ocw-www."""
     return [
         WebsiteContentFactory.create(
             website=ocw_www,
@@ -288,6 +291,7 @@ def instructors(ocw_www):
 
 @pytest.fixture
 def sitemetadata_with_instructors(course_website, instructors):
+    """Create sitemetadata that references instructor content."""
     return WebsiteContentFactory.create(
         website=course_website,
         type=CONTENT_TYPE_METADATA,

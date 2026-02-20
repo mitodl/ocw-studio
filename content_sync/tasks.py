@@ -254,6 +254,18 @@ def trigger_unpublished_removal(website_name: str) -> bool:
     return True
 
 
+@app.task(acks_late=True)
+def upsert_s3_bucket_sync_pipeline(
+    unpause=False,  # noqa: FBT002
+) -> bool:
+    """Upsert the S3 bucket sync pipeline"""
+    pipeline = api.get_s3_bucket_sync_pipeline()
+    pipeline.upsert_pipeline()
+    if unpause:
+        pipeline.unpause()
+    return True
+
+
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
 @single_task(10)
 def sync_website_content(website_name: str):
