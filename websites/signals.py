@@ -45,8 +45,10 @@ def populate_course_list_text_ids_on_save(
     """
     Auto-populate text_id fields in course-list entries when saving.
     """
-    if instance.type == CONTENT_TYPE_COURSE_LIST:
-        populate_course_list_text_ids(instance)
+    if instance.type == CONTENT_TYPE_COURSE_LIST and populate_course_list_text_ids(
+        instance
+    ):
+        instance.metadata = instance.metadata
 
 
 @receiver(pre_save, sender=WebsiteContent)

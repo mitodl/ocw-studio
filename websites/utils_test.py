@@ -11,6 +11,7 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
+    populate_course_list_text_ids,
     set_dict_field,
 )
 
@@ -1034,3 +1035,167 @@ def test_compile_referencing_content_image_content_edge_cases(
 
     result = compile_referencing_content(content)
     assert len(result) == expected_count
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("setup_data", "content_type", "metadata", "expected_result", "expected_text_id"),
+    [
+        # Invalid cases - return False
+        (None, constants.CONTENT_TYPE_PAGE, {}, False, None),  # Non-course-list
+        (None, constants.CONTENT_TYPE_COURSE_LIST, None, False, None),  # No metadata
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": []},
+            False,
+            None,
+        ),  # Empty courses
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": ["not_a_dict"]},
+            False,
+            None,
+        ),  # Non-dict entry
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"title": "No id field"}]},
+            False,
+            None,
+        ),  # Missing id
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "no-slash-in-path"}]},
+            False,
+            None,
+        ),  # Invalid path
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "courses/test", "text_id": "existing-id"}]},
+            False,
+            None,
+        ),  # Already has text_id
+        (
+            None,
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "courses/nonexistent-course", "title": "Test"}]},
+            False,
+            None,
+        ),  # Website doesn't exist
+        (
+            ("courses/no-metadata-course", None),
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "courses/no-metadata-course", "title": "Test"}]},
+            False,
+            None,
+        ),  # Website exists but no metadata
+        # Valid cases - return True and populate text_id
+        (
+            ("courses/test-spring-2001", "test-course-metadata"),
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "courses/test-spring-2001", "title": "Test"}]},
+            True,
+            "test-course-metadata",
+        ),  # Exact match
+        (
+            ("courses/test-spring-2001", "test-course-metadata"),
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "courses/test-spring-2001/", "title": "Test"}]},
+            True,
+            "test-course-metadata",
+        ),  # Trailing slash
+        (
+            ("courses/test-spring-2001", "test-course-metadata"),
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": "/courses/test-spring-2001", "title": "Test"}]},
+            True,
+            "test-course-metadata",
+        ),  # Leading slash
+        (
+            ("courses/test-spring-2001", "test-course-metadata"),
+            constants.CONTENT_TYPE_COURSE_LIST,
+            {"courses": [{"id": " courses/test-spring-2001 ", "title": "Test"}]},
+            True,
+            "test-course-metadata",
+        ),  # Extra whitespace
+    ],
+)
+def test_populate_course_list_text_ids(
+    setup_data, content_type, metadata, expected_result, expected_text_id
+):
+    """Test populate_course_list_text_ids with various input scenarios"""
+    # Setup test data if needed
+    if setup_data:
+        url_path, text_id = setup_data
+        website = WebsiteFactory.create(url_path=url_path)
+        if text_id:
+            WebsiteContentFactory.create(
+                website=website,
+                type=constants.CONTENT_TYPE_METADATA,
+                text_id=text_id,
+            )
+
+    content = WebsiteContentFactory.build(type=content_type, metadata=metadata)
+    result = populate_course_list_text_ids(content)
+
+    assert result is expected_result
+
+    # Check text_id was populated correctly for valid cases
+    if expected_text_id:
+        assert content.metadata["courses"][0]["text_id"] == expected_text_id
+    elif metadata and isinstance(metadata.get("courses"), list) and metadata["courses"]:
+        first_course = metadata["courses"][0]
+        if isinstance(first_course, dict) and "text_id" not in first_course:
+            assert "text_id" not in content.metadata["courses"][0]
+
+
+def test_populate_course_list_text_ids_handles_multiple_courses():
+    """Test function handles multiple course entries with mixed states"""
+    # Create websites with sitemetadata
+    website1 = WebsiteFactory.create(url_path="courses/test-spring-2001")
+    sitemetadata1 = WebsiteContentFactory.create(
+        website=website1,
+        type=constants.CONTENT_TYPE_METADATA,
+        text_id="test-spring-2001-metadata",
+    )
+
+    website2 = WebsiteFactory.create(url_path="courses/test-fall-2002")
+    WebsiteContentFactory.create(
+        website=website2,
+        type=constants.CONTENT_TYPE_METADATA,
+        text_id="test-fall-2002-metadata",
+    )
+
+    # Create course-list with mixed entries
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_LIST,
+        metadata={
+            "courses": [
+                {"id": "courses/test-spring-2001", "title": "Test Course Spring 2001"},
+                {
+                    "id": "courses/test-fall-2002",
+                    "title": "Test Course Fall 2002",
+                    "text_id": "already-has-id",
+                },  # Already has text_id
+                {"id": "invalid-no-slash"},  # Invalid format
+                {"title": "No id field"},  # Missing id field
+            ]
+        },
+    )
+
+    # Should return True (modifications made to first entry)
+    assert populate_course_list_text_ids(content) is True
+
+    # Check first entry was populated
+    assert content.metadata["courses"][0]["text_id"] == sitemetadata1.text_id
+
+    # Check second entry preserved existing text_id
+    assert content.metadata["courses"][1]["text_id"] == "already-has-id"
+
+    # Check invalid entries unchanged
+    assert "text_id" not in content.metadata["courses"][2]
+    assert "text_id" not in content.metadata["courses"][3]
