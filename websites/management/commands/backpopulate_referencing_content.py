@@ -4,7 +4,6 @@ from django.db import transaction
 from mitol.common.utils import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
-from websites import constants
 from websites.models import Website, WebsiteContent
 from websites.utils import compile_referencing_content
 
@@ -142,45 +141,13 @@ class Command(WebsiteFilterCommand):
         return content_references, all_reference_uuids
 
     def _fetch_referenced_content(self, all_reference_uuids, verbosity):
-        """Fetch referenced content in bulk, resolving path-like references."""
+        """Fetch referenced content in bulk."""
         referenced_content_map = {
             content.text_id: content
             for content in WebsiteContent.objects.filter(
                 text_id__in=all_reference_uuids
             ).only("id", "text_id")
         }
-
-        # Handle path-like references (e.g., "courses/test-course" for hidden courses)
-        unresolved = set(all_reference_uuids) - set(referenced_content_map.keys())
-        path_like_refs = [ref for ref in unresolved if "/" in ref]
-
-        if path_like_refs and verbosity >= 3:  # noqa: PLR2004
-            self.stdout.write(f"Resolving {len(path_like_refs)} path-like references")
-
-        for path_ref in path_like_refs:
-            # Try to find website by url_path
-            try:
-                normalized_path = path_ref.strip().strip("/")
-                website = Website.objects.get(url_path=normalized_path)
-                # Find representative content from this website (prefer sitemetadata)
-                representative = (
-                    WebsiteContent.objects.filter(
-                        website=website, type=constants.CONTENT_TYPE_METADATA
-                    )
-                    .only("id", "text_id")
-                    .first()
-                )
-                if representative:
-                    referenced_content_map[path_ref] = representative
-                    if verbosity >= 3:  # noqa: PLR2004
-                        msg = (
-                            f"Resolved {path_ref} → "
-                            f"{representative.text_id} (sitemetadata)"
-                        )
-                        self.stdout.write(msg)
-            except Website.DoesNotExist:
-                if verbosity >= 3:  # noqa: PLR2004
-                    self.stdout.write(f"Could not resolve path reference: {path_ref}")
 
         if verbosity >= 2:  # noqa: PLR2004
             self.stdout.write(
