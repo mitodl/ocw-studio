@@ -11,7 +11,6 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
-    populate_course_list_text_ids,
     set_dict_field,
 )
 
@@ -866,59 +865,56 @@ def test_compile_referencing_content_course_collection():
     assert sorted(result) == sorted([uuid1, uuid2, uuid3])
 
 
-def test_compile_referencing_content_promo():
-    """Test compile_referencing_content with PROMO type"""
-    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
-
+@pytest.mark.parametrize(
+    ("content_type", "markdown", "metadata", "expected_uuids"),
+    [
+        (
+            constants.CONTENT_TYPE_PROMO,
+            None,
+            {
+                "title": "Promo Title",
+                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
+            },
+            ["11223344-5566-7788-99aa-bbccddee1111"],
+        ),
+        (
+            constants.CONTENT_TYPE_TESTIMONIAL,
+            "Testimonial body with embedded resource {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
+            {
+                "title": "John Doe",
+                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
+            },
+            [
+                "11223344-5566-7788-99aa-bbccddee1111",
+                "22334455-6677-8899-aabb-ccddeeff2222",
+            ],
+        ),
+        (
+            constants.CONTENT_TYPE_STORY,
+            "Story body with embedded resource {{< resource 22334455-6677-8899-aabb-ccddeeff2222 >}}",
+            {
+                "title": "Story Title",
+                "image": {"content": "11223344-5566-7788-99aa-bbccddee1111"},
+            },
+            [
+                "11223344-5566-7788-99aa-bbccddee1111",
+                "22334455-6677-8899-aabb-ccddeeff2222",
+            ],
+        ),
+    ],
+)
+def test_compile_referencing_content_image_types(
+    content_type, markdown, metadata, expected_uuids
+):
+    """Test compile_referencing_content for content types with image fields (PROMO, TESTIMONIAL, STORY)."""
     content = WebsiteContentFactory.build(
-        type=constants.CONTENT_TYPE_PROMO,
-        markdown=None,
-        metadata={
-            "title": "Promo Title",
-            "image": {"content": uuid1},
-        },
+        type=content_type,
+        markdown=markdown,
+        metadata=metadata,
     )
 
     result = compile_referencing_content(content)
-    assert result == [uuid1]
-
-
-def test_compile_referencing_content_testimonial():
-    """Test compile_referencing_content with TESTIMONIAL type"""
-    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
-    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
-
-    content = WebsiteContentFactory.build(
-        type=constants.CONTENT_TYPE_TESTIMONIAL,
-        markdown=f"Testimonial body with embedded resource {{{{< resource {uuid2} >}}}}",
-        metadata={
-            "title": "John Doe",
-            "image": {"content": uuid1},
-            "body": "This is the testimonial text",
-        },
-    )
-
-    result = compile_referencing_content(content)
-    # Should find: uuid1 from image field, uuid2 from markdown
-    assert sorted(result) == sorted([uuid1, uuid2])
-
-
-def test_compile_referencing_content_story():
-    """Test compile_referencing_content with STORY type."""
-    uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
-    uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
-
-    content = WebsiteContentFactory.build(
-        type=constants.CONTENT_TYPE_STORY,
-        markdown=f"Story body with embedded resource {{{{< resource {uuid2} >}}}}",
-        metadata={
-            "title": "Story Title",
-            "image": {"content": uuid1},
-        },
-    )
-
-    result = compile_referencing_content(content)
-    assert sorted(result) == sorted([uuid1, uuid2])
+    assert sorted(result) == sorted(expected_uuids)
 
 
 def test_compile_referencing_content_ocw_www_featured_promos_and_stories():
@@ -1030,33 +1026,11 @@ def test_compile_referencing_content_image_content_edge_cases(
     if has_image:
         metadata["image"] = {"content": "11223344-5566-7788-99aa-bbccddee1111"}
 
+    content = WebsiteContentFactory.build(
+        type=content_type,
+        markdown=markdown,
+        metadata=metadata,
+    )
 
-@pytest.mark.parametrize(
-    ("content_type", "metadata", "description"),
-    [
-        (constants.CONTENT_TYPE_PAGE, {}, "Non-course-list content"),
-        (constants.CONTENT_TYPE_COURSE_LIST, None, "No metadata"),
-        (constants.CONTENT_TYPE_COURSE_LIST, {"courses": []}, "Empty courses list"),
-        (
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": ["not_a_dict"]},
-            "Non-dict course entry",
-        ),
-        (
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"title": "No id field"}]},
-            "Course entry without id field",
-        ),
-        (
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "no-slash-in-path"}]},
-            "Course id without path separator",
-        ),
-    ],
-)
-def test_populate_course_list_text_ids_invalid_input(
-    content_type, metadata, description
-):
-    """Test function handles invalid inputs gracefully"""
-    content = WebsiteContentFactory.build(type=content_type, metadata=metadata)
-    assert populate_course_list_text_ids(content) is False
+    result = compile_referencing_content(content)
+    assert len(result) == expected_count
