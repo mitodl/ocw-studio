@@ -1153,6 +1153,7 @@ def test_populate_course_list_text_ids(
             assert "text_id" not in content.metadata["courses"][0]
 
 
+@pytest.mark.django_db
 def test_populate_course_list_text_ids_handles_multiple_courses():
     """Test function handles multiple course entries with mixed states"""
     # Create websites with sitemetadata
