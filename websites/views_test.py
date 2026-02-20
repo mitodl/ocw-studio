@@ -8,7 +8,6 @@ import factory
 import pytest
 import pytz
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 from django.urls import reverse
 from django.utils.text import slugify
 from github import GithubException
@@ -1049,7 +1048,6 @@ def test_websites_content_create(drf_client, global_admin_user):
     assert resp.data["text_id"] == str(content.text_id)
 
 
-@override_settings(OCW_COURSE_STARTER_SLUG="course-view-referencing-test")
 def test_websites_content_create_course_list_sets_references(
     drf_client, global_admin_user
 ):

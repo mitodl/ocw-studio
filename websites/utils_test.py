@@ -755,7 +755,7 @@ def test_get_metadata_content_key():
     )
     assert get_metadata_content_key(content_resource_list) == [
         constants.METADATA_FIELD_DESCRIPTION,
-        constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
+        constants.METADATA_FIELD_RESOURCES_CONTENT,
     ]
 
     # Test RESOURCE_COLLECTION type
@@ -764,7 +764,7 @@ def test_get_metadata_content_key():
     )
     assert get_metadata_content_key(content_resource_collection) == [
         constants.METADATA_FIELD_DESCRIPTION,
-        constants.METADATA_FIELD_RESOURCE_LIST_RESOURCES,
+        constants.METADATA_FIELD_RESOURCES_CONTENT,
     ]
 
     # Test VIDEO_GALLERY type
