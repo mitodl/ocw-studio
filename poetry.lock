@@ -926,14 +926,14 @@ files = [
 
 [[package]]
 name = "dj-database-url"
-version = "3.1.0"
+version = "3.1.2"
 description = "Use Database URLs in your Django Application."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "dj_database_url-3.1.0-py3-none-any.whl", hash = "sha256:155a56fbbecbaaf1348ccd73bf29138b4c9988363ba08261a0f0145e392e638c"},
-    {file = "dj_database_url-3.1.0.tar.gz", hash = "sha256:d80218426b83f9302c8d27d4fccf52de5cf0cab179f0645fb2839f37605d1353"},
+    {file = "dj_database_url-3.1.2-py3-none-any.whl", hash = "sha256:544e015fee3efa5127a1eb1cca465f4ace578265b3671fe61d0ed7dbafb5ec8a"},
+    {file = "dj_database_url-3.1.2.tar.gz", hash = "sha256:63c20e4bbaa51690dfd4c8d189521f6bf6bc9da9fcdb23d95d2ee8ee87f9ec62"},
 ]
 
 [package.dependencies]
@@ -3923,4 +3923,4 @@ ruamel = ["ruamel.yaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13"
-content-hash = "21b87d2e7c1d7ab1ad03e94ce743bebcd79f96fff9e81ae45d3b43e35b31ffd0"
+content-hash = "9447bb190d1a83cac8f46be0b0d0d3bd23d251af6b7cd0993bfe9a67f1ca6113"
