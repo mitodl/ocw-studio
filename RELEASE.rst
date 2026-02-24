@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.178.3
+Version 0.178.3 (Released February 24, 2026)
 ---------------
 
 - chore(deps): update dependency pypdf to v6.7.1 [security] (#2907)
