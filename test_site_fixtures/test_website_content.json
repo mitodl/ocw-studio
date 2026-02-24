@@ -7,7 +7,7 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-19T22:18:26.621000Z",
-      "updated_on": "2024-03-05T11:09:34.790501Z",
+      "updated_on": "2026-02-24T23:38:02.470140Z",
       "text_id": "sitemetadata",
       "title": null,
       "type": "sitemetadata",
@@ -15,7 +15,7 @@
       "metadata": {
         "term": "Fall",
         "year": "2022",
-        "level": ["Graduate", "Undergraduate"],
+        "level": ["Graduate", "Undergraduate", "Early Childhood"],
         "topics": [
           [
             "Engineering",
@@ -24,6 +24,7 @@
           ],
           ["Science", "Physics", "Quantum Mechanics"]
         ],
+        "audience": ["Learners"],
         "legacy_uid": "",
         "instructors": {
           "content": [
@@ -40,10 +41,18 @@
         "course_title": "OCW CI Test Course",
         "hide_download": false,
         "site_short_id": "ocw-ci-test-course",
-        "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at \u00a0[https://github.mit.edu/ocw-content-rc/ocw-ci-test-course](https://github.mit.edu/ocw-content-rc/ocw-ci-test-course)\n- On OCW Studio at [https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course](https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course)\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n\u00a0Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
+        "mit_learn_topics": [
+          ["Art, Design & Architecture"],
+          ["Business & Management", "Business Analytics"]
+        ],
+        "course_description": "This is a test course for use in CI pipelines. This course can be found:\n\n- On Github at \u00a0{{% resource_link \"5653a8f2-056f-412c-913c-50b4664ed954\" \"https://github.mit.edu/ocw-content-rc/ocw-ci-test-course\" %}}\n- On OCW Studio at {{% resource_link \"8c797ae1-d349-4fdb-9ea0-371d969b89e0\" \"https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course\" %}}\n\nThe content of this course is additionally checked into the `ocw-hugo-themes` repository.\n\n\u00a0Recommended usage by OL Engineers:\n\n- Clone the github repository to your local.\n- When developing on `ocw-hugo-themes`, make edits in Studio as needed for the tests you want to write. Pull to local, and copy the files to `ocw-hugo-themes/test-sites/ocw-ci-test-course`.",
         "department_numbers": ["8", "6", "18"],
         "extra_course_numbers": "456",
         "primary_course_number": "123",
+        "course_image_thumbnail": {
+          "content": "5388b0c3-c599-4c42-8a3c-f89beed7c154",
+          "website": "ocw-ci-test-course"
+        },
         "learning_resource_types": [
           "Activity Assignments",
           "Exams",
@@ -57,7 +66,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -68,7 +78,7 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-19T22:18:26.762000Z",
-      "updated_on": "2024-03-05T11:09:35.237127Z",
+      "updated_on": "2024-12-18T17:29:39.115333Z",
       "text_id": "navmenu",
       "title": null,
       "type": "navmenu",
@@ -116,6 +126,16 @@
             "identifier": "2f9c424e-c9ba-4d1e-b1f6-e89de1bf682a"
           },
           {
+            "name": "MITx Online",
+            "weight": 90,
+            "identifier": "2c5e6bc5-e514-4d4d-ab95-4c8eba73ddae"
+          },
+          {
+            "name": "Learn!",
+            "weight": 100,
+            "identifier": "b8269a72-5e16-4df5-8d82-b150c8a0e8d9"
+          },
+          {
             "name": "Subsection 1a Menu Title",
             "parent": "d9eb8c7e-b9ac-42db-83d1-5e36b8189f5d",
             "weight": 10,
@@ -154,7 +174,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -182,7 +203,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -210,7 +232,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522799, 522801, 522846]
     }
   },
   {
@@ -238,7 +261,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -266,7 +290,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -294,7 +319,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -305,11 +331,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-19T22:18:27.741000Z",
-      "updated_on": "2024-03-05T11:09:40.918359Z",
+      "updated_on": "2025-12-22T13:18:42.883547Z",
       "text_id": "7b3ae5c4-3b27-4806-b0c5-f012f16fa245",
       "title": "Subscripts and Superscripts",
       "type": "page",
-      "markdown": "\n**NOTE:** Not all of these are use-cases that we want to encourage. The goal here is to document what currently works and to alert ourselves if one of these stops working. For example, styling bold inside a subscript is absolutely not something we would encourage.\n\nExample, Normal: Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.\n\nExample, Bold: **Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.**\n\nExample, Italic: *Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.*\n\nExample, Interior Bold: Lorem ipsum dolor sit<sub>abc **123**</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc **123**</sup> amet consectetur.\n\nExample, Interior italic: Lorem ipsum dolor sit<sub>abc *123*</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc *123*</sup> amet consectetur.\n\nExample, Links in scripts: Lorem ipsum dolor sit<sub>[abc 123](https://mit.edu)</sub> amet consectetur. Lorem ipsum dolor sit<sup>[abc 123](https://mit.edu)</sup> amet consectetur.\n\nExample, Scripts in Links: Lorem ipsum dolor [sit<sub>abc 123</sub> amet](https://mit.edu) consectetur. Lorem ipsum dolor [sit<sup>abc 123</sup> amet](https://mit.edu) amet consectetur.\n\nExample, Resource Links in scripts: Lorem ipsum dolor sit<sub>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sub> amet consectetur. Lorem ipsum dolor sit<sup>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sup> amet consectetur.\n\nExample, Scripts in Resource Links: Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sub>abc 123</sub> amet\" %}} consectetur. Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sup>abc 123</sup> amet\" %}} consectetur.\n\n### Usage in tables\n\n{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nHeader One\n{{< thclose >}}{{< thopen >}}\nHeader Two\n{{< thclose >}}{{< thopen >}}\nHeader Three\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nlorem<sub>abc 123</sub> ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem[<sup>\u2020</sup>](https://mit.edu) ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"<sup>\u2021</sup>\" %}} ipsum\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\na\n{{< tdclose >}}{{< tdopen >}}\nb\n{{< tdclose >}}{{< tdopen >}}\nc\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
+      "markdown": "\n**NOTE:** Not all of these are use-cases that we want to encourage. The goal here is to document what currently works and to alert ourselves if one of these stops working. For example, styling bold inside a subscript is absolutely not something we would encourage.\n\nExample, Normal: Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.\n\nExample, Bold: **Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.**\n\nExample, Italic: *Lorem ipsum dolor sit<sub>abc 123</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc 123</sup> amet consectetur.*\n\nExample, Interior Bold: Lorem ipsum dolor sit<sub>abc **123**</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc **123**</sup> amet consectetur.\n\nExample, Interior italic: Lorem ipsum dolor sit<sub>abc *123*</sub> amet consectetur. Lorem ipsum dolor sit<sup>abc *123*</sup> amet consectetur.\n\nExample, Links in scripts: Lorem ipsum dolor sit<sub>{{% resource_link \"baa65e5e-4510-4e32-82b6-08f2c8d5d203\" \"abc 123\" %}}</sub> amet consectetur. Lorem ipsum dolor sit<sup>{{% resource_link \"baa65e5e-4510-4e32-82b6-08f2c8d5d203\" \"abc 123\" %}}</sup> amet consectetur.\n\nExample, Scripts in Links: Lorem ipsum dolor {{% resource_link \"baa65e5e-4510-4e32-82b6-08f2c8d5d203\" \"sit<sub>abc 123</sub> amet\" %}} consectetur. Lorem ipsum dolor {{% resource_link \"baa65e5e-4510-4e32-82b6-08f2c8d5d203\" \"sit<sup>abc 123</sup> amet\" %}} amet consectetur.\n\nExample, Resource Links in scripts: Lorem ipsum dolor sit<sub>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sub> amet consectetur. Lorem ipsum dolor sit<sup>{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"abc 123\" %}}</sup> amet consectetur.\n\nExample, Scripts in Resource Links: Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sub>abc 123</sub> amet\" %}} consectetur. Lorem ipsum dolor {{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"sit<sup>abc 123</sup> amet\" %}} consectetur.\n\n### Usage in tables\n\n{{< tableopen >}}{{< theadopen >}}{{< tropen >}}{{< thopen >}}\nHeader One\n{{< thclose >}}{{< thopen >}}\nHeader Two\n{{< thclose >}}{{< thopen >}}\nHeader Three\n{{< thclose >}}{{< trclose >}}{{< theadclose >}}{{< tbodyopen >}}{{< tropen >}}{{< tdopen >}}\nlorem<sub>abc 123</sub> ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem{{% resource_link \"baa65e5e-4510-4e32-82b6-08f2c8d5d203\" \"<sup>\u2020</sup>\" %}} ipsum\n{{< tdclose >}}{{< tdopen >}}\nlorem{{% resource_link \"7b3ae5c4-3b27-4806-b0c5-f012f16fa245\" \"<sup>\u2021</sup>\" %}} ipsum\n{{< tdclose >}}{{< trclose >}}{{< tropen >}}{{< tdopen >}}\na\n{{< tdclose >}}{{< tdopen >}}\nb\n{{< tdclose >}}{{< tdopen >}}\nc\n{{< tdclose >}}{{< trclose >}}{{< tbodyclose >}}{{< tableclose >}}",
       "metadata": {
         "draft": false,
         "description": "Test page for subscripts and superscripts",
@@ -322,7 +348,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796, 522802]
     }
   },
   {
@@ -350,7 +377,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -378,7 +406,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -427,7 +456,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -438,11 +468,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-19T22:18:28.810000Z",
-      "updated_on": "2024-03-05T11:09:43.395523Z",
+      "updated_on": "2026-01-08T10:23:21.544193Z",
       "text_id": "5388b0c3-c599-4c42-8a3c-f89beed7c154",
       "title": "example_jpg.jpg",
       "type": "resource",
-      "markdown": null,
+      "markdown": "",
       "metadata": {
         "body": "",
         "draft": false,
@@ -453,16 +483,25 @@
           "archive_url": "",
           "video_captions_file": "",
           "video_thumbnail_file": "",
-          "video_transcript_file": ""
+          "video_transcript_file": "",
+          "video_captions_resource": {
+            "content": "",
+            "website": "ocw-ci-test-course"
+          },
+          "video_transcript_resource": {
+            "content": "",
+            "website": "ocw-ci-test-course"
+          }
         },
         "content_type": "resource",
         "resourcetype": "Image",
         "image_metadata": {
-          "credit": "",
+          "credit": "Distributed under the CCC. {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google\" %}}",
           "caption": "",
           "image-alt": ""
         },
         "video_metadata": {
+          "source": "",
           "video_tags": "",
           "youtube_id": "",
           "video_speakers": "",
@@ -477,7 +516,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522795]
     }
   },
   {
@@ -526,7 +566,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -583,7 +624,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -632,7 +674,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -680,7 +723,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -729,7 +773,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -777,7 +822,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -826,7 +872,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -874,7 +921,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -923,7 +971,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -971,7 +1020,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1020,7 +1070,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1068,7 +1119,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1117,7 +1169,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1165,7 +1218,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1214,7 +1268,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1262,7 +1317,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1311,7 +1367,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1322,11 +1379,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-23T21:21:21.495000Z",
-      "updated_on": "2023-10-25T20:41:11.331000Z",
+      "updated_on": "2025-09-23T06:57:01.018928Z",
       "text_id": "3caa0884-4fdd-4f3c-ba39-67a64c27d877",
       "title": "Dr. Tester Two",
       "type": "instructor",
-      "markdown": null,
+      "markdown": "",
       "metadata": {
         "draft": false,
         "last_name": "Two",
@@ -1342,7 +1399,8 @@
       "owner": null,
       "updated_by": null,
       "website": "ad453325-9251-4547-a273-e73dbfe8842c",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522795]
     }
   },
   {
@@ -1353,11 +1411,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-23T21:21:21.670000Z",
-      "updated_on": "2023-10-25T20:41:11.536000Z",
+      "updated_on": "2025-09-23T06:57:20.370281Z",
       "text_id": "588e4e64-823f-4e8e-a29e-0e695e2297ae",
       "title": "Prof. Tester One",
       "type": "instructor",
-      "markdown": null,
+      "markdown": "",
       "metadata": {
         "draft": false,
         "last_name": "One",
@@ -1373,7 +1431,8 @@
       "owner": null,
       "updated_by": null,
       "website": "ad453325-9251-4547-a273-e73dbfe8842c",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522795]
     }
   },
   {
@@ -1384,11 +1443,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2023-10-23T21:21:21.865000Z",
-      "updated_on": "2023-10-25T20:41:11.740000Z",
+      "updated_on": "2025-09-23T06:57:42.105817Z",
       "text_id": "d3c64374-bb1c-46bb-a1a1-827c336e4d8e",
       "title": "Another Tester Three",
       "type": "instructor",
-      "markdown": null,
+      "markdown": "",
       "metadata": {
         "draft": false,
         "last_name": "Three",
@@ -1404,7 +1463,8 @@
       "owner": null,
       "updated_by": null,
       "website": "ad453325-9251-4547-a273-e73dbfe8842c",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522795]
     }
   },
   {
@@ -1458,7 +1518,8 @@
       "owner": null,
       "updated_by": null,
       "website": "ad453325-9251-4547-a273-e73dbfe8842c",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1497,7 +1558,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -1526,7 +1588,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -1555,7 +1618,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [468777, 522796]
     }
   },
   {
@@ -1603,7 +1667,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1651,7 +1716,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1699,7 +1765,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1747,7 +1814,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1795,7 +1863,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1843,7 +1912,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1891,7 +1961,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": []
     }
   },
   {
@@ -1902,15 +1973,18 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2024-02-23T07:53:21.875476Z",
-      "updated_on": "2024-03-05T11:09:36.222944Z",
+      "updated_on": "2025-12-22T13:18:43.037862Z",
       "text_id": "8ef7f3de-f238-4b3f-afb1-2d11a16f7247",
       "title": "Google.com",
       "type": "external-resource",
       "markdown": null,
       "metadata": {
+        "status": "valid",
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "wayback_url": "",
         "content_type": "external-resource",
         "external_url": "https://google.com",
+        "url_status_code": 200,
         "has_external_license_warning": true
       },
       "is_page_content": true,
@@ -1920,7 +1994,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796, 522807, 522846]
     }
   },
   {
@@ -1931,15 +2006,18 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2024-02-23T07:53:39.387880Z",
-      "updated_on": "2024-03-05T11:09:35.707741Z",
+      "updated_on": "2024-09-20T14:19:47.088706Z",
       "text_id": "3ee0856f-f641-4d3f-9cdc-79714fff907d",
       "title": "OCW (backed by old site)",
       "type": "external-resource",
       "markdown": null,
       "metadata": {
+        "status": "valid",
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "wayback_url": "",
         "content_type": "external-resource",
         "external_url": "https://ocw.mit.edu",
+        "url_status_code": 200,
         "has_external_license_warning": true
       },
       "is_page_content": true,
@@ -1949,7 +2027,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796, 522846]
     }
   },
   {
@@ -1960,11 +2039,11 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2024-02-23T07:56:46.974400Z",
-      "updated_on": "2024-03-05T11:09:38.067541Z",
+      "updated_on": "2025-12-22T13:18:43.071023Z",
       "text_id": "2f9c424e-c9ba-4d1e-b1f6-e89de1bf682a",
       "title": "External Resources Page",
       "type": "page",
-      "markdown": "This is an external resource {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google.com\" %}}. This is a {{% resource_link \"3ee0856f-f641-4d3f-9cdc-79714fff907d\" \"broken external resource\" %}} (goes to old.ocw.mit.edu). For reference, {{% resource_link \"38167987-b1af-4544-86a1-909a7cdb4f18\" \"this\" %}} is an internal link. And [this](https://google.com) is a plain markdown link.\n\nThis link opens a warning dialog: {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google.com\" %}}\n\nThis link DOES NOT open a warning dialog: {{% resource_link \"4de28921-ab79-4ac4-933f-bbc0f4c99647\" \"OCW main\" %}}",
+      "markdown": "This is an external resource {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google.com\" %}}. This is a {{% resource_link \"3ee0856f-f641-4d3f-9cdc-79714fff907d\" \"broken external resource\" %}} (goes to old.ocw.mit.edu). For reference, {{% resource_link \"38167987-b1af-4544-86a1-909a7cdb4f18\" \"this\" %}} is an internal link. And {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"this\" %}} is a plain markdown link.\n\nThis link opens a warning dialog: {{% resource_link \"8ef7f3de-f238-4b3f-afb1-2d11a16f7247\" \"Google.com\" %}}\n\nThis link DOES NOT open a warning dialog: {{% resource_link \"4de28921-ab79-4ac4-933f-bbc0f4c99647\" \"OCW main\" %}}",
       "metadata": {
         "draft": false,
         "description": "Test external resources.",
@@ -1977,7 +2056,8 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796]
     }
   },
   {
@@ -1988,15 +2068,18 @@
       "deleted": null,
       "deleted_by_cascade": false,
       "created_on": "2024-03-05T11:09:36.737960Z",
-      "updated_on": "2024-03-05T11:09:36.737975Z",
+      "updated_on": "2024-09-20T14:19:48.938814Z",
       "text_id": "4de28921-ab79-4ac4-933f-bbc0f4c99647",
       "title": "OCW main",
       "type": "external-resource",
       "markdown": null,
       "metadata": {
+        "status": "valid",
         "license": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+        "wayback_url": "",
         "content_type": "external-resource",
         "external_url": "https://ocw.mit.edu",
+        "url_status_code": 200,
         "has_external_license_warning": false
       },
       "is_page_content": true,
@@ -2006,7 +2089,231 @@
       "owner": null,
       "updated_by": null,
       "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
-      "parent": null
+      "parent": null,
+      "referencing_content": [522796, 522846]
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 527990,
+    "fields": {
+      "id": 527990,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2024-12-18T17:26:43.591754Z",
+      "updated_on": "2024-12-18T17:26:43.591764Z",
+      "text_id": "b8269a72-5e16-4df5-8d82-b150c8a0e8d9",
+      "title": "Learn.mit.edu",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "valid",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "wayback_url": "https://web.archive.org/web/20250727105753/https://learn.mit.edu/",
+        "external_url": "https://learn.mit.edu/",
+        "url_status_code": 200,
+        "has_external_license_warning": false
+      },
+      "is_page_content": true,
+      "filename": "learnmitedu",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": [522796]
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 527991,
+    "fields": {
+      "id": 527991,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2024-12-18T17:29:08.132881Z",
+      "updated_on": "2024-12-18T17:29:08.132894Z",
+      "text_id": "2c5e6bc5-e514-4d4d-ab95-4c8eba73ddae",
+      "title": "mitxonline",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "wayback_url": "https://web.archive.org/web/20250507013824/https://mitxonline.mit.edu/",
+        "external_url": "https://mitxonline.mit.edu/",
+        "has_external_license_warning": false
+      },
+      "is_page_content": true,
+      "filename": "mitxonline",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": [522796]
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 528230,
+    "fields": {
+      "id": 528230,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2025-02-04T18:37:54.350033Z",
+      "updated_on": "2025-02-04T18:37:54.407472Z",
+      "text_id": "abd9078f-3f2f-41a8-9f57-2601783056fe",
+      "title": "Link",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "valid",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "is_broken": "",
+        "backup_url": "",
+        "external_url": "https://www.google.com/",
+        "url_status_code": 200,
+        "has_external_license_warning": true
+      },
+      "is_page_content": true,
+      "filename": "link",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": []
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 531064,
+    "fields": {
+      "id": 531064,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2025-12-02T05:17:38.855045Z",
+      "updated_on": "2026-02-24T23:41:00.365416Z",
+      "text_id": "6bcadc84-36e4-4bef-8ed8-87b914bd552b",
+      "title": "Image Gallery",
+      "type": "page",
+      "markdown": "Look at this amazing image gallery\n\n{{< image-gallery id=\"6bcadc84-36e4-4bef-8ed8-87b914bd552b_nanogallery2\" baseUrl=\"/courses/ocw-ci-test-course/\" >}}  \n{{< image-gallery-item href=\"example_jpg.jpg\" data-ngdesc=\"A pretty dog\" text=\"A dog having fun\" >}}  \n{{< /image-gallery >}}",
+      "metadata": {
+        "draft": false,
+        "level": ["Undergraduate", "Primary School"],
+        "audience": ["Learners"],
+        "description": "This is an image gallery",
+        "learning_resource_types": ["Image Gallery"]
+      },
+      "is_page_content": true,
+      "filename": "image-gallery",
+      "dirpath": "content/pages",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": []
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 582126,
+    "fields": {
+      "id": 582126,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2025-12-22T13:18:42.574348Z",
+      "updated_on": "2025-12-24T10:17:11.806934Z",
+      "text_id": "5653a8f2-056f-412c-913c-50b4664ed954",
+      "title": "https://github.mit.edu/ocw-content-rc/ocw-ci-test-course",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "broken",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "wayback_url": "",
+        "external_url": "https://github.mit.edu/ocw-content-rc/ocw-ci-test-course",
+        "url_status_code": 404,
+        "has_external_license_warning": false
+      },
+      "is_page_content": true,
+      "filename": "httpsgithubmiteduocw-content-rcocw-ci-test-course_5653a8f2-056f-412c-913c-50b4664ed954",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": [522795]
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 582127,
+    "fields": {
+      "id": 582127,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2025-12-22T13:18:42.612955Z",
+      "updated_on": "2025-12-24T10:17:11.806934Z",
+      "text_id": "8c797ae1-d349-4fdb-9ea0-371d969b89e0",
+      "title": "https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "valid",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "wayback_url": "",
+        "external_url": "https://ocw-studio-rc.odl.mit.edu/sites/ocw-ci-test-course",
+        "url_status_code": 200,
+        "has_external_license_warning": false
+      },
+      "is_page_content": true,
+      "filename": "httpsocw-studio-rcodlmitedusitesocw-ci-test-course_8c797ae1-d349-4fdb-9ea0-371d969b89e0",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": [522795]
+    }
+  },
+  {
+    "model": "websites.websitecontent",
+    "pk": 582128,
+    "fields": {
+      "id": 582128,
+      "deleted": null,
+      "deleted_by_cascade": false,
+      "created_on": "2025-12-22T13:18:42.721152Z",
+      "updated_on": "2025-12-24T10:17:11.806934Z",
+      "text_id": "baa65e5e-4510-4e32-82b6-08f2c8d5d203",
+      "title": "abc 123",
+      "type": "external-resource",
+      "markdown": null,
+      "metadata": {
+        "status": "valid",
+        "license": "https://en.wikipedia.org/wiki/All_rights_reserved",
+        "wayback_url": "",
+        "external_url": "https://mit.edu",
+        "url_status_code": 200,
+        "has_external_license_warning": false
+      },
+      "is_page_content": true,
+      "filename": "abc-123_baa65e5e-4510-4e32-82b6-08f2c8d5d203",
+      "dirpath": "content/external-resources",
+      "file": null,
+      "owner": null,
+      "updated_by": null,
+      "website": "554fc3fa-2f4b-4a94-87f4-19e51ae36920",
+      "parent": null,
+      "referencing_content": [522802]
     }
   }
 ]
