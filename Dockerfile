@@ -36,7 +36,7 @@ RUN mkdir -p /opt/venv && chown -R mitodl:mitodl /src /opt/venv
 
 USER mitodl
 WORKDIR /src
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen --no-install-project --no-dev
 
 FROM node:24-slim AS node_builder
 COPY . /src
@@ -71,11 +71,11 @@ RUN apt-get update \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-    # Copy uv binary from builder
-    COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
-    COPY --from=builder /usr/local/bin/uvx /usr/local/bin/uvx
+# Copy uv binary from builder
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
+COPY --from=builder /usr/local/bin/uvx /usr/local/bin/uvx
 
-    # Add non-root user
+# Add non-root user
 RUN adduser --disabled-password --gecos "" --uid 1001 mitodl \
     && mkdir -p /src /var/media \
     && chown -R mitodl:mitodl /src /var/media
