@@ -36,7 +36,7 @@ RUN mkdir -p /opt/venv && chown -R mitodl:mitodl /src /opt/venv
 
 USER mitodl
 WORKDIR /src
-RUN uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project
 
 FROM node:24-slim AS node_builder
 COPY . /src
