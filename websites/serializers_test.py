@@ -778,6 +778,7 @@ def test_website_export_serializer(ocw_site):
     now = now_in_utc()
     ocw_site.owner = user
     ocw_site.updated_by = user
+    ocw_site.gdrive_folder = "some-gdrive-folder-id"
     ocw_site.has_unpublished_draft = False
     ocw_site.draft_publish_date = now
     ocw_site.latest_build_id_draft = 1
@@ -796,6 +797,7 @@ def test_website_export_serializer(ocw_site):
     serializer = ExportWebsiteSerializer(ocw_site)
     data = serializer.data
     assert data["fields"]["owner"] is None
+    assert data["fields"]["gdrive_folder"] == ""
     assert data["fields"]["has_unpublished_draft"] is True
     assert data["fields"]["draft_publish_date"] is None
     assert data["fields"]["latest_build_id_draft"] is None
