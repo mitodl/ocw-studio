@@ -71,7 +71,11 @@ RUN apt-get update \
         postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Add non-root user
+    # Copy uv binary from builder
+    COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
+    COPY --from=builder /usr/local/bin/uvx /usr/local/bin/uvx
+
+    # Add non-root user
 RUN adduser --disabled-password --gecos "" --uid 1001 mitodl \
     && mkdir -p /src /var/media \
     && chown -R mitodl:mitodl /src /var/media
