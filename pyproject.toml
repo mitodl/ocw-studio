@@ -1,85 +1,94 @@
-[tool.poetry]
+[project]
 name = "ocw-studio"
-description = "OCW Studio manages deployments for OCW courses"
-authors = ["MITODL"]
-license = "BSD-3"
-readme = "README.md"
 version = "0.0.0"
-package-mode = false
+description = "OCW Studio manages deployments for OCW courses"
+authors = [{ name = "MITODL" }]
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+license = "BSD-3"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "beautifulsoup4>=4.12.2,<5",
+    "boto3==1.42.54",
+    "celery>=5.3.0,<6",
+    "cryptography>=46.0.0,<47",
+    "dj-database-url==3.1.2",
+    "django==4.2.28",
+    "django-anymail[mailgun]==14.0",
+    "django-bulk-update-or-create==0.3.0",
+    "django-guardian==3.2.0",
+    "django-hijack==3.7.6",
+    "django-model-utils==5.0.0",
+    "django-redis==5.0.0",
+    "django-robots==7.0b0",
+    "django-safedelete==1.4.1",
+    "django-storages==1.14.6",
+    "django-webpack-loader==3.2.3",
+    "djangorestframework==3.16.1",
+    "drf-extensions>=0.8.0,<0.9",
+    "google-api-python-client>=2.58.0,<3",
+    "google-auth>=2.11.0,<3",
+    "google-auth-oauthlib>=1.0.0,<2",
+    "ipython>=9.0.0,<10",
+    "mitol-django-authentication==2025.3.17",
+    "mitol-django-common>=2023.6.27.1,<2024",
+    "mitol-django-mail>=2025.0.0,<2026",
+    "more-itertools>=10.1.0,<11",
+    "newrelic>=10.0.0,<11",
+    "ol-concourse>=0.5.8,<0.6",
+    "ol-concoursepy==0.0.41",
+    "psycopg2>=2.9.6,<3",
+    "pygithub==2.8.1",
+    "pypdf>=6.0.0,<7",
+    "python-magic>=0.4.27,<0.5",
+    "pyyaml>=6.0.1,<7",
+    "redis>=4.5.5,<5",
+    "requests==2.32.5",
+    "sentry-sdk==2.53.0",
+    "smart-open[s3]>=7.0.0,<8",
+    "social-auth-app-django==5.4.3",
+    "social-auth-core[saml]>=4,<5",
+    "tqdm>=4.65.0,<5",
+    "uwsgi>=2.0.24,<3",
+    "uwsgitop>=0.12,<0.13",
+    "yamale==6.1.0",
+    "xmlsec==1.3.16",
+    "posthog>=7.0.0,<8",
+    "mitol-django-transcoding>=2025.5.21,<2026",
+]
 
-[tool.poetry.dependencies]
-python = "~3.13"
+[dependency-groups]
+dev = [
+    "bpython>=0.26,<0.27",
+    "ddt>=1.6.0,<2",
+    "django-debug-toolbar>=6.0.0,<7",
+    "factory-boy>=3.3.0,<4",
+    "faker>=40.0.0,<41",
+    "ipdb>=0.13.13,<0.14",
+    "moto>=5.0.0,<6",
+    "nplusone>=1.0.0,<2",
+    "pdbpp>=0.11.0,<0.12",
+    "pre-commit>=4.0.0,<5",
+    "pytest>=9.0.0,<10",
+    "pytest-cov>=7.0.0,<8",
+    "pytest-django>=4.5.2,<5",
+    "pytest-env==1.5.0",
+    "pytest-mock>=3.11.1,<4",
+    "ruff>=0.15,<0.16",
+    "semantic-version>=2.10.0,<3",
+]
 
-beautifulsoup4 = "^4.12.2"
-boto3 = "1.42.54"
-celery = "^5.3.0"
-cryptography = "^46.0.0"
-dj-database-url = "3.1.2"
-django = "4.2.28"
-django-anymail = {version = "14.0", extras = ["mailgun"]}
-django-bulk-update-or-create = "0.3.0"
-django-guardian = "3.2.0"
-django-hijack = "3.7.6"
-django-model-utils = "5.0.0"
-django-redis = "5.0.0"
-django-robots = "7.0b0"
-django-safedelete = "1.4.1"
-django-storages = "1.14.6"
-django-webpack-loader = "3.2.3"
-djangorestframework = "3.16.1"
-drf-extensions = "^0.8.0"
-google-api-python-client = "^2.58.0"
-google-auth = "^2.11.0"
-google-auth-oauthlib = "^1.0.0"
-ipython = "^9.0.0"
-mitol-django-authentication = "2025.3.17"
-mitol-django-common = "^2023.6.27.1"
-mitol-django-mail = "^2025.0.0"
-more-itertools = "^10.1.0"
-newrelic = "^10.0.0"
-ol-concourse = "^0.5.8"
-ol-concoursepy = "0.0.41"
-psycopg2 = "^2.9.6"
-pygithub = "2.8.1"
-pypdf = "^6.0.0"
-python-magic = "^0.4.27"
-pyyaml = "^6.0.1"
-redis = "^4.5.5"
-requests = "2.32.5"
-sentry-sdk = "2.53.0"
-smart-open = {extras = ["s3"], version = "^7.0.0"}
-social-auth-app-django = "5.4.3"
-social-auth-core = {version = "^4", extras = ["saml"]}
-tqdm = "^4.65.0"
-uwsgi = "^2.0.24"
-uwsgitop = "^0.12"
-yamale = "6.1.0"
-xmlsec = "1.3.16"
-posthog = "^7.0.0"
-mitol-django-transcoding = "^2025.5.21"
-
-[tool.poetry.group.dev.dependencies]
-bpython = "^0.26"
-ddt = "^1.6.0"
-django-debug-toolbar = "^6.0.0"
-factory-boy = "^3.3.0"
-faker = "^40.0.0"
-ipdb = "^0.13.13"
-moto = "^5.0.0"
-nplusone = "^1.0.0"
-pdbpp = "^0.11.0"
-pre-commit = "^4.0.0"
-pytest = "^9.0.0"
-pytest-cov = "^7.0.0"
-pytest-django = "^4.5.2"
-pytest-env = "1.5.0"
-pytest-mock = "^3.11.1"
-ruff = "^0.15"
-semantic-version = "^2.10.0"
+[tool.uv]
+package = false
+default-groups = "all"
+no-binary-package = ["lxml", "xmlsec"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
 
 [tool.ruff]
 target-version = "py313"
