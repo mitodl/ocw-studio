@@ -302,8 +302,9 @@ class YouTubeApi:
         existing_captions = existing_captions.get("items", [])
         existing_captions = list(
             filter(
-                lambda caption_file: caption_file.get("snippet", {}).get("name")
-                == CAPTION_UPLOAD_NAME,
+                lambda caption_file: (
+                    caption_file.get("snippet", {}).get("name") == CAPTION_UPLOAD_NAME
+                ),
                 existing_captions,
             )
         )
