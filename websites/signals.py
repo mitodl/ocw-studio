@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.utils.text import slugify
 
 from websites.constants import (
+    CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     WEBSITE_CONTENT_LEFTNAV,
@@ -13,6 +14,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.permissions import setup_website_groups_permissions
+from websites.utils import populate_course_list_text_ids
 
 
 @receiver(
@@ -32,6 +34,21 @@ def handle_website_save(
     """
     if created:
         setup_website_groups_permissions(instance)
+
+
+@receiver(pre_save, sender=WebsiteContent)
+def populate_course_list_text_ids_on_save(
+    sender,  # noqa: ARG001
+    instance,
+    **kwargs,  # noqa: ARG001
+):
+    """
+    Auto-populate text_id fields in course-list entries when saving.
+    """
+    if instance.type == CONTENT_TYPE_COURSE_LIST and populate_course_list_text_ids(
+        instance
+    ):
+        instance.metadata = instance.metadata
 
 
 @receiver(pre_save, sender=WebsiteContent)
