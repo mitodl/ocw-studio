@@ -785,6 +785,7 @@ class ExportWebsiteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         fields = super().to_representation(instance)
         fields["owner"] = None
+        fields["gdrive_folder"] = ""
         fields["has_unpublished_draft"] = True
         fields["draft_publish_date"] = None
         fields["latest_build_id_draft"] = None
