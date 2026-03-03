@@ -2,6 +2,8 @@
 
 The normal Studio api rejects `url_path` changes for published sites (enforced in `WebsiteUrlSerializer.validate_url_path`), so this process requires direct DB edits and manual steps.
 
+> **Note:** If you encounter issues not covered below or discover that a step's instructions are incomplete or incorrect, please update this document so future engineers benefit from the experience.
+
 ## Step 1 - Change `url_path` in Django Admin
 
 Update the Website object's **url_path** field to the new value (e.g. `courses/res-100-presenting-your-work`).
