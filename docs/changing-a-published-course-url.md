@@ -44,7 +44,8 @@ Monitor the Concourse builds until they shows `succeeded`.
 
 The course may be referred to by other sites, particularly by ocw-www in course lists and resource collections.
 
-These references may need to be analyzed individually and fixed on a case-to-case basis. To compile a list of such references, the following snippet can be helpful.
+These references may need to be analyzed individually and fixed on a case-to-case basis. If we do step 7 (setting a redirect), we could just rely on
+that instead of having to do anything here. To compile a list of such references, the following snippet can be helpful.
 
 ```python
 from django.db.models import Q
