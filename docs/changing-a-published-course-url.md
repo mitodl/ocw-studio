@@ -44,8 +44,7 @@ Monitor the Concourse builds until they shows `succeeded`.
 
 The course may be referred to by other sites, particularly by ocw-www in course lists and resource collections.
 
-These references may need to be analyzed individually and fixed on a case-to-case basis. If we do step 7 (setting a redirect), we could just rely on
-that instead of having to do anything here. To compile a list of such references, the following snippet can be helpful.
+These references may need to be analyzed individually and fixed on a case-to-case basis. To compile a list of such references, the following snippet can be helpful.
 
 ```python
 from django.db.models import Q
@@ -69,7 +68,9 @@ This may take some time, depending on whenever the indexing in open-discussions/
 
 ## Step 9 — Remove Old Content from S3
 
-Only do this after the redirect in Step 7 is confirmed working.
+> **Cleanup step only.** This step is a nice to have and carries no urgency. Only proceed once you are fully satisfied that the new URL is working correctly, the redirect is in place, and all cross-site references have been resolved. There is no harm in leaving the old content in S3 temporarily while you verify everything.
+
+Only do this once you are confident the entire migration was successful.
 
 ```bash
 aws s3 rm s3://<AWS_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
