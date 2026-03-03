@@ -49,7 +49,7 @@ dependencies = [
     "requests==2.32.5",
     "sentry-sdk==2.53.0",
     "smart-open[s3]>=7.0.0,<8",
-    "social-auth-app-django==5.4.3",
+    "social-auth-app-django==5.6.0",
     "social-auth-core[saml]>=4,<5",
     "tqdm>=4.65.0,<5",
     "uwsgi>=2.0.24,<3",
