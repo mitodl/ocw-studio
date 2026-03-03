@@ -69,10 +69,10 @@ This may take some time, depending on whenever the indexing in open-discussions/
 Only do this after the redirect in Step 7 is confirmed working.
 
 ```bash
-aws s3 rm s3://<AWS_PUBLISH_BUCKET_NAME>/courses/old-slug/ --recursive
-aws s3 rm s3://<AWS_DRAFT_PUBLISH_BUCKET_NAME>/courses/old-slug/ --recursive
+aws s3 rm s3://<AWS_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
+aws s3 rm s3://<AWS_DRAFT_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
 
-aws s3 rm s3://<AWS_OFFLINE_PUBLISH_BUCKET_NAME>/courses/old-slug/ --recursive
-aws s3 rm s3://<AWS_OFFLINE_DRAFT_PUBLISH_BUCKET_NAME>/courses/old-slug/ --recursive
+aws s3 rm s3://<AWS_OFFLINE_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
+aws s3 rm s3://<AWS_OFFLINE_DRAFT_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
 
 ```
