@@ -157,6 +157,7 @@ INSTALLED_APPS = [
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
+    "django_removals",
 ]
 
 if ENVIRONMENT not in PRODUCTION_NAMES:
