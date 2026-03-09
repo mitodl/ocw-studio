@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.179.0
+Version 0.179.0 (Released March 09, 2026)
 ---------------
 
 - chore(deps): pin astral-sh/setup-uv action to 5a095e7 (#2917)
