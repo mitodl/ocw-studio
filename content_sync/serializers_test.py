@@ -103,15 +103,14 @@ def get_example_menu_data():
     ]
 
 
-@mock_aws
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     ("markdown", "exp_sections"),
     [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]],  # noqa: PT007
 )
-def test_hugo_file_serialize(settings, markdown, exp_sections):
+def test_hugo_file_serialize(settings, tmp_path, markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
-    settings.OCW_STUDIO_USE_S3 = True
+    settings.MEDIA_ROOT = str(tmp_path)
     metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
     content = WebsiteContentFactory.create(
         text_id="abcdefg",
@@ -247,7 +246,7 @@ def test_hugo_file_deserialize_with_file(settings):
     settings.STORAGES = {
         "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
         },
     }
     website = WebsiteFactory.create(url_path="courses/website_name-fall-2025")
