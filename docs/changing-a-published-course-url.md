@@ -40,25 +40,30 @@ Trigger a live and draft publish from the Studio publish drawer.
 
 Monitor the Concourse builds until they shows `succeeded`.
 
-## Step 6 — Handle Cross-Site References
+## Step 6 — Add a Redirect from the Old URL
 
-The course may be referred to by other sites, particularly by ocw-www in course lists and resource collections.
+Redirect the old url to the new one. See [this PR](https://github.com/mitodl/ol-infrastructure/pull/4257) as an example of how to add a redirect.
 
-These references may need to be analyzed individually and fixed on a case-to-case basis. To compile a list of such references, the following snippet can be helpful.
+## Step 7 — Handle Cross-Site References
+
+The course may be referenced by other sites — most commonly by ocw-www in course lists and course collections. The redirect will handle any such links that may appear on ocw, but subsequent hugo builds of ocw-www
+may fail if they encounter the old URL in course lists or collections.
+
+Hence, we should update any such references to the new URL.
+
+To find affected `WebsiteContent` objects, use the following snippet:
 
 ```python
-from django.db.models import Q
 from websites.constants import *
 from websites.models import *
+
+www = Website.objects.get(name='ocw-www')
 wc = WebsiteContent.objects.filter(
-    Q(metadata__icontains=<old_url_path>)|Q(markdown__icontains=<old_url_path>)
+    metadata__icontains=<old_url_path>,
+    website=www
 )
 
 ```
-
-## Step 7 — Add a Redirect from the Old URL
-
-Redirect the old url to the new one
 
 ## Step 8 — Search Indexes
 
@@ -68,7 +73,7 @@ This may take some time, depending on whenever the indexing in open-discussions/
 
 ## Step 9 — Remove Old Content from S3
 
-> **Cleanup step only.** This step is a nice to have and carries no urgency. Only proceed once you are fully satisfied that the new URL is working correctly, the redirect is in place, and all cross-site references have been resolved. There is no harm in leaving the old content in S3 temporarily while you verify everything.
+> **Cleanup step only.** This step is optional and carries no urgency. Only proceed once you are fully satisfied that the new URL is working correctly, the redirect is in place, and all cross-site references have been resolved. There is no harm in leaving the old content in S3 temporarily while you verify everything.
 
 Only do this once you are confident the entire migration was successful.
 
