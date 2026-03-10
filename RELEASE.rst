@@ -1,6 +1,24 @@
 Release Notes
 =============
 
+Version 0.179.0 (Released March 09, 2026)
+---------------
+
+- chore(deps): pin astral-sh/setup-uv action to 5a095e7 (#2917)
+- fix(deps): update dependency django-guardian to v3.3.0 (#2921)
+- chore(deps): update dependency pdbpp to >=0.12.1,<0.13 (#2919)
+- chore(deps): update node.js to v24.14.0 (#2920)
+- fix(deps): update dependency boto3 to v1.42.59 (#2918)
+- feat: Track references in course lists (#2900)
+- chore(deps): update dependency pypdf to v6.7.3 [security] (#2916)
+- chore: migrate from poetry/pip to uv for dependency management (#2913)
+- Clear Google Drive folder when serializing website (#2915)
+- chore(deps): update dependency pypdf to v6.7.2 [security] (#2914)
+- fix(deps): update dependency sentry-sdk to v2.53.0 (#2912)
+- chore(deps): update dependency pytest-env to v1.5.0 (#2911)
+- fix(deps): update dependency dj-database-url to v3.1.2 (#2910)
+- fix(deps): update dependency boto3 to v1.42.54 (#2909)
+
 Version 0.178.3 (Released February 24, 2026)
 ---------------
 
