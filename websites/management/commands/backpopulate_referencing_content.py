@@ -5,7 +5,7 @@ from mitol.common.utils import now_in_utc
 
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website, WebsiteContent
-from websites.utils import compile_referencing_content
+from websites.utils import resolve_referenced_content_ids
 
 BATCH_SIZE_DEFAULT = 500  # Default batch size for processing content
 
@@ -94,29 +94,20 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Fetched {len(content_batch)} content items for batch")
 
         # Collect references for this batch only
-        content_references, all_reference_uuids = self._collect_references(
-            content_batch, verbosity
-        )
+        content_references = self._collect_references(content_batch, verbosity)
 
-        if not all_reference_uuids:
+        if not content_references:
             if verbosity >= 2:  # noqa: PLR2004
                 self.stdout.write("No references found in this batch")
             return 0
 
         if verbosity >= 2:  # noqa: PLR2004
             self.stdout.write(
-                f"Found {len(all_reference_uuids)} unique references in batch"
+                f"Found references for {len(content_references)} content items in batch"
             )
 
-        # Bulk fetch all referenced content for this batch
-        referenced_content_map = self._fetch_referenced_content(
-            all_reference_uuids, verbosity
-        )
-
         # Update relationships for this batch
-        batch_updated = self._update_relationships(
-            content_references, referenced_content_map, verbosity
-        )
+        batch_updated = self._update_relationships(content_references, verbosity)
 
         if verbosity >= 2:  # noqa: PLR2004
             self.stdout.write(f"Updated {batch_updated} content items in batch")
@@ -124,56 +115,29 @@ class Command(WebsiteFilterCommand):
         return batch_updated
 
     def _collect_references(self, content_batch, verbosity):
-        """Collect and flatten references from content batch."""
+        """Collect resolved referenced content ids from a content batch."""
         content_references = {}
-        all_reference_uuids = set()
 
         for content in content_batch:
-            if references := compile_referencing_content(content):
-                content_references[content.id] = references
-                all_reference_uuids.update(references)
+            if referenced_content_ids := resolve_referenced_content_ids(content):
+                content_references[content.id] = referenced_content_ids
 
                 if verbosity >= 3:  # noqa: PLR2004
                     self.stdout.write(
-                        f"Content {content.text_id} references {len(references)} items"
+                        f"Content {content.text_id} references "
+                        f"{len(referenced_content_ids)} items"
                     )
 
-        return content_references, all_reference_uuids
+        return content_references
 
-    def _fetch_referenced_content(self, all_reference_uuids, verbosity):
-        """Fetch referenced content in bulk."""
-        referenced_content_map = {
-            content.text_id: content
-            for content in WebsiteContent.objects.filter(
-                text_id__in=all_reference_uuids
-            ).only("id", "text_id")
-        }
-
-        if verbosity >= 2:  # noqa: PLR2004
-            self.stdout.write(
-                f"Resolved {len(referenced_content_map)} of "
-                f"{len(all_reference_uuids)} references"
-            )
-
-        return referenced_content_map
-
-    def _update_relationships(
-        self, content_references, referenced_content_map, verbosity
-    ):
+    def _update_relationships(self, content_references, verbosity):
         """Update content relationships in a transaction."""
         batch_updated = 0
 
         with transaction.atomic():
-            for content_id, reference_uuids in content_references.items():
+            for content_id, referenced_content_ids in content_references.items():
                 try:
                     content = WebsiteContent.objects.get(id=content_id)
-
-                    # Get valid referenced content objects
-                    referenced_content_ids = {
-                        referenced_content_map[ref_uuid].id
-                        for ref_uuid in reference_uuids
-                        if ref_uuid in referenced_content_map
-                    }
 
                     if referenced_content_ids:
                         referenced_objects = WebsiteContent.objects.filter(

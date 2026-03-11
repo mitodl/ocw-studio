@@ -1,7 +1,6 @@
 """Tests for backpopulate_referencing_content management command"""  # noqa: INP001
 
 from io import StringIO
-from unittest.mock import patch
 
 import pytest
 from django.core.management import call_command
@@ -60,65 +59,31 @@ class BackpopulateReferencingContentCommandTest(TestCase):
             text_id="550e8400-e29b-41d4-a716-446655440002",
         )
 
-    @patch(
-        "websites.management.commands.backpopulate_referencing_content.compile_referencing_content"
-    )
-    def test_collect_references(self, mock_compile):
+    def test_collect_references(self):
         """Test _collect_references method"""
         command = Command()
 
-        # Mock compile_referencing_content to return references
-        mock_compile.side_effect = [
-            ["550e8400-e29b-41d4-a716-446655440001"],
-            [],
-            ["550e8400-e29b-41d4-a716-446655440002"],
-        ]
-
         content_batch = [self.content1, self.content2, self.content3]
-        content_references, all_reference_uuids = command._collect_references(  # noqa: SLF001
-            content_batch, verbosity=0
-        )
+        content_references = command._collect_references(content_batch, verbosity=0)  # noqa: SLF001
 
         expected_references = {
-            self.content1.id: ["550e8400-e29b-41d4-a716-446655440001"],
-            self.content3.id: ["550e8400-e29b-41d4-a716-446655440002"],
-        }
-        expected_uuids = {
-            "550e8400-e29b-41d4-a716-446655440001",
-            "550e8400-e29b-41d4-a716-446655440002",
+            self.content1.id: {self.content2.id},
+            self.content3.id: {self.content4.id},
         }
 
         assert content_references == expected_references
-        assert all_reference_uuids == expected_uuids
-
-    def test_fetch_referenced_content(self):
-        """Test _fetch_referenced_content method"""
-        command = Command()
-
-        reference_uuids = [self.content2.text_id, self.content4.text_id]
-        referenced_content_map = command._fetch_referenced_content(  # noqa: SLF001
-            reference_uuids, verbosity=0
-        )
-
-        assert len(referenced_content_map) == 2
-        assert referenced_content_map[self.content2.text_id].id == self.content2.id
-        assert referenced_content_map[self.content4.text_id].id == self.content4.id
 
     def test_update_relationships(self):
         """Test _update_relationships method"""
         command = Command()
 
         content_references = {
-            self.content1.id: [self.content2.text_id],
-            self.content3.id: [self.content4.text_id],
-        }
-        referenced_content_map = {
-            self.content2.text_id: self.content2,
-            self.content4.text_id: self.content4,
+            self.content1.id: {self.content2.id},
+            self.content3.id: {self.content4.id},
         }
 
         batch_updated = command._update_relationships(  # noqa: SLF001
-            content_references, referenced_content_map, verbosity=0
+            content_references, verbosity=0
         )
 
         assert batch_updated == 2
@@ -135,27 +100,17 @@ class BackpopulateReferencingContentCommandTest(TestCase):
         command = Command()
 
         # Use non-existent content ID
-        content_references = {999999: ["550e8400-e29b-41d4-a716-446655440001"]}
-        referenced_content_map = {"550e8400-e29b-41d4-a716-446655440001": self.content2}
+        content_references = {999999: {self.content2.id}}
 
         batch_updated = command._update_relationships(  # noqa: SLF001
-            content_references, referenced_content_map, verbosity=0
+            content_references, verbosity=0
         )
 
         assert batch_updated == 0
 
-    @patch(
-        "websites.management.commands.backpopulate_referencing_content.compile_referencing_content"
-    )
-    def test_process_batch(self, mock_compile):
+    def test_process_batch(self):
         """Test _process_batch method"""
         command = Command()
-
-        # Mock compile_referencing_content
-        mock_compile.side_effect = [
-            [self.content2.text_id],
-            [],
-        ]
 
         website_qset = [self.website1]
         batch_updated = command._process_batch(website_qset, 0, 10, verbosity=0)  # noqa: SLF001
@@ -169,33 +124,26 @@ class BackpopulateReferencingContentCommandTest(TestCase):
     def test_process_batch_no_references(self):
         """Test _process_batch when no references are found"""
         command = Command()
+        website = WebsiteFactory.create()
+        WebsiteContentFactory.create(website=website, type=CONTENT_TYPE_RESOURCE)
 
-        with patch(
-            "websites.management.commands.backpopulate_referencing_content.compile_referencing_content"
-        ) as mock_compile:
-            mock_compile.return_value = []
+        batch_updated = command._process_batch([website], 0, 10, verbosity=0)  # noqa: SLF001
 
-            website_qset = [self.website1]
-            batch_updated = command._process_batch(website_qset, 0, 10, verbosity=0)  # noqa: SLF001
-
-            assert batch_updated == 0
+        assert batch_updated == 0
 
     def test_empty_content_batch(self):
         """Test handling of empty content batch"""
         command = Command()
 
-        content_references, all_reference_uuids = command._collect_references(  # noqa: SLF001
-            [], verbosity=0
-        )
+        content_references = command._collect_references([], verbosity=0)  # noqa: SLF001
 
         assert content_references == {}
-        assert all_reference_uuids == set()
 
     def test_update_relationships_empty_references(self):
         """Test _update_relationships with empty references"""
         command = Command()
 
-        batch_updated = command._update_relationships({}, {}, verbosity=0)  # noqa: SLF001
+        batch_updated = command._update_relationships({}, verbosity=0)  # noqa: SLF001
 
         assert batch_updated == 0
 
@@ -486,7 +434,7 @@ def test_page_with_embedded_href_uuid_references_detected():
 
 
 def test_course_collection_references_detected():
-    """Test that course-collection cover-image and courselists are detected"""
+    """Test that course-collection references include featured courses."""
     website = WebsiteFactory.create()
     resource1 = WebsiteContentFactory.create(
         website=website,
@@ -500,6 +448,10 @@ def test_course_collection_references_detected():
         website=website,
         type="course-lists",
     )
+    featured_course = WebsiteContentFactory.create(
+        website=website,
+        type="course-lists",
+    )
     course_collection = WebsiteContentFactory.create(
         website=website,
         type=CONTENT_TYPE_COURSE_COLLECTION,
@@ -507,6 +459,7 @@ def test_course_collection_references_detected():
             "title": "My Collection",
             "cover-image": {"content": resource1.text_id},
             "courselists": {"content": [course_list1.text_id, course_list2.text_id]},
+            "featured-courses": {"content": featured_course.text_id},
         },
     )
 
@@ -516,10 +469,11 @@ def test_course_collection_references_detected():
 
     course_collection.refresh_from_db()
     referenced_content = list(course_collection.referenced_by.all())
-    assert len(referenced_content) == 3
+    assert len(referenced_content) == 4
     assert resource1 in referenced_content
     assert course_list1 in referenced_content
     assert course_list2 in referenced_content
+    assert featured_course in referenced_content
 
 
 @override_settings(OCW_COURSE_STARTER_SLUG="course-referencing-test")
@@ -527,27 +481,48 @@ def test_course_list_courses_references_detected():
     """Course-list course ids should resolve to sitemetadata (consistent for all courses)."""
     course_starter = WebsiteStarterFactory.create(
         slug="course-referencing-test",
-        config={"root-url-path": "courses"},
+        config={"root-url-path": "learn"},
     )
     ocw_www = WebsiteFactory.create(name="ocw-www")
     course_site_1 = WebsiteFactory.create(
         short_id="test-course-1",
-        url_path="courses/test-course-1",
+        url_path=WebsiteFactory.build(
+            short_id="test-course-1",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-1"),
         starter=course_starter,
     )
     course_site_2 = WebsiteFactory.create(
         short_id="test-course-2",
-        url_path="courses/test-course-2",
+        url_path=WebsiteFactory.build(
+            short_id="test-course-2",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-2"),
+        starter=course_starter,
+    )
+    unrelated_course_site = WebsiteFactory.create(
+        short_id="test-course-3",
+        url_path=WebsiteFactory.build(
+            short_id="test-course-3",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-3"),
         starter=course_starter,
     )
     # Create sitemetadata for each course (consistent approach)
     sitemetadata_1 = WebsiteContentFactory.create(
         website=course_site_1,
         type=CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
     )
     sitemetadata_2 = WebsiteContentFactory.create(
         website=course_site_2,
         type=CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
+    )
+    unrelated_sitemetadata = WebsiteContentFactory.create(
+        website=unrelated_course_site,
+        type=CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
     )
 
     course_list = WebsiteContentFactory.create(
@@ -557,13 +532,11 @@ def test_course_list_courses_references_detected():
             "description": "No markdown refs here",
             "courses": [
                 {
-                    "id": f"courses/{course_site_1.short_id}",
-                    "text_id": sitemetadata_1.text_id,
+                    "id": course_site_1.url_path,
                     "title": "Course 1",
                 },
                 {
-                    "id": f"courses/{course_site_2.short_id}",
-                    "text_id": sitemetadata_2.text_id,
+                    "id": course_site_2.url_path,
                     "title": "Course 2",
                 },
             ],
@@ -579,6 +552,7 @@ def test_course_list_courses_references_detected():
     assert len(referenced_content) == 2
     assert sitemetadata_1 in referenced_content
     assert sitemetadata_2 in referenced_content
+    assert unrelated_sitemetadata not in referenced_content
 
 
 def test_promo_references_detected():

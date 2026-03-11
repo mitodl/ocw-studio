@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db.models import Q
 
 from websites import constants
+from websites.models import Website, WebsiteContent
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
 def resource_reference_field_filter(
     field: dict,
     resource_id: str,
-    website: "Website",  # noqa: F821
+    website: "Website",
 ) -> Q | None:
     """
     Generates an appropriate Q expression to filter a field for a resource usage.
@@ -150,6 +151,7 @@ def get_metadata_content_key(content) -> list:
                 constants.METADATA_FIELD_DESCRIPTION,
                 constants.METADATA_FIELD_COVER_IMAGE,
                 constants.METADATA_FIELD_COURSE_LISTS,
+                constants.METADATA_FIELD_FEATURED_COURSES,
             ]
         case constants.CONTENT_TYPE_COURSE_LIST:
             content_keys = [
@@ -255,18 +257,16 @@ def _extract_relation_text_ids(resource_data: list) -> list[str]:
     return references
 
 
-def _get_sitemetadata_for_course_path(course_id: str) -> str | None:
+def _get_sitemetadata_for_course_path(course_id: str):
     """
-    Get sitemetadata text_id for a course path reference.
+    Get the sitemetadata object for a course site url_path reference.
 
     Args:
-        course_id: Course path like "courses/test-spring-2001"
+        course_id: Course site url_path like "courses/test-spring-2001"
 
     Returns:
-        The sitemetadata text_id if found, None otherwise
+        The sitemetadata content object if found, None otherwise
     """
-    from websites.models import Website  # noqa: PLC0415
-
     normalized_path = course_id.strip().strip("/")
 
     try:
@@ -275,63 +275,34 @@ def _get_sitemetadata_for_course_path(course_id: str) -> str | None:
             type=constants.CONTENT_TYPE_METADATA
         ).first()
 
-        if sitemetadata:
-            log.info(
-                "Auto-populated text_id for %s → %s",
-                course_id,
-                sitemetadata.text_id,
-            )
-            return sitemetadata.text_id
     except Website.DoesNotExist:
         log.debug(
             "Could not find website for course path: %s",
             course_id,
         )
+        sitemetadata = None
 
-    return None
+    return sitemetadata
 
 
-def populate_course_list_text_ids(content) -> bool:
-    """
-    Populate text_id fields in course-list entries based on path references.
-
-    Args:
-        content: WebsiteContent instance
-
-    Returns:
-        True if any changes were made, False otherwise
-    """
-    # Only process course-list content with valid metadata
-    if (
-        content.type != constants.CONTENT_TYPE_COURSE_LIST
-        or not content.metadata
-        or not isinstance(content.metadata, dict)
-    ):
-        return False
+def _resolve_course_list_referenced_content_ids(content) -> set[int]:
+    """Resolve course-list course entries to concrete referenced content ids."""
+    referenced_content_ids = set()
 
     courses = content.metadata.get(constants.METADATA_FIELD_COURSE_LIST_COURSES, [])
-    if not courses:
-        return False
-
-    modified = False
-
     for course_entry in courses:
-        # Only process dict entries without text_id
-        if not isinstance(course_entry, dict) or course_entry.get("text_id"):
+        if not isinstance(course_entry, dict):
             continue
 
         course_id = course_entry.get("id")
-        # Only process path-like string references (e.g., "courses/...")
-        if not isinstance(course_id, str) or "/" not in course_id:
-            continue
+        if (
+            isinstance(course_id, str)
+            and "/" in course_id
+            and (sitemetadata := _get_sitemetadata_for_course_path(course_id))
+        ):
+            referenced_content_ids.add(sitemetadata.id)
 
-        # Try to find and populate text_id
-        text_id = _get_sitemetadata_for_course_path(course_id)
-        if text_id:
-            course_entry["text_id"] = text_id
-            modified = True
-
-    return modified
+    return referenced_content_ids
 
 
 def compile_referencing_content(content) -> list[str]:
@@ -349,6 +320,12 @@ def compile_referencing_content(content) -> list[str]:
 
         if content.metadata:
             content_keys = get_metadata_content_key(content)
+            if content.type == constants.CONTENT_TYPE_COURSE_LIST:
+                content_keys = [
+                    content_key
+                    for content_key in content_keys
+                    if content_key != constants.METADATA_FIELD_COURSE_LIST_COURSES
+                ]
             for content_key in content_keys:
                 if resource_data := get_dict_field(content.metadata, content_key):
                     if isinstance(resource_data, list):
@@ -367,3 +344,20 @@ def compile_referencing_content(content) -> list[str]:
                             content.text_id,
                         )
     return references
+
+
+def resolve_referenced_content_ids(content) -> set[int]:
+    """Resolve referenced content to concrete WebsiteContent ids."""
+    reference_text_ids = compile_referencing_content(content)
+    referenced_content_ids = set(
+        WebsiteContent.objects.filter(text_id__in=reference_text_ids).values_list(
+            "id", flat=True
+        )
+    )
+
+    if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
+        referenced_content_ids.update(
+            _resolve_course_list_referenced_content_ids(content)
+        )
+
+    return referenced_content_ids
