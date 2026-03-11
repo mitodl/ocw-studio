@@ -291,11 +291,143 @@ def test_set_dict_field():
             "{{< resource 550e8400-e29b-41d4-a716-446655440006 >}}",
             ["550e8400-e29b-41d4-a716-446655440006"],
         ),
+        # Quoted positional uuid in resource embed should parse
+        (
+            '{{< resource "550e8400-e29b-41d4-a716-446655440007" >}}',
+            ["550e8400-e29b-41d4-a716-446655440007"],
+        ),
+        # Embedded shortcode content inside resource_link title should not block parsing
+        (
+            '{{% resource_link "550e8400-e29b-41d4-a716-446655440003" "APA Style{{< sup "{{< sub \\"R\\" >}}" >}}" %}}',
+            ["550e8400-e29b-41d4-a716-446655440003"],
+        ),
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
     """parse_resource_uuid should return all referenced resource UUIDs."""
     assert parse_resource_uuid(input_text) == expected_uuids
+
+
+def test_parse_resource_uuid_with_surrounding_text():
+    """parse_resource_uuid works when resource patterns are embedded in other text."""
+    text = """
+    This is some markdown content before the resource.
+
+    {{< resource uuid="123e4567-e89b-12d3-a456-426614174000" >}}
+
+    Here is some content in between resources.
+
+    {{% resource_link "987fcdeb-ba01-2345-6789-abcdef012345" "My Resource Title" %}}
+
+    And here is some content after the resources.
+    """
+
+    result = parse_resource_uuid(text)
+    expected = [
+        "123e4567-e89b-12d3-a456-426614174000",
+        "987fcdeb-ba01-2345-6789-abcdef012345",
+    ]
+    assert result == expected
+
+
+def test_parse_resource_uuid_case_sensitivity():
+    """parse_resource_uuid is case sensitive for pattern matching."""
+    invalid_cases = [
+        '{{< Resource uuid="123e4567-e89b-12d3-a456-426614174000" >}}',
+        '{{< RESOURCE UUID="123e4567-e89b-12d3-a456-426614174000" >}}',
+        '{{% RESOURCE_LINK "123e4567-e89b-12d3-a456-426614174000" "title" %}}',
+    ]
+
+    for text in invalid_cases:
+        result = parse_resource_uuid(text)
+        assert result == [], f"Expected no matches for: {text}"
+
+
+def test_compile_referencing_content_navmenu_type():
+    """compile_referencing_content with NAVMENU type extracts identifiers."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={
+            constants.WEBSITE_CONTENT_LEFTNAV: [
+                {"identifier": "12345678-90ab-cdef-1234-567890abcdef"},
+                {"identifier": "abcdef12-3456-789a-bcde-f1234567890a"},
+                {"identifier": "99887766-5544-3322-1100-ffeeddccbbaa"},
+            ]
+        },
+        markdown="This markdown should be ignored for navmenu type",
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "12345678-90ab-cdef-1234-567890abcdef",
+        "abcdef12-3456-789a-bcde-f1234567890a",
+        "99887766-5544-3322-1100-ffeeddccbbaa",
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_navmenu_empty():
+    """compile_referencing_content with NAVMENU type but empty leftnav."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={constants.WEBSITE_CONTENT_LEFTNAV: []},
+        markdown="This markdown should be ignored",
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_page_markdown():
+    """compile_referencing_content with PAGE type containing markdown references."""
+    markdown_content = (
+        '{{% resource_link "550e8400-e29b-41d4-a716-446655440001" "Resource 1" %}} '
+        'and {{< resource uuid="550e8400-e29b-41d4-a716-446655440002" >}}'
+    )
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=markdown_content,
+        metadata={},
+    )
+
+    result = compile_referencing_content(content)
+    expected = [
+        "550e8400-e29b-41d4-a716-446655440001",
+        "550e8400-e29b-41d4-a716-446655440002",
+    ]
+    assert result == expected
+
+
+def test_compile_referencing_content_description_metadata():
+    """compile_referencing_content with RESOURCE_LIST/RESOURCE_COLLECTION description metadata."""
+    content_list = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_LIST,
+        markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
+        metadata={
+            "description": '{{< resource uuid="66778899-aabb-ccdd-eeff-112233445566" >}}',
+            "other_field": "This should be ignored",
+        },
+    )
+
+    result_list = compile_referencing_content(content_list)
+    expected = [
+        "11223344-5566-7788-99aa-bbccddee1122",
+        "66778899-aabb-ccdd-eeff-112233445566",
+    ]
+    assert result_list == expected
+
+    content_collection = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE_COLLECTION,
+        markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
+        metadata={
+            "description": '{{< resource uuid="66778899-aabb-ccdd-eeff-112233445566" >}}',
+            "other_field": "This should be ignored",
+        },
+    )
+
+    result_collection = compile_referencing_content(content_collection)
+    assert result_collection == expected
 
 
 def test_compile_referencing_content_course_collections():

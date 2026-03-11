@@ -296,10 +296,8 @@ def _resolve_course_list_referenced_content_ids(content) -> set[int]:
             continue
 
         course_id = course_entry.get("id")
-        if (
-            isinstance(course_id, str)
-            and "/" in course_id
-            and (sitemetadata := _get_sitemetadata_for_course_path(course_id))
+        if isinstance(course_id, str) and (
+            sitemetadata := _get_sitemetadata_for_course_path(course_id)
         ):
             referenced_content_ids.add(sitemetadata.id)
 
