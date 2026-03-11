@@ -4,11 +4,11 @@ import logging
 import re
 from typing import Any
 
+from django.apps import apps
 from django.conf import settings
 from django.db.models import Q
 
 from websites import constants
-from websites.models import Website, WebsiteContent
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def get_valid_base_filename(filename: str, content_type: str) -> str:
 def resource_reference_field_filter(
     field: dict,
     resource_id: str,
-    website: "Website",
+    website,
 ) -> Q | None:
     """
     Generates an appropriate Q expression to filter a field for a resource usage.
@@ -269,6 +269,7 @@ def _get_sitemetadata_for_course_path(course_id: str):
     """
     normalized_path = course_id.strip().strip("/")
 
+    Website = apps.get_model("websites", "Website")
     try:
         website = Website.objects.get(url_path=normalized_path)
         sitemetadata = website.websitecontent_set.filter(
@@ -348,6 +349,7 @@ def compile_referencing_content(content) -> list[str]:
 
 def resolve_referenced_content_ids(content) -> set[int]:
     """Resolve referenced content to concrete WebsiteContent ids."""
+    WebsiteContent = apps.get_model("websites", "WebsiteContent")
     reference_text_ids = compile_referencing_content(content)
     referenced_content_ids = set(
         WebsiteContent.objects.filter(text_id__in=reference_text_ids).values_list(
