@@ -121,16 +121,32 @@ class Command(WebsiteFilterCommand):
     def _collect_references(self, content_batch, verbosity):
         """Collect resolved referenced content ids from a content batch.
 
-        Batches the text_id-based lookups into a single query across the
-        whole batch to avoid N+1 queries.  Course-list url_path resolution
-        is still per-item because it depends on website lookups that cannot
-        easily be batched.
+        Uses a single bulk DB query to resolve all text_id references across
+        the whole batch (avoiding N+1 queries).  Course-list url_path
+        resolution is still per-item because it depends on per-website lookups
+        that cannot easily be batched.
         """
-        per_content_text_ids, course_list_ids, all_text_ids = (
-            self._compile_batch_text_ids(content_batch)
-        )
-        text_id_to_ids = self._bulk_resolve_text_ids(all_text_ids)
+        # Pass 1 (no DB): extract text_id references from every item.
+        per_content_text_ids: dict[int, list[str]] = {}
+        course_lists = []
+        all_text_ids: set[str] = set()
+        for content in content_batch:
+            text_ids = compile_referencing_content(content)
+            if text_ids:
+                per_content_text_ids[content.id] = text_ids
+                all_text_ids.update(text_ids)
+            if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
+                course_lists.append(content)
 
+        # Pass 2 (single bulk DB query): resolve all collected text_ids at once.
+        text_id_to_ids: dict[str, set[int]] = {}
+        if all_text_ids:
+            for wc_id, wc_text_id in WebsiteContent.objects.filter(
+                text_id__in=all_text_ids
+            ).values_list("id", "text_id"):
+                text_id_to_ids.setdefault(wc_text_id, set()).add(wc_id)
+
+        # Pass 3 (no DB): map the bulk results back to each content item.
         content_references: dict[int, set[int]] = {}
         for content_id, text_ids in per_content_text_ids.items():
             resolved = {
@@ -139,7 +155,13 @@ class Command(WebsiteFilterCommand):
             if resolved:
                 content_references[content_id] = resolved
 
-        self._merge_course_list_ids(content_batch, course_list_ids, content_references)
+        # Pass 4 (per-item DB): resolve course-list url_path entries.
+        for content in course_lists:
+            extra_ids = resolve_referenced_content_ids(content)
+            if extra_ids:
+                content_references[content.id] = (
+                    content_references.get(content.id, set()) | extra_ids
+                )
 
         if verbosity >= 3:  # noqa: PLR2004
             for content_id, refs in content_references.items():
@@ -148,46 +170,6 @@ class Command(WebsiteFilterCommand):
                 )
 
         return content_references
-
-    def _compile_batch_text_ids(self, content_batch):
-        """Compile text_id references for each item without hitting the DB."""
-        per_content_text_ids: dict[int, list[str]] = {}
-        course_list_ids: list[int] = []
-        all_text_ids: set[str] = set()
-
-        for content in content_batch:
-            text_ids = compile_referencing_content(content)
-            if text_ids:
-                per_content_text_ids[content.id] = text_ids
-                all_text_ids.update(text_ids)
-            if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
-                course_list_ids.append(content.id)
-
-        return per_content_text_ids, course_list_ids, all_text_ids
-
-    def _bulk_resolve_text_ids(self, all_text_ids):
-        """Return a mapping of text_id → set of WebsiteContent ids via one query."""
-        text_id_to_ids: dict[str, set[int]] = {}
-        if all_text_ids:
-            for wc_id, wc_text_id in WebsiteContent.objects.filter(
-                text_id__in=all_text_ids
-            ).values_list("id", "text_id"):
-                text_id_to_ids.setdefault(wc_text_id, set()).add(wc_id)
-        return text_id_to_ids
-
-    def _merge_course_list_ids(
-        self, content_batch, course_list_ids, content_references
-    ):
-        """Merge per-item course-list url_path resolutions into content_references."""
-        if not course_list_ids:
-            return
-        course_list_map = {c.id: c for c in content_batch if c.id in course_list_ids}
-        for content_id, content in course_list_map.items():
-            extra_ids = resolve_referenced_content_ids(content)
-            if extra_ids:
-                content_references[content_id] = (
-                    content_references.get(content_id, set()) | extra_ids
-                )
 
     def _update_relationships(self, content_references, verbosity):
         """Update content relationships in a transaction."""
