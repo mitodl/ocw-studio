@@ -84,24 +84,20 @@ export default function Header(props: HeaderProps): JSX.Element {
         {user !== null ? (
           <div className="links">
             <span className="pr-5">{user.name}</span>
-            <a
-              href={logoutUrl.toString()}
-              onClick={(e) => {
-                e.preventDefault()
-                const form = document.createElement("form")
-                form.method = "post"
-                form.action = logoutUrl.toString()
-                const csrf = document.createElement("input")
-                csrf.type = "hidden"
-                csrf.name = "csrfmiddlewaretoken"
-                csrf.value = getCookie("csrftoken")
-                form.appendChild(csrf)
-                document.body.appendChild(form)
-                form.submit()
-              }}
+            <form
+              method="post"
+              action={logoutUrl.toString()}
+              style={{ display: "inline" }}
             >
-              Log out
-            </a>
+              <input
+                type="hidden"
+                name="csrfmiddlewaretoken"
+                value={getCookie("csrftoken")}
+              />
+              <button type="submit" className="btn btn-link p-0">
+                Log out
+              </button>
+            </form>
           </div>
         ) : null}
       </div>
