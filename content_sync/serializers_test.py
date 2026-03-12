@@ -6,6 +6,7 @@ import re
 import pytest
 import yaml
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from moto import mock_aws
 
 from content_sync.serializers import (
@@ -241,14 +242,16 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 
 @mock_aws
 @pytest.mark.django_db
-def test_hugo_file_deserialize_with_file(settings):
-    """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
-    settings.STORAGES = {
+@override_settings(
+    STORAGES={
         "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
         "staticfiles": {
             "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
         },
     }
+)
+def test_hugo_file_deserialize_with_file(settings):
+    """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
     website = WebsiteFactory.create(url_path="courses/website_name-fall-2025")
     website.starter.config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY] = "courses"
     site_config = SiteConfig(website.starter.config)
