@@ -36,9 +36,9 @@ The mass build pipeline embeds `url_path` values at upsert time. Regenerate both
 
 ## Step 5 — Publish from the Studio UI
 
-Trigger a live and draft publish from the Studio publish drawer.
+Publish live, and draft sites from the Studio publish drawer.
 
-Monitor the Concourse builds until they shows `succeeded`.
+Monitor the Concourse builds until they show `succeeded`.
 
 ## Step 6 — Add a Redirect from the Old URL
 
@@ -69,7 +69,7 @@ wc = WebsiteContent.objects.filter(
 
 Search on [ocw.mit.edu](https://ocw.mit.edu/search) — results should point to the new URL.
 
-This may take some time, depending on whenever the indexing in open-discussions/learn happens.
+This may take some time, depending on when the indexing in open-discussions/learn completes.
 
 ## Step 9 — Remove Old Content from S3
 
@@ -79,9 +79,9 @@ Only do this once you are confident the entire migration was successful.
 
 ```bash
 aws s3 rm s3://<AWS_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
-aws s3 rm s3://<AWS_DRAFT_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
+aws s3 rm s3://<AWS_PREVIEW_BUCKET_NAME>/courses/<old-slug>/ --recursive
 
 aws s3 rm s3://<AWS_OFFLINE_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
-aws s3 rm s3://<AWS_OFFLINE_DRAFT_PUBLISH_BUCKET_NAME>/courses/<old-slug>/ --recursive
+aws s3 rm s3://<AWS_OFFLINE_PREVIEW_BUCKET_NAME>/courses/<old-slug>/ --recursive
 
 ```
