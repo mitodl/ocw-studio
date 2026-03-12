@@ -67,7 +67,7 @@ class TestSettings(TestCase):
             {**REQUIRED_SETTINGS, "OCW_STUDIO_USE_S3": "False"}
         )
         assert (
-            settings_vars.get("DEFAULT_FILE_STORAGE")
+            settings_vars.get("STORAGES", {}).get("default", {}).get("BACKEND")
             != "storages.backends.s3boto3.S3Boto3Storage"
         )
 
