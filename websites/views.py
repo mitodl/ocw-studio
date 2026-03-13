@@ -85,9 +85,9 @@ from websites.serializers import (
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import (
-    compile_referencing_content,
     get_valid_base_filename,
     permissions_group_name_for_role,
+    resolve_referenced_content_ids,
 )
 
 log = logging.getLogger(__name__)
@@ -805,8 +805,9 @@ class WebsiteContentViewSet(
 
     def _referencing_content(self, instance: WebsiteContent):
         """Update instance.referenced_by based on the referencing content"""
-        references = compile_referencing_content(instance)
-        content_refs = WebsiteContent.objects.filter(text_id__in=references).all()
+        content_refs = WebsiteContent.objects.filter(
+            id__in=resolve_referenced_content_ids(instance)
+        ).all()
         instance.referenced_by.set(content_refs)
 
     def perform_update(self, serializer):
