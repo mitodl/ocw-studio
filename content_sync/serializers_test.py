@@ -109,48 +109,50 @@ def get_example_menu_data():
     ("markdown", "exp_sections"),
     [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]],  # noqa: PT007
 )
-def test_hugo_file_serialize(settings, tmp_path, markdown, exp_sections):
+def test_hugo_file_serialize(tmp_path, markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
-    settings.MEDIA_ROOT = str(tmp_path)
-    metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
-    content = WebsiteContentFactory.create(
-        text_id="abcdefg",
-        title="Content Title",
-        type="resource",
-        markdown=markdown,
-        metadata=metadata,
-        file=SimpleUploadedFile("mysite/test.pdf", b"content"),
-        website=WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2025"),
-    )
-    site_config = SiteConfig(content.website.starter.config)
+    with override_settings(MEDIA_ROOT=str(tmp_path)):
+        metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
+        content = WebsiteContentFactory.create(
+            text_id="abcdefg",
+            title="Content Title",
+            type="resource",
+            markdown=markdown,
+            metadata=metadata,
+            file=SimpleUploadedFile("mysite/test.pdf", b"content"),
+            website=WebsiteFactory.create(
+                name="mysite", url_path="sites/mysite-fall-2025"
+            ),
+        )
+        site_config = SiteConfig(content.website.starter.config)
 
-    file_content = HugoMarkdownFileSerializer(site_config).serialize(
-        website_content=content
-    )
-    md_file_sections = [
-        part
-        for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_content)
-        # re.split returns a blank string as the first item here even though the file contents begin with the given
-        # pattern.
-        if part
-    ]
-    assert len(md_file_sections) == exp_sections
-    front_matter = md_file_sections[0]
-    front_matter_lines = list(filter(None, sorted(front_matter.split("\n"))))
-    assert front_matter_lines == sorted(
-        [
-            f"title: {content.title}",
-            f"content_type: {content.type}",
-            f"uid: {content.text_id}",
+        file_content = HugoMarkdownFileSerializer(site_config).serialize(
+            website_content=content
+        )
+        md_file_sections = [
+            part
+            for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_content)
+            # re.split returns a blank string as the first item here even though the file contents begin with the given
+            # pattern.
+            if part
         ]
-        + [f"{k}: {v}" for k, v in metadata.items()]
-    )
-    assert (
-        f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
-        in front_matter_lines
-    )
-    if exp_sections > 1:
-        assert md_file_sections[1] == markdown
+        assert len(md_file_sections) == exp_sections
+        front_matter = md_file_sections[0]
+        front_matter_lines = list(filter(None, sorted(front_matter.split("\n"))))
+        assert front_matter_lines == sorted(
+            [
+                f"title: {content.title}",
+                f"content_type: {content.type}",
+                f"uid: {content.text_id}",
+            ]
+            + [f"{k}: {v}" for k, v in metadata.items()]
+        )
+        assert (
+            f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
+            in front_matter_lines
+        )
+        if exp_sections > 1:
+            assert md_file_sections[1] == markdown
 
 
 @pytest.mark.django_db

@@ -153,11 +153,11 @@ INSTALLED_APPS = [
     "gdrive_sync",
     "videos",
     "external_resources",
+    "django_removals",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
-    "django_removals",
 ]
 
 if ENVIRONMENT not in PRODUCTION_NAMES:
