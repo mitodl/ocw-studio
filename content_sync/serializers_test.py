@@ -6,6 +6,7 @@ import re
 import pytest
 import yaml
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from moto import mock_aws
 
 from content_sync.serializers import (
@@ -103,54 +104,55 @@ def get_example_menu_data():
     ]
 
 
-@mock_aws
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     ("markdown", "exp_sections"),
     [["# Some markdown...\n- and\n- a\n- list", 2], [None, 1]],  # noqa: PT007
 )
-def test_hugo_file_serialize(settings, markdown, exp_sections):
+def test_hugo_file_serialize(tmp_path, markdown, exp_sections):
     """HugoMarkdownFileSerializer.serialize should create the expected file contents"""
-    settings.OCW_STUDIO_USE_S3 = True
-    metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
-    content = WebsiteContentFactory.create(
-        text_id="abcdefg",
-        title="Content Title",
-        type="resource",
-        markdown=markdown,
-        metadata=metadata,
-        file=SimpleUploadedFile("mysite/test.pdf", b"content"),
-        website=WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2025"),
-    )
-    site_config = SiteConfig(content.website.starter.config)
+    with override_settings(MEDIA_ROOT=str(tmp_path)):
+        metadata = {"metadata1": "dummy value 1", "metadata2": "dummy value 2"}
+        content = WebsiteContentFactory.create(
+            text_id="abcdefg",
+            title="Content Title",
+            type="resource",
+            markdown=markdown,
+            metadata=metadata,
+            file=SimpleUploadedFile("mysite/test.pdf", b"content"),
+            website=WebsiteFactory.create(
+                name="mysite", url_path="sites/mysite-fall-2025"
+            ),
+        )
+        site_config = SiteConfig(content.website.starter.config)
 
-    file_content = HugoMarkdownFileSerializer(site_config).serialize(
-        website_content=content
-    )
-    md_file_sections = [
-        part
-        for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_content)
-        # re.split returns a blank string as the first item here even though the file contents begin with the given
-        # pattern.
-        if part
-    ]
-    assert len(md_file_sections) == exp_sections
-    front_matter = md_file_sections[0]
-    front_matter_lines = list(filter(None, sorted(front_matter.split("\n"))))
-    assert front_matter_lines == sorted(
-        [
-            f"title: {content.title}",
-            f"content_type: {content.type}",
-            f"uid: {content.text_id}",
+        file_content = HugoMarkdownFileSerializer(site_config).serialize(
+            website_content=content
+        )
+        md_file_sections = [
+            part
+            for part in re.split(re.compile(r"^---\n", re.MULTILINE), file_content)
+            # re.split returns a blank string as the first item here even though the file contents begin with the given
+            # pattern.
+            if part
         ]
-        + [f"{k}: {v}" for k, v in metadata.items()]
-    )
-    assert (
-        f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
-        in front_matter_lines
-    )
-    if exp_sections > 1:
-        assert md_file_sections[1] == markdown
+        assert len(md_file_sections) == exp_sections
+        front_matter = md_file_sections[0]
+        front_matter_lines = list(filter(None, sorted(front_matter.split("\n"))))
+        assert front_matter_lines == sorted(
+            [
+                f"title: {content.title}",
+                f"content_type: {content.type}",
+                f"uid: {content.text_id}",
+            ]
+            + [f"{k}: {v}" for k, v in metadata.items()]
+        )
+        assert (
+            f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
+            in front_matter_lines
+        )
+        if exp_sections > 1:
+            assert md_file_sections[1] == markdown
 
 
 @pytest.mark.django_db
@@ -242,9 +244,16 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 
 @mock_aws
 @pytest.mark.django_db
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        },
+    }
+)
 def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
-    settings.DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     website = WebsiteFactory.create(url_path="courses/website_name-fall-2025")
     website.starter.config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY] = "courses"
     site_config = SiteConfig(website.starter.config)

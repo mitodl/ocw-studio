@@ -8,6 +8,7 @@ import { useSearchParams } from "../hooks/search"
 
 import PublishDrawer from "../components/PublishDrawer"
 
+import { getCookie } from "../lib/api/util"
 import { logoutUrl, sitesBaseUrl } from "../lib/urls"
 import { websiteStatusRequest } from "../query-configs/websites"
 import { PUBLISH_STATUS_PROCESSING_STATES } from "../constants"
@@ -83,7 +84,20 @@ export default function Header(props: HeaderProps): JSX.Element {
         {user !== null ? (
           <div className="links">
             <span className="pr-5">{user.name}</span>
-            <a href={logoutUrl.toString()}>Log out</a>
+            <form
+              method="post"
+              action={logoutUrl.toString()}
+              className="d-inline"
+            >
+              <input
+                type="hidden"
+                name="csrfmiddlewaretoken"
+                value={getCookie("csrftoken")}
+              />
+              <button type="submit" className="logout-btn">
+                Log out
+              </button>
+            </form>
           </div>
         ) : null}
       </div>

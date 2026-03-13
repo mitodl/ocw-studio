@@ -153,6 +153,7 @@ INSTALLED_APPS = [
     "gdrive_sync",
     "videos",
     "external_resources",
+    "django_removals",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
@@ -895,7 +896,6 @@ HIJACK_LOGOUT_REDIRECT_URL = "/admin/users/user/"
 HIJACK_REGISTER_ADMIN = False
 HIJACK_ALLOW_GET_REQUESTS = True
 
-LOGOUT_URL = "/logout"
 LOGOUT_REDIRECT_URL = "/"
 
 SOCIAL_AUTH_PIPELINE = (

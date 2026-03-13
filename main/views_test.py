@@ -6,10 +6,16 @@ import json
 
 import pytest
 from django.urls import reverse
-from rest_framework.status import HTTP_200_OK, HTTP_302_FOUND
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_302_FOUND,
+    HTTP_405_METHOD_NOT_ALLOWED,
+)
 
 from users.factories import UserFactory
 from websites.constants import CONTENT_FILENAME_MAX_LEN
+
+SESSION_KEY = "_auth_user_id"
 
 pytestmark = [
     pytest.mark.django_db,
@@ -103,3 +109,18 @@ def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     else:
         assert response.status_code == HTTP_302_FOUND
         assert response.url.startswith("/?next=")
+
+
+def test_logout_requires_post(client):
+    """Django 5.x+ LogoutView rejects GET requests; POST with CSRF is required."""
+    user = UserFactory.create()
+    client.force_login(user)
+    assert SESSION_KEY in client.session
+
+    response = client.get(reverse("logout"))
+    assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
+    assert SESSION_KEY in client.session
+
+    response = client.post(reverse("logout"))
+    assert response.status_code == HTTP_302_FOUND
+    assert SESSION_KEY not in client.session

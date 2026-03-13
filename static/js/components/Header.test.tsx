@@ -30,7 +30,7 @@ describe("Header without loaded website", () => {
     expect(ocwLogo.src).toBe(absoluteUrl("/static/images/ocw-studio-logo.png"))
   })
 
-  it("shows the user's name and logout link for logged in users", () => {
+  it("shows the user's name and logout button for logged in users", () => {
     const helper = new IntegrationTestHelper()
     const [result] = helper.render(<Header />)
     const links = result.container.querySelector("div.links")
@@ -41,8 +41,11 @@ describe("Header without loaded website", () => {
     assertInstanceOf(username, HTMLSpanElement)
 
     const logout = dtl.getByText(links, "Log out")
-    assertInstanceOf(logout, HTMLAnchorElement)
-    expect(logout.href).toBe(absoluteUrl(logoutUrl.toString()))
+    assertInstanceOf(logout, HTMLButtonElement)
+    const form = logout.closest("form")
+    assertInstanceOf(form, HTMLFormElement)
+    expect(form.method).toBe("post")
+    expect(form.action).toBe(absoluteUrl(logoutUrl.toString()))
   })
 
   it("does not show username+logout for anonymous users", () => {
