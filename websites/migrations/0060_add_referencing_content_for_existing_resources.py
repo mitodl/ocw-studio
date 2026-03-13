@@ -4,7 +4,7 @@ import logging
 
 from django.db import migrations
 
-from websites.utils import compile_referencing_content
+from websites.utils import resolve_referenced_content_ids
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,10 @@ def migrate_metadata_forward(apps, schema_editor):
 
     # Process records in batches without loading all into memory
     for content in WebsiteContent.objects.iterator(chunk_size=1000):
-        if references := compile_referencing_content(content):
-            referenced_objects = WebsiteContent.objects.filter(text_id__in=references)
+        if referenced_content_ids := resolve_referenced_content_ids(content):
+            referenced_objects = WebsiteContent.objects.filter(
+                id__in=referenced_content_ids
+            )
             content.referenced_by.set(referenced_objects)
 
 

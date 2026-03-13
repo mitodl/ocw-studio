@@ -1,9 +1,15 @@
 """Website utils tests"""
 
+from typing import Any
+
 import pytest
 
 from websites import constants
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.utils import (
     compile_referencing_content,
     get_dict_field,
@@ -11,7 +17,7 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
-    populate_course_list_text_ids,
+    resolve_referenced_content_ids,
     set_dict_field,
 )
 
@@ -298,13 +304,12 @@ def test_set_dict_field():
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
-    """Test parse_resource_uuid extracts UUIDs correctly from various resource patterns"""
-    result = parse_resource_uuid(input_text)
-    assert result == expected_uuids
+    """parse_resource_uuid should return all referenced resource UUIDs."""
+    assert parse_resource_uuid(input_text) == expected_uuids
 
 
 def test_parse_resource_uuid_with_surrounding_text():
-    """Test parse_resource_uuid works correctly when resource patterns are embedded in other text"""
+    """parse_resource_uuid works when resource patterns are embedded in other text."""
     text = """
     This is some markdown content before the resource.
 
@@ -326,12 +331,11 @@ def test_parse_resource_uuid_with_surrounding_text():
 
 
 def test_parse_resource_uuid_case_sensitivity():
-    """Test that parse_resource_uuid is case sensitive for the pattern matching"""
-    # These should not match because of case differences
+    """parse_resource_uuid is case sensitive for pattern matching."""
     invalid_cases = [
-        '{{< Resource uuid="123e4567-e89b-12d3-a456-426614174000" >}}',  # Capital R
-        '{{< RESOURCE UUID="123e4567-e89b-12d3-a456-426614174000" >}}',  # All caps
-        '{{% RESOURCE_LINK "123e4567-e89b-12d3-a456-426614174000" "title" %}}',  # All caps
+        '{{< Resource uuid="123e4567-e89b-12d3-a456-426614174000" >}}',
+        '{{< RESOURCE UUID="123e4567-e89b-12d3-a456-426614174000" >}}',
+        '{{% RESOURCE_LINK "123e4567-e89b-12d3-a456-426614174000" "title" %}}',
     ]
 
     for text in invalid_cases:
@@ -340,8 +344,7 @@ def test_parse_resource_uuid_case_sensitivity():
 
 
 def test_compile_referencing_content_navmenu_type():
-    """Test compile_referencing_content with NAVMENU content type"""
-    # Create content with NAVMENU type and leftnav metadata
+    """compile_referencing_content with NAVMENU type extracts identifiers."""
     content = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_NAVMENU,
         metadata={
@@ -364,7 +367,7 @@ def test_compile_referencing_content_navmenu_type():
 
 
 def test_compile_referencing_content_navmenu_empty():
-    """Test compile_referencing_content with NAVMENU type but empty/no leftnav"""
+    """compile_referencing_content with NAVMENU type but empty leftnav."""
     content = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_NAVMENU,
         metadata={constants.WEBSITE_CONTENT_LEFTNAV: []},
@@ -376,7 +379,7 @@ def test_compile_referencing_content_navmenu_empty():
 
 
 def test_compile_referencing_content_page_markdown():
-    """Test compile_referencing_content with PAGE type containing markdown references"""
+    """compile_referencing_content with PAGE type containing markdown references."""
     markdown_content = (
         '{{% resource_link "550e8400-e29b-41d4-a716-446655440001" "Resource 1" %}} '
         'and {{< resource uuid="550e8400-e29b-41d4-a716-446655440002" >}}'
@@ -397,8 +400,7 @@ def test_compile_referencing_content_page_markdown():
 
 
 def test_compile_referencing_content_description_metadata():
-    """Test compile_referencing_content with RESOURCE_LIST and RESOURCE_COLLECTION types having description metadata"""
-    # Test RESOURCE_LIST type
+    """compile_referencing_content with RESOURCE_LIST/RESOURCE_COLLECTION description metadata."""
     content_list = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_LIST,
         markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
@@ -415,12 +417,38 @@ def test_compile_referencing_content_description_metadata():
     ]
     assert result_list == expected
 
-    # Test RESOURCE_COLLECTION type with same metadata structure
     content_collection = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_RESOURCE_COLLECTION,
         markdown='{{% resource_link "11223344-5566-7788-99aa-bbccddee1122" "Markdown Resource" %}}',
         metadata={
             "description": '{{< resource uuid="66778899-aabb-ccdd-eeff-112233445566" >}}',
+            "other_field": "This should be ignored",
+        },
+    )
+
+    result_collection = compile_referencing_content(content_collection)
+    assert result_collection == expected
+
+
+def test_compile_referencing_content_course_collections():
+    """COURSE_COLLECTION should compile all configured metadata references."""
+    expected = [
+        "11111111-2222-3333-4444-555555555555",
+        "66666666-7777-8888-9999-000000000000",
+        "77777777-8888-9999-0000-111111111111",
+        "88888888-9999-0000-1111-222222222222",
+    ]
+
+    content_collection = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_COURSE_COLLECTION,
+        markdown=None,
+        metadata={
+            "description": (
+                '{{< resource uuid="11111111-2222-3333-4444-555555555555" >}}'
+            ),
+            "cover-image": {"content": "66666666-7777-8888-9999-000000000000"},
+            "courselists": {"content": ["77777777-8888-9999-0000-111111111111"]},
+            "featured-courses": {"content": "88888888-9999-0000-1111-222222222222"},
             "other_field": "This should be ignored",
         },
     )
@@ -807,6 +835,7 @@ def test_get_metadata_content_key():
         constants.METADATA_FIELD_DESCRIPTION,
         constants.METADATA_FIELD_COVER_IMAGE,
         constants.METADATA_FIELD_COURSE_LISTS,
+        constants.METADATA_FIELD_FEATURED_COURSES,
     ]
 
     # Test COURSE_LIST type
@@ -849,6 +878,7 @@ def test_compile_referencing_content_course_collection():
     uuid1 = "11223344-5566-7788-99aa-bbccddee1111"
     uuid2 = "22334455-6677-8899-aabb-ccddeeff2222"
     uuid3 = "33445566-7788-99aa-bbcc-ddeeff332233"
+    uuid4 = "44556677-8899-aabb-ccdd-eeff44334455"
 
     content = WebsiteContentFactory.build(
         type=constants.CONTENT_TYPE_COURSE_COLLECTION,
@@ -858,12 +888,14 @@ def test_compile_referencing_content_course_collection():
             "description": "A collection of courses",
             "cover-image": {"content": uuid2},
             "courselists": {"content": [uuid3]},
+            "featured-courses": {"content": uuid4},
         },
     )
 
     result = compile_referencing_content(content)
-    # Should find: uuid1 from markdown, uuid2 from cover-image, uuid3 from courselists
-    assert sorted(result) == sorted([uuid1, uuid2, uuid3])
+    # Should find: uuid1 from markdown, uuid2 from cover-image, uuid3 from courselists,
+    # uuid4 from featured-courses
+    assert sorted(result) == sorted([uuid1, uuid2, uuid3, uuid4])
 
 
 @pytest.mark.parametrize(
@@ -1023,7 +1055,7 @@ def test_compile_referencing_content_image_content_edge_cases(
     content_type, markdown, has_image, expected_count
 ):
     """Test PROMO/TESTIMONIAL with various combinations of image and markdown."""
-    metadata = {"title": "Test Content"}
+    metadata: dict[str, Any] = {"title": "Test Content"}
     if has_image:
         metadata["image"] = {"content": "11223344-5566-7788-99aa-bbccddee1111"}
 
@@ -1038,165 +1070,70 @@ def test_compile_referencing_content_image_content_edge_cases(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("setup_data", "content_type", "metadata", "expected_result", "expected_text_id"),
-    [
-        # Invalid cases - return False
-        (None, constants.CONTENT_TYPE_PAGE, {}, False, None),  # Non-course-list
-        (None, constants.CONTENT_TYPE_COURSE_LIST, None, False, None),  # No metadata
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": []},
-            False,
-            None,
-        ),  # Empty courses
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": ["not_a_dict"]},
-            False,
-            None,
-        ),  # Non-dict entry
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"title": "No id field"}]},
-            False,
-            None,
-        ),  # Missing id
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "no-slash-in-path"}]},
-            False,
-            None,
-        ),  # Invalid path
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "courses/test", "text_id": "existing-id"}]},
-            False,
-            None,
-        ),  # Already has text_id
-        (
-            None,
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "courses/nonexistent-course", "title": "Test"}]},
-            False,
-            None,
-        ),  # Website doesn't exist
-        (
-            ("courses/no-metadata-course", None),
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "courses/no-metadata-course", "title": "Test"}]},
-            False,
-            None,
-        ),  # Website exists but no metadata
-        # Valid cases - return True and populate text_id
-        (
-            ("courses/test-spring-2001", "test-course-metadata"),
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "courses/test-spring-2001", "title": "Test"}]},
-            True,
-            "test-course-metadata",
-        ),  # Exact match
-        (
-            ("courses/test-spring-2001", "test-course-metadata"),
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "courses/test-spring-2001/", "title": "Test"}]},
-            True,
-            "test-course-metadata",
-        ),  # Trailing slash
-        (
-            ("courses/test-spring-2001", "test-course-metadata"),
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": "/courses/test-spring-2001", "title": "Test"}]},
-            True,
-            "test-course-metadata",
-        ),  # Leading slash
-        (
-            ("courses/test-spring-2001", "test-course-metadata"),
-            constants.CONTENT_TYPE_COURSE_LIST,
-            {"courses": [{"id": " courses/test-spring-2001 ", "title": "Test"}]},
-            True,
-            "test-course-metadata",
-        ),  # Extra whitespace
-    ],
-)
-def test_populate_course_list_text_ids(
-    setup_data, content_type, metadata, expected_result, expected_text_id
-):
-    """Test populate_course_list_text_ids with various input scenarios"""
-    # Setup test data if needed
-    if setup_data:
-        url_path, text_id = setup_data
-        website = WebsiteFactory.create(url_path=url_path)
-        if text_id:
-            WebsiteContentFactory.create(
-                website=website,
-                type=constants.CONTENT_TYPE_METADATA,
-                text_id=text_id,
-            )
+def test_resolve_referenced_content_ids_scopes_course_list_sitemetadata():
+    """Course-list references should resolve only the listed course metadata rows."""
+    ocw_www = WebsiteFactory.create(name="ocw-www")
+    course_starter = WebsiteStarterFactory.create(config={"root-url-path": "learn"})
 
-    content = WebsiteContentFactory.build(type=content_type, metadata=metadata)
-    result = populate_course_list_text_ids(content)
-
-    assert result is expected_result
-
-    # Check text_id was populated correctly for valid cases
-    if expected_text_id:
-        assert content.metadata["courses"][0]["text_id"] == expected_text_id
-    elif metadata and isinstance(metadata.get("courses"), list) and metadata["courses"]:
-        first_course = metadata["courses"][0]
-        if isinstance(first_course, dict) and "text_id" not in first_course:
-            assert "text_id" not in content.metadata["courses"][0]
-
-
-@pytest.mark.django_db
-def test_populate_course_list_text_ids_handles_multiple_courses():
-    """Test function handles multiple course entries with mixed states"""
-    # Create websites with sitemetadata
-    website1 = WebsiteFactory.create(url_path="courses/test-spring-2001")
-    sitemetadata1 = WebsiteContentFactory.create(
-        website=website1,
-        type=constants.CONTENT_TYPE_METADATA,
-        text_id="test-spring-2001-metadata",
+    course_website_1 = WebsiteFactory.create(
+        short_id="test-course-1",
+        starter=course_starter,
+        url_path=WebsiteFactory.build(
+            short_id="test-course-1",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-1"),
+    )
+    course_website_2 = WebsiteFactory.create(
+        short_id="test-course-2",
+        starter=course_starter,
+        url_path=WebsiteFactory.build(
+            short_id="test-course-2",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-2"),
+    )
+    unrelated_course_website = WebsiteFactory.create(
+        short_id="test-course-3",
+        starter=course_starter,
+        url_path=WebsiteFactory.build(
+            short_id="test-course-3",
+            starter=course_starter,
+        ).assemble_full_url_path("test-course-3"),
     )
 
-    website2 = WebsiteFactory.create(url_path="courses/test-fall-2002")
+    sitemetadata_1 = WebsiteContentFactory.create(
+        website=course_website_1,
+        type=constants.CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
+    )
+    sitemetadata_2 = WebsiteContentFactory.create(
+        website=course_website_2,
+        type=constants.CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
+    )
     WebsiteContentFactory.create(
-        website=website2,
+        website=unrelated_course_website,
         type=constants.CONTENT_TYPE_METADATA,
-        text_id="test-fall-2002-metadata",
+        text_id="sitemetadata",
     )
 
-    # Create course-list with mixed entries
-    content = WebsiteContentFactory.build(
+    course_list = WebsiteContentFactory.create(
+        website=ocw_www,
         type=constants.CONTENT_TYPE_COURSE_LIST,
         metadata={
             "courses": [
-                {"id": "courses/test-spring-2001", "title": "Test Course Spring 2001"},
                 {
-                    "id": "courses/test-fall-2002",
-                    "title": "Test Course Fall 2002",
-                    "text_id": "already-has-id",
-                },  # Already has text_id
-                {"id": "invalid-no-slash"},  # Invalid format
-                {"title": "No id field"},  # Missing id field
+                    "id": course_website_1.url_path,
+                    "title": "Course 1",
+                },
+                {
+                    "id": course_website_2.url_path,
+                    "title": "Course 2",
+                },
             ]
         },
     )
 
-    # Should return True (modifications made to first entry)
-    assert populate_course_list_text_ids(content) is True
-
-    # Check first entry was populated
-    assert content.metadata["courses"][0]["text_id"] == sitemetadata1.text_id
-
-    # Check second entry preserved existing text_id
-    assert content.metadata["courses"][1]["text_id"] == "already-has-id"
-
-    # Check invalid entries unchanged
-    assert "text_id" not in content.metadata["courses"][2]
-    assert "text_id" not in content.metadata["courses"][3]
+    assert resolve_referenced_content_ids(course_list) == {
+        sitemetadata_1.id,
+        sitemetadata_2.id,
+    }

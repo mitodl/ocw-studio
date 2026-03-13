@@ -7,6 +7,7 @@ import json
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from mitol.common.utils.webpack import webpack_public_path
 from rest_framework.pagination import LimitOffsetPagination
 
@@ -14,6 +15,7 @@ from gdrive_sync.api import is_gdrive_enabled
 from websites import constants
 
 
+@ensure_csrf_cookie
 def _index(request):
     """Render the view for React pages"""
 

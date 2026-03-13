@@ -244,7 +244,12 @@ def test_hugo_menu_yaml_deserialize(omnibus_config):
 @pytest.mark.django_db
 def test_hugo_file_deserialize_with_file(settings):
     """HugoMarkdownFileSerializer.deserialize should create the expected content object from some file contents"""
-    settings.DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    settings.STORAGES = {
+        "default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"},
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     website = WebsiteFactory.create(url_path="courses/website_name-fall-2025")
     website.starter.config[WEBSITE_CONFIG_ROOT_URL_PATH_KEY] = "courses"
     site_config = SiteConfig(website.starter.config)

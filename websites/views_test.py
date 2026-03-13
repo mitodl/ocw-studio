@@ -1051,31 +1051,52 @@ def test_websites_content_create(drf_client, global_admin_user):
 def test_websites_content_create_course_list_sets_references(
     drf_client, global_admin_user
 ):
-    """Creating course-lists content should resolve courses/<short_id> references."""
+    """Creating course-lists content should resolve course site url_path references."""
     drf_client.force_login(global_admin_user)
     course_starter = WebsiteStarterFactory.create(
         slug="course-view-referencing-test",
-        config={"root-url-path": "courses"},
+        config={"root-url-path": "learn"},
     )
     ocw_www = WebsiteFactory.create(name="ocw-www")
     course_site_1 = WebsiteFactory.create(
         short_id="view-test-course-1",
-        url_path="courses/view-test-course-1",
+        url_path=WebsiteFactory.build(
+            short_id="view-test-course-1",
+            starter=course_starter,
+        ).assemble_full_url_path("view-test-course-1"),
         starter=course_starter,
     )
     course_site_2 = WebsiteFactory.create(
         short_id="view-test-course-2",
-        url_path="courses/view-test-course-2",
+        url_path=WebsiteFactory.build(
+            short_id="view-test-course-2",
+            starter=course_starter,
+        ).assemble_full_url_path("view-test-course-2"),
+        starter=course_starter,
+    )
+    unrelated_course_site = WebsiteFactory.create(
+        short_id="view-test-course-3",
+        url_path=WebsiteFactory.build(
+            short_id="view-test-course-3",
+            starter=course_starter,
+        ).assemble_full_url_path("view-test-course-3"),
         starter=course_starter,
     )
     # Create sitemetadata for each course - these are what get referenced
     listing_1 = WebsiteContentFactory.create(
         website=course_site_1,
         type=constants.CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
     )
     listing_2 = WebsiteContentFactory.create(
         website=course_site_2,
         type=constants.CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
+    )
+    WebsiteContentFactory.create(
+        website=unrelated_course_site,
+        type=constants.CONTENT_TYPE_METADATA,
+        text_id="sitemetadata",
     )
 
     payload = {
@@ -1084,8 +1105,8 @@ def test_websites_content_create_course_list_sets_references(
             "draft": False,
             "description": "",
             "courses": [
-                {"id": f"courses/{course_site_1.short_id}", "title": "Course 1"},
-                {"id": f"courses/{course_site_2.short_id}", "title": "Course 2"},
+                {"id": course_site_1.url_path, "title": "Course 1"},
+                {"id": course_site_2.url_path, "title": "Course 2"},
             ],
         },
     }
