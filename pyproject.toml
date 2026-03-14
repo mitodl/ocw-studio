@@ -47,7 +47,7 @@ dependencies = [
     "pyyaml>=6.0.1,<7",
     "redis>=4.5.5,<5",
     "requests==2.32.5",
-    "sentry-sdk==2.53.0",
+    "sentry-sdk==2.54.0",
     "smart-open[s3]>=7.0.0,<8",
     "social-auth-app-django==5.4.3",
     "social-auth-core[saml]>=4,<5",
