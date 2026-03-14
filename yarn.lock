@@ -10872,7 +10872,7 @@ __metadata:
     react-select-async-paginate: "npm:^0.7.3"
     react-test-renderer: "npm:^16.13.1"
     reactstrap: "npm:8.10.1"
-    redux: "npm:^4.0.5"
+    redux: "npm:^5.0.0"
     redux-query: "npm:^3.4.2"
     redux-query-interface-superagent: "npm:^3.4.2"
     redux-query-react: "npm:^3.4.2"
@@ -12552,7 +12552,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux@npm:^4.0.0, redux@npm:^4.0.5, redux@npm:^4.2.1":
+"redux@npm:^4.0.0, redux@npm:^4.2.1":
   version: 4.2.1
   resolution: "redux@npm:4.2.1"
   dependencies:
