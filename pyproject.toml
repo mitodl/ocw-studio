@@ -3,7 +3,7 @@ name = "ocw-studio"
 version = "0.0.0"
 description = "OCW Studio manages deployments for OCW courses"
 authors = [{ name = "MITODL" }]
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14,<3.15"
 readme = "README.md"
 license = "BSD-3"
 classifiers = [
