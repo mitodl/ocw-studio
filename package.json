@@ -92,7 +92,7 @@
     "js-beautify": "^1.14.0",
     "lodash": "^4.17.21",
     "luxon": "^3.2.1",
-    "mathjax": "^3.2.2",
+    "mathjax": "^4.0.0",
     "mini-css-extract-plugin": "^2.0.0",
     "pluralize": "^8.0.0",
     "postcss-loader": "^8.0.0",
