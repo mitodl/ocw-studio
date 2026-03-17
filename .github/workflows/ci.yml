@@ -54,6 +54,7 @@ jobs:
 
     - name: Tests
       run: |
+        uv run ./manage.py check --fail-level WARNING
         export MEDIA_ROOT="$(mktemp -d)"
         sudo mkdir /var/media
         sudo chown -R $USER:$USER /var/media
