@@ -4,7 +4,7 @@ First, follow the [Platform Engineering guide](https://pe.ol.mit.edu/getting_sta
 
 Once this is complete, run `kubectl get secret -n ocw-studio postgres-ocw-studio-dynamic-secret -o jsonpath='{.data.DATABASE_URL}' | base64 --decode; echo` to get the `DATABASE_URL` for the production data. Then, create an ephemeral pod for cloning the data by running the following:
 
-```bash
+```
 kubectl run pg-client-<your name> \
   --image=postgres:18 \
   --restart=Never \
@@ -14,11 +14,11 @@ kubectl run pg-client-<your name> \
 
 Wait for the ephemeral pod to be ready:
 
-```bash
+```
 kubectl wait --for=condition=Ready pod/pg-client-<your name> -n ocw-studio --timeout=120s
 ```
 
-One this returns with `condition met`, open a shell:
+Once this returns with `condition met`, open a shell:
 
 ```bash
 kubectl exec -it -n ocw-studio pg-client-<your name> -- sh
@@ -40,27 +40,27 @@ kubectl cp ocw-studio/pg-client-<your name>:/tmp/prod_<today's date>.sql ./prod_
 
 Verify that the data is now present locally, and then delete the ephemeral pod by running
 
-```bash
+```
 kubectl delete pod -n ocw-studio pg-client-<your name>
 ```
 
 Next, actually import the data into OCW Studio by running
 
-```bash
+```
 docker compose rm -sv db
 docker compose up -d db
 docker compose exec -T -e PGPASSWORD=postgres db psql -h db -U postgres < ./prod_<today's date>.sql
 ```
 
-It is important to note that the Google Drive folders in the local data will be pointing to production Google Drive folders, which is not what should be used for local development. They should instead be set to RC folders by running the following in Django admin:
+It is important to note that the Google Drive folders in the local data will be pointing to production Google Drive folders, which is not what should be used for local development. They should instead be set to RC folders by running the following in a Django shell (obtained by running `docker compose exec web ./manage.py shell`):
 
-```python
+```
 from websites.models import Website
 Website.objects.all().update(gdrive_folder=None)
 ```
 
 Finally, run the management command to associate the sites with the RC Google Drive folders:
 
-```bash
+```
 docker compose exec web ./manage.py create_missing_gdrive_folders
 ```
