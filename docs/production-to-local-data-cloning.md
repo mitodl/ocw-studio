@@ -20,22 +20,28 @@ kubectl wait --for=condition=Ready pod/pg-client-<your name> -n ocw-studio --tim
 
 Once this returns with `condition met`, open a shell:
 
-```bash
+```
 kubectl exec -it -n ocw-studio pg-client-<your name> -- sh
 ```
 
 Then, in the ephemeral pod, run
 
-```bash
+```
 export DATABASE_URL=<DATABASE_URL obtained earlier>
-pg_dump "$DATABASE_URL" > /tmp/prod_<today's date>.sql
+pg_dump "$DATABASE_URL" | gzip > /tmp/prod_<today's date>.sql.gz
 exit
 ```
 
 Next, copy the data to your local machine with
 
-```bash
-kubectl cp ocw-studio/pg-client-<your name>:/tmp/prod_<today's date>.sql ./prod_<today's date>.sql
+```
+kubectl cp ocw-studio/pg-client-<your name>:/tmp/prod_<today's date>.sql.gz ./prod_<today's date>.sql.gz
+```
+
+Uncompress the data with
+
+```
+gunzip prod_<today's date>.sql.gz
 ```
 
 Verify that the data is now present locally, and then delete the ephemeral pod by running
