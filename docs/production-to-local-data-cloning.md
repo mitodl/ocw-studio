@@ -2,7 +2,10 @@
 
 First, follow the [Platform Engineering guide](https://pe.ol.mit.edu/getting_started/developer_eks_access/) for getting set up with EKS credentials. In particular, run `login_helper.py` and generate `AWS` credentials and the `kubeconfig` file.
 
-Once this is complete, run `kubectl get secret -n ocw-studio postgres-ocw-studio-dynamic-secret -o jsonpath='{.data.DATABASE_URL}' | base64 --decode; echo` to get the `DATABASE_URL` for the production data. Then, create an ephemeral pod for cloning the data by running the following:
+Once this is complete, switch to the production context by running
+`kubectl config use-context applications-production`.
+
+Next, run `kubectl get secret -n ocw-studio postgres-ocw-studio-dynamic-secret -o jsonpath='{.data.DATABASE_URL}' | base64 --decode; echo` to get the `DATABASE_URL` for the production data. Then, create an ephemeral pod for cloning the data by running the following:
 
 ```
 kubectl run pg-client-<your name> \
