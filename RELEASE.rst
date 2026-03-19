@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.180.0 (Released March 19, 2026)
+---------------
+
+- Upgrade to Django 5.2.12 (#2931)
+- Umar/10169 track references course lists (#2928)
+- docs: add steps for changing url of published course site (#2923)
+- Update e2e test data with PK12 values (#2929)
+- feat: Add granian for managing the application runtime
+- Added a GIT_REF argument to create the hash.txt file. (#2926)
+- chore(deps): update dependency pypdf to v6.7.5 [security] (#2924)
+
 Version 0.179.0 (Released March 09, 2026)
 ---------------
 
