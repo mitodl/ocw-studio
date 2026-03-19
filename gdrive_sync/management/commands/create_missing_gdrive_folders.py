@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError
 from django.db.models import Q
@@ -80,9 +82,10 @@ class Command(BaseCommand):
         self.stdout.write("Waiting on task...")
 
         result = task.get()
-        errors = [r for r in result if r is not True]
-        if errors:
-            msg = f"Some errors occurred: {errors}"
+        error_lists = [r for r in result if r is not True]
+        if error_lists:
+            failed_ids = list(chain.from_iterable(error_lists))
+            msg = f"Some errors occurred for sites: {failed_ids}"
             raise CommandError(msg)
 
         total_seconds = (now_in_utc() - start).total_seconds()
