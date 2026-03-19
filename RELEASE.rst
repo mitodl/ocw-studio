@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.181.0
+---------------
+
+- Add documentation on cloning data from production for local development (#2940)
+- Verify Google Drive credentials and fix command errors (#2941)
+- chore(deps): lock file maintenance (#2466)
+- feat: added django-removals for checking deprecations (#2927)
+- fix(deps): update dependency mathjax to v4 (#2938)
+- chore(deps): update astral-sh/setup-uv digest to 37802ad (#2936)
+- chore(deps): update dependency pytest-env to v1.6.0 (#2937)
+- chore(deps): update actions/setup-node digest to 53b8394 (#2933)
+- fix(deps): update dependency sentry-sdk to v2.54.0 (#2935)
+- fix(deps): update dependency boto3 to v1.42.68 (#2934)
+- fix(deps): update dependency social-auth-app-django to v5.6.0 [security] (#2752)
+
 Version 0.180.0 (Released March 19, 2026)
 ---------------
 
