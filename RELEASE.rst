@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.180.0
+Version 0.180.0 (Released March 19, 2026)
 ---------------
 
 - Upgrade to Django 5.2.12 (#2931)
