@@ -2,11 +2,9 @@ import React from "react"
 import sinon, { SinonStub } from "sinon"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { ValidationError } from "yup"
 
 import { SiteForm, websiteValidation } from "./SiteForm"
 import { makeWebsiteStarter } from "../../util/factories/websites"
-import { assertInstanceOf } from "../../test_util"
 
 import { WebsiteStarter } from "../../types/websites"
 
@@ -53,39 +51,23 @@ describe("SiteForm", () => {
 
   describe("validation", () => {
     it("rejects an empty title", async () => {
-      try {
-        await expect(
-          await websiteValidation.validateAt("title", { title: "" }),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, ValidationError)
-        expect(error.errors).toStrictEqual(["Title is a required field"])
-      }
+      await expect(
+        websiteValidation.validateAt("title", { title: "" }),
+      ).rejects.toThrow("Title is a required field")
     })
     it("rejects a short_id with invalid characters", async () => {
-      try {
-        await expect(
-          await websiteValidation.validateAt("short_id", {
-            short_id: "Bad ID!",
-          }),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, ValidationError)
-        expect(error).toBeInstanceOf(ValidationError)
-        expect(error.errors).toStrictEqual([
-          "Only alphanumeric characters, periods, dashes, or underscores allowed",
-        ])
-      }
+      await expect(
+        websiteValidation.validateAt("short_id", {
+          short_id: "Bad ID!",
+        }),
+      ).rejects.toThrow(
+        "Only alphanumeric characters, periods, dashes, or underscores allowed",
+      )
     })
     it("rejects an empty site_type", async () => {
-      try {
-        await expect(
-          await websiteValidation.validateAt("site_type", { site_type: "" }),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, ValidationError)
-        expect(error.errors).toStrictEqual(["Site Type is a required field"])
-      }
+      await expect(
+        websiteValidation.validateAt("site_type", { site_type: "" }),
+      ).rejects.toThrow("Site Type is a required field")
     })
   })
 })
