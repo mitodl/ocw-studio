@@ -29,6 +29,7 @@ export interface ListItemProps {
   to?: string
   onClick?: (e: React.MouseEvent<HTMLLIElement>) => void
   children?: React.ReactNode
+  titleAdornment?: React.ReactNode
   menuOptions?: MenuOption[]
 }
 
@@ -41,7 +42,15 @@ export interface ListItemProps {
  * the component, to the left of the dropdown menu.
  */
 export function StudioListItem(props: ListItemProps): JSX.Element {
-  const { title, subtitle, onClick, to, children, menuOptions } = props
+  const {
+    title,
+    subtitle,
+    onClick,
+    to,
+    children,
+    titleAdornment,
+    menuOptions,
+  } = props
 
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -76,13 +85,16 @@ export function StudioListItem(props: ListItemProps): JSX.Element {
       <Card>
         <div className="d-flex flex-row align-items-center justify-content-between">
           <div className="d-flex flex-column flex-grow-1">
-            {to ? (
-              <Link className="title" to={{ ...location, pathname: to }}>
-                {title}
-              </Link>
-            ) : (
-              <div className="title">{title}</div>
-            )}
+            <div className="d-flex flex-row align-items-center">
+              {to ? (
+                <Link className="title" to={{ ...location, pathname: to }}>
+                  {title}
+                </Link>
+              ) : (
+                <div className="title">{title}</div>
+              )}
+              {titleAdornment}
+            </div>
             <div className="subtitle">{subtitle}</div>
           </div>
           <div>

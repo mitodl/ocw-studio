@@ -7,12 +7,13 @@ import { FormError } from "./FormError"
 import { WebsiteStarter } from "../../types/websites"
 import SelectField from "../widgets/SelectField"
 
-import { WebsiteStarterStatus } from "../../constants"
+import { SiteType, WebsiteStarterStatus } from "../../constants"
 
 export interface SiteFormValues {
   title: string
   short_id: string // eslint-disable-line
   starter: number | null
+  site_type: string
 }
 
 type SiteFormProps = {
@@ -37,6 +38,7 @@ export const websiteValidation = yup.object().shape({
     .max(100, "Must be <= 100 characters")
     .required(),
   starter: yup.number().required(),
+  site_type: yup.string().label("Site Type").required(),
 })
 
 export const SiteForm = ({
@@ -52,6 +54,7 @@ export const SiteForm = ({
     title: "",
     short_id: "",
     starter: defaultWebsiteStarter?.id || 0,
+    site_type: SiteType.OCW,
   }
 
   return (
@@ -102,6 +105,20 @@ export const SiteForm = ({
               }
             />
             <ErrorMessage name="starter" component={FormError} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="site_type">Site Type*</label>
+            <Field
+              as={SelectField}
+              name="site_type"
+              className="form-control"
+              id="site_type"
+              options={[
+                { label: "OCW Course", value: SiteType.OCW },
+                { label: "PK12 Site", value: SiteType.PK12 },
+              ]}
+            />
+            <ErrorMessage name="site_type" component={FormError} />
           </div>
           <div className="form-group d-flex justify-content-end">
             <button

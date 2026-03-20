@@ -35,6 +35,11 @@ describe("SiteForm", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument()
   })
 
+  it("renders a Site Type select field", () => {
+    renderForm()
+    expect(screen.getByLabelText(/site type/i)).toBeInTheDocument()
+  })
+
   it("shows an option for each website starter", async () => {
     renderForm()
     const user = userEvent.setup()
@@ -70,6 +75,16 @@ describe("SiteForm", () => {
         expect(error.errors).toStrictEqual([
           "Only alphanumeric characters, periods, dashes, or underscores allowed",
         ])
+      }
+    })
+    it("rejects an empty site_type", async () => {
+      try {
+        await expect(
+          await websiteValidation.validateAt("site_type", { site_type: "" }),
+        ).rejects.toThrow()
+      } catch (error) {
+        assertInstanceOf(error, ValidationError)
+        expect(error.errors).toStrictEqual(["Site Type is a required field"])
       }
     })
   })

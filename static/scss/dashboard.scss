@@ -12,4 +12,16 @@
     height: 45px;
     width: unset;
   }
+
+  .site-type-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background-color: $studio-gray;
+    color: $studio-dark-gray;
+    white-space: nowrap;
+  }
 }

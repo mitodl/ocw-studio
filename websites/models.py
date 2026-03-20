@@ -87,6 +87,11 @@ class Website(TimestampedModel):
         null=True,
         blank=True,
     )
+    site_type = models.CharField(
+        max_length=20,
+        choices=zip(constants.SITE_TYPES, constants.SITE_TYPES),
+        default=constants.SITE_TYPE_OCW,
+    )
     metadata = models.JSONField(null=True, blank=True)
 
     first_published_to_production = models.DateTimeField(null=True, blank=True)
