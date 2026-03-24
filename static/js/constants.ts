@@ -213,6 +213,11 @@ export const SITE_TYPE_LABELS: Record<string, string> = {
   [SiteType.PK12]: "PK12",
 }
 
+export const SITE_TYPE_FORM_LABELS: Record<string, string> = {
+  [SiteType.OCW]: "OCW Course",
+  [SiteType.PK12]: "PK12 Site",
+}
+
 export enum PublishingEnv {
   Staging = "staging",
   Production = "production",

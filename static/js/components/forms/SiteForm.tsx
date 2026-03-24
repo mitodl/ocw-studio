@@ -7,7 +7,11 @@ import { FormError } from "./FormError"
 import { WebsiteStarter } from "../../types/websites"
 import SelectField from "../widgets/SelectField"
 
-import { SiteType, WebsiteStarterStatus } from "../../constants"
+import {
+  SiteType,
+  SITE_TYPE_FORM_LABELS,
+  WebsiteStarterStatus,
+} from "../../constants"
 
 export interface SiteFormValues {
   title: string
@@ -113,10 +117,10 @@ export const SiteForm = ({
               name="site_type"
               className="form-control"
               id="site_type"
-              options={[
-                { label: "OCW Course", value: SiteType.OCW },
-                { label: "PK12 Site", value: SiteType.PK12 },
-              ]}
+              options={Object.values(SiteType).map((value) => ({
+                label: SITE_TYPE_FORM_LABELS[value],
+                value,
+              }))}
             />
             <ErrorMessage name="site_type" component={FormError} />
           </div>
