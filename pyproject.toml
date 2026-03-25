@@ -38,7 +38,6 @@ dependencies = [
     "mitol-django-common>=2023.6.27.1,<2024",
     "mitol-django-mail>=2025.0.0,<2026",
     "more-itertools>=10.1.0,<11",
-    "newrelic>=12,<13",
     "ol-concourse>=0.5.8,<0.6",
     "ol-concoursepy==0.0.41",
     "psycopg2>=2.9.6,<3",
