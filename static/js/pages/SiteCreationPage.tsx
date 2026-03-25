@@ -39,6 +39,7 @@ export default function SiteCreationPage({
       title: values.title,
       short_id: values.short_id,
       starter: values.starter,
+      site_type: values.site_type,
     })
     if (!response) {
       return
@@ -57,6 +58,7 @@ export default function SiteCreationPage({
           title: errors.title || errors.name,
           short_id: errors.short_id,
           starter: errors.starter,
+          site_type: errors.site_type,
         })
       }
       return

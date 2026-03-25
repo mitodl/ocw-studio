@@ -27,6 +27,8 @@ from websites.constants import (
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_VIDEO,
     ROLE_EDITOR,
+    SITE_TYPE_OCW,
+    SITE_TYPE_PK12,
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_SOURCE_OCW_IMPORT,
 )
@@ -86,6 +88,20 @@ def test_serialize_website_course():
         serialized_data["starter"]
         == WebsiteStarterSerializer(instance=site.starter).data
     )
+
+
+@pytest.mark.parametrize("site_type", [SITE_TYPE_OCW, SITE_TYPE_PK12])
+def test_serialize_website_site_type(site_type):
+    site = WebsiteFactory.create(site_type=site_type)
+    serialized_data = WebsiteSerializer(instance=site).data
+    assert serialized_data["site_type"] == site_type
+
+
+def test_website_site_type_default():
+    site = WebsiteFactory.create()
+    assert site.site_type == SITE_TYPE_OCW
+    serialized_data = WebsiteSerializer(instance=site).data
+    assert serialized_data["site_type"] == SITE_TYPE_OCW
 
 
 def test_serialize_basic_website_course():

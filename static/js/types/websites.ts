@@ -221,6 +221,7 @@ export interface NewWebsitePayload {
   title: string
   short_id: string
   starter: number
+  site_type: string
 }
 
 export interface WebsiteStatus {
@@ -253,6 +254,7 @@ export type Website = WebsiteStatus & {
   title: string
   short_id: string
   source: string | null
+  site_type: string
   starter: WebsiteStarter | null
   metadata?: any
   is_admin?: boolean

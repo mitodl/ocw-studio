@@ -13,7 +13,7 @@ import { Website } from "../types/websites"
 import * as searchHooks from "../hooks/search"
 import { render } from "@testing-library/react"
 import { StatusWithDateHover, formatDateTime } from "./SitesDashboard"
-import { PublishStatus } from "../constants"
+import { PublishStatus, SITE_TYPE_LABELS } from "../constants"
 
 jest.mock("../hooks/search", () => {
   return {
@@ -68,6 +68,17 @@ describe("SitesDashboard", () => {
         siteDetailUrl.param({ name: website.name }).toString(),
       )
       expect(screen.getByText(website.short_id)).toBeInTheDocument()
+    }
+  })
+
+  test("shows a site type badge next to each site title", async () => {
+    helper.render(<SitesDashboard />)
+    for (const website of websites) {
+      const expectedLabel =
+        SITE_TYPE_LABELS[website.site_type] ?? website.site_type
+      const link = screen.getByRole("link", { name: website.title })
+      const titleCell = link.closest(".d-flex")!
+      expect(titleCell.textContent).toContain(expectedLabel)
     }
   })
 

@@ -136,6 +136,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
             "short_id",
             "title",
             "source",
+            "site_type",
             "draft_publish_date",
             "publish_date",
             "first_published_to_production",
