@@ -141,7 +141,7 @@
     "waait": "^1.0.5",
     "webpack": "^5.76.0",
     "webpack-bundle-tracker": "^3.0.0",
-    "webpack-cli": "^6.0.0",
+    "webpack-cli": "^7.0.0",
     "webpack-dev-middleware": "^7.0.0",
     "webpack-hot-middleware": "^2.25.0",
     "yup": "^1.0.0"
