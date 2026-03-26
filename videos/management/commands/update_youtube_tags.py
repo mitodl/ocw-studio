@@ -1,20 +1,36 @@
 """Management command to update YouTube video tags without re-uploading videos"""
 
 import csv
+import logging
+import math
 from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Q
+from googleapiclient.errors import HttpError
 
 from main.management.commands.filter import WebsiteFilterCommand
+from videos.tasks import update_youtube_tags_batch
 from videos.utils import get_course_tag, parse_tags
-from videos.youtube import YouTubeApi, is_youtube_enabled
+from videos.youtube import API_QUOTA_ERROR_MSG, YouTubeApi, is_youtube_enabled
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import WebsiteContent
 from websites.utils import get_dict_field, set_dict_field
 
+log = logging.getLogger(__name__)
+
 # Verbosity level for detailed output
 VERBOSITY_DETAILED = 2
+
+# YouTube Data API v3 quota costs
+QUOTA_COST_VIDEO_LIST = 1  # videos.list costs 1 unit
+QUOTA_COST_VIDEO_UPDATE = 50  # videos.update costs 50 units
+
+# Maximum video IDs per videos.list call
+YT_LIST_BATCH_SIZE = 50
+
+# Default daily quota limit (conservative to leave room for other usage)
+DEFAULT_QUOTA_LIMIT = 9000
 
 
 class Command(WebsiteFilterCommand):
@@ -56,8 +72,53 @@ class Command(WebsiteFilterCommand):
                 "final_tags_db"
             ),
         )
+        parser.add_argument(
+            "--batch-size",
+            dest="batch_size",
+            type=int,
+            default=None,
+            help=(
+                "Maximum number of videos to process in this run. "
+                "Use with --offset to process in batches across multiple runs."
+            ),
+        )
+        parser.add_argument(
+            "--offset",
+            dest="offset",
+            type=int,
+            default=0,
+            help=(
+                "Number of videos to skip from the beginning of the queryset. "
+                "Use with --batch-size to resume from where you left off."
+            ),
+        )
+        parser.add_argument(
+            "--quota-limit",
+            dest="quota_limit",
+            type=int,
+            default=DEFAULT_QUOTA_LIMIT,
+            help=(
+                f"Stop processing before exceeding this quota unit limit "
+                f"(default: {DEFAULT_QUOTA_LIMIT}). YouTube Data API v3 "
+                f"default daily quota is 10,000 units. "
+                f"videos.list = {QUOTA_COST_VIDEO_LIST} unit, "
+                f"videos.update = {QUOTA_COST_VIDEO_UPDATE} units."
+            ),
+        )
+        parser.add_argument(
+            "--schedule",
+            action="store_true",
+            default=False,
+            help=(
+                "When the number of videos exceeds the batch threshold "
+                f"(YT_BATCH_THRESHOLD, default {settings.YT_BATCH_THRESHOLD}), "
+                "automatically schedule Celery tasks spread across multiple "
+                "days instead of updating immediately. If the count is below "
+                "the threshold, updates run immediately regardless."
+            ),
+        )
 
-    def get_video_resources(self, youtube_id_filter):
+    def get_video_resources(self, youtube_id_filter, *, offset=0, batch_size=None):
         """
         Build and return the filtered queryset of video resources.
 
@@ -81,7 +142,50 @@ class Command(WebsiteFilterCommand):
                     **{f"{query_id_field}__in": youtube_ids}
                 )
 
+        # Apply stable ordering for consistent offset/batch behavior
+        video_resources = video_resources.order_by("id")
+
+        # Apply offset and batch_size
+        if batch_size is not None:
+            video_resources = video_resources[offset : offset + batch_size]
+        elif offset > 0:
+            video_resources = video_resources[offset:]
+
         return video_resources
+
+    def batch_fetch_youtube_snippets(self, youtube, youtube_ids):
+        """
+        Fetch video snippets from YouTube in batches of up to 50 IDs per call.
+
+        The YouTube videos.list API accepts comma-separated IDs and costs
+        1 quota unit regardless of how many IDs are included (up to 50).
+
+        Args:
+            youtube: YouTubeApi instance
+            youtube_ids: List of YouTube video IDs
+
+        Returns:
+            tuple: (dict mapping youtube_id -> snippet, quota_used)
+        """
+        snippets = {}
+        quota_used = 0
+
+        for i in range(0, len(youtube_ids), YT_LIST_BATCH_SIZE):
+            batch = youtube_ids[i : i + YT_LIST_BATCH_SIZE]
+            batch_ids = ",".join(batch)
+
+            response = (
+                youtube.client.videos()
+                .list(part="snippet", id=batch_ids)
+                .execute()
+            )
+            quota_used += QUOTA_COST_VIDEO_LIST
+
+            for item in response.get("items", []):
+                video_id = item["id"]
+                snippets[video_id] = item["snippet"]
+
+        return snippets, quota_used
 
     def flatten_tags(self, tags: list[str]) -> set[str]:
         """
@@ -142,32 +246,57 @@ class Command(WebsiteFilterCommand):
         )
 
     def process_video(
-        self, video_resource, youtube, dry_run, add_course_tag, verbosity
+        self,
+        video_resource,
+        youtube,
+        dry_run,
+        add_course_tag,
+        verbosity,
+        snippet=None,
     ):
         """
         Process a single video resource to update its tags.
 
-        Returns tuple: (status, message, csv_data) where:
+        Args:
+            video_resource: WebsiteContent object
+            youtube: YouTubeApi instance
+            dry_run: Preview changes without updating
+            add_course_tag: Add course slug as tag
+            verbosity: Output verbosity level
+            snippet: Pre-fetched YouTube snippet dict (avoids redundant API call)
+
+        Returns tuple: (status, message, csv_data, quota_used) where:
         - status is 'success', 'error', or 'skip'
         - message is a string describing the result
         - csv_data is a dict with CSV export data (or None on error)
+        - quota_used is the number of quota units consumed
         """
         youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
         course_slug = get_course_tag(video_resource.website)
         website_name = video_resource.website.name
+        quota_used = 0
 
         try:
-            # Fetch current tags from YouTube
-            video_response = (
-                youtube.client.videos().list(part="snippet", id=youtube_id).execute()
-            )
+            if snippet is None:
+                # Fallback: fetch from YouTube if not pre-fetched
+                video_response = (
+                    youtube.client.videos()
+                    .list(part="snippet", id=youtube_id)
+                    .execute()
+                )
+                quota_used += QUOTA_COST_VIDEO_LIST
 
-            if not video_response.get("items"):
+                if not video_response.get("items"):
+                    msg = f"Video {youtube_id} not found on YouTube"
+                    return ("error", msg, None, quota_used)
+
+                snippet = video_response["items"][0]["snippet"]
+            elif snippet == "not_found":
                 msg = f"Video {youtube_id} not found on YouTube"
-                return ("error", msg, None)
+                return ("error", msg, None, quota_used)
 
             # Get current tags from YouTube
-            youtube_tags = video_response["items"][0]["snippet"].get("tags", [])
+            youtube_tags = snippet.get("tags", [])
 
             # Get tags from DB and parse to list
             db_tags_str = get_dict_field(
@@ -212,8 +341,19 @@ class Command(WebsiteFilterCommand):
                 message = f"  [DRY RUN] Would update tags to: {merged_tags}"
             else:
                 if tags_changed:
-                    # Update tags on YouTube
-                    youtube.update_video_tags(youtube_id, merged_tags)
+                    # Update tags directly using the already-fetched snippet
+                    # This avoids the redundant videos.list call in
+                    # update_video_tags
+                    snippet["tags"] = parse_tags(merged_tags)
+                    youtube.client.videos().update(
+                        part="snippet",
+                        body={
+                            "id": youtube_id,
+                            "snippet": snippet,
+                        },
+                    ).execute()
+                    quota_used += QUOTA_COST_VIDEO_UPDATE
+
                     status = "success"
                     message = f"Updated tags for YouTube video {youtube_id}"
 
@@ -233,11 +373,16 @@ class Command(WebsiteFilterCommand):
                 "db_updated": not dry_run,
             }
 
+        except HttpError as exc:
+            if API_QUOTA_ERROR_MSG in str(exc).lower():
+                raise
+            status, message = "error", f"Error updating tags for {youtube_id}: {exc!s}"
+            csv_data = None
         except Exception as exc:  # noqa: BLE001
             status, message = "error", f"Error updating tags for {youtube_id}: {exc!s}"
             csv_data = None
 
-        return status, message, csv_data
+        return status, message, csv_data, quota_used
 
     def print_summary(self, success_count, error_count, skipped_count):
         """Print summary of processing results"""
@@ -249,6 +394,76 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(self.style.WARNING(f"Skipped: {skipped_count}"))
         total = success_count + error_count + skipped_count
         self.stdout.write(f"Total processed: {total}")
+
+    def _schedule_celery_tasks(self, video_resources, add_course_tag, verbosity):
+        """
+        Schedule Celery tasks to process videos spread across multiple days.
+
+        Calculates how many videos can be updated per day based on the daily
+        quota, then creates tasks with increasing countdown delays (24h apart).
+        """
+        daily_quota = settings.YT_DAILY_QUOTA
+        # Each video that needs updating costs up to 50 units (videos.update)
+        # plus a small overhead for batch list calls (~1 unit per 50 videos)
+        # Conservative estimate: assume all videos need updating
+        videos_per_day = max(
+            1, (daily_quota - 10) // QUOTA_COST_VIDEO_UPDATE  # reserve 10 for list calls
+        )
+
+        # Collect all YouTube IDs
+        all_youtube_ids = []
+        for vr in video_resources:
+            yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
+            if yt_id and yt_id not in all_youtube_ids:
+                all_youtube_ids.append(yt_id)
+
+        total_videos = len(all_youtube_ids)
+        num_days = math.ceil(total_videos / videos_per_day)
+        seconds_per_day = 24 * 60 * 60
+
+        self.stdout.write(
+            self.style.WARNING(
+                f"\n{total_videos} videos exceed the batch threshold "
+                f"({settings.YT_BATCH_THRESHOLD}). Scheduling Celery tasks "
+                f"spread across {num_days} day(s)."
+            )
+        )
+        self.stdout.write(
+            f"  Videos per day: ~{videos_per_day} "
+            f"(based on {daily_quota} daily quota units)"
+        )
+
+        tasks_scheduled = 0
+        for i in range(0, total_videos, videos_per_day):
+            chunk = all_youtube_ids[i : i + videos_per_day]
+            day_number = i // videos_per_day
+            countdown = day_number * seconds_per_day
+
+            update_youtube_tags_batch.apply_async(
+                args=[chunk],
+                kwargs={"add_course_tag": add_course_tag},
+                countdown=countdown,
+            )
+            tasks_scheduled += 1
+
+            if verbosity >= VERBOSITY_DETAILED:
+                if day_number == 0:
+                    self.stdout.write(
+                        f"  Task {tasks_scheduled}: {len(chunk)} videos "
+                        f"(running immediately)"
+                    )
+                else:
+                    self.stdout.write(
+                        f"  Task {tasks_scheduled}: {len(chunk)} videos "
+                        f"(scheduled in {day_number} day(s))"
+                    )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Scheduled {tasks_scheduled} Celery task(s) for "
+                f"{total_videos} videos across {num_days} day(s)."
+            )
+        )
 
     def handle(self, *args, **options):  # noqa: C901, PLR0912, PLR0915
         """Execute the management command"""
@@ -268,6 +483,10 @@ class Command(WebsiteFilterCommand):
         youtube_id_filter = options["youtube_id"]
         add_course_tag = options["add_course_tag"]
         output_file = options["output_file"]
+        batch_size = options["batch_size"]
+        offset = options["offset"]
+        quota_limit = options["quota_limit"]
+        schedule = options["schedule"]
 
         # Initialize CSV data collection if output file specified
         csv_rows = [] if output_file else None
@@ -288,29 +507,126 @@ class Command(WebsiteFilterCommand):
                     self.style.SUCCESS("Adding course name as tag for all videos")
                 )
 
-        video_resources = self.get_video_resources(youtube_id_filter)
+        video_resources = self.get_video_resources(
+            youtube_id_filter, offset=offset, batch_size=batch_size
+        )
 
-        if not video_resources.exists():
+        # Convert to list to allow len() and iteration on sliced querysets
+        video_resources = list(video_resources)
+
+        if not video_resources:
             # Always show if no videos found
             self.stdout.write(
                 self.style.WARNING("No video resources found matching criteria")
             )
             return
 
+        video_count = len(video_resources)
+        threshold = settings.YT_BATCH_THRESHOLD
+
         if verbosity >= VERBOSITY_DETAILED:
             self.stdout.write(
-                f"Found {video_resources.count()} video resources to process"
+                f"Found {video_count} video resources to process"
             )
+            if offset > 0:
+                self.stdout.write(f"  Offset: {offset}")
+            if batch_size:
+                self.stdout.write(f"  Batch size: {batch_size}")
+            self.stdout.write(f"  Quota limit: {quota_limit} units")
+
+        # If --schedule is set and count exceeds threshold, dispatch to Celery
+        if schedule and video_count > threshold and not dry_run:
+            self._schedule_celery_tasks(
+                video_resources, add_course_tag, verbosity
+            )
+            return
 
         youtube = YouTubeApi()
         success_count = 0
         error_count = 0
         skipped_count = 0
+        total_quota_used = 0
+        quota_exceeded = False
+
+        # Collect all YouTube IDs for batch fetching
+        yt_id_to_resources = {}
+        for vr in video_resources:
+            yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
+            if yt_id:
+                yt_id_to_resources.setdefault(yt_id, []).append(vr)
+
+        all_youtube_ids = list(yt_id_to_resources.keys())
+
+        if verbosity >= VERBOSITY_DETAILED:
+            self.stdout.write(
+                f"Batch-fetching snippets for {len(all_youtube_ids)} YouTube IDs "
+                f"in {(len(all_youtube_ids) + YT_LIST_BATCH_SIZE - 1) // YT_LIST_BATCH_SIZE} API call(s)..."
+            )
+
+        # Batch-fetch all YouTube snippets
+        try:
+            snippets, list_quota = self.batch_fetch_youtube_snippets(
+                youtube, all_youtube_ids
+            )
+            total_quota_used += list_quota
+        except HttpError as exc:
+            if API_QUOTA_ERROR_MSG in str(exc).lower():
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"YouTube API quota exceeded during batch fetch. "
+                        f"Quota used so far: {total_quota_used} units. "
+                        f"Try again tomorrow or use --batch-size and --offset."
+                    )
+                )
+                return
+            raise
+        except Exception as exc:  # noqa: BLE001
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Error fetching video data from YouTube: {exc!s}"
+                )
+            )
+            return
+
+        if verbosity >= VERBOSITY_DETAILED:
+            self.stdout.write(
+                f"Fetched {len(snippets)} snippets "
+                f"({total_quota_used} quota units used for list calls)"
+            )
 
         for video_resource in video_resources:
-            status, message, csv_data = self.process_video(
-                video_resource, youtube, dry_run, add_course_tag, verbosity
+            yt_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
+
+            # Check if we have enough quota for a potential update
+            if not dry_run and (
+                total_quota_used + QUOTA_COST_VIDEO_UPDATE > quota_limit
+            ):
+                quota_exceeded = True
+                remaining = len(video_resources) - (
+                    success_count + error_count + skipped_count
+                )
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"\nQuota limit reached ({total_quota_used}/{quota_limit} units used). "
+                        f"{remaining} videos remaining. "
+                        f"Re-run with --offset {offset + success_count + error_count + skipped_count} "
+                        f"to continue."
+                    )
+                )
+                break
+
+            # Look up pre-fetched snippet (or mark as not found)
+            snippet = snippets.get(yt_id, "not_found") if yt_id else None
+
+            status, message, csv_data, video_quota = self.process_video(
+                video_resource,
+                youtube,
+                dry_run,
+                add_course_tag,
+                verbosity,
+                snippet=snippet,
             )
+            total_quota_used += video_quota
 
             # Collect CSV data if output file specified
             if csv_rows is not None and csv_data:
@@ -339,8 +655,11 @@ class Command(WebsiteFilterCommand):
                 completion_msg += f", {error_count} errors"
             if skipped_count > 0:
                 completion_msg += f", {skipped_count} skipped"
+            completion_msg += f" ({total_quota_used} quota units used)"
 
-            if error_count > 0:
+            if quota_exceeded:
+                self.stdout.write(self.style.WARNING(completion_msg))
+            elif error_count > 0:
                 self.stdout.write(self.style.WARNING(completion_msg))
             else:
                 self.stdout.write(self.style.SUCCESS(completion_msg))

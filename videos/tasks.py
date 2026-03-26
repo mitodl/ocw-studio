@@ -49,7 +49,7 @@ from videos.exceptions import (
     raise_missing_file_metadata_error,
 )
 from videos.models import Video, VideoFile
-from videos.utils import create_new_content
+from videos.utils import create_new_content, get_course_tag, parse_tags
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -716,3 +716,155 @@ def backfill_caption_or_transcript_file_size(self, resource_id: int):
             resource.website.short_id,
         )
         raise self.retry(exc=exc) from exc
+
+
+# YouTube Data API v3 quota costs
+_QUOTA_COST_VIDEO_LIST = 1
+_QUOTA_COST_VIDEO_UPDATE = 50
+_YT_LIST_BATCH_SIZE = 50
+
+
+@app.task(bind=True, acks_late=True, max_retries=1)
+def update_youtube_tags_batch(
+    self,
+    youtube_ids,
+    *,
+    add_course_tag=False,
+):
+    """
+    Update YouTube tags for a batch of videos identified by youtube_ids.
+
+    This task is designed to be scheduled with a countdown/eta so that
+    large tag-update operations can be spread across multiple days
+    without exceeding the YouTube API daily quota.
+
+    Args:
+        youtube_ids: List of YouTube video IDs to update
+        add_course_tag: Whether to add course slug as a tag
+    """
+    if not is_youtube_enabled():
+        log.warning("YouTube is not enabled, skipping tag update batch")
+        return
+
+    youtube = YouTubeApi()
+    success_count = 0
+    error_count = 0
+    skipped_count = 0
+
+    # Find WebsiteContent records for these YouTube IDs
+    query_id_field = f"metadata__{settings.YT_FIELD_ID.replace('.', '__')}"
+    video_resources = WebsiteContent.objects.filter(
+        **{f"{query_id_field}__in": youtube_ids},
+        metadata__resourcetype=RESOURCE_TYPE_VIDEO,
+    )
+
+    # Build a map of youtube_id -> list of resources
+    yt_id_to_resources = {}
+    for vr in video_resources:
+        yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
+        if yt_id:
+            yt_id_to_resources.setdefault(yt_id, []).append(vr)
+
+    if not yt_id_to_resources:
+        log.info("No video resources found for youtube_ids batch")
+        return
+
+    # Batch-fetch snippets from YouTube (up to 50 IDs per API call)
+    snippets = {}
+    try:
+        for i in range(0, len(youtube_ids), _YT_LIST_BATCH_SIZE):
+            batch = youtube_ids[i : i + _YT_LIST_BATCH_SIZE]
+            response = (
+                youtube.client.videos()
+                .list(part="snippet", id=",".join(batch))
+                .execute()
+            )
+            for item in response.get("items", []):
+                snippets[item["id"]] = item["snippet"]
+    except HttpError as exc:
+        if API_QUOTA_ERROR_MSG in str(exc).lower():
+            log.warning(
+                "YouTube API quota exceeded during batch fetch, "
+                "will retry: %s",
+                exc,
+            )
+            raise self.retry(exc=exc, countdown=3600) from exc
+        raise
+
+    # Process each video
+    for yt_id in youtube_ids:
+        resources = yt_id_to_resources.get(yt_id, [])
+        snippet = snippets.get(yt_id)
+
+        if not snippet:
+            log.warning("Video %s not found on YouTube, skipping", yt_id)
+            error_count += 1
+            continue
+
+        for video_resource in resources:
+            try:
+                course_slug = get_course_tag(video_resource.website)
+
+                youtube_tags = snippet.get("tags", [])
+                db_tags_str = get_dict_field(
+                    video_resource.metadata, settings.YT_FIELD_TAGS
+                )
+                db_tags = set(parse_tags(db_tags_str or ""))
+
+                # Normalize YouTube tags (handle comma-containing tags)
+                yt_tags_normalized = set()
+                for tag in youtube_tags:
+                    if "," in tag:
+                        yt_tags_normalized.update(
+                            t.strip().lower() for t in tag.split(",") if t.strip()
+                        )
+                    else:
+                        yt_tags_normalized.add(tag.strip().lower())
+
+                merged = yt_tags_normalized | db_tags
+                if add_course_tag and course_slug and course_slug not in merged:
+                    merged.add(course_slug)
+
+                tags_changed = merged != yt_tags_normalized
+
+                if tags_changed:
+                    merged_str = ", ".join(sorted(merged))
+                    snippet_copy = dict(snippet)
+                    snippet_copy["tags"] = parse_tags(merged_str)
+                    youtube.client.videos().update(
+                        part="snippet",
+                        body={"id": yt_id, "snippet": snippet_copy},
+                    ).execute()
+                    success_count += 1
+                else:
+                    merged_str = ", ".join(sorted(merged))
+                    skipped_count += 1
+
+                # Always save merged tags to DB
+                set_dict_field(
+                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_str
+                )
+                video_resource.save()
+
+            except HttpError as exc:
+                if API_QUOTA_ERROR_MSG in str(exc).lower():
+                    log.warning(
+                        "YouTube API quota exceeded at video %s "
+                        "(%d/%d processed). Remaining will be retried.",
+                        yt_id,
+                        success_count + error_count + skipped_count,
+                        len(youtube_ids),
+                    )
+                    raise self.retry(exc=exc, countdown=3600) from exc
+                log.exception("Error updating tags for %s", yt_id)
+                error_count += 1
+            except Exception:
+                log.exception("Error updating tags for %s", yt_id)
+                error_count += 1
+
+    log.info(
+        "YouTube tag batch complete: %d updated, %d skipped, %d errors",
+        success_count,
+        skipped_count,
+        error_count,
+    )

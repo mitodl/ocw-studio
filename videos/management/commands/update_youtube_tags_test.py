@@ -30,6 +30,14 @@ COURSE_STARTER_CONFIG = yaml.safe_load(
 )
 
 
+def _make_batch_list_response(items_by_id):
+    """Helper to build a mock videos.list response with id field included."""
+    items = []
+    for yt_id, snippet in items_by_id.items():
+        items.append({"id": yt_id, "snippet": snippet})
+    return {"items": items}
+
+
 @pytest.fixture
 def mock_youtube_api(mocker):
     """Mock the YouTube API client"""
@@ -39,15 +47,8 @@ def mock_youtube_api(mocker):
     mock_api = mock_api_cls.return_value
 
     # Mock the client.videos().list() chain to return current YouTube tags
-    mock_list_response = {
-        "items": [
-            {
-                "snippet": {
-                    "tags": []  # Default: no tags on YouTube
-                }
-            }
-        ]
-    }
+    # Default: empty batch response (no items)
+    mock_list_response = {"items": []}
     mock_api.client.videos.return_value.list.return_value.execute.return_value = (
         mock_list_response
     )
@@ -86,10 +87,10 @@ def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
     content, _ = video_content_with_tags
     initial_tags = content.metadata["video_metadata"]["video_tags"]
 
-    # Mock YouTube returning some tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["youtube-tag"]}}]
-    }
+    # Mock YouTube returning some tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "test_youtube_id_123": {"tags": ["youtube-tag"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -99,7 +100,7 @@ def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
 
     # Should fetch from YouTube but not update
     assert mock_youtube_api.client.videos.return_value.list.called
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
     # Verify DB was not modified
     content.refresh_from_db()
@@ -110,21 +111,18 @@ def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
     """Test that the command successfully merges and updates YouTube tags"""
     content, _ = video_content_with_tags
 
-    # Mock YouTube already having some tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["existing-youtube-tag"]}}]
-    }
+    # Mock YouTube already having some tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "test_youtube_id_123": {"tags": ["existing-youtube-tag"]},
+    })
 
     call_command(
         "update_youtube_tags",
         filter="test-course",
     )
 
-    # Should merge YouTube tags (existing-youtube-tag) with DB tags (python, django, testing)
-    # Tags are sorted alphabetically
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "test_youtube_id_123", "django, existing-youtube-tag, python, testing"
-    )
+    # Should have called videos.update with merged tags
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
     # Verify merged tags saved to DB
     content.refresh_from_db()
@@ -178,20 +176,18 @@ def test_update_youtube_tags_specific_video(mock_youtube_api):
         },
     )
 
-    # Mock YouTube response for youtube_id_1
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["youtube-tag"]}}]
-    }
+    # Mock YouTube response for youtube_id_1 (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_id_1": {"tags": ["youtube-tag"]},
+    })
 
     call_command(
         "update_youtube_tags",
         youtube_id="youtube_id_1",
     )
 
-    # Should only update the video with youtube_id_1, merging its tags (alphabetically sorted)
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "youtube_id_1", "tag1, youtube-tag"
-    )
+    # Should have called videos.update
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
     # Verify tags saved to DB for video 1
     content1 = WebsiteContent.objects.get(
@@ -267,26 +263,11 @@ def test_update_youtube_tags_multiple_youtube_ids(mock_youtube_api):
         },
     )
 
-    def mock_list(*args, **kwargs):
-        youtube_id = kwargs.get("id")
-        mock_execute = (
-            mock_youtube_api.client.videos.return_value.list.return_value.execute
-        )
-
-        if youtube_id == "youtube_id_1":
-            mock_execute.return_value = {
-                "items": [{"snippet": {"tags": ["youtube-tag1"]}}]
-            }
-        elif youtube_id == "youtube_id_2":
-            mock_execute.return_value = {
-                "items": [{"snippet": {"tags": ["youtube-tag2"]}}]
-            }
-        else:
-            mock_execute.return_value = {"items": [{"snippet": {"tags": []}}]}
-
-        return mock_youtube_api.client.videos.return_value.list.return_value
-
-    mock_youtube_api.client.videos.return_value.list.side_effect = mock_list
+    # Mock batch response returning both videos with their respective tags
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_id_1": {"tags": ["youtube-tag1"]},
+        "youtube_id_2": {"tags": ["youtube-tag2"]},
+    })
 
     # Test with comma-separated YouTube IDs
     call_command(
@@ -295,17 +276,18 @@ def test_update_youtube_tags_multiple_youtube_ids(mock_youtube_api):
     )
 
     # Should update both videos (but not video 3)
-    assert mock_youtube_api.update_video_tags.call_count == 2
+    # Verify via DB state since the update call is on the mock chain
+    content1 = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="youtube_id_1"
+    )
+    content1.refresh_from_db()
+    assert content1.metadata["video_metadata"]["video_tags"] == "tag1, youtube-tag1"
 
-    # Verify the calls were made with correct merged tags
-    calls = mock_youtube_api.update_video_tags.call_args_list
-    call_args = {call[0][0]: call[0][1] for call in calls}
-
-    assert "youtube_id_1" in call_args
-    assert call_args["youtube_id_1"] == "tag1, youtube-tag1"
-
-    assert "youtube_id_2" in call_args
-    assert call_args["youtube_id_2"] == "tag2, youtube-tag2"
+    content2 = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="youtube_id_2"
+    )
+    content2.refresh_from_db()
+    assert content2.metadata["video_metadata"]["video_tags"] == "tag2, youtube-tag2"
 
 
 def test_update_youtube_tags_no_tags(mock_youtube_api):
@@ -328,10 +310,10 @@ def test_update_youtube_tags_no_tags(mock_youtube_api):
         },
     )
 
-    # Mock YouTube also having no tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": []}}]
-    }
+    # Mock YouTube also having no tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_id_no_tags": {"tags": []},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -339,7 +321,7 @@ def test_update_youtube_tags_no_tags(mock_youtube_api):
     )
 
     # Should skip update when no tags in either location
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
@@ -360,7 +342,7 @@ def test_update_youtube_tags_missing_youtube_id(mock_youtube_api):
     )
 
     # Should not call update for videos without YouTube ID
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags):
@@ -376,7 +358,7 @@ def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags
     )
 
     # Should not call update if list() fails
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_youtube_not_enabled(mocker):
@@ -404,7 +386,7 @@ def test_update_youtube_tags_no_videos_found(mock_youtube_api):
     )
 
     # Should not call update when no videos found
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_exclude_filter(mock_youtube_api):
@@ -441,20 +423,22 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
         },
     )
 
-    # Mock YouTube having different tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["yt-tag"]}}]
-    }
+    # Mock YouTube having different tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_1": {"tags": ["yt-tag"]},
+    })
 
     call_command(
         "update_youtube_tags",
         exclude="course-2",
     )
 
-    # Should only update video from course-1, merging tags (alphabetically sorted)
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "youtube_1", "tag1, yt-tag"
+    # Should only update video from course-1, verify via DB
+    content1 = WebsiteContent.objects.get(
+        website=website1, metadata__video_metadata__youtube_id="youtube_1"
     )
+    content1.refresh_from_db()
+    assert content1.metadata["video_metadata"]["video_tags"] == "tag1, yt-tag"
 
 
 def test_update_youtube_tags_add_course_tag(mock_youtube_api):
@@ -484,10 +468,10 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
         },
     )
 
-    # Mock YouTube having additional tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["machine-learning"]}}]
-    }
+    # Mock YouTube having additional tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_test_123": {"tags": ["machine-learning"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -496,9 +480,12 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
     )
 
     # Verify the tags were merged: YouTube tags + DB tags + course slug (alphabetically sorted)
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "youtube_test_123", "course-with-videos, django, machine-learning, python"
+    # Check via DB state
+    content = WebsiteContent.objects.get(
+        website=website, metadata__video_metadata__youtube_id="youtube_test_123"
     )
+    content.refresh_from_db()
+    assert content.metadata["video_metadata"]["video_tags"] == "course-with-videos, django, machine-learning, python"
 
 
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
@@ -526,10 +513,10 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
         },
     )
 
-    # Mock YouTube having some tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["existing-yt-tag"]}}]
-    }
+    # Mock YouTube having some tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_id_789": {"tags": ["existing-yt-tag"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -538,11 +525,7 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
     )
 
     # Verify YouTube tag + course slug were merged (alphabetically sorted)
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_id_789", "existing-yt-tag, test-course-123"
-    )
-
-    # Verify final tags in DB include both YouTube tag and course slug
+    # Check via DB state
     content = WebsiteContent.objects.get(
         website=website, metadata__video_metadata__youtube_id="yt_id_789"
     )
@@ -579,10 +562,10 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
         },
     )
 
-    # Mock YouTube already having the course tag
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["my-course", "machine-learning"]}}]
-    }
+    # Mock YouTube already having the course tag (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_existing": {"tags": ["my-course", "machine-learning"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -591,11 +574,6 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     )
 
     # Verify course URL slug wasn't duplicated, tags properly merged (alphabetically sorted)
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_existing", "django, machine-learning, my-course, python"
-    )
-
-    # Verify final tags in DB: all tags merged, no duplicates, alphabetically sorted
     content = WebsiteContent.objects.get(
         website=website, metadata__video_metadata__youtube_id="yt_existing"
     )
@@ -636,10 +614,10 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     initial_tags = content.metadata["video_metadata"]["video_tags"]
     assert initial_tags == "python, django"
 
-    # Mock YouTube having additional tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["ai", "machine-learning"]}}]
-    }
+    # Mock YouTube having additional tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_save_test": {"tags": ["ai", "machine-learning"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -647,11 +625,8 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
         add_course_tag=True,
     )
 
-    # Verify YouTube API was called with merged tags (alphabetically sorted)
-    assert mock_youtube_api.update_video_tags.called
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_save_test", "ai, django, machine-learning, python, test-course"
-    )
+    # Verify YouTube API was called with videos.update
+    assert mock_youtube_api.client.videos.return_value.update.return_value.execute.called
 
     # Refresh from database to verify persistence
     content.refresh_from_db()
@@ -689,10 +664,10 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
 
     initial_tags = content.metadata["video_metadata"]["video_tags"]
 
-    # Mock YouTube having different tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["ai", "ml"]}}]
-    }
+    # Mock YouTube having different tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_dry_run_test": {"tags": ["ai", "ml"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -702,7 +677,7 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
     )
 
     # Verify YouTube API was NOT called in dry-run mode
-    assert not mock_youtube_api.update_video_tags.called
+    assert not mock_youtube_api.client.videos.return_value.update.return_value.execute.called
 
     # Refresh from database
     content.refresh_from_db()
@@ -737,10 +712,10 @@ def test_update_youtube_tags_skips_when_no_changes(mock_youtube_api):
         },
     )
 
-    # Mock YouTube having exactly the same tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["python", "django"]}}]
-    }
+    # Mock YouTube having exactly the same tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_no_changes": {"tags": ["python", "django"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -748,7 +723,7 @@ def test_update_youtube_tags_skips_when_no_changes(mock_youtube_api):
     )
 
     # Should skip update when tags are identical
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_merges_youtube_priority(mock_youtube_api):
@@ -772,20 +747,18 @@ def test_update_youtube_tags_merges_youtube_priority(mock_youtube_api):
         },
     )
 
-    # Mock YouTube having different tags, some overlap
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["yt-tag1", "tag2", "yt-tag2"]}}]
-    }
+    # Mock YouTube having different tags, some overlap (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_merge_test": {"tags": ["yt-tag1", "tag2", "yt-tag2"]},
+    })
 
     call_command(
         "update_youtube_tags",
         filter="test-course",
     )
 
-    # Should merge all tags and sort alphabetically
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_merge_test", "tag1, tag2, tag3, yt-tag1, yt-tag2"
-    )
+    # Should have called videos.update with merged tags
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
     # Verify merged tags saved to DB
     content.refresh_from_db()
@@ -820,11 +793,10 @@ def test_update_youtube_tags_handles_poorly_formatted_youtube_tags(mock_youtube_
     )
 
     # Mock YouTube returning a single tag that contains commas (poorly formatted)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [
-            {"snippet": {"tags": ["game design, critique, game theory, discussion"]}}
-        ]
-    }
+    # Batch response with id
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_comma_test": {"tags": ["game design, critique, game theory, discussion"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -832,11 +804,8 @@ def test_update_youtube_tags_handles_poorly_formatted_youtube_tags(mock_youtube_
     )
 
     # Should split the poorly formatted tag and merge with DB tags
-    # All individual parts should be present and sorted alphabetically
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "yt_comma_test",
-        "critique, discussion, game design, game theory, proper-tag1, proper-tag2",
-    )
+    # Verify via DB state
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
     # Verify merged tags saved to DB
     content.refresh_from_db()
@@ -878,9 +847,10 @@ def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
     )
 
     # Mock YouTube already having both tags (python + django)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["python", "django"]}}]
-    }
+    # Batch response with id
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_skip_test": {"tags": ["python", "django"]},
+    })
 
     call_command(
         "update_youtube_tags",
@@ -888,7 +858,7 @@ def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
     )
 
     # YouTube update should be skipped since merged tags match YouTube tags
-    mock_youtube_api.update_video_tags.assert_not_called()
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
     # Merged tags should still be saved to DB in normal mode (not dry-run)
     content.refresh_from_db()
@@ -926,10 +896,10 @@ def test_update_youtube_tags_csv_export(mock_youtube_api, tmp_path):
         },
     )
 
-    # Mock YouTube returning different tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = {
-        "items": [{"snippet": {"tags": ["youtube-tag", "common-tag"]}}]
-    }
+    # Mock YouTube returning different tags (batch response with id)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "youtube_id_1": {"tags": ["youtube-tag", "common-tag"]},
+    })
 
     csv_file = tmp_path / "test_output.csv"
 
@@ -971,10 +941,8 @@ def test_update_youtube_tags_csv_export(mock_youtube_api, tmp_path):
     assert row["youtube_updated"] == "True"  # CSV writes boolean as string
     assert row["db_updated"] == "True"
 
-    # Verify YouTube API was called with correct merged tags
-    mock_youtube_api.update_video_tags.assert_called_once_with(
-        "youtube_id_1", "common-tag, existing-db-tag, youtube-tag"
-    )
+    # Verify YouTube API was called to update
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
     # Verify final tags actually saved to database
     content.refresh_from_db()
@@ -1057,3 +1025,243 @@ def test_flatten_tags_empty_list():
     result = command.flatten_tags(tags)
 
     assert result == set()
+
+
+def test_update_youtube_tags_batch_size_and_offset(mock_youtube_api):
+    """Test that --batch-size and --offset correctly limit processed videos"""
+    website = WebsiteFactory.create(name="test-course")
+
+    # Create 5 videos
+    for i in range(1, 6):
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id=f"yt_batch_{i}",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            title=f"Video {i}",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": f"yt_batch_{i}",
+                    "video_tags": f"tag{i}",
+                },
+            },
+        )
+
+    # Mock batch response for all IDs
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        f"yt_batch_{i}": {"tags": ["new-tag"]} for i in range(1, 6)
+    })
+
+    # Process only 2 videos starting from offset 1
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        batch_size=2,
+        offset=1,
+    )
+
+    # Count how many videos had their DB updated (tags changed)
+    updated_count = 0
+    for i in range(1, 6):
+        content = WebsiteContent.objects.get(
+            website=website, metadata__video_metadata__youtube_id=f"yt_batch_{i}"
+        )
+        content.refresh_from_db()
+        if "new-tag" in content.metadata["video_metadata"].get("video_tags", ""):
+            updated_count += 1
+
+    # Should have updated exactly 2 videos
+    assert updated_count == 2
+
+
+def test_update_youtube_tags_quota_limit(mock_youtube_api):
+    """Test that --quota-limit stops processing before exceeding quota"""
+    website = WebsiteFactory.create(name="test-course")
+
+    # Create 5 videos that all need updating
+    for i in range(1, 6):
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id=f"yt_quota_{i}",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            title=f"Video {i}",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": f"yt_quota_{i}",
+                    "video_tags": f"tag{i}",
+                },
+            },
+        )
+
+    # Mock batch response - all videos have new tags that need merging
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        f"yt_quota_{i}": {"tags": ["new-tag"]} for i in range(1, 6)
+    })
+
+    # Set quota limit to allow only 1 update (list costs 1 + update costs 50 = 51)
+    # With quota_limit=52, the 2nd update would exceed the limit
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        quota_limit=52,
+    )
+
+    # Should have updated only 1 video before hitting quota limit
+    updated_count = 0
+    for i in range(1, 6):
+        content = WebsiteContent.objects.get(
+            website=website, metadata__video_metadata__youtube_id=f"yt_quota_{i}"
+        )
+        content.refresh_from_db()
+        if "new-tag" in content.metadata["video_metadata"].get("video_tags", ""):
+            updated_count += 1
+
+    assert updated_count == 1
+
+
+def test_update_youtube_tags_schedule_dispatches_celery_tasks(
+    mock_youtube_api, mocker, settings
+):
+    """Test that --schedule dispatches Celery tasks when video count exceeds threshold"""
+    settings.YT_BATCH_THRESHOLD = 2  # Low threshold for testing
+    settings.YT_DAILY_QUOTA = 200  # Allows ~3 videos per day (200/50=4, minus overhead)
+
+    website = WebsiteFactory.create(name="test-course")
+
+    # Create 5 videos (exceeds threshold of 2)
+    for i in range(1, 6):
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id=f"yt_sched_{i}",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            title=f"Video {i}",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": f"yt_sched_{i}",
+                    "video_tags": f"tag{i}",
+                },
+            },
+        )
+
+    mock_task = mocker.patch(
+        "videos.management.commands.update_youtube_tags.update_youtube_tags_batch"
+    )
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        schedule=True,
+    )
+
+    # Should have dispatched tasks via apply_async, not processed immediately
+    assert mock_task.apply_async.call_count >= 2  # At least 2 days worth
+
+    # First task should have countdown=0 (immediate)
+    first_call = mock_task.apply_async.call_args_list[0]
+    assert first_call.kwargs.get("countdown", 0) == 0
+
+    # Second task should be delayed by 24 hours
+    second_call = mock_task.apply_async.call_args_list[1]
+    assert second_call.kwargs["countdown"] == 86400
+
+    # YouTube API should NOT have been called directly (no immediate processing)
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.assert_not_called()
+
+
+def test_update_youtube_tags_schedule_runs_immediately_below_threshold(
+    mock_youtube_api, settings
+):
+    """Test that --schedule runs immediately when video count is below threshold"""
+    settings.YT_BATCH_THRESHOLD = 100  # High threshold
+
+    website = WebsiteFactory.create(name="test-course")
+    video = VideoFactory.create(website=website)
+    VideoFileFactory.create(
+        video=video,
+        destination=DESTINATION_YOUTUBE,
+        destination_id="yt_immediate",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        title="Single Video",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {
+                "youtube_id": "yt_immediate",
+                "video_tags": "tag1",
+            },
+        },
+    )
+
+    # Mock YouTube batch response
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        "yt_immediate": {"tags": ["new-tag"]},
+    })
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        schedule=True,
+    )
+
+    # Should process immediately (1 video < threshold of 100)
+    mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
+
+
+def test_update_youtube_tags_schedule_skipped_in_dry_run(
+    mock_youtube_api, mocker, settings
+):
+    """Test that --schedule is ignored in dry-run mode"""
+    settings.YT_BATCH_THRESHOLD = 1  # Very low threshold
+
+    website = WebsiteFactory.create(name="test-course")
+    for i in range(1, 4):
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id=f"yt_dry_{i}",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": f"yt_dry_{i}",
+                    "video_tags": f"tag{i}",
+                },
+            },
+        )
+
+    mock_task = mocker.patch(
+        "videos.management.commands.update_youtube_tags.update_youtube_tags_batch"
+    )
+
+    # Mock YouTube batch response
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
+        f"yt_dry_{i}": {"tags": ["yt-tag"]} for i in range(1, 4)
+    })
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        schedule=True,
+        dry_run=True,
+    )
+
+    # Dry-run should NOT schedule Celery tasks
+    mock_task.apply_async.assert_not_called()

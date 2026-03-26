@@ -51,6 +51,7 @@ from videos.tasks import (
     update_transcripts_for_video,
     update_transcripts_for_website,
     update_youtube_statuses,
+    update_youtube_tags_batch,
     upload_youtube_videos,
 )
 from videos.youtube import API_QUOTA_ERROR_MSG
@@ -1126,3 +1127,146 @@ def test_start_transcript_job_no_retry_on_unexpected_error(mocker, settings):
         start_transcript_job.apply([video.id])
 
     mock_retry.assert_not_called()
+
+
+class TestUpdateYoutubeTagsBatch:
+    """Tests for update_youtube_tags_batch Celery task"""
+
+    def test_updates_tags_and_saves_to_db(self, mocker, settings):
+        """Test that the task updates YouTube tags and saves merged tags to DB"""
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+        settings.YT_REFRESH_TOKEN = "refresh"  # noqa: S105
+        settings.YT_CLIENT_ID = "client_id"
+        settings.YT_CLIENT_SECRET = "secret"  # noqa: S105
+        settings.YT_PROJECT_ID = "project"
+
+        website = WebsiteFactory.create(name="test-course")
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id="yt_batch_1",
+        )
+        content = WebsiteContentFactory.create(
+            website=website,
+            title="Test Video",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": "yt_batch_1",
+                    "video_tags": "python, django",
+                },
+            },
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+        mock_api = mock_api_cls.return_value
+
+        # Mock batch list response
+        mock_api.client.videos.return_value.list.return_value.execute.return_value = {
+            "items": [
+                {"id": "yt_batch_1", "snippet": {"tags": ["machine-learning"]}}
+            ]
+        }
+
+        update_youtube_tags_batch(["yt_batch_1"])
+
+        # Verify videos.update was called
+        mock_api.client.videos.return_value.update.return_value.execute.assert_called()
+
+        # Verify DB was updated with merged tags
+        content.refresh_from_db()
+        tags = content.metadata["video_metadata"]["video_tags"]
+        assert "python" in tags
+        assert "django" in tags
+        assert "machine-learning" in tags
+
+    def test_skips_when_no_tag_changes(self, mocker, settings):
+        """Test that the task skips YouTube update when tags are identical"""
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+        settings.YT_REFRESH_TOKEN = "refresh"  # noqa: S105
+        settings.YT_CLIENT_ID = "client_id"
+        settings.YT_CLIENT_SECRET = "secret"  # noqa: S105
+        settings.YT_PROJECT_ID = "project"
+
+        website = WebsiteFactory.create(name="test-course")
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id="yt_skip",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": "yt_skip",
+                    "video_tags": "python, django",
+                },
+            },
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+        mock_api = mock_api_cls.return_value
+
+        # YouTube already has same tags
+        mock_api.client.videos.return_value.list.return_value.execute.return_value = {
+            "items": [
+                {"id": "yt_skip", "snippet": {"tags": ["python", "django"]}}
+            ]
+        }
+
+        update_youtube_tags_batch(["yt_skip"])
+
+        # Should not call update
+        mock_api.client.videos.return_value.update.return_value.execute.assert_not_called()
+
+    def test_skips_when_youtube_disabled(self, mocker, settings):
+        """Test that the task returns early when YouTube is disabled"""
+        settings.YT_ACCESS_TOKEN = ""
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+
+        update_youtube_tags_batch(["yt_1"])
+
+        mock_api_cls.assert_not_called()
+
+    def test_handles_missing_video_on_youtube(self, mocker, settings):
+        """Test that videos not found on YouTube are skipped gracefully"""
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+        settings.YT_REFRESH_TOKEN = "refresh"  # noqa: S105
+        settings.YT_CLIENT_ID = "client_id"
+        settings.YT_CLIENT_SECRET = "secret"  # noqa: S105
+        settings.YT_PROJECT_ID = "project"
+
+        website = WebsiteFactory.create(name="test-course")
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id="yt_missing",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": "yt_missing",
+                    "video_tags": "tag1",
+                },
+            },
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+        mock_api = mock_api_cls.return_value
+
+        # YouTube returns empty response (video not found)
+        mock_api.client.videos.return_value.list.return_value.execute.return_value = {
+            "items": []
+        }
+
+        # Should not raise
+        update_youtube_tags_batch(["yt_missing"])
+
+        mock_api.client.videos.return_value.update.return_value.execute.assert_not_called()
