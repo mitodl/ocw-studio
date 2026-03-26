@@ -1252,18 +1252,6 @@ wheels = [
 ]
 
 [[package]]
-name = "newrelic"
-version = "10.17.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/82/71eb49483a2675eec2a5cfce2ea08c898c9329072a83f6671d2a6f68d101/newrelic-10.17.0.tar.gz", hash = "sha256:f092109ac024f9524fafdd06126924c0fbd2af54684571167c0ee1d1cc1bcb7d", size = 1286818, upload-time = "2025-09-04T22:15:25.988Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/60/731dbb138b7ec21a292769f5bed36a207ea957fbd6bfabca8954bfb029b3/newrelic-10.17.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:165c7045da474342d4ceab67776e8aeb66e77674fab7484b4e2e4ea68d02ed4d", size = 862986, upload-time = "2025-09-04T22:15:01.831Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/d2/fb51ee95e13e00a81d526cdd12359dc543e66ccb975ac0e164ef1008a852/newrelic-10.17.0-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fc3c3c82c95b57fe30fc1f684bf920bd8b0ecae70a16cc11f55d0867ffb7520d", size = 862661, upload-time = "2025-09-04T22:15:03.303Z" },
-    { url = "https://files.pythonhosted.org/packages/1f/e2/adea40e0e6d6ef16083fbb48aae45a353910b61edbd253969ded2042b1e0/newrelic-10.17.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:5789f739e6ca1c4a49649e406b538d67c063ec33ab4658d01049303dfad9398b", size = 860798, upload-time = "2025-09-04T22:15:05.018Z" },
-    { url = "https://files.pythonhosted.org/packages/eb/bb/2ee2ef672ab1dafcc40c17a13fa33cd5055275426f8853fbfadde563ccf6/newrelic-10.17.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:4144dd96fa55772456326b3a6032a53d54aa9245ffc5041b002ce9eb5dbd0992", size = 860672, upload-time = "2025-09-04T22:15:06.346Z" },
-]
-
-[[package]]
 name = "nodeenv"
 version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1328,7 +1316,6 @@ dependencies = [
     { name = "mitol-django-mail" },
     { name = "mitol-django-transcoding" },
     { name = "more-itertools" },
-    { name = "newrelic" },
     { name = "ol-concourse" },
     { name = "ol-concoursepy" },
     { name = "posthog" },
@@ -1402,7 +1389,6 @@ requires-dist = [
     { name = "mitol-django-mail", specifier = ">=2025.0.0,<2026" },
     { name = "mitol-django-transcoding", specifier = ">=2025.5.21,<2026" },
     { name = "more-itertools", specifier = ">=10.1.0,<11" },
-    { name = "newrelic", specifier = ">=10.0.0,<11" },
     { name = "ol-concourse", specifier = ">=0.5.8,<0.6" },
     { name = "ol-concoursepy", specifier = "==0.0.41" },
     { name = "posthog", specifier = ">=7.0.0,<8" },
