@@ -46,7 +46,7 @@ dependencies = [
     "python-magic>=0.4.27,<0.5",
     "pyyaml>=6.0.1,<7",
     "redis>=4.5.5,<5",
-    "requests==2.32.5",
+    "requests==2.33.0",
     "sentry-sdk==2.54.0",
     "smart-open[s3]>=7.0.0,<8",
     "social-auth-app-django==5.6.0",
