@@ -21,7 +21,7 @@ import Dropdown from "../components/Dropdown"
 import UnpublishDialog from "../components/UnpublishDialog"
 import { useURLParamFilter, usePagination } from "../hooks/search"
 import { usePermission } from "../hooks/permissions"
-import { Permission, PublishStatus } from "../constants"
+import { Permission, PublishStatus, SITE_TYPE_LABELS } from "../constants"
 
 function getListingParams(search: string): WebsiteListingParams {
   const qsParams = new URLSearchParams(search)
@@ -245,6 +245,11 @@ export default function SitesDashboard(): JSX.Element {
               subtitle={site.short_id}
               to={siteDetailUrl.param({ name: site.name }).toString()}
               key={site.uuid}
+              titleAdornment={
+                <span className="site-type-badge ml-2">
+                  {SITE_TYPE_LABELS[site.site_type] ?? site.site_type}
+                </span>
+              }
             >
               <div className="d-flex flex-row">
                 {(() => {

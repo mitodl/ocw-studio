@@ -43,6 +43,7 @@ describe("SiteCreationPage", () => {
     await screen.findByLabelText(/title/i)
     expect(screen.getByLabelText(/short id/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/starter/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/site type/i)).toBeInTheDocument()
   })
 
   it("sets the page title", async () => {

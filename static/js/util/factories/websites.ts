@@ -222,6 +222,7 @@ export const makeWebsiteDetail = (
     .toLowerCase(),
   title: casual.title,
   source: null,
+  site_type: "ocw",
   starter: makeWebsiteStarter("course"),
   metadata: {
     course_numbers: [`${casual.integer(1, 20)}.${casual.integer(1, 999)}`],

@@ -76,7 +76,7 @@ turndownService.rules.blankRule.replacement = (
 
   if (matchingRules.length === 1) {
     const [rule] = matchingRules
-    return rule.replacement?.(content, node, options)
+    return rule.replacement?.(content, node as HTMLElement, options)
   } else {
     return "\n\n"
   }

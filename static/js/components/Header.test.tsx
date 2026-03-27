@@ -13,7 +13,7 @@ import {
 import Header from "./Header"
 import { logoutUrl, siteApiDetailUrl } from "../lib/urls"
 import { makeWebsiteDetail } from "../util/factories/websites"
-import { PublishStatus } from "../constants"
+import { PublishStatus, SiteType, SITE_TYPE_LABELS } from "../constants"
 
 describe("Header without loaded website", () => {
   it("includes the site logo and mit logo", () => {
@@ -96,6 +96,20 @@ describe("Header with a loaded website", () => {
 
     expect(h2.tagName).toBe("H2")
   })
+
+  it.each([
+    { siteType: SiteType.OCW, expectedLabel: SITE_TYPE_LABELS[SiteType.OCW] },
+    { siteType: SiteType.PK12, expectedLabel: SITE_TYPE_LABELS[SiteType.PK12] },
+  ])(
+    "shows the site type badge for $siteType",
+    ({ siteType, expectedLabel }) => {
+      const helper = new IntegrationTestHelper()
+      const website = makeWebsiteDetail({ site_type: siteType })
+      const [result] = helper.render(<Header website={website} />)
+
+      expect(result.getByText(expectedLabel)).toBeInTheDocument()
+    },
+  )
 
   const liveCases = [{ isLive: true }, { isLive: false }]
   const statusCases = {

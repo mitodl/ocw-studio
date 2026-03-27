@@ -11,7 +11,10 @@ import PublishDrawer from "../components/PublishDrawer"
 import { getCookie } from "../lib/api/util"
 import { logoutUrl, sitesBaseUrl } from "../lib/urls"
 import { websiteStatusRequest } from "../query-configs/websites"
-import { PUBLISH_STATUS_PROCESSING_STATES } from "../constants"
+import {
+  PUBLISH_STATUS_PROCESSING_STATES,
+  SITE_TYPE_LABELS,
+} from "../constants"
 import PublishStatusIndicator from "./PublishStatusIndicator"
 
 import { Website } from "../types/websites"
@@ -107,7 +110,12 @@ export default function Header(props: HeaderProps): JSX.Element {
       </div>
       {website && (
         <div className="d-flex justify-content-between mt-3 site-header">
-          <h2 className="my-0 mr-1 p-0">{website.title}</h2>
+          <div className="d-flex align-items-center">
+            <h2 className="my-0 mr-1 p-0">{website.title}</h2>
+            <span className="site-type-badge">
+              {SITE_TYPE_LABELS[website.site_type] ?? website.site_type}
+            </span>
+          </div>
           <div className="flex-shrink-0">
             <button
               type="button"
