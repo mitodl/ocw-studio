@@ -41,6 +41,42 @@ The [`TranscodeJobView` endpoint](/videos/views.py) listens for the webhook that
 
 Videos are uploaded to YouTube via the [`resumable_upload` function](/videos/youtube.py). The [YouTube upload success notification](/videos/templates/mail/youtube_upload_success/body.html) is sent by email when the [`update_youtube_statuses`](/videos/tasks.py) task is complete; exceptions in this task trigger the [YouTube upload failure notification](/videos/templates/mail/youtube_upload_failure/body.html). When the course is published to draft/staging, the video is set to `unlisted`. However, when it is published to live/production, the video is made public on YouTube, via the [`update_youtube_metadata` function](/videos/youtube.py). When a video is made public on YouTube, all YouTube subscribers will be notified. There are nearly 5 million subscribers to the OCW YouTube channel, so be careful with this setting. Subsequently republishing the course to draft/staging will not change the visibility of the YouTube video. However, if the video resource is set to "Draft" and the course is republished, the video will again be set to `unlisted`.
 
+## Enabling YouTube Metadata Updates
+
+The PostHog feature flag `FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE` (defined in [`main/feature_flags.py`](/main/feature_flags.py)) controls whether automatic YouTube metadata updates occur during publish. **By default, YouTube updates are disabled** unless this flag is enabled.
+
+**Default Behavior (Flag Not Set or False):**
+
+- YouTube metadata updates are **disabled**
+- Videos are uploaded but metadata (title, description, visibility) is **not** updated
+- No YouTube subscriber notifications are triggered
+
+**When Flag is Enabled (Set to True in PostHog):**
+
+- YouTube metadata updates proceed normally
+- Video visibility, titles, and descriptions are updated
+- YouTube subscribers may receive notifications when videos are made public
+
+To enable YouTube updates in PostHog, set `OCW_STUDIO_ENABLE_YOUTUBE_UPDATE` to `true` for the desired user group or rollout percentage.
+
+## Testing YouTube Updates on RC/Staging
+
+For testing YouTube metadata updates on RC or staging environments without affecting production videos, set `YT_TEST_VIDEO_IDS` in your `.env` file to a comma-separated list of YouTube video IDs:
+
+```bash
+YT_TEST_VIDEO_IDS=abc123,def456,ghi789
+```
+
+**Important:** Videos in this list will **bypass the PostHog feature flag** (`FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE`) and always have their metadata updated, even when the flag is not enabled. This is useful for:
+
+- Testing YouTube integration changes with specific test videos on RC while the flag is disabled (default)
+- Safe testing on RC/staging without enabling updates for all videos
+
+When `YT_TEST_VIDEO_IDS` is configured:
+
+- Videos with IDs **in the list**: Always updated (bypasses feature flag check entirely)
+- Videos with IDs **not in the list**: Updates disabled unless feature flag is enabled
+
 # Captioning and 3Play Transcript Request
 
 If there are no pre-existing captions, a 3Play transcript request is generated. This is done via the [`threeplay_transcript_api_request` function](/videos/threeplay_api.py).

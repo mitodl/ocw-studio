@@ -19,6 +19,8 @@ from mitol.mail.api import get_message_sender
 from smart_open.s3 import Reader
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from main.feature_flags import FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE
+from main.posthog import is_feature_enabled
 from main.s3_utils import get_boto3_client
 from main.utils import truncate_words
 from videos.constants import (
@@ -511,6 +513,11 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
     """Update YouTube video metadata via the API"""
     if not is_youtube_enabled() or not is_ocw_site(website):
         return
+
+    # Check PostHog feature flag once (optimization)
+    # YouTube updates are blocked by default, only enabled if flag is True
+    youtube_updates_enabled = is_feature_enabled(FEATURE_FLAG_ENABLE_YOUTUBE_UPDATE)
+
     query_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
     video_resources = website.websitecontent_set.filter(
         Q(metadata__resourcetype=RESOURCE_TYPE_VIDEO)
@@ -524,6 +531,21 @@ def update_youtube_metadata(website: Website, version=VERSION_DRAFT) -> None:
     for video_resource in video_resources:
         is_draft = get_dict_field(video_resource.metadata, "draft") is True
         youtube_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
+
+        # Test videos bypass feature flag (always update)
+        is_test_video = (
+            settings.YT_TEST_VIDEO_IDS and youtube_id in settings.YT_TEST_VIDEO_IDS
+        )
+
+        # Skip if feature flag NOT enabled and not a test video
+        if not youtube_updates_enabled and not is_test_video:
+            log.info(
+                "Skipping YouTube metadata update for video %s "
+                "(feature flag not enabled)",
+                youtube_id,
+            )
+            continue
+
         # do not run this for any old imported videos
         if VideoFile.objects.filter(
             video__website=website, destination_id=youtube_id
