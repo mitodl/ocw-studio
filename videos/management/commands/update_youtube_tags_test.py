@@ -88,9 +88,11 @@ def test_update_youtube_tags_dry_run(mock_youtube_api, video_content_with_tags):
     initial_tags = content.metadata["video_metadata"]["video_tags"]
 
     # Mock YouTube returning some tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "test_youtube_id_123": {"tags": ["youtube-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "test_youtube_id_123": {"tags": ["youtube-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -112,9 +114,11 @@ def test_update_youtube_tags_success(mock_youtube_api, video_content_with_tags):
     content, _ = video_content_with_tags
 
     # Mock YouTube already having some tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "test_youtube_id_123": {"tags": ["existing-youtube-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "test_youtube_id_123": {"tags": ["existing-youtube-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -177,9 +181,11 @@ def test_update_youtube_tags_specific_video(mock_youtube_api):
     )
 
     # Mock YouTube response for youtube_id_1 (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_id_1": {"tags": ["youtube-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_id_1": {"tags": ["youtube-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -264,10 +270,12 @@ def test_update_youtube_tags_multiple_youtube_ids(mock_youtube_api):
     )
 
     # Mock batch response returning both videos with their respective tags
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_id_1": {"tags": ["youtube-tag1"]},
-        "youtube_id_2": {"tags": ["youtube-tag2"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_id_1": {"tags": ["youtube-tag1"]},
+            "youtube_id_2": {"tags": ["youtube-tag2"]},
+        }
+    )
 
     # Test with comma-separated YouTube IDs
     call_command(
@@ -311,9 +319,11 @@ def test_update_youtube_tags_no_tags(mock_youtube_api):
     )
 
     # Mock YouTube also having no tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_id_no_tags": {"tags": []},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_id_no_tags": {"tags": []},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -424,9 +434,11 @@ def test_update_youtube_tags_exclude_filter(mock_youtube_api):
     )
 
     # Mock YouTube having different tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_1": {"tags": ["yt-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_1": {"tags": ["yt-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -469,9 +481,11 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
     )
 
     # Mock YouTube having additional tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_test_123": {"tags": ["machine-learning"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_test_123": {"tags": ["machine-learning"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -485,7 +499,10 @@ def test_update_youtube_tags_add_course_tag(mock_youtube_api):
         website=website, metadata__video_metadata__youtube_id="youtube_test_123"
     )
     content.refresh_from_db()
-    assert content.metadata["video_metadata"]["video_tags"] == "course-with-videos, django, machine-learning, python"
+    assert (
+        content.metadata["video_metadata"]["video_tags"]
+        == "course-with-videos, django, machine-learning, python"
+    )
 
 
 def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
@@ -514,9 +531,11 @@ def test_update_youtube_tags_add_course_tag_no_existing_tags(mock_youtube_api):
     )
 
     # Mock YouTube having some tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_id_789": {"tags": ["existing-yt-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_id_789": {"tags": ["existing-yt-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -563,9 +582,11 @@ def test_update_youtube_tags_add_course_tag_already_exists(mock_youtube_api):
     )
 
     # Mock YouTube already having the course tag (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_existing": {"tags": ["my-course", "machine-learning"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_existing": {"tags": ["my-course", "machine-learning"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -615,9 +636,11 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     assert initial_tags == "python, django"
 
     # Mock YouTube having additional tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_save_test": {"tags": ["ai", "machine-learning"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_save_test": {"tags": ["ai", "machine-learning"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -626,7 +649,9 @@ def test_update_youtube_tags_saves_metadata_to_database(mock_youtube_api):
     )
 
     # Verify YouTube API was called with videos.update
-    assert mock_youtube_api.client.videos.return_value.update.return_value.execute.called
+    assert (
+        mock_youtube_api.client.videos.return_value.update.return_value.execute.called
+    )
 
     # Refresh from database to verify persistence
     content.refresh_from_db()
@@ -665,9 +690,11 @@ def test_update_youtube_tags_dry_run_does_not_save_metadata(mock_youtube_api):
     initial_tags = content.metadata["video_metadata"]["video_tags"]
 
     # Mock YouTube having different tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_dry_run_test": {"tags": ["ai", "ml"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_dry_run_test": {"tags": ["ai", "ml"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -713,9 +740,11 @@ def test_update_youtube_tags_skips_when_no_changes(mock_youtube_api):
     )
 
     # Mock YouTube having exactly the same tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_no_changes": {"tags": ["python", "django"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_no_changes": {"tags": ["python", "django"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -748,9 +777,11 @@ def test_update_youtube_tags_merges_youtube_priority(mock_youtube_api):
     )
 
     # Mock YouTube having different tags, some overlap (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_merge_test": {"tags": ["yt-tag1", "tag2", "yt-tag2"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_merge_test": {"tags": ["yt-tag1", "tag2", "yt-tag2"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -794,9 +825,13 @@ def test_update_youtube_tags_handles_poorly_formatted_youtube_tags(mock_youtube_
 
     # Mock YouTube returning a single tag that contains commas (poorly formatted)
     # Batch response with id
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_comma_test": {"tags": ["game design, critique, game theory, discussion"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_comma_test": {
+                "tags": ["game design, critique, game theory, discussion"]
+            },
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -848,9 +883,11 @@ def test_update_youtube_tags_saves_to_db_even_when_skipping(mock_youtube_api):
 
     # Mock YouTube already having both tags (python + django)
     # Batch response with id
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_skip_test": {"tags": ["python", "django"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_skip_test": {"tags": ["python", "django"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -897,9 +934,11 @@ def test_update_youtube_tags_csv_export(mock_youtube_api, tmp_path):
     )
 
     # Mock YouTube returning different tags (batch response with id)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "youtube_id_1": {"tags": ["youtube-tag", "common-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "youtube_id_1": {"tags": ["youtube-tag", "common-tag"]},
+        }
+    )
 
     csv_file = tmp_path / "test_output.csv"
 
@@ -1052,9 +1091,9 @@ def test_update_youtube_tags_batch_size_and_offset(mock_youtube_api):
         )
 
     # Mock batch response for all IDs
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        f"yt_batch_{i}": {"tags": ["new-tag"]} for i in range(1, 6)
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {f"yt_batch_{i}": {"tags": ["new-tag"]} for i in range(1, 6)}
+    )
 
     # Process only 2 videos starting from offset 1
     call_command(
@@ -1103,9 +1142,9 @@ def test_update_youtube_tags_quota_limit(mock_youtube_api):
         )
 
     # Mock batch response - all videos have new tags that need merging
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        f"yt_quota_{i}": {"tags": ["new-tag"]} for i in range(1, 6)
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {f"yt_quota_{i}": {"tags": ["new-tag"]} for i in range(1, 6)}
+    )
 
     # Set quota limit to allow only 1 update (list costs 1 + update costs 50 = 51)
     # With quota_limit=52, the 2nd update would exceed the limit
@@ -1134,6 +1173,7 @@ def test_update_youtube_tags_schedule_dispatches_celery_tasks(
     """Test that --schedule dispatches Celery tasks when video count exceeds threshold"""
     settings.YT_BATCH_THRESHOLD = 2  # Low threshold for testing
     settings.YT_DAILY_QUOTA = 200  # Allows ~3 videos per day (200/50=4, minus overhead)
+    settings.YT_SCHEDULE_WEEKENDS_ONLY = False
 
     website = WebsiteFactory.create(name="test-course")
 
@@ -1208,9 +1248,11 @@ def test_update_youtube_tags_schedule_runs_immediately_below_threshold(
     )
 
     # Mock YouTube batch response
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        "yt_immediate": {"tags": ["new-tag"]},
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {
+            "yt_immediate": {"tags": ["new-tag"]},
+        }
+    )
 
     call_command(
         "update_youtube_tags",
@@ -1252,9 +1294,9 @@ def test_update_youtube_tags_schedule_skipped_in_dry_run(
     )
 
     # Mock YouTube batch response
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response({
-        f"yt_dry_{i}": {"tags": ["yt-tag"]} for i in range(1, 4)
-    })
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {f"yt_dry_{i}": {"tags": ["yt-tag"]} for i in range(1, 4)}
+    )
 
     call_command(
         "update_youtube_tags",
@@ -1265,3 +1307,69 @@ def test_update_youtube_tags_schedule_skipped_in_dry_run(
 
     # Dry-run should NOT schedule Celery tasks
     mock_task.apply_async.assert_not_called()
+
+
+def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker, settings):
+    """Test that weekend-only mode delays tasks to Saturday/Sunday slots"""
+    settings.YT_BATCH_THRESHOLD = 2
+    settings.YT_DAILY_QUOTA = 200  # ~3 videos per day
+    settings.YT_SCHEDULE_WEEKENDS_ONLY = True
+
+    # Mock timezone.now() to a Wednesday at noon UTC
+    import datetime
+
+    from django.utils import timezone
+
+    mock_now = datetime.datetime(2026, 4, 1, 12, 0, 0, tzinfo=datetime.UTC)
+    mocker.patch.object(timezone, "now", return_value=mock_now)
+
+    website = WebsiteFactory.create(name="test-course")
+
+    # Create 5 videos (exceeds threshold of 2)
+    for i in range(1, 6):
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id=f"yt_wknd_{i}",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            title=f"Video {i}",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": f"yt_wknd_{i}",
+                    "video_tags": f"tag{i}",
+                },
+            },
+        )
+
+    mock_task = mocker.patch(
+        "videos.management.commands.update_youtube_tags.update_youtube_tags_batch"
+    )
+
+    call_command(
+        "update_youtube_tags",
+        filter="test-course",
+        schedule=True,
+    )
+
+    # Should have dispatched tasks
+    assert mock_task.apply_async.call_count >= 2
+
+    # All countdowns should be > 0 (delayed to weekend since today is Wednesday)
+    for call in mock_task.apply_async.call_args_list:
+        assert call.kwargs["countdown"] > 0
+
+    # First task countdown should be to Saturday (2026-04-04 06:00 UTC)
+    # From Wed Apr 1 12:00 to Sat Apr 4 06:00 = 2 days 18 hours = 237600 seconds
+    first_countdown = mock_task.apply_async.call_args_list[0].kwargs["countdown"]
+    assert first_countdown > 0
+
+    # Second task should be on Sunday (one day later)
+    second_countdown = mock_task.apply_async.call_args_list[1].kwargs["countdown"]
+    assert second_countdown == first_countdown + 86400
+
+    # YouTube API should NOT have been called directly
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.assert_not_called()

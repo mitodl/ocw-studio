@@ -3,10 +3,12 @@
 import csv
 import logging
 import math
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings
 from django.db.models import Q
+from django.utils import timezone
 from googleapiclient.errors import HttpError
 
 from main.management.commands.filter import WebsiteFilterCommand
@@ -175,9 +177,7 @@ class Command(WebsiteFilterCommand):
             batch_ids = ",".join(batch)
 
             response = (
-                youtube.client.videos()
-                .list(part="snippet", id=batch_ids)
-                .execute()
+                youtube.client.videos().list(part="snippet", id=batch_ids).execute()
             )
             quota_used += QUOTA_COST_VIDEO_LIST
 
@@ -395,19 +395,37 @@ class Command(WebsiteFilterCommand):
         total = success_count + error_count + skipped_count
         self.stdout.write(f"Total processed: {total}")
 
+    @staticmethod
+    def _seconds_until_next_saturday():
+        """Return seconds from now until the start of the next Saturday (UTC)."""
+        now = timezone.now()
+        days_ahead = (5 - now.weekday()) % 7  # Saturday = 5
+        if days_ahead == 0 and now.hour >= 12:  # noqa: PLR2004
+            # Already Saturday afternoon — push to next Saturday
+            days_ahead = 7
+        next_saturday = now.replace(
+            hour=6, minute=0, second=0, microsecond=0
+        ) + timedelta(days=days_ahead)
+        return max(0, int((next_saturday - now).total_seconds()))
+
     def _schedule_celery_tasks(self, video_resources, add_course_tag, verbosity):
         """
         Schedule Celery tasks to process videos spread across multiple days.
 
         Calculates how many videos can be updated per day based on the daily
         quota, then creates tasks with increasing countdown delays (24h apart).
+
+        If YT_SCHEDULE_WEEKENDS_ONLY is True, tasks are delayed so they only
+        run on Saturdays and Sundays (2 slots per week).
         """
         daily_quota = settings.YT_DAILY_QUOTA
+        weekends_only = settings.YT_SCHEDULE_WEEKENDS_ONLY
         # Each video that needs updating costs up to 50 units (videos.update)
         # plus a small overhead for batch list calls (~1 unit per 50 videos)
         # Conservative estimate: assume all videos need updating
         videos_per_day = max(
-            1, (daily_quota - 10) // QUOTA_COST_VIDEO_UPDATE  # reserve 10 for list calls
+            1,
+            (daily_quota - 10) // QUOTA_COST_VIDEO_UPDATE,  # reserve 10 for list calls
         )
 
         # Collect all YouTube IDs
@@ -418,26 +436,54 @@ class Command(WebsiteFilterCommand):
                 all_youtube_ids.append(yt_id)
 
         total_videos = len(all_youtube_ids)
-        num_days = math.ceil(total_videos / videos_per_day)
+        total_chunks = math.ceil(total_videos / videos_per_day)
         seconds_per_day = 24 * 60 * 60
+
+        # Build countdown schedule
+        if weekends_only:
+            # Schedule on Saturdays and Sundays only
+            base_delay = self._seconds_until_next_saturday()
+            countdowns = []
+            for chunk_idx in range(total_chunks):
+                # 0 -> Saturday, 1 -> Sunday, 2 -> next Saturday, 3 -> next Sunday...
+                week_offset = chunk_idx // 2
+                is_sunday = chunk_idx % 2 == 1
+                delay = base_delay + (week_offset * 7 * seconds_per_day)
+                if is_sunday:
+                    delay += seconds_per_day
+                countdowns.append(delay)
+            num_weekends = math.ceil(total_chunks / 2)
+            schedule_desc = f"{num_weekends} weekend(s) (Sat/Sun only)"
+        else:
+            countdowns = [
+                (i // videos_per_day) * seconds_per_day
+                for i in range(0, total_videos, videos_per_day)
+            ]
+            num_days = len(countdowns)
+            schedule_desc = f"{num_days} day(s)"
 
         self.stdout.write(
             self.style.WARNING(
                 f"\n{total_videos} videos exceed the batch threshold "
                 f"({settings.YT_BATCH_THRESHOLD}). Scheduling Celery tasks "
-                f"spread across {num_days} day(s)."
+                f"spread across {schedule_desc}."
             )
         )
         self.stdout.write(
             f"  Videos per day: ~{videos_per_day} "
             f"(based on {daily_quota} daily quota units)"
         )
+        if weekends_only:
+            self.stdout.write(
+                "  Weekend-only mode: tasks will run on Saturdays and Sundays"
+            )
 
         tasks_scheduled = 0
-        for i in range(0, total_videos, videos_per_day):
-            chunk = all_youtube_ids[i : i + videos_per_day]
-            day_number = i // videos_per_day
-            countdown = day_number * seconds_per_day
+        for chunk_idx, countdown in enumerate(countdowns):
+            start = chunk_idx * videos_per_day
+            chunk = all_youtube_ids[start : start + videos_per_day]
+            if not chunk:
+                break
 
             update_youtube_tags_batch.apply_async(
                 args=[chunk],
@@ -447,21 +493,22 @@ class Command(WebsiteFilterCommand):
             tasks_scheduled += 1
 
             if verbosity >= VERBOSITY_DETAILED:
-                if day_number == 0:
+                if countdown == 0:
                     self.stdout.write(
                         f"  Task {tasks_scheduled}: {len(chunk)} videos "
                         f"(running immediately)"
                     )
                 else:
+                    hours = countdown // 3600
                     self.stdout.write(
                         f"  Task {tasks_scheduled}: {len(chunk)} videos "
-                        f"(scheduled in {day_number} day(s))"
+                        f"(scheduled in ~{hours}h)"
                     )
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Scheduled {tasks_scheduled} Celery task(s) for "
-                f"{total_videos} videos across {num_days} day(s)."
+                f"{total_videos} videos across {schedule_desc}."
             )
         )
 
@@ -525,9 +572,7 @@ class Command(WebsiteFilterCommand):
         threshold = settings.YT_BATCH_THRESHOLD
 
         if verbosity >= VERBOSITY_DETAILED:
-            self.stdout.write(
-                f"Found {video_count} video resources to process"
-            )
+            self.stdout.write(f"Found {video_count} video resources to process")
             if offset > 0:
                 self.stdout.write(f"  Offset: {offset}")
             if batch_size:
@@ -536,9 +581,7 @@ class Command(WebsiteFilterCommand):
 
         # If --schedule is set and count exceeds threshold, dispatch to Celery
         if schedule and video_count > threshold and not dry_run:
-            self._schedule_celery_tasks(
-                video_resources, add_course_tag, verbosity
-            )
+            self._schedule_celery_tasks(video_resources, add_course_tag, verbosity)
             return
 
         youtube = YouTubeApi()
@@ -582,9 +625,7 @@ class Command(WebsiteFilterCommand):
             raise
         except Exception as exc:  # noqa: BLE001
             self.stdout.write(
-                self.style.ERROR(
-                    f"Error fetching video data from YouTube: {exc!s}"
-                )
+                self.style.ERROR(f"Error fetching video data from YouTube: {exc!s}")
             )
             return
 
@@ -657,9 +698,7 @@ class Command(WebsiteFilterCommand):
                 completion_msg += f", {skipped_count} skipped"
             completion_msg += f" ({total_quota_used} quota units used)"
 
-            if quota_exceeded:
-                self.stdout.write(self.style.WARNING(completion_msg))
-            elif error_count > 0:
+            if quota_exceeded or error_count > 0:
                 self.stdout.write(self.style.WARNING(completion_msg))
             else:
                 self.stdout.write(self.style.SUCCESS(completion_msg))

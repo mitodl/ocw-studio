@@ -10,6 +10,7 @@ This document describes the components of the video workflow for OCW.
 1. [Captioning and 3Play Transcript Request](#captioning-and-3play-transcript-request)
 1. [Completing the Workflow](#completing-the-workflow)
 1. [Management Commands](#management-commands)
+1. [YouTube API Quota Management](#youtube-api-quota-management)
 1. [Testing PRs with Transcoding](#testing-prs-with-transcoding)
 1. [Adding Captions and Transcript to Existing Videos](#adding-captions-and-transcript-to-existing-videos)
 
@@ -57,6 +58,115 @@ In cases where something may have gone wrong with the data, often due to legacy 
 - [clear_webvtt_files](/videos/management/commands/clear_webvtt_files.py) Some captions were initially saved without an extension; this management command deletes them from S3 and clears the resource metadata, allowing them to be re-created.
 - [sync_missing_captions](/videos/management/commands/sync_missing_captions.py) This management command syncs captions and transcripts from 3Play to course videos missing them.
 - [sync_transcripts](/videos/management/commands/sync_transcripts.py). This management command syncs captions and transcripts for any videos missing them from one course (`from_course`) to another (`to_course`).
+- [update_youtube_tags](/videos/management/commands/update_youtube_tags.py). This management command merges YouTube video tags with database tags and updates both. See [YouTube API Quota Management](#youtube-api-quota-management) for details on handling large-scale updates.
+
+## `update_youtube_tags` Usage
+
+This command fetches current tags from YouTube, merges them with tags stored in the database, and pushes the merged set back to YouTube. It supports filtering, batching, quota tracking, and automated scheduling via Celery.
+
+### Basic usage
+
+```bash
+# Preview changes without modifying YouTube (dry run)
+python manage.py update_youtube_tags --dry-run
+
+# Update all videos
+python manage.py update_youtube_tags
+
+# Update only videos from specific courses
+python manage.py update_youtube_tags --filter course-1,course-2
+
+# Exclude specific courses
+python manage.py update_youtube_tags --exclude course-to-skip
+
+# Update specific YouTube IDs
+python manage.py update_youtube_tags --youtube-id "yt_id_1,yt_id_2"
+
+# Add course URL slug as a tag
+python manage.py update_youtube_tags --add-course-tag
+
+# Export results to CSV
+python manage.py update_youtube_tags --out results.csv
+```
+
+### Manual batching (for large sets)
+
+```bash
+# Process 150 videos starting from the beginning
+python manage.py update_youtube_tags --batch-size 150 --offset 0
+
+# Next day: process the next 150
+python manage.py update_youtube_tags --batch-size 150 --offset 150
+
+# Set a custom quota limit (stop before exceeding)
+python manage.py update_youtube_tags --quota-limit 5000
+```
+
+### Automated scheduling via Celery
+
+When the number of videos exceeds `YT_BATCH_THRESHOLD` (default: 150), the `--schedule` flag dispatches Celery tasks spread across multiple days automatically:
+
+```bash
+# Auto-schedule: splits work across days based on quota
+python manage.py update_youtube_tags --schedule --add-course-tag
+
+# Combine with filters
+python manage.py update_youtube_tags --schedule --filter course-1 --add-course-tag
+```
+
+**Weekend-only scheduling:** Set `YT_SCHEDULE_WEEKENDS_ONLY=True` to restrict scheduled tasks to Saturdays and Sundays, avoiding quota consumption during weekday operations.
+
+```bash
+# With weekend-only enabled via env var:
+# YT_SCHEDULE_WEEKENDS_ONLY=True
+python manage.py update_youtube_tags --schedule --add-course-tag
+# Tasks will be delayed to the next Saturday/Sunday slots
+```
+
+If the video count is below the threshold, `--schedule` still runs updates immediately.
+
+### Environment variables
+
+| Variable                    | Default | Description                                               |
+| --------------------------- | ------- | --------------------------------------------------------- |
+| `YT_BATCH_THRESHOLD`        | `150`   | Video count above which `--schedule` dispatches to Celery |
+| `YT_DAILY_QUOTA`            | `9000`  | Quota units available per day for scheduling calculations |
+| `YT_SCHEDULE_WEEKENDS_ONLY` | `False` | Restrict scheduled tasks to weekends only                 |
+
+# YouTube API Quota Management
+
+The YouTube Data API v3 enforces a **daily quota of 10,000 units** (resets at midnight Pacific Time). Different operations have different costs:
+
+| Operation                | Quota Cost | Notes                                         |
+| ------------------------ | ---------- | --------------------------------------------- |
+| `videos.list`            | 1 unit     | Accepts up to 50 comma-separated IDs per call |
+| `videos.update`          | 50 units   | One video per call (no batch endpoint)        |
+| `videos.insert` (upload) | 1600 units | Full video upload                             |
+| `captions.list`          | 50 units   |                                               |
+| `captions.insert`        | 400 units  |                                               |
+| `captions.update`        | 450 units  |                                               |
+
+### Quota budget for tag updates
+
+With a 10,000 unit daily quota and reserving 1,000 for other operations:
+
+- **~179 videos** can have tags updated per day (`9000 / 50 = 180`, minus list overhead)
+- Reading tags for 1,000 videos costs only **20 units** (batched 50 IDs per call)
+
+### Pattern: Spreading API-intensive work across days
+
+When a management command or task needs to process more items than a single day's quota allows, follow this pattern:
+
+1. **Check the count** against a configurable threshold
+2. **Below threshold** → process synchronously in the management command with quota tracking
+3. **Above threshold** → split into chunks and schedule Celery tasks with `countdown` delays:
+   - Day 0: `countdown=0` (immediate)
+   - Day 1: `countdown=86400` (24h)
+   - Day N: `countdown=N*86400`
+4. **Each task** should handle quota errors gracefully by retrying with `self.retry(countdown=3600)`
+5. **Weekend-only mode** can delay tasks to Saturday/Sunday slots to avoid consuming quota during peak weekday usage
+
+This pattern is implemented in `update_youtube_tags` / `update_youtube_tags_batch` and can be reused for any YouTube API-intensive operation.
 
 # Testing PRs with Transcoding
 

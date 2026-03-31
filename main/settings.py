@@ -579,6 +579,16 @@ YT_DAILY_QUOTA = get_int(
         "Default is 9000 (leaving 1000 for other operations out of the 10000 daily limit)"
     ),
 )
+YT_SCHEDULE_WEEKENDS_ONLY = get_bool(
+    name="YT_SCHEDULE_WEEKENDS_ONLY",
+    default=False,
+    description=(
+        "When True, scheduled YouTube tag update tasks will only run on "
+        "weekends (Saturday/Sunday). Tasks are delayed to the next Saturday "
+        "if dispatched on a weekday. This avoids consuming API quota during "
+        "peak weekday usage."
+    ),
+)
 ARCHIVE_URL_REQUEST_TIMEOUT = get_int(
     name="ARCHIVE_URL_REQUEST_TIMEOUT",
     default=120,
