@@ -1401,7 +1401,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.33.0" },
     { name = "sentry-sdk", specifier = "==2.56.0" },
     { name = "smart-open", extras = ["s3"], specifier = ">=7.0.0,<8" },
-    { name = "social-auth-app-django", specifier = "==5.6.0" },
+    { name = "social-auth-app-django", specifier = "==5.7.0" },
     { name = "social-auth-core", extras = ["saml"], specifier = ">=4,<5" },
     { name = "tqdm", specifier = ">=4.65.0,<5" },
     { name = "uwsgi", specifier = ">=2.0.24,<3" },
@@ -2098,15 +2098,15 @@ s3 = [
 
 [[package]]
 name = "social-auth-app-django"
-version = "5.6.0"
+version = "5.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "social-auth-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4e/7d/cd7e0958db16e478ecdf2137621a46aa95bfd7d3991d29cf15f2bdf18b0a/social_auth_app_django-5.6.0.tar.gz", hash = "sha256:c695501fcbf6fe87f68f5a79e379abe853662f5129e7ec6cb758a75d5b28c888", size = 29195, upload-time = "2025-10-09T11:56:08.48Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/1d/50d9f85975f8aebec6fd353e815d260acada851004e0457fa53e346ed242/social_auth_app_django-5.7.0.tar.gz", hash = "sha256:c0cc118d1bb935dbf02acb8a57fabd7b07694452fce755a5956282c69f019c79", size = 29192, upload-time = "2025-12-18T19:00:26.209Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/02/738d8c89d6d67a25a568fc6a7744949ddf037153705c6d5c676ce25b9812/social_auth_app_django-5.6.0-py3-none-any.whl", hash = "sha256:43ca88cc5cd9161710896165ced58b3155e8aafaaff847e859879194770f138d", size = 28708, upload-time = "2025-10-09T11:56:07.633Z" },
+    { url = "https://files.pythonhosted.org/packages/39/df/8ed6e0b5e97a3893fc9d2fa5ef57844f0ed820119df49ea151fc1b0ceac1/social_auth_app_django-5.7.0-py3-none-any.whl", hash = "sha256:492b6f64e1e9fa5ed62b24bc19bde31c235fd4eb7fbd5c310e999e752b8f699a", size = 28542, upload-time = "2025-12-18T19:00:26.955Z" },
 ]
 
 [[package]]
