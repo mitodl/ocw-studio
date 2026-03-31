@@ -87,16 +87,6 @@ python manage.py update_youtube_tags --add-course-tag
 
 # Export results to CSV
 python manage.py update_youtube_tags --out results.csv
-```
-
-### Manual batching (for large sets)
-
-```bash
-# Process 150 videos starting from the beginning
-python manage.py update_youtube_tags --batch-size 150 --offset 0
-
-# Next day: process the next 150
-python manage.py update_youtube_tags --batch-size 150 --offset 150
 
 # Set a custom quota limit (stop before exceeding)
 python manage.py update_youtube_tags --quota-limit 5000
@@ -104,7 +94,7 @@ python manage.py update_youtube_tags --quota-limit 5000
 
 ### Automated scheduling via Celery
 
-When the number of videos exceeds `YT_BATCH_THRESHOLD` (default: 150), the `--schedule` flag dispatches Celery tasks spread across multiple days automatically:
+When the number of videos exceeds `--threshold` (default: 150), the `--schedule` flag dispatches Celery tasks spread across multiple days automatically:
 
 ```bash
 # Auto-schedule: splits work across days based on quota
@@ -112,26 +102,33 @@ python manage.py update_youtube_tags --schedule --add-course-tag
 
 # Combine with filters
 python manage.py update_youtube_tags --schedule --filter course-1 --add-course-tag
+
+# Custom threshold and daily quota
+python manage.py update_youtube_tags --schedule --threshold 100 --daily-quota 5000
 ```
 
-**Weekend-only scheduling:** Set `YT_SCHEDULE_WEEKENDS_ONLY=True` to restrict scheduled tasks to Saturdays and Sundays, avoiding quota consumption during weekday operations.
+**Weekend-only scheduling:** Use `--weekends-only` to restrict scheduled tasks to Saturdays and Sundays, avoiding quota consumption during weekday operations.
 
 ```bash
-# With weekend-only enabled via env var:
-# YT_SCHEDULE_WEEKENDS_ONLY=True
-python manage.py update_youtube_tags --schedule --add-course-tag
+python manage.py update_youtube_tags --schedule --weekends-only --add-course-tag
 # Tasks will be delayed to the next Saturday/Sunday slots
 ```
 
 If the video count is below the threshold, `--schedule` still runs updates immediately.
 
-### Environment variables
+### Command-line options
 
-| Variable                    | Default | Description                                               |
-| --------------------------- | ------- | --------------------------------------------------------- |
-| `YT_BATCH_THRESHOLD`        | `150`   | Video count above which `--schedule` dispatches to Celery |
-| `YT_DAILY_QUOTA`            | `9000`  | Quota units available per day for scheduling calculations |
-| `YT_SCHEDULE_WEEKENDS_ONLY` | `False` | Restrict scheduled tasks to weekends only                 |
+| Option             | Default | Description                                               |
+| ------------------ | ------- | --------------------------------------------------------- |
+| `--dry-run`        | `False` | Preview changes without modifying YouTube or DB           |
+| `--youtube-id`     | `None`  | Comma-separated YouTube IDs to update                     |
+| `--add-course-tag` | `False` | Add course URL slug as a tag                              |
+| `--out`            | `None`  | Export results to CSV file                                |
+| `--quota-limit`    | `9000`  | Stop processing before exceeding this many quota units    |
+| `--schedule`       | `False` | Dispatch Celery tasks when video count exceeds threshold  |
+| `--threshold`      | `150`   | Video count above which `--schedule` dispatches to Celery |
+| `--daily-quota`    | `9000`  | Quota units available per day for scheduling calculations |
+| `--weekends-only`  | `False` | Restrict scheduled tasks to weekends (Sat/Sun) only       |
 
 # YouTube API Quota Management
 

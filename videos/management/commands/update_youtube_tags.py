@@ -75,26 +75,6 @@ class Command(WebsiteFilterCommand):
             ),
         )
         parser.add_argument(
-            "--batch-size",
-            dest="batch_size",
-            type=int,
-            default=None,
-            help=(
-                "Maximum number of videos to process in this run. "
-                "Use with --offset to process in batches across multiple runs."
-            ),
-        )
-        parser.add_argument(
-            "--offset",
-            dest="offset",
-            type=int,
-            default=0,
-            help=(
-                "Number of videos to skip from the beginning of the queryset. "
-                "Use with --batch-size to resume from where you left off."
-            ),
-        )
-        parser.add_argument(
             "--quota-limit",
             dest="quota_limit",
             type=int,
@@ -112,15 +92,45 @@ class Command(WebsiteFilterCommand):
             action="store_true",
             default=False,
             help=(
-                "When the number of videos exceeds the batch threshold "
-                f"(YT_BATCH_THRESHOLD, default {settings.YT_BATCH_THRESHOLD}), "
+                "When the number of videos exceeds --threshold, "
                 "automatically schedule Celery tasks spread across multiple "
                 "days instead of updating immediately. If the count is below "
                 "the threshold, updates run immediately regardless."
             ),
         )
+        parser.add_argument(
+            "--threshold",
+            dest="threshold",
+            type=int,
+            default=150,
+            help=(
+                "Video count above which --schedule dispatches Celery tasks "
+                "instead of processing immediately (default: 150)."
+            ),
+        )
+        parser.add_argument(
+            "--daily-quota",
+            dest="daily_quota",
+            type=int,
+            default=DEFAULT_QUOTA_LIMIT,
+            help=(
+                f"Quota units available per day for scheduling calculations "
+                f"(default: {DEFAULT_QUOTA_LIMIT}). Used with --schedule to "
+                f"determine how many videos to process per day."
+            ),
+        )
+        parser.add_argument(
+            "--weekends-only",
+            action="store_true",
+            default=False,
+            help=(
+                "When used with --schedule, restrict scheduled tasks to "
+                "weekends (Saturday/Sunday) only. Tasks are delayed to the "
+                "next Saturday if dispatched on a weekday."
+            ),
+        )
 
-    def get_video_resources(self, youtube_id_filter, *, offset=0, batch_size=None):
+    def get_video_resources(self, youtube_id_filter):
         """
         Build and return the filtered queryset of video resources.
 
@@ -144,16 +154,8 @@ class Command(WebsiteFilterCommand):
                     **{f"{query_id_field}__in": youtube_ids}
                 )
 
-        # Apply stable ordering for consistent offset/batch behavior
-        video_resources = video_resources.order_by("id")
-
-        # Apply offset and batch_size
-        if batch_size is not None:
-            video_resources = video_resources[offset : offset + batch_size]
-        elif offset > 0:
-            video_resources = video_resources[offset:]
-
-        return video_resources
+        # Apply stable ordering for consistent behavior
+        return video_resources.order_by("id")
 
     def batch_fetch_youtube_snippets(self, youtube, youtube_ids):
         """
@@ -245,7 +247,7 @@ class Command(WebsiteFilterCommand):
             merged_tags != youtube_tags_set,
         )
 
-    def process_video(
+    def process_video(  # noqa: C901, PLR0912, PLR0913, PLR0915
         self,
         video_resource,
         youtube,
@@ -408,18 +410,25 @@ class Command(WebsiteFilterCommand):
         ) + timedelta(days=days_ahead)
         return max(0, int((next_saturday - now).total_seconds()))
 
-    def _schedule_celery_tasks(self, video_resources, add_course_tag, verbosity):
+    def _schedule_celery_tasks(  # noqa: C901, PLR0913
+        self,
+        video_resources,
+        add_course_tag,
+        verbosity,
+        *,
+        daily_quota,
+        weekends_only,
+        threshold,
+    ):
         """
         Schedule Celery tasks to process videos spread across multiple days.
 
         Calculates how many videos can be updated per day based on the daily
         quota, then creates tasks with increasing countdown delays (24h apart).
 
-        If YT_SCHEDULE_WEEKENDS_ONLY is True, tasks are delayed so they only
+        If weekends_only is True, tasks are delayed so they only
         run on Saturdays and Sundays (2 slots per week).
         """
-        daily_quota = settings.YT_DAILY_QUOTA
-        weekends_only = settings.YT_SCHEDULE_WEEKENDS_ONLY
         # Each video that needs updating costs up to 50 units (videos.update)
         # plus a small overhead for batch list calls (~1 unit per 50 videos)
         # Conservative estimate: assume all videos need updating
@@ -465,7 +474,7 @@ class Command(WebsiteFilterCommand):
         self.stdout.write(
             self.style.WARNING(
                 f"\n{total_videos} videos exceed the batch threshold "
-                f"({settings.YT_BATCH_THRESHOLD}). Scheduling Celery tasks "
+                f"({threshold}). Scheduling Celery tasks "
                 f"spread across {schedule_desc}."
             )
         )
@@ -530,10 +539,11 @@ class Command(WebsiteFilterCommand):
         youtube_id_filter = options["youtube_id"]
         add_course_tag = options["add_course_tag"]
         output_file = options["output_file"]
-        batch_size = options["batch_size"]
-        offset = options["offset"]
         quota_limit = options["quota_limit"]
         schedule = options["schedule"]
+        threshold = options["threshold"]
+        daily_quota = options["daily_quota"]
+        weekends_only = options["weekends_only"]
 
         # Initialize CSV data collection if output file specified
         csv_rows = [] if output_file else None
@@ -554,9 +564,7 @@ class Command(WebsiteFilterCommand):
                     self.style.SUCCESS("Adding course name as tag for all videos")
                 )
 
-        video_resources = self.get_video_resources(
-            youtube_id_filter, offset=offset, batch_size=batch_size
-        )
+        video_resources = self.get_video_resources(youtube_id_filter)
 
         # Convert to list to allow len() and iteration on sliced querysets
         video_resources = list(video_resources)
@@ -569,19 +577,21 @@ class Command(WebsiteFilterCommand):
             return
 
         video_count = len(video_resources)
-        threshold = settings.YT_BATCH_THRESHOLD
 
         if verbosity >= VERBOSITY_DETAILED:
             self.stdout.write(f"Found {video_count} video resources to process")
-            if offset > 0:
-                self.stdout.write(f"  Offset: {offset}")
-            if batch_size:
-                self.stdout.write(f"  Batch size: {batch_size}")
             self.stdout.write(f"  Quota limit: {quota_limit} units")
 
         # If --schedule is set and count exceeds threshold, dispatch to Celery
         if schedule and video_count > threshold and not dry_run:
-            self._schedule_celery_tasks(video_resources, add_course_tag, verbosity)
+            self._schedule_celery_tasks(
+                video_resources,
+                add_course_tag,
+                verbosity,
+                daily_quota=daily_quota,
+                weekends_only=weekends_only,
+                threshold=threshold,
+            )
             return
 
         youtube = YouTubeApi()
@@ -601,9 +611,12 @@ class Command(WebsiteFilterCommand):
         all_youtube_ids = list(yt_id_to_resources.keys())
 
         if verbosity >= VERBOSITY_DETAILED:
+            num_calls = (
+                len(all_youtube_ids) + YT_LIST_BATCH_SIZE - 1
+            ) // YT_LIST_BATCH_SIZE
             self.stdout.write(
-                f"Batch-fetching snippets for {len(all_youtube_ids)} YouTube IDs "
-                f"in {(len(all_youtube_ids) + YT_LIST_BATCH_SIZE - 1) // YT_LIST_BATCH_SIZE} API call(s)..."
+                f"Batch-fetching snippets for {len(all_youtube_ids)} "
+                f"YouTube IDs in {num_calls} API call(s)..."
             )
 
         # Batch-fetch all YouTube snippets
@@ -618,7 +631,7 @@ class Command(WebsiteFilterCommand):
                     self.style.ERROR(
                         f"YouTube API quota exceeded during batch fetch. "
                         f"Quota used so far: {total_quota_used} units. "
-                        f"Try again tomorrow or use --batch-size and --offset."
+                        f"Try again tomorrow or use --schedule."
                     )
                 )
                 return
@@ -648,10 +661,10 @@ class Command(WebsiteFilterCommand):
                 )
                 self.stdout.write(
                     self.style.WARNING(
-                        f"\nQuota limit reached ({total_quota_used}/{quota_limit} units used). "
+                        f"\nQuota limit reached "
+                        f"({total_quota_used}/{quota_limit} units used). "
                         f"{remaining} videos remaining. "
-                        f"Re-run with --offset {offset + success_count + error_count + skipped_count} "
-                        f"to continue."
+                        f"Re-run with --schedule to spread work across days."
                     )
                 )
                 break

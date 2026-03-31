@@ -563,32 +563,7 @@ YT_UPLOAD_LIMIT = get_int(
     default=50,
     description="Max Youtube uploads allowed per day",
 )
-YT_BATCH_THRESHOLD = get_int(
-    name="YT_BATCH_THRESHOLD",
-    default=150,
-    description=(
-        "If the number of videos to update exceeds this threshold, "
-        "schedule updates via Celery tasks spread across multiple days"
-    ),
-)
-YT_DAILY_QUOTA = get_int(
-    name="YT_DAILY_QUOTA",
-    default=9000,
-    description=(
-        "YouTube Data API v3 quota units available per day for tag updates. "
-        "Default is 9000 (leaving 1000 for other operations out of the 10000 daily limit)"
-    ),
-)
-YT_SCHEDULE_WEEKENDS_ONLY = get_bool(
-    name="YT_SCHEDULE_WEEKENDS_ONLY",
-    default=False,
-    description=(
-        "When True, scheduled YouTube tag update tasks will only run on "
-        "weekends (Saturday/Sunday). Tasks are delayed to the next Saturday "
-        "if dispatched on a weekday. This avoids consuming API quota during "
-        "peak weekday usage."
-    ),
-)
+
 ARCHIVE_URL_REQUEST_TIMEOUT = get_int(
     name="ARCHIVE_URL_REQUEST_TIMEOUT",
     default=120,

@@ -8,6 +8,7 @@ import pytest
 import yaml
 from django.conf import settings
 from django.core.management import call_command
+from django.utils import timezone
 
 from videos.constants import DESTINATION_YOUTUBE
 from videos.factories import VideoFactory, VideoFileFactory
@@ -31,7 +32,7 @@ COURSE_STARTER_CONFIG = yaml.safe_load(
 
 
 def _make_batch_list_response(items_by_id):
-    """Helper to build a mock videos.list response with id field included."""
+    """Build a mock videos.list response with id field included."""
     items = []
     for yt_id, snippet in items_by_id.items():
         items.append({"id": yt_id, "snippet": snippet})
@@ -1066,57 +1067,6 @@ def test_flatten_tags_empty_list():
     assert result == set()
 
 
-def test_update_youtube_tags_batch_size_and_offset(mock_youtube_api):
-    """Test that --batch-size and --offset correctly limit processed videos"""
-    website = WebsiteFactory.create(name="test-course")
-
-    # Create 5 videos
-    for i in range(1, 6):
-        video = VideoFactory.create(website=website)
-        VideoFileFactory.create(
-            video=video,
-            destination=DESTINATION_YOUTUBE,
-            destination_id=f"yt_batch_{i}",
-        )
-        WebsiteContentFactory.create(
-            website=website,
-            title=f"Video {i}",
-            metadata={
-                "resourcetype": RESOURCE_TYPE_VIDEO,
-                "video_metadata": {
-                    "youtube_id": f"yt_batch_{i}",
-                    "video_tags": f"tag{i}",
-                },
-            },
-        )
-
-    # Mock batch response for all IDs
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
-        {f"yt_batch_{i}": {"tags": ["new-tag"]} for i in range(1, 6)}
-    )
-
-    # Process only 2 videos starting from offset 1
-    call_command(
-        "update_youtube_tags",
-        filter="test-course",
-        batch_size=2,
-        offset=1,
-    )
-
-    # Count how many videos had their DB updated (tags changed)
-    updated_count = 0
-    for i in range(1, 6):
-        content = WebsiteContent.objects.get(
-            website=website, metadata__video_metadata__youtube_id=f"yt_batch_{i}"
-        )
-        content.refresh_from_db()
-        if "new-tag" in content.metadata["video_metadata"].get("video_tags", ""):
-            updated_count += 1
-
-    # Should have updated exactly 2 videos
-    assert updated_count == 2
-
-
 def test_update_youtube_tags_quota_limit(mock_youtube_api):
     """Test that --quota-limit stops processing before exceeding quota"""
     website = WebsiteFactory.create(name="test-course")
@@ -1167,13 +1117,8 @@ def test_update_youtube_tags_quota_limit(mock_youtube_api):
     assert updated_count == 1
 
 
-def test_update_youtube_tags_schedule_dispatches_celery_tasks(
-    mock_youtube_api, mocker, settings
-):
+def test_update_youtube_tags_schedule_dispatches_celery_tasks(mock_youtube_api, mocker):
     """Test that --schedule dispatches Celery tasks when video count exceeds threshold"""
-    settings.YT_BATCH_THRESHOLD = 2  # Low threshold for testing
-    settings.YT_DAILY_QUOTA = 200  # Allows ~3 videos per day (200/50=4, minus overhead)
-    settings.YT_SCHEDULE_WEEKENDS_ONLY = False
 
     website = WebsiteFactory.create(name="test-course")
 
@@ -1205,6 +1150,8 @@ def test_update_youtube_tags_schedule_dispatches_celery_tasks(
         "update_youtube_tags",
         filter="test-course",
         schedule=True,
+        threshold=2,
+        daily_quota=200,
     )
 
     # Should have dispatched tasks via apply_async, not processed immediately
@@ -1223,10 +1170,9 @@ def test_update_youtube_tags_schedule_dispatches_celery_tasks(
 
 
 def test_update_youtube_tags_schedule_runs_immediately_below_threshold(
-    mock_youtube_api, settings
+    mock_youtube_api,
 ):
     """Test that --schedule runs immediately when video count is below threshold"""
-    settings.YT_BATCH_THRESHOLD = 100  # High threshold
 
     website = WebsiteFactory.create(name="test-course")
     video = VideoFactory.create(website=website)
@@ -1258,17 +1204,15 @@ def test_update_youtube_tags_schedule_runs_immediately_below_threshold(
         "update_youtube_tags",
         filter="test-course",
         schedule=True,
+        threshold=100,
     )
 
     # Should process immediately (1 video < threshold of 100)
     mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_called()
 
 
-def test_update_youtube_tags_schedule_skipped_in_dry_run(
-    mock_youtube_api, mocker, settings
-):
+def test_update_youtube_tags_schedule_skipped_in_dry_run(mock_youtube_api, mocker):
     """Test that --schedule is ignored in dry-run mode"""
-    settings.YT_BATCH_THRESHOLD = 1  # Very low threshold
 
     website = WebsiteFactory.create(name="test-course")
     for i in range(1, 4):
@@ -1302,6 +1246,7 @@ def test_update_youtube_tags_schedule_skipped_in_dry_run(
         "update_youtube_tags",
         filter="test-course",
         schedule=True,
+        threshold=1,
         dry_run=True,
     )
 
@@ -1309,18 +1254,11 @@ def test_update_youtube_tags_schedule_skipped_in_dry_run(
     mock_task.apply_async.assert_not_called()
 
 
-def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker, settings):
+def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker):
     """Test that weekend-only mode delays tasks to Saturday/Sunday slots"""
-    settings.YT_BATCH_THRESHOLD = 2
-    settings.YT_DAILY_QUOTA = 200  # ~3 videos per day
-    settings.YT_SCHEDULE_WEEKENDS_ONLY = True
 
     # Mock timezone.now() to a Wednesday at noon UTC
-    import datetime
-
-    from django.utils import timezone
-
-    mock_now = datetime.datetime(2026, 4, 1, 12, 0, 0, tzinfo=datetime.UTC)
+    mock_now = datetime(2026, 4, 1, 12, 0, 0, tzinfo=UTC)
     mocker.patch.object(timezone, "now", return_value=mock_now)
 
     website = WebsiteFactory.create(name="test-course")
@@ -1353,6 +1291,9 @@ def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker, se
         "update_youtube_tags",
         filter="test-course",
         schedule=True,
+        threshold=2,
+        daily_quota=200,
+        weekends_only=True,
     )
 
     # Should have dispatched tasks
