@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.181.0
+Version 0.181.0 (Released March 31, 2026)
 ---------------
 
 - fix(deps): update dependency requests to v2.33.0 [security] (#2951)
