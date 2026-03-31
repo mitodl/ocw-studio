@@ -1164,9 +1164,7 @@ class TestUpdateYoutubeTagsBatch:
 
         # Mock batch list response
         mock_api.client.videos.return_value.list.return_value.execute.return_value = {
-            "items": [
-                {"id": "yt_batch_1", "snippet": {"tags": ["machine-learning"]}}
-            ]
+            "items": [{"id": "yt_batch_1", "snippet": {"tags": ["machine-learning"]}}]
         }
 
         update_youtube_tags_batch(["yt_batch_1"])
@@ -1212,9 +1210,7 @@ class TestUpdateYoutubeTagsBatch:
 
         # YouTube already has same tags
         mock_api.client.videos.return_value.list.return_value.execute.return_value = {
-            "items": [
-                {"id": "yt_skip", "snippet": {"tags": ["python", "django"]}}
-            ]
+            "items": [{"id": "yt_skip", "snippet": {"tags": ["python", "django"]}}]
         }
 
         update_youtube_tags_batch(["yt_skip"])

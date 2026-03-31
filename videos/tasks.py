@@ -784,8 +784,7 @@ def update_youtube_tags_batch(
     except HttpError as exc:
         if API_QUOTA_ERROR_MSG in str(exc).lower():
             log.warning(
-                "YouTube API quota exceeded during batch fetch, "
-                "will retry: %s",
+                "YouTube API quota exceeded during batch fetch, will retry: %s",
                 exc,
             )
             raise self.retry(exc=exc, countdown=3600) from exc
