@@ -836,7 +836,7 @@ def _process_batch_videos(
     return success_count, skipped_count, error_count
 
 
-@app.task(bind=True, acks_late=True, max_retries=1)
+@app.task(bind=True, acks_late=True, max_retries=3)
 def update_youtube_tags_batch(
     self,
     youtube_ids,
@@ -880,7 +880,7 @@ def update_youtube_tags_batch(
                 "YouTube API quota exceeded, will retry: %s",
                 exc,
             )
-            raise self.retry(exc=exc, countdown=3600) from exc
+            raise self.retry(exc=exc, countdown=6 * 3600) from exc
         raise
 
     log.info(
