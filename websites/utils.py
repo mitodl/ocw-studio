@@ -310,10 +310,11 @@ def compile_referencing_content(content) -> list[str]:
     """Compile referencing content for a website content instance."""
     references = []
 
-    if content.type == constants.CONTENT_TYPE_NAVMENU:
+    if content.type == constants.CONTENT_TYPE_NAVMENU and content.metadata:
         references = [
             item["identifier"]
             for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
+            if item.get("identifier")
         ]
     else:
         if content.markdown:
