@@ -242,9 +242,12 @@ class Command(WebsiteFilterCommand):
         # Sort alphabetically
         sorted_tags = sorted(merged_tags)
 
+        merged_str = ", ".join(sorted_tags) if sorted_tags else ""
+        # Detect formatting issues (e.g., commas in single YouTube tags)
+        has_formatting_issues = any("," in tag for tag in youtube_tags)
         return (
-            ", ".join(sorted_tags) if sorted_tags else "",
-            merged_tags != youtube_tags_set,
+            merged_str,
+            merged_tags != youtube_tags_set or has_formatting_issues,
         )
 
     def process_video(  # noqa: C901, PLR0912, PLR0913, PLR0915
@@ -399,16 +402,22 @@ class Command(WebsiteFilterCommand):
 
     @staticmethod
     def _seconds_until_next_saturday():
-        """Return seconds from now until the start of the next Saturday (UTC)."""
+        """
+        Return seconds from now until the next Saturday at 06:00 UTC.
+
+        The returned time is the next upcoming Saturday at 06:00 UTC that is
+        strictly in the future relative to the current time.
+        """
         now = timezone.now()
-        days_ahead = (5 - now.weekday()) % 7  # Saturday = 5
-        if days_ahead == 0 and now.hour >= 12:  # noqa: PLR2004
-            # Already Saturday afternoon — push to next Saturday
-            days_ahead = 7
+        # Compute upcoming Saturday (weekday() -> Monday=0, ..., Saturday=5)
+        days_ahead = (5 - now.weekday()) % 7
         next_saturday = now.replace(
             hour=6, minute=0, second=0, microsecond=0
         ) + timedelta(days=days_ahead)
-        return max(0, int((next_saturday - now).total_seconds()))
+        # If we've already passed this Saturday 06:00, roll to the following week
+        if next_saturday <= now:
+            next_saturday += timedelta(days=7)
+        return int((next_saturday - now).total_seconds())
 
     def _schedule_celery_tasks(  # noqa: C901, PLR0913
         self,
@@ -439,10 +448,12 @@ class Command(WebsiteFilterCommand):
 
         # Collect all YouTube IDs
         all_youtube_ids = []
+        seen_ids = set()
         for vr in video_resources:
             yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
-            if yt_id and yt_id not in all_youtube_ids:
+            if yt_id and yt_id not in seen_ids:
                 all_youtube_ids.append(yt_id)
+                seen_ids.add(yt_id)
 
         total_videos = len(all_youtube_ids)
         total_chunks = math.ceil(total_videos / videos_per_day)
@@ -672,14 +683,29 @@ class Command(WebsiteFilterCommand):
             # Look up pre-fetched snippet (or mark as not found)
             snippet = snippets.get(yt_id, "not_found") if yt_id else None
 
-            status, message, csv_data, video_quota = self.process_video(
-                video_resource,
-                youtube,
-                dry_run,
-                add_course_tag,
-                verbosity,
-                snippet=snippet,
-            )
+            try:
+                status, message, csv_data, video_quota = self.process_video(
+                    video_resource,
+                    youtube,
+                    dry_run,
+                    add_course_tag,
+                    verbosity,
+                    snippet=snippet,
+                )
+            except HttpError as exc:
+                if API_QUOTA_ERROR_MSG in str(exc).lower():
+                    quota_exceeded = True
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"\nYouTube API quota error while processing "
+                            f"video {yt_id!s}: {exc!s}\n"
+                            f"Total quota used: {total_quota_used} units. "
+                            f"Re-run with --schedule to spread work "
+                            f"across days."
+                        )
+                    )
+                    break
+                raise
             total_quota_used += video_quota
 
             # Collect CSV data if output file specified

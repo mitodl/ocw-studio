@@ -1266,3 +1266,51 @@ class TestUpdateYoutubeTagsBatch:
         update_youtube_tags_batch(["yt_missing"])
 
         mock_api.client.videos.return_value.update.return_value.execute.assert_not_called()
+
+    def test_add_course_tag(self, mocker, settings):
+        """Test that add_course_tag adds the course slug to tags"""
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+        settings.YT_REFRESH_TOKEN = "refresh"  # noqa: S105
+        settings.YT_CLIENT_ID = "client_id"
+        settings.YT_CLIENT_SECRET = "secret"  # noqa: S105
+        settings.YT_PROJECT_ID = "project"
+
+        website = WebsiteFactory.create(
+            name="test-course",
+            url_path="test-course",
+        )
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id="yt_course_tag",
+        )
+        content = WebsiteContentFactory.create(
+            website=website,
+            title="Course Tag Video",
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": "yt_course_tag",
+                    "video_tags": "python",
+                },
+            },
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+        mock_api = mock_api_cls.return_value
+
+        mock_api.client.videos.return_value.list.return_value.execute.return_value = {
+            "items": [{"id": "yt_course_tag", "snippet": {"tags": ["python"]}}]
+        }
+
+        update_youtube_tags_batch(["yt_course_tag"], add_course_tag=True)
+
+        # Verify videos.update was called (course tag is a new tag)
+        mock_api.client.videos.return_value.update.return_value.execute.assert_called()
+
+        # Verify DB was updated with course slug tag
+        content.refresh_from_db()
+        tags = content.metadata["video_metadata"]["video_tags"]
+        assert "python" in tags
+        assert "test-course" in tags

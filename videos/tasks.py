@@ -739,13 +739,7 @@ def _batch_fetch_snippets(youtube, youtube_ids):
 
 def _normalize_tags(tags):
     """Normalize a list of tags, splitting comma-containing entries."""
-    normalized = set()
-    for tag in tags:
-        if "," in tag:
-            normalized.update(t.strip().lower() for t in tag.split(",") if t.strip())
-        else:
-            normalized.add(tag.strip().lower())
-    return normalized
+    return set().union(*(parse_tags(t) for t in tags)) if tags else set()
 
 
 def _process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
@@ -768,19 +762,23 @@ def _process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
         merged.add(course_slug)
 
     merged_str = ", ".join(sorted(merged))
-    tags_changed = merged != yt_tags_normalized
+
+    merged_list = parse_tags(merged_str)
+    # Consider tags changed if the normalized sets differ or YouTube has
+    # formatting issues (e.g., commas in single tags like ["a, b"]).
+    has_formatting_issues = any("," in tag for tag in youtube_tags)
+    tags_changed = merged != yt_tags_normalized or has_formatting_issues
 
     if tags_changed:
-        snippet_copy = dict(snippet)
-        snippet_copy["tags"] = parse_tags(merged_str)
+        snippet["tags"] = merged_list
         youtube.client.videos().update(
             part="snippet",
-            body={"id": yt_id, "snippet": snippet_copy},
+            body={"id": yt_id, "snippet": snippet},
         ).execute()
 
     # Always save merged tags to DB
     set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_str)
-    video_resource.save()
+    video_resource.save(update_fields=["metadata"])
 
     return "success" if tags_changed else "skip"
 
