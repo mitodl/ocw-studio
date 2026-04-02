@@ -1,0 +1,7 @@
+[
+  "content_sync/serializers.py:133:21:ORM001",
+  "content_sync/serializers.py:54:21:ORM001",
+  "websites/serializers.py:257:23:ORM001",
+  "websites/serializers.py:683:16:ORM001",
+  "websites/serializers.py:700:20:ORM002"
+]
