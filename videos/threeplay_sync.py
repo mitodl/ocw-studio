@@ -10,6 +10,7 @@ from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path, get_content_dirpath
+from websites.api import sync_website_content_references
 from websites.models import WebsiteContent
 
 log = logging.getLogger()
@@ -157,6 +158,7 @@ def sync_video_captions_and_transcripts(
     _attach_captions_if_missing(video, base_url, youtube_id, summary, write_output)
     video.skip_sync = True
     video.save()
+    sync_website_content_references(video)
 
 
 def upload_to_s3(file_content: File, video: WebsiteContent) -> str:

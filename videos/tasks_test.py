@@ -967,6 +967,7 @@ def test_update_transcript_and_captions(mocker):
     new_transcript_file = "/path/to/new_transcript_file"
     new_captions_file = "/path/to/new_captions_file"
     mocker.spy(test_resource, "save")
+    sync_refs_mock = mocker.patch("videos.tasks.sync_website_content_references")
 
     update_transcript_and_captions(
         test_resource, new_transcript_file, new_captions_file
@@ -981,6 +982,7 @@ def test_update_transcript_and_captions(mocker):
         == new_captions_file
     )
     test_resource.save.assert_called_once()
+    sync_refs_mock.assert_called_once_with(test_resource)
 
 
 def test_create_drivefile(mocker):

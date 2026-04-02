@@ -1213,3 +1213,61 @@ def test_resolve_referenced_content_ids_scopes_course_list_sitemetadata():
         sitemetadata_1.id,
         sitemetadata_2.id,
     }
+
+
+@pytest.mark.django_db
+def test_resolve_referenced_content_ids_video_file_paths():
+    """resolve_referenced_content_ids resolves video_captions_file and video_transcript_file by file path."""
+    website = WebsiteFactory.create()
+
+    captions_content = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="nXyqvKrQGZ8_captions",
+        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+    )
+    transcript_content = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="pdf_testpage",
+        file=f"courses/{website.name}/pdf_testpage.pdf",
+    )
+
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+            },
+        },
+    )
+
+    result = resolve_referenced_content_ids(video_resource)
+    assert captions_content.id in result
+    assert transcript_content.id in result
+
+
+@pytest.mark.django_db
+def test_resolve_referenced_content_ids_video_file_empty_strings():
+    """resolve_referenced_content_ids handles empty-string video file paths gracefully."""
+    website = WebsiteFactory.create()
+
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": "",
+                "video_transcript_file": "",
+                "video_captions_resource": "",
+                "video_transcript_resource": "",
+            },
+        },
+    )
+
+    result = resolve_referenced_content_ids(video_resource)
+    assert result == set()

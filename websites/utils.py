@@ -2,6 +2,7 @@
 
 import logging
 import re
+from pathlib import Path
 from typing import Any
 
 from django.apps import apps
@@ -46,6 +47,8 @@ def get_dict_field(obj: dict, field_path: str) -> Any:
     current_obj = obj
     for field in fields[:-1]:
         current_obj = current_obj.get(field, {})
+        if not isinstance(current_obj, dict):
+            return None
     return current_obj.get(fields[-1])
 
 
@@ -306,6 +309,26 @@ def _resolve_course_list_referenced_content_ids(content) -> set[int]:
     return referenced_content_ids
 
 
+def resolve_video_file_referenced_content_ids(content) -> set[int]:
+    """Resolve video_captions_file/video_transcript_file paths to WebsiteContent ids."""
+    WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    referenced_ids = set()
+
+    for field_path in (settings.YT_FIELD_CAPTIONS, settings.YT_FIELD_TRANSCRIPT):
+        key = get_dict_field(content.metadata, field_path)
+        if not key:
+            continue
+        base_name = Path(key).stem
+        related_ids = (
+            WebsiteContent.objects.filter(website=content.website)
+            .filter(Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name))
+            .values_list("id", flat=True)
+        )
+        referenced_ids.update(related_ids)
+
+    return referenced_ids
+
+
 def compile_referencing_content(content) -> list[str]:
     """Compile referencing content for a website content instance."""
     references = []
@@ -361,6 +384,11 @@ def resolve_referenced_content_ids(content) -> set[int]:
     if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
         referenced_content_ids.update(
             _resolve_course_list_referenced_content_ids(content)
+        )
+
+    if content.type == constants.CONTENT_TYPE_RESOURCE and content.metadata:
+        referenced_content_ids.update(
+            resolve_video_file_referenced_content_ids(content)
         )
 
     return referenced_content_ids

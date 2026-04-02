@@ -57,7 +57,11 @@ from videos.youtube import (
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
 )
-from websites.api import is_ocw_site, videos_missing_captions
+from websites.api import (
+    is_ocw_site,
+    sync_website_content_references,
+    videos_missing_captions,
+)
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
@@ -519,6 +523,7 @@ def update_transcript_and_captions(resource, new_transcript_file, new_captions_f
     )
 
     resource.save()
+    sync_website_content_references(resource)
 
 
 def create_drivefile(gdrive_file_id, new_resource, destination_course, files_or_videos):

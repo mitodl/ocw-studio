@@ -1132,6 +1132,58 @@ def test_websites_content_create_course_list_sets_references(
     }
 
 
+def test_websites_content_create_video_resource_sets_3play_references(
+    drf_client, global_admin_user
+):
+    """Creating a video resource should resolve caption/transcript file references."""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="video-captions",
+        file=f"courses/{website.name}/video-captions.webvtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="video-transcript",
+        file=f"courses/{website.name}/video-transcript.pdf",
+    )
+
+    payload = {
+        "type": constants.CONTENT_TYPE_RESOURCE,
+        "metadata": {
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt123"},
+            "video_files": {
+                "video_captions_file": f"/courses/{website.name}/video-captions.webvtt",
+                "video_transcript_file": (
+                    f"/courses/{website.name}/video-transcript.pdf"
+                ),
+            },
+        },
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={"parent_lookup_website": website.name},
+        ),
+        data=payload,
+        format="json",
+    )
+
+    assert resp.status_code == 201
+    content = WebsiteContent.objects.get(
+        website=website,
+        text_id=resp.data["text_id"],
+    )
+    assert set(content.referenced_by.values_list("id", flat=True)) == {
+        captions.id,
+        transcript.id,
+    }
+
+
 def test_websites_content_create_with_textid(drf_client, global_admin_user):
     """If a text_id is added when POSTing to the WebsiteContent, we should use that instead of creating a uuid"""
     drf_client.force_login(global_admin_user)
@@ -1632,3 +1684,62 @@ def test_referencing_content_clears_when_references_removed(
 
     page.refresh_from_db()
     assert page.referenced_by.count() == 0
+
+
+def test_websites_content_update_video_resource_sets_3play_references(
+    drf_client, global_admin_user
+):
+    """Updating a video resource should refresh caption/transcript file references."""
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="updated-captions",
+        file=f"courses/{website.name}/updated-captions.webvtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="updated-transcript",
+        file=f"courses/{website.name}/updated-transcript.pdf",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt456"},
+            "video_files": {},
+        },
+    )
+
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": website.name,
+                "text_id": str(video.text_id),
+            },
+        ),
+        data={
+            "metadata": {
+                "video_files": {
+                    "video_captions_file": (
+                        f"/courses/{website.name}/updated-captions.webvtt"
+                    ),
+                    "video_transcript_file": (
+                        f"/courses/{website.name}/updated-transcript.pdf"
+                    ),
+                }
+            }
+        },
+        format="json",
+    )
+
+    assert resp.status_code == 200
+    video.refresh_from_db()
+    assert set(video.referenced_by.values_list("id", flat=True)) == {
+        captions.id,
+        transcript.id,
+    }

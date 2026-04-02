@@ -964,3 +964,41 @@ def test_video_resource_captions_only_reference_detected():
     referenced_content = list(video_resource.referenced_by.all())
     assert len(referenced_content) == 1
     assert captions_resource in referenced_content
+
+
+def test_video_resource_file_path_references_detected():
+    """Test that video_captions_file and video_transcript_file paths are resolved to referenced content"""
+    website = WebsiteFactory.create()
+    captions_content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="nXyqvKrQGZ8_captions",
+        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+    )
+    transcript_content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="pdf_testpage",
+        file=f"courses/{website.name}/pdf_testpage.pdf",
+    )
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+            },
+        },
+    )
+
+    assert video_resource.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    video_resource.refresh_from_db()
+    referenced_content = list(video_resource.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert captions_content in referenced_content
+    assert transcript_content in referenced_content
