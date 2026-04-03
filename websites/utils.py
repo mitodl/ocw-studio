@@ -291,7 +291,7 @@ def _get_sitemetadata_for_course_path(course_id: str):
     return sitemetadata
 
 
-def _resolve_course_list_referenced_content_ids(content) -> set[int]:
+def resolve_course_list_referenced_content_ids(content) -> set[int]:
     """Resolve course-list course entries to concrete referenced content ids."""
     referenced_content_ids = set()
 
@@ -329,45 +329,55 @@ def resolve_video_file_referenced_content_ids(content) -> set[int]:
     return referenced_ids
 
 
+def _extract_references_from_metadata_key(content, content_key: str) -> list[str]:
+    """Extract text_id references from a single metadata key on a content item."""
+    resource_data = get_dict_field(content.metadata, content_key)
+    if not resource_data:
+        return []
+    if isinstance(resource_data, list):
+        return _extract_relation_text_ids(resource_data)
+    if isinstance(resource_data, str):
+        resource_data = resource_data.strip()
+        if re.fullmatch(UUID_REGEX_STR, resource_data):
+            return [resource_data]
+        return parse_resource_uuid(resource_data)
+    log.warning(
+        "Unexpected metadata type %s for key '%s' in content %s",
+        type(resource_data).__name__,
+        content_key,
+        content.text_id,
+    )
+    return []
+
+
 def compile_referencing_content(content) -> list[str]:
     """Compile referencing content for a website content instance."""
     references = []
 
-    if content.type == constants.CONTENT_TYPE_NAVMENU and content.metadata:
-        references = [
-            item["identifier"]
-            for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
-            if item.get("identifier")
-        ]
-    else:
-        if content.markdown:
-            references += parse_resource_uuid(content.markdown)
-
+    if content.type == constants.CONTENT_TYPE_NAVMENU:
         if content.metadata:
-            content_keys = get_metadata_content_key(content)
-            if content.type == constants.CONTENT_TYPE_COURSE_LIST:
-                content_keys = [
-                    content_key
-                    for content_key in content_keys
-                    if content_key != constants.METADATA_FIELD_COURSE_LIST_COURSES
-                ]
-            for content_key in content_keys:
-                if resource_data := get_dict_field(content.metadata, content_key):
-                    if isinstance(resource_data, list):
-                        references.extend(_extract_relation_text_ids(resource_data))
-                    elif isinstance(resource_data, str):
-                        resource_data = resource_data.strip()
-                        if re.fullmatch(UUID_REGEX_STR, resource_data):
-                            references.append(resource_data)
-                        else:
-                            references.extend(parse_resource_uuid(resource_data))
-                    else:
-                        log.warning(
-                            "Unexpected metadata type %s for key '%s' in content %s",
-                            type(resource_data).__name__,
-                            content_key,
-                            content.text_id,
-                        )
+            references = [
+                item["identifier"]
+                for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
+                if item.get("identifier")
+            ]
+        return references
+
+    if content.markdown:
+        references += parse_resource_uuid(content.markdown)
+
+    if content.metadata:
+        content_keys = get_metadata_content_key(content)
+        if content.type == constants.CONTENT_TYPE_COURSE_LIST:
+            content_keys = [
+                k
+                for k in content_keys
+                if k != constants.METADATA_FIELD_COURSE_LIST_COURSES
+            ]
+        for content_key in content_keys:
+            references.extend(
+                _extract_references_from_metadata_key(content, content_key)
+            )
     return references
 
 
@@ -383,7 +393,7 @@ def resolve_referenced_content_ids(content) -> set[int]:
 
     if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
         referenced_content_ids.update(
-            _resolve_course_list_referenced_content_ids(content)
+            resolve_course_list_referenced_content_ids(content)
         )
 
     if content.type == constants.CONTENT_TYPE_RESOURCE and content.metadata:

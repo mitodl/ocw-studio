@@ -8,7 +8,7 @@ from websites import constants
 from websites.models import Website, WebsiteContent
 from websites.utils import (
     compile_referencing_content,
-    resolve_referenced_content_ids,
+    resolve_course_list_referenced_content_ids,
     resolve_video_file_referenced_content_ids,
 )
 
@@ -192,7 +192,8 @@ class Command(WebsiteFilterCommand):
         """Merge per-item video file path resolutions into content_references."""
         if not video_resource_ids:
             return
-        video_map = {c.id: c for c in content_batch if c.id in video_resource_ids}
+        video_resource_id_set = set(video_resource_ids)
+        video_map = {c.id: c for c in content_batch if c.id in video_resource_id_set}
         for content_id, content in video_map.items():
             extra_ids = resolve_video_file_referenced_content_ids(content)
             if extra_ids:
@@ -208,7 +209,7 @@ class Command(WebsiteFilterCommand):
             return
         course_list_map = {c.id: c for c in content_batch if c.id in course_list_ids}
         for content_id, content in course_list_map.items():
-            extra_ids = resolve_referenced_content_ids(content)
+            extra_ids = resolve_course_list_referenced_content_ids(content)
             if extra_ids:
                 content_references[content_id] = (
                     content_references.get(content_id, set()) | extra_ids

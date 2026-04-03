@@ -391,6 +391,18 @@ def test_compile_referencing_content_navmenu_null_metadata():
     assert result == []
 
 
+def test_compile_referencing_content_navmenu_empty_metadata():
+    """compile_referencing_content with NAVMENU type and empty dict metadata returns empty list without scanning markdown."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={},
+        markdown='{{% resource_link "550e8400-e29b-41d4-a716-446655440001" "Should not appear" %}}',
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
 def test_compile_referencing_content_navmenu_skips_items_without_identifier():
     """compile_referencing_content with NAVMENU skips items that have no identifier (e.g. external links)."""
     content = WebsiteContentFactory.build(
