@@ -1,5 +1,5 @@
 # Build stage
-FROM python:3.13.7-slim as builder
+FROM python:3.14.3-slim@sha256:fb83750094b46fd6b8adaa80f66e2302ecbe45d513f6cece637a841e1025b4ca as builder
 LABEL maintainer="ODL DevOps <mitx-devops@mit.edu>"
 
 # Set environment variables for build
@@ -45,7 +45,7 @@ ENV NODE_ENV=production
 RUN yarn install --immutable && yarn build
 
 # Runtime stage
-FROM python:3.13.7-slim as runtime
+FROM python:3.14.3-slim@sha256:fb83750094b46fd6b8adaa80f66e2302ecbe45d513f6cece637a841e1025b4ca as runtime
 
 # Set environment variables for production
 ENV PYTHONUNBUFFERED=1 \
