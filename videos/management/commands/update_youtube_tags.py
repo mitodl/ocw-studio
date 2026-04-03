@@ -12,24 +12,27 @@ from django.utils import timezone
 from googleapiclient.errors import HttpError
 
 from main.management.commands.filter import WebsiteFilterCommand
+from videos.constants import (
+    QUOTA_COST_VIDEO_LIST,
+    QUOTA_COST_VIDEO_UPDATE,
+    YT_LIST_BATCH_SIZE,
+)
 from videos.tasks import update_youtube_tags_batch
-from videos.utils import get_course_tag, parse_tags
+from videos.utils import (
+    fetch_youtube_snippets,
+    get_course_tag,
+    parse_tags,
+    process_video_tags,
+)
 from videos.youtube import API_QUOTA_ERROR_MSG, YouTubeApi, is_youtube_enabled
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.models import WebsiteContent
-from websites.utils import get_dict_field, set_dict_field
+from websites.utils import get_dict_field
 
 log = logging.getLogger(__name__)
 
 # Verbosity level for detailed output
 VERBOSITY_DETAILED = 2
-
-# YouTube Data API v3 quota costs
-QUOTA_COST_VIDEO_LIST = 1  # videos.list costs 1 unit
-QUOTA_COST_VIDEO_UPDATE = 50  # videos.update costs 50 units
-
-# Maximum video IDs per videos.list call
-YT_LIST_BATCH_SIZE = 50
 
 # Default daily quota limit (conservative to leave room for other usage)
 DEFAULT_QUOTA_LIMIT = 9000
@@ -114,9 +117,10 @@ class Command(WebsiteFilterCommand):
             type=int,
             default=DEFAULT_QUOTA_LIMIT,
             help=(
-                f"Quota units available per day for scheduling calculations "
-                f"(default: {DEFAULT_QUOTA_LIMIT}). Used with --schedule to "
-                f"determine how many videos to process per day."
+                f"Assumed quota units available per calendar day, used only "
+                f"with --schedule to calculate how many videos fit in each "
+                f"scheduled Celery task (default: {DEFAULT_QUOTA_LIMIT}). "
+                f"This does not limit the current run — use --quota-limit for that."
             ),
         )
         parser.add_argument(
@@ -156,38 +160,6 @@ class Command(WebsiteFilterCommand):
 
         # Apply stable ordering for consistent behavior
         return video_resources.order_by("id")
-
-    def batch_fetch_youtube_snippets(self, youtube, youtube_ids):
-        """
-        Fetch video snippets from YouTube in batches of up to 50 IDs per call.
-
-        The YouTube videos.list API accepts comma-separated IDs and costs
-        1 quota unit regardless of how many IDs are included (up to 50).
-
-        Args:
-            youtube: YouTubeApi instance
-            youtube_ids: List of YouTube video IDs
-
-        Returns:
-            tuple: (dict mapping youtube_id -> snippet, quota_used)
-        """
-        snippets = {}
-        quota_used = 0
-
-        for i in range(0, len(youtube_ids), YT_LIST_BATCH_SIZE):
-            batch = youtube_ids[i : i + YT_LIST_BATCH_SIZE]
-            batch_ids = ",".join(batch)
-
-            response = (
-                youtube.client.videos().list(part="snippet", id=batch_ids).execute()
-            )
-            quota_used += QUOTA_COST_VIDEO_LIST
-
-            for item in response.get("items", []):
-                video_id = item["id"]
-                snippets[video_id] = item["snippet"]
-
-        return snippets, quota_used
 
     def flatten_tags(self, tags: list[str]) -> set[str]:
         """
@@ -344,29 +316,18 @@ class Command(WebsiteFilterCommand):
                 # Dry run mode - don't update anything
                 status = "success"
                 message = f"  [DRY RUN] Would update tags to: {merged_tags}"
+                youtube_updated = False
+                db_updated = False
             else:
-                if tags_changed:
-                    # Update tags directly using the already-fetched snippet
-                    # This avoids the redundant videos.list call in
-                    # update_video_tags
-                    snippet["tags"] = parse_tags(merged_tags)
-                    youtube.client.videos().update(
-                        part="snippet",
-                        body={
-                            "id": youtube_id,
-                            "snippet": snippet,
-                        },
-                    ).execute()
+                result = process_video_tags(
+                    video_resource, snippet, youtube, add_course_tag=add_course_tag
+                )
+                if result == "success":
                     quota_used += QUOTA_COST_VIDEO_UPDATE
-
                     status = "success"
                     message = f"Updated tags for YouTube video {youtube_id}"
-
-                # Always save merged tags to DB in normal mode
-                set_dict_field(
-                    video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
-                )
-                video_resource.save()
+                youtube_updated = result == "success"
+                db_updated = True
 
             # Prepare CSV data
             csv_data = {
@@ -374,8 +335,8 @@ class Command(WebsiteFilterCommand):
                 "existing_yt_tags": initial_yt_tags,
                 "existing_db_tags": initial_db_tags,
                 "final_tags": merged_tags,
-                "youtube_updated": tags_changed and not dry_run,
-                "db_updated": not dry_run,
+                "youtube_updated": youtube_updated,
+                "db_updated": db_updated,
             }
 
         except HttpError as exc:
@@ -632,10 +593,11 @@ class Command(WebsiteFilterCommand):
 
         # Batch-fetch all YouTube snippets
         try:
-            snippets, list_quota = self.batch_fetch_youtube_snippets(
-                youtube, all_youtube_ids
+            snippets = fetch_youtube_snippets(youtube, all_youtube_ids)
+            total_quota_used += (
+                math.ceil(len(all_youtube_ids) / YT_LIST_BATCH_SIZE)
+                * QUOTA_COST_VIDEO_LIST
             )
-            total_quota_used += list_quota
         except HttpError as exc:
             if API_QUOTA_ERROR_MSG in str(exc).lower():
                 self.stdout.write(

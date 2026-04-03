@@ -49,7 +49,11 @@ from videos.exceptions import (
     raise_missing_file_metadata_error,
 )
 from videos.models import Video, VideoFile
-from videos.utils import create_new_content, get_course_tag, parse_tags
+from videos.utils import (
+    create_new_content,
+    fetch_youtube_snippets,
+    process_video_tags,
+)
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -718,71 +722,6 @@ def backfill_caption_or_transcript_file_size(self, resource_id: int):
         raise self.retry(exc=exc) from exc
 
 
-# YouTube Data API v3 quota costs
-_QUOTA_COST_VIDEO_LIST = 1
-_QUOTA_COST_VIDEO_UPDATE = 50
-_YT_LIST_BATCH_SIZE = 50
-
-
-def _batch_fetch_snippets(youtube, youtube_ids):
-    """Fetch YouTube video snippets in batches of up to 50 IDs per call."""
-    snippets = {}
-    for i in range(0, len(youtube_ids), _YT_LIST_BATCH_SIZE):
-        batch = youtube_ids[i : i + _YT_LIST_BATCH_SIZE]
-        response = (
-            youtube.client.videos().list(part="snippet", id=",".join(batch)).execute()
-        )
-        for item in response.get("items", []):
-            snippets[item["id"]] = item["snippet"]
-    return snippets
-
-
-def _normalize_tags(tags):
-    """Normalize a list of tags, splitting comma-containing entries."""
-    return set().union(*(parse_tags(t) for t in tags)) if tags else set()
-
-
-def _process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
-    """
-    Merge YouTube and DB tags for a single video and update both sides.
-
-    Returns:
-        str: "success", "skip", or "error"
-    """
-    yt_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
-    course_slug = get_course_tag(video_resource.website)
-
-    youtube_tags = snippet.get("tags", [])
-    db_tags_str = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
-    db_tags = set(parse_tags(db_tags_str or ""))
-
-    yt_tags_normalized = _normalize_tags(youtube_tags)
-    merged = yt_tags_normalized | db_tags
-    if add_course_tag and course_slug and course_slug not in merged:
-        merged.add(course_slug)
-
-    merged_str = ", ".join(sorted(merged))
-
-    merged_list = parse_tags(merged_str)
-    # Consider tags changed if the normalized sets differ or YouTube has
-    # formatting issues (e.g., commas in single tags like ["a, b"]).
-    has_formatting_issues = any("," in tag for tag in youtube_tags)
-    tags_changed = merged != yt_tags_normalized or has_formatting_issues
-
-    if tags_changed:
-        snippet["tags"] = merged_list
-        youtube.client.videos().update(
-            part="snippet",
-            body={"id": yt_id, "snippet": snippet},
-        ).execute()
-
-    # Always save merged tags to DB
-    set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_str)
-    video_resource.save(update_fields=["metadata"])
-
-    return "success" if tags_changed else "skip"
-
-
 def _build_yt_id_resource_map(youtube_ids):
     """Build a mapping of youtube_id -> list of WebsiteContent resources."""
     query_id_field = f"metadata__{settings.YT_FIELD_ID.replace('.', '__')}"
@@ -817,7 +756,7 @@ def _process_batch_videos(
 
         for video_resource in resources:
             try:
-                result = _process_video_tags(
+                result = process_video_tags(
                     video_resource,
                     snippet,
                     youtube,
@@ -866,7 +805,7 @@ def update_youtube_tags_batch(
         return
 
     try:
-        snippets = _batch_fetch_snippets(youtube, youtube_ids)
+        snippets = fetch_youtube_snippets(youtube, youtube_ids)
         success_count, skipped_count, error_count = _process_batch_videos(
             youtube_ids,
             yt_id_to_resources,
