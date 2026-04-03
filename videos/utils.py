@@ -11,8 +11,9 @@ from django.conf import settings
 
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
+from videos.constants import YT_LIST_BATCH_SIZE
 from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.utils import get_dict_field
+from websites.utils import get_dict_field, set_dict_field
 
 
 def generate_s3_path(file_or_webcontent, website):
@@ -169,3 +170,82 @@ def get_tags_with_course(metadata: dict, course_slug: str) -> str:
     # Sort alphabetically (tags are already lowercase)
     sorted_tags = sorted(all_tags)
     return ", ".join(sorted_tags)
+
+
+def fetch_youtube_snippets(youtube, youtube_ids):
+    """
+    Fetch YouTube video snippets in batches of up to 50 IDs per API call.
+
+    Each call costs 1 quota unit regardless of the number of IDs (up to 50).
+    The number of quota units consumed is:
+    ``math.ceil(len(youtube_ids) / YT_LIST_BATCH_SIZE) * QUOTA_COST_VIDEO_LIST``.
+
+    Args:
+        youtube: YouTubeApi instance
+        youtube_ids: List of YouTube video IDs
+
+    Returns:
+        dict: Mapping of youtube_id -> snippet dict for found videos
+    """
+    snippets = {}
+    for i in range(0, len(youtube_ids), YT_LIST_BATCH_SIZE):
+        batch = youtube_ids[i : i + YT_LIST_BATCH_SIZE]
+        response = (
+            youtube.client.videos().list(part="snippet", id=",".join(batch)).execute()
+        )
+        for item in response.get("items", []):
+            snippets[item["id"]] = item["snippet"]
+    return snippets
+
+
+def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
+    """
+    Merge YouTube and DB tags for a single video resource then persist.
+
+    Updates YouTube via ``videos().update`` if tags changed, and always saves
+    the merged tag string to the DB. Mutates ``snippet["tags"]`` in-place so
+    callers sharing the same snippet dict across multiple resources for the
+    same YouTube video accumulate tags correctly.
+
+    Args:
+        video_resource: WebsiteContent instance
+        snippet: YouTube snippet dict (from the videos.list response)
+        youtube: YouTubeApi instance
+        add_course_tag: If True, add the course URL slug as a tag
+
+    Returns:
+        str: ``"success"`` if YouTube was updated, ``"skip"`` otherwise
+    """
+
+    yt_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
+    course_slug = get_course_tag(video_resource.website)
+
+    youtube_tags = snippet.get("tags", [])
+    db_tags_str = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
+    db_tags = set(parse_tags(db_tags_str or ""))
+
+    yt_tags_normalized = (
+        set().union(*(parse_tags(t) for t in youtube_tags)) if youtube_tags else set()
+    )
+    merged = yt_tags_normalized | db_tags
+    if add_course_tag and course_slug and course_slug not in merged:
+        merged.add(course_slug)
+
+    merged_str = ", ".join(sorted(merged))
+    merged_list = parse_tags(merged_str)
+
+    # Detect formatting issues (e.g., commas in a single YouTube tag like "a, b")
+    has_formatting_issues = any("," in tag for tag in youtube_tags)
+    tags_changed = merged != yt_tags_normalized or has_formatting_issues
+
+    if tags_changed:
+        snippet["tags"] = merged_list
+        youtube.client.videos().update(
+            part="snippet",
+            body={"id": yt_id, "snippet": snippet},
+        ).execute()
+
+    set_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS, merged_str)
+    video_resource.save(update_fields=["metadata"])
+
+    return "success" if tags_changed else "skip"
