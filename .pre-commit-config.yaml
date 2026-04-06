@@ -111,3 +111,14 @@ repos:
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]
+- repo: local
+  hooks:
+  - id: drf-serializer-orm-check
+    name: DRF Serializer ORM Check
+    description: "Detects Django ORM queries inside DRF serializer methods (N+1 risk)"
+    entry: drf-lint
+    args: [--baseline, drf_lint_baseline.json]
+    language: python
+    files: 'serializers\.py$'
+    additional_dependencies:
+    - mitol-drf-lint
