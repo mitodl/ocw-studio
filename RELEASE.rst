@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.182.0
+Version 0.182.0 (Released April 08, 2026)
 ---------------
 
 - chore: add drf-lint pre-commit hook with baseline (#2965)
