@@ -1,6 +1,26 @@
 Release Notes
 =============
 
+Version 0.182.0 (Released April 08, 2026)
+---------------
+
+- chore: add drf-lint pre-commit hook with baseline (#2965)
+- chore(deps): update dependency @types/sinon to v21.0.1 (#2977)
+- chore(deps): update dependency posthog-js to v1.364.6 (#2968)
+- chore(deps): update dependency sass to v1.99.0 (#2969)
+- chore(deps): update dependency lodash to v4.18.1 [security] (#2966)
+- fix(deps): update dependency djangorestframework to v3.17.0 (#2975)
+- fix(deps): update dependency social-auth-app-django to v5.7.0 (#2962)
+- chore(deps): update dependency uv_build to >=0.11.2,<0.12.0 (#2959)
+- fix(deps): update dependency pygithub to v2.9.0 (#2960)
+- fix(deps): update dependency django-hijack to v3.7.7 (#2958)
+- chore(deps): update nginx docker tag to v1.29.7 (#2954)
+- fix(deps): update dependency sentry-sdk to v2.56.0 (#2961)
+- chore(deps): update node.js to v24.14.1 (#2955)
+- fix(deps): update dependency django-guardian to v3.3.1 (#2957)
+- fix(deps): update dependency boto3 to v1.42.78 (#2956)
+- chore(deps): update dependency cryptography to v46.0.6 [security] (#2953)
+
 Version 0.181.0 (Released March 31, 2026)
 ---------------
 
