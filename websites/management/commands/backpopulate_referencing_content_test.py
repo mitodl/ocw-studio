@@ -11,6 +11,7 @@ from websites.constants import (
     CONTENT_TYPE_HOMEPAGE_SETTINGS,
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
+    CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_PROMO,
     CONTENT_TYPE_RESOURCE,
@@ -18,6 +19,7 @@ from websites.constants import (
     CONTENT_TYPE_STORY,
     CONTENT_TYPE_TESTIMONIAL,
     CONTENT_TYPE_VIDEO_GALLERY,
+    WEBSITE_CONTENT_LEFTNAV,
 )
 from websites.factories import (
     WebsiteContentFactory,
@@ -850,3 +852,153 @@ def test_promo_no_image_field():
     promo.refresh_from_db()
     # Should still be 0 since there are no references
     assert promo.referenced_by.count() == 0
+
+
+def test_navmenu_references_detected():
+    """Test that navmenu leftnav identifiers are detected as references"""
+    website = WebsiteFactory.create()
+    page1 = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_PAGE,
+    )
+    page2 = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_PAGE,
+    )
+    navmenu = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_NAVMENU,
+        metadata={
+            WEBSITE_CONTENT_LEFTNAV: [
+                {"identifier": page1.text_id, "name": "Page 1"},
+                {"identifier": page2.text_id, "name": "Page 2"},
+            ]
+        },
+    )
+
+    assert navmenu.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    navmenu.refresh_from_db()
+    referenced_content = list(navmenu.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert page1 in referenced_content
+    assert page2 in referenced_content
+
+
+def test_navmenu_null_metadata_no_error():
+    """Test that navmenu with None metadata does not raise an error"""
+    website = WebsiteFactory.create()
+    navmenu = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_NAVMENU,
+        metadata=None,
+    )
+
+    assert navmenu.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    navmenu.refresh_from_db()
+    assert navmenu.referenced_by.count() == 0
+
+
+def test_video_resource_captions_and_transcript_references_detected():
+    """Test that captions and transcript resource UUIDs in video metadata are detected"""
+    website = WebsiteFactory.create()
+    captions_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+    )
+    transcript_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+    )
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_resource": {"content": captions_resource.text_id},
+                "video_transcript_resource": {"content": transcript_resource.text_id},
+            },
+        },
+    )
+
+    assert video_resource.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    video_resource.refresh_from_db()
+    referenced_content = list(video_resource.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert captions_resource in referenced_content
+    assert transcript_resource in referenced_content
+
+
+def test_video_resource_captions_only_reference_detected():
+    """Test that only captions resource UUID is detected when transcript is absent"""
+    website = WebsiteFactory.create()
+    captions_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+    )
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_resource": {"content": captions_resource.text_id},
+            },
+        },
+    )
+
+    assert video_resource.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    video_resource.refresh_from_db()
+    referenced_content = list(video_resource.referenced_by.all())
+    assert len(referenced_content) == 1
+    assert captions_resource in referenced_content
+
+
+def test_video_resource_file_path_references_detected():
+    """Test that video_captions_file and video_transcript_file paths are resolved to referenced content"""
+    website = WebsiteFactory.create()
+    captions_content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="nXyqvKrQGZ8_captions",
+        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+    )
+    transcript_content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="pdf_testpage",
+        file=f"courses/{website.name}/pdf_testpage.pdf",
+    )
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+            },
+        },
+    )
+
+    assert video_resource.referenced_by.count() == 0
+
+    call_command("backpopulate_referencing_content", verbosity=0, stdout=StringIO())
+
+    video_resource.refresh_from_db()
+    referenced_content = list(video_resource.referenced_by.all())
+    assert len(referenced_content) == 2
+    assert captions_content in referenced_content
+    assert transcript_content in referenced_content

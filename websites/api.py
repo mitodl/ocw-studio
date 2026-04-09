@@ -35,7 +35,12 @@ from websites.messages import (
     PreviewOrPublishSuccessMessage,
 )
 from websites.models import Website, WebsiteContent, WebsiteStarter
-from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
+from websites.utils import (
+    get_dict_field,
+    get_dict_query_field,
+    resolve_referenced_content_ids,
+    set_dict_field,
+)
 
 log = logging.getLogger(__name__)
 
@@ -204,6 +209,14 @@ def update_youtube_thumbnail(
                 settings.YT_FIELD_THUMBNAIL,
                 YT_THUMBNAIL_IMG.format(video_id=youtube_id),
             )
+
+
+def sync_website_content_references(content: WebsiteContent) -> None:
+    """Refresh reference tracking for a WebsiteContent record."""
+    referenced_content = WebsiteContent.objects.filter(
+        id__in=resolve_referenced_content_ids(content)
+    )
+    content.referenced_by.set(referenced_content)
 
 
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:

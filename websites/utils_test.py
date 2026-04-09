@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+from django.conf import settings
 
 from websites import constants
 from websites.factories import (
@@ -378,6 +379,51 @@ def test_compile_referencing_content_navmenu_empty():
     assert result == []
 
 
+def test_compile_referencing_content_navmenu_null_metadata():
+    """compile_referencing_content with NAVMENU type and None metadata returns empty list."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata=None,
+        markdown="This markdown should be ignored",
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_navmenu_empty_metadata():
+    """compile_referencing_content with NAVMENU type and empty dict metadata returns empty list without scanning markdown."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={},
+        markdown='{{% resource_link "550e8400-e29b-41d4-a716-446655440001" "Should not appear" %}}',
+    )
+
+    result = compile_referencing_content(content)
+    assert result == []
+
+
+def test_compile_referencing_content_navmenu_skips_items_without_identifier():
+    """compile_referencing_content with NAVMENU skips items that have no identifier (e.g. external links)."""
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_NAVMENU,
+        metadata={
+            constants.WEBSITE_CONTENT_LEFTNAV: [
+                {"identifier": "12345678-90ab-cdef-1234-567890abcdef"},
+                {"url": "https://example.com", "name": "External Link"},
+                {"identifier": "abcdef12-3456-789a-bcde-f1234567890a"},
+            ]
+        },
+        markdown="This markdown should be ignored",
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [
+        "12345678-90ab-cdef-1234-567890abcdef",
+        "abcdef12-3456-789a-bcde-f1234567890a",
+    ]
+
+
 def test_compile_referencing_content_page_markdown():
     """compile_referencing_content with PAGE type containing markdown references."""
     markdown_content = (
@@ -729,6 +775,46 @@ def test_compile_referencing_content_resource_image_metadata(
     assert result == expected_uuids
 
 
+def test_compile_referencing_content_resource_captions_and_transcript():
+    """Test compile_referencing_content with RESOURCE type having captions/transcript resource references."""
+    captions_uuid = "aaaabbbb-cccc-dddd-eeee-ffff12345678"
+    transcript_uuid = "11223344-5566-7788-99aa-bbccddee1122"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_resource": {"content": captions_uuid},
+                "video_transcript_resource": {"content": transcript_uuid},
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert sorted(result) == sorted([captions_uuid, transcript_uuid])
+
+
+def test_compile_referencing_content_resource_captions_only():
+    """Test compile_referencing_content with RESOURCE type having only captions resource reference."""
+    captions_uuid = "aaaabbbb-cccc-dddd-eeee-ffff12345678"
+
+    content = WebsiteContentFactory.build(
+        type=constants.CONTENT_TYPE_RESOURCE,
+        markdown=None,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_resource": {"content": captions_uuid},
+            },
+        },
+    )
+
+    result = compile_referencing_content(content)
+    assert result == [captions_uuid]
+
+
 def test_compile_referencing_content_empty_and_none():
     """Test compile_referencing_content with no/empty markdown and metadata"""
     # Test with None values
@@ -817,6 +903,8 @@ def test_get_metadata_content_key():
     assert get_metadata_content_key(content_resource) == [
         constants.METADATA_FIELD_IMAGE_CAPTION,
         constants.METADATA_FIELD_IMAGE_CREDIT,
+        settings.YT_FIELD_CAPTIONS_RESOURCE + ".content",
+        settings.YT_FIELD_TRANSCRIPT_RESOURCE + ".content",
     ]
 
     # Test unknown/unsupported type
@@ -1137,3 +1225,61 @@ def test_resolve_referenced_content_ids_scopes_course_list_sitemetadata():
         sitemetadata_1.id,
         sitemetadata_2.id,
     }
+
+
+@pytest.mark.django_db
+def test_resolve_referenced_content_ids_video_file_paths():
+    """resolve_referenced_content_ids resolves video_captions_file and video_transcript_file by file path."""
+    website = WebsiteFactory.create()
+
+    captions_content = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="nXyqvKrQGZ8_captions",
+        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+    )
+    transcript_content = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="pdf_testpage",
+        file=f"courses/{website.name}/pdf_testpage.pdf",
+    )
+
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
+                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+            },
+        },
+    )
+
+    result = resolve_referenced_content_ids(video_resource)
+    assert captions_content.id in result
+    assert transcript_content.id in result
+
+
+@pytest.mark.django_db
+def test_resolve_referenced_content_ids_video_file_empty_strings():
+    """resolve_referenced_content_ids handles empty-string video file paths gracefully."""
+    website = WebsiteFactory.create()
+
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": "",
+                "video_transcript_file": "",
+                "video_captions_resource": "",
+                "video_transcript_resource": "",
+            },
+        },
+    )
+
+    result = resolve_referenced_content_ids(video_resource)
+    assert result == set()
