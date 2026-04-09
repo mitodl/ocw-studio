@@ -1,5 +1,6 @@
 """Backpopulate referencing content"""  # noqa: INP001
 
+from django.conf import settings
 from django.db import transaction
 from mitol.common.utils import now_in_utc
 
@@ -13,6 +14,15 @@ from websites.utils import (
 )
 
 BATCH_SIZE_DEFAULT = 500  # Default batch size for processing content
+
+# Top-level metadata keys under which video file paths are stored, derived from
+# settings so custom field paths are respected.
+_VIDEO_FILE_TOP_KEYS = frozenset(
+    {
+        settings.YT_FIELD_CAPTIONS.split(".")[0],
+        settings.YT_FIELD_TRANSCRIPT.split(".")[0],
+    }
+)
 
 
 class Command(WebsiteFilterCommand):
@@ -170,7 +180,7 @@ class Command(WebsiteFilterCommand):
             if (
                 content.type == constants.CONTENT_TYPE_RESOURCE
                 and content.metadata
-                and content.metadata.get("video_files")
+                and any(content.metadata.get(k) for k in _VIDEO_FILE_TOP_KEYS)
             ):
                 video_resource_ids.append(content.id)
 
