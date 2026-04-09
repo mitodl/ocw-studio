@@ -2,6 +2,7 @@
 
 import logging
 import re
+from pathlib import Path
 from typing import Any
 
 from django.apps import apps
@@ -46,6 +47,8 @@ def get_dict_field(obj: dict, field_path: str) -> Any:
     current_obj = obj
     for field in fields[:-1]:
         current_obj = current_obj.get(field, {})
+        if not isinstance(current_obj, dict):
+            return None
     return current_obj.get(fields[-1])
 
 
@@ -145,6 +148,8 @@ def get_metadata_content_key(content) -> list:
             content_keys = [
                 constants.METADATA_FIELD_IMAGE_CAPTION,
                 constants.METADATA_FIELD_IMAGE_CREDIT,
+                settings.YT_FIELD_CAPTIONS_RESOURCE + ".content",
+                settings.YT_FIELD_TRANSCRIPT_RESOURCE + ".content",
             ]
         case constants.CONTENT_TYPE_COURSE_COLLECTION:
             content_keys = [
@@ -286,7 +291,7 @@ def _get_sitemetadata_for_course_path(course_id: str):
     return sitemetadata
 
 
-def _resolve_course_list_referenced_content_ids(content) -> set[int]:
+def resolve_course_list_referenced_content_ids(content) -> set[int]:
     """Resolve course-list course entries to concrete referenced content ids."""
     referenced_content_ids = set()
 
@@ -304,44 +309,75 @@ def _resolve_course_list_referenced_content_ids(content) -> set[int]:
     return referenced_content_ids
 
 
+def resolve_video_file_referenced_content_ids(content) -> set[int]:
+    """Resolve video_captions_file/video_transcript_file paths to WebsiteContent ids."""
+    WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    referenced_ids = set()
+
+    for field_path in (settings.YT_FIELD_CAPTIONS, settings.YT_FIELD_TRANSCRIPT):
+        key = get_dict_field(content.metadata, field_path)
+        if not key:
+            continue
+        base_name = Path(key).stem
+        related_ids = (
+            WebsiteContent.objects.filter(website=content.website)
+            .filter(Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name))
+            .values_list("id", flat=True)
+        )
+        referenced_ids.update(related_ids)
+
+    return referenced_ids
+
+
+def _extract_references_from_metadata_key(content, content_key: str) -> list[str]:
+    """Extract text_id references from a single metadata key on a content item."""
+    resource_data = get_dict_field(content.metadata, content_key)
+    if not resource_data:
+        return []
+    if isinstance(resource_data, list):
+        return _extract_relation_text_ids(resource_data)
+    if isinstance(resource_data, str):
+        resource_data = resource_data.strip()
+        if re.fullmatch(UUID_REGEX_STR, resource_data):
+            return [resource_data]
+        return parse_resource_uuid(resource_data)
+    log.warning(
+        "Unexpected metadata type %s for key '%s' in content %s",
+        type(resource_data).__name__,
+        content_key,
+        content.text_id,
+    )
+    return []
+
+
 def compile_referencing_content(content) -> list[str]:
     """Compile referencing content for a website content instance."""
     references = []
 
     if content.type == constants.CONTENT_TYPE_NAVMENU:
-        references = [
-            item["identifier"]
-            for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
-        ]
-    else:
-        if content.markdown:
-            references += parse_resource_uuid(content.markdown)
-
         if content.metadata:
-            content_keys = get_metadata_content_key(content)
-            if content.type == constants.CONTENT_TYPE_COURSE_LIST:
-                content_keys = [
-                    content_key
-                    for content_key in content_keys
-                    if content_key != constants.METADATA_FIELD_COURSE_LIST_COURSES
-                ]
-            for content_key in content_keys:
-                if resource_data := get_dict_field(content.metadata, content_key):
-                    if isinstance(resource_data, list):
-                        references.extend(_extract_relation_text_ids(resource_data))
-                    elif isinstance(resource_data, str):
-                        resource_data = resource_data.strip()
-                        if re.fullmatch(UUID_REGEX_STR, resource_data):
-                            references.append(resource_data)
-                        else:
-                            references.extend(parse_resource_uuid(resource_data))
-                    else:
-                        log.warning(
-                            "Unexpected metadata type %s for key '%s' in content %s",
-                            type(resource_data).__name__,
-                            content_key,
-                            content.text_id,
-                        )
+            references = [
+                item["identifier"]
+                for item in content.metadata.get(constants.WEBSITE_CONTENT_LEFTNAV, [])
+                if item.get("identifier")
+            ]
+        return references
+
+    if content.markdown:
+        references += parse_resource_uuid(content.markdown)
+
+    if content.metadata:
+        content_keys = get_metadata_content_key(content)
+        if content.type == constants.CONTENT_TYPE_COURSE_LIST:
+            content_keys = [
+                k
+                for k in content_keys
+                if k != constants.METADATA_FIELD_COURSE_LIST_COURSES
+            ]
+        for content_key in content_keys:
+            references.extend(
+                _extract_references_from_metadata_key(content, content_key)
+            )
     return references
 
 
@@ -357,7 +393,12 @@ def resolve_referenced_content_ids(content) -> set[int]:
 
     if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
         referenced_content_ids.update(
-            _resolve_course_list_referenced_content_ids(content)
+            resolve_course_list_referenced_content_ids(content)
+        )
+
+    if content.type == constants.CONTENT_TYPE_RESOURCE and content.metadata:
+        referenced_content_ids.update(
+            resolve_video_file_referenced_content_ids(content)
         )
 
     return referenced_content_ids

@@ -49,7 +49,11 @@ from videos.exceptions import (
     raise_missing_file_metadata_error,
 )
 from videos.models import Video, VideoFile
-from videos.utils import create_new_content
+from videos.utils import (
+    create_new_content,
+    fetch_youtube_snippets,
+    process_video_tags,
+)
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
     YouTubeApi,
@@ -57,7 +61,11 @@ from videos.youtube import (
     mail_youtube_upload_failure,
     mail_youtube_upload_success,
 )
-from websites.api import is_ocw_site, videos_missing_captions
+from websites.api import (
+    is_ocw_site,
+    sync_website_content_references,
+    videos_missing_captions,
+)
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
@@ -519,6 +527,7 @@ def update_transcript_and_captions(resource, new_transcript_file, new_captions_f
     )
 
     resource.save()
+    sync_website_content_references(resource)
 
 
 def create_drivefile(gdrive_file_id, new_resource, destination_course, files_or_videos):
@@ -716,3 +725,111 @@ def backfill_caption_or_transcript_file_size(self, resource_id: int):
             resource.website.short_id,
         )
         raise self.retry(exc=exc) from exc
+
+
+def _build_yt_id_resource_map(youtube_ids):
+    """Build a mapping of youtube_id -> list of WebsiteContent resources."""
+    query_id_field = f"metadata__{settings.YT_FIELD_ID.replace('.', '__')}"
+    video_resources = WebsiteContent.objects.filter(
+        **{f"{query_id_field}__in": youtube_ids},
+        metadata__resourcetype=RESOURCE_TYPE_VIDEO,
+    )
+    yt_id_to_resources = {}
+    for vr in video_resources:
+        yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
+        if yt_id:
+            yt_id_to_resources.setdefault(yt_id, []).append(vr)
+    return yt_id_to_resources
+
+
+def _process_batch_videos(
+    youtube_ids, yt_id_to_resources, snippets, youtube, *, add_course_tag
+):
+    """Process all videos in a batch, returning (success, skipped, error) counts."""
+    success_count = 0
+    error_count = 0
+    skipped_count = 0
+
+    for yt_id in youtube_ids:
+        resources = yt_id_to_resources.get(yt_id, [])
+        snippet = snippets.get(yt_id)
+
+        if not snippet:
+            log.warning("Video %s not found on YouTube, skipping", yt_id)
+            error_count += 1
+            continue
+
+        for video_resource in resources:
+            try:
+                result = process_video_tags(
+                    video_resource,
+                    snippet,
+                    youtube,
+                    add_course_tag=add_course_tag,
+                )
+                if result == "success":
+                    success_count += 1
+                else:
+                    skipped_count += 1
+            except HttpError:
+                raise
+            except Exception:
+                log.exception("Error updating tags for %s", yt_id)
+                error_count += 1
+
+    return success_count, skipped_count, error_count
+
+
+@app.task(bind=True, acks_late=True, max_retries=3)
+def update_youtube_tags_batch(
+    self,
+    youtube_ids,
+    *,
+    add_course_tag=False,
+):
+    """
+    Update YouTube tags for a batch of videos identified by youtube_ids.
+
+    This task is designed to be scheduled with a countdown/eta so that
+    large tag-update operations can be spread across multiple days
+    without exceeding the YouTube API daily quota.
+
+    Args:
+        youtube_ids: List of YouTube video IDs to update
+        add_course_tag: Whether to add course slug as a tag
+    """
+    if not is_youtube_enabled():
+        log.warning("YouTube is not enabled, skipping tag update batch")
+        return
+
+    youtube = YouTubeApi()
+
+    yt_id_to_resources = _build_yt_id_resource_map(youtube_ids)
+    if not yt_id_to_resources:
+        log.info("No video resources found for youtube_ids batch")
+        return
+
+    try:
+        snippets = fetch_youtube_snippets(youtube, youtube_ids)
+        success_count, skipped_count, error_count = _process_batch_videos(
+            youtube_ids,
+            yt_id_to_resources,
+            snippets,
+            youtube,
+            add_course_tag=add_course_tag,
+        )
+    except HttpError as exc:
+        if API_QUOTA_ERROR_MSG in str(exc).lower():
+            log.warning(
+                "YouTube API quota exceeded, will retry: %s",
+                exc,
+            )
+            raise self.retry(exc=exc, countdown=6 * 3600) from exc
+        raise
+
+    log.info(
+        "YouTube tag batch complete: %d updated, %d skipped, %d errors",
+        success_count,
+        skipped_count,
+        error_count,
+    )

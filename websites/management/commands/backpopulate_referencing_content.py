@@ -1,5 +1,6 @@
 """Backpopulate referencing content"""  # noqa: INP001
 
+from django.conf import settings
 from django.db import transaction
 from mitol.common.utils import now_in_utc
 
@@ -8,10 +9,20 @@ from websites import constants
 from websites.models import Website, WebsiteContent
 from websites.utils import (
     compile_referencing_content,
-    resolve_referenced_content_ids,
+    resolve_course_list_referenced_content_ids,
+    resolve_video_file_referenced_content_ids,
 )
 
 BATCH_SIZE_DEFAULT = 500  # Default batch size for processing content
+
+# Top-level metadata keys under which video file paths are stored, derived from
+# settings so custom field paths are respected.
+_VIDEO_FILE_TOP_KEYS = frozenset(
+    {
+        settings.YT_FIELD_CAPTIONS.split(".")[0],
+        settings.YT_FIELD_TRANSCRIPT.split(".")[0],
+    }
+)
 
 
 class Command(WebsiteFilterCommand):
@@ -126,7 +137,7 @@ class Command(WebsiteFilterCommand):
         is still per-item because it depends on website lookups that cannot
         easily be batched.
         """
-        per_content_text_ids, course_list_ids, all_text_ids = (
+        per_content_text_ids, course_list_ids, video_resource_ids, all_text_ids = (
             self._compile_batch_text_ids(content_batch)
         )
         text_id_to_ids = self._bulk_resolve_text_ids(all_text_ids)
@@ -140,6 +151,9 @@ class Command(WebsiteFilterCommand):
                 content_references[content_id] = resolved
 
         self._merge_course_list_ids(content_batch, course_list_ids, content_references)
+        self._merge_video_file_ids(
+            content_batch, video_resource_ids, content_references
+        )
 
         if verbosity >= 3:  # noqa: PLR2004
             for content_id, refs in content_references.items():
@@ -153,6 +167,7 @@ class Command(WebsiteFilterCommand):
         """Compile text_id references for each item without hitting the DB."""
         per_content_text_ids: dict[int, list[str]] = {}
         course_list_ids: list[int] = []
+        video_resource_ids: list[int] = []
         all_text_ids: set[str] = set()
 
         for content in content_batch:
@@ -162,8 +177,14 @@ class Command(WebsiteFilterCommand):
                 all_text_ids.update(text_ids)
             if content.type == constants.CONTENT_TYPE_COURSE_LIST and content.metadata:
                 course_list_ids.append(content.id)
+            if (
+                content.type == constants.CONTENT_TYPE_RESOURCE
+                and content.metadata
+                and any(content.metadata.get(k) for k in _VIDEO_FILE_TOP_KEYS)
+            ):
+                video_resource_ids.append(content.id)
 
-        return per_content_text_ids, course_list_ids, all_text_ids
+        return per_content_text_ids, course_list_ids, video_resource_ids, all_text_ids
 
     def _bulk_resolve_text_ids(self, all_text_ids):
         """Return a mapping of text_id → set of WebsiteContent ids via one query."""
@@ -175,6 +196,21 @@ class Command(WebsiteFilterCommand):
                 text_id_to_ids.setdefault(wc_text_id, set()).add(wc_id)
         return text_id_to_ids
 
+    def _merge_video_file_ids(
+        self, content_batch, video_resource_ids, content_references
+    ):
+        """Merge per-item video file path resolutions into content_references."""
+        if not video_resource_ids:
+            return
+        video_resource_id_set = set(video_resource_ids)
+        video_map = {c.id: c for c in content_batch if c.id in video_resource_id_set}
+        for content_id, content in video_map.items():
+            extra_ids = resolve_video_file_referenced_content_ids(content)
+            if extra_ids:
+                content_references[content_id] = (
+                    content_references.get(content_id, set()) | extra_ids
+                )
+
     def _merge_course_list_ids(
         self, content_batch, course_list_ids, content_references
     ):
@@ -183,7 +219,7 @@ class Command(WebsiteFilterCommand):
             return
         course_list_map = {c.id: c for c in content_batch if c.id in course_list_ids}
         for content_id, content in course_list_map.items():
-            extra_ids = resolve_referenced_content_ids(content)
+            extra_ids = resolve_course_list_referenced_content_ids(content)
             if extra_ids:
                 content_references[content_id] = (
                     content_references.get(content_id, set()) | extra_ids

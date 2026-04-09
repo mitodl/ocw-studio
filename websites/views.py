@@ -38,7 +38,11 @@ from main.utils import uuid_string, valid_key
 from main.views import DefaultPagination
 from users.models import User
 from websites import constants
-from websites.api import get_valid_new_filename, update_website_status
+from websites.api import (
+    get_valid_new_filename,
+    sync_website_content_references,
+    update_website_status,
+)
 from websites.constants import (
     CONTENT_TYPE_COURSE_LIST,
     CONTENT_TYPE_METADATA,
@@ -87,7 +91,6 @@ from websites.site_config_api import SiteConfig
 from websites.utils import (
     get_valid_base_filename,
     permissions_group_name_for_role,
-    resolve_referenced_content_ids,
 )
 
 log = logging.getLogger(__name__)
@@ -793,29 +796,22 @@ class WebsiteContentViewSet(
             if content:
                 # If the content already exists, return it instead of creating a new one
                 serializer = self.get_serializer(content)
-                self._referencing_content(content)
+                sync_website_content_references(content)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
         # Proceed with creation if no existing content is found
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save(updated_by=self.request.user)
-        self._referencing_content(instance)
+        sync_website_content_references(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def _referencing_content(self, instance: WebsiteContent):
-        """Update instance.referenced_by based on the referencing content"""
-        content_refs = WebsiteContent.objects.filter(
-            id__in=resolve_referenced_content_ids(instance)
-        ).all()
-        instance.referenced_by.set(content_refs)
 
     def perform_update(self, serializer):
         """
         Override the update request for content
         """
         instance = serializer.save(updated_by=self.request.user)
-        self._referencing_content(instance)
+        sync_website_content_references(instance)
 
     @action(
         detail=False,

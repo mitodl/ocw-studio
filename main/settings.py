@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.182.0"
+VERSION = "0.183.0"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -563,6 +563,7 @@ YT_UPLOAD_LIMIT = get_int(
     default=50,
     description="Max Youtube uploads allowed per day",
 )
+
 ARCHIVE_URL_REQUEST_TIMEOUT = get_int(
     name="ARCHIVE_URL_REQUEST_TIMEOUT",
     default=120,
