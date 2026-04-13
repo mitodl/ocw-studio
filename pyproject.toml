@@ -28,7 +28,7 @@ dependencies = [
     "django-safedelete==1.4.1",
     "django-storages==1.14.6",
     "django-webpack-loader==3.2.3",
-    "djangorestframework==3.17.0",
+    "djangorestframework==3.17.1",
     "drf-extensions>=0.8.0,<0.9",
     "google-api-python-client>=2.58.0,<3",
     "google-auth>=2.11.0,<3",
