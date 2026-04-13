@@ -15355,8 +15355,8 @@ __metadata:
   linkType: hard
 
 "webpack-dev-middleware@npm:^8.0.0":
-  version: 8.0.2
-  resolution: "webpack-dev-middleware@npm:8.0.2"
+  version: 8.0.3
+  resolution: "webpack-dev-middleware@npm:8.0.3"
   dependencies:
     memfs: "npm:^4.56.10"
     mime-types: "npm:^3.0.2"
@@ -15368,7 +15368,7 @@ __metadata:
   peerDependenciesMeta:
     webpack:
       optional: true
-  checksum: 10c0/95a810f9081aa83cf9c219e52d8389d113932856ca2caf37445df5bb47c807074e48e1ee65a7dd83d2f23d549e1f21192b218fdbfdc058acb210da293367ede2
+  checksum: 10c0/d9752ce08f1868bec0e49f6034d3b5b23c80c990e8ba3f3e4dfde8ffed552a9e5a10282d7adfaf74318ab17fcd017a10a1ea8871e7f705ab496d970b699c5417
   languageName: node
   linkType: hard
 
