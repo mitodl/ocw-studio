@@ -571,7 +571,11 @@ class WebsiteContentDetailSerializer(
     def update(self, instance, validated_data):
         """Update WebsiteContent, handling filename and metadata."""
         title = validated_data.get("title", instance.title)
-        if instance.type == CONTENT_TYPE_PAGE and title:
+        if (
+            instance.type == CONTENT_TYPE_PAGE
+            and title
+            and instance.filename != "_index"
+        ):
             new_filename = slugify(title)
             if instance.filename != new_filename:
                 cur_filename = WebsiteContent.objects.filter(

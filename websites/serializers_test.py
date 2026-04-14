@@ -905,6 +905,39 @@ def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
         assert page.filename == expected_filename
 
 
+@pytest.mark.parametrize(
+    ("initial_filename", "expected_filename"),
+    [
+        ("_index", "_index"),
+        ("original-title", "new-title"),
+    ],
+)
+def test_update_page_url_on_title_change_legacy_index_behavior(
+    enable_websitecontent_signal,
+    initial_filename,
+    expected_filename,
+):
+    """Legacy _index pages skip page url updates; normal pages still proceed with them."""
+    website = WebsiteFactory.create(owner=UserFactory.create())
+    page = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_PAGE,
+        dirpath="",
+        title="Original Title",
+        filename=initial_filename,
+    )
+
+    serializer = WebsiteContentDetailSerializer(
+        instance=page, data={"title": "New Title"}, partial=True
+    )
+    assert serializer.is_valid(), serializer.errors
+    serializer.save()
+
+    page.refresh_from_db()
+    assert page.filename == expected_filename
+    assert page.title == "New Title"
+
+
 def test_website_content_detail_serializer_syncs_video_relation_files(
     mocker, mocked_website_funcs
 ):
