@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.183.0 (Released April 14, 2026)
+---------------
+
+- feat: handled refrencing_content for captions/transcripts (#2964)
+- feat: Asynchronously update YouTube Tags (#2963)
+- chore(deps): update dependency cryptography to v46.0.7 [security] (#2981)
+- fix(deps): update dependency django to v5.2.13 [security] (#2980)
+- [pre-commit.ci] pre-commit autoupdate (#2884)
+- chore(deps): update dependency turndown to v7.2.4 (#2973)
+- chore(deps): update dependency @swc/core to v1.15.24 (#2971)
+- chore(deps): update dependency sentry-testkit to v6.4.0 (#2970)
+- fix(deps): update dependency jest-when to v4 (#2979)
+- chore(deps): update dependency mini-css-extract-plugin to v2.10.2 (#2972)
+
 Version 0.182.0 (Released April 08, 2026)
 ---------------
 
