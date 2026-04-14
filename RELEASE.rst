@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.183.0
+Version 0.183.0 (Released April 14, 2026)
 ---------------
 
 - feat: handled refrencing_content for captions/transcripts (#2964)
