@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.184.0
+---------------
+
+- chore(deps): update dependency pytest to v9.0.3 [security] (#2992)
+- fix(deps): update dependency boto3 to v1.42.79 (#2974)
+- chore(deps): update dependency webpack-dev-middleware to v8.0.3 (#2988)
+- chore(deps): update dependency posthog-js to v1.367.0 (#2987)
+- fix(deps): update dependency djangorestframework to v3.17.1 (#2986)
+- chore(deps): update dependency @types/node to v24.12.2 (#2984)
+- chore(deps): update dependency pypdf to v6.10.0 [security] (#2983)
+
 Version 0.183.0 (Released April 14, 2026)
 ---------------
 
