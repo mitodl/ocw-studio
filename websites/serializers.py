@@ -684,7 +684,7 @@ class WebsiteContentDetailSerializer(
         contents = []
         for website_id, text_ids in lookup.items():
             contents.extend(
-                WebsiteContent.objects.filter( # noqa: ORM001
+                WebsiteContent.objects.filter(  # noqa: ORM001
                     (Q(website__url_path=website_id) | Q(website__name=website_id)),
                     text_id__in=text_ids,
                 )
@@ -701,7 +701,7 @@ class WebsiteContentDetailSerializer(
             if file_field:
                 result[file_field["name"]] = instance.file.url
 
-        drivefile = instance.drivefile_set.first() # noqa: ORM002
+        drivefile = instance.drivefile_set.first()  # noqa: ORM002
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
 
