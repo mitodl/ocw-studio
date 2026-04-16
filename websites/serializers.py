@@ -574,7 +574,7 @@ class WebsiteContentDetailSerializer(
         if (
             instance.type == CONTENT_TYPE_PAGE
             and title
-            and instance.filename != "_index"
+            and instance.filename not in constants.CONTENT_FILENAMES_FORBIDDEN
         ):
             new_filename = slugify(title)
             if instance.filename != new_filename:
