@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.184.0
+Version 0.184.0 (Released April 16, 2026)
 ---------------
 
 - chore(deps): update dependency pytest to v9.0.3 [security] (#2992)
