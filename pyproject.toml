@@ -22,7 +22,7 @@ dependencies = [
     "django-guardian==3.3.1",
     "django-hijack==3.7.7",
     "django-model-utils==5.0.0",
-    "django-redis==5.0.0",
+    "django-redis==6.0.0",
     "django-removals~=1.1.6",
     "django-robots==7.0b0",
     "django-safedelete==1.4.1",
