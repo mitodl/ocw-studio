@@ -1,6 +1,6 @@
 [project]
 name = "ocw-studio"
-version = "0.0.0"
+version = "2026.04.16.1"
 description = "OCW Studio manages deployments for OCW courses"
 authors = [{ name = "MITODL" }]
 requires-python = ">=3.13,<3.14"
@@ -200,3 +200,4 @@ push = false
 
 [tool.bumpver.file_patterns]
 "main/settings.py" = ['VERSION = "{version}"']
+"pyproject.toml" = ['version = "{version}"']
