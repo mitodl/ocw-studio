@@ -177,6 +177,7 @@ ignore = [
     "RUF012",
     "UP007"
 ]
+external = ["ORM001", "ORM002"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
