@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.184.1
+Version 0.184.1 (Released April 21, 2026)
 ---------------
 
 - fix: do not change url for section pages (#2993)
