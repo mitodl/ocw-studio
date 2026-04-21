@@ -7,7 +7,6 @@ import logging
 import re
 
 from django.db import migrations, transaction
-from safedelete.models import HARD_DELETE
 
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 
@@ -24,30 +23,39 @@ AMAZON_BUTTON_TITLE_PATTERN = re.compile(r"^!\[[^\]]*\]\(/images/a_logo_17\.gif\
 
 def remove_amazon_links(apps, schema_editor):  # noqa: ARG001
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    Website = apps.get_model("websites", "Website")
 
     markdown_to_update = []
+    website_ids = set()
     for content in WebsiteContent.objects.filter(markdown__icontains=AMAZON_BUTTON_IMAGE):
         updated = AMAZON_BUTTON_SHORTCODE_PATTERN.sub("", content.markdown)
         updated = AMAZON_BUTTON_IMAGE_PATTERN.sub("", updated)
         if updated != content.markdown:
             content.markdown = updated
             markdown_to_update.append(content)
+            website_ids.add(content.website_id)
 
-    resources_to_delete = [
-        content
-        for content in WebsiteContent.objects.filter(
-            title__icontains=AMAZON_BUTTON_IMAGE,
-            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
-        )
-        if AMAZON_BUTTON_TITLE_PATTERN.match(content.title)
-    ]
+    resources_to_delete_ids = []
+    for content in WebsiteContent.objects.filter(
+        title__icontains=AMAZON_BUTTON_IMAGE,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+    ):
+        if AMAZON_BUTTON_TITLE_PATTERN.match(content.title):
+            resources_to_delete_ids.append(content.pk)
+            website_ids.add(content.website_id)
 
     with transaction.atomic():
         if markdown_to_update:
             WebsiteContent.objects.bulk_update(markdown_to_update, ["markdown"])
 
-        for content in resources_to_delete:
-            content.delete(force_policy=HARD_DELETE)
+        if resources_to_delete_ids:
+            WebsiteContent.objects.filter(pk__in=resources_to_delete_ids).delete()
+
+        if website_ids:
+            Website.objects.filter(pk__in=website_ids).update(
+                has_unpublished_live=True,
+                has_unpublished_draft=True,
+            )
 
 
 def reverse_remove_amazon_links(apps, schema_editor):  # noqa: ARG001
