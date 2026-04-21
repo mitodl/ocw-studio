@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.184.1
+---------------
+
+- fix: do not change url for section pages (#2993)
+- chore(deps): update dependency pypdf to v6.10.1 [security] (#2995)
+- fix(deps): update dependency sentry-sdk to v2.57.0 (#2976)
+
 Version 0.184.0 (Released April 16, 2026)
 ---------------
 
