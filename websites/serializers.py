@@ -571,7 +571,11 @@ class WebsiteContentDetailSerializer(
     def update(self, instance, validated_data):
         """Update WebsiteContent, handling filename and metadata."""
         title = validated_data.get("title", instance.title)
-        if instance.type == CONTENT_TYPE_PAGE and title:
+        if (
+            instance.type == CONTENT_TYPE_PAGE
+            and title
+            and instance.filename not in constants.CONTENT_FILENAMES_FORBIDDEN
+        ):
             new_filename = slugify(title)
             if instance.filename != new_filename:
                 cur_filename = WebsiteContent.objects.filter(
@@ -680,7 +684,7 @@ class WebsiteContentDetailSerializer(
         contents = []
         for website_id, text_ids in lookup.items():
             contents.extend(
-                WebsiteContent.objects.filter(
+                WebsiteContent.objects.filter(  # noqa: ORM001
                     (Q(website__url_path=website_id) | Q(website__name=website_id)),
                     text_id__in=text_ids,
                 )
@@ -697,7 +701,7 @@ class WebsiteContentDetailSerializer(
             if file_field:
                 result[file_field["name"]] = instance.file.url
 
-        drivefile = instance.drivefile_set.first()
+        drivefile = instance.drivefile_set.first()  # noqa: ORM002
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
 
