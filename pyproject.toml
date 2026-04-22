@@ -36,7 +36,7 @@ dependencies = [
     "ipython>=9.0.0,<10",
     "mitol-django-authentication==2025.3.17",
     "mitol-django-common>=2023.6.27.1,<2024",
-    "mitol-django-mail>=2025.0.0,<2026",
+    "mitol-django-mail>=2026.4.2,<2027",
     "more-itertools>=10.1.0,<11",
     "ol-concourse>=0.5.8,<0.6",
     "ol-concoursepy==0.0.41",

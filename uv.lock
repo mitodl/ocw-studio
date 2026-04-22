@@ -1217,7 +1217,7 @@ wheels = [
 
 [[package]]
 name = "mitol-django-mail"
-version = "2025.6.24"
+version = "2026.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1229,9 +1229,9 @@ dependencies = [
     { name = "premailer" },
     { name = "toolz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/82/ca6814b0fa4ebaf0ab1c9e93c1a2b60da7f198e8b13823d0adaac15a404f/mitol_django_mail-2025.6.24.tar.gz", hash = "sha256:7acaec76138b35bf20af8d33e55c575a829c9e7f6d28f02246da720147c1adc9", size = 13537, upload-time = "2025-06-24T22:12:12.8Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/32/63b71c97f49567da824ab79defde6fe020a51115ca2fbcbce8510e36bd63/mitol_django_mail-2026.4.2.tar.gz", hash = "sha256:d57eade44d8cdfb0e75f93f0aa3a1b8407fb8c34fe1ae4dc0060ba928c93be6b", size = 13492, upload-time = "2026-04-02T15:43:29.685Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b4/6d/8740fa49df7e729c87d9379c94b44ae1adc46be9bab6cbb7a42e918f786d/mitol_django_mail-2025.6.24-py3-none-any.whl", hash = "sha256:20e1830de82095fa1bc5484275c036a45b207e991f9febd65b4d9e276ffd4f57", size = 18971, upload-time = "2025-06-24T22:12:11.721Z" },
+    { url = "https://files.pythonhosted.org/packages/91/b4/95ce066b4fe6e7bc4dad5b2494ac4eaa426aec9f2515021ea733e97e8fbb/mitol_django_mail-2026.4.2-py3-none-any.whl", hash = "sha256:f78695194850afcc7f11247168e00d5a57ff65fae7004427e7f39cb9f3c50f6b", size = 18764, upload-time = "2026-04-02T15:43:28.588Z" },
 ]
 
 [[package]]
@@ -1426,7 +1426,7 @@ requires-dist = [
     { name = "ipython", specifier = ">=9.0.0,<10" },
     { name = "mitol-django-authentication", specifier = "==2025.3.17" },
     { name = "mitol-django-common", specifier = ">=2023.6.27.1,<2024" },
-    { name = "mitol-django-mail", specifier = ">=2025.0.0,<2026" },
+    { name = "mitol-django-mail", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-transcoding", specifier = ">=2025.5.21,<2026" },
     { name = "more-itertools", specifier = ">=10.1.0,<11" },
     { name = "ol-concourse", specifier = ">=0.5.8,<0.6" },
