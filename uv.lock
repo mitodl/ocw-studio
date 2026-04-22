@@ -1236,7 +1236,7 @@ wheels = [
 
 [[package]]
 name = "mitol-django-transcoding"
-version = "2025.5.21"
+version = "2026.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3" },
@@ -1244,9 +1244,9 @@ dependencies = [
     { name = "django-stubs" },
     { name = "mitol-django-common" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/82/70/add89c781d35a0f0f1893c3dc93d34b61e7c7a2d5c89afd4b382a3a982e1/mitol_django_transcoding-2025.5.21.tar.gz", hash = "sha256:456b444f606d7bad032a1249fd4c8789a3c5c08f15e72353bb00b8878cbe487f", size = 6018, upload-time = "2025-05-21T07:55:51.546Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/ee/6d2db3a89e54ba8605b5cf64df8144bd606015e0801c404ad49b18ba8d0a/mitol_django_transcoding-2026.4.2.tar.gz", hash = "sha256:57a729c84e53a8488cff33acf537fd7c23a0be3f8027e18e5e8d4c4d867cc5bf", size = 5953, upload-time = "2026-04-02T15:46:56.643Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/de/e8dfd26f07c3c43f57d073aaae465087f1bf897f18dc4f6288e42354728d/mitol_django_transcoding-2025.5.21-py3-none-any.whl", hash = "sha256:0bf29ca82adf059c66def1841b55bd117d9ce5e35b0db6a7bd30647880c24baa", size = 9513, upload-time = "2025-05-21T07:55:50.776Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/21/d92a04459d6d55b3d746c249f4cffaf0116c1a62cc4e8d86f7197282739a/mitol_django_transcoding-2026.4.2-py3-none-any.whl", hash = "sha256:91d9510e0ef166af145ad8a25ce65ff5c768397b3d166e46433bacd8a116205e", size = 9273, upload-time = "2026-04-02T15:46:55.628Z" },
 ]
 
 [[package]]
@@ -1427,7 +1427,7 @@ requires-dist = [
     { name = "mitol-django-authentication", specifier = "==2025.3.17" },
     { name = "mitol-django-common", specifier = ">=2023.6.27.1,<2024" },
     { name = "mitol-django-mail", specifier = ">=2025.0.0,<2026" },
-    { name = "mitol-django-transcoding", specifier = ">=2025.5.21,<2026" },
+    { name = "mitol-django-transcoding", specifier = ">=2026.4.2,<2027" },
     { name = "more-itertools", specifier = ">=10.1.0,<11" },
     { name = "ol-concourse", specifier = ">=0.5.8,<0.6" },
     { name = "ol-concoursepy", specifier = "==0.0.41" },

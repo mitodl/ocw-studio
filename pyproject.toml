@@ -57,7 +57,7 @@ dependencies = [
     "yamale==6.1.0",
     "xmlsec==1.3.16",
     "posthog>=7.0.0,<8",
-    "mitol-django-transcoding>=2025.5.21,<2026",
+    "mitol-django-transcoding>=2026.4.2,<2027",
     "granian>=2.7.2",
 ]
 
