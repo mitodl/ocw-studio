@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.184.2
+Version 0.184.2 (Released April 24, 2026)
 ---------------
 
 - Remove 'Buy at Amazon' links (#2997)
