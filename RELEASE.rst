@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.184.3
+---------------
+
+- Add v3 offline var to e2e pipeline definition (#3005)
+- fix(deps): update dependency mitol-django-common, mitol-django-authentication, mitol-django-mail, mitol-django-transcoding and django-redis (#3001)
+- [pre-commit.ci] pre-commit autoupdate (#2991)
+
 Version 0.184.2 (Released April 24, 2026)
 ---------------
 
