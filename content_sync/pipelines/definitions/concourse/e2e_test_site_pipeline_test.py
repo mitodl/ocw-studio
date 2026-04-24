@@ -255,3 +255,6 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
     assert (
         playwright_task_params["WWW_CONTENT_PATH"] == f"../{www_content_git_identifier}"
     )
+    assert playwright_task_params["COURSE_V3_OFFLINE_HUGO_CONFIG_PATH"] == (
+        f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/ocw-course-v3/config-offline.yaml"
+    )
