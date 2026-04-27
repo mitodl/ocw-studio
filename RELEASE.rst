@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.184.3
+Version 0.184.3 (Released April 27, 2026)
 ---------------
 
 - Add v3 offline var to e2e pipeline definition (#3005)
