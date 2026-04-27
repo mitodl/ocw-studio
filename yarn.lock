@@ -13542,12 +13542,12 @@ __metadata:
   linkType: hard
 
 "sentry-testkit@npm:^6.0.0":
-  version: 6.4.0
-  resolution: "sentry-testkit@npm:6.4.0"
+  version: 6.4.1
+  resolution: "sentry-testkit@npm:6.4.1"
   dependencies:
     body-parser: "npm:^1.20.3"
     express: "npm:^4.21.2"
-  checksum: 10c0/3d79ceb4d1e76fb73b8356e1bf38b227dafb1d2a02b28ff3c66c82e0eca494c8ff6b8a5877b0c15d5d2bf907d26db0ebaf523fe40a7560533c6a1e688361c627
+  checksum: 10c0/3b143d3c579b12d3389df25b5f565b327f28b64064a02627387bf903ec4d583297f97db36d87575da1e306b8f4095fd92ddaf8422e9299a07e202fe3df51ca93
   languageName: node
   linkType: hard
 
