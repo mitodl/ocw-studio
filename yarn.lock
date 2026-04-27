@@ -9688,11 +9688,11 @@ __metadata:
   linkType: hard
 
 "jest-when@npm:^4.0.0":
-  version: 4.0.1
-  resolution: "jest-when@npm:4.0.1"
+  version: 4.0.3
+  resolution: "jest-when@npm:4.0.3"
   peerDependencies:
     jest: ">= 27"
-  checksum: 10c0/4354dcb44141ed5d761840ef1c40fada26d41f12a580a35e8523f475fba0dfaaadaf6996693da4bd398e1e2bcbd9e60b6e8d2f99ddf72455d5e594cb9e8e52d3
+  checksum: 10c0/e29aac22580adf4d1883f8d9c9d3551b2d2c4b21a64dc278b60bb58bdece19755ab69fc7ce94d9c0b68e2eca6b402647562cc4a1e705154d56630cbd8cb8bb56
   languageName: node
   linkType: hard
 
