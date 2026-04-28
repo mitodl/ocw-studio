@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+Version 0.184.4 (Released April 28, 2026)
+---------------
+
+- Update dependency requests to v2.33.1 (#3011)
+- Update dependency prettier to v3.8.3 (#2985)
+- Update dependency sentry-testkit to v6.4.1 (#3012)
+- Update dependency jest-when to v4.0.2 (#3010)
+- Update dependency boto3 to v1.42.88 (#3009)
+- Update dependency @swc/core to v1.15.30 (#3008)
+
 Version 0.184.3 (Released April 27, 2026)
 ---------------
 
