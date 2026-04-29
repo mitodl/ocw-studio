@@ -983,6 +983,13 @@ CONCOURSE_IS_PRIVATE_REPO = get_bool(
     description="True if a git repo requires authentication to retrieve",
     required=False,
 )
+SYSTEM_ARCHITECTURE = get_string(
+    name="SYSTEM_ARCHITECTURE",
+    default="x86_64",
+    description="System architecture for pipeline image selection",
+    required=False,
+)
+
 # Git backend settings
 GIT_TOKEN = get_string(
     name="GIT_TOKEN",

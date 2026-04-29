@@ -369,7 +369,15 @@ AWS_OFFLINE_TEST_BUCKET_NAME=ocw-content-offline-test
 STATIC_API_BASE_URL_TEST=http://10.1.0.102:8046
 ```
 
-There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the ID's of the `ocw-www` and `ocw-course` starters are referenced. If these ID's are not correct on your system, you can get the ID's of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
+If you are running on Apple Silicon (arm64), you should also set:
+
+```
+SYSTEM_ARCHITECTURE=arm64
+```
+
+This ensures the e2e test pipeline uses an explicit `amd64` Playwright image, which is required because `hugo-bin-extended` ships an `x86_64` binary.
+
+There are fixtures for two test websites in the `test_site_fixtures` folder. These contain two sites; `ocw-ci-test-www` and `ocw-ci-test-course` along with test content. In `test_websites.json`, the IDs of the `ocw-www` and `ocw-course` starters are referenced. If these IDs are not correct on your system, you can get the IDs of your starters in Django admin and modify the fixture. They can be loaded into the database with the following commands:
 
 ```
 docker-compose exec web ./manage.py loaddata test_site_fixtures/test_websites.json
