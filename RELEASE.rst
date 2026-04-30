@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.184.5
+---------------
+
+- Remove Lecture Videos LRT from non-video resources (#3027)
+- Update Playwright image with Apple Silicon support; ignore v3 offline tests (#3026)
+- Update dependency more-itertools to v11 (#3017)
+- Update dependency @sentry/react to v10 (#3022)
+- Update dependency sentry-sdk to v2.58.0 (#3021)
+- Update dependency pygithub to v2.9.1 (#3020)
+- Update dependency stylelint to v17 (#3024)
+- [pre-commit.ci] pre-commit autoupdate (#3019)
+- Update dependency stylelint-config-standard-scss to v17 (#3025)
+- Update astral-sh/setup-uv action to v8 (#3014)
+
 Version 0.184.4 (Released April 28, 2026)
 ---------------
 
