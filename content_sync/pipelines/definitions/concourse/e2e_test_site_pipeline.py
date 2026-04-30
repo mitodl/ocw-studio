@@ -298,7 +298,10 @@ class EndToEndTestPipelineDefinition(Pipeline):
                     params={
                         "PLAYWRIGHT_BASE_URL": static_api_base_url,
                         "CI": "1",
-                        "TESTS_IGNORE": "**/ocw-ci-test-course-v3/**",
+                        "TESTS_IGNORE": (
+                            "**/ocw-ci-test-course-v3/**"
+                            ",**/ocw-ci-test-course-v3-offline/**"
+                        ),
                         "FEATURE_ENABLE_LEARN_INTEGRATION": "true",
                         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                         "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,

@@ -983,6 +983,18 @@ CONCOURSE_IS_PRIVATE_REPO = get_bool(
     description="True if a git repo requires authentication to retrieve",
     required=False,
 )
+PLAYWRIGHT_IMAGE_ARCH = get_string(
+    name="PLAYWRIGHT_IMAGE_ARCH",
+    default="",
+    description=("Architecture suffix for the Playwright image tag (e.g., 'amd64')."),
+    required=False,
+)
+if PLAYWRIGHT_IMAGE_ARCH not in {"", "amd64"}:
+    msg = (
+        f"PLAYWRIGHT_IMAGE_ARCH must be 'amd64' or unset, got {PLAYWRIGHT_IMAGE_ARCH!r}"
+    )
+    raise ImproperlyConfigured(msg)
+
 # Git backend settings
 GIT_TOKEN = get_string(
     name="GIT_TOKEN",

@@ -1,3 +1,4 @@
+from django.conf import settings
 from ol_concourse.lib.constants import REGISTRY_IMAGE
 from ol_concourse.lib.models.pipeline import AnonymousResource, RegistryImage
 
@@ -24,9 +25,14 @@ CURL_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE, source=RegistryImage(repository="curlimages/curl")
 )
 
+PLAYWRIGHT_VERSION = "v1.59.1"
+PLAYWRIGHT_TAG = (
+    f"{PLAYWRIGHT_VERSION}-jammy-{settings.PLAYWRIGHT_IMAGE_ARCH}"
+    if settings.PLAYWRIGHT_IMAGE_ARCH
+    else f"{PLAYWRIGHT_VERSION}-jammy"
+)
+
 PLAYWRIGHT_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
-    source=RegistryImage(
-        repository="mcr.microsoft.com/playwright", tag="v1.40.0-jammy"
-    ),
+    source=RegistryImage(repository="mcr.microsoft.com/playwright", tag=PLAYWRIGHT_TAG),
 )
