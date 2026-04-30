@@ -27,8 +27,8 @@ CURL_REGISTRY_IMAGE = AnonymousResource(
 
 PLAYWRIGHT_VERSION = "v1.59.1"
 PLAYWRIGHT_TAG = (
-    f"{PLAYWRIGHT_VERSION}-jammy-amd64"
-    if settings.SYSTEM_ARCHITECTURE == "arm64"
+    f"{PLAYWRIGHT_VERSION}-jammy-{settings.PLAYWRIGHT_IMAGE_ARCH}"
+    if settings.PLAYWRIGHT_IMAGE_ARCH
     else f"{PLAYWRIGHT_VERSION}-jammy"
 )
 

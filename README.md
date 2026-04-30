@@ -372,7 +372,7 @@ STATIC_API_BASE_URL_TEST=http://10.1.0.102:8046
 If you are running on Apple Silicon (arm64), you should also set:
 
 ```
-SYSTEM_ARCHITECTURE=arm64
+PLAYWRIGHT_IMAGE_ARCH=amd64
 ```
 
 This ensures the e2e test pipeline uses an explicit `amd64` Playwright image, which is required because `hugo-bin-extended` ships an `x86_64` binary.
