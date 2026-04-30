@@ -5,8 +5,8 @@ content. Since this is a data fix, there is no reverse migration implemented.
 
 from django.db import migrations
 
-from websites.constants import CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO
-
+CONTENT_TYPE_RESOURCE = "resource"
+RESOURCE_TYPE_VIDEO = "Video"
 LECTURE_VIDEOS_LRT = "Lecture Videos"
 
 
