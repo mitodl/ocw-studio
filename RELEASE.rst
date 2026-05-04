@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.184.5
+Version 0.184.5 (Released May 04, 2026)
 ---------------
 
 - Remove Lecture Videos LRT from non-video resources (#3027)
