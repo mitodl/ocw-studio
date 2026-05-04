@@ -1,7 +1,7 @@
 """Syncing API"""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 
 import pytz
@@ -11,7 +11,6 @@ from mitol.common.utils import now_in_utc
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
-from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
@@ -249,20 +248,37 @@ def publish_website(  # pylint: disable=too-many-arguments
 
 def throttle_git_backend_calls(backend: object, min_delay: int | None = None):
     """If the current git api limit is too low, sleep until it is reset"""
-    min_delay = min_delay or settings.GITHUB_RATE_LIMIT_MIN_SLEEP
-    if settings.GITHUB_RATE_LIMIT_CHECK and isinstance(backend, GithubBackend):
-        requests_remaining, limit = backend.api.git.rate_limiting
-        reset_time = datetime.fromtimestamp(
-            backend.api.git.rate_limiting_resettime, tz=pytz.utc
-        )
-        log.debug(
-            "Remaining github calls : %d/%d, reset: %s",
-            requests_remaining,
-            limit,
-            reset_time.isoformat(),
-        )
-        if requests_remaining <= settings.GITHUB_RATE_LIMIT_CUTOFF:
-            sleep((reset_time - now_in_utc()).seconds)
-        else:
-            # Always wait x seconds between git backend calls
-            sleep(min_delay)
+    check_setting = getattr(backend, "rate_limit_check_setting", None)
+    cutoff_setting = getattr(backend, "rate_limit_cutoff_setting", None)
+    min_sleep_setting = getattr(backend, "rate_limit_min_sleep_setting", None)
+    backend_name = getattr(backend, "rate_limit_name", "git")
+
+    if not all([check_setting, cutoff_setting, min_sleep_setting]) or not hasattr(
+        backend, "get_rate_limit_status"
+    ):
+        return
+    if not getattr(settings, check_setting):
+        return
+
+    min_delay = min_delay or getattr(settings, min_sleep_setting)
+    rate_limit_status = backend.get_rate_limit_status()
+    if rate_limit_status is None:
+        sleep(min_delay)
+        return
+
+    requests_remaining, limit, reset_time = rate_limit_status
+    if isinstance(reset_time, (int, float)):
+        reset_time = datetime.fromtimestamp(reset_time, tz=pytz.utc)
+    elif not isinstance(reset_time, datetime):
+        reset_time = now_in_utc() + timedelta(seconds=min_delay + 2)
+    log.debug(
+        "Remaining %s calls : %d/%d, reset: %s",
+        backend_name,
+        requests_remaining,
+        limit,
+        reset_time.isoformat(),
+    )
+    if requests_remaining <= getattr(settings, cutoff_setting):
+        sleep((reset_time - now_in_utc()).seconds)
+    else:
+        sleep(min_delay)
