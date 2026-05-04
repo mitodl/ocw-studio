@@ -2,9 +2,13 @@
 
 import logging
 from typing import TYPE_CHECKING
+from datetime import datetime
 
 from django.conf import settings
 from github.GithubObject import NotSet
+from github.PullRequest import PullRequest
+from github.Repository import Repository
+from mitol.common.utils import now_in_utc
 from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import (
@@ -35,6 +39,10 @@ class GithubBackend(BaseSyncBackend):
     """
 
     IGNORED_PATHS = {"README.md"}
+    rate_limit_name = "github"
+    rate_limit_check_setting = "GITHUB_RATE_LIMIT_CHECK"
+    rate_limit_cutoff_setting = "GITHUB_RATE_LIMIT_CUTOFF"
+    rate_limit_min_sleep_setting = "GITHUB_RATE_LIMIT_MIN_SLEEP"
 
     def __init__(self, website: Website):
         """Initialize the Github API backend for a specific website"""
@@ -44,6 +52,22 @@ class GithubBackend(BaseSyncBackend):
     def backend_exists(self):
         """Determine if the website repo exists"""
         return self.api.repo_exists()
+
+    def get_rate_limit_status(self):
+        """Return github rate limit state."""
+        requests_remaining, limit = self.api.git.rate_limiting
+        reset_time = getattr(self.api.git, "rate_limiting_resettime", None)
+        if isinstance(reset_time, (int, float, datetime)):
+            return requests_remaining, limit, reset_time
+        if isinstance(limit, (int, float, datetime)):
+            if isinstance(limit, datetime):
+                return requests_remaining, 0, limit
+            return requests_remaining, limit, limit
+        return (
+            requests_remaining,
+            0,
+            now_in_utc().timestamp() + settings.GITHUB_RATE_LIMIT_MIN_SLEEP + 2,
+        )
 
     def create_website_in_backend(self) -> Repository:
         """
