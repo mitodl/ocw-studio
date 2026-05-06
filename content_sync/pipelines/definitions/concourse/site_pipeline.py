@@ -213,20 +213,20 @@ class SitePipelineDefinitionConfig:
         starter_slug = theme_slug if theme_slug else site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
-        base_url_path = (
-            f"/{self.prefix}/{self.base_url}" if self.prefix else f"/{self.base_url}"
-        )
-
-        # ocw-course-v3 extra-theme course pages are served on Learn under
-        # /courses/o/<course-path>, so generated Hugo URLs must use that path.
         if (
             self.prefix == "ocw-course-v3"
             and self.is_extra_theme
             and not self.is_root_website
         ):
-            base_url_path = f"/courses/o/{
-                self.base_url.removeprefix('/courses/').removeprefix('courses/')
-            }"
+            # ocw-course-v3 extra-theme course pages are served on Learn under
+            # /courses/o/<course-path>, so generated Hugo URLs must use that path.
+            base_url_path = f"/courses/o/{self.base_url.removeprefix('courses/')}"
+        else:
+            base_url_path = (
+                f"/{self.prefix}/{self.base_url}"
+                if self.prefix
+                else f"/{self.base_url}"
+            )
 
         base_online_args.update(
             {
