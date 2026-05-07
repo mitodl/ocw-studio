@@ -260,7 +260,7 @@ class Website(TimestampedModel):
         if with_prefix:
             if root_path and not url_path.startswith(root_path):
                 url_path = self.assemble_full_url_path(url_path)
-        elif url_path is not None:
+        elif url_path is not None and root_path:
             url_path = re.sub(f"^{re.escape(root_path)}/", "", url_path, count=1)
         return url_path
 
