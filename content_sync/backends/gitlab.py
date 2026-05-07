@@ -82,10 +82,18 @@ class GitlabBackend(BaseSyncBackend):
         )
 
     def sync_all_content_to_backend(
-        self, query_set: WebsiteContentQuerySet | None = None
+        self,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        use_batch_commits: bool = False,
+        batch_size: int | None = None,
     ):
         """Sync all the website's files to GitLab in one commit."""
-        return self.api.upsert_content_files(query_set=query_set)
+        return self.api.upsert_content_files(
+            query_set=query_set,
+            use_batch_commits=use_batch_commits,
+            batch_size=batch_size,
+        )
 
     def delete_content_in_backend(self, sync_state: ContentSyncState):
         """Delete content from GitLab."""
