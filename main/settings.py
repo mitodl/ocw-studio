@@ -1049,8 +1049,14 @@ GITHUB_TIMEOUT = get_int(
 )
 GITLAB_TIMEOUT = get_int(
     name="GITLAB_TIMEOUT",
-    default=15,
-    description="Timeout in seconds for GitLab API requests",
+    default=None,
+    description="Timeout in seconds for GitLab API requests, or None for no timeout",
+    required=False,
+)
+GITLAB_COMMIT_BATCH_SIZE = get_int(
+    name="GITLAB_COMMIT_BATCH_SIZE",
+    default=200,
+    description="Number of content records to include in each GitLab sync commit",
     required=False,
 )
 GIT_ORGANIZATION = get_string(
