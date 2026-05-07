@@ -30,6 +30,7 @@ def mock_gdrive_build(mocker):
     made by any test that doesn't explicitly need it.
     """
     mocker.patch("gdrive_sync.api.build")
+    mocker.patch("videos.youtube.build")
 
 
 @pytest.fixture
