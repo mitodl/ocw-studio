@@ -191,3 +191,41 @@ inline-quotes = "double"
 "**/migrations/**" = ["ARG001"]
 "**/apps.py" = ["PLC0415"]
 "repl.py" = ["S603"]
+
+
+[tool.pytest.ini_options]
+addopts = "--cov . --cov-report term --cov-report html --cov-report xml --ds=main.settings --reuse-db"
+norecursedirs = [
+    "node_modules",
+    ".git",
+    "static",
+    "templates",
+    ".*",
+    "CVS",
+    "_darcs",
+    "{arch}",
+    "*.egg",
+    "s3",
+]
+filterwarnings = [
+    "error",
+    # billiard / rest_framework / sentry_sdk / django / pyyaml:
+    # unclosed SSL sockets from test HTTP calls; these are third-party library
+    # resource-cleanup issues
+    "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
+    # ol-concoursepy: uses the pydantic v1 `update_forward_refs` API which is
+    # deprecated in pydantic v2; upstream fix needed in ol-concoursepy
+    "ignore:The `update_forward_refs` method is deprecated",
+]
+env = [
+    "CELERY_TASK_ALWAYS_EAGER=True",
+    "DEBUG=False",
+    "OCW_STUDIO_DB_DISABLE_SSL=True",
+    "OCW_STUDIO_SECURE_SSL_REDIRECT=False",
+    "SENTRY_DSN=",
+    "WEBPACK_DISABLE_LOADER_STATS=True",
+    "CONTENT_SYNC_BACKEND=",
+    "OCW_STUDIO_USE_S3=False",
+    "OCW_IMPORT_STARTER_SLUG=course",
+    "OCW_COURSE_STARTER_SLUG=course",
+]

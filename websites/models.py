@@ -261,7 +261,7 @@ class Website(TimestampedModel):
             if root_path and not url_path.startswith(root_path):
                 url_path = self.assemble_full_url_path(url_path)
         elif url_path is not None:
-            url_path = re.sub(f"^{root_path}/", "", url_path, 1)  # noqa: B034
+            url_path = re.sub(f"^{root_path}/", "", url_path, count=1)
         return url_path
 
     def assemble_full_url_path(self, path):

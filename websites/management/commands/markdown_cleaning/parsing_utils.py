@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Union
 from uuid import UUID
 
-from pyparsing import ParserElement, ParseResults, originalTextFor
+from pyparsing import ParserElement, ParseResults, original_text_for
 
 import main.utils
 from websites.management.commands.markdown_cleaning.constants import (
@@ -18,7 +18,7 @@ INITIAL_DEFAULT_WHITESPACE_CHARS = ParserElement.DEFAULT_WHITE_CHARS
 
 
 def restore_initial_default_whitespace_chars():
-    ParserElement.setDefaultWhitespaceChars(INITIAL_DEFAULT_WHITESPACE_CHARS)
+    ParserElement.set_default_whitespace_chars(INITIAL_DEFAULT_WHITESPACE_CHARS)
 
 
 class WrappedParser:
@@ -28,13 +28,12 @@ class WrappedParser:
     This serves two purposes:
         1. Ensure availability of the original text for individual matches
             on parse actions.
-        2. Provide nice snake_case names. Our version of Pyparsing does not have
-            snake case names. (It's introduce in 3.0; we're on 2.4.7)
+        2. Provide nice snake_case names.
     """
 
     def __init__(self, grammar) -> None:
-        self.grammar = originalTextFor(grammar)
-        self.grammar.parseWithTabs()
+        self.grammar = original_text_for(grammar)
+        self.grammar.parse_with_tabs()
         self.set_parse_action()
 
     @staticmethod
@@ -55,8 +54,8 @@ class WrappedParser:
                 - ...: and any named properties on parse results of the underlying
                     grammar.
         """
-        self.grammar.setParseAction(self._original_text_for)
-        self.grammar.addParseAction(*parse_actions)
+        self.grammar.set_parse_action(self._original_text_for)
+        self.grammar.add_parse_action(*parse_actions)
 
     def parse_string(self, string: str, parse_all=True):  # noqa: FBT002
         """
@@ -65,19 +64,19 @@ class WrappedParser:
         Note: The default value for parse_all (True) is different from
         Pyparsing.
         """
-        return self.grammar.parseString(string, parseAll=parse_all)
+        return self.grammar.parse_string(string, parse_all=parse_all)
 
     def transform_string(self, string: str):
         """
         Snake-case alias for PyParsing's transformString
         """
-        return self.grammar.transformString(string)
+        return self.grammar.transform_string(string)
 
     def scan_string(self, string: str):
         """
         Snake-case alias for Pyparsing's scanString
         """
-        return self.grammar.scanString(string)
+        return self.grammar.scan_string(string)
 
 
 def escape_double_quotes(s: str):

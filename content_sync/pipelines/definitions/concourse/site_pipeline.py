@@ -22,6 +22,7 @@ from ol_concourse.lib.models.pipeline import (
     TryStep,
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
+from pydantic import ConfigDict
 
 from content_sync.constants import DEV_TEST_URL, TARGET_OFFLINE, TARGET_ONLINE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -938,8 +939,7 @@ class SitePipelineDefinition(Pipeline):
     _online_site_job_identifier = Identifier("online-site-job").root
     _offline_site_job_identifier = Identifier("offline-site-job").root
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
         base = super()

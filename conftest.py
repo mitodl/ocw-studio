@@ -20,6 +20,18 @@ def default_settings(settings):
     settings.DISABLE_WEBPACK_LOADER_STATS = True
 
 
+@pytest.fixture(autouse=True)
+def mock_gdrive_build(mocker):
+    """
+    Prevent tests from making real HTTP calls to the Google API discovery endpoint.
+    googleapiclient.discovery.build() fetches a discovery document over the network
+    when first called. Tests that exercise gdrive or YouTube code paths should mock
+    at the service/task level; this fixture ensures the underlying HTTP call is never
+    made by any test that doesn't explicitly need it.
+    """
+    mocker.patch("gdrive_sync.api.build")
+
+
 @pytest.fixture
 def mocked_celery(mocker):
     """Mock object that patches certain celery functions"""
@@ -39,22 +51,19 @@ def mocked_celery(mocker):
 
 
 @pytest.fixture
-@pytest.mark.django_db
-def course_starter(settings):
+def course_starter(settings, db):  # noqa: ARG001
     """Returns the 'course'-type WebsiteStarter that is seeded in a data migration"""  # noqa: D401
     return WebsiteStarter.objects.get(slug=settings.OCW_COURSE_STARTER_SLUG)
 
 
 @pytest.fixture
-@pytest.mark.django_db
-def omnibus_starter():
+def omnibus_starter(db):  # noqa: ARG001
     """Returns the omnibus WebsiteStarter that is seeded in a data migration"""  # noqa: D401
     return WebsiteStarter.objects.get(slug=OMNIBUS_STARTER_SLUG)
 
 
 @pytest.fixture
-@pytest.mark.django_db
-def omnibus_config(settings):
+def omnibus_config(settings, db):  # noqa: ARG001
     """Returns the omnibus site config"""  # noqa: D401
     with open(  # noqa: PTH123
         os.path.join(  # noqa: PTH118
