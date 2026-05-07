@@ -54,6 +54,40 @@ def get_token() -> str:
     raise ImproperlyConfigured(msg)
 
 
+def update_all_repos_visibility(visibility: str = "public") -> int:
+    """Update visibility for all repos in the configured GitLab group.
+
+    Returns the number of repos updated.
+    """
+    gl = gitlab.Gitlab(
+        url=settings.GIT_API_URL,
+        private_token=get_token(),
+        timeout=settings.GITLAB_TIMEOUT,
+    )
+    group = gl.groups.get(settings.GIT_ORGANIZATION)
+    count = 0
+    page = 1
+    per_page = 100
+
+    while True:
+        # Use explicit page params rather than get_all=True so we don't
+        # depend on potentially incorrect next-link URLs returned by GitLab.
+        projects = group.projects.list(page=page, per_page=per_page)
+        if not projects:
+            break
+
+        for stub in projects:
+            project = gl.projects.get(stub.id)
+            if project.visibility != visibility:
+                project.visibility = visibility
+                project.save()
+                count += 1
+
+        page += 1
+
+    return count
+
+
 class GitlabApiWrapper:
     """GitLab API wrapper class."""
 
@@ -114,6 +148,7 @@ class GitlabApiWrapper:
                     "name": self.website.short_id,
                     "namespace_id": self.group.id,
                     "initialize_with_readme": True,
+                    "visibility": "public",
                     **kwargs,
                 }
             )
@@ -210,8 +245,14 @@ class GitlabApiWrapper:
             }
         )
 
-    def upsert_content_files(self, query_set: WebsiteContentQuerySet | None = None):
-        """Commit all website content, with 1 commit per user."""
+    def upsert_content_files(
+        self,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        use_batch_commits: bool = False,
+        batch_size: int | None = None,
+    ):
+        """Commit all website content, with 1 commit per user by default."""
         if query_set:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
@@ -223,13 +264,23 @@ class GitlabApiWrapper:
             )
 
         for user_id in content_files:
-            self.upsert_content_files_for_user(user_id, query_set)
+            self.upsert_content_files_for_user(
+                user_id,
+                query_set,
+                use_batch_commits=use_batch_commits,
+                batch_size=batch_size,
+            )
 
     @retry_on_failure
     def upsert_content_files_for_user(
-        self, user_id=None, query_set: WebsiteContentQuerySet | None = None
+        self,
+        user_id=None,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        use_batch_commits: bool = False,
+        batch_size: int | None = None,
     ):
-        """Upsert multiple WebsiteContent objects to GitLab in one commit."""
+        """Upsert WebsiteContent objects to GitLab in one or more commits."""
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
         ).exclude(
@@ -239,8 +290,16 @@ class GitlabApiWrapper:
         if query_set:
             unsynced_states = unsynced_states.filter(content__in=query_set)
 
-        actions = []
-        synced_results = []
+        commit_batch_size = max(
+            1,
+            batch_size
+            if batch_size is not None
+            else getattr(settings, "GITLAB_COMMIT_BATCH_SIZE", 200),
+        )
+        user = User.objects.filter(id=user_id).first()
+        pending_actions: list[dict[str, str]] = []
+        pending_results: list[SyncResult] = []
+        latest_commit = None
 
         for sync_state in unsynced_states.iterator():
             content = sync_state.content
@@ -258,7 +317,14 @@ class GitlabApiWrapper:
                 ):
                     continue
 
-            synced_results.append(
+            data = serialize_content_to_file(
+                site_config=self.site_config, website_content=content
+            )
+            actions = self.get_commit_actions(sync_state, data, filepath)
+            if not actions:
+                continue
+
+            pending_results.append(
                 SyncResult(
                     sync_id=sync_state.id,
                     filepath=filepath,
@@ -266,16 +332,40 @@ class GitlabApiWrapper:
                     deleted=content.deleted is not None,
                 )
             )
+            pending_actions.extend(actions)
 
-            data = serialize_content_to_file(
-                site_config=self.site_config, website_content=content
+            if use_batch_commits and len(pending_results) >= commit_batch_size:
+                latest_commit = self.commit_actions(pending_actions, user)
+                self.update_sync_states(pending_results)
+                log.info(
+                    "Committed GitLab sync batch for website=%s user_id=%s items=%d actions=%d",  # noqa: E501
+                    self.website.name,
+                    user_id,
+                    len(pending_results),
+                    len(pending_actions),
+                )
+                pending_actions = []
+                pending_results = []
+
+        if not pending_actions:
+            return latest_commit
+
+        latest_commit = self.commit_actions(pending_actions, user)
+        self.update_sync_states(pending_results)
+        if use_batch_commits:
+            log.info(
+                "Committed GitLab sync batch for website=%s user_id=%s items=%d actions=%d",  # noqa: E501
+                self.website.name,
+                user_id,
+                len(pending_results),
+                len(pending_actions),
             )
-            actions.extend(self.get_commit_actions(sync_state, data, filepath))
+        return latest_commit
 
-        if not actions:
+    def update_sync_states(self, synced_results: list[SyncResult]):
+        """Persist sync-state updates for a committed batch."""
+        if not synced_results:
             return None
-
-        commit = self.commit_actions(actions, User.objects.filter(id=user_id).first())
 
         for sync_result in synced_results:
             sync_state = ContentSyncState.objects.get(id=sync_result.sync_id)
@@ -285,8 +375,7 @@ class GitlabApiWrapper:
                 sync_state.data = {GIT_DATA_FILEPATH: sync_result.filepath}
                 sync_state.synced_checksum = sync_result.checksum
                 sync_state.save()
-
-        return commit
+        return True
 
     @retry_on_failure
     def delete_content_file(self, content: WebsiteContent):
@@ -308,14 +397,28 @@ class GitlabApiWrapper:
     def merge_branches(self, from_branch: str, to_branch: str):
         """Merge one branch to another via merge request."""
         repo = self.get_repo()
-        merge_request = repo.mergerequests.create(
-            {
-                "source_branch": from_branch,
-                "target_branch": to_branch,
-                "title": f"Merge {from_branch} to {to_branch}",
-                "remove_source_branch": False,
-            }
-        )
+        try:
+            merge_request = repo.mergerequests.create(
+                {
+                    "source_branch": from_branch,
+                    "target_branch": to_branch,
+                    "title": f"Merge {from_branch} to {to_branch}",
+                    "remove_source_branch": False,
+                }
+            )
+        except GitlabCreateError as ge:
+            if ge.response_code != 409:  # noqa: PLR2004
+                raise
+            existing_mrs = repo.mergerequests.list(
+                state="opened",
+                source_branch=from_branch,
+                target_branch=to_branch,
+                get_all=True,
+            )
+            if not existing_mrs:
+                raise
+            merge_request = existing_mrs[0]
+
         try:
             merge_request.merge()
         except GitlabUpdateError as ge:
