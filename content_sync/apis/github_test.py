@@ -577,7 +577,7 @@ def test_get_token(settings, mocker, mock_rsa_key, use_app):
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
     github_app_token = "gh_token"  # noqa: S105
     mock_get_app_installation_id = mocker.patch(
-        "content_sync.apis.github.get_app_installation_id", return_value="123"
+        "content_sync.apis.github.get_app_installation_id", return_value=123
     )
     mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
     mock_integration.return_value.get_access_token.return_value.token = github_app_token

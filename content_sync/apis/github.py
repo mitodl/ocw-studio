@@ -124,7 +124,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             continue
 
 
-def get_app_installation_id(app: GithubIntegration) -> str | None:
+def get_app_installation_id(app: GithubIntegration) -> int | None:
     """
     Get the app installation id for the organization
     """
