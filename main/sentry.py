@@ -52,6 +52,6 @@ def init_sentry(*, dsn, environment, version, log_level, heroku_app_name):
         ],
     )
 
-    scope = sentry_sdk.get_current_scope()
+    scope = sentry_sdk.get_global_scope()
     if heroku_app_name:
         scope.set_tag("review_app_name", heroku_app_name)
