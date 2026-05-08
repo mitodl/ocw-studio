@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import F, Q
 from github import (
+    Auth,
     Consts,
     ContentFile,
     Github,
@@ -123,12 +124,12 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
             continue
 
 
-def get_app_installation_id(app: GithubIntegration) -> str | None:
+def get_app_installation_id(app: GithubIntegration) -> int | None:
     """
     Get the app installation id for the organization
     """
     headers = {
-        "Authorization": f"Bearer {app.create_jwt(expiration=600)}",
+        "Authorization": f"Bearer {app.auth.create_jwt(expiration=600)}",
         "Accept": Consts.mediaTypeIntegrationPreview,
         "User-Agent": "PyGithub/Python",
     }
@@ -165,8 +166,7 @@ def get_token():
                 .decode()
             )
             app = GithubIntegration(
-                settings.GITHUB_APP_ID,
-                private_key,
+                auth=Auth.AppAuth(settings.GITHUB_APP_ID, private_key),
                 **(
                     {"base_url": settings.GIT_API_URL}
                     if settings.GIT_API_URL is not None

@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from pyparsing import ParseResults, nestedExpr
+from pyparsing import ParseResults, nested_expr
 
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     ShortcodeParam,
@@ -51,10 +51,10 @@ class ShortcodeParser(WrappedParser):
 
             return _parse_action
 
-        angle_expr = nestedExpr(opener=R"{{<", closer=R">}}").setParseAction(
+        angle_expr = nested_expr(opener=R"{{<", closer=R">}}").set_parse_action(
             record_shortcode(percent_delimiters=False)
         )
-        percent_expr = nestedExpr(opener=R"{{%", closer=R"%}}").setParseAction(
+        percent_expr = nested_expr(opener=R"{{%", closer=R"%}}").set_parse_action(
             record_shortcode(percent_delimiters=True)
         )
 

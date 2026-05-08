@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from github import GithubException, GithubIntegration
+from github import Auth, GithubException, GithubIntegration
 from requests import HTTPError
 
 from content_sync.apis.github import (
@@ -577,7 +577,7 @@ def test_get_token(settings, mocker, mock_rsa_key, use_app):
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
     github_app_token = "gh_token"  # noqa: S105
     mock_get_app_installation_id = mocker.patch(
-        "content_sync.apis.github.get_app_installation_id", return_value="123"
+        "content_sync.apis.github.get_app_installation_id", return_value=123
     )
     mock_integration = mocker.patch("content_sync.apis.github.GithubIntegration")
     mock_integration.return_value.get_access_token.return_value.token = github_app_token
@@ -643,7 +643,9 @@ def test_get_app_installation_id(settings, mocker, mock_rsa_key, app_id, install
     settings.GITHUB_APP_ID = app_id
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
     installation_id = get_app_installation_id(
-        GithubIntegration(settings.GITHUB_APP_ID, mock_rsa_key.decode())
+        GithubIntegration(
+            auth=Auth.AppAuth(settings.GITHUB_APP_ID, mock_rsa_key.decode())
+        )
     )
     assert installation_id == install_id
 
@@ -660,7 +662,9 @@ def test_invalid_app_installation_id(
     settings.GITHUB_APP_PRIVATE_KEY = mock_rsa_key
     with pytest.raises(AssertionError):
         get_app_installation_id(
-            GithubIntegration(settings.GITHUB_APP_ID, mock_rsa_key.decode())
+            GithubIntegration(
+                auth=Auth.AppAuth(settings.GITHUB_APP_ID, mock_rsa_key.decode())
+            )
         )
 
 

@@ -289,7 +289,8 @@ class YouTubeApi:
         if not videofile or not videofile.video.webvtt_transcript_file:
             return
 
-        content = videofile.video.webvtt_transcript_file.open(mode="rb").read()
+        with videofile.video.webvtt_transcript_file.open(mode="rb") as f:
+            content = f.read()
 
         media_body = MediaIoBaseUpload(
             BytesIO(content), mimetype="text/vtt", chunksize=-1, resumable=True

@@ -13,8 +13,8 @@ from pyparsing import (
     White,
     Word,
     ZeroOrMore,
-    nestedExpr,
-    originalTextFor,
+    nested_expr,
+    original_text_for,
     quotedString,
 )
 
@@ -91,7 +91,7 @@ class LinkParser(WrappedParser):
         # By default pyparsing collapses whitespace characters.
         # Markdown cares about whitespace containing double newlines, so we
         # can't collapse newlines.
-        ParserElement.setDefaultWhitespaceChars("")
+        ParserElement.set_default_whitespace_chars("")
         grammar = (
             self._parser_piece_is_image()
             + self._parser_piece_text()
@@ -120,7 +120,7 @@ class LinkParser(WrappedParser):
 
             return ParseResults.from_dict({"link": link})
 
-        grammar.setParseAction(parse_action)
+        grammar.set_parse_action(parse_action)
 
         restore_initial_default_whitespace_chars()
 
@@ -134,8 +134,8 @@ class LinkParser(WrappedParser):
         """
         return (
             Optional("!")
-            .setResultsName("is_image")
-            .setParseAction(lambda s, l, toks: bool(toks))  # noqa: ARG005, E741
+            .set_results_name("is_image")
+            .set_parse_action(lambda s, l, toks: bool(toks))  # noqa: ARG005, E741
         )
 
     @staticmethod
@@ -165,16 +165,16 @@ class LinkParser(WrappedParser):
         # If this ever changes, we would need to change content to something
         # like Combine(OneOrMore(~ignore + content_character))
         content = content_character
-        text = originalTextFor(
-            nestedExpr(
+        text = original_text_for(
+            nested_expr(
                 opener="[",
                 closer="]",
                 content=content,
-                ignoreExpr=ignore,
+                ignore_expr=ignore,
             )
-        ).setResultsName("text")
+        ).set_results_name("text")
 
-        text.addParseAction(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
+        text.add_parse_action(lambda s, l, toks: toks[0][1:-1])  # noqa: ARG005, E741
 
         return text
 
@@ -187,9 +187,9 @@ class LinkParser(WrappedParser):
 
         # Capture everything between the balanced parentheses
         # Then parse it later.
-        dest_and_title = originalTextFor(
-            nestedExpr(opener="(", closer=")")
-        ).addParseAction(
+        dest_and_title = original_text_for(
+            nested_expr(opener="(", closer=")")
+        ).add_parse_action(
             lambda s, l, toks: toks[0][1:-1]  # noqa: ARG005, E741
         )
 
@@ -198,19 +198,19 @@ class LinkParser(WrappedParser):
             # But before each character (exact=1) check if we have a
             # shortcode. If we do, allow that.
             ZeroOrMore(
-                originalTextFor(nestedExpr(opener=R"{{<", closer=">}}"))
-                | originalTextFor(nestedExpr(opener=R"{{%", closer="%}}"))
+                original_text_for(nested_expr(opener=R"{{<", closer=">}}"))
+                | original_text_for(nested_expr(opener=R"{{%", closer="%}}"))
                 | CharsNotIn(" \t", exact=1)
             )
-        ).setResultsName("destination")
+        ).set_results_name("destination")
 
         # CommonMark requires link title to be encased in single-quotes,
         # double-quotes, or wrapped in parentheses. Let's not bother with
         # the parentheses case for now.
         title = (
             quotedString.copy()
-            .setResultsName("title")
-            .setParseAction(
+            .set_results_name("title")
+            .set_parse_action(
                 lambda s, l, toks: unescape_quoted_string(toks[0])  # noqa: ARG005, E741
             )
         )
@@ -219,8 +219,8 @@ class LinkParser(WrappedParser):
         dest_and_title_parser = destination + Optional(White(" ") + title) + StringEnd()
 
         def back_parse_action(_s, _l, toks):
-            return dest_and_title_parser.parseString(toks[0])
+            return dest_and_title_parser.parse_string(toks[0])
 
-        dest_and_title.addParseAction(back_parse_action)
+        dest_and_title.add_parse_action(back_parse_action)
 
         return dest_and_title
