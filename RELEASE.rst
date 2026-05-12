@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.185.0
+Version 0.185.0 (Released May 12, 2026)
 ---------------
 
 - Add migration to Nuclear Energy course topic (#3037)
