@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.185.0
+---------------
+
+- Add migration to Nuclear Energy course topic (#3037)
+- Update dependency django to v5.2.14 [SECURITY] (#3035)
+- Remove wildcard warning suppression; fix underlying issues (#3034)
+- Update dependency granian to v2.7.4 [SECURITY] (#3033)
+
 Version 0.184.5 (Released May 04, 2026)
 ---------------
 
