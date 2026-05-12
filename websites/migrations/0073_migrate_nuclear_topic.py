@@ -46,14 +46,17 @@ def update_topics(topics, old_subtopic, new_subtopic):
 def update_items(items, old_subtopic, new_subtopic):
     """Update topic metadata on Website or WebsiteContent items."""
     website_ids = set()
+    updated_items = []
     for item in items.iterator():
         metadata = item.metadata or {}
         topics = metadata.get("topics")
         if update_topics(topics, old_subtopic, new_subtopic):
             metadata["topics"] = topics
             item.metadata = metadata
-            item.save(update_fields=["metadata"])
+            updated_items.append(item)
             website_ids.add(getattr(item, "website_id", item.pk))
+    if updated_items:
+        items.model.objects.bulk_update(updated_items, ["metadata"])
     return website_ids
 
 
