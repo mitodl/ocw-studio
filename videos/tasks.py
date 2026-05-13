@@ -125,7 +125,7 @@ def upload_youtube_videos():  # noqa: C901
                 set_dict_field(
                     video_resource.metadata, settings.YT_FIELD_TAGS, merged_tags
                 )
-                video_resource.save(update_fields=["metadata"])
+                video_resource.save(update_fields=["metadata", "updated_on"])
 
         # Always save video_file status
         video_file.save()
