@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 
 import pytest
-from gitlab.exceptions import GitlabCreateError
+from gitlab.exceptions import GitlabCreateError, GitlabMRClosedError
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, update_all_repos_visibility
@@ -140,13 +140,22 @@ def test_upsert_content_files_for_user_defaults_to_single_commit(
 
 def test_merge_branches_reuses_existing_open_mr_on_409(mocker, gitlab_api_wrapper):
     """merge_branches should reuse an existing open MR when create returns 409."""
+    existing_mr_stub = mocker.Mock()
+    existing_mr_stub.iid = 123
     existing_mr = mocker.Mock()
     repo = mocker.Mock()
     repo.mergerequests.create.side_effect = GitlabCreateError(
         "conflict",
         response_code=409,
     )
-    repo.mergerequests.list.return_value = [existing_mr]
+    repo.mergerequests.list.return_value = [existing_mr_stub]
+    repo.mergerequests.get.return_value = existing_mr
+
+    preview_branch = mocker.Mock()
+    preview_branch.commit = {"id": "sha-main"}
+    repo.branches.get.return_value = preview_branch
+    repo.repository_compare.return_value = {"commits": []}
+
     mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
 
     result = gitlab_api_wrapper.merge_branches("main", "preview")
@@ -158,6 +167,7 @@ def test_merge_branches_reuses_existing_open_mr_on_409(mocker, gitlab_api_wrappe
         target_branch="preview",
         get_all=True,
     )
+    repo.mergerequests.get.assert_called_once_with(123)
     existing_mr.merge.assert_called_once()
 
 
@@ -169,10 +179,73 @@ def test_merge_branches_raises_on_409_without_existing_mr(mocker, gitlab_api_wra
         response_code=409,
     )
     repo.mergerequests.list.return_value = []
+
+    same_branch = mocker.Mock()
+    same_branch.commit = {"id": "sha-main"}
+    repo.branches.get.return_value = same_branch
+
     mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
 
     with pytest.raises(GitlabCreateError):
         gitlab_api_wrapper.merge_branches("main", "preview")
+
+
+def test_merge_branches_raises_when_target_tip_does_not_change(
+    mocker, gitlab_api_wrapper
+):
+    """merge_branches should fail if a merge attempt does not advance target."""
+    mr = mocker.Mock()
+    repo = mocker.Mock()
+    repo.mergerequests.create.return_value = mr
+
+    preview_branch = mocker.Mock()
+    preview_branch.commit = {"id": "preview-sha"}
+    repo.branches.get.return_value = preview_branch
+    repo.repository_compare.return_value = {"commits": [{"id": "main-sha"}]}
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    with pytest.raises(RuntimeError):
+        gitlab_api_wrapper.merge_branches("main", "preview")
+
+
+def test_merge_branches_accepts_noop_when_already_up_to_date(
+    mocker, gitlab_api_wrapper
+):
+    """merge_branches should treat already-equal source/target tips as a no-op."""
+    mr = mocker.Mock()
+    repo = mocker.Mock()
+    repo.mergerequests.create.return_value = mr
+
+    branch_preview = mocker.Mock()
+    branch_preview.commit = {"id": "same-sha"}
+    repo.branches.get.return_value = branch_preview
+    repo.repository_compare.return_value = {"commits": []}
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    result = gitlab_api_wrapper.merge_branches("main", "preview")
+
+    assert result is mr
+
+
+def test_merge_branches_accepts_mr_closed_when_already_up_to_date(
+    mocker, gitlab_api_wrapper
+):
+    """merge_branches should allow MR closed errors when tips already match."""
+    mr = mocker.Mock()
+    mr.merge.side_effect = GitlabMRClosedError("closed", response_code=405)
+    repo = mocker.Mock()
+    repo.mergerequests.create.return_value = mr
+
+    preview_branch = mocker.Mock()
+    preview_branch.commit = {"id": "same-sha"}
+    repo.branches.get.return_value = preview_branch
+    repo.repository_compare.return_value = {"commits": []}
+
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    result = gitlab_api_wrapper.merge_branches("main", "preview")
+
+    assert result is mr
 
 
 def test_create_repo_sets_public_visibility(settings, mocker):
