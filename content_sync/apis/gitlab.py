@@ -14,6 +14,7 @@ from gitlab.exceptions import (
     GitlabCreateError,
     GitlabDeleteError,
     GitlabGetError,
+    GitlabMRClosedError,
     GitlabUpdateError,
 )
 from safedelete.models import HARD_DELETE
@@ -397,6 +398,7 @@ class GitlabApiWrapper:
     def merge_branches(self, from_branch: str, to_branch: str):
         """Merge one branch to another via merge request."""
         repo = self.get_repo()
+        target_tip_before = repo.branches.get(to_branch).commit["id"]
         try:
             merge_request = repo.mergerequests.create(
                 {
@@ -417,15 +419,28 @@ class GitlabApiWrapper:
             )
             if not existing_mrs:
                 raise
-            merge_request = existing_mrs[0]
+            merge_request = repo.mergerequests.get(existing_mrs[0].iid)
 
         try:
             merge_request.merge()
-        except GitlabUpdateError as ge:
-            # Already merged / no changes are acceptable no-op outcomes.
+        except (GitlabUpdateError, GitlabMRClosedError) as ge:
+            # 405 can mean no changes/already merged. Validate branch movement below.
             if ge.response_code != 405:  # noqa: PLR2004
                 raise
-        return merge_request
+
+        target_tip_after = repo.branches.get(to_branch).commit["id"]
+        if target_tip_after != target_tip_before:
+            return merge_request
+
+        compare_result = repo.repository_compare(to_branch, from_branch)
+        if len(compare_result.get("commits", [])) == 0:
+            return merge_request
+
+        msg = (
+            "GitLab merge did not update target branch "
+            f"{from_branch}->{to_branch} for website={self.website.name}"
+        )
+        raise RuntimeError(msg)
 
     def git_user(self, user: User | None) -> dict[str, str]:
         """Return a name/email mapping to be used as committer metadata."""
