@@ -421,20 +421,25 @@ class GitlabApiWrapper:
                 raise
             merge_request = repo.mergerequests.get(existing_mrs[0].iid)
 
-        try:
-            merge_request.merge()
-        except (GitlabUpdateError, GitlabMRClosedError) as ge:
-            # 405 can mean no changes/already merged. Validate branch movement below.
-            if ge.response_code != 405:  # noqa: PLR2004
-                raise
+        for _ in range(3):
+            try:
+                merge_request.merge()
+            except (GitlabUpdateError, GitlabMRClosedError) as ge:
+                if ge.response_code != 405:  # noqa: PLR2004
+                    raise
 
-        target_tip_after = repo.branches.get(to_branch).commit["id"]
-        if target_tip_after != target_tip_before:
-            return merge_request
+            target_tip_after = repo.branches.get(to_branch).commit["id"]
+            if target_tip_after != target_tip_before:
+                return merge_request
 
-        compare_result = repo.repository_compare(to_branch, from_branch)
-        if len(compare_result.get("commits", [])) == 0:
-            return merge_request
+            compare_result = repo.repository_compare(to_branch, from_branch)
+            if len(compare_result.get("commits", [])) == 0:
+                return merge_request
+
+            # GitLab can briefly report non-mergeable states right after MR creation.
+            merge_request = repo.mergerequests.get(merge_request.iid)
+            if getattr(merge_request, "state", "") != "opened":
+                break
 
         msg = (
             "GitLab merge did not update target branch "
