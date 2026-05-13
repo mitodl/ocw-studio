@@ -36,7 +36,7 @@
   &.column-view {
     display: flex;
     flex-direction: column;
-    row-gap: 0; // sass-lint:disable-line no-misspelled-properties
+    row-gap: 0;
 
     .resource-item {
       background-color: initial;
