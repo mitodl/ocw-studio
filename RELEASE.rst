@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.186.0
+---------------
+
+- fix: make video workflows more robust (#3036)
+
 Version 0.185.0 (Released May 12, 2026)
 ---------------
 
