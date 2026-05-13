@@ -232,9 +232,13 @@ def test_merge_branches_accepts_mr_closed_when_already_up_to_date(
 ):
     """merge_branches should allow MR closed errors when tips already match."""
     mr = mocker.Mock()
+    mr.iid = 13
     mr.merge.side_effect = GitlabMRClosedError("closed", response_code=405)
+    refreshed_mr = mocker.Mock()
+    refreshed_mr.state = "closed"
     repo = mocker.Mock()
     repo.mergerequests.create.return_value = mr
+    repo.mergerequests.get.return_value = refreshed_mr
 
     preview_branch = mocker.Mock()
     preview_branch.commit = {"id": "same-sha"}
@@ -246,6 +250,41 @@ def test_merge_branches_accepts_mr_closed_when_already_up_to_date(
     result = gitlab_api_wrapper.merge_branches("main", "preview")
 
     assert result is mr
+
+
+def test_merge_branches_retries_once_after_405(mocker, gitlab_api_wrapper):
+    """merge_branches should refresh and retry merge once on transient 405."""
+    mr = mocker.Mock()
+    mr.iid = 7
+    mr.merge.side_effect = GitlabMRClosedError("closed", response_code=405)
+    refreshed_mr = mocker.Mock()
+    refreshed_mr.state = "opened"
+    refreshed_mr.merge.return_value = None
+
+    repo = mocker.Mock()
+    repo.mergerequests.create.return_value = mr
+    repo.mergerequests.get.return_value = refreshed_mr
+
+    before = mocker.Mock()
+    before.commit = {"id": "old-sha"}
+    still_before = mocker.Mock()
+    still_before.commit = {"id": "old-sha"}
+    after = mocker.Mock()
+    after.commit = {"id": "new-sha"}
+    repo.branches.get.side_effect = [before, still_before, after]
+    repo.repository_compare.side_effect = [
+        {"commits": [{"id": "from-sha"}]},
+        {"commits": []},
+    ]
+
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    result = gitlab_api_wrapper.merge_branches("main", "preview")
+
+    assert result is refreshed_mr
+    mr.merge.assert_called_once()
+    refreshed_mr.merge.assert_called_once()
+    repo.mergerequests.get.assert_called_once_with(7)
 
 
 def test_create_repo_sets_public_visibility(settings, mocker):
