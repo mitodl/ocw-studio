@@ -5,6 +5,7 @@ import os
 
 import botocore
 from django.conf import settings
+from django.db import transaction
 from mitol.transcoding.api import media_convert_job
 
 from content_sync.utils import move_s3_object
@@ -91,6 +92,7 @@ def process_video_outputs(video: Video, output_group_details: dict):
     prepare_video_download_file(video)
 
 
+@transaction.atomic
 def update_video_job(results: dict):
     """Update a VideoJob and associated Video, VideoFiles based on MediaConvert results"""  # noqa: E501
 
