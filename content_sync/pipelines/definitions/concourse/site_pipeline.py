@@ -78,6 +78,12 @@ BUILD_OFFLINE_SITE_IDENTIFIER = Identifier("build-offline-site").root
 UPLOAD_OFFLINE_BUILD_IDENTIFIER = Identifier("upload-offline-build").root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
 
+# Extra themes can be served under a different published base path than the
+# source site path used in Studio.
+EXTRA_THEME_BASE_URL_PREFIXES = {
+    "ocw-course-v3": "/courses/o",
+}
+
 
 def get_site_pipeline_definition_vars(namespace: str):
     return {
@@ -110,6 +116,26 @@ def get_site_pipeline_definition_vars(namespace: str):
         "theme_slug": f"(({namespace}theme_slug))",
         "gtm_account_id": f"(({namespace}gtm_account_id))",
     }
+
+
+def get_base_url_path(
+    prefix: str,
+    base_url: str,
+    site_root_path: str,
+    *,
+    is_extra_theme: bool,
+    is_root_website: bool,
+) -> str:
+    """Get the Hugo baseURL path for a site pipeline."""
+    extra_theme_base_url_prefix = EXTRA_THEME_BASE_URL_PREFIXES.get(prefix)
+    if is_extra_theme and not is_root_website and extra_theme_base_url_prefix:
+        root_prefix = site_root_path.strip("/")
+        course_path = base_url
+        if root_prefix:
+            course_path = base_url.removeprefix(f"{root_prefix}/")
+        return f"{extra_theme_base_url_prefix}/{course_path}"
+
+    return f"/{prefix}/{base_url}" if prefix else f"/{base_url}"
 
 
 class SitePipelineDefinitionConfig:
@@ -213,20 +239,13 @@ class SitePipelineDefinitionConfig:
         starter_slug = theme_slug if theme_slug else site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
-        if (
-            self.prefix == "ocw-course-v3"
-            and self.is_extra_theme
-            and not self.is_root_website
-        ):
-            # ocw-course-v3 extra-theme course pages are served on Learn under
-            # /courses/o/<course-path>, so generated Hugo URLs must use that path.
-            base_url_path = f"/courses/o/{self.base_url.removeprefix('courses/')}"
-        else:
-            base_url_path = (
-                f"/{self.prefix}/{self.base_url}"
-                if self.prefix
-                else f"/{self.base_url}"
-            )
+        base_url_path = get_base_url_path(
+            prefix=self.prefix,
+            base_url=self.base_url,
+            site_root_path=site.get_site_root_path() or "",
+            is_extra_theme=self.is_extra_theme,
+            is_root_website=self.is_root_website,
+        )
 
         base_online_args.update(
             {
