@@ -39,6 +39,7 @@ from videos.constants import (
     DESTINATION_YOUTUBE,
     S3_FILESIZE_TASK_RATE_LIMIT,
     YT_THUMBNAIL_IMG,
+    YTAGS_BATCH_LOCK_TTL,
     VideoFileStatus,
     VideoStatus,
     YouTubeStatus,
@@ -780,7 +781,8 @@ def _process_batch_videos(
     return success_count, skipped_count, error_count
 
 
-@app.task(bind=True, acks_late=True, max_retries=3)
+@app.task(bind=True, max_retries=3)
+@single_task(timeout=YTAGS_BATCH_LOCK_TTL, raise_block=False)
 def update_youtube_tags_batch(
     self,
     youtube_ids,
@@ -789,6 +791,13 @@ def update_youtube_tags_batch(
 ):
     """
     Update YouTube tags for a batch of videos identified by youtube_ids.
+
+    Only one instance runs at a time cluster-wide (enforced by the
+    @single_task Redis lock). Duplicate messages delivered by the broker
+    after a pod restart are silently dropped by the lock; if they fire
+    after the first copy has already completed, process_video_tags() detects
+    no tag changes and skips the videos.update call, spending only the
+    cheap videos.list quota.
 
     This task is designed to be scheduled with a countdown/eta so that
     large tag-update operations can be spread across multiple days

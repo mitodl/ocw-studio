@@ -19,6 +19,7 @@ from videos.constants import (
 )
 from videos.tasks import update_youtube_tags_batch
 from videos.utils import (
+    compute_merged_tags,
     fetch_youtube_snippets,
     get_course_tag,
     parse_tags,
@@ -380,7 +381,7 @@ class Command(WebsiteFilterCommand):
             next_saturday += timedelta(days=7)
         return int((next_saturday - now).total_seconds())
 
-    def _schedule_celery_tasks(  # noqa: C901, PLR0913
+    def _schedule_celery_tasks(  # noqa: C901, PLR0912, PLR0913, PLR0915
         self,
         video_resources,
         add_course_tag,
@@ -407,16 +408,52 @@ class Command(WebsiteFilterCommand):
             (daily_quota - 10) // QUOTA_COST_VIDEO_UPDATE,  # reserve 10 for list calls
         )
 
-        # Collect all YouTube IDs
-        all_youtube_ids = []
-        seen_ids = set()
+        # Collect all YouTube IDs, keeping the resource objects for pre-filtering.
+        yt_id_to_resources = {}
         for vr in video_resources:
             yt_id = get_dict_field(vr.metadata, settings.YT_FIELD_ID)
-            if yt_id and yt_id not in seen_ids:
-                all_youtube_ids.append(yt_id)
-                seen_ids.add(yt_id)
+            if yt_id:
+                yt_id_to_resources.setdefault(yt_id, []).append(vr)
 
+        all_youtube_ids = list(yt_id_to_resources.keys())
+
+        # Pre-filter: fetch current YouTube tags now so we only schedule tasks
+        # for videos that will actually change.  The list calls cost ~1 quota
+        # unit per 50 IDs — far cheaper than running 50-unit update tasks on
+        # videos that are already correct.
+        youtube = YouTubeApi()
+        snippets = fetch_youtube_snippets(youtube, all_youtube_ids)
+        list_quota_used = (
+            math.ceil(len(all_youtube_ids) / YT_LIST_BATCH_SIZE) * QUOTA_COST_VIDEO_LIST
+        )
+
+        filtered_ids = [
+            yt_id
+            for yt_id in all_youtube_ids
+            if (snippet := snippets.get(yt_id)) is not None
+            and any(
+                compute_merged_tags(vr, snippet, add_course_tag=add_course_tag)[2]
+                for vr in yt_id_to_resources[yt_id]
+            )
+        ]
+        prefiltered_count = len(all_youtube_ids) - len(filtered_ids)
+
+        if prefiltered_count:
+            self.stdout.write(
+                f"Pre-filtered {prefiltered_count} video(s) already up to date "
+                f"({list_quota_used} quota unit(s) used)."
+            )
+
+        all_youtube_ids = filtered_ids
         total_videos = len(all_youtube_ids)
+
+        if total_videos == 0:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "All videos already have the correct tags. Nothing to schedule."
+                )
+            )
+            return
         total_chunks = math.ceil(total_videos / videos_per_day)
         seconds_per_day = 24 * 60 * 60
 

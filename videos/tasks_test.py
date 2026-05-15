@@ -1134,6 +1134,22 @@ def test_start_transcript_job_no_retry_on_unexpected_error(mocker, settings):
 class TestUpdateYoutubeTagsBatch:
     """Tests for update_youtube_tags_batch Celery task"""
 
+    @pytest.fixture(autouse=True)
+    def allow_single_task_lock(self, mocker):
+        """
+        Mock the Redis lock used by @single_task so it always grants.
+        This keeps tests independent of real Redis state.
+        """
+        mock_lock = mocker.MagicMock()
+        mock_lock.acquire.return_value = True
+        mock_lock.locked.return_value = True
+        mock_redis = mocker.MagicMock()
+        mock_redis.lock.return_value = mock_lock
+        mocker.patch(
+            "content_sync.decorators.get_redis_connection", return_value=mock_redis
+        )
+        return mock_lock
+
     def test_updates_tags_and_saves_to_db(self, mocker, settings):
         """Test that the task updates YouTube tags and saves merged tags to DB"""
         settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
@@ -1316,3 +1332,65 @@ class TestUpdateYoutubeTagsBatch:
         tags = content.metadata["video_metadata"]["video_tags"]
         assert "python" in tags
         assert "test-course" in tags
+
+    def test_skips_when_lock_already_held(self, mocker, settings):
+        """When another instance holds the @single_task lock, the task exits silently."""
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+
+        # Override autouse fixture: lock not granted
+        mock_lock = mocker.MagicMock()
+        mock_lock.acquire.return_value = False
+        mock_lock.locked.return_value = False
+        mock_redis = mocker.MagicMock()
+        mock_redis.lock.return_value = mock_lock
+        mocker.patch(
+            "content_sync.decorators.get_redis_connection", return_value=mock_redis
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+
+        update_youtube_tags_batch(["yt_concurrent"])
+
+        mock_api_cls.assert_not_called()
+
+    def test_duplicate_batch_skips_yt_update(self, mocker, settings):
+        """
+        A duplicate delivery that fires after the original completes makes only
+        videos.list calls (process_video_tags detects no changes and skips update).
+        """
+        settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
+        settings.YT_REFRESH_TOKEN = "refresh"  # noqa: S105
+        settings.YT_CLIENT_ID = "client_id"
+        settings.YT_CLIENT_SECRET = "secret"  # noqa: S105
+        settings.YT_PROJECT_ID = "project"
+
+        website = WebsiteFactory.create(name="test-course")
+        video = VideoFactory.create(website=website)
+        VideoFileFactory.create(
+            video=video,
+            destination=DESTINATION_YOUTUBE,
+            destination_id="yt_dup_2",
+        )
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_metadata": {
+                    "youtube_id": "yt_dup_2",
+                    "video_tags": "python",
+                },
+            },
+        )
+
+        mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+        mock_api = mock_api_cls.return_value
+        # YouTube already has the same tags as DB — simulates state after first run
+        mock_api.client.videos.return_value.list.return_value.execute.return_value = {
+            "items": [{"id": "yt_dup_2", "snippet": {"tags": ["python"]}}]
+        }
+
+        update_youtube_tags_batch(["yt_dup_2"])
+
+        # videos.list was called (cheap) but videos.update was not (no change)
+        mock_api.client.videos.return_value.list.return_value.execute.assert_called()
+        mock_api.client.videos.return_value.update.return_value.execute.assert_not_called()
