@@ -381,7 +381,32 @@ class Command(WebsiteFilterCommand):
             next_saturday += timedelta(days=7)
         return int((next_saturday - now).total_seconds())
 
-    def _schedule_celery_tasks(  # noqa: C901, PLR0912, PLR0913, PLR0915
+    def _prefilter_videos(self, all_youtube_ids, yt_id_to_resources, add_course_tag):
+        """
+        Fetch current YouTube tags and return only the IDs that need updating.
+
+        Calls videos.list in batches (~1 quota unit per 50 IDs) and excludes
+        videos whose merged tags would be identical to their current YouTube
+        tags.  Returns (filtered_ids, list_quota_used).
+        """
+        youtube = YouTubeApi()
+        snippets = fetch_youtube_snippets(youtube, all_youtube_ids)
+        list_quota_used = (
+            math.ceil(len(all_youtube_ids) / YT_LIST_BATCH_SIZE) * QUOTA_COST_VIDEO_LIST
+        )
+
+        filtered_ids = [
+            yt_id
+            for yt_id in all_youtube_ids
+            if (snippet := snippets.get(yt_id)) is not None
+            and any(
+                compute_merged_tags(vr, snippet, add_course_tag=add_course_tag)[2]
+                for vr in yt_id_to_resources[yt_id]
+            )
+        ]
+        return filtered_ids, list_quota_used
+
+    def _schedule_celery_tasks(  # noqa: C901, PLR0912, PLR0913
         self,
         video_resources,
         add_course_tag,
@@ -417,25 +442,9 @@ class Command(WebsiteFilterCommand):
 
         all_youtube_ids = list(yt_id_to_resources.keys())
 
-        # Pre-filter: fetch current YouTube tags now so we only schedule tasks
-        # for videos that will actually change.  The list calls cost ~1 quota
-        # unit per 50 IDs — far cheaper than running 50-unit update tasks on
-        # videos that are already correct.
-        youtube = YouTubeApi()
-        snippets = fetch_youtube_snippets(youtube, all_youtube_ids)
-        list_quota_used = (
-            math.ceil(len(all_youtube_ids) / YT_LIST_BATCH_SIZE) * QUOTA_COST_VIDEO_LIST
+        filtered_ids, list_quota_used = self._prefilter_videos(
+            all_youtube_ids, yt_id_to_resources, add_course_tag
         )
-
-        filtered_ids = [
-            yt_id
-            for yt_id in all_youtube_ids
-            if (snippet := snippets.get(yt_id)) is not None
-            and any(
-                compute_merged_tags(vr, snippet, add_course_tag=add_course_tag)[2]
-                for vr in yt_id_to_resources[yt_id]
-            )
-        ]
         prefiltered_count = len(all_youtube_ids) - len(filtered_ids)
 
         if prefiltered_count:
