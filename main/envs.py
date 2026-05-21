@@ -130,6 +130,39 @@ def get_list_of_str(name, default):
     return parsed_value
 
 
+def get_dict_of_str(name, default):
+    """
+    Get an environment variable as a dictionary of strings.
+    Args:
+        name (str): An environment variable name
+        default (dict): The default value to use if the environment variable doesn't exist.
+    Returns:
+        dict[str, str]:
+            The environment variable value parsed as a dictionary of strings
+    """  # noqa: E501
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    parse_exception = EnvironmentVariableParseException(
+        f"Expected value in {name}={value} to be a dict of str"
+    )
+
+    try:
+        parsed_value = literal_eval(value)
+    except (ValueError, SyntaxError) as ex:
+        raise parse_exception from ex
+
+    if not isinstance(parsed_value, dict):
+        raise parse_exception
+
+    for key, item in parsed_value.items():
+        if not isinstance(key, str) or not isinstance(item, str):
+            raise parse_exception
+
+    return parsed_value
+
+
 def get_key(name, default):
     """
     Get an environment variable as a string representing a private or public key.

@@ -108,6 +108,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "hugo_args_offline": f"(({namespace}hugo_args_offline))",
         "prefix": f"(({namespace}prefix))",
         "theme_slug": f"(({namespace}theme_slug))",
+        "gtm_account_id": f"(({namespace}gtm_account_id))",
     }
 
 
@@ -203,6 +204,12 @@ class SitePipelineDefinitionConfig:
             if self.is_root_website:
                 self.url_path = site.name
         self.is_extra_theme = is_extra_theme(theme_slug)
+        self.gtm_account_id = settings.OCW_GTM_ACCOUNT_ID
+        if self.is_extra_theme:
+            self.gtm_account_id = (
+                settings.OCW_EXTRA_THEMES_GTM_IDS.get(theme_slug)
+                or settings.OCW_GTM_ACCOUNT_ID
+            )
         starter_slug = theme_slug if theme_slug else site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
@@ -269,6 +276,7 @@ class SitePipelineDefinitionConfig:
             "hugo_args_offline": hugo_args_offline,
             "prefix": self.prefix,
             "theme_slug": theme_slug or "",
+            "gtm_account_id": self.gtm_account_id,
         }
 
 
@@ -543,7 +551,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 attempts=3,
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-                    "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+                    "GTM_ACCOUNT_ID": pipeline_vars["gtm_account_id"],
                     "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -765,7 +773,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 attempts=3,
                 params={
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-                    "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+                    "GTM_ACCOUNT_ID": pipeline_vars["gtm_account_id"],
                     "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
                     "STATIC_API_BASE_URL": pipeline_vars["static_api_url"],
                     "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -1019,6 +1027,7 @@ class SitePipelineDefinition(Pipeline):
                     "hugo_args_offline": config.values["hugo_args_offline"],
                     "prefix": config.values["prefix"],
                     "theme_slug": config.values["theme_slug"],
+                    "gtm_account_id": config.values["gtm_account_id"],
                 }
             ),
         )
