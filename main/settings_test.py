@@ -134,6 +134,32 @@ class TestSettings(TestCase):
             "sslmode": "require"
         }
 
+    def test_extra_theme_gtm_ids_must_match_extra_themes(self):
+        """Extra theme GTM ID keys must be configured extra theme slugs."""
+        settings_vars = self.patch_settings(
+            {
+                **REQUIRED_SETTINGS,
+                "OCW_EXTRA_COURSE_THEMES": "ocw-course-v3,another-extra-theme",
+                "OCW_EXTRA_THEMES_GTM_IDS": (
+                    '{"ocw-course-v3": "extra-theme-tracking-id"}'
+                ),
+            }
+        )
+        assert settings_vars["OCW_EXTRA_THEMES_GTM_IDS"] == {
+            "ocw-course-v3": "extra-theme-tracking-id"
+        }
+
+        with pytest.raises(ImproperlyConfigured):
+            self.patch_settings(
+                {
+                    **REQUIRED_SETTINGS,
+                    "OCW_EXTRA_COURSE_THEMES": "ocw-course-v3",
+                    "OCW_EXTRA_THEMES_GTM_IDS": (
+                        '{"ocw_course_v3": "extra-theme-tracking-id"}'
+                    ),
+                }
+            )
+
     @staticmethod
     def test_semantic_version():
         """

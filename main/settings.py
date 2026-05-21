@@ -21,7 +21,7 @@ from mitol.common.envs import (
 )
 
 from main.constants import PRODUCTION_NAMES
-from main.envs import get_list_of_str
+from main.envs import get_dict_of_str, get_list_of_str
 from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
@@ -1297,6 +1297,19 @@ OCW_EXTRA_COURSE_THEMES = get_delimited_list(
     description="Additional Hugo themes to build for OCW course sites",
     required=False,
 )
+OCW_EXTRA_THEMES_GTM_IDS = get_dict_of_str(
+    name="OCW_EXTRA_THEMES_GTM_IDS",
+    default={},
+)
+unknown_extra_theme_gtm_ids = set(OCW_EXTRA_THEMES_GTM_IDS) - set(
+    OCW_EXTRA_COURSE_THEMES
+)
+if unknown_extra_theme_gtm_ids:
+    msg = (
+        "OCW_EXTRA_THEMES_GTM_IDS contains theme slugs that are not configured in "
+        f"OCW_EXTRA_COURSE_THEMES: {', '.join(sorted(unknown_extra_theme_gtm_ids))}"
+    )
+    raise ImproperlyConfigured(msg)
 OCW_HUGO_PROJECTS_BRANCH = get_string(
     name="OCW_HUGO_PROJECTS_BRANCH",
     description="The branch to use in development of ocw-hugo-projects",

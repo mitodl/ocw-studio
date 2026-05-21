@@ -380,7 +380,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     build_online_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-        "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+        "GTM_ACCOUNT_ID": config.vars["gtm_account_id"],
         "OCW_STUDIO_BASE_URL": ocw_studio_url,
         "STATIC_API_BASE_URL": branch_vars["static_api_url"],
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -399,6 +399,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         )
     assert set(build_online_site_expected_params).issubset(
         set(build_online_site_task["params"])
+    )
+    assert (
+        build_online_site_task["params"]["GTM_ACCOUNT_ID"]
+        == config.vars["gtm_account_id"]
     )
     upload_online_build_task = get_dict_list_item_by_field(
         items=online_site_tasks, field="task", value=UPLOAD_ONLINE_BUILD_IDENTIFIER
@@ -597,7 +601,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
     build_offline_site_expected_params = {
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
-        "GTM_ACCOUNT_ID": settings.OCW_GTM_ACCOUNT_ID,
+        "GTM_ACCOUNT_ID": config.vars["gtm_account_id"],
         "OCW_STUDIO_BASE_URL": ocw_studio_url,
         "STATIC_API_BASE_URL": branch_vars["static_api_url"],
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
@@ -616,6 +620,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         )
     assert set(build_offline_site_expected_params).issubset(
         set(build_offline_site_task["params"])
+    )
+    assert (
+        build_offline_site_task["params"]["GTM_ACCOUNT_ID"]
+        == config.vars["gtm_account_id"]
     )
     upload_offline_build_task = get_dict_list_item_by_field(
         offline_site_tasks, "task", UPLOAD_OFFLINE_BUILD_IDENTIFIER
@@ -1028,6 +1036,94 @@ def test_site_pipeline_definition_config_theme_slug(settings, mocker, theme_slug
     expected_slug = theme_slug if theme_slug else starter.slug
     assert f"/{expected_slug}/config.yaml" in config.hugo_args_online
     assert f"/{expected_slug}/config-offline.yaml" in config.hugo_args_offline
+
+
+@pytest.mark.parametrize(
+    "gtm_case",
+    [
+        {
+            "theme_slug": None,
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {"ocw-course-v3": "extra-theme-tracking-id"},
+            "expected_gtm_account_id": "default-tracking-id",
+        },
+        {
+            "theme_slug": "ocw-course-v2",
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {"ocw-course-v3": "extra-theme-tracking-id"},
+            "expected_gtm_account_id": "default-tracking-id",
+        },
+        {
+            "theme_slug": "another-theme",
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {"another-theme": "alternate-theme-tracking-id"},
+            "expected_gtm_account_id": "default-tracking-id",
+        },
+        {
+            "theme_slug": "ocw-course-v3",
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {},
+            "expected_gtm_account_id": "default-tracking-id",
+        },
+        {
+            "theme_slug": "ocw-course-v3",
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {"ocw-course-v3": ""},
+            "expected_gtm_account_id": "default-tracking-id",
+        },
+        {
+            "theme_slug": "ocw-course-v3",
+            "extra_themes": ["ocw-course-v3"],
+            "extra_themes_gtm_ids": {
+                "ocw-course-v3": "extra-theme-tracking-id&gtm_auth=fake-auth"
+            },
+            "expected_gtm_account_id": "extra-theme-tracking-id&gtm_auth=fake-auth",
+        },
+        {
+            "theme_slug": "another-extra-theme",
+            "extra_themes": ["ocw-course-v3", "another-extra-theme"],
+            "extra_themes_gtm_ids": {
+                "ocw-course-v3": "extra-theme-tracking-id",
+                "another-extra-theme": "alternate-theme-tracking-id",
+            },
+            "expected_gtm_account_id": "alternate-theme-tracking-id",
+        },
+    ],
+)
+def test_site_pipeline_definition_config_gtm_account_id(settings, mocker, gtm_case):
+    """Extra course themes should use their mapped GTM override when configured."""
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    settings.OCW_GTM_ACCOUNT_ID = "default-tracking-id"
+    settings.OCW_EXTRA_THEMES_GTM_IDS = gtm_case["extra_themes_gtm_ids"]
+    settings.OCW_EXTRA_COURSE_THEMES = gtm_case["extra_themes"]
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path="https://github.com/org/repo/site",
+        slug="gtm-config-test",
+    )
+    website = WebsiteFactory.create(starter=starter)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        theme_slug=gtm_case["theme_slug"],
+    )
+
+    assert config.gtm_account_id == gtm_case["expected_gtm_account_id"]
+    assert config.values["gtm_account_id"] == gtm_case["expected_gtm_account_id"]
 
 
 @pytest.mark.parametrize(
