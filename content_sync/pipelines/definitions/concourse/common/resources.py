@@ -29,12 +29,14 @@ class SlackAlertResource(Resource):
     """  # noqa: E501
 
     def __init__(self, **kwargs):
+        slack_url = getattr(settings, "CONCOURSE_SLACK_URL", None)
         super().__init__(
             name=SLACK_ALERT_RESOURCE_IDENTIFIER,
             icon="slack",
             type=slack_notification_resource().name,
             check_every="never",
-            source={"url": "((slack-url))", "disabled": "false"},
+            # Avoid runtime failures when no Concourse var source defines slack-url.
+            source={"url": slack_url or "https://example.invalid", "disabled": "false"},
             **kwargs,
         )
 
