@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.187.0
+---------------
+
+- Update dependency sentry-sdk to v2.59.0 (#3047)
+- Add per-theme GTM settings to pipelines (#3043)
+- Update astral-sh/setup-uv action to v8.1.0 (#3045)
+- Update dependency django-hijack to v3.7.8 (#3044)
+- Update dependency boto3 to v1.43.5 (#3046)
+- Update dependency webpack to v5.106.2 (#3016)
+- Update dependency sinon to v21.1.2 (#2989)
+- Update dependency posthog-js to v1.373.5 (#3013)
+- Remove unused legacy dotfiles and sass-lint (#3040)
+
 Version 0.186.0 (Released May 13, 2026)
 ---------------
 
