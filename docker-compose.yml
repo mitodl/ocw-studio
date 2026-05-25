@@ -160,6 +160,55 @@ services:
     networks:
     - default-network
 
+
+  keycloak-db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: postgres # pragma: allowlist secret
+    ports:
+    - "5432"
+    networks:
+      default-network:
+        aliases:
+        - keycloak-db
+
+    volumes:
+    - kc-db-data:/var/lib/postgresql/18/docker
+    - ./config/keycloak/db:/docker-entrypoint-initdb.d
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.7
+    depends_on:
+    - keycloak-db
+    environment:
+    - KEYCLOAK_SVC_KEYSTORE_PASSWORD=${KEYCLOAK_SVC_KEYSTORE_PASSWORD:-supersecret123456}
+    - KEYCLOAK_SVC_HOSTNAME=${KEYCLOAK_SVC_HOSTNAME:-kc.odl.local}
+    - KEYCLOAK_ADMIN=${KEYCLOAK_SVC_ADMIN:-admin}
+    - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_SVC_ADMIN_PASSWORD:-admin}
+    - KEYCLOAK_PORT=${KEYCLOAK_PORT:-7080}
+    - KEYCLOAK_SSL_PORT=${KEYCLOAK_SSL_PORT:-7443}
+    - _JAVA_OPTIONS=${JAVA_OPTIONS:-}
+    env_file: .env
+    ports:
+    - ${KEYCLOAK_PORT}:${KEYCLOAK_PORT:-7080}
+    - ${KEYCLOAK_SSL_PORT}:${KEYCLOAK_SSL_PORT:-7443}
+    networks:
+      default-network:
+        aliases:
+        - ${KEYCLOAK_SVC_HOSTNAME:-kc.odl.local}
+    command: | # pragma: allowlist secret
+      start --verbose --features scripts --import-realm --hostname=${KEYCLOAK_SVC_HOSTNAME:-kc.odl.local} --config-keystore-password=${KEYCLOAK_SVC_KEYSTORE_PASSWORD} --db-password=postgres
+      --hostname-strict=false --hostname-debug=true --https-port=${KEYCLOAK_SSL_PORT:-7443}
+      --https-certificate-file=/etc/x509/https/tls.crt --https-certificate-key-file=/etc/x509/https/tls.key
+      --http-enabled=true --http-port=${KEYCLOAK_PORT:-7080} --config-keystore=/etc/keycloak-store
+      --db=postgres --db-url-database=keycloak
+      --db-url-host=keycloak-db --db-schema=public --db-username=postgres
+    volumes:
+    - keycloak-store:/etc/keycloak-store
+    - ./config/keycloak/tls:/etc/x509/https
+    - ./config/keycloak/realms:/opt/keycloak/data/import
+
+
   concourse-keys:
     image: gotechnies/alpine-ssh
     entrypoint: /scripts/keys.sh
@@ -313,3 +362,5 @@ volumes:
   django_media: {}
   yarn-cache: {}
   concourse-keys: {}
+  kc-db-data: {}
+  keycloak-store: {}
