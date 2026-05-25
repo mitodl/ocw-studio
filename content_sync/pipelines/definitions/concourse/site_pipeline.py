@@ -78,12 +78,6 @@ BUILD_OFFLINE_SITE_IDENTIFIER = Identifier("build-offline-site").root
 UPLOAD_OFFLINE_BUILD_IDENTIFIER = Identifier("upload-offline-build").root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
 
-# Extra themes can be served under a different published base path than the
-# source site path used in Studio.
-EXTRA_THEME_BASE_URL_PREFIXES = {
-    "ocw-course-v3": "/courses/o",
-}
-
 
 def get_site_pipeline_definition_vars(namespace: str):
     return {
@@ -127,7 +121,7 @@ def get_base_url_path(
     is_root_website: bool,
 ) -> str:
     """Get the Hugo baseURL path for a site pipeline."""
-    extra_theme_base_url_prefix = EXTRA_THEME_BASE_URL_PREFIXES.get(prefix)
+    extra_theme_base_url_prefix = settings.OCW_EXTRA_THEMES_BASE_URLS.get(prefix)
     if is_extra_theme and not is_root_website and extra_theme_base_url_prefix:
         root_prefix = site_root_path.strip("/")
         course_path = base_url

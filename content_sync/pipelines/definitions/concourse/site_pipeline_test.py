@@ -1151,6 +1151,7 @@ def test_site_pipeline_definition_config_ocw_course_v3_baseurl(  # noqa: PLR0913
     unexpected_template,
 ):
     settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    settings.OCW_EXTRA_THEMES_BASE_URLS = {"ocw-course-v3": "/courses/o"}
     mocker.patch(
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
         return_value=False,
