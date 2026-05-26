@@ -921,33 +921,28 @@ SOCIAL_AUTH_USER_FIELD_MAPPING = {"fullname": "name"}
 # Keycloak social auth settings
 SOCIAL_AUTH_KEYCLOAK_KEY = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_KEY",
-    default=None,
     description="Keycloak client ID for social auth",
-    required=False,
+    required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_SECRET = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_SECRET",
-    default=None,
     description="Keycloak client secret for social auth",
-    required=False,
+    required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY",
-    default=None,
     description="Keycloak realm public key for social auth",
-    required=False,
+    required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL",
-    default=None,
     description="Keycloak authorization URL for social auth",
-    required=False,
+    required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL",
-    default=None,
     description="Keycloak access token URL for social auth",
-    required=False,
+    required=True,
 )
 
 
