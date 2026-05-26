@@ -68,7 +68,6 @@ import_settings_modules(
     "mitol.common.settings.base",
     "mitol.common.settings.webpack",
     "mitol.mail.settings.email",
-    "mitol.authentication.settings.touchstone",
     "mitol.transcoding.settings.job",
 )
 
@@ -919,14 +918,7 @@ SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [
 
 SOCIAL_AUTH_USER_FIELD_MAPPING = {"fullname": "name"}
 
-# SAML backend settings
-SOCIAL_AUTH_SAML_LOGIN_URL = get_string(
-    name="SOCIAL_AUTH_SAML_LOGIN_URL",
-    default=None,
-    description="The URL to redirect the user to for SAML login",
-    required=True,
-)
-
+# Keycloak social auth settings
 SOCIAL_AUTH_KEYCLOAK_KEY = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_KEY",
     default=None,

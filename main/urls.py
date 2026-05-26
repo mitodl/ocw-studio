@@ -38,7 +38,6 @@ urlpatterns = [
     path("logout/", LogoutView.as_view(), name="logout"),
     path("", include("news.urls")),
     path("", include("websites.urls")),
-    path("", include("mitol.authentication.urls.saml")),
     path("", include("mitol.mail.urls")),
     path("", include("videos.urls")),
     path("api/", include("mitol.transcoding.urls")),

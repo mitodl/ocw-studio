@@ -69,7 +69,7 @@ describe("Prompting for authentication", () => {
         const goToLogin = dom.queryByText(dialog, "Go to Login")
         assertInstanceOf(goToLogin, HTMLButtonElement)
         await act(() => user.click(goToLogin))
-        expect(window.location.href).toBe("/login/saml/?idp=default")
+        expect(window.location.href).toBe("/auth/login/keycloak/")
         result.unmount()
       })
 
