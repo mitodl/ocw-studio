@@ -201,6 +201,7 @@ def publish_website(  # pylint: disable=too-many-arguments
             if not website.publish_date:
                 pipeline.upsert_pipeline()
             pipeline.unpause_pipeline(version)
+            pipeline.check_online_site_job_resources(version)
             build_id = pipeline.trigger_pipeline_build(version)
             update_kwargs[f"latest_build_id_{version}"] = build_id
 
