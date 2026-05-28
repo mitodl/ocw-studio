@@ -33,6 +33,12 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
+)
 from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import (
     EndToEndTestPipelineDefinition,
 )
@@ -45,12 +51,6 @@ from content_sync.pipelines.definitions.concourse.remove_unpublished_sites impor
 )
 from content_sync.pipelines.definitions.concourse.s3_bucket_sync_pipeline import (
     S3BucketSyncPipelineDefinition,
-)
-from content_sync.pipelines.definitions.concourse.common.identifiers import (
-    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-    OCW_HUGO_THEMES_GIT_IDENTIFIER,
-    SITE_CONTENT_GIT_IDENTIFIER,
-    WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     SitePipelineDefinition,
