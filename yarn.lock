@@ -2582,7 +2582,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sinonjs/fake-timers@npm:^15.3.2":
+"@sinonjs/fake-timers@npm:^15.4.0":
   version: 15.4.0
   resolution: "@sinonjs/fake-timers@npm:15.4.0"
   dependencies:
@@ -6001,10 +6001,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diff@npm:^8.0.4":
-  version: 8.0.4
-  resolution: "diff@npm:8.0.4"
-  checksum: 10c0/7ee5d03926db4039be7252ac3b0abaae1bd122a2ca971e5ca7270e444e36ff83dd906fad1a719740ca347e97ed5dc8f458a76a8391dbcd7aff363bdafb348a00
+"diff@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "diff@npm:9.0.0"
+  checksum: 10c0/a971cc88f66071a33bd3942db2f51b57d484e9856265ae45cf44fb28ab2fde91f132d9c26d8be0fb6082d2be94d29e1295c1adb251b7461935d6a2dd304cd161
   languageName: node
   linkType: hard
 
@@ -10643,7 +10643,7 @@ __metadata:
     sass-loader: "npm:^16.0.0"
     sentry-testkit: "npm:^6.0.0"
     showdown: "npm:^2.0.0"
-    sinon: "npm:^21.0.0"
+    sinon: "npm:^22.0.0"
     style-loader: "npm:^4.0.0"
     stylelint: "npm:^17.0.0"
     stylelint-config-standard-scss: "npm:^17.0.0"
@@ -12987,15 +12987,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sinon@npm:^21.0.0":
-  version: 21.1.2
-  resolution: "sinon@npm:21.1.2"
+"sinon@npm:^22.0.0":
+  version: 22.0.0
+  resolution: "sinon@npm:22.0.0"
   dependencies:
     "@sinonjs/commons": "npm:^3.0.1"
-    "@sinonjs/fake-timers": "npm:^15.3.2"
+    "@sinonjs/fake-timers": "npm:^15.4.0"
     "@sinonjs/samsam": "npm:^10.0.2"
-    diff: "npm:^8.0.4"
-  checksum: 10c0/d33aaf68f9bd78ad32f68ace36b7437e1e1f93ea341c4c2fd814935b3bf6788169ebd6258c8bce195d3adb13198814f28048470d80fa239cf2ffbf50dfd3082b
+    diff: "npm:^9.0.0"
+  checksum: 10c0/66d087069330f30bbd3d32694bd60d8318491094a5400cedabd77c94ce79455972ec92aab5036c4bbb3ab186f42767a9109740b5af7e4cac17bb528899948523
   languageName: node
   linkType: hard
 
