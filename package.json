@@ -125,7 +125,7 @@
     "sass-loader": "^16.0.0",
     "sentry-testkit": "^6.0.0",
     "showdown": "^2.0.0",
-    "sinon": "^21.0.0",
+    "sinon": "^22.0.0",
     "style-loader": "^4.0.0",
     "stylelint": "^17.0.0",
     "stylelint-config-standard-scss": "^17.0.0",
