@@ -198,6 +198,44 @@ def fetch_youtube_snippets(youtube, youtube_ids):
     return snippets
 
 
+def compute_merged_tags(video_resource, snippet, *, add_course_tag):
+    """
+    Compute the merged tag state for a video resource without making any API
+    calls or DB writes.
+
+    Args:
+        video_resource: WebsiteContent instance
+        snippet: YouTube snippet dict (from the videos.list response)
+        add_course_tag: If True, include the course URL slug as a tag
+
+    Returns:
+        tuple[str, list[str], bool]:
+            - merged_str: comma-separated merged tag string
+            - merged_list: list of individual merged tags
+            - tags_changed: True if the merged set differs from the current
+              YouTube tags (or if current YouTube tags have formatting issues)
+    """
+    youtube_tags = snippet.get("tags", [])
+    db_tags_str = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
+    db_tags = set(parse_tags(db_tags_str or ""))
+
+    yt_tags_normalized = (
+        set().union(*(parse_tags(t) for t in youtube_tags)) if youtube_tags else set()
+    )
+    merged = yt_tags_normalized | db_tags
+    if add_course_tag:
+        course_slug = get_course_tag(video_resource.website)
+        if course_slug and course_slug not in merged:
+            merged.add(course_slug)
+
+    merged_str = ", ".join(sorted(merged))
+    merged_list = parse_tags(merged_str)
+    has_formatting_issues = any("," in tag for tag in youtube_tags)
+    tags_changed = merged != yt_tags_normalized or has_formatting_issues
+
+    return merged_str, merged_list, tags_changed
+
+
 def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     """
     Merge YouTube and DB tags for a single video resource then persist.
@@ -216,27 +254,11 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     Returns:
         str: ``"success"`` if YouTube was updated, ``"skip"`` otherwise
     """
-
     yt_id = get_dict_field(video_resource.metadata, settings.YT_FIELD_ID)
-    course_slug = get_course_tag(video_resource.website)
 
-    youtube_tags = snippet.get("tags", [])
-    db_tags_str = get_dict_field(video_resource.metadata, settings.YT_FIELD_TAGS)
-    db_tags = set(parse_tags(db_tags_str or ""))
-
-    yt_tags_normalized = (
-        set().union(*(parse_tags(t) for t in youtube_tags)) if youtube_tags else set()
+    merged_str, merged_list, tags_changed = compute_merged_tags(
+        video_resource, snippet, add_course_tag=add_course_tag
     )
-    merged = yt_tags_normalized | db_tags
-    if add_course_tag and course_slug and course_slug not in merged:
-        merged.add(course_slug)
-
-    merged_str = ", ".join(sorted(merged))
-    merged_list = parse_tags(merged_str)
-
-    # Detect formatting issues (e.g., commas in a single YouTube tag like "a, b")
-    has_formatting_issues = any("," in tag for tag in youtube_tags)
-    tags_changed = merged != yt_tags_normalized or has_formatting_issues
 
     if tags_changed:
         snippet["tags"] = merged_list

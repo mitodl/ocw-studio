@@ -23,6 +23,11 @@ ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT = "0.1/s"
 S3_FILESIZE_TASK_RATE_LIMIT = "5/s"
 
 
+# Lock TTL for the update_youtube_tags_batch single_task mutex.
+# Long enough for a full batch to complete; short enough to self-heal after a crash.
+YTAGS_BATCH_LOCK_TTL = 30 * 60  # 30 minutes
+
+
 class VideoStatus:
     """Simple class for possible Video statuses"""
 

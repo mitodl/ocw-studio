@@ -1146,6 +1146,12 @@ def test_update_youtube_tags_schedule_dispatches_celery_tasks(mock_youtube_api, 
         "videos.management.commands.update_youtube_tags.update_youtube_tags_batch"
     )
 
+    # Pre-filter fetches current YouTube tags; return empty tags so all videos
+    # are detected as needing an update (DB has tags, YouTube has none).
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {f"yt_sched_{i}": {"tags": []} for i in range(1, 6)}
+    )
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
@@ -1164,9 +1170,6 @@ def test_update_youtube_tags_schedule_dispatches_celery_tasks(mock_youtube_api, 
     # Second task should be delayed by 24 hours
     second_call = mock_task.apply_async.call_args_list[1]
     assert second_call.kwargs["countdown"] == 86400
-
-    # YouTube API should NOT have been called directly (no immediate processing)
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.assert_not_called()
 
 
 def test_update_youtube_tags_schedule_runs_immediately_below_threshold(
@@ -1287,6 +1290,12 @@ def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker):
         "videos.management.commands.update_youtube_tags.update_youtube_tags_batch"
     )
 
+    # Pre-filter fetches current YouTube tags; return empty tags so all videos
+    # are detected as needing an update (DB has tags, YouTube has none).
+    mock_youtube_api.client.videos.return_value.list.return_value.execute.return_value = _make_batch_list_response(
+        {f"yt_wknd_{i}": {"tags": []} for i in range(1, 6)}
+    )
+
     call_command(
         "update_youtube_tags",
         filter="test-course",
@@ -1311,6 +1320,3 @@ def test_update_youtube_tags_schedule_weekends_only(mock_youtube_api, mocker):
     # Second task should be on Sunday (one day later)
     second_countdown = mock_task.apply_async.call_args_list[1].kwargs["countdown"]
     assert second_countdown == first_countdown + 86400
-
-    # YouTube API should NOT have been called directly
-    mock_youtube_api.client.videos.return_value.list.return_value.execute.assert_not_called()
