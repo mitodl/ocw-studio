@@ -307,7 +307,10 @@ class GeneralPipeline(BaseGeneralPipeline):
 
     def check_resource(self, pipeline_name: str, resource_name: str):
         """Trigger a resource check for a pipeline resource"""
-        self.api.post(self._make_resource_check_url(pipeline_name, resource_name))
+        self.api.post(
+            self._make_resource_check_url(pipeline_name, resource_name),
+            data=json.dumps({"from": None}),
+        )
 
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
