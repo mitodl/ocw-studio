@@ -112,6 +112,26 @@ def get_site_pipeline_definition_vars(namespace: str):
     }
 
 
+def get_base_url_path(
+    prefix: str,
+    base_url: str,
+    site_root_path: str,
+    *,
+    is_extra_theme: bool,
+    is_root_website: bool,
+) -> str:
+    """Get the Hugo baseURL path for a site pipeline."""
+    extra_theme_base_url_prefix = settings.OCW_EXTRA_THEMES_BASE_URLS.get(prefix)
+    if is_extra_theme and not is_root_website and extra_theme_base_url_prefix:
+        root_prefix = site_root_path.strip("/")
+        course_path = base_url
+        if root_prefix:
+            course_path = base_url.removeprefix(f"{root_prefix}/")
+        return f"{extra_theme_base_url_prefix}/{course_path}"
+
+    return f"/{prefix}/{base_url}" if prefix else f"/{base_url}"
+
+
 class SitePipelineDefinitionConfig:
     """
     A class with configuration properties for building a site pipeline
@@ -213,9 +233,14 @@ class SitePipelineDefinitionConfig:
         starter_slug = theme_slug if theme_slug else site.starter.slug
         base_hugo_args = {"--themesDir": f"../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/"}
         base_online_args = base_hugo_args.copy()
-        base_url_path = (
-            f"/{self.prefix}/{self.base_url}" if self.prefix else f"/{self.base_url}"
+        base_url_path = get_base_url_path(
+            prefix=self.prefix,
+            base_url=self.base_url,
+            site_root_path=site.get_site_root_path() or "",
+            is_extra_theme=self.is_extra_theme,
+            is_root_website=self.is_root_website,
         )
+
         base_online_args.update(
             {
                 "--config": f"../{OCW_HUGO_PROJECTS_GIT_IDENTIFIER}/{starter_slug}/config.yaml",  # noqa: E501

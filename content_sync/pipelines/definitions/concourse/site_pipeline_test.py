@@ -1127,6 +1127,73 @@ def test_site_pipeline_definition_config_gtm_account_id(settings, mocker, gtm_ca
 
 
 @pytest.mark.parametrize(
+    ("use_root_website", "expected_template", "unexpected_template"),
+    [
+        (
+            False,
+            "--baseURL /courses/o/my-course",
+            "--baseURL /ocw-course-v3/courses/my-course",
+        ),
+        (
+            True,
+            "--baseURL /ocw-course-v3/",
+            "--baseURL /courses/o/",
+        ),
+    ],
+    ids=["learn-site", "root-site"],
+)
+def test_site_pipeline_definition_config_ocw_course_v3_baseurl(  # noqa: PLR0913
+    settings,
+    mocker,
+    root_website,
+    use_root_website,
+    expected_template,
+    unexpected_template,
+):
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    settings.OCW_EXTRA_THEMES_BASE_URLS = {"ocw-course-v3": "/courses/o"}
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+
+    if use_root_website:
+        website = root_website
+    else:
+        hugo_projects_path = "https://github.com/org/repo"
+        starter = WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB,
+            path=f"{hugo_projects_path}/site",
+            slug="learn-baseurl-config-test",
+        )
+        starter.config["root-url-path"] = "courses"
+        website = WebsiteFactory.create(
+            starter=starter,
+            url_path="courses/my-course",
+        )
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        prefix="ocw-course-v3",
+        theme_slug="ocw-course-v3",
+    )
+
+    assert expected_template in config.hugo_args_online
+    assert unexpected_template not in config.hugo_args_online
+
+
+@pytest.mark.parametrize(
     ("theme_slug", "extra_themes", "expect_webhook_resource"),
     [
         (None, ["ocw-course-v3"], True),

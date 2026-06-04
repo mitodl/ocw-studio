@@ -1297,6 +1297,10 @@ OCW_EXTRA_COURSE_THEMES = get_delimited_list(
     description="Additional Hugo themes to build for OCW course sites",
     required=False,
 )
+OCW_EXTRA_THEMES_BASE_URLS = get_dict_of_str(
+    name="OCW_EXTRA_THEMES_BASE_URLS",
+    default={},
+)
 OCW_EXTRA_THEMES_GTM_IDS = get_dict_of_str(
     name="OCW_EXTRA_THEMES_GTM_IDS",
     default={},
