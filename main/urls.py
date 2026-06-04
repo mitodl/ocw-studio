@@ -17,12 +17,12 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.views import LogoutView
 from django.urls import include, path, re_path
 
-from main.views import public_index, restricted_index
+from main.views import global_logout, public_index, restricted_index
 
 urlpatterns = [
+    path("admin/logout/", global_logout, name="admin-logout"),
     path("admin/", admin.site.urls),
     path("robots.txt", include("robots.urls")),
     path("auth/", include("social_django.urls", namespace="social")),
@@ -35,7 +35,7 @@ urlpatterns = [
     path("new-site/", restricted_index, name="new-site"),
     path("markdown-editor", restricted_index, name="markdown-editor-test"),
     re_path(r"^collections/.*$", restricted_index, name="collections"),
-    path("logout/", LogoutView.as_view(), name="logout"),
+    path("logout/", global_logout, name="logout"),
     path("", include("news.urls")),
     path("", include("websites.urls")),
     path("", include("mitol.mail.urls")),

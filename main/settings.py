@@ -944,7 +944,10 @@ SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL = get_string(
     description="Keycloak access token URL for social auth",
     required=True,
 )
-
+SOCIAL_AUTH_KEYCLOAK_SCOPE = ["openid", "profile", "email"]
+SOCIAL_AUTH_KEYCLOAK_EXTRA_DATA = [
+    ("id_token", "id_token"),
+]
 
 CONTENT_SYNC_BACKEND = get_string(
     name="CONTENT_SYNC_BACKEND",
