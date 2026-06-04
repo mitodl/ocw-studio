@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.188.0
+Version 0.188.0 (Released June 04, 2026)
 ---------------
 
 - feat: add resource checking to concourse publish executions. (#3051)
