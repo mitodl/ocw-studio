@@ -201,6 +201,7 @@ def publish_website(  # pylint: disable=too-many-arguments
             if not website.publish_date:
                 pipeline.upsert_pipeline()
             pipeline.unpause_pipeline(version)
+            pipeline.check_online_site_job_resources(version)
             build_id = pipeline.trigger_pipeline_build(version)
             update_kwargs[f"latest_build_id_{version}"] = build_id
 
@@ -221,6 +222,7 @@ def publish_website(  # pylint: disable=too-many-arguments
                     if not website.publish_date:
                         theme_pipeline.upsert_pipeline()
                     theme_pipeline.unpause_pipeline(theme_pipeline_name)
+                    theme_pipeline.check_online_site_job_resources(theme_pipeline_name)
                     theme_pipeline.trigger_pipeline_build(theme_pipeline_name)
 
         # Need to update additional fields

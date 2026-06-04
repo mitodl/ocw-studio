@@ -33,6 +33,12 @@ from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
+)
 from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import (
     EndToEndTestPipelineDefinition,
 )
@@ -295,6 +301,17 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Make URL for unpausing a pipeline"""
         return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/unpause{self.instance_vars}"  # noqa: E501
 
+    def _make_resource_check_url(self, pipeline_name: str, resource_name: str) -> str:
+        """Make URL for triggering a resource check"""
+        return f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/resources/{resource_name}/check{self.instance_vars}"  # noqa: E501
+
+    def check_resource(self, pipeline_name: str, resource_name: str):
+        """Trigger a resource check for a pipeline resource"""
+        self.api.post(
+            self._make_resource_check_url(pipeline_name, resource_name),
+            data=json.dumps({"from": None}),
+        )
+
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
@@ -515,6 +532,16 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
             self.upsert_config(
                 SitePipelineDefinition(config=pipeline_config).json(), pipeline_name
             )
+
+    def check_online_site_job_resources(self, pipeline_name: str):
+        """Trigger resource checks for all resources required by online-site-job"""
+        for resource_name in [
+            WEBPACK_MANIFEST_S3_IDENTIFIER,
+            OCW_HUGO_THEMES_GIT_IDENTIFIER,
+            OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+            SITE_CONTENT_GIT_IDENTIFIER,
+        ]:
+            self.check_resource(pipeline_name, resource_name)
 
 
 class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # pylint: disable=too-many-instance-attributes

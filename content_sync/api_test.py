@@ -274,6 +274,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
             website, api=pipeline_api
         )
         assert pipeline.upsert_pipeline.call_count == (0 if publish_date else 1)
+        pipeline.check_online_site_job_resources.assert_called_once_with(version)
         pipeline.trigger_pipeline_build.assert_called_once_with(version)
         pipeline.unpause_pipeline.assert_called_once_with(version)
         assert getattr(website, f"latest_build_id_{version}") == build_id
@@ -281,6 +282,7 @@ def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-argume
         mock_api_funcs.mock_get_pipeline.assert_not_called()
         pipeline.trigger_pipeline_build.assert_not_called()
         pipeline.unpause_pipeline.assert_not_called()
+        pipeline.check_online_site_job_resources.assert_not_called()
         assert getattr(website, f"latest_build_id_{version}") is None
     assert getattr(website, f"has_unpublished_{version}") is False
     assert getattr(website, f"{version}_last_published_by") is None
@@ -406,6 +408,7 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     expected_upsert_calls = 0 if publish_date else 3
     assert mock_pipeline.upsert_pipeline.call_count == expected_upsert_calls
     assert mock_pipeline.unpause_pipeline.call_count == 3
+    assert mock_pipeline.check_online_site_job_resources.call_count == 3
     assert mock_pipeline.trigger_pipeline_build.call_count == 3
 
     unpause_calls = [
@@ -413,6 +416,10 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     ]
     trigger_calls = [
         call[0][0] for call in mock_pipeline.trigger_pipeline_build.call_args_list
+    ]
+    check_resource_calls = [
+        call[0][0]
+        for call in mock_pipeline.check_online_site_job_resources.call_args_list
     ]
 
     assert version in unpause_calls
@@ -422,6 +429,10 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     assert version in trigger_calls
     assert f"{version}-ocw-course-v3" in trigger_calls
     assert f"{version}-ocw-course-v4" in trigger_calls
+
+    assert version in check_resource_calls
+    assert f"{version}-ocw-course-v3" in check_resource_calls
+    assert f"{version}-ocw-course-v4" in check_resource_calls
 
 
 def test_publish_website_no_extra_themes_for_non_ocw_site(settings, mocker):

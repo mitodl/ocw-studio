@@ -28,6 +28,8 @@ from content_sync.pipelines.concourse import (
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
+    SITE_CONTENT_GIT_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_IDENTIFIER,
 )
 from content_sync.utils import (
     get_common_pipeline_vars,
@@ -592,6 +594,52 @@ def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):
     mock_put.assert_any_call(
         f"/api/v1/teams/myteam/pipelines/ocw-theme-assets/{action}{pipeline.instance_vars}"
     )
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_check_resource(settings, mocker, mock_auth, version):
+    """check_resource should POST to the correct resource check URL"""
+    settings.CONCOURSE_TEAM = "myteam"
+    mock_post = mocker.patch("content_sync.pipelines.concourse.PipelineApi.post")
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = SitePipeline(website)
+    resource_name = WEBPACK_MANIFEST_S3_IDENTIFIER
+    pipeline.check_resource(version, resource_name)
+    mock_post.assert_called_once_with(
+        f"/api/v1/teams/myteam/pipelines/{version}/resources/{resource_name}/check{pipeline.instance_vars}",
+        data='{"from": null}',
+    )
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_check_online_site_job_resources(settings, mocker, mock_auth, version):
+    """check_online_site_job_resources should trigger checks for all 4 online-site-job resources"""
+    settings.CONCOURSE_TEAM = "myteam"
+    mock_post = mocker.patch("content_sync.pipelines.concourse.PipelineApi.post")
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = SitePipeline(website)
+    pipeline.check_online_site_job_resources(version)
+    expected_resources = [
+        WEBPACK_MANIFEST_S3_IDENTIFIER,
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+        SITE_CONTENT_GIT_IDENTIFIER,
+    ]
+    assert mock_post.call_count == len(expected_resources)
+    actual_urls = [call.args[0] for call in mock_post.call_args_list]
+    for resource_name in expected_resources:
+        assert (
+            f"/api/v1/teams/myteam/pipelines/{version}/resources/{resource_name}/check{pipeline.instance_vars}"
+            in actual_urls
+        )
 
 
 def test_get_build_status(mocker, mock_auth):
