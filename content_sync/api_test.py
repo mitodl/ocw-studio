@@ -408,6 +408,7 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     expected_upsert_calls = 0 if publish_date else 3
     assert mock_pipeline.upsert_pipeline.call_count == expected_upsert_calls
     assert mock_pipeline.unpause_pipeline.call_count == 3
+    assert mock_pipeline.check_online_site_job_resources.call_count == 3
     assert mock_pipeline.trigger_pipeline_build.call_count == 3
 
     unpause_calls = [
@@ -415,6 +416,10 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     ]
     trigger_calls = [
         call[0][0] for call in mock_pipeline.trigger_pipeline_build.call_args_list
+    ]
+    check_resource_calls = [
+        call[0][0]
+        for call in mock_pipeline.check_online_site_job_resources.call_args_list
     ]
 
     assert version in unpause_calls
@@ -424,6 +429,10 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     assert version in trigger_calls
     assert f"{version}-ocw-course-v3" in trigger_calls
     assert f"{version}-ocw-course-v4" in trigger_calls
+
+    assert version in check_resource_calls
+    assert f"{version}-ocw-course-v3" in check_resource_calls
+    assert f"{version}-ocw-course-v4" in check_resource_calls
 
 
 def test_publish_website_no_extra_themes_for_non_ocw_site(settings, mocker):

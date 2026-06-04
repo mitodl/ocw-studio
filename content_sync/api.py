@@ -222,6 +222,7 @@ def publish_website(  # pylint: disable=too-many-arguments
                     if not website.publish_date:
                         theme_pipeline.upsert_pipeline()
                     theme_pipeline.unpause_pipeline(theme_pipeline_name)
+                    theme_pipeline.check_online_site_job_resources(theme_pipeline_name)
                     theme_pipeline.trigger_pipeline_build(theme_pipeline_name)
 
         # Need to update additional fields
