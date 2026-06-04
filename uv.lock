@@ -1324,7 +1324,7 @@ wheels = [
 
 [[package]]
 name = "ocw-studio"
-version = "0.0.0"
+version = "0.188.0"
 source = { virtual = "." }
 dependencies = [
     { name = "beautifulsoup4" },

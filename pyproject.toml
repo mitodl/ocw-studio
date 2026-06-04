@@ -1,6 +1,6 @@
 [project]
 name = "ocw-studio"
-version = "0.0.0"
+version = "0.188.0"
 description = "OCW Studio manages deployments for OCW courses"
 authors = [{ name = "MITODL" }]
 requires-python = ">=3.13,<3.14"
@@ -229,3 +229,36 @@ env = [
     "OCW_IMPORT_STARTER_SLUG=course",
     "OCW_COURSE_STARTER_SLUG=course",
 ]
+
+[tool.bumpversion]
+commit = false
+tag = false
+parse = "(?P<release>(?:[1-9][0-9]{3})\\.(?:1[0-2]|[1-9])\\.(?:3[0-1]|[12][0-9]|[1-9]))\\.(?P<build>\\d+)"
+serialize = ["{release}.{build}"]
+
+[tool.bumpversion.parts.release]
+calver_format = "{YYYY}.{MM}.{DD}"
+
+[tool.bumpversion.parts.build]
+first_value = "1"
+
+[[tool.bumpversion.files]]
+filename = "main/settings.py"
+search = 'VERSION = "{current_version}"'
+replace = 'VERSION = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "uv.lock"
+search = """
+name = "ocw-studio"
+version = "{current_version}"
+source = {{ virtual = "." }}"""
+replace = """
+name = "ocw-studio"
+version = "{new_version}"
+source = {{ virtual = "." }}"""
