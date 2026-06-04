@@ -610,7 +610,8 @@ def test_check_resource(settings, mocker, mock_auth, version):
     resource_name = WEBPACK_MANIFEST_S3_IDENTIFIER
     pipeline.check_resource(version, resource_name)
     mock_post.assert_called_once_with(
-        f"/api/v1/teams/myteam/pipelines/{version}/resources/{resource_name}/check{pipeline.instance_vars}"
+        f"/api/v1/teams/myteam/pipelines/{version}/resources/{resource_name}/check{pipeline.instance_vars}",
+        data='{"from": null}',
     )
 
 
