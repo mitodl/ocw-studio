@@ -15,7 +15,11 @@ from main.utils import (
     is_valid_uuid,
     remove_trailing_slashes,
 )
-from websites.constants import CONTENT_MENU_FIELD, CONTENT_TYPE_METADATA
+from websites.constants import (
+    CONTENT_MENU_FIELD,
+    CONTENT_TYPE_EXTERNAL_RESOURCE,
+    CONTENT_TYPE_METADATA,
+)
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import ConfigItem, SiteConfig
 
@@ -75,6 +79,8 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             "title": website_content.title,
             "content_type": website_content.type,
         }
+        if website_content.type == CONTENT_TYPE_EXTERNAL_RESOURCE:
+            front_matter["_build"] = {"render": False, "list": True}
         # NOTE: yaml.dump adds a newline to the end of its output by default
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"
 
@@ -100,7 +106,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
         dirpath, filename = get_dirpath_and_filename(
             filepath, expect_file_extension=True
         )
-        omitted_keys = ["uid", "title", "type"]
+        omitted_keys = ["uid", "title", "type", "_build"]
         file_url = None
         config_item = self.site_config.find_item_by_name(content_type)
         if config_item is None:

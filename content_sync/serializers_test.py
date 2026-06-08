@@ -19,7 +19,10 @@ from content_sync.serializers import (
     deserialize_file_to_website_content,
     serialize_content_to_file,
 )
-from websites.constants import WEBSITE_CONFIG_ROOT_URL_PATH_KEY
+from websites.constants import (
+    CONTENT_TYPE_EXTERNAL_RESOURCE,
+    WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
+)
 from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
@@ -541,3 +544,68 @@ def test_deserialize_file_to_website_content(mocker):
         file_contents=file_contents,
     )
     assert deserialized == mock_serializer.deserialize.return_value
+
+
+EXAMPLE_EXTERNAL_RESOURCE_MARKDOWN = """---
+_build:
+  list: true
+  render: false
+content_type: external-resource
+external_url: https://example.com
+has_external_license_warning: true
+title: Example External Resource
+uid: ext-abcdefg
+---
+"""
+
+
+@pytest.mark.django_db
+def test_hugo_file_serialize_external_resource():
+    """HugoMarkdownFileSerializer.serialize should add _build front matter for external-resource content"""
+    metadata = {
+        "external_url": "https://example.com",
+        "has_external_license_warning": True,
+    }
+    content = WebsiteContentFactory.create(
+        text_id="ext-abcdefg",
+        title="Example External Resource",
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        markdown=None,
+        metadata=metadata,
+    )
+    site_config = SiteConfig(content.website.starter.config)
+
+    file_content = HugoMarkdownFileSerializer(site_config).serialize(
+        website_content=content
+    )
+    front_matter = yaml.safe_load(file_content.split("---\n")[1])
+    assert front_matter["_build"] == {"render": False, "list": True}
+    assert front_matter["content_type"] == CONTENT_TYPE_EXTERNAL_RESOURCE
+    assert front_matter["external_url"] == "https://example.com"
+
+
+@pytest.mark.django_db
+def test_hugo_file_deserialize_external_resource_omits_build(mocker):
+    """HugoMarkdownFileSerializer.deserialize should not store _build in metadata for external-resource content"""
+    dest_directory, dest_filename = (
+        "content/external-resources",
+        "example-external-resource",
+    )
+    filepath = f"/{dest_directory}/{dest_filename}.md"
+    mocker.patch.object(
+        SiteConfig,
+        "find_item_by_name",
+        return_value=ConfigItem(item={"folder": dest_directory}),
+    )
+    website = WebsiteFactory.create()
+    site_config = SiteConfig(website.starter.config)
+    serializer = HugoMarkdownFileSerializer(site_config)
+
+    website_content = serializer.deserialize(
+        website=website,
+        filepath=filepath,
+        file_contents=EXAMPLE_EXTERNAL_RESOURCE_MARKDOWN,
+    )
+    assert website_content.type == CONTENT_TYPE_EXTERNAL_RESOURCE
+    assert "_build" not in website_content.metadata
+    assert website_content.metadata["external_url"] == "https://example.com"
