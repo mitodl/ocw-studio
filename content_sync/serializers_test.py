@@ -548,7 +548,7 @@ def test_deserialize_file_to_website_content(mocker):
 
 EXAMPLE_EXTERNAL_RESOURCE_MARKDOWN = """---
 _build:
-  list: false
+  list: true
   render: false
 content_type: external-resource
 external_url: https://example.com
@@ -579,7 +579,7 @@ def test_hugo_file_serialize_external_resource():
         website_content=content
     )
     front_matter = yaml.safe_load(file_content.split("---\n")[1])
-    assert front_matter["_build"] == {"render": False, "list": False}
+    assert front_matter["_build"] == {"render": False, "list": True}
     assert front_matter["content_type"] == CONTENT_TYPE_EXTERNAL_RESOURCE
     assert front_matter["external_url"] == "https://example.com"
 

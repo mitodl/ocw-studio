@@ -80,7 +80,7 @@ class HugoMarkdownFileSerializer(BaseContentFileSerializer):
             "content_type": website_content.type,
         }
         if website_content.type == CONTENT_TYPE_EXTERNAL_RESOURCE:
-            front_matter["_build"] = {"render": False, "list": False}
+            front_matter["_build"] = {"render": False, "list": True}
         # NOTE: yaml.dump adds a newline to the end of its output by default
         return f"---\n{yaml.dump(front_matter)}---\n{website_content.markdown or ''}"
 
