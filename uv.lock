@@ -1179,7 +1179,7 @@ wheels = [
 
 [[package]]
 name = "mitol-django-authentication"
-version = "2026.4.2"
+version = "2026.4.29"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
@@ -1191,9 +1191,9 @@ dependencies = [
     { name = "mitol-django-mail" },
     { name = "social-auth-app-django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3d/4f/d79ecfa1caedb0b5358819a803dd59c67eb5c928230e7f8617a2eb11e229/mitol_django_authentication-2026.4.2.tar.gz", hash = "sha256:0e867def9669e7519efcee3a4f3f5076552407274f1cfd85563c1b26ba96e55d", size = 5850, upload-time = "2026-04-02T15:46:55.288Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/9d/14c5f7883a435d27bb3f629911e28babc3618db42644c1113de0f82f15b5/mitol_django_authentication-2026.4.29.tar.gz", hash = "sha256:ce2d5e4d9ca2fa524c7b748915ccfa8af19c7a2c02fdcc9a5ca1534206c53698", size = 6034, upload-time = "2026-04-29T19:56:16.736Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/02/06/70a888dbeb64a3c5a99ce8dd52ea3dd5c9a6bccfa23c4b5db6107f3e001b/mitol_django_authentication-2026.4.2-py3-none-any.whl", hash = "sha256:0440a2bc7f64df94c99eefa1f1756d1c8f92cb32fe9dfd2de0b4f6ecf5a60588", size = 9935, upload-time = "2026-04-02T15:46:54.324Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/4d/fd8c8549d2b363333d75f6259eb84ea16148901cd329abbdf5199d899d34/mitol_django_authentication-2026.4.29-py3-none-any.whl", hash = "sha256:95590074644f0772c10b2507d806afe398559ca86841a2a070736c945aeaedba", size = 10139, upload-time = "2026-04-29T19:56:15.873Z" },
 ]
 
 [[package]]
@@ -1425,7 +1425,7 @@ requires-dist = [
     { name = "google-auth-oauthlib", specifier = ">=1.0.0,<2" },
     { name = "granian", specifier = ">=2.7.2" },
     { name = "ipython", specifier = ">=9.0.0,<10" },
-    { name = "mitol-django-authentication", specifier = "==2026.4.2,<2027" },
+    { name = "mitol-django-authentication", specifier = "==2026.4.29,<2027" },
     { name = "mitol-django-common", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-mail", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-transcoding", specifier = ">=2026.4.2,<2027" },
