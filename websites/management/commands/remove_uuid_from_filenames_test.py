@@ -1,10 +1,13 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
+from urllib.parse import quote
+
 import pytest
 from django.core.management import call_command
 
 from gdrive_sync.factories import DriveFileFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import Website
 
 pytestmark = pytest.mark.django_db
 
@@ -32,7 +35,7 @@ def test_renames_file_with_uuid_prefix(settings, mock_s3):
     mock_s3_client = mock_s3.return_value
     mock_s3_client.copy_object.assert_called_once_with(
         Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-        CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{old_key}",
+        CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{quote(old_key)}",
         Key=expected_new_key,
         ACL="public-read",
     )
@@ -141,3 +144,37 @@ def test_s3_error_is_reported_and_does_not_abort(mock_s3):
     assert str(failing_content.file) == failing_key
     succeeding_content.refresh_from_db()
     assert str(succeeding_content.file) == f"sites/{website.name}/good.pdf"
+
+
+def test_marks_website_dirty_after_rename(mock_s3):
+    """Websites with renamed files are marked as having unpublished changes."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    # Reset flags after content creation (signals set them on save)
+    Website.objects.filter(uuid=website.uuid).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+    assert website.has_unpublished_draft is True
+
+
+def test_dry_run_does_not_mark_website_dirty(mock_s3):
+    """With --dry-run, website dirty flags are not set."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    # Reset flags after content creation (signals set them on save)
+    Website.objects.filter(uuid=website.uuid).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+
+    website.refresh_from_db()
+    assert website.has_unpublished_live is False
+    assert website.has_unpublished_draft is False

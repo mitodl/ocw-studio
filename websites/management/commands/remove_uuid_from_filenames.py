@@ -1,13 +1,14 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
 import re
+from urllib.parse import quote
 
 from django.conf import settings
 
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 
 UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
 
@@ -38,6 +39,7 @@ class Command(WebsiteFilterCommand):
         renamed_count = 0
         skipped_count = 0
         error_count = 0
+        updated_website_ids = set()
 
         for content in contents.iterator():
             old_key = str(content.file)
@@ -76,7 +78,7 @@ class Command(WebsiteFilterCommand):
             try:
                 s3.copy_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{old_key}",
+                    CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{quote(old_key)}",
                     Key=new_key,
                     ACL="public-read",
                 )
@@ -84,17 +86,22 @@ class Command(WebsiteFilterCommand):
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                     Key=old_key,
                 )
-                content.file = new_key
-                content.save()
-                drive_file = DriveFile.objects.filter(resource=content).first()
-                if drive_file and drive_file.s3_key == old_key:
-                    drive_file.s3_key = new_key
-                    drive_file.save()
+                WebsiteContent.objects.filter(pk=content.pk).update(file=new_key)
+                DriveFile.objects.filter(resource=content, s3_key=old_key).update(
+                    s3_key=new_key
+                )
+                updated_website_ids.add(content.website_id)
                 self.stdout.write(f"Renamed: {old_key} -> {new_key}")
                 renamed_count += 1
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(f"Error renaming {old_key} to {new_key}: {exc!s}")
                 error_count += 1
+
+        if updated_website_ids:
+            Website.objects.filter(uuid__in=updated_website_ids).update(
+                has_unpublished_live=True,
+                has_unpublished_draft=True,
+            )
 
         if dry_run:
             self.stdout.write(
