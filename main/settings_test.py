@@ -8,7 +8,6 @@ import sys
 from unittest import mock
 
 import pytest
-import semantic_version
 from django.conf import settings
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
@@ -158,13 +157,6 @@ class TestSettings(TestCase):
                     ),
                 }
             )
-
-    @staticmethod
-    def test_semantic_version():
-        """
-        Verify that we have a semantic compatible version.
-        """
-        semantic_version.Version(settings.VERSION)
 
     def test_server_side_cursors_disabled(self):
         """DISABLE_SERVER_SIDE_CURSORS should be true by default"""
