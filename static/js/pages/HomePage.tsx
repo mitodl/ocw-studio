@@ -11,11 +11,8 @@ export default function HomePage(): JSX.Element | null {
         <div className="home-page-background">
           {!user ? (
             <div className="text-center">
-              <a
-                href="/login/saml/?idp=default"
-                className="btn cyan-button login"
-              >
-                Login with MIT Touchstone
+              <a href="/auth/login/keycloak/" className="btn cyan-button login">
+                Login with MIT Keycloak
               </a>
             </div>
           ) : null}

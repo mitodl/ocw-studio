@@ -6,7 +6,7 @@ OCW Studio manages deployments for OCW courses.
 
 - [ocw_studio](#ocw_studio)
 - [Initial Setup](#initial-setup)
-  - [Testing Touchstone login with SAML via SSOCircle](#testing-touchstone-login-with-saml-via-ssocircle)
+  - [Testing Keycloak login locally](#testing-keycloak-login-locally)
   - [Commits](#commits)
 - [Testing and Formatting](#testing-and-formatting)
   - [JS/CSS Tests and Linting](#jscss-tests-and-linting)
@@ -51,48 +51,33 @@ The `ocw-www` starter is meant for creating a home page, aka the "root website."
 - AWS S3 credentials (Minio S3 emulation should work out of the box for local development)
 - Youtube / AWS MediaConvert / 3Play if you need to work with videos
 
-### Testing Touchstone login with SAML via SSOCircle
+### Testing Keycloak login locally
 
-_Note: Testing with ShibTest instead of SSOCircle fails unless python-saml3 is downgraded to 1.2.6 and `use="signing"` is removed from the `KeyDescriptor` tag of the SP metadata_
+Keycloak runs automatically as part of the local Docker Compose stack. A pre-configured development realm is imported on startup from `config/keycloak/realms/ocw-studio-realm.json`.
 
-- NOTE: your app's BASE_URL hostname and the x509 FQDN must match, additionally SSOCircle enforces an requirement that this value be unique per user, so you'll need to pick a hostname no one else on our team is using
-- Create an X.509 certificate & key with the following command, picking a unique FQDN for yourself (e.g. MYNAME.ocw-studio.odl.local):
-  ```
-  openssl req -new -x509 -days 365 -nodes -out saml.crt -keyout saml.key
-  ```
-- Enter values for the following [SAML configuration variables](http://python-social-auth-docs.readthedocs.io/en/latest/backends/saml.html) in your `.env` file
+- Start the full stack (Keycloak will be available at `http://localhost:<KEYCLOAK_PORT>` once healthy):
   ```sh
-  SOCIAL_AUTH_SAML_SP_ENTITY_ID=http://MYNAME.ocw-studio.odl.local:8043/  # replace with the one entered into the x509 cert above
-  SOCIAL_AUTH_SAML_SP_PUBLIC_CERT=<saml.crt contents, no spaces or returns>
-  SOCIAL_AUTH_SAML_SP_PRIVATE_KEY= <saml.key contents, no spaces or returns>
-  SOCIAL_AUTH_SAML_SECURITY_ENCRYPTED=false
-  SOCIAL_AUTH_SAML_ORG_DISPLAYNAME=ODL Test
-  SOCIAL_AUTH_SAML_CONTACT_NAME=<Your Name>
-  SOCIAL_AUTH_SAML_IDP_ENTITY_ID=https://idp.ssocircle.com
-  SOCIAL_AUTH_SAML_IDP_URL=https://idp.ssocircle.com:443/sso/SSORedirect/metaAlias/publicidp
-  SOCIAL_AUTH_SAML_LOGIN_URL=https://idp.ssocircle.com:443/sso/SSORedirect/metaAlias/publicidp
-  SOCIAL_AUTH_SAML_IDP_ATTRIBUTE_PERM_ID=EmailAddress
-  SOCIAL_AUTH_SAML_IDP_ATTRIBUTE_NAME=FirstName
-  SOCIAL_AUTH_SAML_IDP_ATTRIBUTE_EMAIL=EmailAddress
-  # The value for SOCIAL_AUTH_SAML_IDP_X509 comes from https://idp.ssocircle.com/meta-idp.xml:
-  SOCIAL_AUTH_SAML_IDP_X509=<get value from https://idp.ssocircle.com/meta-idp.xml>
+  docker-compose up
   ```
-- Go to `http://MYNAME.ocw-studio.odl.local:8043/saml/metadata/` and copy the XML response
-- Register & login for a free account at `ssocircle.net`, the email that you use to register will be used as your social-auth identifier.
+- Add a local hosts alias for Keycloak in `/etc/hosts` so `kc.odl.local` resolves:
+  ```sh
+  127.0.0.1 kc.odl.local
+  ```
+- Set the following variables in your `.env` file (defaults for local dev are in `.env.example`):
+  ```sh
+  SOCIAL_AUTH_KEYCLOAK_KEY=<client ID registered in the realm>
+  SOCIAL_AUTH_KEYCLOAK_SECRET=<client secret from Keycloak admin console>
+  SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY=<realm RS256 public key, no header/footer>
+  SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/auth
+  SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/token
+  ```
+- For local development, values in `.env.example` can be used as defaults for all of the variables above except `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY`. Retrieve `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY` from `http://kc.odl.local:7080/realms/ocw-studio`.
+- Navigate to the app and click **Login with MIT Keycloak**. You will be redirected to the Keycloak login page.
+- After a successful login you will be redirected back to the app and authenticated.
+- The development realm includes a default test user: **`admin@odl.local`** / **`admin`**.
+- To administer the local Keycloak instance (create users, inspect clients, etc.), log in to the Keycloak admin console at `http://localhost:<KEYCLOAK_PORT>` with the admin credentials defined in `docker-compose.yml`.
 
-  _SSOCircle free accounts are limited to three concurrent sessions. See https://www.ssocircle.com/en/portfolio/publicidp/idp-pricing/_
-
-- After confirming your registration, go to https://idp.ssocircle.com/sso/hos/ManageSPMetadata.jsp
-  - Click `Add new Service Provider`
-  - Enter your FQDN as the FQDN
-  - Check `FirstName`, `EmailAddress`
-  - Paste the XML response from above into the text field
-  - Submit the form
-- In an incognito browser window, go to `http://MYNAME.ocw-studio.odl.local:8043/login/saml/?next=%2F&idp=default`
-- You should be redirected to SSOCircle, fill out the captcha and click `Continue SAML Single Sign On`
-- You should be redirected back to the /sites/ pages, and be logged in.
-- Log out & back in as a superuser and to go the Users admin page.
-  - There should be a new user with the same email address and name that you used to register with SSOCircle.
+> **Note:** Keycloak is used solely for authentication (verifying identity). Authorization — controlling what a user can do within the app — is handled entirely by ocw-studio itself.
 
 ### Commits
 

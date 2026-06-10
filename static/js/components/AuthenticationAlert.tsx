@@ -8,7 +8,7 @@ const AuthenticationAlert: React.FC = () => {
   useEffect(() => setIsDismissed(false), [authenticationErrors])
   const dismiss = useCallback(() => setIsDismissed(true), [])
   const goToLogin = useCallback(() => {
-    window.location.href = "/login/saml/?idp=default"
+    window.location.href = "/auth/login/keycloak/"
   }, [])
 
   const isVisible = authenticationErrors > 0 && !isDismissed
