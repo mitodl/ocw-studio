@@ -1,7 +1,6 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
 import re
-from urllib.parse import quote
 
 from django.conf import settings
 
@@ -78,7 +77,10 @@ class Command(WebsiteFilterCommand):
             try:
                 s3.copy_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{quote(old_key)}",
+                    CopySource={
+                        "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
+                        "Key": old_key,
+                    },
                     Key=new_key,
                     ACL="public-read",
                 )

@@ -1,7 +1,5 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
-from urllib.parse import quote
-
 import pytest
 from django.core.management import call_command
 
@@ -35,7 +33,7 @@ def test_renames_file_with_uuid_prefix(settings, mock_s3):
     mock_s3_client = mock_s3.return_value
     mock_s3_client.copy_object.assert_called_once_with(
         Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-        CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{quote(old_key)}",
+        CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": old_key},
         Key=expected_new_key,
         ACL="public-read",
     )
