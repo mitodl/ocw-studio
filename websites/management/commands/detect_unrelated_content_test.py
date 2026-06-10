@@ -178,14 +178,15 @@ def test_video_metadata_protected_when_video_row_has_no_file(mock_s3):
     orphan = f"{website.s3_path}/orphan.bin"
     WebsiteContentFactory.create(
         website=website,
-        type="video",
+        type="resource",
         file=None,
         metadata={
+            "resourcetype": "Video",
             "video_files": {
                 "video_thumbnail_file": thumb,
                 "video_captions_file": captions,
                 "video_transcript_file": None,
-            }
+            },
         },
     )
     mock_s3.put({thumb, captions, orphan})

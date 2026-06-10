@@ -116,11 +116,11 @@ class Command(WebsiteFilterCommand):
         # sites whose name has this site's name as a string prefix. Without it,
         # listing "courses/game-theory" also returns the keys of
         # "courses/game-theory-and-political-theory", which would then be
-        # flagged as unrelated and deleted. Every real key is
-        # "<s3_path>/<text_id>_<filename>", so the trailing slash excludes no
-        # legitimate file (see WebsiteContent.upload_file_to). s3_path never has
-        # a trailing slash itself (its parts are stripped before joining).
-        prefix = f"{prefix}/"
+        # flagged as unrelated and deleted. A site's objects all live *under*
+        # "<s3_path>/", so the trailing slash still matches every one of them
+        # and only excludes the colliding siblings.
+        if not prefix.endswith("/"):
+            prefix = f"{prefix}/"
         s3_file_keys = list_all_s3_keys(
             s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
         )
