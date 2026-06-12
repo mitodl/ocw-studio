@@ -157,6 +157,11 @@ def test_renames_file_with_uuid_prefix(settings, mock_s3):
         Bucket=settings.AWS_STORAGE_BUCKET_NAME,
         Key=old_key,
     )
+    # copy_object must precede delete_object — data-safe ordering invariant.
+    call_names = [c[0] for c in mock_s3_client.mock_calls]
+    assert call_names.index("copy_object") < call_names.index("delete_object"), (
+        "copy_object must be called before delete_object"
+    )
     content.refresh_from_db()
     assert str(content.file) == expected_new_key
 
@@ -335,6 +340,39 @@ def test_s3_error_does_not_dirty_website_or_patch_metadata(mock_s3):
     assert website.has_unpublished_live is False
     assert website.has_unpublished_draft is False
     # Video metadata must NOT be patched — the underlying file was not renamed
+    video_resource.refresh_from_db()
+    assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
+
+
+def test_metadata_not_patched_for_skipped_captions_rename(mock_s3):
+    """Video metadata is not patched when the captions file rename was skipped (conflict)."""
+    website = WebsiteFactory.create()
+    # File A renames successfully — puts website into actually_renamed_website_ids.
+    other_uuid = "cc4d029952cda060f4afcd811189a591"
+    old_key_a = f"sites/{website.name}/{other_uuid}_main.mp4"
+    WebsiteContentFactory.create(website=website, file=old_key_a)
+    # Captions file B: rename skipped — target key is already occupied.
+    captions_uuid = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    captions_old = f"sites/{website.name}/{captions_uuid}_captions.vtt"
+    captions_new = f"sites/{website.name}/captions.vtt"
+    WebsiteContentFactory.create(website=website, file=captions_old)
+    WebsiteContentFactory.create(website=website, file=captions_new)  # occupies target
+    # Video resource references the skipped captions file.
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old,
+                "video_transcript_file": None,
+            },
+        },
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    # Captions rename was skipped — metadata must NOT be patched to the stripped path.
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 

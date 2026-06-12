@@ -15,8 +15,8 @@ from websites.models import Website, WebsiteContent
 class RenameTask(NamedTuple):
     """A planned S3 + DB rename for one WebsiteContent record."""
 
-    pk: str  # WebsiteContent pk (UUID string)
-    website_id: str  # Website.uuid (FK, used for dirty-flag bulk update)
+    pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
+    website_id: str  # str(Website.uuid) — UUID FK used for dirty-flag bulk update
     old_key: str
     new_key: str
 
@@ -24,7 +24,7 @@ class RenameTask(NamedTuple):
 class MetadataPatch(NamedTuple):
     """A planned metadata update for one Video-type WebsiteContent record."""
 
-    pk: str  # WebsiteContent pk (UUID string)
+    pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
     updated_metadata: dict
 
 
@@ -116,7 +116,7 @@ def _collect_renames(queryset):
     return tasks, skipped
 
 
-def _collect_metadata_patches(website_uuids):
+def _collect_metadata_patches(website_uuids, renamed_keys=None):
     """
     Scan Video-type resource records in *website_uuids* for stale UUID-prefixed
     paths in metadata["video_files"]["video_captions_file"] and
@@ -124,6 +124,13 @@ def _collect_metadata_patches(website_uuids):
 
     Returns list[MetadataPatch] — one entry per record that needs updating.
     Does not write to the database.
+
+    *renamed_keys* — if provided, only patch metadata values whose path
+    (after stripping a leading slash) appears in this set. This prevents
+    patching video metadata for a captions/transcript file whose rename was
+    skipped (e.g. due to a conflict), which would otherwise leave the metadata
+    pointing at the wrong S3 path. Omit for dry-run paths where all planned
+    renames are assumed to succeed.
     """
     if not website_uuids:
         return []
@@ -146,6 +153,11 @@ def _collect_metadata_patches(website_uuids):
         for field in ("video_captions_file", "video_transcript_file"):
             val = vf.get(field) or ""
             if val:
+                # If a renamed_keys filter is provided, skip values whose
+                # underlying file was not actually renamed (e.g. skipped due
+                # to a conflict). lstrip handles leading-slash variants.
+                if renamed_keys is not None and val.lstrip("/") not in renamed_keys:
+                    continue
                 new_val = strip_uuid_prefix(val)
                 if new_val != val:
                     vf[field] = new_val
@@ -201,6 +213,7 @@ class Command(WebsiteFilterCommand):
         renamed_count = 0
         error_count = 0
         actually_renamed_website_ids = set()
+        successfully_renamed_old_keys: set[str] = set()
 
         for task in renames:
             try:
@@ -224,6 +237,7 @@ class Command(WebsiteFilterCommand):
                 self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
                 renamed_count += 1
                 actually_renamed_website_ids.add(task.website_id)
+                successfully_renamed_old_keys.add(task.old_key)
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
@@ -240,7 +254,14 @@ class Command(WebsiteFilterCommand):
                 has_unpublished_draft=True,
             )
 
-        patches = _collect_metadata_patches(actually_renamed_website_ids)
+        # Pass successfully_renamed_old_keys so metadata is only patched for
+        # captions/transcript files whose underlying rename actually committed.
+        # Skipped files (e.g. due to a conflict) are excluded, preventing
+        # metadata from pointing at the wrong S3 path.
+        patches = _collect_metadata_patches(
+            actually_renamed_website_ids,
+            renamed_keys=successfully_renamed_old_keys,
+        )
         if patches:
             WebsiteContent.objects.bulk_update(
                 [
