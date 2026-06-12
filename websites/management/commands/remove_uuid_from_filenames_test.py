@@ -304,6 +304,41 @@ def test_s3_error_is_reported_and_does_not_abort(mock_s3):
     assert str(succeeding_content.file) == f"sites/{website.name}/good.pdf"
 
 
+def test_s3_error_does_not_dirty_website_or_patch_metadata(mock_s3):
+    """A failed rename must not mark the website dirty or patch video metadata."""
+    website = WebsiteFactory.create()
+    captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
+    captions_content = WebsiteContentFactory.create(website=website, file=captions_old)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old,
+                "video_transcript_file": None,
+            },
+        },
+    )
+    Website.objects.filter(uuid=website.uuid).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    mock_s3.return_value.copy_object.side_effect = Exception("S3 unavailable")
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    # Rename failed: file unchanged in DB
+    captions_content.refresh_from_db()
+    assert str(captions_content.file) == captions_old
+    # Website must NOT be marked dirty — no rename committed to DB
+    website.refresh_from_db()
+    assert website.has_unpublished_live is False
+    assert website.has_unpublished_draft is False
+    # Video metadata must NOT be patched — the underlying file was not renamed
+    video_resource.refresh_from_db()
+    assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
+
+
 def test_marks_website_dirty_after_rename(mock_s3):
     """Websites with renamed files are marked as having unpublished changes."""
     website = WebsiteFactory.create()

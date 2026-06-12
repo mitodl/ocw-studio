@@ -59,10 +59,17 @@ def _collect_renames(queryset):
     Returns (tasks, skipped_count) where:
       tasks         -- list of RenameTask, one per valid rename
       skipped_count -- number of records skipped due to empty-result or conflict
+
+    Pre-fetches all existing file→pk mappings once upfront so the per-record
+    conflict check is an O(1) dict lookup rather than an individual DB query.
     """
     tasks = []
     skipped = 0
     claimed_keys = set()  # new_keys already reserved by earlier tasks in this batch
+    # Pre-fetch all non-empty file→pk mappings to avoid an N+1 conflict check.
+    existing_files = dict(
+        WebsiteContent.objects.exclude(file="").values_list("file", "pk")
+    )
     for content in queryset.iterator():
         old_key = str(content.file)
         new_key = strip_uuid_prefix(old_key)
@@ -88,12 +95,10 @@ def _collect_renames(queryset):
             skipped += 1
             continue
 
-        conflicting = (
-            WebsiteContent.objects.filter(file=new_key).exclude(pk=content.pk).first()
-        )
-        if conflicting:
+        conflicting_pk = existing_files.get(new_key)
+        if conflicting_pk and conflicting_pk != content.pk:
             print(  # noqa: T201
-                f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting.pk}",  # noqa: E501
+                f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting_pk}",  # noqa: E501
                 file=sys.stderr,
             )
             skipped += 1
@@ -178,22 +183,24 @@ class Command(WebsiteFilterCommand):
 
         # --- Discovery phase (no S3/DB writes) ---
         renames, skipped_count = _collect_renames(contents)
-        affected_website_ids = {task.website_id for task in renames}
-        patches = _collect_metadata_patches(affected_website_ids)
+        planned_website_ids = {task.website_id for task in renames}
 
         if dry_run:
+            # Compute planned patches only for the dry-run summary count.
+            planned_patches = _collect_metadata_patches(planned_website_ids)
             for task in renames:
                 self.stdout.write(f"Would rename: {task.old_key} -> {task.new_key}")
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
-                f"{len(patches)} video metadata records would be patched"
+                f"{len(planned_patches)} video metadata records would be patched"
             )
             return
 
         # --- Execution phase ---
         renamed_count = 0
         error_count = 0
+        actually_renamed_website_ids = set()
 
         for task in renames:
             try:
@@ -216,21 +223,31 @@ class Command(WebsiteFilterCommand):
                 )
                 self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
                 renamed_count += 1
+                actually_renamed_website_ids.add(task.website_id)
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
                 )
                 error_count += 1
 
-        if affected_website_ids:
-            Website.objects.filter(uuid__in=affected_website_ids).update(
+        # Dirty-flag and metadata updates are scoped to websites where at least
+        # one rename actually committed to the DB — not the full planned set.
+        # This prevents marking websites dirty or patching video metadata when
+        # the underlying S3/DB rename failed.
+        if actually_renamed_website_ids:
+            Website.objects.filter(uuid__in=actually_renamed_website_ids).update(
                 has_unpublished_live=True,
                 has_unpublished_draft=True,
             )
 
-        for patch in patches:
-            WebsiteContent.objects.filter(pk=patch.pk).update(
-                metadata=patch.updated_metadata
+        patches = _collect_metadata_patches(actually_renamed_website_ids)
+        if patches:
+            WebsiteContent.objects.bulk_update(
+                [
+                    WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
+                    for patch in patches
+                ],
+                ["metadata"],
             )
 
         self.stdout.write(
