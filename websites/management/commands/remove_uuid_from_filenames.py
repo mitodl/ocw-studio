@@ -1,6 +1,8 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
 import re
+import sys
+from typing import NamedTuple
 
 from django.conf import settings
 
@@ -9,7 +11,146 @@ from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
 from websites.models import Website, WebsiteContent
 
+
+class RenameTask(NamedTuple):
+    """A planned S3 + DB rename for one WebsiteContent record."""
+
+    pk: str  # WebsiteContent pk (UUID string)
+    website_id: str  # Website.uuid (FK, used for dirty-flag bulk update)
+    old_key: str
+    new_key: str
+
+
+class MetadataPatch(NamedTuple):
+    """A planned metadata update for one Video-type WebsiteContent record."""
+
+    pk: str  # WebsiteContent pk (UUID string)
+    updated_metadata: dict
+
+
 UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
+
+
+def strip_uuid_prefix(path):
+    """
+    Strip a UUID prefix from the basename of a path value.
+
+    Handles values stored with or without a leading slash.
+    Returns the original value unchanged if no UUID prefix is found or if
+    stripping would leave an empty basename.
+    """
+    stripped = path.lstrip("/")
+    lead = path[: len(path) - len(stripped)]  # "" or "/"
+    prefix_path, _, basename = stripped.rpartition("/")
+    if not UUID_FILENAME_RE.match(basename):
+        return path
+    new_basename = basename[33:]  # 32 hex chars + 1 underscore
+    if not new_basename:
+        return path
+    new_path = f"{prefix_path}/{new_basename}" if prefix_path else new_basename
+    return f"{lead}{new_path}"
+
+
+def _collect_renames(queryset):
+    """
+    Scan *queryset* for WebsiteContent records whose file basename has a UUID
+    prefix and return the planned renames.
+
+    Returns (tasks, skipped_count) where:
+      tasks         -- list of RenameTask, one per valid rename
+      skipped_count -- number of records skipped due to empty-result or conflict
+    """
+    tasks = []
+    skipped = 0
+    claimed_keys = set()  # new_keys already reserved by earlier tasks in this batch
+    for content in queryset.iterator():
+        old_key = str(content.file)
+        new_key = strip_uuid_prefix(old_key)
+
+        if new_key == old_key:
+            # Either no UUID prefix, or strip would leave empty basename.
+            # Distinguish: re-check the basename directly.
+            _, _, basename = old_key.rpartition("/")
+            if UUID_FILENAME_RE.match(basename) and not basename[33:]:
+                print(  # noqa: T201
+                    f"Skipping {old_key}: filename would be empty after removing UUID prefix",  # noqa: E501
+                    file=sys.stderr,
+                )
+                skipped += 1
+            continue
+
+        # Check intra-batch conflict first (another task in this run claims new_key).
+        if new_key in claimed_keys:
+            print(  # noqa: T201
+                f"Skipping {old_key}: target key {new_key} already claimed by another record in this batch",  # noqa: E501
+                file=sys.stderr,
+            )
+            skipped += 1
+            continue
+
+        conflicting = (
+            WebsiteContent.objects.filter(file=new_key).exclude(pk=content.pk).first()
+        )
+        if conflicting:
+            print(  # noqa: T201
+                f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting.pk}",  # noqa: E501
+                file=sys.stderr,
+            )
+            skipped += 1
+            continue
+
+        claimed_keys.add(new_key)
+        tasks.append(
+            RenameTask(
+                pk=str(content.pk),
+                website_id=str(content.website_id),
+                old_key=old_key,
+                new_key=new_key,
+            )
+        )
+    return tasks, skipped
+
+
+def _collect_metadata_patches(website_uuids):
+    """
+    Scan Video-type resource records in *website_uuids* for stale UUID-prefixed
+    paths in metadata["video_files"]["video_captions_file"] and
+    ["video_transcript_file"].
+
+    Returns list[MetadataPatch] — one entry per record that needs updating.
+    Does not write to the database.
+    """
+    if not website_uuids:
+        return []
+
+    patches = []
+    video_resources = (
+        WebsiteContent.objects.filter(
+            website__uuid__in=website_uuids,
+            type="resource",
+            metadata__resourcetype="Video",
+            metadata__video_files__isnull=False,
+        )
+        .values("pk", "metadata")
+        .iterator()
+    )
+    for resource in video_resources:
+        metadata = resource["metadata"] or {}
+        vf = metadata.get("video_files") or {}
+        changed = False
+        for field in ("video_captions_file", "video_transcript_file"):
+            val = vf.get(field) or ""
+            if val:
+                new_val = strip_uuid_prefix(val)
+                if new_val != val:
+                    vf[field] = new_val
+                    changed = True
+        if changed:
+            metadata["video_files"] = vf
+            patches.append(
+                MetadataPatch(pk=str(resource["pk"]), updated_metadata=metadata)
+            )
+    return patches
 
 
 class Command(WebsiteFilterCommand):
@@ -35,81 +176,64 @@ class Command(WebsiteFilterCommand):
             WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
         )
 
-        renamed_count = 0
-        skipped_count = 0
-        error_count = 0
-        updated_website_ids = set()
+        # --- Discovery phase (no S3/DB writes) ---
+        renames, skipped_count = _collect_renames(contents)
+        affected_website_ids = {task.website_id for task in renames}
+        patches = _collect_metadata_patches(affected_website_ids)
 
-        for content in contents.iterator():
-            old_key = str(content.file)
-            prefix_path, _, basename = old_key.rpartition("/")
-
-            if not UUID_FILENAME_RE.match(basename):
-                continue
-
-            new_basename = basename[33:]  # 32 hex chars + 1 underscore
-            if not new_basename:
-                self.stderr.write(
-                    f"Skipping {old_key}: filename would be empty after removing UUID prefix"  # noqa: E501
-                )
-                skipped_count += 1
-                continue
-
-            new_key = f"{prefix_path}/{new_basename}" if prefix_path else new_basename
-
-            conflicting = (
-                WebsiteContent.objects.filter(file=new_key)
-                .exclude(pk=content.pk)
-                .first()
+        if dry_run:
+            for task in renames:
+                self.stdout.write(f"Would rename: {task.old_key} -> {task.new_key}")
+            self.stdout.write(
+                f"Dry run complete: {len(renames)} files would be renamed, "
+                f"{skipped_count} skipped, "
+                f"{len(patches)} video metadata records would be patched"
             )
-            if conflicting:
-                self.stderr.write(
-                    f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting.pk}"  # noqa: E501
-                )
-                skipped_count += 1
-                continue
+            return
 
-            if dry_run:
-                self.stdout.write(f"Would rename: {old_key} -> {new_key}")
-                renamed_count += 1
-                continue
+        # --- Execution phase ---
+        renamed_count = 0
+        error_count = 0
 
+        for task in renames:
             try:
                 s3.copy_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                     CopySource={
                         "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                        "Key": old_key,
+                        "Key": task.old_key,
                     },
-                    Key=new_key,
+                    Key=task.new_key,
                     ACL="public-read",
                 )
+                WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
+                DriveFile.objects.filter(
+                    resource_id=task.pk, s3_key=task.old_key
+                ).update(s3_key=task.new_key)
                 s3.delete_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=old_key,
+                    Key=task.old_key,
                 )
-                WebsiteContent.objects.filter(pk=content.pk).update(file=new_key)
-                DriveFile.objects.filter(resource=content, s3_key=old_key).update(
-                    s3_key=new_key
-                )
-                updated_website_ids.add(content.website_id)
-                self.stdout.write(f"Renamed: {old_key} -> {new_key}")
+                self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
                 renamed_count += 1
             except Exception as exc:  # noqa: BLE001
-                self.stderr.write(f"Error renaming {old_key} to {new_key}: {exc!s}")
+                self.stderr.write(
+                    f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
+                )
                 error_count += 1
 
-        if updated_website_ids:
-            Website.objects.filter(uuid__in=updated_website_ids).update(
+        if affected_website_ids:
+            Website.objects.filter(uuid__in=affected_website_ids).update(
                 has_unpublished_live=True,
                 has_unpublished_draft=True,
             )
 
-        if dry_run:
-            self.stdout.write(
-                f"Dry run complete: {renamed_count} files would be renamed, {skipped_count} skipped"  # noqa: E501
+        for patch in patches:
+            WebsiteContent.objects.filter(pk=patch.pk).update(
+                metadata=patch.updated_metadata
             )
-        else:
-            self.stdout.write(
-                f"Done: {renamed_count} renamed, {skipped_count} skipped, {error_count} errors"  # noqa: E501
-            )
+
+        self.stdout.write(
+            f"Done: {renamed_count} renamed, {skipped_count} skipped, "
+            f"{error_count} errors, {len(patches)} video metadata records patched"
+        )
