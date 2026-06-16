@@ -1066,3 +1066,87 @@ def test_website_content_detail_serializer_syncs_video_relation_files_partial(
             get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
             == "/old/captions.vtt"
         )
+
+
+@pytest.mark.django_db
+def test_website_content_detail_serializer_syncs_video_relation_files_multi_language(
+    mocker, mocked_website_funcs
+):
+    """Updating video with multiple language resources stores list of {file, language}."""
+    mocker.patch("websites.serializers.update_youtube_thumbnail")
+    video_metadata = {
+        settings.FIELD_RESOURCETYPE: RESOURCE_TYPE_VIDEO,
+        "video_files": {},
+    }
+    set_dict_field(video_metadata, settings.YT_FIELD_CAPTIONS, [])
+    set_dict_field(video_metadata, settings.YT_FIELD_TRANSCRIPT, [])
+
+    video = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata=video_metadata,
+    )
+
+    caption_en = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        is_page_content=True,
+        filename="lecture1_captions_vtt",
+        website=video.website,
+    )
+    caption_en.file = SimpleUploadedFile("lecture1_captions.vtt", b"en captions")
+    caption_en.save()
+
+    caption_es = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        is_page_content=True,
+        filename="lecture1_captions_es_vtt",
+        website=video.website,
+    )
+    caption_es.file = SimpleUploadedFile("lecture1_captions_es.vtt", b"es captions")
+    caption_es.save()
+
+    transcript_en = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        is_page_content=True,
+        filename="lecture1_transcript_pdf",
+        website=video.website,
+    )
+    transcript_en.file = SimpleUploadedFile("lecture1_transcript.pdf", b"en transcript")
+    transcript_en.save()
+
+    metadata_patch = {"video_files": {}}
+    set_dict_field(
+        metadata_patch,
+        settings.YT_FIELD_CAPTIONS_RESOURCE,
+        {
+            "content": [str(caption_en.text_id), str(caption_es.text_id)],
+            "website": video.website.name,
+        },
+    )
+    set_dict_field(
+        metadata_patch,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+        {"content": [str(transcript_en.text_id)], "website": video.website.name},
+    )
+
+    serializer = WebsiteContentDetailSerializer(
+        instance=video,
+        data={"metadata": metadata_patch},
+        partial=True,
+        context={"request": mocker.Mock(user=UserFactory.create())},
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    video.refresh_from_db()
+
+    captions_result = get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
+    assert isinstance(captions_result, list)
+    assert len(captions_result) == 2
+    # Language detection is not asserted here; all entries default to "en".
+    files = {entry["file"] for entry in captions_result}
+    assert f"/{caption_en.file.name.lstrip('/')}" in files
+    assert f"/{caption_es.file.name.lstrip('/')}" in files
+
+    transcript_result = get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
+    assert isinstance(transcript_result, list)
+    assert len(transcript_result) == 1
+    assert transcript_result[0]["file"] == f"/{transcript_en.file.name.lstrip('/')}"

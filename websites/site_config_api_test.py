@@ -185,6 +185,8 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments  # noqa: 
         "video_metadata": {"youtube_id": "", "video_speakers": "", "video_tags": ""},
         "video_files": {
             "video_thumbnail_file": "",
+            "video_captions_resources": [],
+            "video_transcript_resources": [],
         },
         **class_data,
     }

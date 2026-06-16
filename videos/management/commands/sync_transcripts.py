@@ -53,7 +53,7 @@ class Command(BaseCommand):
             # refresh query each time
             to_course_videos_dict = self.courses_to_youtube_dict(to_course_videos)
             captions_resource = (
-                video.metadata["video_files"].get("video_captions_resource") or {}
+                video.metadata["video_files"].get("video_captions_resources") or {}
             )
             if not captions_resource.get("content"):  # missing captions
                 self.stdout.write("Missing captions: " + video_youtube_id + "\n")
@@ -73,7 +73,7 @@ class Command(BaseCommand):
                         source_captions.is_page_content = True
                         source_captions.save()
                     if source_captions:
-                        video.metadata["video_files"]["video_captions_resource"] = {
+                        video.metadata["video_files"]["video_captions_resources"] = {
                             "content": [str(source_captions.text_id)],
                             "website": to_course.name,
                         }
@@ -96,7 +96,7 @@ class Command(BaseCommand):
                     ).first()
                     if source_captions:
                         new_captions = create_new_content(source_captions, to_course)
-                        video.metadata["video_files"]["video_captions_resource"] = {
+                        video.metadata["video_files"]["video_captions_resources"] = {
                             "content": [str(new_captions.text_id)],
                             "website": to_course.name,
                         }
@@ -108,7 +108,7 @@ class Command(BaseCommand):
                         video.save()
 
             transcript_resource = (
-                video.metadata["video_files"].get("video_transcript_resource") or {}
+                video.metadata["video_files"].get("video_transcript_resources") or {}
             )
             if not transcript_resource.get("content"):  # missing transcript
                 self.stdout.write("Missing transcript: " + video_youtube_id + "\n")
@@ -128,7 +128,7 @@ class Command(BaseCommand):
                         source_transcript.is_page_content = True
                         source_transcript.save()
                     if source_transcript:
-                        video.metadata["video_files"]["video_transcript_resource"] = {
+                        video.metadata["video_files"]["video_transcript_resources"] = {
                             "content": [str(source_transcript.text_id)],
                             "website": to_course.name,
                         }
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                         new_transcript = create_new_content(
                             source_transcript, to_course
                         )
-                        video.metadata["video_files"]["video_transcript_resource"] = {
+                        video.metadata["video_files"]["video_transcript_resources"] = {
                             "content": [str(new_transcript.text_id)],
                             "website": to_course.name,
                         }
@@ -176,10 +176,10 @@ class Command(BaseCommand):
         for video in videos:
             youtube_id = video.metadata["video_metadata"]["youtube_id"]
             captions_rel = (
-                video.metadata["video_files"].get("video_captions_resource") or {}
+                video.metadata["video_files"].get("video_captions_resources") or {}
             )
             transcript_rel = (
-                video.metadata["video_files"].get("video_transcript_resource") or {}
+                video.metadata["video_files"].get("video_transcript_resources") or {}
             )
             captions_ids = captions_rel.get("content") or []
             transcript_ids = transcript_rel.get("content") or []

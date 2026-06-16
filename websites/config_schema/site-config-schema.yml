@@ -55,7 +55,7 @@ field_condition:
 ---
 relation_filter:
   field: str()
-  filter_type: enum('equals')
+  filter_type: enum('equals', 'not_equals')
   value: any()
 ---
 level:

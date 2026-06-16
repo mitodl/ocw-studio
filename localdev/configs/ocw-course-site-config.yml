@@ -168,6 +168,26 @@ collections:
     - label: Video Thumbnail URL
       name: video_thumbnail_file
       widget: string
+    - label: Video Captions Resources
+      name: video_captions_resources
+      widget: relation
+      collection: resource
+      display_field: title
+      multiple: true
+      filter:
+        field: resourcetype
+        filter_type: equals
+        value: Other
+    - label: Video Transcript Resources
+      name: video_transcript_resources
+      widget: relation
+      collection: resource
+      display_field: title
+      multiple: true
+      filter:
+        field: resourcetype
+        filter_type: equals
+        value: Document
 
 - category: Settings
   name: metadata
