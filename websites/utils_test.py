@@ -786,8 +786,8 @@ def test_compile_referencing_content_resource_captions_and_transcript():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_resource": {"content": captions_uuid},
-                "video_transcript_resource": {"content": transcript_uuid},
+                "video_captions_resources": {"content": captions_uuid},
+                "video_transcript_resources": {"content": transcript_uuid},
             },
         },
     )
@@ -806,7 +806,7 @@ def test_compile_referencing_content_resource_captions_only():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_resource": {"content": captions_uuid},
+                "video_captions_resources": {"content": captions_uuid},
             },
         },
     )
@@ -1275,11 +1275,67 @@ def test_resolve_referenced_content_ids_video_file_empty_strings():
             "video_files": {
                 "video_captions_file": "",
                 "video_transcript_file": "",
-                "video_captions_resource": "",
-                "video_transcript_resource": "",
+                "video_captions_resources": "",
+                "video_transcript_resources": "",
             },
         },
     )
 
     result = resolve_referenced_content_ids(video_resource)
     assert result == set()
+
+
+@pytest.mark.django_db
+def test_resolve_referenced_content_ids_video_file_paths_array_format():
+    """resolve_referenced_content_ids resolves multi-language array-of-objects _file format."""
+    website = WebsiteFactory.create()
+
+    captions_en = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
+    )
+    captions_es = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="lecture1_captions_es_vtt",
+        file=f"courses/{website.name}/lecture1_captions_es.vtt",
+    )
+    transcript_en = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="lecture1_transcript_pdf",
+        file=f"courses/{website.name}/lecture1_transcript.pdf",
+    )
+
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": [
+                    {
+                        "file": f"/courses/{website.name}/lecture1_captions.vtt",
+                        "language": "en",
+                    },
+                    {
+                        "file": f"/courses/{website.name}/lecture1_captions_es.vtt",
+                        "language": "es",
+                    },
+                ],
+                "video_transcript_file": [
+                    {
+                        "file": f"/courses/{website.name}/lecture1_transcript.pdf",
+                        "language": "en",
+                    },
+                ],
+            },
+        },
+    )
+
+    result = resolve_referenced_content_ids(video_resource)
+    assert captions_en.id in result
+    assert captions_es.id in result
+    assert transcript_en.id in result

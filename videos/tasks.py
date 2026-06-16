@@ -53,6 +53,7 @@ from videos.models import Video, VideoFile
 from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
+    parse_caption_language_locale,
     process_video_tags,
 )
 from videos.youtube import (
@@ -140,7 +141,7 @@ def upload_youtube_videos():  # noqa: C901
     max_retries=3,
     bind=True,  # Bind to access retry count
 )
-def start_transcript_job(self, video_id: int, timeout_override: int | None = None):
+def start_transcript_job(self, video_id: int, timeout_override: int | None = None):  # noqa: C901, PLR0912, PLR0915
     """
     If there are existing captions or transcript, associate them with the video;
     otherwise, use the 3Play API to order a new transcript for video
@@ -162,20 +163,65 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
         .first()
     )
 
-    captions, transcript = video.caption_transcript_resources()
+    captions_list, transcripts_list = video.caption_transcript_resources()
 
-    if captions or transcript:  # check for existing captions or transcript
-        if captions:
+    if captions_list or transcripts_list:  # check for existing captions or transcript
+        website = video.website
+        if captions_list:
+            captions_file_data = []
+            for r in captions_list:
+                if not (getattr(r, "file", None) and r.file.name):
+                    continue
+                lang, locale = parse_caption_language_locale(r.filename or "")
+                entry: dict = {
+                    "file": urljoin(
+                        "/",
+                        r.file.name.replace(website.s3_path, website.url_path),
+                    ),
+                    "language": lang,
+                }
+                if locale:
+                    entry["locale"] = locale
+                captions_file_data.append(entry)
+            set_dict_field(
+                video_resource.metadata, settings.YT_FIELD_CAPTIONS, captions_file_data
+            )
             set_dict_field(
                 video_resource.metadata,
-                settings.YT_FIELD_CAPTIONS,
-                [{"file": captions.file.name, "language": "en"}],
+                settings.YT_FIELD_CAPTIONS_RESOURCE,
+                {
+                    "content": [str(r.text_id) for r in captions_list],
+                    "website": website.name,
+                },
             )
-        if transcript:
+        if transcripts_list:
+            transcripts_file_data = []
+            for r in transcripts_list:
+                if not (getattr(r, "file", None) and r.file.name):
+                    continue
+                lang, locale = parse_caption_language_locale(r.filename or "")
+                entry: dict = {
+                    "file": urljoin(
+                        "/",
+                        r.file.name.replace(website.s3_path, website.url_path),
+                    ),
+                    "language": lang,
+                }
+                if locale:
+                    entry["locale"] = locale
+                transcripts_file_data.append(entry)
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_TRANSCRIPT,
-                [{"file": transcript.file.name, "language": "en"}],
+                transcripts_file_data,
+            )
+            set_dict_field(
+                video_resource.metadata,
+                settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+                {
+                    "content": [str(r.text_id) for r in transcripts_list],
+                    "website": website.name,
+                },
             )
         video_resource.save()
 
@@ -322,16 +368,16 @@ def delete_s3_objects(
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
 )
-def update_transcripts_for_video(video_id: int):  # noqa: C901
+def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
-    captions, transcript = video.caption_transcript_resources()
+    captions_list, transcripts_list = video.caption_transcript_resources()
     has_threeplay_update = (
         False
-        if captions or transcript
+        if captions_list or transcripts_list
         else threeplay_api.update_transcripts_for_video(video)
     )
-    if not captions and not transcript and not has_threeplay_update:
+    if not captions_list and not transcripts_list and not has_threeplay_update:
         return
 
     first_transcript_download = False
@@ -387,24 +433,36 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                 )
                 video_resource.save()
             else:
-                for resource, meta_field in [
-                    (captions, settings.YT_FIELD_CAPTIONS),
-                    (transcript, settings.YT_FIELD_TRANSCRIPT),
+                for resources_list, meta_field in [
+                    (captions_list, settings.YT_FIELD_CAPTIONS),
+                    (transcripts_list, settings.YT_FIELD_TRANSCRIPT),
                 ]:
-                    if resource:
-                        new_file = urljoin(
-                            "/",
-                            resource.file.name.replace(
-                                video.website.s3_path, video.website.url_path
-                            ),
-                        )
-                        new_entry = {"file": new_file, "language": "en"}
+                    if resources_list:
+                        new_value = []
+                        for r in resources_list:
+                            if not (getattr(r, "file", None) and r.file.name):
+                                continue
+                            lang, locale = parse_caption_language_locale(
+                                r.filename or ""
+                            )
+                            rv_entry: dict = {
+                                "file": urljoin(
+                                    "/",
+                                    r.file.name.replace(
+                                        video.website.s3_path, video.website.url_path
+                                    ),
+                                ),
+                                "language": lang,
+                            }
+                            if locale:
+                                rv_entry["locale"] = locale
+                            new_value.append(rv_entry)
                         current_value = get_dict_field(
                             video_resource.metadata, meta_field
                         )
-                        if current_value != [new_entry]:
+                        if current_value != new_value:
                             set_dict_field(
-                                video_resource.metadata, meta_field, [new_entry]
+                                video_resource.metadata, meta_field, new_value
                             )
                             video_resource.save()
 
@@ -532,16 +590,20 @@ def copy_gdrive_file(gdrive_file, destination_course):
 def update_transcript_and_captions(resource, new_transcript_file, new_captions_file):
     """
     Update the associated transcript and captions files for a resource.
+    Writes the file data array used by the build pipeline.
     """
     transcript_path = f"/{str(new_transcript_file).lstrip('/')}"
     captions_path = f"/{str(new_captions_file).lstrip('/')}"
-    resource.metadata["video_files"]["video_transcript_file"] = [
-        {"file": transcript_path, "language": "en"}
-    ]
-    resource.metadata["video_files"]["video_captions_file"] = [
-        {"file": captions_path, "language": "en"}
-    ]
-
+    set_dict_field(
+        resource.metadata,
+        settings.YT_FIELD_TRANSCRIPT,
+        [{"file": transcript_path, "language": "en"}],
+    )
+    set_dict_field(
+        resource.metadata,
+        settings.YT_FIELD_CAPTIONS,
+        [{"file": captions_path, "language": "en"}],
+    )
     resource.save()
     sync_website_content_references(resource)
 
@@ -582,12 +644,13 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
     """
     Copy a video resource and associated captions/transcripts (celery task).
 
-    Captions and transcripts are discovered via the ``video_captions_resource`` and
-    ``video_transcript_resource`` relation fields.  For each linked resource the
-    content record is copied to the destination course, the relation field on the
-    new video resource is updated to point at the copy, and the build-pipeline
-    file-data field is populated with the new file path.  Associated Google Drive
-    files are also copied when present.
+    Captions and transcripts are discovered via the ``video_captions_resources`` and
+    ``video_transcript_resources`` relation fields introduced in migration 0075.  For
+    each linked resource the content record is copied to the destination course, the
+    relation field on the new video resource is updated to point at the copy, and the
+    build-pipeline file-data field (``video_captions_file`` / ``video_transcript_file``)
+    is populated with the new file path.  Associated Google Drive files are also copied
+    when present.
     """
     source_course = Website.objects.get(uuid=source_course_id)
     destination_course = Website.objects.get(uuid=destination_course_id)
@@ -620,6 +683,7 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
                 file_path = f"/{new_content.file.name.lstrip('/')}"
                 file_entries.append({"file": file_path, "language": "en"})
 
+            # Copy the associated DriveFile if one exists.
             if source_content.file and source_content.file.name:
                 gdrive_file = DriveFile.objects.filter(
                     s3_key=source_content.file.name.lstrip("/")
