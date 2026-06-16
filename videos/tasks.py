@@ -681,7 +681,11 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
 
             if new_content.file and new_content.file.name:
                 file_path = f"/{new_content.file.name.lstrip('/')}"
-                file_entries.append({"file": file_path, "language": "en"})
+                lang, locale = parse_caption_language_locale(new_content.filename or "")
+                entry = {"file": file_path, "language": lang}
+                if locale:
+                    entry["locale"] = locale
+                file_entries.append(entry)
 
             # Copy the associated DriveFile if one exists.
             if source_content.file and source_content.file.name:

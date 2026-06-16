@@ -11,6 +11,7 @@ from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from users.factories import UserFactory
 from videos.constants import YT_THUMBNAIL_IMG
 from websites.api import (
+    auto_link_video_captions_transcript,
     detect_mime_type,
     fetch_website,
     get_content_warnings,
@@ -719,3 +720,159 @@ def test_get_short_id(course_num, term, year, expected_id):
     else:
         with pytest.raises(ValueError, match="Primary course number is missing"):
             get_short_id("random-name", metadata)
+
+
+# ── auto_link_video_captions_transcript ──────────────────────────────────────
+
+
+def test_auto_link_video_skips_non_video():
+    """auto_link_video_captions_transcript is a no-op for non-video resources."""
+    content = WebsiteContentFactory.create(
+        metadata={"resourcetype": "Image"},
+        filename="some-image",
+    )
+    auto_link_video_captions_transcript(content)
+    content.refresh_from_db()
+    assert content.metadata == {"resourcetype": "Image"}
+
+
+def test_auto_link_video_no_matching_captions():
+    """auto_link_video_captions_transcript makes no changes when no captions/transcript exist."""
+    website = WebsiteFactory.create()
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    assert video.metadata["video_files"] == {}
+
+
+def test_auto_link_video_links_existing_captions_and_transcript():
+    """auto_link_video_captions_transcript sets _resource fields from existing content."""
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_transcript_pdf",
+        file=f"courses/{website.name}/lecture01_transcript.pdf",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_resources"] == {
+        "content": [str(captions.text_id)],
+        "website": website.name,
+    }
+    assert vf["video_captions_file"] == [
+        {"file": f"/courses/{website.name}/lecture01_captions.vtt", "language": "en"}
+    ]
+    assert vf["video_transcript_resources"] == {
+        "content": [str(transcript.text_id)],
+        "website": website.name,
+    }
+    assert vf["video_transcript_file"] == [
+        {"file": f"/courses/{website.name}/lecture01_transcript.pdf", "language": "en"}
+    ]
+
+
+def test_auto_link_video_treats_empty_content_as_unset():
+    """_resource fields with empty-string content (site config default) are treated as unset."""
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                # site-config-initialised empty relation — should be overwritten
+                "video_captions_resources": {"content": "", "website": website.name},
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_resources"] == {
+        "content": [str(captions.text_id)],
+        "website": website.name,
+    }
+
+
+def test_auto_link_video_appends_new_without_overwriting_existing():
+    """New captions found by convention are appended to existing content list."""
+    website = WebsiteFactory.create()
+    existing_captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_fr_vtt",
+        file=f"courses/{website.name}/lecture01_captions_fr.vtt",
+    )
+    new_captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_en_vtt",
+        file=f"courses/{website.name}/lecture01_captions_en.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(existing_captions.text_id)],
+                    "website": website.name,
+                },
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    # Existing id preserved, new id appended
+    assert str(existing_captions.text_id) in vf["video_captions_resources"]["content"]
+    assert str(new_captions.text_id) in vf["video_captions_resources"]["content"]
+    assert len(vf["video_captions_resources"]["content"]) == 2
+
+
+def test_auto_link_video_multi_language_captions():
+    """auto_link_video_captions_transcript links all language variants, not just English."""
+    website = WebsiteFactory.create()
+    captions_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_en_vtt",
+        file=f"courses/{website.name}/lecture01_captions_en.vtt",
+    )
+    captions_fr = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_fr_vtt",
+        file=f"courses/{website.name}/lecture01_captions_fr.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    content = vf["video_captions_resources"]["content"]
+    assert str(captions_en.text_id) in content
+    assert str(captions_fr.text_id) in content
+    assert len(content) == 2
+    languages = {e["language"] for e in vf["video_captions_file"]}
+    assert languages == {"en", "fr"}

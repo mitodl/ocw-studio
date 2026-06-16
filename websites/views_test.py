@@ -1197,6 +1197,69 @@ def test_websites_content_create_video_resource_sets_3play_references(
     ]
 
 
+def test_websites_content_create_video_auto_links_by_filename_convention(
+    drf_client, global_admin_user
+):
+    """
+    When a video is created via the API and _resource fields are absent or
+    initialised with empty content (the site-config default), any existing
+    captions/transcript resources matching the filename convention are
+    automatically linked.
+    """
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="vid_captions_vtt",
+        file=f"courses/{website.name}/vid_captions.vtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="vid_transcript_pdf",
+        file=f"courses/{website.name}/vid_transcript.pdf",
+    )
+
+    # Simulate what the site config relation widget sends when left empty.
+    payload = {
+        "type": constants.CONTENT_TYPE_RESOURCE,
+        "title": "vid",
+        "filename": "vid_mp4",
+        "metadata": {
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": ""},
+            "video_files": {
+                "video_captions_resources": {"content": "", "website": website.name},
+                "video_transcript_resources": {"content": "", "website": website.name},
+            },
+        },
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={"parent_lookup_website": website.name},
+        ),
+        data=payload,
+        format="json",
+    )
+
+    assert resp.status_code == 201
+    content = WebsiteContent.objects.get(
+        website=website,
+        text_id=resp.data["text_id"],
+    )
+    vf = content.metadata["video_files"]
+    assert vf["video_captions_resources"] == {
+        "content": [str(captions.text_id)],
+        "website": website.name,
+    }
+    assert vf["video_transcript_resources"] == {
+        "content": [str(transcript.text_id)],
+        "website": website.name,
+    }
+
+
 def test_websites_content_create_with_textid(drf_client, global_admin_user):
     """If a text_id is added when POSTing to the WebsiteContent, we should use that instead of creating a uuid"""
     drf_client.force_login(global_admin_user)

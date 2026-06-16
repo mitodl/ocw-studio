@@ -1087,28 +1087,28 @@ def test_website_content_detail_serializer_syncs_video_relation_files_multi_lang
     )
 
     caption_en = WebsiteContentFactory.create(
+        website=video.website,
         type=CONTENT_TYPE_RESOURCE,
         is_page_content=True,
         filename="lecture1_captions_vtt",
-        website=video.website,
     )
     caption_en.file = SimpleUploadedFile("lecture1_captions.vtt", b"en captions")
     caption_en.save()
 
     caption_es = WebsiteContentFactory.create(
+        website=video.website,
         type=CONTENT_TYPE_RESOURCE,
         is_page_content=True,
         filename="lecture1_captions_es_vtt",
-        website=video.website,
     )
     caption_es.file = SimpleUploadedFile("lecture1_captions_es.vtt", b"es captions")
     caption_es.save()
 
     transcript_en = WebsiteContentFactory.create(
+        website=video.website,
         type=CONTENT_TYPE_RESOURCE,
         is_page_content=True,
         filename="lecture1_transcript_pdf",
-        website=video.website,
     )
     transcript_en.file = SimpleUploadedFile("lecture1_transcript.pdf", b"en transcript")
     transcript_en.save()
@@ -1173,10 +1173,10 @@ def test_website_content_detail_serializer_syncs_video_relation_files_with_local
 
     # English (US locale) — filename carries locale suffix
     caption_en_us = WebsiteContentFactory.create(
+        website=video.website,
         type=CONTENT_TYPE_RESOURCE,
         is_page_content=True,
         filename="lecture1_captions_en_us_vtt",
-        website=video.website,
     )
     caption_en_us.file = SimpleUploadedFile(
         "lecture1_captions_en_us.vtt", b"en-US captions"
@@ -1185,10 +1185,10 @@ def test_website_content_detail_serializer_syncs_video_relation_files_with_local
 
     # French — no locale
     caption_fr = WebsiteContentFactory.create(
+        website=video.website,
         type=CONTENT_TYPE_RESOURCE,
         is_page_content=True,
         filename="lecture1_captions_fr_vtt",
-        website=video.website,
     )
     caption_fr.file = SimpleUploadedFile("lecture1_captions_fr.vtt", b"fr captions")
     caption_fr.save()

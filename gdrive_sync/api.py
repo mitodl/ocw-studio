@@ -46,7 +46,8 @@ from main.utils import get_base_filename, get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
-from websites.api import get_valid_new_filename
+from videos.utils import parse_caption_language_locale
+from websites.api import auto_link_video_captions_transcript, get_valid_new_filename
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
@@ -458,7 +459,7 @@ def _link_video_caption_transcript_resources(
     filename = resource.filename or ""
 
     if resource_type == RESOURCE_TYPE_VIDEO:
-        _link_captions_transcript_to_video(resource, website)
+        auto_link_video_captions_transcript(resource)
     elif "_captions" in filename:
         video_base = filename.split("_captions")[0]
         _link_resource_to_video(
@@ -471,59 +472,7 @@ def _link_video_caption_transcript_resources(
         )
 
 
-def _link_captions_transcript_to_video(
-    video_resource: WebsiteContent, website: Website
-) -> None:
-    """Set _resource relation fields on a video from existing captions/transcript."""
-    video_base = get_base_filename(video_resource.filename or "")
-    if not video_base:
-        return
-    video_files = (
-        video_resource.metadata.get("video_files") if video_resource.metadata else None
-    )
-    if not isinstance(video_files, dict):
-        video_files = {}
-
-    changed = False
-    for resource_field, data_field, filename in [
-        (
-            "video_captions_resources",
-            "video_captions_file",
-            f"{video_base}_captions_vtt",
-        ),
-        (
-            "video_transcript_resources",
-            "video_transcript_file",
-            f"{video_base}_transcript_pdf",
-        ),
-    ]:
-        # Skip when content is already set — empty string/list is treated as unset.
-        existing = video_files.get(resource_field)
-        if isinstance(existing, dict) and existing.get("content"):
-            continue
-        related = WebsiteContent.objects.filter(
-            website=website, filename=filename
-        ).first()
-        if not related:
-            continue
-        video_files[resource_field] = {
-            "content": [str(related.text_id)],
-            "website": website.name,
-        }
-        if related.file and related.file.name:
-            video_files[data_field] = [
-                {"file": f"/{related.file.name.lstrip('/')}", "language": "en"}
-            ]
-        changed = True
-
-    if changed:
-        if not isinstance(video_resource.metadata, dict):
-            video_resource.metadata = {}
-        video_resource.metadata["video_files"] = video_files
-        video_resource.save()
-
-
-def _link_resource_to_video(
+def _link_resource_to_video(  # noqa: C901
     resource: WebsiteContent,
     website: Website,
     resource_field: str,
@@ -551,11 +500,24 @@ def _link_resource_to_video(
     if not isinstance(video_files, dict):
         video_files = {}
     existing = video_files.get(resource_field)
-    if isinstance(existing, dict) and existing.get("content"):
+
+    # Build set of existing content ids (support both scalar and list formats)
+    existing_ids: set[str] = set()
+    if isinstance(existing, dict):
+        content = existing.get("content")
+        if isinstance(content, list):
+            existing_ids = {c for c in content if c}
+        elif isinstance(content, str) and content:
+            existing_ids = {content}
+
+    # Don't re-link if already present
+    this_id = str(resource.text_id)
+    if this_id in existing_ids:
         return
 
+    # Append to existing list (not overwrite)
     video_files[resource_field] = {
-        "content": [str(resource.text_id)],
+        "content": [*list(existing_ids), this_id],
         "website": website.name,
     }
     data_field = (
@@ -564,9 +526,17 @@ def _link_resource_to_video(
         else "video_transcript_file"
     )
     if resource.file and resource.file.name:
-        video_files[data_field] = [
-            {"file": f"/{resource.file.name.lstrip('/')}", "language": "en"}
-        ]
+        lang, locale = parse_caption_language_locale(resource.filename or "")
+        new_file_entry: dict = {
+            "file": f"/{resource.file.name.lstrip('/')}",
+            "language": lang,
+        }
+        if locale:
+            new_file_entry["locale"] = locale
+        existing_files = video_files.get(data_field)
+        if not isinstance(existing_files, list):
+            existing_files = []
+        video_files[data_field] = [*existing_files, new_file_entry]
     if not isinstance(video_resource.metadata, dict):
         video_resource.metadata = {}
     video_resource.metadata["video_files"] = video_files
