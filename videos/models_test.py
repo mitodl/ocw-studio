@@ -72,3 +72,41 @@ def test_video_upload_file_to(course_starter):
 
     upload_location = video.upload_file_to(filename)
     assert upload_location == expected_upload_location
+
+
+@pytest.mark.django_db
+def test_video_caption_transcript_resources_multi_language(
+    preexisting_captions_filenames,
+):
+    """caption_transcript_resources returns all language-tagged captions/transcripts."""
+    youtube_id = "yt-multi"
+
+    video = VideoFactory.create()
+    VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, video=video, destination_id=youtube_id
+    )
+    video_filename = preexisting_captions_filenames["website_content"]["video"]
+    WebsiteContentFactory.create(
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        filename=video_filename,
+        website=video.website,
+    )
+    # Strip trailing suffix (e.g. "_mp4") to get the base stem
+    base = "_".join(video_filename.rsplit("_", 1)[:-1])
+    WebsiteContentFactory.create(
+        filename=f"{base}_captions_en_vtt",
+        website=video.website,
+    )
+    WebsiteContentFactory.create(
+        filename=f"{base}_captions_es_vtt",
+        website=video.website,
+    )
+    WebsiteContentFactory.create(
+        filename=f"{base}_transcript_fr_pdf",
+        website=video.website,
+    )
+
+    captions, transcripts = video.caption_transcript_resources()
+
+    assert len(captions) == 2
+    assert len(transcripts) == 1
