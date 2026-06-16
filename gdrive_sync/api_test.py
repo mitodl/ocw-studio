@@ -602,33 +602,63 @@ def test_create_gdrive_resource_content_preexisting_captions(
     mocker, mock_gdrive_pdf, preexisting_captions_filenames
 ):
     """
-    Test create_gdrive_resource_content creates resources with expected filenames
-    for preexisting captions.
+    create_gdrive_resource_content assigns expected filenames AND auto-links
+    video_captions_resources / video_transcript_resources on the video resource.
     """
     mocked_get_s3_content_type = mocker.patch("gdrive_sync.api.get_s3_content_type")
-    for drive_filename, content_filename, content_type in zip(
-        [
-            preexisting_captions_filenames["gdrive"]["video"],
-            preexisting_captions_filenames["gdrive"]["captions"],
-            preexisting_captions_filenames["gdrive"]["transcript"],
-        ],
-        [
-            preexisting_captions_filenames["website_content"]["video"],
-            preexisting_captions_filenames["website_content"]["captions"],
-            preexisting_captions_filenames["website_content"]["transcript"],
-        ],
-        ["video/mp4", "text/vtt", "application/pdf"],
-    ):
-        mocked_get_s3_content_type.return_value = content_type
+    website = WebsiteFactory.create()
 
-        drive_file = DriveFileFactory.create(
-            name=drive_filename, s3_key=f"/gdrive_uploads/website/{drive_filename}"
+    filenames = list(
+        zip(
+            [
+                preexisting_captions_filenames["gdrive"]["video"],
+                preexisting_captions_filenames["gdrive"]["captions"],
+                preexisting_captions_filenames["gdrive"]["transcript"],
+            ],
+            [
+                preexisting_captions_filenames["website_content"]["video"],
+                preexisting_captions_filenames["website_content"]["captions"],
+                preexisting_captions_filenames["website_content"]["transcript"],
+            ],
+            ["video/mp4", "text/vtt", "application/pdf"],
         )
+    )
 
+    for drive_filename, content_filename, content_type in filenames:
+        mocked_get_s3_content_type.return_value = content_type
+        drive_file = DriveFileFactory.create(
+            website=website,
+            name=drive_filename,
+            s3_key=f"/gdrive_uploads/website/{drive_filename}",
+        )
         create_gdrive_resource_content(drive_file)
         drive_file.refresh_from_db()
-
         assert drive_file.resource.filename == content_filename
+
+    # After all three are processed, the video resource must have _resource fields set.
+    video_filename = preexisting_captions_filenames["website_content"]["video"]
+    video_resource = WebsiteContent.objects.get(
+        website=website, filename=video_filename
+    )
+
+    captions_resource = WebsiteContent.objects.get(
+        website=website,
+        filename=preexisting_captions_filenames["website_content"]["captions"],
+    )
+    transcript_resource = WebsiteContent.objects.get(
+        website=website,
+        filename=preexisting_captions_filenames["website_content"]["transcript"],
+    )
+
+    vf = video_resource.metadata.get("video_files", {})
+    assert vf.get("video_captions_resources") == {
+        "content": [str(captions_resource.text_id)],
+        "website": website.name,
+    }
+    assert vf.get("video_transcript_resources") == {
+        "content": [str(transcript_resource.text_id)],
+        "website": website.name,
+    }
 
 
 def test_gdrive_pdf_failure(mock_get_s3_content_type, mocker):
