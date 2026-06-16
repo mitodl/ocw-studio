@@ -991,14 +991,12 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
 
     expected_caption_path = f"/{caption.file.name.lstrip('/')}"
     expected_transcript_path = f"/{transcript.file.name.lstrip('/')}"
-    assert (
-        get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
-        == expected_caption_path
-    )
-    assert (
-        get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
-        == expected_transcript_path
-    )
+    assert get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS) == [
+        {"file": expected_caption_path, "language": "en"}
+    ]
+    assert get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT) == [
+        {"file": expected_transcript_path, "language": "en"}
+    ]
 
 
 @pytest.mark.parametrize("update_field", ["captions", "transcript"])
@@ -1053,19 +1051,17 @@ def test_website_content_detail_serializer_syncs_video_relation_files_partial(
     expected_new_path = f"/{resource.file.name.lstrip('/')}"
 
     if update_field == "captions":
-        assert (
-            get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
-            == expected_new_path
-        )
+        assert get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS) == [
+            {"file": expected_new_path, "language": "en"}
+        ]
         assert (
             get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
             == "/old/transcript.pdf"
         )
     else:
-        assert (
-            get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
-            == expected_new_path
-        )
+        assert get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT) == [
+            {"file": expected_new_path, "language": "en"}
+        ]
         assert (
             get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
             == "/old/captions.vtt"

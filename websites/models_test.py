@@ -155,6 +155,54 @@ def test_websitecontent_full_metadata(
         assert full_metadata is None
 
 
+def test_websitecontent_full_metadata_video_files_array_format():
+    """full_metadata replaces s3_path with url_path inside video_files array entries."""
+    website = WebsiteFactory(
+        starter=WebsiteStarterFactory.create(
+            config={
+                "content-dir": "content",
+                "root-url-path": "sites",
+                "collections": [
+                    {
+                        "name": "resource",
+                        "label": "Resource",
+                        "category": "Content",
+                        "folder": "content/resource",
+                        "fields": [
+                            {"label": "Title", "name": "title", "widget": "string"},
+                        ],
+                    }
+                ],
+            }
+        ),
+        url_path="sites/mysite-fall-2008",
+        name="mysite",
+    )
+    content = WebsiteContentFactory.build(
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_file": [
+                    {"file": "/sites/mysite/captions.vtt", "language": "en"}
+                ],
+                "video_transcript_file": [
+                    {"file": "/sites/mysite/transcript.pdf", "language": "en"}
+                ],
+            }
+        },
+        website=website,
+    )
+
+    full_metadata = content.full_metadata
+
+    assert full_metadata["video_files"]["video_captions_file"] == [
+        {"file": "/sites/mysite-fall-2008/captions.vtt", "language": "en"}
+    ]
+    assert full_metadata["video_files"]["video_transcript_file"] == [
+        {"file": "/sites/mysite-fall-2008/transcript.pdf", "language": "en"}
+    ]
+
+
 def test_website_starter_unpublished():
     """Website should set has_unpublished_live and has_unpublished_draft if the starter is updated"""
     website = WebsiteFactory.create(
