@@ -50,7 +50,11 @@ def _attach_transcript_if_missing(
     Attach transcript to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if video.metadata["video_files"].get("video_transcript_file"):
+    if (
+        video.metadata["video_files"]
+        .get("video_transcript_resources", {})
+        .get("content")
+    ):
         return
 
     pdf_url = base_url + f"&format_id={PDF_FORMAT_ID}"
@@ -62,8 +66,14 @@ def _attach_transcript_if_missing(
     if pdf_response:
         file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        filepath = _create_new_content(pdf_file, video, file_size=file_size)
-        video.metadata["video_files"]["video_transcript_file"] = filepath
+        filepath, text_id = _create_new_content(pdf_file, video, file_size=file_size)
+        video.metadata["video_files"]["video_transcript_resources"] = {
+            "content": [text_id],
+            "website": video.website.name,
+        }
+        video.metadata["video_files"]["video_transcript_file"] = [
+            {"file": filepath, "language": "en"}
+        ]
 
         if summary:
             summary["transcripts"]["updated"] += 1
@@ -91,7 +101,7 @@ def _attach_captions_if_missing(
     Attach captions to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if video.metadata["video_files"].get("video_captions_file"):
+    if video.metadata["video_files"].get("video_captions_resources", {}).get("content"):
         return
 
     webvtt_url = base_url + f"&format_id={WEBVTT_FORMAT_ID}"
@@ -102,8 +112,14 @@ def _attach_captions_if_missing(
     if webvtt_response:
         file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        filepath = _create_new_content(vtt_file, video, file_size)
-        video.metadata["video_files"]["video_captions_file"] = filepath
+        filepath, text_id = _create_new_content(vtt_file, video, file_size)
+        video.metadata["video_files"]["video_captions_resources"] = {
+            "content": [text_id],
+            "website": video.website.name,
+        }
+        video.metadata["video_files"]["video_captions_file"] = [
+            {"file": filepath, "language": "en"}
+        ]
         if summary:
             summary["captions"]["updated"] += 1
         write_output(
@@ -198,10 +214,11 @@ def generate_metadata(
 
 def _create_new_content(
     file_content: File, video: WebsiteContent, file_size: int | None = None
-) -> str:
+) -> tuple[str, str]:
     """
     Create and save a new WebsiteContent object
     for a caption or transcript file.
+    Returns a (s3_path, text_id) tuple.
     """
     new_text_id = str(uuid4())
     new_s3_loc = upload_to_s3(file_content, video)
@@ -228,4 +245,4 @@ def _create_new_content(
     obj.file = new_s3_loc
     obj.save()
 
-    return new_s3_loc
+    return new_s3_loc, str(obj.text_id)
