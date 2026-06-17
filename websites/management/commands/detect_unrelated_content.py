@@ -45,6 +45,7 @@ class Command(WebsiteFilterCommand):
     UNRELATED_FILES_THRESHOLD = 100
 
     def add_arguments(self, parser):
+        """Add command-line arguments."""
         super().add_arguments(parser)
         parser.add_argument(
             "--delete", action="store_true", help="Delete unrelated resources from S3"
@@ -111,6 +112,15 @@ class Command(WebsiteFilterCommand):
             s3: The S3 resource object.
             unrelated_files_by_site (dict): A dictionary to store unrelated files.
         """
+        # Terminate the prefix with "/" so the listing does not match sibling
+        # sites whose name has this site's name as a string prefix. Without it,
+        # listing "courses/game-theory" also returns the keys of
+        # "courses/game-theory-and-political-theory", which would then be
+        # flagged as unrelated and deleted. A site's objects all live *under*
+        # "<s3_path>/", so the trailing slash still matches every one of them
+        # and only excludes the colliding siblings.
+        if not prefix.endswith("/"):
+            prefix = f"{prefix}/"
         s3_file_keys = list_all_s3_keys(
             s3.meta.client, settings.AWS_STORAGE_BUCKET_NAME, prefix
         )
@@ -171,6 +181,15 @@ class Command(WebsiteFilterCommand):
         """
         Get all files referenced in content and video metadata.
 
+        A content's S3 location may be stored in the ``file`` column or, for
+        data created in earlier eras, in ``metadata["file"]`` /
+        ``metadata["file_location"]`` (see gdrive_sync.utils.fetch_content_file_size,
+        which resolves all three). All of them must be treated as related, or
+        their live S3 objects would be flagged as unrelated and deleted.
+
+        ``all_objects`` is used so files belonging to soft-deleted content are
+        also protected: soft deletes are reversible, S3 deletes are not.
+
         Args:
             website: The website to check for content
 
@@ -183,15 +202,18 @@ class Command(WebsiteFilterCommand):
             "video_transcript_file",
         ]
 
-        website_contents = WebsiteContent.objects.filter(
-            website=website, file__isnull=False
-        ).values_list("file", "metadata__video_files")
+        website_contents = WebsiteContent.all_objects.filter(
+            website=website
+        ).values_list(
+            "file", "metadata__file", "metadata__file_location", "metadata__video_files"
+        )
 
         normalized_files = set()
 
-        for file, video_files in website_contents:
-            if file:
-                normalized_files.add(file.removeprefix("/"))
+        for file, meta_file, meta_loc, video_files in website_contents:
+            for candidate in (file, meta_file, meta_loc):
+                if candidate:
+                    normalized_files.add(str(candidate).removeprefix("/"))
 
             if video_files:
                 paths = set()
