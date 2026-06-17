@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.189.0 (Released June 17, 2026)
+---------------
+
+- Configure bump-my-version for Concourse release pipeline (#2996)
+- use keycloak for authentication (#3050)
+- Update dependency mitol-django-authentication to ==2026.4.29,<2027 (#3060)
+- Update dependency sentry-sdk to v2.60.0 (#3062)
+- fix: prevent external-resource pages from being rendered by Hugo (#3053)
+- Update dependency boto3 to v1.43.14 (#3058)
+- Update dependency django to v5.2.15 [SECURITY] (#3056)
+
 Version 0.188.0 (Released June 04, 2026)
 ---------------
 
