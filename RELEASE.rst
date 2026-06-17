@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.189.0
+Version 0.189.0 (Released June 17, 2026)
 ---------------
 
 - Configure bump-my-version for Concourse release pipeline (#2996)
