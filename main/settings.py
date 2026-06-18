@@ -585,8 +585,8 @@ YT_FIELD_CAPTIONS = get_string(
     default="video_files.video_captions_file",
     description="The site config metadata field for the captions URL",
 )
-YT_FIELD_CAPTIONS_RESOURCE = get_string(
-    name="YT_FIELD_CAPTIONS_RESOURCE",
+YT_FIELD_CAPTIONS_RESOURCES = get_string(
+    name="YT_FIELD_CAPTIONS_RESOURCES",
     default="video_files.video_captions_resources",
     description="The site config metadata field for the captions resource",
 )
@@ -621,8 +621,8 @@ YT_FIELD_TRANSCRIPT = get_string(
     default="video_files.video_transcript_file",
     description="The site config metadata field for the transcript URL",
 )
-YT_FIELD_TRANSCRIPT_RESOURCE = get_string(
-    name="YT_FIELD_TRANSCRIPT_RESOURCE",
+YT_FIELD_TRANSCRIPT_RESOURCES = get_string(
+    name="YT_FIELD_TRANSCRIPT_RESOURCES",
     default="video_files.video_transcript_resources",
     description="The site config metadata field for the transcript resource",
 )

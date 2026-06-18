@@ -968,12 +968,12 @@ def test_website_content_detail_serializer_syncs_video_relation_files(
     metadata_patch = {"video_files": {}}
     set_dict_field(
         metadata_patch,
-        settings.YT_FIELD_CAPTIONS_RESOURCE,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
         {"content": str(caption.text_id)},
     )
     set_dict_field(
         metadata_patch,
-        settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         {"content": str(transcript.text_id)},
     )
 
@@ -1028,9 +1028,9 @@ def test_website_content_detail_serializer_syncs_video_relation_files_partial(
     metadata_patch = {"video_files": video.metadata["video_files"].copy()}
 
     relation_field = (
-        settings.YT_FIELD_CAPTIONS_RESOURCE
+        settings.YT_FIELD_CAPTIONS_RESOURCES
         if update_field == "captions"
-        else settings.YT_FIELD_TRANSCRIPT_RESOURCE
+        else settings.YT_FIELD_TRANSCRIPT_RESOURCES
     )
     set_dict_field(
         metadata_patch,
@@ -1116,7 +1116,7 @@ def test_website_content_detail_serializer_syncs_video_relation_files_multi_lang
     metadata_patch = {"video_files": {}}
     set_dict_field(
         metadata_patch,
-        settings.YT_FIELD_CAPTIONS_RESOURCE,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
         {
             "content": [str(caption_en.text_id), str(caption_es.text_id)],
             "website": video.website.name,
@@ -1124,7 +1124,7 @@ def test_website_content_detail_serializer_syncs_video_relation_files_multi_lang
     )
     set_dict_field(
         metadata_patch,
-        settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         {"content": [str(transcript_en.text_id)], "website": video.website.name},
     )
 

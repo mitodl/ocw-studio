@@ -53,7 +53,6 @@ from videos.models import Video, VideoFile
 from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
-    parse_caption_language_locale,
     process_video_tags,
 )
 from videos.youtube import (
@@ -141,7 +140,7 @@ def upload_youtube_videos():  # noqa: C901
     max_retries=3,
     bind=True,  # Bind to access retry count
 )
-def start_transcript_job(self, video_id: int, timeout_override: int | None = None):  # noqa: C901, PLR0912, PLR0915
+def start_transcript_job(self, video_id: int, timeout_override: int | None = None):
     """
     If there are existing captions or transcript, associate them with the video;
     otherwise, use the 3Play API to order a new transcript for video
@@ -163,63 +162,35 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
         .first()
     )
 
-    captions_list, transcripts_list = video.caption_transcript_resources()
+    captions, transcript = video.caption_transcript_resources()
 
-    if captions_list or transcripts_list:  # check for existing captions or transcript
+    if captions or transcript:  # check for existing captions or transcript
         website = video.website
-        if captions_list:
-            captions_file_data = []
-            for r in captions_list:
-                if not (getattr(r, "file", None) and r.file.name):
-                    continue
-                lang, locale = parse_caption_language_locale(r.filename or "")
-                entry: dict = {
-                    "file": urljoin(
-                        "/",
-                        r.file.name.replace(website.s3_path, website.url_path),
-                    ),
-                    "language": lang,
-                }
-                if locale:
-                    entry["locale"] = locale
-                captions_file_data.append(entry)
+        if captions:
             set_dict_field(
-                video_resource.metadata, settings.YT_FIELD_CAPTIONS, captions_file_data
+                video_resource.metadata,
+                settings.YT_FIELD_CAPTIONS,
+                [{"file": captions.file.name, "language": "en"}],
             )
             set_dict_field(
                 video_resource.metadata,
-                settings.YT_FIELD_CAPTIONS_RESOURCE,
+                settings.YT_FIELD_CAPTIONS_RESOURCES,
                 {
-                    "content": [str(r.text_id) for r in captions_list],
+                    "content": [str(captions.text_id)],
                     "website": website.name,
                 },
             )
-        if transcripts_list:
-            transcripts_file_data = []
-            for r in transcripts_list:
-                if not (getattr(r, "file", None) and r.file.name):
-                    continue
-                lang, locale = parse_caption_language_locale(r.filename or "")
-                entry: dict = {
-                    "file": urljoin(
-                        "/",
-                        r.file.name.replace(website.s3_path, website.url_path),
-                    ),
-                    "language": lang,
-                }
-                if locale:
-                    entry["locale"] = locale
-                transcripts_file_data.append(entry)
+        if transcript:
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_TRANSCRIPT,
-                transcripts_file_data,
+                [{"file": transcript.file.name, "language": "en"}],
             )
             set_dict_field(
                 video_resource.metadata,
-                settings.YT_FIELD_TRANSCRIPT_RESOURCE,
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES,
                 {
-                    "content": [str(r.text_id) for r in transcripts_list],
+                    "content": [str(transcript.text_id)],
                     "website": website.name,
                 },
             )
@@ -368,16 +339,16 @@ def delete_s3_objects(
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
 )
-def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
+def update_transcripts_for_video(video_id: int):  # noqa: C901
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
-    captions_list, transcripts_list = video.caption_transcript_resources()
+    captions, transcript = video.caption_transcript_resources()
     has_threeplay_update = (
         False
-        if captions_list or transcripts_list
+        if captions or transcript
         else threeplay_api.update_transcripts_for_video(video)
     )
-    if not captions_list and not transcripts_list and not has_threeplay_update:
+    if not captions and not transcript and not has_threeplay_update:
         return
 
     first_transcript_download = False
@@ -433,36 +404,44 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
                 )
                 video_resource.save()
             else:
-                for resources_list, meta_field in [
-                    (captions_list, settings.YT_FIELD_CAPTIONS),
-                    (transcripts_list, settings.YT_FIELD_TRANSCRIPT),
+                for resource, (file_field, resource_field) in [
+                    (
+                        captions,
+                        (
+                            settings.YT_FIELD_CAPTIONS,
+                            settings.YT_FIELD_CAPTIONS_RESOURCES,
+                        ),
+                    ),
+                    (
+                        transcript,
+                        (
+                            settings.YT_FIELD_TRANSCRIPT,
+                            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+                        ),
+                    ),
                 ]:
-                    if resources_list:
-                        new_value = []
-                        for r in resources_list:
-                            if not (getattr(r, "file", None) and r.file.name):
-                                continue
-                            lang, locale = parse_caption_language_locale(
-                                r.filename or ""
-                            )
-                            rv_entry: dict = {
-                                "file": urljoin(
-                                    "/",
-                                    r.file.name.replace(
-                                        video.website.s3_path, video.website.url_path
-                                    ),
-                                ),
-                                "language": lang,
-                            }
-                            if locale:
-                                rv_entry["locale"] = locale
-                            new_value.append(rv_entry)
-                        current_value = get_dict_field(
-                            video_resource.metadata, meta_field
+                    if resource:
+                        new_file = urljoin(
+                            "/",
+                            resource.file.name.replace(
+                                video.website.s3_path, video.website.url_path
+                            ),
                         )
-                        if current_value != new_value:
+                        new_entry = {"file": new_file, "language": "en"}
+                        current_value = get_dict_field(
+                            video_resource.metadata, file_field
+                        )
+                        if current_value != [new_entry]:
                             set_dict_field(
-                                video_resource.metadata, meta_field, new_value
+                                video_resource.metadata, file_field, [new_entry]
+                            )
+                            set_dict_field(
+                                video_resource.metadata,
+                                resource_field,
+                                {
+                                    "content": [str(resource.text_id)],
+                                    "website": website.name,
+                                },
                             )
                             video_resource.save()
 
@@ -660,8 +639,8 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
     new_resource = create_new_content(source_resource, destination_course)
 
     for resource_field, data_field in (
-        (settings.YT_FIELD_CAPTIONS_RESOURCE, settings.YT_FIELD_CAPTIONS),
-        (settings.YT_FIELD_TRANSCRIPT_RESOURCE, settings.YT_FIELD_TRANSCRIPT),
+        (settings.YT_FIELD_CAPTIONS_RESOURCES, settings.YT_FIELD_CAPTIONS),
+        (settings.YT_FIELD_TRANSCRIPT_RESOURCES, settings.YT_FIELD_TRANSCRIPT),
     ):
         relation = get_dict_field(source_resource.metadata, resource_field) or {}
         content_ids = relation.get("content") or []

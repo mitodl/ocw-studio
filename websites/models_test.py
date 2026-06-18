@@ -617,5 +617,5 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
     } in resolved
     assert {
         "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
-        "language": "es",
+        "language": "en",
     } in resolved

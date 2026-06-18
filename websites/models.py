@@ -28,9 +28,9 @@ from safedelete.queryset import SafeDeleteQueryset
 from content_sync.constants import VERSION_LIVE
 from main.settings import (
     YT_FIELD_CAPTIONS,
-    YT_FIELD_CAPTIONS_RESOURCE,
+    YT_FIELD_CAPTIONS_RESOURCES,
     YT_FIELD_TRANSCRIPT,
-    YT_FIELD_TRANSCRIPT_RESOURCE,
+    YT_FIELD_TRANSCRIPT_RESOURCES,
 )
 from main.utils import uuid_string
 from users.models import User
@@ -445,8 +445,8 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             )
 
             for resource_field in (
-                YT_FIELD_CAPTIONS_RESOURCE,
-                YT_FIELD_TRANSCRIPT_RESOURCE,
+                YT_FIELD_CAPTIONS_RESOURCES,
+                YT_FIELD_TRANSCRIPT_RESOURCES,
             ):
                 resource_data = get_dict_field(full_metadata, resource_field)
                 if not resource_data or not isinstance(resource_data, dict):

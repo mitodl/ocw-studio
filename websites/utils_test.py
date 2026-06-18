@@ -903,8 +903,8 @@ def test_get_metadata_content_key():
     assert get_metadata_content_key(content_resource) == [
         constants.METADATA_FIELD_IMAGE_CAPTION,
         constants.METADATA_FIELD_IMAGE_CREDIT,
-        settings.YT_FIELD_CAPTIONS_RESOURCE + ".content",
-        settings.YT_FIELD_TRANSCRIPT_RESOURCE + ".content",
+        settings.YT_FIELD_CAPTIONS_RESOURCES + ".content",
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES + ".content",
     ]
 
     # Test unknown/unsupported type

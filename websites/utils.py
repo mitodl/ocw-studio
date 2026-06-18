@@ -148,8 +148,8 @@ def get_metadata_content_key(content) -> list:
             content_keys = [
                 constants.METADATA_FIELD_IMAGE_CAPTION,
                 constants.METADATA_FIELD_IMAGE_CREDIT,
-                settings.YT_FIELD_CAPTIONS_RESOURCE + ".content",
-                settings.YT_FIELD_TRANSCRIPT_RESOURCE + ".content",
+                settings.YT_FIELD_CAPTIONS_RESOURCES + ".content",
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES + ".content",
             ]
         case constants.CONTENT_TYPE_COURSE_COLLECTION:
             content_keys = [
