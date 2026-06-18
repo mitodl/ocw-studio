@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.190.0
+---------------
+
+- chore: removed collision, handled soft-deleted, and legacy data (#3065)
+- feat: added management command to rename filenames (#3064)
+- Update dependency sass-loader to v16.0.8 (#3070)
+- Update dependency social-auth-app-django to v5.9.0 (#3071)
+- Update dependency prettier to v3.8.4 (#3069)
+- Update dependency boto3 to v1.43.18 (#3068)
+- Update dependency pypdf to v6.12.0 [SECURITY] (#3067)
+
 Version 0.189.0 (Released June 17, 2026)
 ---------------
 
