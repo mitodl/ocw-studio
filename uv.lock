@@ -105,16 +105,16 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.43.14"
+version = "1.43.18"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/79/4b/616367e871ce3f1cb3e8545a97736b6331b9fb081497f2d44c5b2aa6959d/boto3-1.43.14.tar.gz", hash = "sha256:5c0a994b3182061ee101812e721100717a4d664f9f4ceaf4a86b6d032ce9fc2d", size = 113142, upload-time = "2026-05-22T19:28:47.861Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/37/2ae45d06423182b4561c03bc33494fafa21a0d1e847f0554f590e3cbbc62/boto3-1.43.18.tar.gz", hash = "sha256:33138883e984eb1937d1553da699182c8ad2099138091e885b65c9accbccea16", size = 113154, upload-time = "2026-05-29T19:33:30.046Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/00/59cb9329c18e2d3aa23062ceaa87d065f2e81e7d2931df24d64e9a7815aa/boto3-1.43.14-py3-none-any.whl", hash = "sha256:574335744656cfed0b362a0a0467aaf2eb2bf15526edcd02d31d3c661f4b09e4", size = 140536, upload-time = "2026-05-22T19:28:46.49Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/75/fcb2c10d516496536c50e397248de42a673d8ea8137caf5b578a72b11293/boto3-1.43.18-py3-none-any.whl", hash = "sha256:7b62ce5c0a51428d692aa4f2adc9dc2a4a4c2989bf65a0a12834eeffa99b0b84", size = 140538, upload-time = "2026-05-29T19:33:27.131Z" },
 ]
 
 [[package]]
@@ -1392,7 +1392,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12.2,<5" },
-    { name = "boto3", specifier = "==1.43.14" },
+    { name = "boto3", specifier = "==1.43.18" },
     { name = "celery", specifier = ">=5.3.0,<6" },
     { name = "cryptography", specifier = ">=46.0.0,<47" },
     { name = "dj-database-url", specifier = "==3.1.2" },
@@ -1432,7 +1432,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.33.1" },
     { name = "sentry-sdk", specifier = "==2.60.0" },
     { name = "smart-open", extras = ["s3"], specifier = ">=7.0.0,<8" },
-    { name = "social-auth-app-django", specifier = "==5.7.0" },
+    { name = "social-auth-app-django", specifier = "==5.9.0" },
     { name = "social-auth-core", specifier = ">=4,<5" },
     { name = "tqdm", specifier = ">=4.65.0,<5" },
     { name = "uwsgi", specifier = ">=2.0.24,<3" },
@@ -1803,11 +1803,11 @@ wheels = [
 
 [[package]]
 name = "pypdf"
-version = "6.10.2"
+version = "6.13.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7b/3f/9f2167401c2e94833ca3b69535bad89e533b5de75fefe4197a2c224baec2/pypdf-6.10.2.tar.gz", hash = "sha256:7d09ce108eff6bf67465d461b6ef352dcb8d84f7a91befc02f904455c6eea11d", size = 5315679, upload-time = "2026-04-15T16:37:36.978Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/0a/48fe05c6bb3aa4bb4d2a4079a383d33c0dfec1edf613a642f07d8b8b5c2e/pypdf-6.13.2.tar.gz", hash = "sha256:5a96a17dbdfbf9c2ab24c0a13fa0aba182be22ba6f283098712c16fc242f509f", size = 6479250, upload-time = "2026-06-10T16:42:34.5Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/d6/1d5c60cc17bbdf37c1552d9c03862fc6d32c5836732a0415b2d637edc2d0/pypdf-6.10.2-py3-none-any.whl", hash = "sha256:aa53be9826655b51c96741e5d7983ca224d898ac0a77896e64636810517624aa", size = 336308, upload-time = "2026-04-15T16:37:34.851Z" },
+    { url = "https://files.pythonhosted.org/packages/cb/17/378943705992f74e451a06de3401ce68e3213763c81e44d0614559c45599/pypdf-6.13.2-py3-none-any.whl", hash = "sha256:6eeb9e57693f29d41bd01255d02660cbbb41fd7fc818a982677389a35e4f2083", size = 346555, upload-time = "2026-06-10T16:42:32.37Z" },
 ]
 
 [[package]]
@@ -2070,14 +2070,14 @@ wheels = [
 
 [[package]]
 name = "s3transfer"
-version = "0.17.0"
+version = "0.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9b/ec/7c692cde9125b77e84b307354d4fb705f98b8ccad59a036d5957ca75bfc3/s3transfer-0.17.0.tar.gz", hash = "sha256:9edeb6d1c3c2f89d6050348548834ad8289610d886e5bf7b7207728bd43ce33a", size = 155337, upload-time = "2026-04-29T22:07:36.33Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/1f/12417f7f493fc45e1f9fd5d4a9b6c125cf8d2cf3f8ddbdfab3e76406e9d6/s3transfer-0.18.0.tar.gz", hash = "sha256:3760b8b7ec1315da54048b2d626276732bee4300d054d492d4e1d43e20d4ecbd", size = 160560, upload-time = "2026-05-28T19:39:09.124Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/72/c6c32d2b657fa3dad1de340254e14390b1e334ce38268b7ad51abda3c8c2/s3transfer-0.17.0-py3-none-any.whl", hash = "sha256:ce3801712acf4ad3e89fb9990df97b4972e93f4b3b0004d214be5bce12814c20", size = 86811, upload-time = "2026-04-29T22:07:34.966Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/58/a58fc997655386daa2e25784e30c288aa3e3819e401f77029ee4899fb55a/s3transfer-0.18.0-py3-none-any.whl", hash = "sha256:239c13b09e65ad0346e1be7348b8a202dcad44ac7ea7c6eb858fc881dce739b6", size = 88572, upload-time = "2026-05-28T19:39:07.999Z" },
 ]
 
 [[package]]
@@ -2130,15 +2130,16 @@ s3 = [
 
 [[package]]
 name = "social-auth-app-django"
-version = "5.7.0"
+version = "5.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "asgiref" },
     { name = "django" },
     { name = "social-auth-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/1d/50d9f85975f8aebec6fd353e815d260acada851004e0457fa53e346ed242/social_auth_app_django-5.7.0.tar.gz", hash = "sha256:c0cc118d1bb935dbf02acb8a57fabd7b07694452fce755a5956282c69f019c79", size = 29192, upload-time = "2025-12-18T19:00:26.209Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/f9/c761cf93cb0a102ddd59498ea560b398be6bd14b8d6a4c493cc011b4bb80/social_auth_app_django-5.9.0.tar.gz", hash = "sha256:5b79c53321f9528334d53ddb154452a3b7e598b7ff4c2c1302be9a76b1349e8d", size = 29751, upload-time = "2026-04-29T14:52:50.715Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/df/8ed6e0b5e97a3893fc9d2fa5ef57844f0ed820119df49ea151fc1b0ceac1/social_auth_app_django-5.7.0-py3-none-any.whl", hash = "sha256:492b6f64e1e9fa5ed62b24bc19bde31c235fd4eb7fbd5c310e999e752b8f699a", size = 28542, upload-time = "2025-12-18T19:00:26.955Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/8c/5a06761549ea5e7e3c6e87d25ed2029ed5ba9ba39c493bc8a591548d6575/social_auth_app_django-5.9.0-py3-none-any.whl", hash = "sha256:80edf5c207d871f2225a0fc6bb414004c0342c30deb3a217eb38a63b66e749bb", size = 28568, upload-time = "2026-04-29T14:52:49.473Z" },
 ]
 
 [[package]]
