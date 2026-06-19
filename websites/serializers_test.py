@@ -1196,7 +1196,7 @@ def test_website_content_detail_serializer_syncs_video_relation_files_with_local
     metadata_patch = {"video_files": {}}
     set_dict_field(
         metadata_patch,
-        settings.YT_FIELD_CAPTIONS_RESOURCE,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
         {
             "content": [str(caption_en_us.text_id), str(caption_fr.text_id)],
             "website": video.website.name,

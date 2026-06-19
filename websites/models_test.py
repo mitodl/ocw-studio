@@ -611,11 +611,13 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
     assert isinstance(resolved, list)
     assert len(resolved) == 2
     # s3_path ("sites/mysite") must be replaced by url_path ("sites/mysite-fall-2008")
+    # parse_caption_language_locale extracts "en" for the legacy no-suffix filename
     assert {
         "file": "/sites/mysite-fall-2008/lecture1_captions.vtt",
         "language": "en",
     } in resolved
+    # and "es" for the _es suffix — language detection added in this branch
     assert {
         "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
-        "language": "en",
+        "language": "es",
     } in resolved
