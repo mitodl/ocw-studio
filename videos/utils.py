@@ -273,38 +273,12 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
-def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
-    """
-    Extract language code and optional locale from a slugified
-    caption/transcript filename.
-
-    The slugified naming convention is:
-        {base}_{captions|transcript}[_{lang}[_{locale}]]_{ext}
-
-    The last underscore-separated segment is the file extension slug (e.g. ``vtt``,
-    ``pdf``).  Segments between the type marker and the extension are interpreted as
-    ``[lang]`` or ``[lang, locale]``.  Defaults to ``("en", None)`` when no language
-    segment is present so existing content is unaffected.
-
-    Examples::
-
-        lecture1_captions_vtt         → ("en", None)
-        lecture1_captions_en_vtt      → ("en", None)
-        lecture1_captions_fr_vtt      → ("fr", None)
-        lecture1_captions_fr_ca_vtt   → ("fr", "CA")
-        lecture1_transcript_en_pdf    → ("en", None)
-    """
-    for marker in ("_captions_", "_transcript_"):
-        idx = filename.find(marker)
-        if idx != -1:
-            suffix = filename[idx + len(marker) :]
-            parts = suffix.split("_")
-            # parts[-1] is always the extension slug; before it: [lang, locale?]
-            lang_parts = parts[:-1]
-            _LANG_AND_LOCALE = 2
-            if len(lang_parts) >= _LANG_AND_LOCALE:
-                return lang_parts[0], lang_parts[1].upper()
-            if len(lang_parts) == 1:
-                return lang_parts[0], None
-            break
-    return "en", None
+def resource_file_paths(resources: list) -> list:
+    """Return {file, language} dicts for caption/transcript WebsiteContent objects."""
+    result = []
+    for resource in resources:
+        file_field = getattr(resource, "file", None)
+        file_name = getattr(file_field, "name", None) if file_field else None
+        if file_name:
+            result.append({"file": f"/{file_name.lstrip('/')}", "language": "en"})
+    return result

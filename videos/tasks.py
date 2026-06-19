@@ -165,17 +165,34 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
     captions, transcript = video.caption_transcript_resources()
 
     if captions or transcript:  # check for existing captions or transcript
+        website = video.website
         if captions:
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_CAPTIONS,
                 [{"file": captions.file.name, "language": "en"}],
             )
+            set_dict_field(
+                video_resource.metadata,
+                settings.YT_FIELD_CAPTIONS_RESOURCES,
+                {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                },
+            )
         if transcript:
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_TRANSCRIPT,
                 [{"file": transcript.file.name, "language": "en"}],
+            )
+            set_dict_field(
+                video_resource.metadata,
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+                {
+                    "content": [str(transcript.text_id)],
+                    "website": website.name,
+                },
             )
         video_resource.save()
 
@@ -387,9 +404,21 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                 )
                 video_resource.save()
             else:
-                for resource, meta_field in [
-                    (captions, settings.YT_FIELD_CAPTIONS),
-                    (transcript, settings.YT_FIELD_TRANSCRIPT),
+                for resource, (file_field, resource_field) in [
+                    (
+                        captions,
+                        (
+                            settings.YT_FIELD_CAPTIONS,
+                            settings.YT_FIELD_CAPTIONS_RESOURCES,
+                        ),
+                    ),
+                    (
+                        transcript,
+                        (
+                            settings.YT_FIELD_TRANSCRIPT,
+                            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+                        ),
+                    ),
                 ]:
                     if resource:
                         new_file = urljoin(
@@ -400,11 +429,19 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                         )
                         new_entry = {"file": new_file, "language": "en"}
                         current_value = get_dict_field(
-                            video_resource.metadata, meta_field
+                            video_resource.metadata, file_field
                         )
                         if current_value != [new_entry]:
                             set_dict_field(
-                                video_resource.metadata, meta_field, [new_entry]
+                                video_resource.metadata, file_field, [new_entry]
+                            )
+                            set_dict_field(
+                                video_resource.metadata,
+                                resource_field,
+                                {
+                                    "content": [str(resource.text_id)],
+                                    "website": website.name,
+                                },
                             )
                             video_resource.save()
 
@@ -532,16 +569,20 @@ def copy_gdrive_file(gdrive_file, destination_course):
 def update_transcript_and_captions(resource, new_transcript_file, new_captions_file):
     """
     Update the associated transcript and captions files for a resource.
+    Writes the file data array used by the build pipeline.
     """
     transcript_path = f"/{str(new_transcript_file).lstrip('/')}"
     captions_path = f"/{str(new_captions_file).lstrip('/')}"
-    resource.metadata["video_files"]["video_transcript_file"] = [
-        {"file": transcript_path, "language": "en"}
-    ]
-    resource.metadata["video_files"]["video_captions_file"] = [
-        {"file": captions_path, "language": "en"}
-    ]
-
+    set_dict_field(
+        resource.metadata,
+        settings.YT_FIELD_TRANSCRIPT,
+        [{"file": transcript_path, "language": "en"}],
+    )
+    set_dict_field(
+        resource.metadata,
+        settings.YT_FIELD_CAPTIONS,
+        [{"file": captions_path, "language": "en"}],
+    )
     resource.save()
     sync_website_content_references(resource)
 
@@ -582,12 +623,13 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
     """
     Copy a video resource and associated captions/transcripts (celery task).
 
-    Captions and transcripts are discovered via the ``video_captions_resource`` and
-    ``video_transcript_resource`` relation fields.  For each linked resource the
-    content record is copied to the destination course, the relation field on the
-    new video resource is updated to point at the copy, and the build-pipeline
-    file-data field is populated with the new file path.  Associated Google Drive
-    files are also copied when present.
+    Captions and transcripts are discovered via the ``video_captions_resources`` and
+    ``video_transcript_resources`` relation fields introduced in migration 0075.  For
+    each linked resource the content record is copied to the destination course, the
+    relation field on the new video resource is updated to point at the copy, and the
+    build-pipeline file-data field (``video_captions_file`` / ``video_transcript_file``)
+    is populated with the new file path.  Associated Google Drive files are also copied
+    when present.
     """
     source_course = Website.objects.get(uuid=source_course_id)
     destination_course = Website.objects.get(uuid=destination_course_id)
@@ -597,8 +639,8 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
     new_resource = create_new_content(source_resource, destination_course)
 
     for resource_field, data_field in (
-        (settings.YT_FIELD_CAPTIONS_RESOURCE, settings.YT_FIELD_CAPTIONS),
-        (settings.YT_FIELD_TRANSCRIPT_RESOURCE, settings.YT_FIELD_TRANSCRIPT),
+        (settings.YT_FIELD_CAPTIONS_RESOURCES, settings.YT_FIELD_CAPTIONS),
+        (settings.YT_FIELD_TRANSCRIPT_RESOURCES, settings.YT_FIELD_TRANSCRIPT),
     ):
         relation = get_dict_field(source_resource.metadata, resource_field) or {}
         content_ids = relation.get("content") or []
@@ -620,6 +662,7 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
                 file_path = f"/{new_content.file.name.lstrip('/')}"
                 file_entries.append({"file": file_path, "language": "en"})
 
+            # Copy the associated DriveFile if one exists.
             if source_content.file and source_content.file.name:
                 gdrive_file = DriveFile.objects.filter(
                     s3_key=source_content.file.name.lstrip("/")

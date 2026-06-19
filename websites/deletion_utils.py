@@ -44,7 +44,7 @@ def delete_resource(content: WebsiteContent):
 def delete_related_captions_and_transcript(content: WebsiteContent):
     """Delete related captions and transcript resources for a video."""
     video_files = content.metadata.get("video_files", {})
-    for resource_field in ("video_captions_resource", "video_transcript_resource"):
+    for resource_field in ("video_captions_resources", "video_transcript_resources"):
         relation = video_files.get(resource_field)
         if not isinstance(relation, dict):
             continue

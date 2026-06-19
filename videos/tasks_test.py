@@ -1028,11 +1028,11 @@ def test_copy_video_resource_uses_relation_fields(mocker):
         website=source_course,
         metadata={
             "video_files": {
-                settings.YT_FIELD_CAPTIONS_RESOURCE.split(".")[-1]: {
+                settings.YT_FIELD_CAPTIONS_RESOURCES.split(".")[-1]: {
                     "content": [str(captions_content.text_id)],
                     "website": source_course.name,
                 },
-                settings.YT_FIELD_TRANSCRIPT_RESOURCE.split(".")[-1]: {
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES.split(".")[-1]: {
                     "content": [str(transcript_content.text_id)],
                     "website": source_course.name,
                 },
@@ -1058,14 +1058,14 @@ def test_copy_video_resource_uses_relation_fields(mocker):
     assert new_resource is not None
 
     captions_relation = new_resource.metadata["video_files"].get(
-        settings.YT_FIELD_CAPTIONS_RESOURCE.split(".")[-1]
+        settings.YT_FIELD_CAPTIONS_RESOURCES.split(".")[-1]
     )
     assert captions_relation is not None
     assert captions_relation["website"] == destination_course.name
     assert len(captions_relation["content"]) == 1
 
     transcript_relation = new_resource.metadata["video_files"].get(
-        settings.YT_FIELD_TRANSCRIPT_RESOURCE.split(".")[-1]
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES.split(".")[-1]
     )
     assert transcript_relation is not None
     assert transcript_relation["website"] == destination_course.name
