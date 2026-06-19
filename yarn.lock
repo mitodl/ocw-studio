@@ -1949,10 +1949,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mathjax/mathjax-newcm-font@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "@mathjax/mathjax-newcm-font@npm:4.1.1"
-  checksum: 10c0/8fcddc81757b90f3141d1994222b92a04b44ad9ceb83c28638e59d31d5cfaf73e1cb26e4101cce15aee870036f8b68f10fab919e0db0e25eff8a39f249e688f2
+"@mathjax/mathjax-newcm-font@npm:^4.1.2":
+  version: 4.1.2
+  resolution: "@mathjax/mathjax-newcm-font@npm:4.1.2"
+  checksum: 10c0/23867a672706a5cc1a9cfe835a188466202ff5502bd9f65a75343532638184cb53c6a11a76473c37a4e6231b38f6781b1a20a6eb3a3f1ba46144bf533bd25026
   languageName: node
   linkType: hard
 
@@ -9797,11 +9797,11 @@ __metadata:
   linkType: hard
 
 "mathjax@npm:^4.0.0":
-  version: 4.1.1
-  resolution: "mathjax@npm:4.1.1"
+  version: 4.1.2
+  resolution: "mathjax@npm:4.1.2"
   dependencies:
-    "@mathjax/mathjax-newcm-font": "npm:^4.1.1"
-  checksum: 10c0/e2a861803d8a3ed3ae6ebf40f08c41bcdd1e9110392f43c94fea3f508cd647d9c8eb80b72dcc0653757d666e94b5fdc4aac74121f0f193f8bdd262106404822a
+    "@mathjax/mathjax-newcm-font": "npm:^4.1.2"
+  checksum: 10c0/3d842708029c65bdcaaf621f80aed1248a2f29f180d4e5a42e6e48e935cdf891be1505575e323193ea44347112149b636a3b08b0a72ed2b203004c18044f5dc8
   languageName: node
   linkType: hard
 
