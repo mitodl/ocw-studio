@@ -216,16 +216,6 @@
               "label": "Video Thumbnail URL",
               "name": "video_thumbnail_file",
               "widget": "string"
-            },
-            {
-              "label": "Video Captions (WebVTT) URL",
-              "name": "video_captions_file",
-              "widget": "string"
-            },
-            {
-              "label": "Video Transcript (PDF) URL",
-              "name": "video_transcript_file",
-              "widget": "string"
             }
           ],
           "label": "Video Files",

@@ -59,13 +59,6 @@ RELATION_URL_FIELDS = (
 )
 
 
-def resource_file_path(resource: WebsiteContent | None) -> str | None:
-    if not resource:
-        return None
-    file_name = getattr(getattr(resource, "file", None), "name", None)
-    return f"/{file_name.lstrip('/')}" if file_name else None
-
-
 def sync_video_relation_urls(metadata: dict) -> None:
     if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
         return
@@ -73,13 +66,32 @@ def sync_video_relation_urls(metadata: dict) -> None:
         relation_value = get_dict_field(metadata, relation_field)
         if not isinstance(relation_value, dict):
             continue
-        relation_id = relation_value.get("content")
-        resource = (
-            WebsiteContent.objects.filter(text_id=relation_id).first()
-            if relation_id
-            else None
+        content = relation_value.get("content")
+        # Normalize: content may be a scalar str (legacy) or a list (multi-select)
+        if isinstance(content, str):
+            content_ids = [content] if content else []
+        elif isinstance(content, list):
+            content_ids = [c for c in content if c]
+        else:
+            content_ids = []
+        website_name = relation_value.get("website")
+        resources = (
+            list(
+                WebsiteContent.objects.filter(
+                    website__name=website_name, text_id__in=content_ids
+                )
+                if website_name
+                else WebsiteContent.objects.filter(text_id__in=content_ids)
+            )
+            if content_ids
+            else []
         )
-        set_dict_field(metadata, target_field, resource_file_path(resource))
+        file_entries = [
+            {"file": f"/{r.file.name.lstrip('/')}", "language": "en"}
+            for r in resources
+            if getattr(r, "file", None) and r.file.name
+        ]
+        set_dict_field(metadata, target_field, file_entries or None)
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):

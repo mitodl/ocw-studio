@@ -434,11 +434,27 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         if full_metadata:
             for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
                 value = get_dict_field(full_metadata, field)
-                if value and url_path:
+                if not value or not url_path:
+                    continue
+                if isinstance(value, list):
+                    set_dict_field(
+                        full_metadata,
+                        field,
+                        [
+                            {
+                                **entry,
+                                "file": entry["file"].replace(s3_path, url_path, 1),
+                            }
+                            if isinstance(entry, dict) and entry.get("file")
+                            else entry
+                            for entry in value
+                        ],
+                    )
+                elif isinstance(value, str):
                     set_dict_field(
                         full_metadata, field, value.replace(s3_path, url_path, 1)
                     )
-                    modified = True
+                modified = True
         return full_metadata if modified else self.metadata
 
     def get_config_file_field(self) -> dict:

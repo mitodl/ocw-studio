@@ -315,16 +315,28 @@ def resolve_video_file_referenced_content_ids(content) -> set[int]:
     referenced_ids = set()
 
     for field_path in (settings.YT_FIELD_CAPTIONS, settings.YT_FIELD_TRANSCRIPT):
-        key = get_dict_field(content.metadata, field_path)
-        if not key:
+        value = get_dict_field(content.metadata, field_path)
+        if not value:
             continue
-        base_name = Path(key).stem
-        related_ids = (
-            WebsiteContent.objects.filter(website=content.website)
-            .filter(Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name))
-            .values_list("id", flat=True)
-        )
-        referenced_ids.update(related_ids)
+        # New array format: [{"file": "...", "language": "en"}]
+        if isinstance(value, list):
+            keys = [
+                entry["file"]
+                for entry in value
+                if isinstance(entry, dict) and entry.get("file")
+            ]
+        elif isinstance(value, str):
+            keys = [value]
+        else:
+            continue
+        for key in keys:
+            base_name = Path(key).stem
+            related_ids = (
+                WebsiteContent.objects.filter(website=content.website)
+                .filter(Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name))
+                .values_list("id", flat=True)
+            )
+            referenced_ids.update(related_ids)
 
     return referenced_ids
 
