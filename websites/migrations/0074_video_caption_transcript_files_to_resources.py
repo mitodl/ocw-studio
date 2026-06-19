@@ -15,7 +15,7 @@ The _resource fields are written in single-select format for now:
   video_captions_resource   = {"content": "<text_id>", "website": "<name>"}
   video_transcript_resource = {"content": "<text_id>", "website": "<name>"}
 
-Migration 0074 converts these to the multi-select list format used by the relation widget.
+Migration 0075 converts these to the multi-select list format used by the relation widget.
 
 The reverse migration looks up each resource by its stored text_id and restores
 the original ``_file`` path string.  Only the first text_id is used when the
@@ -25,19 +25,23 @@ field holds a list (the old scalar field could only hold one path).
 from django.db import migrations
 
 
-def _find_resource_by_path(WebsiteContent, website, path):
+def _find_resource_by_path(WebsiteContent, website, path, resourcetype=None):
     """Return the WebsiteContent whose file matches *path*, or None.
 
     Tries the Django FileField first (path stored without leading slash),
     then falls back to metadata["file"] (which may include the leading slash).
+
+    Pass *resourcetype* to narrow the match to a specific resourcetype value
+    (e.g. ``"Document"`` for transcript PDFs).
     """
     if not path:
         return None
     path_stripped = path.lstrip("/")
+    extra = {"metadata__resourcetype": resourcetype} if resourcetype else {}
     return (
-        WebsiteContent.objects.filter(website=website, file=path_stripped).first()
+        WebsiteContent.objects.filter(website=website, file=path_stripped, **extra).first()
         or WebsiteContent.objects.filter(
-            website=website, metadata__file=path
+            website=website, metadata__file=path, **extra
         ).first()
     )
 
@@ -66,17 +70,11 @@ def _backpopulate_resource_fields(apps, schema_editor):
         # resources linked to a video.
         transcript_path = video_files.get("video_transcript_file")
         if isinstance(transcript_path, str) and transcript_path:
-            resource = (
-                WebsiteContent.objects.filter(
-                    website=content.website,
-                    metadata__resourcetype="Document",
-                    file=transcript_path.lstrip("/"),
-                ).first()
-                or WebsiteContent.objects.filter(
-                    website=content.website,
-                    metadata__resourcetype="Document",
-                    metadata__file=transcript_path,
-                ).first()
+            resource = _find_resource_by_path(
+                WebsiteContent,
+                content.website,
+                transcript_path,
+                resourcetype="Document",
             )
             if resource:
                 video_files["video_transcript_resource"] = {
