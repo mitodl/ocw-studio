@@ -13,6 +13,7 @@ from requests import HTTPError
 from gdrive_sync import api
 from gdrive_sync.api import (
     GDriveStreamReader,
+    _link_resource_to_video,
     create_gdrive_resource_content,
     gdrive_root_url,
     get_resource_type,
@@ -1024,3 +1025,46 @@ def test_delete_drive_file(mocker, with_resource, is_used_in_content, with_user)
             assert WebsiteContent.all_objects.get(pk=resource.id).updated_by == user
         else:
             assert not drive_file_exists
+
+
+@pytest.mark.django_db
+def test_link_resource_to_video_appends_second_language():
+    """Second-language caption appended to content list; first-language entry preserved."""
+    website = WebsiteFactory.create()
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        metadata={"resourcetype": "Video", "video_files": {}},
+    )
+    caption_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
+    )
+    caption_fr = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_fr_vtt",
+        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+    )
+
+    # Link English first
+    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_resources"]["content"] == [str(caption_en.text_id)]
+
+    # Link French — must append, not overwrite
+    _link_resource_to_video(caption_fr, website, "video_captions_resources", "lecture1")
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert str(caption_en.text_id) in vf["video_captions_resources"]["content"]
+    assert str(caption_fr.text_id) in vf["video_captions_resources"]["content"]
+    assert len(vf["video_captions_resources"]["content"]) == 2
+
+    # _file list must also have both entries with correct languages
+    file_entries = vf["video_captions_file"]
+    assert len(file_entries) == 2
+    languages = {e["language"] for e in file_entries}
+    assert "en" in languages
+    assert "fr" in languages

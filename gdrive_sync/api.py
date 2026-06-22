@@ -46,6 +46,7 @@ from main.utils import get_base_filename, get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
+from videos.utils import resource_file_paths
 from websites.api import get_valid_new_filename
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
@@ -485,35 +486,51 @@ def _link_captions_transcript_to_video(
         video_files = {}
 
     changed = False
-    for resource_field, data_field, filename in [
+    for resource_field, data_field, prefix, suffix in [
         (
             "video_captions_resources",
             "video_captions_file",
-            f"{video_base}_captions_vtt",
+            f"{video_base}_captions",
+            "_vtt",
         ),
         (
             "video_transcript_resources",
             "video_transcript_file",
-            f"{video_base}_transcript_pdf",
+            f"{video_base}_transcript",
+            "_pdf",
         ),
     ]:
-        # Skip when content is already set — empty string/list is treated as unset.
+        related_list = list(
+            WebsiteContent.objects.filter(
+                website=website,
+                filename__startswith=prefix,
+                filename__endswith=suffix,
+            )
+        )
+        if not related_list:
+            continue
+
         existing = video_files.get(resource_field)
-        if isinstance(existing, dict) and existing.get("content"):
+        existing_ids = existing.get("content", []) if isinstance(existing, dict) else []
+        new_resources = [r for r in related_list if str(r.text_id) not in existing_ids]
+        if not new_resources:
             continue
-        related = WebsiteContent.objects.filter(
-            website=website, filename=filename
-        ).first()
-        if not related:
-            continue
+
+        all_ids = existing_ids + [str(r.text_id) for r in new_resources]
         video_files[resource_field] = {
-            "content": [str(related.text_id)],
+            "content": all_ids,
             "website": website.name,
         }
-        if related.file and related.file.name:
-            video_files[data_field] = [
-                {"file": f"/{related.file.name.lstrip('/')}", "language": "en"}
-            ]
+        new_file_entries = resource_file_paths(new_resources)
+        if new_file_entries:
+            existing_files = video_files.get(data_field)
+            if isinstance(existing_files, list):
+                existing_paths = {e.get("file") for e in existing_files}
+                video_files[data_field] = existing_files + [
+                    e for e in new_file_entries if e["file"] not in existing_paths
+                ]
+            else:
+                video_files[data_field] = new_file_entries
         changed = True
 
     if changed:
@@ -550,23 +567,36 @@ def _link_resource_to_video(
     )
     if not isinstance(video_files, dict):
         video_files = {}
+
+    new_id = str(resource.text_id)
     existing = video_files.get(resource_field)
     if isinstance(existing, dict) and existing.get("content"):
-        return
+        # Already linked — append if not a duplicate
+        if new_id in existing["content"]:
+            return
+        existing["content"] = existing["content"] + [new_id]
+    else:
+        video_files[resource_field] = {
+            "content": [new_id],
+            "website": website.name,
+        }
 
-    video_files[resource_field] = {
-        "content": [str(resource.text_id)],
-        "website": website.name,
-    }
     data_field = (
         "video_captions_file"
         if "captions" in resource_field
         else "video_transcript_file"
     )
-    if resource.file and resource.file.name:
-        video_files[data_field] = [
-            {"file": f"/{resource.file.name.lstrip('/')}", "language": "en"}
-        ]
+    new_file_entries = resource_file_paths([resource])
+    if new_file_entries:
+        existing_files = video_files.get(data_field)
+        if isinstance(existing_files, list):
+            existing_paths = {e.get("file") for e in existing_files}
+            extra = [e for e in new_file_entries if e["file"] not in existing_paths]
+            if extra:
+                video_files[data_field] = existing_files + extra
+        else:
+            video_files[data_field] = new_file_entries
+
     if not isinstance(video_resource.metadata, dict):
         video_resource.metadata = {}
     video_resource.metadata["video_files"] = video_files
