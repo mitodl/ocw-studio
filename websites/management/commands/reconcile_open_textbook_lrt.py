@@ -52,6 +52,8 @@ def add_open_textbook(objects) -> list:
     for obj in objects:
         metadata = obj.metadata if isinstance(obj.metadata, dict) else {}
         learning_resource_types = metadata.get(LRT_FIELD) or []
+        if not isinstance(learning_resource_types, list):
+            learning_resource_types = []
         if OPEN_TEXTBOOK_LRT not in learning_resource_types:
             obj.metadata = {
                 **metadata,
