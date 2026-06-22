@@ -46,8 +46,18 @@ class Video(TimestampedModel):
         else:
             return None
 
-    def caption_transcript_resources(self) -> tuple[WebsiteContent, WebsiteContent]:
-        """Search for and return the video's caption resource and transcript resource if either exists"""  # noqa: E501
+    def caption_transcript_resources(
+        self,
+    ) -> tuple[list[WebsiteContent], list[WebsiteContent]]:
+        """Search for and return the video's caption resources and transcript resources.
+
+        Returns a 2-tuple of lists: (captions, transcripts).  Each list may
+        contain zero, one, or multiple WebsiteContent objects — one per
+        language-tagged file discovered in the website.  Captions are matched
+        by filename prefix ``{video_filename}_captions`` with suffix ``_vtt``;
+        transcripts by prefix ``{video_filename}_transcript`` with suffix
+        ``_pdf``.
+        """
         youtube_id = self.youtube_id()
 
         query_youtube_id_field = get_dict_query_field("metadata", settings.YT_FIELD_ID)
@@ -58,16 +68,22 @@ class Video(TimestampedModel):
         )
         if video_resource:
             video_filename = get_base_filename(video_resource.filename)
-            captions = WebsiteContent.objects.filter(
-                models.Q(website=self.website)
-                & models.Q(filename=f"{video_filename}_captions_vtt")
-            ).first()
-            transcript = WebsiteContent.objects.filter(
-                models.Q(website=self.website)
-                & models.Q(filename=f"{video_filename}_transcript_pdf")
-            ).first()
-            return captions, transcript
-        return None, None
+            captions = list(
+                WebsiteContent.objects.filter(
+                    website=self.website,
+                    filename__startswith=f"{video_filename}_captions",
+                    filename__endswith="_vtt",
+                )
+            )
+            transcripts = list(
+                WebsiteContent.objects.filter(
+                    website=self.website,
+                    filename__startswith=f"{video_filename}_transcript",
+                    filename__endswith="_pdf",
+                )
+            )
+            return captions, transcripts
+        return [], []
 
     source_key = models.CharField(max_length=2048, unique=True)
     website = models.ForeignKey(Website, on_delete=CASCADE, related_name="videos")

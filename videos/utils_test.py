@@ -11,6 +11,7 @@ from videos.utils import (
     generate_s3_path,
     get_content_dirpath,
     get_tags_with_course,
+    parse_caption_language_locale,
     update_metadata,
 )
 from websites.factories import (
@@ -170,3 +171,35 @@ def test_get_tags_with_course_whitespace_handling():
 
     # Whitespace stripped from tags, then sorted
     assert result == "ai, django, my-course, python"
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected"),
+    [
+        # Legacy single-language convention — defaults to English, no locale
+        ("lecture1_captions_vtt", ("en", None)),
+        ("lecture1_transcript_pdf", ("en", None)),
+        # Multi-language captions — language only, no locale
+        ("lecture1_captions_es_vtt", ("es", None)),
+        ("lecture1_captions_fr_vtt", ("fr", None)),
+        ("lecture1_captions_zh_vtt", ("zh", None)),
+        ("lecture1_captions_ar_vtt", ("ar", None)),
+        # Multi-language transcripts — language only, no locale
+        ("lecture1_transcript_es_pdf", ("es", None)),
+        ("lecture1_transcript_zh_pdf", ("zh", None)),
+        # GDrive pattern: <title>_<lang>_<locale>.<ext> — locale returned uppercase
+        ("lecture1_captions_en_us_vtt", ("en", "US")),
+        ("lecture1_captions_fr_en_vtt", ("fr", "EN")),
+        ("lecture1_transcript_en_us_pdf", ("en", "US")),
+        ("lecture1_transcript_fr_gb_pdf", ("fr", "GB")),
+        # Longer filename still parsed correctly
+        ("my_long_course_lecture_03_captions_pt_vtt", ("pt", None)),
+        ("my_long_course_lecture_03_captions_pt_br_vtt", ("pt", "BR")),
+        # No recognised suffix -> defaults to English, no locale
+        ("some_random_file_pdf", ("en", None)),
+        ("lecture1_vtt", ("en", None)),
+    ],
+)
+def test_parse_caption_language_locale(filename, expected):
+    """parse_caption_language_locale returns (language, locale) from slugified filename."""
+    assert parse_caption_language_locale(filename) == expected

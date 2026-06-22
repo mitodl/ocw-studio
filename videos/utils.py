@@ -273,12 +273,54 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
+# Regex that matches ``_captions_{lang}_vtt``, ``_transcript_{lang}_pdf``,
+# or ``_captions_{lang}_{locale}_vtt`` at the end of a slugified filename.
+# GDrive files follow the pattern ``<title>_<lang>_<locale>.<ext>`` where
+# the locale is an ISO 3166-1 alpha-2 region code (e.g. ``us``, ``gb``).
+_LANG_LOCALE_RE = re.compile(
+    r"(?:_captions|_transcript)_([a-z]{2,3})_(?:([a-z]{2,3})_)?(?:vtt|webvtt|pdf)$"
+)
+
+
+def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
+    """Return ``(language_code, locale_code)`` embedded in a caption/transcript
+    filename.
+
+    The filename is expected to be the slugified ``WebsiteContent.filename``.  GDrive
+    files follow the pattern ``<title>_captions_<lang>_<locale>_vtt`` where ``<lang>``
+    is an ISO 639-1 code (e.g. ``en``, ``fr``) and ``<locale>`` is an ISO 3166-1
+    alpha-2 region code (e.g. ``us``, ``gb``).  ``locale`` is returned uppercase
+    (e.g. ``"US"``) or ``None`` when absent.
+
+    Legacy single-language filenames without a language suffix
+    (e.g. ``lecture1_captions_vtt``) return ``("en", None)``.
+    """
+    match = _LANG_LOCALE_RE.search(filename)
+    if match:
+        lang = match.group(1)
+        locale = match.group(2).upper() if match.group(2) else None
+        return lang, locale
+    return "en", None
+
+
 def resource_file_paths(resources: list) -> list:
-    """Return {file, language} dicts for caption/transcript WebsiteContent objects."""
+    """Return a list of ``{file, language[, locale]}`` dicts for caption/transcript
+    resources.
+
+    Language and optional locale are parsed from each resource's ``filename`` using
+    :func:`parse_caption_language_locale`.  Resources without a resolvable file are
+    omitted.  ``locale`` is only included in the dict when present in the filename.
+    """
     result = []
     for resource in resources:
-        file_field = getattr(resource, "file", None)
-        file_name = getattr(file_field, "name", None) if file_field else None
+        file_name = getattr(getattr(resource, "file", None), "name", None)
         if file_name:
-            result.append({"file": f"/{file_name.lstrip('/')}", "language": "en"})
+            lang, locale = parse_caption_language_locale(resource.filename or "")
+            entry: dict = {
+                "file": f"/{file_name.lstrip('/')}",
+                "language": lang,
+            }
+            if locale:
+                entry["locale"] = locale
+            result.append(entry)
     return result
