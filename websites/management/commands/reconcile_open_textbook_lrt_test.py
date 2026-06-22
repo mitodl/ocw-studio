@@ -24,15 +24,26 @@ from websites.models import Website
 
 pytestmark = pytest.mark.django_db
 
+# An unrelated metadata key the command must never touch. Seeded into every
+# object below so tests can assert reconciliation leaves other keys intact.
+OTHER_KEY = "title"
+OTHER_VALUE = "Unrelated metadata"
+
 
 def create_content(website, content_type, learning_resource_types, **kwargs):
     """Create a WebsiteContent with the given learning_resource_types list."""
     return WebsiteContentFactory.create(
         website=website,
         type=content_type,
-        metadata={LRT_FIELD: list(learning_resource_types)},
+        metadata={LRT_FIELD: list(learning_resource_types), OTHER_KEY: OTHER_VALUE},
         **kwargs,
     )
+
+
+def assert_unrelated_metadata_preserved(*objects):
+    """Assert the command left each (already-refreshed) object's other keys intact."""
+    for obj in objects:
+        assert obj.metadata[OTHER_KEY] == OTHER_VALUE
 
 
 def reset_dirty_flags(website):
@@ -58,30 +69,47 @@ def run_command(textbook_uuids):
 
 def test_strip_removes_tag_and_preserves_other_lrts():
     """strip_open_textbook drops only Open Textbooks, keeping other LRTs."""
-    objects = [SimpleNamespace(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT, "Readings"]})]
+    objects = [
+        SimpleNamespace(
+            metadata={
+                LRT_FIELD: [OPEN_TEXTBOOK_LRT, "Readings"],
+                OTHER_KEY: OTHER_VALUE,
+            }
+        )
+    ]
     result = strip_open_textbook(objects)
     assert result[0].metadata[LRT_FIELD] == ["Readings"]
+    assert result[0].metadata[OTHER_KEY] == OTHER_VALUE  # unrelated key untouched
 
 
 def test_add_appends_tag_when_absent():
     """add_open_textbook appends the tag when missing."""
-    objects = [SimpleNamespace(metadata={LRT_FIELD: ["Readings"]})]
+    objects = [
+        SimpleNamespace(metadata={LRT_FIELD: ["Readings"], OTHER_KEY: OTHER_VALUE})
+    ]
     result = add_open_textbook(objects)
     assert result[0].metadata[LRT_FIELD] == ["Readings", OPEN_TEXTBOOK_LRT]
+    assert result[0].metadata[OTHER_KEY] == OTHER_VALUE  # unrelated key untouched
 
 
 def test_add_is_noop_when_already_present():
     """add_open_textbook does not duplicate an existing tag."""
-    objects = [SimpleNamespace(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT]})]
+    objects = [
+        SimpleNamespace(
+            metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT], OTHER_KEY: OTHER_VALUE}
+        )
+    ]
     result = add_open_textbook(objects)
     assert result[0].metadata[LRT_FIELD] == [OPEN_TEXTBOOK_LRT]
+    assert result[0].metadata[OTHER_KEY] == OTHER_VALUE  # unrelated key untouched
 
 
 def test_add_handles_missing_field():
     """add_open_textbook creates the LRT list when it is absent."""
-    objects = [SimpleNamespace(metadata={})]
+    objects = [SimpleNamespace(metadata={OTHER_KEY: OTHER_VALUE})]
     result = add_open_textbook(objects)
     assert result[0].metadata[LRT_FIELD] == [OPEN_TEXTBOOK_LRT]
+    assert result[0].metadata[OTHER_KEY] == OTHER_VALUE  # unrelated key untouched
 
 
 def test_add_handles_none_metadata():
@@ -143,6 +171,7 @@ def test_strips_tag_from_page():
     run_command("")
     page.refresh_from_db()
     assert page.metadata[LRT_FIELD] == ["Readings"]
+    assert_unrelated_metadata_preserved(page)
 
 
 def test_keeps_textbook_resource_and_strips_other_resource():
@@ -155,6 +184,7 @@ def test_keeps_textbook_resource_and_strips_other_resource():
     excerpt.refresh_from_db()
     assert textbook.metadata[LRT_FIELD] == [OPEN_TEXTBOOK_LRT]
     assert excerpt.metadata[LRT_FIELD] == []
+    assert_unrelated_metadata_preserved(textbook, excerpt)
 
 
 def test_adds_tag_to_untagged_textbook_resource():
@@ -164,6 +194,7 @@ def test_adds_tag_to_untagged_textbook_resource():
     run_command(textbook.text_id)
     textbook.refresh_from_db()
     assert textbook.metadata[LRT_FIELD] == ["Readings", OPEN_TEXTBOOK_LRT]
+    assert_unrelated_metadata_preserved(textbook)
 
 
 def test_removes_only_open_textbook_from_multi_lrt_resource():
@@ -177,6 +208,7 @@ def test_removes_only_open_textbook_from_multi_lrt_resource():
     run_command("")
     resource.refresh_from_db()
     assert resource.metadata[LRT_FIELD] == ["Readings", "Lecture Notes"]
+    assert_unrelated_metadata_preserved(resource)
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +218,9 @@ def test_removes_only_open_textbook_from_multi_lrt_resource():
 
 def test_strips_course_level_for_textbookless_course():
     """A course with no textbook loses the tag from sitemetadata and Website.metadata."""
-    website = WebsiteFactory.create(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT, "Exams"]})
+    website = WebsiteFactory.create(
+        metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT, "Exams"], OTHER_KEY: OTHER_VALUE}
+    )
     sitemeta = create_content(
         website, CONTENT_TYPE_METADATA, [OPEN_TEXTBOOK_LRT, "Exams"]
     )
@@ -195,11 +229,14 @@ def test_strips_course_level_for_textbookless_course():
     website.refresh_from_db()
     assert sitemeta.metadata[LRT_FIELD] == ["Exams"]
     assert website.metadata[LRT_FIELD] == ["Exams"]
+    assert_unrelated_metadata_preserved(sitemeta, website)
 
 
 def test_textbook_course_adds_to_sitemetadata_but_not_website_metadata():
     """A textbook course gains the tag on sitemetadata but never on Website.metadata."""
-    website = WebsiteFactory.create(metadata={LRT_FIELD: ["Exams"]})
+    website = WebsiteFactory.create(
+        metadata={LRT_FIELD: ["Exams"], OTHER_KEY: OTHER_VALUE}
+    )
     textbook = create_content(website, CONTENT_TYPE_RESOURCE, [OPEN_TEXTBOOK_LRT])
     sitemeta = create_content(website, CONTENT_TYPE_METADATA, ["Exams"])
     run_command(textbook.text_id)
@@ -207,13 +244,16 @@ def test_textbook_course_adds_to_sitemetadata_but_not_website_metadata():
     website.refresh_from_db()
     assert OPEN_TEXTBOOK_LRT in sitemeta.metadata[LRT_FIELD]  # added
     assert OPEN_TEXTBOOK_LRT not in website.metadata[LRT_FIELD]  # never added
+    assert_unrelated_metadata_preserved(sitemeta, website)
 
 
 def test_textbook_course_strips_website_metadata_even_when_sitemetadata_tagged():
     """Website.metadata is strip-only: a textbook course loses it there but keeps it
     on the sitemetadata content.
     """
-    website = WebsiteFactory.create(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT]})
+    website = WebsiteFactory.create(
+        metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT], OTHER_KEY: OTHER_VALUE}
+    )
     textbook = create_content(website, CONTENT_TYPE_RESOURCE, [OPEN_TEXTBOOK_LRT])
     sitemeta = create_content(website, CONTENT_TYPE_METADATA, [OPEN_TEXTBOOK_LRT])
     run_command(textbook.text_id)
@@ -221,6 +261,7 @@ def test_textbook_course_strips_website_metadata_even_when_sitemetadata_tagged()
     sitemeta.refresh_from_db()
     assert website.metadata[LRT_FIELD] == []  # stripped, never re-added
     assert sitemeta.metadata[LRT_FIELD] == [OPEN_TEXTBOOK_LRT]  # retained
+    assert_unrelated_metadata_preserved(website, sitemeta)
 
 
 # ---------------------------------------------------------------------------
@@ -281,16 +322,20 @@ def test_reconciles_across_multiple_sites():
     """Several textbooks across several courses reconcile independently and correctly."""
     # Course A: a textbook (tagged) + an excerpt (tagged) + sitemetadata (untagged)
     # + Website.metadata (tagged).
-    course_a = WebsiteFactory.create(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT]})
+    course_a = WebsiteFactory.create(
+        metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT], OTHER_KEY: OTHER_VALUE}
+    )
     textbook_a = create_content(course_a, CONTENT_TYPE_RESOURCE, [OPEN_TEXTBOOK_LRT])
     excerpt_a = create_content(course_a, CONTENT_TYPE_RESOURCE, [OPEN_TEXTBOOK_LRT])
     sitemeta_a = create_content(course_a, CONTENT_TYPE_METADATA, ["Exams"])
     # Course B: a textbook missing the tag + sitemetadata already tagged.
-    course_b = WebsiteFactory.create(metadata={LRT_FIELD: []})
+    course_b = WebsiteFactory.create(metadata={LRT_FIELD: [], OTHER_KEY: OTHER_VALUE})
     textbook_b = create_content(course_b, CONTENT_TYPE_RESOURCE, ["Readings"])
     sitemeta_b = create_content(course_b, CONTENT_TYPE_METADATA, [OPEN_TEXTBOOK_LRT])
     # Course C: no textbook — fully stripped.
-    course_c = WebsiteFactory.create(metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT]})
+    course_c = WebsiteFactory.create(
+        metadata={LRT_FIELD: [OPEN_TEXTBOOK_LRT], OTHER_KEY: OTHER_VALUE}
+    )
     page_c = create_content(course_c, CONTENT_TYPE_PAGE, [OPEN_TEXTBOOK_LRT])
     sitemeta_c = create_content(course_c, CONTENT_TYPE_METADATA, [OPEN_TEXTBOOK_LRT])
 
@@ -322,3 +367,15 @@ def test_reconciles_across_multiple_sites():
     assert page_c.metadata[LRT_FIELD] == []
     assert sitemeta_c.metadata[LRT_FIELD] == []
     assert course_c.metadata[LRT_FIELD] == []
+    # Every object's unrelated metadata key survived reconciliation.
+    assert_unrelated_metadata_preserved(
+        textbook_a,
+        excerpt_a,
+        sitemeta_a,
+        course_a,
+        textbook_b,
+        sitemeta_b,
+        page_c,
+        sitemeta_c,
+        course_c,
+    )

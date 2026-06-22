@@ -17,8 +17,6 @@ log = logging.getLogger(__name__)
 
 OPEN_TEXTBOOK_LRT = "Open Textbooks"
 LRT_FIELD = "learning_resource_types"
-# Postgres JSONField containment lookup: matches rows whose
-# metadata["learning_resource_types"] list currently contains OPEN_TEXTBOOK_LRT.
 HAS_TAG_FILTER = {f"metadata__{LRT_FIELD}__contains": OPEN_TEXTBOOK_LRT}
 BULK_UPDATE_BATCH_SIZE = 100
 
