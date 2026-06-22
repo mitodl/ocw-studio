@@ -39,6 +39,53 @@ extension_map = {
 }
 
 
+def _append_resource_to_video_files(
+    video: WebsiteContent,
+    resource_field: str,
+    file_field: str,
+    text_id: str,
+    filepath: str,
+) -> None:
+    """
+    Append a caption/transcript resource entry to video_files metadata.
+
+    Preserves any existing entries (e.g. other-language variants already
+    linked from GDrive) instead of overwriting them.
+    """
+    vf = video.metadata["video_files"]
+    existing_resources = vf.get(resource_field)
+    if isinstance(existing_resources, dict) and existing_resources.get("content"):
+        if text_id not in existing_resources["content"]:
+            existing_resources["content"] = [*existing_resources["content"], text_id]
+    else:
+        vf[resource_field] = {"content": [text_id], "website": video.website.name}
+    existing_files = vf.get(file_field)
+    new_file_entry = {"file": filepath, "language": "en"}
+    if isinstance(existing_files, list):
+        if not any(e.get("file") == filepath for e in existing_files):
+            vf[file_field] = [*existing_files, new_file_entry]
+    else:
+        vf[file_field] = [new_file_entry]
+
+
+def _threeplay_resource_already_linked(
+    video: WebsiteContent, resource_field: str, filename: str
+) -> bool:
+    """Return True if the 3Play-generated resource is already in the content list."""
+    existing_content = (
+        video.metadata["video_files"].get(resource_field, {}).get("content") or []
+    )
+    return bool(
+        isinstance(existing_content, list)
+        and existing_content
+        and WebsiteContent.objects.filter(
+            website=video.website,
+            text_id__in=existing_content,
+            filename=filename,
+        ).exists()
+    )
+
+
 def _attach_transcript_if_missing(
     video: WebsiteContent,
     base_url: str,
@@ -50,10 +97,8 @@ def _attach_transcript_if_missing(
     Attach transcript to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if (
-        video.metadata["video_files"]
-        .get("video_transcript_resources", {})
-        .get("content")
+    if _threeplay_resource_already_linked(
+        video, "video_transcript_resources", f"{youtube_id}_transcript"
     ):
         return
 
@@ -67,17 +112,15 @@ def _attach_transcript_if_missing(
         file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
         filepath, text_id = _create_new_content(pdf_file, video, file_size=file_size)
-        video.metadata["video_files"]["video_transcript_resources"] = {
-            "content": [text_id],
-            "website": video.website.name,
-        }
-        video.metadata["video_files"]["video_transcript_file"] = [
-            {"file": filepath, "language": "en"}
-        ]
-
+        _append_resource_to_video_files(
+            video,
+            "video_transcript_resources",
+            "video_transcript_file",
+            text_id,
+            filepath,
+        )
         if summary:
             summary["transcripts"]["updated"] += 1
-
         write_output(
             "Transcript updated for video, %s and course %s",
             video.title,
@@ -101,7 +144,9 @@ def _attach_captions_if_missing(
     Attach captions to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if video.metadata["video_files"].get("video_captions_resources", {}).get("content"):
+    if _threeplay_resource_already_linked(
+        video, "video_captions_resources", f"{youtube_id}_captions"
+    ):
         return
 
     webvtt_url = base_url + f"&format_id={WEBVTT_FORMAT_ID}"
@@ -113,13 +158,13 @@ def _attach_captions_if_missing(
         file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
         filepath, text_id = _create_new_content(vtt_file, video, file_size)
-        video.metadata["video_files"]["video_captions_resources"] = {
-            "content": [text_id],
-            "website": video.website.name,
-        }
-        video.metadata["video_files"]["video_captions_file"] = [
-            {"file": filepath, "language": "en"}
-        ]
+        _append_resource_to_video_files(
+            video,
+            "video_captions_resources",
+            "video_captions_file",
+            text_id,
+            filepath,
+        )
         if summary:
             summary["captions"]["updated"] += 1
         write_output(
