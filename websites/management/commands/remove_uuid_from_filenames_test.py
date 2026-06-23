@@ -443,6 +443,57 @@ def test_patches_video_metadata_captions_and_transcript(mock_s3):
     )
 
 
+def test_renames_file_with_leading_slash_normalizes_s3_key(settings, mock_s3):
+    """content.file paths with a leading slash are stripped before S3 operations."""
+    website = WebsiteFactory.create()
+    # Legacy courses/ content stores file paths with a leading slash in the DB.
+    old_key_db = f"/courses/{website.name}/{UUID_PREFIX}_ch8.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key_db)
+    expected_s3_old = f"courses/{website.name}/{UUID_PREFIX}_ch8.pdf"
+    expected_s3_new = f"courses/{website.name}/ch8.pdf"
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3_client = mock_s3.return_value
+    mock_s3_client.copy_object.assert_called_once_with(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": expected_s3_old},
+        Key=expected_s3_new,
+        ACL="public-read",
+    )
+    mock_s3_client.delete_object.assert_called_once_with(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        Key=expected_s3_old,
+    )
+    content.refresh_from_db()
+    # DB value preserves the original leading-slash format; only UUID prefix stripped.
+    assert str(content.file) == f"/courses/{website.name}/ch8.pdf"
+
+
+def test_patches_video_metadata_when_file_has_leading_slash(mock_s3):
+    """Metadata is patched correctly when content.file and metadata both use leading-slash paths."""
+    website = WebsiteFactory.create()
+    captions_old_db = f"/courses/{website.name}/{UUID_PREFIX}_captions.vtt"
+    WebsiteContentFactory.create(website=website, file=captions_old_db)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old_db,
+                "video_transcript_file": None,
+            },
+        },
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    video_resource.refresh_from_db()
+    expected = f"/courses/{website.name}/captions.vtt"
+    assert video_resource.metadata["video_files"]["video_captions_file"] == expected
+
+
 def test_patches_video_metadata_with_leading_slash(mock_s3):
     """Metadata paths stored with a leading slash are also patched correctly."""
     website = WebsiteFactory.create()

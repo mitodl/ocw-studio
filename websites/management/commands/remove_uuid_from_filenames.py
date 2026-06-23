@@ -195,9 +195,9 @@ class Command(WebsiteFilterCommand):
 
         # --- Discovery phase (no S3/DB writes) ---
         renames, skipped_count = _collect_renames(contents)
-        planned_website_ids = {task.website_id for task in renames}
 
         if dry_run:
+            planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
             for task in renames:
@@ -217,27 +217,34 @@ class Command(WebsiteFilterCommand):
 
         for task in renames:
             try:
+                # Legacy content.file values may be stored with a leading slash
+                # (e.g. /courses/...) but S3 keys never start with /.  Normalize
+                # before S3 operations to avoid NoSuchKey on pre-sites/ content.
+                s3_old_key = task.old_key.lstrip("/")
+                s3_new_key = task.new_key.lstrip("/")
                 s3.copy_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                     CopySource={
                         "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                        "Key": task.old_key,
+                        "Key": s3_old_key,
                     },
-                    Key=task.new_key,
+                    Key=s3_new_key,
                     ACL="public-read",
                 )
                 WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
-                DriveFile.objects.filter(
-                    resource_id=task.pk, s3_key=task.old_key
-                ).update(s3_key=task.new_key)
+                DriveFile.objects.filter(resource_id=task.pk, s3_key=s3_old_key).update(
+                    s3_key=s3_new_key
+                )
                 s3.delete_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=task.old_key,
+                    Key=s3_old_key,
                 )
                 self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
                 renamed_count += 1
                 actually_renamed_website_ids.add(task.website_id)
-                successfully_renamed_old_keys.add(task.old_key)
+                # Store normalized key so _collect_metadata_patches can match
+                # val.lstrip("/") against it regardless of slash format.
+                successfully_renamed_old_keys.add(s3_old_key)
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
