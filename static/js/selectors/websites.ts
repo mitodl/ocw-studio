@@ -22,19 +22,19 @@ import {
 } from "../types/websites"
 
 export const getWebsiteDetailCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteDetails ?? {},
+  (state: ReduxState) => state.entities?.websiteDetails,
   (websiteDetails: WebsiteDetails) =>
-    memoize((name: string): Website => websiteDetails[name]),
+    memoize((name: string): Website => websiteDetails?.[name]),
 )
 
 type DetailCursor = ReturnType<typeof getWebsiteDetailCursor>
 
 export const getWebsiteListingCursor = createSelector(
-  (state: ReduxState) => state.entities?.websitesListing ?? {},
+  (state: ReduxState) => state.entities?.websitesListing,
   getWebsiteDetailCursor,
   (listing: WebsitesListing, websiteDetailCursor: DetailCursor) =>
     memoize((offset: number): WebsiteListingResponse => {
-      const response = listing[offset] ?? {}
+      const response = listing?.[offset] ?? {}
       const names = response?.results ?? []
       const sites = names.map(websiteDetailCursor)
 
@@ -53,13 +53,13 @@ export interface WebsiteCollaboratorListSelection extends WCSelection {
 }
 
 export const getWebsiteCollaboratorListingCursor = createSelector(
-  (state: ReduxState) => state.entities?.collaborators ?? {},
+  (state: ReduxState) => state.entities?.collaborators,
   (listing) =>
     memoize(
       (
         listingParams: CollaboratorListingParams,
       ): WebsiteCollaboratorListSelection => {
-        const response = listing[collaboratorListingKey(listingParams)] ?? {}
+        const response = listing?.[collaboratorListingKey(listingParams)] ?? {}
         return response
       },
 
@@ -68,11 +68,11 @@ export const getWebsiteCollaboratorListingCursor = createSelector(
     ),
 )
 export const getWebsiteContentDetailCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteContentDetails ?? {},
+  (state: ReduxState) => state.entities?.websiteContentDetails,
   (content: Record<string, WebsiteContent>) =>
     memoize(
       (params: ContentDetailParams): WebsiteContent | null =>
-        content[contentDetailKey(params)] ?? null,
+        content?.[contentDetailKey(params)] ?? null,
     ),
 )
 
@@ -91,14 +91,14 @@ export interface WebsiteContentListSelection extends WCSelection {
 }
 
 export const getWebsiteContentListingCursor = createSelector(
-  (state: ReduxState) => state.entities?.websiteContentListing ?? {},
+  (state: ReduxState) => state.entities?.websiteContentListing,
   getWebsiteContentDetailCursor,
   (listing, websiteContentDetailCursor) =>
     memoize(
       (
         listingParams: ContentListingParams,
       ): WebsiteContentSelection | WebsiteContentListSelection => {
-        const response = listing[contentListingKey(listingParams)] ?? {}
+        const response = listing?.[contentListingKey(listingParams)] ?? {}
         const uuids: string[] = response?.results ?? []
         const items = uuids.map((uuid) =>
           websiteContentDetailCursor({
