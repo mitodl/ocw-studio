@@ -324,7 +324,7 @@ def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
     )
 
     assert output_file.exists()
-    with output_file.open("r", newline="") as f:
+    with output_file.open("r", newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     assert len(rows) == 1
     assert rows[0]["pk"] == str(content.pk)

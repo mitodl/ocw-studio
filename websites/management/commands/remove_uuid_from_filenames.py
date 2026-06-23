@@ -8,6 +8,7 @@ from typing import NamedTuple
 
 from django.conf import settings
 from django.core.management.base import CommandError
+from django.db import transaction
 
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
@@ -72,11 +73,15 @@ def _collect_renames(queryset):
     conflict check is an O(1) dict lookup rather than an individual DB query.
     """
     skipped = 0
-    # Normalize keys to strip any leading slash so conflict detection works
-    # regardless of whether legacy content stores paths with or without one.
+    # Restrict conflict detection to the websites present in the queryset.
+    # S3 keys are namespaced by website name, so cross-website collisions
+    # are impossible and scanning the whole table is wasteful at scale.
+    website_ids = set(queryset.values_list("website_id", flat=True).distinct())
     existing_files = {
         f.lstrip("/"): pk
-        for f, pk in WebsiteContent.objects.exclude(file="").values_list("file", "pk")
+        for f, pk in WebsiteContent.objects.filter(website_id__in=website_ids)
+        .exclude(file="")
+        .values_list("file", "pk")
         if f
     }
 
@@ -260,7 +265,7 @@ class Command(WebsiteFilterCommand):
                 if planned_website_ids
                 else {}
             )
-            with open(output_path, "w", newline="") as f:  # noqa: PTH123
+            with open(output_path, "w", newline="", encoding="utf-8") as f:  # noqa: PTH123
                 _write_csv_rows(
                     csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),
                     renames,
@@ -297,10 +302,11 @@ class Command(WebsiteFilterCommand):
                     Key=s3_new_key,
                     ACL="public-read",
                 )
-                WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
-                DriveFile.objects.filter(resource_id=task.pk, s3_key=s3_old_key).update(
-                    s3_key=s3_new_key
-                )
+                with transaction.atomic():
+                    WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
+                    DriveFile.objects.filter(
+                        resource_id=task.pk, s3_key=s3_old_key
+                    ).update(s3_key=s3_new_key)
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
