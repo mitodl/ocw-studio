@@ -7,6 +7,7 @@ from collections import Counter
 from typing import NamedTuple
 
 from django.conf import settings
+from django.core.management.base import CommandError
 
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
@@ -225,10 +226,7 @@ class Command(WebsiteFilterCommand):
             "--output",
             dest="output",
             default=None,
-            help=(
-                "File path for the dry-run CSV plan (default: stdout). "
-                "Only used with --dry-run."
-            ),
+            help="File path for the CSV plan. Required with --dry-run.",
         )
 
     def handle(self, *args, **options):
@@ -243,6 +241,10 @@ class Command(WebsiteFilterCommand):
         renames, skipped_count = _collect_renames(contents)
 
         if dry_run:
+            output_path = options.get("output")
+            if not output_path:
+                msg = "--output is required when using --dry-run"
+                raise CommandError(msg)
             planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
@@ -258,27 +260,17 @@ class Command(WebsiteFilterCommand):
                 if planned_website_ids
                 else {}
             )
-            output_path = options.get("output")
-            if output_path:
-                with open(output_path, "w", newline="") as f:  # noqa: PTH123
-                    _write_csv_rows(
-                        csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),
-                        renames,
-                        website_names,
-                    )
-                plan_dest = output_path
-            else:
+            with open(output_path, "w", newline="") as f:  # noqa: PTH123
                 _write_csv_rows(
-                    csv.DictWriter(self.stdout, fieldnames=_CSV_FIELDNAMES),
+                    csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),
                     renames,
                     website_names,
                 )
-                plan_dest = "stdout"
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
                 f"{len(planned_patches)} video metadata records would be patched. "
-                f"Plan written to {plan_dest}."
+                f"Plan written to {output_path}."
             )
             return
 

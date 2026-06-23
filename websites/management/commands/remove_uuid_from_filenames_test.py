@@ -259,13 +259,18 @@ def test_skips_all_when_multiple_sources_target_same_key(mock_s3):
     assert str(content_b.file) == key_b
 
 
-def test_dry_run_makes_no_changes(mock_s3):
+def test_dry_run_makes_no_changes(tmp_path, mock_s3):
     """With --dry-run, no S3 operations are performed and the DB is not modified."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_slides.pptx"
     content = WebsiteContentFactory.create(website=website, file=old_key)
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     mock_s3.return_value.copy_object.assert_not_called()
     mock_s3.return_value.delete_object.assert_not_called()
@@ -273,7 +278,7 @@ def test_dry_run_makes_no_changes(mock_s3):
     assert str(content.file) == old_key
 
 
-def test_dry_run_reports_metadata_patch_count(mock_s3):
+def test_dry_run_reports_metadata_patch_count(tmp_path, mock_s3):
     """Dry-run summary includes the number of video metadata records that would be patched."""
     website = WebsiteFactory.create()
     captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
@@ -296,6 +301,7 @@ def test_dry_run_reports_metadata_patch_count(mock_s3):
         "remove_uuid_from_filenames",
         filter=website.name,
         dry_run=True,
+        output=str(tmp_path / "plan.csv"),
         stdout=stdout,
     )
 
@@ -326,6 +332,18 @@ def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
     assert rows[0]["new_key"] == f"sites/{website.name}/doc.pdf"
     assert rows[0]["website_id"] == str(website.uuid)
     assert rows[0]["website_name"] == website.name
+
+
+def test_dry_run_requires_output(mock_s3):
+    """--dry-run without --output raises CommandError instead of writing to stdout."""
+    from django.core.management.base import CommandError  # noqa: PLC0415
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    with pytest.raises(CommandError, match="--output is required"):
+        call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
 
 
 def test_filter_limits_to_specified_website(mock_s3):
@@ -510,7 +528,7 @@ def test_marks_website_dirty_after_rename(mock_s3):
     assert website.has_unpublished_draft is True
 
 
-def test_dry_run_does_not_mark_website_dirty(mock_s3):
+def test_dry_run_does_not_mark_website_dirty(tmp_path, mock_s3):
     """With --dry-run, website dirty flags are not set."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
@@ -520,7 +538,12 @@ def test_dry_run_does_not_mark_website_dirty(mock_s3):
         has_unpublished_live=False, has_unpublished_draft=False
     )
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     website.refresh_from_db()
     assert website.has_unpublished_live is False
@@ -651,7 +674,7 @@ def test_does_not_patch_non_video_resource_metadata(mock_s3):
     assert doc_resource.metadata.get("video_files") is None
 
 
-def test_dry_run_does_not_patch_video_metadata(mock_s3):
+def test_dry_run_does_not_patch_video_metadata(tmp_path, mock_s3):
     """With --dry-run, video metadata is not modified."""
     website = WebsiteFactory.create()
     captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
@@ -668,7 +691,12 @@ def test_dry_run_does_not_patch_video_metadata(mock_s3):
         },
     )
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
