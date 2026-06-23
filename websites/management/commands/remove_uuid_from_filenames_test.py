@@ -439,6 +439,60 @@ def test_metadata_not_patched_for_skipped_captions_rename(mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
 
+def test_delete_object_failure_still_records_rename(mock_s3):
+    """A delete_object failure after a committed copy+DB rename still marks dirty and patches metadata."""
+    website = WebsiteFactory.create()
+    captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
+    captions_content = WebsiteContentFactory.create(website=website, file=captions_old)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old,
+                "video_transcript_file": None,
+            },
+        },
+    )
+    Website.objects.filter(uuid=website.uuid).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    mock_s3.return_value.delete_object.side_effect = Exception("Delete failed")
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    # copy + DB updates committed before delete — rename should be counted
+    captions_content.refresh_from_db()
+    assert str(captions_content.file) == f"sites/{website.name}/captions.vtt"
+    # Website must be marked dirty despite delete failure
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+    assert website.has_unpublished_draft is True
+    # Metadata must be patched
+    video_resource.refresh_from_db()
+    assert (
+        video_resource.metadata["video_files"]["video_captions_file"]
+        == f"sites/{website.name}/captions.vtt"
+    )
+
+
+def test_conflict_detection_normalizes_leading_slash(mock_s3):
+    """A conflict is detected even when the existing target key and the rename target differ only by leading slash."""
+    website = WebsiteFactory.create()
+    # Existing record holds the target path WITHOUT a leading slash.
+    existing_key = f"courses/{website.name}/doc.pdf"
+    WebsiteContentFactory.create(website=website, file=existing_key)
+    # Source has a leading slash and UUID prefix — would rename to /courses/.../doc.pdf.
+    # After lstrip normalization, this is the same S3 key as existing_key.
+    source_key = f"/courses/{website.name}/{UUID_PREFIX}_doc.pdf"
+    WebsiteContentFactory.create(website=website, file=source_key)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+
+
 def test_marks_website_dirty_after_rename(mock_s3):
     """Websites with renamed files are marked as having unpublished changes."""
     website = WebsiteFactory.create()
