@@ -1,10 +1,14 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
+import csv
 import re
 import sys
+from collections import Counter
 from typing import NamedTuple
 
 from django.conf import settings
+from django.core.management.base import CommandError
+from django.db import transaction
 
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
@@ -60,16 +64,29 @@ def _collect_renames(queryset):
       tasks         -- list of RenameTask, one per valid rename
       skipped_count -- number of records skipped due to empty-result or conflict
 
+    When multiple UUID-prefixed files would resolve to the same target key,
+    ALL of them are skipped — not just the second-and-later. This prevents a
+    collision where one source renames successfully but the other sources are
+    left with UUID prefixes still pointing at conflicting paths.
+
     Pre-fetches all existing file→pk mappings once upfront so the per-record
     conflict check is an O(1) dict lookup rather than an individual DB query.
     """
-    tasks = []
     skipped = 0
-    claimed_keys = set()  # new_keys already reserved by earlier tasks in this batch
-    # Pre-fetch all non-empty file→pk mappings to avoid an N+1 conflict check.
-    existing_files = dict(
-        WebsiteContent.objects.exclude(file="").values_list("file", "pk")
-    )
+    # Restrict conflict detection to the websites present in the queryset.
+    # S3 keys are namespaced by website name, so cross-website collisions
+    # are impossible and scanning the whole table is wasteful at scale.
+    website_ids = set(queryset.values_list("website_id", flat=True).distinct())
+    existing_files = {
+        f.lstrip("/"): pk
+        for f, pk in WebsiteContent.objects.filter(website_id__in=website_ids)
+        .exclude(file="")
+        .values_list("file", "pk")
+        if f
+    }
+
+    # Pass 1: collect all candidates that have a strippable UUID prefix.
+    candidates = []
     for content in queryset.iterator():
         old_key = str(content.file)
         new_key = strip_uuid_prefix(old_key)
@@ -86,17 +103,27 @@ def _collect_renames(queryset):
                 skipped += 1
             continue
 
-        # Check intra-batch conflict first (another task in this run claims new_key).
-        if new_key in claimed_keys:
+        candidates.append((content.pk, str(content.website_id), old_key, new_key))
+
+    # Pass 2: find target keys claimed by more than one source — ALL must be skipped.
+    # Normalize with lstrip to catch collisions between slash-prefixed and non-prefixed
+    # variants that resolve to the same S3 key.
+    target_counts = Counter(new_key.lstrip("/") for _, _, _, new_key in candidates)
+
+    # Pass 3: build the final task list, dropping ambiguous and conflicting targets.
+    tasks = []
+    for pk, website_id, old_key, new_key in candidates:
+        norm_new = new_key.lstrip("/")
+        if target_counts[norm_new] > 1:
             print(  # noqa: T201
-                f"Skipping {old_key}: target key {new_key} already claimed by another record in this batch",  # noqa: E501
+                f"Skipping {old_key}: target key {new_key} is claimed by {target_counts[norm_new]} sources",  # noqa: E501
                 file=sys.stderr,
             )
             skipped += 1
             continue
 
-        conflicting_pk = existing_files.get(new_key)
-        if conflicting_pk and conflicting_pk != content.pk:
+        conflicting_pk = existing_files.get(norm_new)
+        if conflicting_pk and conflicting_pk != pk:
             print(  # noqa: T201
                 f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting_pk}",  # noqa: E501
                 file=sys.stderr,
@@ -104,11 +131,10 @@ def _collect_renames(queryset):
             skipped += 1
             continue
 
-        claimed_keys.add(new_key)
         tasks.append(
             RenameTask(
-                pk=str(content.pk),
-                website_id=str(content.website_id),
+                pk=str(pk),
+                website_id=website_id,
                 old_key=old_key,
                 new_key=new_key,
             )
@@ -170,6 +196,24 @@ def _collect_metadata_patches(website_uuids, renamed_keys=None):
     return patches
 
 
+_CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
+
+
+def _write_csv_rows(writer, renames, website_names):
+    """Write header + one row per RenameTask to *writer*."""
+    writer.writeheader()
+    for task in renames:
+        writer.writerow(
+            {
+                "pk": task.pk,
+                "website_id": task.website_id,
+                "website_name": website_names.get(task.website_id, ""),
+                "old_key": task.old_key,
+                "new_key": task.new_key,
+            }
+        )
+
+
 class Command(WebsiteFilterCommand):
     """Remove legacy UUID prefixes from resource filenames in S3 and update database records."""  # noqa: E501
 
@@ -181,13 +225,18 @@ class Command(WebsiteFilterCommand):
             "--dry-run",
             action="store_true",
             dest="dry_run",
-            help="Print what would be done without making any changes",
+            help="Export a rename plan CSV without making any changes",
+        )
+        parser.add_argument(
+            "--output",
+            dest="output",
+            default=None,
+            help="File path for the CSV plan. Required with --dry-run.",
         )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
         dry_run = options["dry_run"]
-        s3 = get_boto3_client("s3")
 
         contents = self.filter_website_contents(
             WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
@@ -195,54 +244,97 @@ class Command(WebsiteFilterCommand):
 
         # --- Discovery phase (no S3/DB writes) ---
         renames, skipped_count = _collect_renames(contents)
-        planned_website_ids = {task.website_id for task in renames}
 
         if dry_run:
+            output_path = options.get("output")
+            if not output_path:
+                msg = "--output is required when using --dry-run"
+                raise CommandError(msg)
+            planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
-            for task in renames:
-                self.stdout.write(f"Would rename: {task.old_key} -> {task.new_key}")
+            # Look up website names for the human-readable CSV column.
+            # Use str(uuid) as key to match task.website_id (already stringified).
+            website_names = (
+                {
+                    str(uuid): name
+                    for uuid, name in Website.objects.filter(
+                        uuid__in=planned_website_ids
+                    ).values_list("uuid", "name")
+                }
+                if planned_website_ids
+                else {}
+            )
+            with open(output_path, "w", newline="", encoding="utf-8") as f:  # noqa: PTH123
+                _write_csv_rows(
+                    csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),
+                    renames,
+                    website_names,
+                )
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
-                f"{len(planned_patches)} video metadata records would be patched"
+                f"{len(planned_patches)} video metadata records would be patched. "
+                f"Plan written to {output_path}."
             )
             return
 
         # --- Execution phase ---
+        s3 = get_boto3_client("s3")
         renamed_count = 0
         error_count = 0
         actually_renamed_website_ids = set()
         successfully_renamed_old_keys: set[str] = set()
 
         for task in renames:
+            # Legacy content.file values may be stored with a leading slash
+            # (e.g. /courses/...) but S3 keys never start with /.  Normalize
+            # before S3 operations to avoid NoSuchKey on pre-sites/ content.
+            s3_old_key = task.old_key.lstrip("/")
+            s3_new_key = task.new_key.lstrip("/")
             try:
                 s3.copy_object(
                     Bucket=settings.AWS_STORAGE_BUCKET_NAME,
                     CopySource={
                         "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                        "Key": task.old_key,
+                        "Key": s3_old_key,
                     },
-                    Key=task.new_key,
+                    Key=s3_new_key,
                     ACL="public-read",
                 )
-                WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
-                DriveFile.objects.filter(
-                    resource_id=task.pk, s3_key=task.old_key
-                ).update(s3_key=task.new_key)
-                s3.delete_object(
-                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=task.old_key,
-                )
-                self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
-                renamed_count += 1
-                actually_renamed_website_ids.add(task.website_id)
-                successfully_renamed_old_keys.add(task.old_key)
+                with transaction.atomic():
+                    WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
+                    DriveFile.objects.filter(
+                        resource_id=task.pk, s3_key=s3_old_key
+                    ).update(s3_key=s3_new_key)
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
                 )
                 error_count += 1
+                continue
+
+            # copy + DB updates committed — record success for dirty-flag and
+            # metadata patching regardless of whether the old-key cleanup below
+            # succeeds.
+            self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
+            renamed_count += 1
+            actually_renamed_website_ids.add(task.website_id)
+            # Store normalized key so _collect_metadata_patches can match
+            # val.lstrip("/") against it regardless of slash format.
+            successfully_renamed_old_keys.add(s3_old_key)
+
+            try:
+                s3.delete_object(
+                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                    Key=s3_old_key,
+                )
+            except Exception as exc:  # noqa: BLE001
+                # The rename is already committed in DB and S3; the old key is
+                # now an orphan.  Log a warning but keep the success counters.
+                self.stderr.write(
+                    f"Warning: failed to delete old key {s3_old_key}: {exc!s}"
+                )
 
         # Dirty-flag and metadata updates are scoped to websites where at least
         # one rename actually committed to the DB — not the full planned set.
