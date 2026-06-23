@@ -1,5 +1,6 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
+import csv
 from io import StringIO
 
 import pytest
@@ -300,6 +301,31 @@ def test_dry_run_reports_metadata_patch_count(mock_s3):
 
     output = stdout.getvalue()
     assert "1 video metadata records would be patched" in output
+
+
+def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
+    """Dry-run exports a CSV with pk, website info, and old/new S3 keys."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    output_file = tmp_path / "plan.csv"
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+
+    assert output_file.exists()
+    with output_file.open("r", newline="") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["pk"] == str(content.pk)
+    assert rows[0]["old_key"] == old_key
+    assert rows[0]["new_key"] == f"sites/{website.name}/doc.pdf"
+    assert rows[0]["website_id"] == str(website.uuid)
+    assert rows[0]["website_name"] == website.name
 
 
 def test_filter_limits_to_specified_website(mock_s3):

@@ -1,5 +1,6 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
+import csv
 import re
 import sys
 from collections import Counter
@@ -194,7 +195,16 @@ class Command(WebsiteFilterCommand):
             "--dry-run",
             action="store_true",
             dest="dry_run",
-            help="Print what would be done without making any changes",
+            help="Export a rename plan CSV without making any changes",
+        )
+        parser.add_argument(
+            "--output",
+            dest="output",
+            default=None,
+            help=(
+                "File path for the dry-run CSV plan (default: stdout). "
+                "Only used with --dry-run."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -213,12 +223,54 @@ class Command(WebsiteFilterCommand):
             planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
-            for task in renames:
-                self.stdout.write(f"Would rename: {task.old_key} -> {task.new_key}")
+            # Look up website names for the human-readable CSV column.
+            # Use str(uuid) as key to match task.website_id (already stringified).
+            website_names = (
+                {
+                    str(uuid): name
+                    for uuid, name in Website.objects.filter(
+                        uuid__in=planned_website_ids
+                    ).values_list("uuid", "name")
+                }
+                if planned_website_ids
+                else {}
+            )
+            fieldnames = ["pk", "website_id", "website_name", "old_key", "new_key"]
+            output_path = options.get("output")
+            if output_path:
+                with open(output_path, "w", newline="") as f:  # noqa: PTH123
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    for task in renames:
+                        writer.writerow(
+                            {
+                                "pk": task.pk,
+                                "website_id": task.website_id,
+                                "website_name": website_names.get(task.website_id, ""),
+                                "old_key": task.old_key,
+                                "new_key": task.new_key,
+                            }
+                        )
+                plan_dest = output_path
+            else:
+                writer = csv.DictWriter(self.stdout, fieldnames=fieldnames)
+                writer.writeheader()
+                for task in renames:
+                    writer.writerow(
+                        {
+                            "pk": task.pk,
+                            "website_id": task.website_id,
+                            "website_name": website_names.get(task.website_id, ""),
+                            "old_key": task.old_key,
+                            "new_key": task.new_key,
+                        }
+                    )
+                plan_dest = "stdout"
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
-                f"{len(planned_patches)} video metadata records would be patched"
+                f"{len(planned_patches)} video metadata records would be patched. "
+                f"Plan written to {plan_dest}."
             )
             return
 
