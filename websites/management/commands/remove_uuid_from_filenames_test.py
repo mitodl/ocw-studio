@@ -182,6 +182,24 @@ def test_also_updates_drive_file(settings, mock_s3):
     assert drive_file.s3_key == expected_new_key
 
 
+def test_also_updates_drive_file_with_leading_slash_content(settings, mock_s3):
+    """DriveFile.s3_key is updated correctly when content.file has a leading slash."""
+    website = WebsiteFactory.create()
+    old_key_db = f"/courses/{website.name}/{UUID_PREFIX}_photo.jpg"
+    content = WebsiteContentFactory.create(website=website, file=old_key_db)
+    # DriveFile.s3_key is always stored without a leading slash (backfill normalizes it).
+    drive_file = DriveFileFactory.create(
+        resource=content,
+        website=website,
+        s3_key=f"courses/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    drive_file.refresh_from_db()
+    assert drive_file.s3_key == f"courses/{website.name}/photo.jpg"
+
+
 def test_skips_file_without_uuid_prefix(mock_s3):
     """Files whose basename does not start with a UUID prefix are left unchanged."""
     website = WebsiteFactory.create()
