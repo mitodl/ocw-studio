@@ -2,6 +2,7 @@
 
 import re
 import sys
+from collections import Counter
 from typing import NamedTuple
 
 from django.conf import settings
@@ -60,16 +61,22 @@ def _collect_renames(queryset):
       tasks         -- list of RenameTask, one per valid rename
       skipped_count -- number of records skipped due to empty-result or conflict
 
+    When multiple UUID-prefixed files would resolve to the same target key,
+    ALL of them are skipped — not just the second-and-later. This prevents a
+    collision where one source renames successfully but the other sources are
+    left with UUID prefixes still pointing at conflicting paths.
+
     Pre-fetches all existing file→pk mappings once upfront so the per-record
     conflict check is an O(1) dict lookup rather than an individual DB query.
     """
-    tasks = []
     skipped = 0
-    claimed_keys = set()  # new_keys already reserved by earlier tasks in this batch
     # Pre-fetch all non-empty file→pk mappings to avoid an N+1 conflict check.
     existing_files = dict(
         WebsiteContent.objects.exclude(file="").values_list("file", "pk")
     )
+
+    # Pass 1: collect all candidates that have a strippable UUID prefix.
+    candidates = []
     for content in queryset.iterator():
         old_key = str(content.file)
         new_key = strip_uuid_prefix(old_key)
@@ -86,17 +93,24 @@ def _collect_renames(queryset):
                 skipped += 1
             continue
 
-        # Check intra-batch conflict first (another task in this run claims new_key).
-        if new_key in claimed_keys:
+        candidates.append((content.pk, str(content.website_id), old_key, new_key))
+
+    # Pass 2: find target keys claimed by more than one source — ALL must be skipped.
+    target_counts = Counter(new_key for _, _, _, new_key in candidates)
+
+    # Pass 3: build the final task list, dropping ambiguous and conflicting targets.
+    tasks = []
+    for pk, website_id, old_key, new_key in candidates:
+        if target_counts[new_key] > 1:
             print(  # noqa: T201
-                f"Skipping {old_key}: target key {new_key} already claimed by another record in this batch",  # noqa: E501
+                f"Skipping {old_key}: target key {new_key} is claimed by {target_counts[new_key]} sources",  # noqa: E501
                 file=sys.stderr,
             )
             skipped += 1
             continue
 
         conflicting_pk = existing_files.get(new_key)
-        if conflicting_pk and conflicting_pk != content.pk:
+        if conflicting_pk and conflicting_pk != pk:
             print(  # noqa: T201
                 f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting_pk}",  # noqa: E501
                 file=sys.stderr,
@@ -104,11 +118,10 @@ def _collect_renames(queryset):
             skipped += 1
             continue
 
-        claimed_keys.add(new_key)
         tasks.append(
             RenameTask(
-                pk=str(content.pk),
-                website_id=str(content.website_id),
+                pk=str(pk),
+                website_id=website_id,
                 old_key=old_key,
                 new_key=new_key,
             )

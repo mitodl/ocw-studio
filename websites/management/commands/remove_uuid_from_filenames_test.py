@@ -94,7 +94,7 @@ def test_collect_renames_skips_and_counts_conflict():
 
 
 def test_collect_renames_skips_intra_conflict():
-    """When two UUID-prefixed records want the same target, the second is skipped."""
+    """When two UUID-prefixed records want the same target, both are skipped."""
     website = WebsiteFactory.create()
     uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
     key_a = f"sites/{website.name}/{UUID_PREFIX}_file.pdf"
@@ -107,9 +107,9 @@ def test_collect_renames_skips_intra_conflict():
 
     tasks, skipped = _collect_renames(qs)
 
-    # First record in pk order wins; second is a conflict
-    assert len(tasks) + skipped == 2
-    assert skipped == 1
+    # Both sources target the same key — neither should be renamed.
+    assert tasks == []
+    assert skipped == 2
 
 
 @pytest.mark.parametrize(
@@ -238,6 +238,24 @@ def test_skips_conflicting_target_key(mock_s3):
     call_command("remove_uuid_from_filenames", filter=website.name)
 
     mock_s3.return_value.copy_object.assert_not_called()
+
+
+def test_skips_all_when_multiple_sources_target_same_key(mock_s3):
+    """When two UUID-prefixed files resolve to the same target, neither is renamed."""
+    website = WebsiteFactory.create()
+    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    key_a = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
+    key_b = f"sites/{website.name}/{uuid_b}_report.pdf"
+    content_a = WebsiteContentFactory.create(website=website, file=key_a)
+    content_b = WebsiteContentFactory.create(website=website, file=key_b)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    content_a.refresh_from_db()
+    content_b.refresh_from_db()
+    assert str(content_a.file) == key_a
+    assert str(content_b.file) == key_b
 
 
 def test_dry_run_makes_no_changes(mock_s3):
