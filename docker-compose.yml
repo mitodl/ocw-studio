@@ -72,13 +72,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime
+      target: development
     command: >
       /bin/bash -c '
       sleep 3 &&
       python3 manage.py collectstatic --noinput &&
       python3 manage.py migrate --noinput &&
-      granian --interface wsgi --host 0.0.0.0 --port 8041 --workers 2 main.wsgi:application'
+      exec granian --interface wsgi --host 0.0.0.0 --port 8041 --workers 2 main.wsgi:application'
     stdin_open: true
     tty: true
     ports:
@@ -123,7 +123,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime
+      target: development
     environment:
       <<: *py-enviroment
       DEBUG: "True"

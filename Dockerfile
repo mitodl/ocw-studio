@@ -21,14 +21,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 # ─── Dependency install ───────────────────────────────────────────────────────
 FROM base AS deps
 
-COPY pyproject.toml uv.lock /src/
-RUN chown mitodl:mitodl /src/pyproject.toml /src/uv.lock
+COPY --chown=mitodl:mitodl pyproject.toml uv.lock /src/
 
 USER mitodl
 WORKDIR /src
 # BuildKit cache mount keeps the uv download cache across builds.
 RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-install-project --no-dev
 
 # ─── Node / frontend asset build ─────────────────────────────────────────────
 FROM node:24-slim AS node_builder
@@ -58,3 +57,9 @@ COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webp
 
 ARG GIT_REF
 RUN echo "$GIT_REF" >> /src/static/hash.txt
+
+# ─── Development target ───────────────────────────────────────────────────────
+FROM runtime AS development
+
+RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
+    uv sync --frozen --no-install-project
