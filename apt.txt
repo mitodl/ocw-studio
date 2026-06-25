@@ -1,14 +1,7 @@
-# Core requirements
-git
-curl
-libjpeg-dev
-zlib1g-dev
-net-tools
-libpq-dev
-postgresql-client
-libxmlsec1-dev
-# Build requirements
-build-essential
-libxml2-dev
-libxslt1-dev
-pkg-config
+# App-specific apt extras for ocw-studio.
+# Common packages (git, curl, libjpeg-dev, zlib1g-dev, net-tools,
+# build-essential, libpq-dev, postgresql-client, pkg-config, libxmlsec1-dev,
+# libxml2-dev, libxslt1-dev) are in mitodl/ol-python-base:3.13.
+# App extras installed inline in the Dockerfile:
+#   libmagic1          - python-magic file-type detection
+#   libxmlsec1-openssl - OpenSSL engine for xmlsec signatures
