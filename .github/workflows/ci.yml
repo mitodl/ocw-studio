@@ -13,7 +13,7 @@ jobs:
 
     services:
       db:
-        image: postgres:18.1
+        image: postgres:18.1@sha256:1090bc3a8ccfb0b55f78a494d76f8d603434f7e4553543d6e807bc7bd6bbd17f
         # Health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -28,7 +28,7 @@ jobs:
         - 5432:5432
 
       redis:
-        image: redis:8.4.0
+        image: redis:8.4.0@sha256:c22af04bb576503bf16b3e34a1fd2fd82de0f765afd866d2e380145e0af30d78
         ports:
         - 6379:6379
 
