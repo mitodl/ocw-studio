@@ -562,7 +562,12 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         skip_search_index_update: bool = False,
         skip_webhooks: bool = False,
     ):
-        delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
+        if destructive_sync:
+            delete_flag = pipeline_vars["delete_flag"]
+            mass_build_delete_param = {}
+        else:
+            delete_flag = "$MASS_BUILD_DELETE"
+            mass_build_delete_param = {"MASS_BUILD_DELETE": "((mass_build_delete:))"}
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
             filter_videos=filter_videos,
@@ -659,6 +664,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                         settings.AWS_MAX_CONCURRENT_CONNECTIONS
                     ),
                     "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
+                    **mass_build_delete_param,
                 },
                 config=TaskConfig(
                     platform="linux",
