@@ -37,7 +37,7 @@ class Command(WebsiteFilterCommand):
 
     help = __doc__
 
-    Rules: "list[type[MarkdownCleanupRule]]" = [
+    Rules: list[type[MarkdownCleanupRule]] = [
         rules.BaseurlReplacementRule,
         rules.LinkUnescapeRule,
         rules.RootRelativeUrlRule,

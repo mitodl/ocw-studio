@@ -16,7 +16,7 @@ class ShortcodeLoggingRule(PyparsingRule):
     class ReplacementNotes:
         name: str
         num_args: int
-        args: "list[str]"
+        args: list[str]
 
     def replace_match(
         self,

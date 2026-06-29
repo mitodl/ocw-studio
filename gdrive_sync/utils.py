@@ -16,7 +16,7 @@ from websites.models import WebsiteContent
 
 def fetch_content_file_size(
     content: WebsiteContent,
-    bucket: "s3.Bucket",  # noqa: F821
+    bucket: s3.Bucket,  # noqa: F821
 ) -> int | None:
     """Return the size (in bytes) of the file associated with `content`."""
     size = None
@@ -44,7 +44,7 @@ def fetch_content_file_size(
 
 def fetch_drive_file_size(
     drive_file: DriveFile,
-    bucket: "s3.Bucket",  # noqa: F821
+    bucket: s3.Bucket,  # noqa: F821
 ) -> int | None:
     """Return the size (in bytes) of the file associated with `drive_file.s3_key`."""
     size = None
