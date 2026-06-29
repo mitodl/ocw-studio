@@ -312,11 +312,16 @@ class GeneralPipeline(BaseGeneralPipeline):
             data=json.dumps({"from": None}),
         )
 
-    def trigger_pipeline_build(self, pipeline_name: str) -> int:
+    def trigger_pipeline_build(
+        self, pipeline_name: str, build_vars: dict | None = None
+    ) -> int:
         """Trigger a pipeline build"""
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
+        data = json.dumps({"vars": build_vars}) if build_vars else None
+        return self.api.post(self._make_builds_url(pipeline_name, job_name), data=data)[
+            "id"
+        ]
 
     def pause_pipeline(self, pipeline_name: str):
         """Pause the pipeline"""
@@ -346,10 +351,12 @@ class GeneralPipeline(BaseGeneralPipeline):
             msg = "No default name specified for this pipeline"
             raise ValueError(msg)
 
-    def trigger(self) -> int:
+    def trigger(self, build_vars: dict | None = None) -> int:
         """Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
         if self.PIPELINE_NAME:
-            return self.trigger_pipeline_build(self.PIPELINE_NAME)
+            return self.trigger_pipeline_build(
+                self.PIPELINE_NAME, build_vars=build_vars
+            )
         else:
             msg = "No default name specified for this pipeline"
             raise ValueError(msg)

@@ -555,7 +555,8 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
         f"/api/v1/teams/{team}/pipelines/{version}/config{pipeline.instance_vars}"
     )
     mock_post.assert_called_once_with(
-        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}"
+        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}",
+        data=None,
     )
     job_name = "build-theme-assets"
     mock_get = mocker.patch(
@@ -568,9 +569,39 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
         f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/config{pipeline.instance_vars}"
     )
     mock_post.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds{pipeline.instance_vars}"
+        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds{pipeline.instance_vars}",
+        data=None,
     )
     assert build_id == expected_build_id
+
+
+@pytest.mark.parametrize("version", ["live", "draft"])
+def test_trigger_pipeline_build_with_vars(settings, mocker, mock_auth, version):
+    """trigger_pipeline_build passes vars as POST body when provided"""
+    job_name = "build-online-ocw-site"
+    mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get",
+        return_value={"config": {"jobs": [{"name": job_name}]}},
+    )
+    expected_build_id = 999
+    mock_post = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.post",
+        return_value={"id": expected_build_id},
+    )
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    team = settings.CONCOURSE_TEAM
+    pipeline = SitePipeline(website)
+    vars_dict = {"mass_build_delete": " --delete"}
+    build_id = pipeline.trigger_pipeline_build(version, build_vars=vars_dict)
+    assert build_id == expected_build_id
+    mock_post.assert_called_once_with(
+        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}",
+        data=json.dumps({"vars": vars_dict}),
+    )
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
