@@ -325,6 +325,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                     )
                     assert "--delete" in upload_online_build_command
                     assert "$MASS_BUILD_DELETE" in upload_online_build_command
+                    assert "--exclude='*.mp4'" in upload_online_build_command
                     assert (
                         upload_online_build_task["params"]["MASS_BUILD_DELETE"]
                         == "((mass_build_delete:))"

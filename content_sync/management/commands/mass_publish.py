@@ -105,6 +105,16 @@ Would you like to proceed? (y/n): """  # noqa: E501
                 self.stdout.write("Aborting...")
                 return
 
+        if sync_with_delete and not no_mass_build:
+            confirmation = input(
+                f"""WARNING: --sync-with-delete will run 'aws s3 sync --delete' for {len(website_names)} non-root sites.
+Files in S3 not present in the Hugo output will be permanently deleted (archive videos and zip archives are excluded).
+Would you like to proceed? (y/n): """  # noqa: E501
+            )
+            if confirmation != "y":
+                self.stdout.write("Aborting...")
+                return
+
         self.stdout.write(
             f"Publishing {version} version for {len(website_names)} sites."
         )
