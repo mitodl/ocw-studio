@@ -56,6 +56,18 @@ class Command(WebsiteFilterCommand):
             action="store_true",
             help="Run individual site pipelines instead of the mass-build-sites pipeline",  # noqa: E501
         )
+        parser.add_argument(
+            "--sync-with-delete",
+            dest="sync_with_delete",
+            action="store_true",
+            default=False,
+            help=(
+                "Run aws s3 sync with --delete for non-root sites during mass build. "
+                "Use after content removals to ensure files removed from Hugo output "
+                "are deleted from S3 and not re-cached by the CDN after cache purge. "
+                "Has no effect when --no-mass-build is set."
+            ),
+        )
 
     def handle(self, *args, **options):  # pylint:disable=too-many-locals
         super().handle(*args, **options)
@@ -69,6 +81,7 @@ class Command(WebsiteFilterCommand):
         chunk_size = int(options["chunk_size"])
         prepublish = options["prepublish"]
         no_mass_build = options["no_mass_build"]
+        sync_with_delete = options["sync_with_delete"]
         is_verbose = options["verbosity"] > 1
 
         website_qset = Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
@@ -102,6 +115,7 @@ Would you like to proceed? (y/n): """  # noqa: E501
             chunk_size=chunk_size,
             prepublish=prepublish,
             no_mass_build=no_mass_build,
+            sync_with_delete=sync_with_delete,
         )
 
         self.stdout.write(
