@@ -918,11 +918,6 @@ SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [
 
 SOCIAL_AUTH_USER_FIELD_MAPPING = {"fullname": "name"}
 
-# Prevent the pipeline from overwriting the user's email with whatever Keycloak
-# returns. This matters when a user's Keycloak email differs from their
-# Touchstone email — after migration the Django email is the source of truth.
-SOCIAL_AUTH_PROTECTED_USER_FIELDS = ["email"]
-
 # Keycloak social auth settings
 SOCIAL_AUTH_KEYCLOAK_KEY = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_KEY",

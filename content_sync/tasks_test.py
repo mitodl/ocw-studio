@@ -749,7 +749,7 @@ def test_trigger_mass_build(settings, mocker, backend, version, sync_with_delete
     tasks.trigger_mass_build.delay(version, sync_with_delete=sync_with_delete)
     if backend == "concourse":
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        expected_vars = {"mass_build_delete": " --delete"} if sync_with_delete else None
+        expected_vars = {"mass_build_delete": "--delete"} if sync_with_delete else None
         mock_pipeline_trigger.assert_called_once_with(
             pipeline_name, build_vars=expected_vars
         )

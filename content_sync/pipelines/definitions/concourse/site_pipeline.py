@@ -566,7 +566,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             delete_flag = pipeline_vars["delete_flag"]
             mass_build_delete_param = {}
         else:
-            delete_flag = "$MASS_BUILD_DELETE"
+            delete_flag = " $MASS_BUILD_DELETE"
             mass_build_delete_param = {"MASS_BUILD_DELETE": "((mass_build_delete:))"}
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
