@@ -55,7 +55,7 @@ class ConfigItem:
     def iter_fields(
         self,
         only_cross_site: bool = False,  # noqa: FBT001, FBT002
-    ) -> Iterator["ConfigField"]:
+    ) -> Iterator[ConfigField]:
         """
         Yields ConfigField for each field.
 
