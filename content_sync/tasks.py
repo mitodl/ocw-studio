@@ -382,6 +382,7 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     *,
     prepublish: bool | None = False,
     no_mass_build: bool | None = False,
+    sync_with_delete: bool = False,
 ):
     """Publish live or draft versions of multiple websites in parallel batches"""
     if not settings.CONTENT_SYNC_BACKEND or not settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -398,7 +399,10 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     ]
     if no_mass_build:
         return self.replace(celery.group(site_tasks))
-    workflow = celery.chain(celery.group(site_tasks), trigger_mass_build.si(version))
+    workflow = celery.chain(
+        celery.group(site_tasks),
+        trigger_mass_build.si(version, sync_with_delete=sync_with_delete),
+    )
     return self.replace(celery.group(workflow))
 
 

@@ -472,6 +472,7 @@ def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpau
 @pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
 @pytest.mark.parametrize("has_mass_build", [True, False])
 @pytest.mark.parametrize("no_mass_build", [True, False])
+@pytest.mark.parametrize("sync_with_delete", [True, False])
 def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments  # noqa: PLR0913
     mocker,
     mocked_celery,
@@ -482,6 +483,7 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
     prepublish,
     has_mass_build,
     no_mass_build,
+    sync_with_delete,
 ):
     """publish_websites calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
@@ -500,6 +502,7 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
             chunk_size=chunk_size,
             prepublish=prepublish,
             no_mass_build=no_mass_build,
+            sync_with_delete=sync_with_delete,
         )
     mock_batch.assert_any_call(
         website_names[0:chunk_size],
@@ -515,7 +518,9 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
             trigger_pipeline=trigger_pipeline,
         )
     if not trigger_pipeline:
-        mock_mass_build.assert_called_once_with(version)
+        mock_mass_build.assert_called_once_with(
+            version, sync_with_delete=sync_with_delete
+        )
     else:
         mock_mass_build.assert_not_called()
 
