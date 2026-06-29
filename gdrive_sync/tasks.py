@@ -2,7 +2,7 @@
 
 import logging
 from collections import Counter
-from datetime import datetime
+from typing import TYPE_CHECKING
 
 import celery
 from celery import chain, chord
@@ -26,6 +26,9 @@ from main.s3_utils import get_boto3_resource
 from main.tasks import chord_finisher
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.models import Website, WebsiteContent
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 # pylint:disable=unused-argument, raising-format-tuple
 

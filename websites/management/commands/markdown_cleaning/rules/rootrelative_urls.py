@@ -4,6 +4,7 @@ WebsiteContentMarkdownCleaner rule to convert root-relative urls to resource_lin
 
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
@@ -20,7 +21,9 @@ from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
     remove_prefix,
 )
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from websites.models import WebsiteContent
 
 
 class RootRelativeUrlRule(PyparsingRule):

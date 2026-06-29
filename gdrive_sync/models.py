@@ -1,8 +1,8 @@
 """Models for gdrive_sync"""
 
 import os
-from collections.abc import Iterable
 from functools import reduce
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.db import models
@@ -19,6 +19,9 @@ from videos.models import Video
 from websites.api import find_available_name
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.utils import resource_reference_field_filter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class DriveApiQueryTracker(TimestampedModel):

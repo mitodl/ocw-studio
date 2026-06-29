@@ -1,12 +1,15 @@
 import abc
 import re
 from dataclasses import dataclass
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
-from pyparsing import ParseResults
+if TYPE_CHECKING:
+    from pyparsing import ParseResults
 
-from websites.management.commands.markdown_cleaning.parsing_utils import WrappedParser
-from websites.models import WebsiteContent
+    from websites.management.commands.markdown_cleaning.parsing_utils import (
+        WrappedParser,
+    )
+    from websites.models import WebsiteContent
 
 
 class MarkdownCleanupRule(abc.ABC):

@@ -1,7 +1,7 @@
 """API functionality for working with site configs"""
 
-from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from django.utils.functional import cached_property
 
@@ -12,6 +12,9 @@ from websites.constants import (
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_CONFIG_SITE_URL_FORMAT_KEY,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @dataclass

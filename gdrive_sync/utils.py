@@ -1,5 +1,7 @@
 """Common utilities"""
 
+from typing import TYPE_CHECKING
+
 import requests
 
 from gdrive_sync.constants import (
@@ -10,8 +12,10 @@ from gdrive_sync.constants import (
     DRIVE_FILE_MODIFIED_TIME,
     DRIVE_FILE_SIZE,
 )
-from gdrive_sync.models import DriveFile
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from gdrive_sync.models import DriveFile
+    from websites.models import WebsiteContent
 
 
 def fetch_content_file_size(

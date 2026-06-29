@@ -1,11 +1,13 @@
 """Sync abstract base"""
 
 import abc
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from content_sync.models import ContentSyncState
-from websites.models import Website, WebsiteContentQuerySet
 from websites.site_config_api import SiteConfig
+
+if TYPE_CHECKING:
+    from websites.models import Website, WebsiteContentQuerySet
 
 
 class BaseSyncBackend(abc.ABC):

@@ -6,7 +6,7 @@ import re
 import time
 from collections import Counter
 from io import BytesIO
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import urljoin
 
 from django.conf import settings
@@ -31,8 +31,10 @@ from videos.models import VideoFile
 from videos.utils import get_course_tag, get_tags_with_course, parse_tags
 from websites.api import is_ocw_site
 from websites.constants import RESOURCE_TYPE_VIDEO
-from websites.models import Website, WebsiteContent
 from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
+
+if TYPE_CHECKING:
+    from websites.models import Website, WebsiteContent
 
 log = logging.getLogger(__name__)
 

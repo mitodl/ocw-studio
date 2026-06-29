@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from django.conf import settings
@@ -12,6 +12,9 @@ from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path, get_content_dirpath
 from websites.api import sync_website_content_references
 from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 log = logging.getLogger()
 

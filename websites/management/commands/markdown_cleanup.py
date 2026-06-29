@@ -2,9 +2,9 @@
 
 import logging
 import os
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.core.management.base import CommandParser
 from django.core.paginator import Paginator
 from mitol.common.utils import now_in_utc
 from tqdm import tqdm
@@ -17,6 +17,9 @@ from websites.management.commands.markdown_cleaning import (
     rules,
 )
 from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from django.core.management.base import CommandParser
 
 log = logging.getLogger(__name__)
 

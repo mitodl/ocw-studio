@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pyparsing import ParseException
@@ -23,7 +24,9 @@ from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     get_rootrelative_url_from_content,
 )
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from websites.models import WebsiteContent
 
 
 class LinkWrappedImagesRule(PyparsingRule):
