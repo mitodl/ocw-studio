@@ -3,7 +3,9 @@ from inspect import isclass
 from pathlib import Path
 from pkgutil import iter_modules
 
-from websites.management.commands.markdown_cleaning.cleaner import MarkdownCleanupRule
+from websites.management.commands.markdown_cleaning.cleanup_rule import (
+    MarkdownCleanupRule,
+)
 
 # Import all rule classes when `rules` module is loaded.
 #
