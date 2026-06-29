@@ -783,7 +783,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     if backend == "concourse":
         mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+        mock_pipeline_trigger.assert_called_once_with(pipeline_name, build_vars=None)
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
