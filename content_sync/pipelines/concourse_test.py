@@ -604,6 +604,21 @@ def test_trigger_pipeline_build_with_vars(settings, mocker, mock_auth, version):
     )
 
 
+def test_trigger_with_vars(settings, mocker, mock_auth):
+    """trigger() forwards build_vars to trigger_pipeline_build"""
+    mock_trigger_build = mocker.patch(
+        "content_sync.pipelines.concourse.GeneralPipeline.trigger_pipeline_build",
+        return_value=42,
+    )
+    pipeline = ThemeAssetsPipeline()
+    build_vars = {"mass_build_delete": " --delete"}
+    result = pipeline.trigger(build_vars=build_vars)
+    assert result == 42
+    mock_trigger_build.assert_called_once_with(
+        pipeline.PIPELINE_NAME, build_vars=build_vars
+    )
+
+
 @pytest.mark.parametrize("version", ["live", "draft"])
 @pytest.mark.parametrize("action", ["pause", "unpause"])
 def test_pause_unpause_pipeline(settings, mocker, mock_auth, version, action):

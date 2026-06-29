@@ -318,7 +318,7 @@ class GeneralPipeline(BaseGeneralPipeline):
         """Trigger a pipeline build"""
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        data = json.dumps({"vars": build_vars}) if build_vars else None
+        data = json.dumps({"vars": build_vars}) if build_vars is not None else None
         return self.api.post(self._make_builds_url(pipeline_name, job_name), data=data)[
             "id"
         ]
