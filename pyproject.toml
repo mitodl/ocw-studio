@@ -213,6 +213,9 @@ filterwarnings = [
     # ol-concoursepy: uses the pydantic v1 `update_forward_refs` API which is
     # deprecated in pydantic v2; upstream fix needed in ol-concoursepy
     "ignore:The `update_forward_refs` method is deprecated",
+    # sentry_sdk calls asyncio.iscoroutinefunction() which is deprecated in
+    # Python 3.14; upstream fix needed in sentry-sdk
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:sentry_sdk",
 ]
 env = [
     "CELERY_TASK_ALWAYS_EAGER=True",
