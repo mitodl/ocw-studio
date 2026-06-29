@@ -323,7 +323,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                     upload_online_build_command = "\n".join(
                         upload_online_build_task["config"]["run"]["args"]
                     )
-                    assert "--delete" not in upload_online_build_command
+                    assert "--delete" in upload_online_build_command
                     assert "$MASS_BUILD_DELETE" in upload_online_build_command
                     assert (
                         upload_online_build_task["params"]["MASS_BUILD_DELETE"]
