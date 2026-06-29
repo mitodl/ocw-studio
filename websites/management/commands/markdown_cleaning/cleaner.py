@@ -3,17 +3,19 @@
 import csv
 from dataclasses import asdict, dataclass, fields
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from websites.management.commands.markdown_cleaning.cleanup_rule import (
-    MarkdownCleanupRule,
-)
 from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
     remove_prefix,
 )
-from websites.models import WebsiteContent
 from websites.utils import get_dict_field, set_dict_field
+
+if TYPE_CHECKING:
+    from websites.management.commands.markdown_cleaning.cleanup_rule import (
+        MarkdownCleanupRule,
+    )
+    from websites.models import WebsiteContent
 
 
 def get_ocw_url(content: WebsiteContent):

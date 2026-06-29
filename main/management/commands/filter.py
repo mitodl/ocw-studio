@@ -1,15 +1,18 @@
 """Filter options for website management commands"""
 
 import json
+from typing import TYPE_CHECKING
 
 from django.core.management import BaseCommand
 from django.db.models import Q
 
 from content_sync.constants import VERSION_DRAFT
-from content_sync.models import ContentSyncStateQuerySet
 from main.constants import IS_FILTER_REQUIRED
-from videos.models import VideoQuerySet
-from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
+
+if TYPE_CHECKING:
+    from content_sync.models import ContentSyncStateQuerySet
+    from videos.models import VideoQuerySet
+    from websites.models import WebsiteContentQuerySet, WebsiteQuerySet
 
 
 class WebsiteFilterCommand(BaseCommand):

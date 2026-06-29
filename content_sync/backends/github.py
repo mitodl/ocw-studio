@@ -1,13 +1,10 @@
 """Github backend"""
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.conf import settings
-from github.Commit import Commit
-from github.ContentFile import ContentFile
 from github.GithubObject import NotSet
-from github.PullRequest import PullRequest
-from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import (
@@ -17,10 +14,17 @@ from content_sync.apis.github import (
 )
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.decorators import check_sync_state
-from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
-from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
+
+if TYPE_CHECKING:
+    from github.Commit import Commit
+    from github.ContentFile import ContentFile
+    from github.PullRequest import PullRequest
+    from github.Repository import Repository
+
+    from content_sync.models import ContentSyncState
+    from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 
 log = logging.getLogger(__name__)
 

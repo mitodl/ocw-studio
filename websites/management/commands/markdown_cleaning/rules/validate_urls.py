@@ -1,13 +1,17 @@
-import re
 from dataclasses import dataclass
 from functools import partial
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import ContentLookup
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    import re
+
+    from websites.models import WebsiteContent
 
 
 class ValidateUrlsRule(RegexpCleanupRule):
