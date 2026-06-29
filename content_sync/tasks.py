@@ -231,12 +231,13 @@ def upsert_test_pipeline(
 
 
 @app.task(acks_late=True)
-def trigger_mass_build(version: str) -> bool:
+def trigger_mass_build(version: str, *, sync_with_delete: bool = False) -> bool:
     """Trigger the mass build pipeline for the specified version"""
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         pipeline = api.get_mass_build_sites_pipeline(version)
         pipeline.unpause()
-        pipeline.trigger()
+        trigger_vars = {"mass_build_delete": " --delete"} if sync_with_delete else None
+        pipeline.trigger(build_vars=trigger_vars)
     return True
 
 
