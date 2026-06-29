@@ -645,9 +645,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             S3_PATH="$S3_PATH/{pipeline_vars["base_url"]}"
         fi
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            # Sync directories with --delete, excluding the static_shared directory
+            # Sync directories with delete flag, excluding the static_shared directory
             for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
-                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://$S3_PATH/$(basename "$dir")"{delete_flag} --metadata site-id={pipeline_vars["site_name"]}
             done
             # Copy only files at the root (exclude directories)
             find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://$S3_PATH/" --metadata site-id={pipeline_vars["site_name"]} \;
