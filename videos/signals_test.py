@@ -36,6 +36,8 @@ def test_delete_video_transcripts():
     video: Video = VideoFactory.create(
         pdf_transcript_file=pdf_temp_file, webvtt_transcript_file=vtt_temp_file
     )
+    pdf_temp_file.close()
+    vtt_temp_file.close()
 
     pdf_filename = video.pdf_transcript_file.name
     webvtt_filename = video.webvtt_transcript_file.name
