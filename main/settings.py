@@ -97,6 +97,7 @@ SECURE_SSL_REDIRECT = get_bool(
     description="Application-level SSL redirect setting.",
 )
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 USE_X_FORWARDED_HOST = get_bool(
     name="USE_X_FORWARDED_HOST",
