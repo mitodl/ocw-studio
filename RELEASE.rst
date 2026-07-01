@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.191.0
+Version 0.191.0 (Released July 01, 2026)
 ---------------
 
 - Add reconcile_open_textbook_lrt management command (#3075)
