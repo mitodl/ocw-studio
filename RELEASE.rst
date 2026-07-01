@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.192.0
+---------------
+
+- fix: added `SECURE_PROXY_SSL_HEADER` in django settings for invalid redirect-uri (#3080)
+- fix: normalize s3 keys and export csv (#3077)
+- feat: adopt mitodl/ol-python-base:3.13, granian (#3078)
+
 Version 0.191.0 (Released July 01, 2026)
 ---------------
 
