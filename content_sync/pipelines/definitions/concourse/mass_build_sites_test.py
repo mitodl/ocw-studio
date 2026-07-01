@@ -222,18 +222,21 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                 )
                 is not None
             )
-        expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
         for step in steps:
-            if hasattr(step, "across"):
+            if "across" in step:
                 across_vars = step["across"][0]
                 assert across_vars["var"] == "site"
                 for across_values in across_vars["values"]:
-                    site = mass_build_websites.get(short_id=across_values["short_id"])
+                    site = next(
+                        s
+                        for s in mass_build_websites
+                        if s.short_id == across_values["short_id"]
+                    )
                     site_config = SitePipelineDefinitionConfig(
                         site=site,
-                        pipeline_name="test",
-                        instance_vars="test",
-                        site_content_branch="test",
+                        pipeline_name=version,
+                        instance_vars=across_values["instance_vars"],
+                        site_content_branch=site_content_branch,
                         static_api_url="test",
                         storage_bucket=settings.AWS_STORAGE_BUCKET_NAME,
                         artifacts_bucket=artifacts_bucket,
@@ -243,11 +246,13 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                         hugo_override_args="",
+                        prefix=across_values.get("prefix", ""),
+                        namespace=".:site.",
                     )
                     assert across_values["site_name"] == site.name
                     assert across_values["s3_path"] == site.s3_path
-                    assert across_values["url_path"] == site.get_url_path()
-                    assert across_values["base_url"] == site.get_url_path()
+                    assert across_values["url_path"] == site_config.url_path
+                    assert across_values["base_url"] == site_config.base_url
                     assert (
                         across_values["static_resources_subdirectory"]
                         == site_config.static_resources_subdirectory
@@ -282,7 +287,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         across_values["hugo_args_offline"]
                         == site_config.hugo_args_offline
                     )
-                    assert across_values["prefix"] == expected_prefix
+                    assert across_values["prefix"] == site_config.prefix
                 build_steps = step["do"]
                 site_content_git_step = get_dict_list_item_by_field(
                     items=build_steps,
@@ -302,22 +307,29 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                     field="task",
                     value=STATIC_RESOURCES_S3_IDENTIFIER,
                 )
-                static_resources_s3_command = static_resources_s3_step["config"]["run"][
-                    "args"
-                ].join("\n")
+                static_resources_s3_command = "\n".join(
+                    static_resources_s3_step["config"]["run"]["args"]
+                )
                 if offline:
                     assert "--exclude *.mp4" not in static_resources_s3_command
                 else:
                     assert "--exclude *.mp4" in static_resources_s3_command
-                upload_online_build_task = get_dict_list_item_by_field(
-                    items=build_steps,
-                    field="task",
-                    value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
-                )
-                upload_online_build_command = upload_online_build_task["config"]["run"][
-                    "args"
-                ].join("\n")
-                assert "--delete" not in upload_online_build_command
+                if not offline:
+                    upload_online_build_task = get_dict_list_item_by_field(
+                        items=build_steps,
+                        field="task",
+                        value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
+                    )
+                    upload_online_build_command = "\n".join(
+                        upload_online_build_task["config"]["run"]["args"]
+                    )
+                    assert "--delete" in upload_online_build_command
+                    assert "$MASS_BUILD_DELETE" in upload_online_build_command
+                    assert "--exclude='*.mp4'" in upload_online_build_command
+                    assert (
+                        upload_online_build_task["params"]["MASS_BUILD_DELETE"]
+                        == "((mass_build_delete:))"
+                    )
         if batch_number < batch_count:
             batch_gate = get_dict_list_item_by_field(
                 items=steps,

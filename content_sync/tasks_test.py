@@ -472,6 +472,7 @@ def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpau
 @pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
 @pytest.mark.parametrize("has_mass_build", [True, False])
 @pytest.mark.parametrize("no_mass_build", [True, False])
+@pytest.mark.parametrize("sync_with_delete", [True, False])
 def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments  # noqa: PLR0913
     mocker,
     mocked_celery,
@@ -482,6 +483,7 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
     prepublish,
     has_mass_build,
     no_mass_build,
+    sync_with_delete,
 ):
     """publish_websites calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
@@ -500,6 +502,7 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
             chunk_size=chunk_size,
             prepublish=prepublish,
             no_mass_build=no_mass_build,
+            sync_with_delete=sync_with_delete,
         )
     mock_batch.assert_any_call(
         website_names[0:chunk_size],
@@ -515,7 +518,9 @@ def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments 
             trigger_pipeline=trigger_pipeline,
         )
     if not trigger_pipeline:
-        mock_mass_build.assert_called_once_with(version)
+        mock_mass_build.assert_called_once_with(
+            version, sync_with_delete=sync_with_delete
+        )
     else:
         mock_mass_build.assert_not_called()
 
@@ -727,10 +732,11 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
     assert website.live_publish_status == PUBLISH_STATUS_NOT_STARTED
 
 
-@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+@pytest.mark.parametrize("sync_with_delete", [True, False])
 @pytest.mark.parametrize("backend", ["concourse", None])
-def test_trigger_mass_build(settings, mocker, backend, version):
-    """trigger_mass_build should call trigger_pipeline_build if enabled"""
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_trigger_mass_build(settings, mocker, backend, version, sync_with_delete):
+    """trigger_mass_build should call trigger_pipeline_build with correct vars"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_pipeline_unpause = mocker.patch(
@@ -740,10 +746,13 @@ def test_trigger_mass_build(settings, mocker, backend, version):
         "content_sync.pipelines.concourse.GeneralPipeline.trigger_pipeline_build"
     )
     pipeline_name = BaseMassBuildSitesPipeline.PIPELINE_NAME
-    tasks.trigger_mass_build.delay(version)
+    tasks.trigger_mass_build.delay(version, sync_with_delete=sync_with_delete)
     if backend == "concourse":
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+        expected_vars = {"mass_build_delete": "--delete"} if sync_with_delete else None
+        mock_pipeline_trigger.assert_called_once_with(
+            pipeline_name, build_vars=expected_vars
+        )
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
@@ -774,7 +783,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     if backend == "concourse":
         mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+        mock_pipeline_trigger.assert_called_once_with(pipeline_name, build_vars=None)
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
