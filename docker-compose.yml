@@ -28,7 +28,7 @@ networks:
       - subnet: "10.1.0.0/24"
 services:
   db:
-    image: postgres:18.1
+    image: postgres:18.1@sha256:1090bc3a8ccfb0b55f78a494d76f8d603434f7e4553543d6e807bc7bd6bbd17f
     ports:
     - "5431:5432"
     environment:
@@ -39,7 +39,7 @@ services:
         ipv4_address: 10.1.0.103
 
   redis:
-    image: redis:8.4.0
+    image: redis:8.4.0@sha256:c22af04bb576503bf16b3e34a1fd2fd82de0f765afd866d2e380145e0af30d78
     ports:
     - "6379"
     networks:
@@ -47,7 +47,7 @@ services:
     - concourse-network
 
   nginx:
-    image: nginx:1.29.7
+    image: nginx:1.29.7@sha256:1854da86e82d5dfb49a8f3d78b099adcc7e36608b207146ed95cd47937938a40
     environment:
       AWS_PREVIEW_BUCKET_NAME: $AWS_PREVIEW_BUCKET_NAME
       AWS_PUBLISH_BUCKET_NAME: $AWS_PUBLISH_BUCKET_NAME
@@ -102,7 +102,7 @@ services:
     - django_media:/var/media
 
   watch:
-    image: node:24.14.1
+    image: node:24.14.1@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'
@@ -146,7 +146,7 @@ services:
     - django_media:/var/media
 
   concourse-db:
-    image: postgres:latest
+    image: postgres:latest@sha256:4aabea78cf39b90e834caf3af7d602a18565f6fe2508705c8d01aa63245c2e20
     environment:
       POSTGRES_DB: concourse
       POSTGRES_USER: postgres
@@ -162,7 +162,7 @@ services:
 
 
   keycloak-db:
-    image: postgres:18
+    image: postgres:18@sha256:4aabea78cf39b90e834caf3af7d602a18565f6fe2508705c8d01aa63245c2e20
     environment:
       POSTGRES_PASSWORD: postgres # pragma: allowlist secret
     ports:
@@ -177,7 +177,7 @@ services:
     - ./config/keycloak/db:/docker-entrypoint-initdb.d
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4.7
+    image: quay.io/keycloak/keycloak:26.4.7@sha256:9409c59bdfb65dbffa20b11e6f18b8abb9281d480c7ca402f51ed3d5977e6007
     depends_on:
     - keycloak-db
     environment:
@@ -206,7 +206,7 @@ services:
 
 
   concourse-keys:
-    image: gotechnies/alpine-ssh
+    image: gotechnies/alpine-ssh@sha256:c356c4aec99f7ef1e64e180260152e4607f45fccc93c9e72088746f506d63a16
     entrypoint: /scripts/keys.sh
     healthcheck:
       test: "exit 0"
@@ -215,7 +215,7 @@ services:
     - concourse-keys:/concourse-keys
 
   concourse:
-    image: concourse/concourse:7.14
+    image: concourse/concourse:7.14@sha256:ff7ee75c781c2e073296b915f0612f4bda8d9267ded13678b6d6217b1f7b4369
     command: web
     privileged: true
     depends_on:
@@ -264,7 +264,7 @@ services:
         ipv4_address: 10.1.0.101
 
   concourse-worker:
-    image: concourse/concourse:7.14
+    image: concourse/concourse:7.14@sha256:ff7ee75c781c2e073296b915f0612f4bda8d9267ded13678b6d6217b1f7b4369
     command: worker
     privileged: true
     depends_on:
@@ -295,7 +295,7 @@ services:
         ipv4_address: 10.1.0.104
 
   s3:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     ports:
     - "9000:9000"
     - "9001:9001"
@@ -316,7 +316,7 @@ services:
       concourse-network:
         ipv4_address: 10.1.0.100
   create-buckets:
-    image: minio/mc
+    image: minio/mc@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     depends_on:
       s3:
         condition: service_healthy
