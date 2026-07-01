@@ -1,6 +1,6 @@
-import re
 from dataclasses import dataclass
 from functools import partial
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
@@ -10,7 +10,11 @@ from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     get_rootrelative_url_from_content,
 )
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    import re
+
+    from websites.models import WebsiteContent
 
 
 class MetadataRelativeUrlsRule(RegexpCleanupRule):

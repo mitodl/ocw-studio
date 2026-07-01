@@ -5,11 +5,14 @@ import hmac
 import re
 from enum import Flag, auto
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from django.conf import settings
 from django.db.models.fields.json import KeyTextTransform
-from django.http import HttpRequest
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
 
 class FeatureFlag(Flag):

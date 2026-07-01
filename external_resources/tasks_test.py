@@ -1,8 +1,7 @@
 """Tests for External Resources Tasks"""
 
 from datetime import timedelta
-from types import SimpleNamespace
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import Mock
 
 import pytest
@@ -36,6 +35,9 @@ from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
 )
+
+if TYPE_CHECKING:
+    from types import SimpleNamespace
 
 
 @pytest.mark.parametrize("website_content_subset", [10, 110])

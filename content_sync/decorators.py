@@ -4,13 +4,14 @@ import functools
 import logging
 from collections.abc import Callable
 from time import sleep
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from django.conf import settings
 from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
 
-from content_sync.models import ContentSyncState
+if TYPE_CHECKING:
+    from content_sync.models import ContentSyncState
 
 F = TypeVar("F", bound=Callable[..., Any])
 

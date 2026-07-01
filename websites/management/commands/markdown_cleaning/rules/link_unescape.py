@@ -12,11 +12,14 @@ So, this removes the unescape for links whose destination starts with a
 shortcode (which is most of them).
 """
 
-import re
+from typing import TYPE_CHECKING
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
+
+if TYPE_CHECKING:
+    import re
 
 LINK_WITHOUT_IMAGE = r"\\\[[^\[\]]*\\\]\({{<"
 LINK_WITH_IMAGE = r"\\\[!\\\[[^\[\]]*\][^\[\]]*\\\]\({{<"

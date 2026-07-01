@@ -3,6 +3,7 @@
 import abc
 import json
 import re
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import yaml
@@ -21,7 +22,9 @@ from websites.constants import (
     CONTENT_TYPE_METADATA,
 )
 from websites.models import Website, WebsiteContent
-from websites.site_config_api import ConfigItem, SiteConfig
+
+if TYPE_CHECKING:
+    from websites.site_config_api import ConfigItem, SiteConfig
 
 
 class BaseContentFileSerializer(abc.ABC):

@@ -677,7 +677,7 @@ class WebsiteContentDetailSerializer(
                             ]
                         )
 
-                except (AttributeError, KeyError, TypeError):
+                except AttributeError, KeyError, TypeError:
                     # Either missing or malformed relation field value
                     continue
 

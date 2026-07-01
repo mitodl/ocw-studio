@@ -2,7 +2,7 @@
 
 import logging
 from collections import Counter
-from datetime import datetime
+from datetime import datetime  # noqa: TC003
 
 import celery
 from celery import chain, chord

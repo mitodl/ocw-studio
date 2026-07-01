@@ -5,12 +5,15 @@ For example, `courses/1-050-solid-mechanics-fall-2004` is replaced with
 `/courses/1-050-solid-mechanics-fall-2004`.
 """
 
-import re
+from typing import TYPE_CHECKING
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
 from websites.management.commands.markdown_cleaning.utils import ContentLookup
+
+if TYPE_CHECKING:
+    import re
 
 COURSE_LINK = r"\]\((courses\/[^\/\)]+)\/?\)"
 
