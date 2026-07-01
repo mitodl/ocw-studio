@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.192.0
+Version 0.192.0 (Released July 01, 2026)
 ---------------
 
 - fix: added `SECURE_PROXY_SSL_HEADER` in django settings for invalid redirect-uri (#3080)
