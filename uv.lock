@@ -569,6 +569,49 @@ wheels = [
 ]
 
 [[package]]
+name = "django-aqueduct"
+version = "0.5.0"
+source = { editable = "/home/tmacey/code/mit/apps/maintained/django-aqueduct/.claude/worktrees/aqueduct-integration" }
+dependencies = [
+    { name = "django" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+]
+
+[package.optional-dependencies]
+mitol = [
+    { name = "mitol-django-common" },
+]
+vault = [
+    { name = "hvac" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3", marker = "extra == 'aws'", specifier = ">=1.26" },
+    { name = "django", specifier = ">=4.2" },
+    { name = "genson", marker = "extra == 'codegen'", specifier = ">=1.2.1,<2" },
+    { name = "hvac", marker = "extra == 'vault'", specifier = ">=2.0" },
+    { name = "mitol-django-common", marker = "extra == 'mitol'", specifier = ">=2023.1.1" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "pydantic-settings", specifier = ">=2.0" },
+]
+provides-extras = ["codegen", "vault", "aws", "mitol"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "boto3", specifier = ">=1.26" },
+    { name = "django-stubs", extras = ["compatible-mypy"], specifier = ">=5.0" },
+    { name = "genson", specifier = ">=1.2.1,<2" },
+    { name = "hvac", specifier = ">=2.0" },
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-django", specifier = ">=4.8" },
+    { name = "pytest-mock", specifier = ">=3.14" },
+    { name = "ruff", specifier = ">=0.4" },
+]
+
+[[package]]
 name = "django-bulk-update-or-create"
 version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1026,6 +1069,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hvac"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e2/57/b46c397fb3842cfb02a44609aa834c887f38dd75f290c2fc5a34da4b2fee/hvac-2.4.0.tar.gz", hash = "sha256:e0056ad9064e7923e874e6769015b032580b639e29246f5ab1044f7959c1c7e0", size = 332543, upload-time = "2025-10-30T12:57:47.512Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/33/71e45a6bd6875f44a26f99da31c63b6840123e88bedf2c0b1ce429b8be12/hvac-2.4.0-py3-none-any.whl", hash = "sha256:008db5efd8c2f77bd37d2368ea5f713edceae1c65f11fd608393179478649e0f", size = 155921, upload-time = "2025-10-30T12:57:46.253Z" },
+]
+
+[[package]]
 name = "identify"
 version = "2.6.18"
 source = { registry = "https://pypi.org/simple" }
@@ -1428,6 +1483,7 @@ dependencies = [
     { name = "dj-database-url" },
     { name = "django" },
     { name = "django-anymail" },
+    { name = "django-aqueduct", extra = ["mitol", "vault"] },
     { name = "django-bulk-update-or-create" },
     { name = "django-guardian" },
     { name = "django-health-check", extra = ["celery", "redis"] },
@@ -1500,6 +1556,7 @@ requires-dist = [
     { name = "dj-database-url", specifier = "==3.1.2" },
     { name = "django", specifier = "==5.2.15" },
     { name = "django-anymail", extras = ["mailgun"], specifier = "==14.0" },
+    { name = "django-aqueduct", extras = ["vault", "mitol"], editable = "/home/tmacey/code/mit/apps/maintained/django-aqueduct/.claude/worktrees/aqueduct-integration" },
     { name = "django-bulk-update-or-create", specifier = "==0.3.0" },
     { name = "django-guardian", specifier = "==3.3.1" },
     { name = "django-health-check", extras = ["celery", "redis"], specifier = ">=4.0.0" },
@@ -1843,6 +1900,20 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/96/5fb7d8c3c17bc8c62fdb031c47d77a1af698f1d7a406b0f79aaa1338f9ad/pydantic_core-2.41.5-cp314-cp314t-win32.whl", hash = "sha256:b4ececa40ac28afa90871c2cc2b9ffd2ff0bf749380fbdf57d165fd23da353aa", size = 1988906, upload-time = "2025-11-04T13:41:56.606Z" },
     { url = "https://files.pythonhosted.org/packages/22/ed/182129d83032702912c2e2d8bbe33c036f342cc735737064668585dac28f/pydantic_core-2.41.5-cp314-cp314t-win_amd64.whl", hash = "sha256:80aa89cad80b32a912a65332f64a4450ed00966111b6615ca6816153d3585a8c", size = 1981607, upload-time = "2025-11-04T13:41:58.889Z" },
     { url = "https://files.pythonhosted.org/packages/9f/ed/068e41660b832bb0b1aa5b58011dea2a3fe0ba7861ff38c4d4904c1c1a99/pydantic_core-2.41.5-cp314-cp314t-win_arm64.whl", hash = "sha256:35b44f37a3199f771c3eaa53051bc8a70cd7b54f333531c59e29fd4db5d15008", size = 1974769, upload-time = "2025-11-04T13:42:01.186Z" },
+]
+
+[[package]]
+name = "pydantic-settings"
+version = "2.14.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5c/b5/8f48e906c3e0205276e8bd8cb7512217a87b2685304d64be27cad5b3019f/pydantic_settings-2.14.2.tar.gz", hash = "sha256:c19dd64b19097f1de80184f0cc7b0272a13ae6e170cbf240a3e27e381ed14a5f", size = 237700, upload-time = "2026-06-19T13:44:56.324Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/77/c1/6e422f34e569cf8e18df68d1939c81c099d2b61e4f7d9621c8a77560799c/pydantic_settings-2.14.2-py3-none-any.whl", hash = "sha256:a20c97b37910b6550d5ea50fbcc2d4187defe58cd57070b73863d069419c9440", size = 61715, upload-time = "2026-06-19T13:44:55.02Z" },
 ]
 
 [[package]]
