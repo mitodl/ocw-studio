@@ -921,8 +921,8 @@ def test_video_resource_captions_and_transcript_references_detected():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_resource": {"content": captions_resource.text_id},
-                "video_transcript_resource": {"content": transcript_resource.text_id},
+                "video_captions_resources": {"content": captions_resource.text_id},
+                "video_transcript_resources": {"content": transcript_resource.text_id},
             },
         },
     )
@@ -951,7 +951,7 @@ def test_video_resource_captions_only_reference_detected():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_resource": {"content": captions_resource.text_id},
+                "video_captions_resources": {"content": captions_resource.text_id},
             },
         },
     )

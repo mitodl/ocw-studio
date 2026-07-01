@@ -17,7 +17,8 @@ from websites.models import WebsiteContent
 @pytest.mark.django_db
 def test_delete_pre_existing_video(mocker):
     """
-    Deleting a pre-existing video should also delete its associated caption and transcript.
+    Deleting a video with _resource relation fields deletes caption and transcript.
+    This is the primary post-migration path.
     """
     website = WebsiteFactory.create()
 
@@ -30,11 +31,24 @@ def test_delete_pre_existing_video(mocker):
     caption_path = f"{course_path}{base_name}_captions.vtt"
     transcript_path = f"{course_path}{base_name}_transcript.pdf"
 
+    caption = WebsiteContentFactory.create(
+        website=website, file=caption_path, filename=f"{base_name}_captions"
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website, file=transcript_path, filename=f"{base_name}_transcript"
+    )
+
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_file": caption_path,
-            "video_transcript_file": transcript_path,
+            "video_captions_resources": {
+                "content": [str(caption.text_id)],
+                "website": website.name,
+            },
+            "video_transcript_resources": {
+                "content": [str(transcript.text_id)],
+                "website": website.name,
+            },
         },
     }
 
@@ -42,13 +56,6 @@ def test_delete_pre_existing_video(mocker):
         website=website,
         type=CONTENT_TYPE_RESOURCE,
         metadata=video_metadata,
-    )
-
-    caption = WebsiteContentFactory.create(
-        website=website, file=caption_path, filename=f"{base_name}_captions"
-    )
-    transcript = WebsiteContentFactory.create(
-        website=website, file=transcript_path, filename=f"{base_name}_transcript"
     )
 
     assert WebsiteContent.objects.filter(pk=video.pk).exists()
@@ -89,11 +96,24 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
     transcript_path = f"{course_path}{base_name}_transcript.pdf"
     video_path = f"{course_path}{base_name}.mp4"
 
+    caption = WebsiteContentFactory.create(
+        website=website, file=caption_path, filename=f"{base_name}_captions"
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website, file=transcript_path, filename=f"{base_name}_transcript"
+    )
+
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_file": caption_path,
-            "video_transcript_file": transcript_path,
+            "video_captions_resources": {
+                "content": [str(caption.text_id)],
+                "website": website.name,
+            },
+            "video_transcript_resources": {
+                "content": [str(transcript.text_id)],
+                "website": website.name,
+            },
         },
     }
 
@@ -102,12 +122,6 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
         type=CONTENT_TYPE_RESOURCE,
         metadata=video_metadata,
         file=video_path,
-    )
-    caption = WebsiteContentFactory.create(
-        website=website, file=caption_path, filename=f"{base_name}_captions"
-    )
-    transcript = WebsiteContentFactory.create(
-        website=website, file=transcript_path, filename=f"{base_name}_transcript"
     )
 
     video_drive_file = DriveFileFactory.create(
@@ -189,11 +203,24 @@ def test_delete_video_mixed_scenario(mocker):
     base_name = "E8uZtq_vOYM"
     course_path = f"/courses/{website.name}/"
 
+    caption = WebsiteContentFactory.create(
+        website=website, file=f"{course_path}{base_name}_captions.vtt"
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website, file=f"{course_path}{base_name}_transcript.pdf"
+    )
+
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_file": f"{course_path}{base_name}_captions.vtt",
-            "video_transcript_file": f"{course_path}{base_name}_transcript.pdf",
+            "video_captions_resources": {
+                "content": [str(caption.text_id)],
+                "website": website.name,
+            },
+            "video_transcript_resources": {
+                "content": [str(transcript.text_id)],
+                "website": website.name,
+            },
         },
     }
 
@@ -202,12 +229,6 @@ def test_delete_video_mixed_scenario(mocker):
         type=CONTENT_TYPE_RESOURCE,
         metadata=video_metadata,
         file=f"{course_path}{base_name}.mp4",
-    )
-    caption = WebsiteContentFactory.create(
-        website=website, file=f"{course_path}{base_name}_captions.vtt"
-    )
-    transcript = WebsiteContentFactory.create(
-        website=website, file=f"{course_path}{base_name}_transcript.pdf"
     )
 
     video_drive_file = DriveFileFactory.create(
