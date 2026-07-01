@@ -54,6 +54,7 @@ from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
     process_video_tags,
+    resource_file_paths,
 )
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
@@ -162,35 +163,35 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
         .first()
     )
 
-    captions, transcript = video.caption_transcript_resources()
+    captions_list, transcripts_list = video.caption_transcript_resources()
 
-    if captions or transcript:  # check for existing captions or transcript
+    if captions_list or transcripts_list:  # check for existing captions or transcript
         website = video.website
-        if captions:
+        if captions_list:
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_CAPTIONS,
-                [{"file": captions.file.name, "language": "en"}],
+                resource_file_paths(captions_list),
             )
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_CAPTIONS_RESOURCES,
                 {
-                    "content": [str(captions.text_id)],
+                    "content": [str(r.text_id) for r in captions_list],
                     "website": website.name,
                 },
             )
-        if transcript:
+        if transcripts_list:
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_TRANSCRIPT,
-                [{"file": transcript.file.name, "language": "en"}],
+                resource_file_paths(transcripts_list),
             )
             set_dict_field(
                 video_resource.metadata,
                 settings.YT_FIELD_TRANSCRIPT_RESOURCES,
                 {
-                    "content": [str(transcript.text_id)],
+                    "content": [str(r.text_id) for r in transcripts_list],
                     "website": website.name,
                 },
             )
@@ -342,13 +343,13 @@ def delete_s3_objects(
 def update_transcripts_for_video(video_id: int):  # noqa: C901
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
-    captions, transcript = video.caption_transcript_resources()
+    captions_list, transcripts_list = video.caption_transcript_resources()
     has_threeplay_update = (
         False
-        if captions or transcript
+        if captions_list or transcripts_list
         else threeplay_api.update_transcripts_for_video(video)
     )
-    if not captions and not transcript and not has_threeplay_update:
+    if not captions_list and not transcripts_list and not has_threeplay_update:
         return
 
     first_transcript_download = False
@@ -404,42 +405,44 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                 )
                 video_resource.save()
             else:
-                for resource, (file_field, resource_field) in [
+                s3_path = video.website.s3_path
+                url_path = website.url_path
+                for resource_list, (file_field, resource_field) in [
                     (
-                        captions,
+                        captions_list,
                         (
                             settings.YT_FIELD_CAPTIONS,
                             settings.YT_FIELD_CAPTIONS_RESOURCES,
                         ),
                     ),
                     (
-                        transcript,
+                        transcripts_list,
                         (
                             settings.YT_FIELD_TRANSCRIPT,
                             settings.YT_FIELD_TRANSCRIPT_RESOURCES,
                         ),
                     ),
                 ]:
-                    if resource:
-                        new_file = urljoin(
-                            "/",
-                            resource.file.name.replace(
-                                video.website.s3_path, video.website.url_path
-                            ),
-                        )
-                        new_entry = {"file": new_file, "language": "en"}
+                    if resource_list:
+                        new_entries = [
+                            {
+                                **entry,
+                                "file": entry["file"].replace(s3_path, url_path, 1),
+                            }
+                            for entry in resource_file_paths(resource_list)
+                        ]
                         current_value = get_dict_field(
                             video_resource.metadata, file_field
                         )
-                        if current_value != [new_entry]:
+                        if current_value != new_entries:
                             set_dict_field(
-                                video_resource.metadata, file_field, [new_entry]
+                                video_resource.metadata, file_field, new_entries
                             )
                             set_dict_field(
                                 video_resource.metadata,
                                 resource_field,
                                 {
-                                    "content": [str(resource.text_id)],
+                                    "content": [str(r.text_id) for r in resource_list],
                                     "website": website.name,
                                 },
                             )
