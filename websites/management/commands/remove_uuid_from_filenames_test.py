@@ -1,5 +1,6 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
+import csv
 from io import StringIO
 
 import pytest
@@ -94,7 +95,7 @@ def test_collect_renames_skips_and_counts_conflict():
 
 
 def test_collect_renames_skips_intra_conflict():
-    """When two UUID-prefixed records want the same target, the second is skipped."""
+    """When two UUID-prefixed records want the same target, both are skipped."""
     website = WebsiteFactory.create()
     uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
     key_a = f"sites/{website.name}/{UUID_PREFIX}_file.pdf"
@@ -107,9 +108,9 @@ def test_collect_renames_skips_intra_conflict():
 
     tasks, skipped = _collect_renames(qs)
 
-    # First record in pk order wins; second is a conflict
-    assert len(tasks) + skipped == 2
-    assert skipped == 1
+    # Both sources target the same key — neither should be renamed.
+    assert tasks == []
+    assert skipped == 2
 
 
 @pytest.mark.parametrize(
@@ -182,6 +183,24 @@ def test_also_updates_drive_file(settings, mock_s3):
     assert drive_file.s3_key == expected_new_key
 
 
+def test_also_updates_drive_file_with_leading_slash_content(settings, mock_s3):
+    """DriveFile.s3_key is updated correctly when content.file has a leading slash."""
+    website = WebsiteFactory.create()
+    old_key_db = f"/courses/{website.name}/{UUID_PREFIX}_photo.jpg"
+    content = WebsiteContentFactory.create(website=website, file=old_key_db)
+    # DriveFile.s3_key is always stored without a leading slash (backfill normalizes it).
+    drive_file = DriveFileFactory.create(
+        resource=content,
+        website=website,
+        s3_key=f"courses/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    drive_file.refresh_from_db()
+    assert drive_file.s3_key == f"courses/{website.name}/photo.jpg"
+
+
 def test_skips_file_without_uuid_prefix(mock_s3):
     """Files whose basename does not start with a UUID prefix are left unchanged."""
     website = WebsiteFactory.create()
@@ -222,13 +241,36 @@ def test_skips_conflicting_target_key(mock_s3):
     mock_s3.return_value.copy_object.assert_not_called()
 
 
-def test_dry_run_makes_no_changes(mock_s3):
+def test_skips_all_when_multiple_sources_target_same_key(mock_s3):
+    """When two UUID-prefixed files resolve to the same target, neither is renamed."""
+    website = WebsiteFactory.create()
+    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    key_a = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
+    key_b = f"sites/{website.name}/{uuid_b}_report.pdf"
+    content_a = WebsiteContentFactory.create(website=website, file=key_a)
+    content_b = WebsiteContentFactory.create(website=website, file=key_b)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    content_a.refresh_from_db()
+    content_b.refresh_from_db()
+    assert str(content_a.file) == key_a
+    assert str(content_b.file) == key_b
+
+
+def test_dry_run_makes_no_changes(tmp_path, mock_s3):
     """With --dry-run, no S3 operations are performed and the DB is not modified."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_slides.pptx"
     content = WebsiteContentFactory.create(website=website, file=old_key)
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     mock_s3.return_value.copy_object.assert_not_called()
     mock_s3.return_value.delete_object.assert_not_called()
@@ -236,7 +278,7 @@ def test_dry_run_makes_no_changes(mock_s3):
     assert str(content.file) == old_key
 
 
-def test_dry_run_reports_metadata_patch_count(mock_s3):
+def test_dry_run_reports_metadata_patch_count(tmp_path, mock_s3):
     """Dry-run summary includes the number of video metadata records that would be patched."""
     website = WebsiteFactory.create()
     captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
@@ -259,11 +301,49 @@ def test_dry_run_reports_metadata_patch_count(mock_s3):
         "remove_uuid_from_filenames",
         filter=website.name,
         dry_run=True,
+        output=str(tmp_path / "plan.csv"),
         stdout=stdout,
     )
 
     output = stdout.getvalue()
     assert "1 video metadata records would be patched" in output
+
+
+def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
+    """Dry-run exports a CSV with pk, website info, and old/new S3 keys."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    output_file = tmp_path / "plan.csv"
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+
+    assert output_file.exists()
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["pk"] == str(content.pk)
+    assert rows[0]["old_key"] == old_key
+    assert rows[0]["new_key"] == f"sites/{website.name}/doc.pdf"
+    assert rows[0]["website_id"] == str(website.uuid)
+    assert rows[0]["website_name"] == website.name
+
+
+def test_dry_run_requires_output(mock_s3):
+    """--dry-run without --output raises CommandError instead of writing to stdout."""
+    from django.core.management.base import CommandError  # noqa: PLC0415
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    with pytest.raises(CommandError, match="--output is required"):
+        call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
 
 
 def test_filter_limits_to_specified_website(mock_s3):
@@ -377,6 +457,60 @@ def test_metadata_not_patched_for_skipped_captions_rename(mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
 
+def test_delete_object_failure_still_records_rename(mock_s3):
+    """A delete_object failure after a committed copy+DB rename still marks dirty and patches metadata."""
+    website = WebsiteFactory.create()
+    captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
+    captions_content = WebsiteContentFactory.create(website=website, file=captions_old)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old,
+                "video_transcript_file": None,
+            },
+        },
+    )
+    Website.objects.filter(uuid=website.uuid).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    mock_s3.return_value.delete_object.side_effect = Exception("Delete failed")
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    # copy + DB updates committed before delete — rename should be counted
+    captions_content.refresh_from_db()
+    assert str(captions_content.file) == f"sites/{website.name}/captions.vtt"
+    # Website must be marked dirty despite delete failure
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+    assert website.has_unpublished_draft is True
+    # Metadata must be patched
+    video_resource.refresh_from_db()
+    assert (
+        video_resource.metadata["video_files"]["video_captions_file"]
+        == f"sites/{website.name}/captions.vtt"
+    )
+
+
+def test_conflict_detection_normalizes_leading_slash(mock_s3):
+    """A conflict is detected even when the existing target key and the rename target differ only by leading slash."""
+    website = WebsiteFactory.create()
+    # Existing record holds the target path WITHOUT a leading slash.
+    existing_key = f"courses/{website.name}/doc.pdf"
+    WebsiteContentFactory.create(website=website, file=existing_key)
+    # Source has a leading slash and UUID prefix — would rename to /courses/.../doc.pdf.
+    # After lstrip normalization, this is the same S3 key as existing_key.
+    source_key = f"/courses/{website.name}/{UUID_PREFIX}_doc.pdf"
+    WebsiteContentFactory.create(website=website, file=source_key)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+
+
 def test_marks_website_dirty_after_rename(mock_s3):
     """Websites with renamed files are marked as having unpublished changes."""
     website = WebsiteFactory.create()
@@ -394,7 +528,7 @@ def test_marks_website_dirty_after_rename(mock_s3):
     assert website.has_unpublished_draft is True
 
 
-def test_dry_run_does_not_mark_website_dirty(mock_s3):
+def test_dry_run_does_not_mark_website_dirty(tmp_path, mock_s3):
     """With --dry-run, website dirty flags are not set."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
@@ -404,7 +538,12 @@ def test_dry_run_does_not_mark_website_dirty(mock_s3):
         has_unpublished_live=False, has_unpublished_draft=False
     )
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     website.refresh_from_db()
     assert website.has_unpublished_live is False
@@ -441,6 +580,57 @@ def test_patches_video_metadata_captions_and_transcript(mock_s3):
         video_resource.metadata["video_files"]["video_transcript_file"]
         == transcript_new
     )
+
+
+def test_renames_file_with_leading_slash_normalizes_s3_key(settings, mock_s3):
+    """content.file paths with a leading slash are stripped before S3 operations."""
+    website = WebsiteFactory.create()
+    # Legacy courses/ content stores file paths with a leading slash in the DB.
+    old_key_db = f"/courses/{website.name}/{UUID_PREFIX}_ch8.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key_db)
+    expected_s3_old = f"courses/{website.name}/{UUID_PREFIX}_ch8.pdf"
+    expected_s3_new = f"courses/{website.name}/ch8.pdf"
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_s3_client = mock_s3.return_value
+    mock_s3_client.copy_object.assert_called_once_with(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        CopySource={"Bucket": settings.AWS_STORAGE_BUCKET_NAME, "Key": expected_s3_old},
+        Key=expected_s3_new,
+        ACL="public-read",
+    )
+    mock_s3_client.delete_object.assert_called_once_with(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        Key=expected_s3_old,
+    )
+    content.refresh_from_db()
+    # DB value preserves the original leading-slash format; only UUID prefix stripped.
+    assert str(content.file) == f"/courses/{website.name}/ch8.pdf"
+
+
+def test_patches_video_metadata_when_file_has_leading_slash(mock_s3):
+    """Metadata is patched correctly when content.file and metadata both use leading-slash paths."""
+    website = WebsiteFactory.create()
+    captions_old_db = f"/courses/{website.name}/{UUID_PREFIX}_captions.vtt"
+    WebsiteContentFactory.create(website=website, file=captions_old_db)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": captions_old_db,
+                "video_transcript_file": None,
+            },
+        },
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    video_resource.refresh_from_db()
+    expected = f"/courses/{website.name}/captions.vtt"
+    assert video_resource.metadata["video_files"]["video_captions_file"] == expected
 
 
 def test_patches_video_metadata_with_leading_slash(mock_s3):
@@ -484,7 +674,7 @@ def test_does_not_patch_non_video_resource_metadata(mock_s3):
     assert doc_resource.metadata.get("video_files") is None
 
 
-def test_dry_run_does_not_patch_video_metadata(mock_s3):
+def test_dry_run_does_not_patch_video_metadata(tmp_path, mock_s3):
     """With --dry-run, video metadata is not modified."""
     website = WebsiteFactory.create()
     captions_old = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
@@ -501,7 +691,12 @@ def test_dry_run_does_not_patch_video_metadata(mock_s3):
         },
     )
 
-    call_command("remove_uuid_from_filenames", filter=website.name, dry_run=True)
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
