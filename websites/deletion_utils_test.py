@@ -41,11 +41,11 @@ def test_delete_pre_existing_video(mocker):
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_resource": {
+            "video_captions_resources": {
                 "content": [str(caption.text_id)],
                 "website": website.name,
             },
-            "video_transcript_resource": {
+            "video_transcript_resources": {
                 "content": [str(transcript.text_id)],
                 "website": website.name,
             },
@@ -106,11 +106,11 @@ def test_delete_video_with_drive_files_comprehensive(mocker):
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_resource": {
+            "video_captions_resources": {
                 "content": [str(caption.text_id)],
                 "website": website.name,
             },
-            "video_transcript_resource": {
+            "video_transcript_resources": {
                 "content": [str(transcript.text_id)],
                 "website": website.name,
             },
@@ -213,11 +213,11 @@ def test_delete_video_mixed_scenario(mocker):
     video_metadata = {
         "resourcetype": RESOURCE_TYPE_VIDEO,
         "video_files": {
-            "video_captions_resource": {
+            "video_captions_resources": {
                 "content": [str(caption.text_id)],
                 "website": website.name,
             },
-            "video_transcript_resource": {
+            "video_transcript_resources": {
                 "content": [str(transcript.text_id)],
                 "website": website.name,
             },

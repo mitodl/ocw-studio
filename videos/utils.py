@@ -273,38 +273,54 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
+# Regex that matches ``_captions_{lang}_vtt``, ``_transcript_{lang}_pdf``,
+# or ``_captions_{lang}_{locale}_vtt`` at the end of a slugified filename.
+# GDrive files follow the pattern ``<title>_<lang>_<locale>.<ext>`` where
+# the locale is an ISO 3166-1 alpha-2 region code (e.g. ``us``, ``gb``).
+_LANG_LOCALE_RE = re.compile(
+    r"(?:_captions|_transcript)_([a-z]{2,3})_(?:([a-z]{2,3})_)?(?:vtt|webvtt|pdf)$"
+)
+
+
 def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
+    """Return ``(language_code, locale_code)`` embedded in a caption/transcript
+    filename.
+
+    The filename is expected to be the slugified ``WebsiteContent.filename``.  GDrive
+    files follow the pattern ``<title>_captions_<lang>_<locale>_vtt`` where ``<lang>``
+    is an ISO 639-1 code (e.g. ``en``, ``fr``) and ``<locale>`` is an ISO 3166-1
+    alpha-2 region code (e.g. ``us``, ``gb``).  ``locale`` is returned uppercase
+    (e.g. ``"US"``) or ``None`` when absent.
+
+    Legacy single-language filenames without a language suffix
+    (e.g. ``lecture1_captions_vtt``) return ``("en", None)``.
     """
-    Extract language code and optional locale from a slugified
-    caption/transcript filename.
-
-    The slugified naming convention is:
-        {base}_{captions|transcript}[_{lang}[_{locale}]]_{ext}
-
-    The last underscore-separated segment is the file extension slug (e.g. ``vtt``,
-    ``pdf``).  Segments between the type marker and the extension are interpreted as
-    ``[lang]`` or ``[lang, locale]``.  Defaults to ``("en", None)`` when no language
-    segment is present so existing content is unaffected.
-
-    Examples::
-
-        lecture1_captions_vtt         → ("en", None)
-        lecture1_captions_en_vtt      → ("en", None)
-        lecture1_captions_fr_vtt      → ("fr", None)
-        lecture1_captions_fr_ca_vtt   → ("fr", "CA")
-        lecture1_transcript_en_pdf    → ("en", None)
-    """
-    for marker in ("_captions_", "_transcript_"):
-        idx = filename.find(marker)
-        if idx != -1:
-            suffix = filename[idx + len(marker) :]
-            parts = suffix.split("_")
-            # parts[-1] is always the extension slug; before it: [lang, locale?]
-            lang_parts = parts[:-1]
-            _LANG_AND_LOCALE = 2
-            if len(lang_parts) >= _LANG_AND_LOCALE:
-                return lang_parts[0], lang_parts[1].upper()
-            if len(lang_parts) == 1:
-                return lang_parts[0], None
-            break
+    match = _LANG_LOCALE_RE.search(filename)
+    if match:
+        lang = match.group(1)
+        locale = match.group(2).upper() if match.group(2) else None
+        return lang, locale
     return "en", None
+
+
+def resource_file_paths(resources: list) -> list:
+    """Return a list of ``{file, language[, locale]}`` dicts for caption/transcript
+    resources.
+
+    Language and optional locale are parsed from each resource's ``filename`` using
+    :func:`parse_caption_language_locale`.  Resources without a resolvable file are
+    omitted.  ``locale`` is only included in the dict when present in the filename.
+    """
+    result = []
+    for resource in resources:
+        file_name = getattr(getattr(resource, "file", None), "name", None)
+        if file_name:
+            lang, locale = parse_caption_language_locale(resource.filename or "")
+            entry: dict = {
+                "file": f"/{file_name.lstrip('/')}",
+                "language": lang,
+            }
+            if locale:
+                entry["locale"] = locale
+            result.append(entry)
+    return result

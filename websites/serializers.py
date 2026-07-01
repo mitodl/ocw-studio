@@ -24,6 +24,7 @@ from gdrive_sync.tasks import create_gdrive_folders
 from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
+from videos.utils import resource_file_paths
 from websites import constants
 from websites.api import (
     detect_mime_type,
@@ -54,8 +55,8 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 
 
 RELATION_URL_FIELDS = (
-    (settings.YT_FIELD_CAPTIONS_RESOURCE, settings.YT_FIELD_CAPTIONS),
-    (settings.YT_FIELD_TRANSCRIPT_RESOURCE, settings.YT_FIELD_TRANSCRIPT),
+    (settings.YT_FIELD_CAPTIONS_RESOURCES, settings.YT_FIELD_CAPTIONS),
+    (settings.YT_FIELD_TRANSCRIPT_RESOURCES, settings.YT_FIELD_TRANSCRIPT),
 )
 
 
@@ -86,11 +87,7 @@ def sync_video_relation_urls(metadata: dict) -> None:
             if content_ids
             else []
         )
-        file_entries = [
-            {"file": f"/{r.file.name.lstrip('/')}", "language": "en"}
-            for r in resources
-            if getattr(r, "file", None) and r.file.name
-        ]
+        file_entries = resource_file_paths(resources)
         set_dict_field(metadata, target_field, file_entries or None)
 
 
@@ -762,6 +759,9 @@ class WebsiteContentCreateSerializer(
             validated_data["metadata"]["file_type"] = detect_mime_type(
                 validated_data["file"]
             )
+
+        if validated_data.get("metadata"):
+            sync_video_relation_urls(validated_data["metadata"])
 
         instance = super().create(
             {

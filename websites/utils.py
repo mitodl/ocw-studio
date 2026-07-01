@@ -148,8 +148,8 @@ def get_metadata_content_key(content) -> list:
             content_keys = [
                 constants.METADATA_FIELD_IMAGE_CAPTION,
                 constants.METADATA_FIELD_IMAGE_CREDIT,
-                settings.YT_FIELD_CAPTIONS_RESOURCE + ".content",
-                settings.YT_FIELD_TRANSCRIPT_RESOURCE + ".content",
+                settings.YT_FIELD_CAPTIONS_RESOURCES + ".content",
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES + ".content",
             ]
         case constants.CONTENT_TYPE_COURSE_COLLECTION:
             content_keys = [
@@ -310,7 +310,11 @@ def resolve_course_list_referenced_content_ids(content) -> set[int]:
 
 
 def resolve_video_file_referenced_content_ids(content) -> set[int]:
-    """Resolve video_captions_file/video_transcript_file paths to WebsiteContent ids."""
+    """Resolve video_captions_file/video_transcript_file paths to WebsiteContent ids.
+
+    Handles both the legacy scalar string format and the new multi-language
+    array-of-objects format (``[{"file": "/path/...", "language": "en"}, ...]``).
+    """
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     referenced_ids = set()
 
@@ -318,17 +322,20 @@ def resolve_video_file_referenced_content_ids(content) -> set[int]:
         value = get_dict_field(content.metadata, field_path)
         if not value:
             continue
-        # New array format: [{"file": "...", "language": "en"}]
-        if isinstance(value, list):
+
+        if isinstance(value, str):
+            # Legacy scalar format — a single URL path string.
+            keys = [value]
+        elif isinstance(value, list):
+            # Multi-language format — list of {"file": ..., "language": ...}.
             keys = [
                 entry["file"]
                 for entry in value
                 if isinstance(entry, dict) and entry.get("file")
             ]
-        elif isinstance(value, str):
-            keys = [value]
         else:
             continue
+
         for key in keys:
             base_name = Path(key).stem
             related_ids = (

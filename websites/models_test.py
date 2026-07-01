@@ -476,3 +476,148 @@ def test_website_collaborators_with_missing_groups():
     collaborators = website.collaborators
     assert len(collaborators) == 1
     assert owner in collaborators
+
+
+@pytest.mark.django_db
+def test_websitecontent_full_metadata_array_captions():
+    """full_metadata applies s3_path->url_path substitution on multi-language array _file values."""
+    content = WebsiteContentFactory.build(
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_file": [
+                    {"file": "/sites/mysite/lecture1_captions.vtt", "language": "en"},
+                    {
+                        "file": "/sites/mysite/lecture1_captions_es.vtt",
+                        "language": "es",
+                    },
+                ],
+                "video_transcript_file": [
+                    {
+                        "file": "/sites/mysite/lecture1_transcript.pdf",
+                        "language": "en",
+                    },
+                ],
+            }
+        },
+        file=None,
+        website=WebsiteFactory(
+            starter=WebsiteStarterFactory.create(
+                config={
+                    "content-dir": "content",
+                    "root-url-path": "sites",
+                    "collections": [
+                        {
+                            "name": "resource",
+                            "label": "Resource",
+                            "category": "Content",
+                            "folder": "content/resource",
+                            "fields": [
+                                {"label": "Title", "name": "title", "widget": "string"}
+                            ],
+                        }
+                    ],
+                }
+            ),
+            url_path="sites/mysite-fall-2008",
+            name="mysite",
+        ),
+    )
+
+    full = content.full_metadata
+
+    captions = full["video_files"]["video_captions_file"]
+    assert isinstance(captions, list)
+    assert len(captions) == 2
+    assert captions[0] == {
+        "file": "/sites/mysite-fall-2008/lecture1_captions.vtt",
+        "language": "en",
+    }
+    assert captions[1] == {
+        "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
+        "language": "es",
+    }
+
+    transcripts = full["video_files"]["video_transcript_file"]
+    assert isinstance(transcripts, list)
+    assert len(transcripts) == 1
+    assert transcripts[0] == {
+        "file": "/sites/mysite-fall-2008/lecture1_transcript.pdf",
+        "language": "en",
+    }
+
+
+def test_websitecontent_full_metadata_resolves_resources_relation():
+    """full_metadata resolves video_captions_resources/_resources dicts to [{file, language}] arrays.
+
+    The _resources relation field (stored as {"content": [text_id, ...], "website": name})
+    must be resolved at git-sync time by full_metadata() into a list of {file, language}
+    dicts, with s3_path replaced by url_path in each file path.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config={
+                "content-dir": "content",
+                "root-url-path": "sites",
+                "collections": [
+                    {
+                        "name": "resource",
+                        "label": "Resource",
+                        "category": "Content",
+                        "folder": "content/resource",
+                        "fields": [
+                            {"label": "Title", "name": "title", "widget": "string"}
+                        ],
+                    }
+                ],
+            }
+        ),
+        url_path="sites/mysite-fall-2008",
+        name="mysite",
+    )
+
+    # Create two caption resources — English (legacy no-lang suffix) and Spanish
+    captions_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    captions_es = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_es_vtt",
+        file="sites/mysite/lecture1_captions_es.vtt",
+        type="resource",
+    )
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(captions_en.text_id), str(captions_es.text_id)],
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    full = video.full_metadata
+
+    # _resources dict must be replaced by the resolved [{file, language}] list
+    resolved = full["video_files"]["video_captions_resources"]
+    assert isinstance(resolved, list)
+    assert len(resolved) == 2
+    # s3_path ("sites/mysite") must be replaced by url_path ("sites/mysite-fall-2008")
+    # parse_caption_language_locale extracts "en" for the legacy no-suffix filename
+    assert {
+        "file": "/sites/mysite-fall-2008/lecture1_captions.vtt",
+        "language": "en",
+    } in resolved
+    # and "es" for the _es suffix — language detection added in this branch
+    assert {
+        "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
+        "language": "es",
+    } in resolved
