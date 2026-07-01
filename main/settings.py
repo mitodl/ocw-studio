@@ -158,6 +158,7 @@ INSTALLED_APPS = [
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
+    "health_check",
 ]
 
 if ENVIRONMENT not in PRODUCTION_NAMES:
@@ -375,12 +376,6 @@ LOGGING = {
         "level": LOG_LEVEL,
     },
 }
-
-# server-status
-STATUS_TOKEN = get_string(
-    name="STATUS_TOKEN", default="", description="Token to access the status API."
-)
-HEALTH_CHECK = ["CELERY", "REDIS", "POSTGRES"]
 
 GA_TRACKING_ID = get_string(
     name="GA_TRACKING_ID", default="", description="Google analytics tracking ID"
