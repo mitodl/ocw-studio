@@ -23,6 +23,7 @@ from main.views import global_logout, public_index, restricted_index
 
 urlpatterns = [
     path("admin/logout/", global_logout, name="admin-logout"),
+    path("", include("main.urls_healthcheck")),
     path("admin/", admin.site.urls),
     path("robots.txt", include("robots.urls")),
     path("auth/", include("social_django.urls", namespace="social")),
