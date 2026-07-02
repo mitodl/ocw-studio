@@ -56,6 +56,7 @@ dependencies = [
     "posthog>=7.0.0,<8",
     "mitol-django-transcoding>=2026.4.2,<2027",
     "granian>=2.7.2",
+    "django-aqueduct[vault,mitol]>=0.6.0",
 ]
 
 [dependency-groups]
@@ -187,6 +188,9 @@ inline-quotes = "double"
 "test_*.py" = ["ARG001", "E501", "S101", "PLR2004"]
 "**/migrations/**" = ["ARG001"]
 "**/apps.py" = ["PLC0415"]
+# django-aqueduct codegen scaffold: TODO markers flag fields whose type could be
+# refined further; tracked as follow-up work rather than fixed inline.
+"main/aqueduct_settings.py" = ["TD002", "TD003", "FIX002"]
 "repl.py" = ["S603"]
 
 
