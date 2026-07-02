@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.193.0
+---------------
+
+- feat: migarate captions & transcript file fields to resource fields (#2999)
+
 Version 0.192.0 (Released July 01, 2026)
 ---------------
 
