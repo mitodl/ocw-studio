@@ -14,13 +14,14 @@ from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from main.utils import NestableKeyTextTransform
+from main.utils import NestableKeyTextTransform, get_base_filename
 from users.models import User
 from videos.constants import (
     YT_MAX_LENGTH_DESCRIPTION,
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
 )
+from videos.utils import parse_caption_language_locale
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -221,6 +222,108 @@ def sync_website_content_references(content: WebsiteContent) -> None:
         id__in=resolve_referenced_content_ids(content)
     )
     content.referenced_by.set(referenced_content)
+
+
+def _merge_caption_resource(  # noqa: PLR0913
+    video_files: dict,
+    website: "Website",
+    resource_field: str,
+    data_field: str,
+    filename_prefix: str,
+    filename_suffix: str,
+) -> bool:
+    """Find caption/transcript resources by prefix and merge into video_files.
+
+    Returns True if video_files was modified.
+    """
+    existing = video_files.get(resource_field)
+    existing_ids: set[str] = set()
+    if isinstance(existing, dict):
+        content = existing.get("content")
+        if isinstance(content, list):
+            existing_ids = {c for c in content if c}
+        elif isinstance(content, str) and content:
+            existing_ids = {content}
+
+    related_resources = list(
+        WebsiteContent.objects.filter(
+            website=website,
+            filename__startswith=filename_prefix,
+            filename__endswith=filename_suffix,
+        ).order_by("filename")
+    )
+    new_resources = [r for r in related_resources if str(r.text_id) not in existing_ids]
+    if not new_resources:
+        return False
+
+    video_files[resource_field] = {
+        "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
+        "website": website.name,
+    }
+
+    existing_files: list = []
+    existing_files_val = video_files.get(data_field)
+    if isinstance(existing_files_val, list):
+        existing_files = list(existing_files_val)
+    for r in new_resources:
+        if r.file and r.file.name:
+            lang, locale = parse_caption_language_locale(r.filename or "")
+            entry: dict = {"file": f"/{r.file.name.lstrip('/')}", "language": lang}
+            if locale:
+                entry["locale"] = locale
+            existing_files.append(entry)
+    if existing_files:
+        video_files[data_field] = existing_files
+    return True
+
+
+def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
+    """
+    For a Video resource, auto-populate ``video_captions_resources`` and
+    ``video_transcript_resources`` from existing WebsiteContent records in the
+    same website that match the ``{base}_captions_*_vtt`` /
+    ``{base}_transcript_*_pdf`` filename prefix convention.  Finds ALL language
+    variants and merges them into the multi-select content list without
+    overwriting existing non-empty entries.
+    """
+    if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
+        return
+    video_base = get_base_filename(video_resource.filename or "")
+    if not video_base:
+        return
+    website = video_resource.website
+    video_files = (
+        video_resource.metadata.get("video_files") if video_resource.metadata else None
+    )
+    if not isinstance(video_files, dict):
+        video_files = {}
+
+    results = [
+        _merge_caption_resource(
+            video_files, website, resource_field, data_field, prefix, suffix
+        )
+        for resource_field, data_field, prefix, suffix in [
+            (
+                "video_captions_resources",
+                "video_captions_file",
+                f"{video_base}_captions_",
+                "_vtt",
+            ),
+            (
+                "video_transcript_resources",
+                "video_transcript_file",
+                f"{video_base}_transcript_",
+                "_pdf",
+            ),
+        ]
+    ]
+    changed = any(results)
+
+    if changed:
+        if not isinstance(video_resource.metadata, dict):
+            video_resource.metadata = {}
+        video_resource.metadata["video_files"] = video_files
+        video_resource.save()
 
 
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:
