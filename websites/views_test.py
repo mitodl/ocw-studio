@@ -1135,7 +1135,7 @@ def test_websites_content_create_course_list_sets_references(
 def test_websites_content_create_video_resource_sets_3play_references(
     drf_client, global_admin_user
 ):
-    """Creating a video resource should resolve caption/transcript file references."""
+    """Creating a video resource with _resource fields links captions/transcript."""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     captions = WebsiteContentFactory.create(
@@ -1157,10 +1157,14 @@ def test_websites_content_create_video_resource_sets_3play_references(
             "resourcetype": "Video",
             "video_metadata": {"youtube_id": "yt123"},
             "video_files": {
-                "video_captions_file": f"/courses/{website.name}/video-captions.webvtt",
-                "video_transcript_file": (
-                    f"/courses/{website.name}/video-transcript.pdf"
-                ),
+                "video_captions_resources": {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                },
+                "video_transcript_resources": {
+                    "content": [str(transcript.text_id)],
+                    "website": website.name,
+                },
             },
         },
     }
@@ -1178,10 +1182,19 @@ def test_websites_content_create_video_resource_sets_3play_references(
         website=website,
         text_id=resp.data["text_id"],
     )
+    # referenced_by relationship set via sync_website_content_references
     assert set(content.referenced_by.values_list("id", flat=True)) == {
         captions.id,
         transcript.id,
     }
+    # build-pipeline file arrays populated by sync_video_relation_urls on create
+    vf = content.metadata["video_files"]
+    assert vf["video_captions_file"] == [
+        {"file": f"/courses/{website.name}/video-captions.webvtt", "language": "en"}
+    ]
+    assert vf["video_transcript_file"] == [
+        {"file": f"/courses/{website.name}/video-transcript.pdf", "language": "en"}
+    ]
 
 
 def test_websites_content_create_with_textid(drf_client, global_admin_user):
@@ -1689,7 +1702,7 @@ def test_referencing_content_clears_when_references_removed(
 def test_websites_content_update_video_resource_sets_3play_references(
     drf_client, global_admin_user
 ):
-    """Updating a video resource should refresh caption/transcript file references."""
+    """Updating a video resource with _resource fields links captions/transcript."""
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
     captions = WebsiteContentFactory.create(
@@ -1725,12 +1738,14 @@ def test_websites_content_update_video_resource_sets_3play_references(
         data={
             "metadata": {
                 "video_files": {
-                    "video_captions_file": (
-                        f"/courses/{website.name}/updated-captions.webvtt"
-                    ),
-                    "video_transcript_file": (
-                        f"/courses/{website.name}/updated-transcript.pdf"
-                    ),
+                    "video_captions_resources": {
+                        "content": [str(captions.text_id)],
+                        "website": website.name,
+                    },
+                    "video_transcript_resources": {
+                        "content": [str(transcript.text_id)],
+                        "website": website.name,
+                    },
                 }
             }
         },
@@ -1739,7 +1754,16 @@ def test_websites_content_update_video_resource_sets_3play_references(
 
     assert resp.status_code == 200
     video.refresh_from_db()
+    # referenced_by relationship set
     assert set(video.referenced_by.values_list("id", flat=True)) == {
         captions.id,
         transcript.id,
     }
+    # build-pipeline file arrays populated by sync_video_relation_urls on update
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_file"] == [
+        {"file": f"/courses/{website.name}/updated-captions.webvtt", "language": "en"}
+    ]
+    assert vf["video_transcript_file"] == [
+        {"file": f"/courses/{website.name}/updated-transcript.pdf", "language": "en"}
+    ]

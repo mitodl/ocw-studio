@@ -36,8 +36,8 @@ class Command(WebsiteFilterCommand):
         content_videos = WebsiteContent.objects.filter(
             Q(metadata__resourcetype="Video")
             & (
-                Q(metadata__video_files__video_captions_file=None)
-                | Q(metadata__video_files__video_transcript_file=None)
+                Q(metadata__video_files__video_captions_resources=None)
+                | Q(metadata__video_files__video_transcript_resources=None)
             )
         )
         content_videos = self.filter_website_contents(content_videos)

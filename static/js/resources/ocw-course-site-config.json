@@ -218,14 +218,30 @@
               "widget": "string"
             },
             {
-              "label": "Video Captions (WebVTT) URL",
-              "name": "video_captions_file",
-              "widget": "string"
+              "collection": "resource",
+              "display_field": "title",
+              "filter": {
+                "field": "resourcetype",
+                "filter_type": "equals",
+                "value": "Other"
+              },
+              "label": "Video Captions Resources",
+              "multiple": true,
+              "name": "video_captions_resources",
+              "widget": "relation"
             },
             {
-              "label": "Video Transcript (PDF) URL",
-              "name": "video_transcript_file",
-              "widget": "string"
+              "collection": "resource",
+              "display_field": "title",
+              "filter": {
+                "field": "resourcetype",
+                "filter_type": "equals",
+                "value": "Document"
+              },
+              "label": "Video Transcript Resources",
+              "multiple": true,
+              "name": "video_transcript_resources",
+              "widget": "relation"
             }
           ],
           "label": "Video Files",

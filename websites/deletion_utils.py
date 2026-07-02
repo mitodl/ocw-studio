@@ -1,7 +1,5 @@
 import logging
-from pathlib import Path
 
-from django.db.models import Q
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.decorators import retry_on_failure
@@ -44,19 +42,22 @@ def delete_resource(content: WebsiteContent):
 
 
 def delete_related_captions_and_transcript(content: WebsiteContent):
-    """
-    Delete related captions and transcript file for a video.
-    """
+    """Delete related captions and transcript resources for a video."""
     video_files = content.metadata.get("video_files", {})
-    for attr in ("video_captions_file", "video_transcript_file"):
-        key = video_files.get(attr)
-        if not key:
+    for resource_field in ("video_captions_resources", "video_transcript_resources"):
+        relation = video_files.get(resource_field)
+        if not isinstance(relation, dict):
             continue
-        base_name = Path(key).stem
-        qs = WebsiteContent.objects.filter(website=content.website)
-        related = qs.filter(
-            Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name)
-        ).first()
-        if related:
-            # if captions or transcript file is found, delete it
-            delete_resource(related)
+        content_val = relation.get("content")
+        if isinstance(content_val, str):
+            text_ids = [content_val] if content_val else []
+        elif isinstance(content_val, list):
+            text_ids = [t for t in content_val if t]
+        else:
+            text_ids = []
+        for text_id in text_ids:
+            related = WebsiteContent.objects.filter(
+                website=content.website, text_id=text_id
+            ).first()
+            if related:
+                delete_resource(related)

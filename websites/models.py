@@ -26,7 +26,12 @@ from safedelete.models import SafeDeleteModel
 from safedelete.queryset import SafeDeleteQueryset
 
 from content_sync.constants import VERSION_LIVE
-from main.settings import YT_FIELD_CAPTIONS, YT_FIELD_TRANSCRIPT
+from main.settings import (
+    YT_FIELD_CAPTIONS,
+    YT_FIELD_CAPTIONS_RESOURCES,
+    YT_FIELD_TRANSCRIPT,
+    YT_FIELD_TRANSCRIPT_RESOURCES,
+)
 from main.utils import uuid_string
 from users.models import User
 from websites import constants
@@ -412,7 +417,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         ).hexdigest()
 
     @property
-    def full_metadata(self) -> dict:
+    def full_metadata(self) -> dict:  # noqa: C901, PLR0912
         """Return the metadata field with file upload included"""
         file_field = self.get_config_file_field()
         s3_path = self.website.s3_path
@@ -430,14 +435,66 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
             else:
                 full_metadata[file_field["name"]] = None
             modified = True
-        # Update video transcript/caption paths if they exist
+        if full_metadata:
+            # Resolve _resources relation fields to [{file, language}] for Hugo.
+            # video_captions_resources and video_transcript_resources are stored as
+            # {"content": [text_id, ...], "website": name} in the DB but Hugo needs
+            # resolved file paths.  Resolution happens at git-sync time here.
+            from videos.utils import (  # noqa: PLC0415
+                resource_file_paths,
+            )
+
+            for resource_field in (
+                YT_FIELD_CAPTIONS_RESOURCES,
+                YT_FIELD_TRANSCRIPT_RESOURCES,
+            ):
+                resource_data = get_dict_field(full_metadata, resource_field)
+                if not resource_data or not isinstance(resource_data, dict):
+                    continue
+                text_ids = resource_data.get("content", [])
+                if not text_ids:
+                    continue
+                # self.__class__ is WebsiteContent — no circular import needed
+                related_contents = list(
+                    self.__class__.objects.filter(
+                        website=self.website,
+                        text_id__in=text_ids,
+                    )
+                )
+                resolved = resource_file_paths(related_contents)
+                # Apply URL path substitution if s3 and url paths differ
+                if resolved and url_path and s3_path != url_path:
+                    resolved = [
+                        {**entry, "file": entry["file"].replace(s3_path, url_path, 1)}
+                        for entry in resolved
+                    ]
+                if resolved:
+                    set_dict_field(full_metadata, resource_field, resolved)
+                    modified = True
+
+        # Update video transcript/caption paths in _file fields if they exist.
+        # Handles both the legacy scalar string format and the new
+        # multi-language array-of-objects format.
         if full_metadata:
             for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
                 value = get_dict_field(full_metadata, field)
-                if value and url_path:
+                if not value or not url_path:
+                    continue
+                if isinstance(value, str):
+                    # Legacy scalar — a single URL path string.
                     set_dict_field(
                         full_metadata, field, value.replace(s3_path, url_path, 1)
                     )
+                    modified = True
+                elif isinstance(value, list):
+                    # Multi-language format — list of {"file": ..., "language": ...}.
+                    updated = [
+                        {**entry, "file": entry["file"].replace(s3_path, url_path, 1)}
+                        if isinstance(entry, dict) and entry.get("file")
+                        else entry
+                        for entry in value
+                    ]
+                    set_dict_field(full_metadata, field, updated)
                     modified = True
         return full_metadata if modified else self.metadata
 
