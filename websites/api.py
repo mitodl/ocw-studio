@@ -428,7 +428,6 @@ def videos_missing_captions(website: Website) -> list[WebsiteContent]:
         & query_field_is_empty(
             f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content",
             empty_values=(None, [], ""),
-            include_isnull=False,
         )
     )
 
