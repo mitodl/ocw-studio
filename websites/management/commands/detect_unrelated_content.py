@@ -196,6 +196,11 @@ class Command(WebsiteFilterCommand):
         Returns:
             normalized_files: Set of normalized file paths
         """
+        # Caption/transcript resources are protected via the generic per-row
+        # `file` loop below, not by reading video_files here. This assumes
+        # such resources already have `file` set by the time they're linked
+        # via video_captions_resources/video_transcript_resources; a resource
+        # linked before its file is set would not be protected.
         video_metadata_fields = [
             "video_thumbnail_file",
         ]
