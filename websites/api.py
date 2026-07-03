@@ -224,6 +224,40 @@ def sync_website_content_references(content: WebsiteContent) -> None:
     content.referenced_by.set(referenced_content)
 
 
+def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
+    """
+    Remove a deleted resource's id from any video's
+    ``video_captions_resources``/``video_transcript_resources`` content list.
+
+    Relies on ``referencing_content`` (populated by ``sync_website_content_references``)
+    to find affected videos, rather than scanning every resource's metadata.
+    """
+    videos = resource.referencing_content.all()
+    text_id = str(resource.text_id)
+    for video in videos:
+        if (video.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
+            continue
+        video_files = video.metadata.get("video_files")
+        if not isinstance(video_files, dict):
+            continue
+        changed = False
+        for resource_field in (
+            "video_captions_resources",
+            "video_transcript_resources",
+        ):
+            relation = video_files.get(resource_field)
+            if not isinstance(relation, dict):
+                continue
+            content_list = relation.get("content")
+            if isinstance(content_list, list) and text_id in content_list:
+                relation["content"] = [c for c in content_list if c != text_id]
+                changed = True
+        if changed:
+            video.metadata["video_files"] = video_files
+            video.save()
+            sync_website_content_references(video)
+
+
 def _merge_caption_resource(  # noqa: PLR0913
     video_files: dict,
     website: "Website",

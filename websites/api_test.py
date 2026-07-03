@@ -21,6 +21,8 @@ from websites.api import (
     get_website_in_root_website_metadata,
     is_ocw_site,
     mail_on_publish,
+    sync_website_content_references,
+    unlink_deleted_resource_from_videos,
     update_website_status,
     update_youtube_thumbnail,
     videos_missing_captions,
@@ -28,6 +30,7 @@ from websites.api import (
     videos_with_unassigned_youtube_ids,
 )
 from websites.constants import (
+    CONTENT_TYPE_RESOURCE,
     PUBLISH_STATUS_ERRORED,
     PUBLISH_STATUS_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
@@ -876,3 +879,93 @@ def test_auto_link_video_multi_language_captions():
     assert len(content) == 2
     languages = {e["language"] for e in vf["video_captions_file"]}
     assert languages == {"en", "fr"}
+
+
+# ── unlink_deleted_resource_from_videos ──────────────────────────────────────
+
+
+def test_unlink_deleted_resource_removes_from_video_captions_resources():
+    """Deleting a linked caption resource removes it from the video's relation content."""
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                }
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    sync_website_content_references(video)
+    assert captions in video.referenced_by.all()
+
+    unlink_deleted_resource_from_videos(captions)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == []
+    assert captions not in video.referenced_by.all()
+
+
+def test_unlink_deleted_resource_preserves_other_language():
+    """Deleting one language variant leaves other linked languages intact."""
+    website = WebsiteFactory.create()
+    captions_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    captions_fr = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_fr_vtt",
+        file=f"courses/{website.name}/lecture01_captions_fr.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(captions_en.text_id), str(captions_fr.text_id)],
+                    "website": website.name,
+                }
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    sync_website_content_references(video)
+
+    unlink_deleted_resource_from_videos(captions_en)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
+        str(captions_fr.text_id)
+    ]
+
+
+def test_unlink_deleted_resource_no_op_when_not_referenced():
+    """A resource that no video references is a no-op."""
+    website = WebsiteFactory.create()
+    orphan = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    unlink_deleted_resource_from_videos(orphan)
+    video.refresh_from_db()
+    assert video.metadata["video_files"] == {}

@@ -27,7 +27,6 @@ from users.models import User
 from videos.utils import resource_file_paths
 from websites import constants
 from websites.api import (
-    auto_link_video_captions_transcript,
     detect_mime_type,
     get_content_warnings,
     sync_website_title,
@@ -264,7 +263,7 @@ class WebsiteUnpublishSerializer(serializers.ModelSerializer):
 
     def get_site_uid(self, instance):
         """Get the website uid"""
-        meta_content = WebsiteContent.objects.filter(
+        meta_content = WebsiteContent.objects.filter(  # noqa: ORM001
             type=CONTENT_TYPE_METADATA, website=instance
         ).first()
         legacy_uid = (
@@ -623,7 +622,6 @@ class WebsiteContentDetailSerializer(
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
         )
-        auto_link_video_captions_transcript(instance)
         update_website_backend(instance.website)
         # Sync the metadata title and website title if appropriate
         if instance.type == CONTENT_TYPE_METADATA:
@@ -774,7 +772,6 @@ class WebsiteContentCreateSerializer(
                 **added_context_data,
             }
         )
-        auto_link_video_captions_transcript(instance)
         update_website_backend(instance.website)
         if instance.type == CONTENT_TYPE_METADATA:
             sync_website_title(instance)

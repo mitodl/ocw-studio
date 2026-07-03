@@ -4,7 +4,9 @@ from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
+from safedelete.signals import post_softdelete
 
+from websites.api import unlink_deleted_resource_from_videos
 from websites.constants import (
     CONTENT_TYPE_NAVMENU,
     CONTENT_TYPE_PAGE,
@@ -73,3 +75,18 @@ def update_navmenu_on_page_url_change(
                 navmenu.save(update_fields=["metadata"])
         except WebsiteContent.DoesNotExist:
             pass
+
+
+@receiver(post_softdelete, sender=WebsiteContent)
+def unlink_deleted_resource_on_softdelete(
+    sender,  # noqa: ARG001
+    instance,
+    **kwargs,  # noqa: ARG001
+):
+    """
+    When a resource referenced by a video (as a caption/transcript) is
+    deleted, remove it from that video's relation content list.
+    """
+    if not instance.referencing_content.exists():
+        return
+    unlink_deleted_resource_from_videos(instance)

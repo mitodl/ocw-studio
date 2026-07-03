@@ -1197,24 +1197,24 @@ def test_websites_content_create_video_resource_sets_3play_references(
     ]
 
 
-def test_websites_content_create_video_auto_links_by_filename_convention(
+def test_websites_content_create_video_does_not_auto_link_by_filename_convention(
     drf_client, global_admin_user
 ):
     """
-    When a video is created via the API and _resource fields are absent or
-    initialised with empty content (the site-config default), any existing
-    captions/transcript resources matching the filename convention are
-    automatically linked.
+    Creating a video via the API must NOT auto-link existing captions/transcript
+    resources by filename convention, even when they'd match. Auto-linking by
+    convention only happens during gdrive/3play sync, not on CMS form saves —
+    the relation widget content is authoritative for whatever the user submits.
     """
     drf_client.force_login(global_admin_user)
     website = WebsiteFactory.create()
-    captions = WebsiteContentFactory.create(
+    WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
         filename="vid_captions_vtt",
         file=f"courses/{website.name}/vid_captions.vtt",
     )
-    transcript = WebsiteContentFactory.create(
+    WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
         filename="vid_transcript_pdf",
@@ -1250,14 +1250,8 @@ def test_websites_content_create_video_auto_links_by_filename_convention(
         text_id=resp.data["text_id"],
     )
     vf = content.metadata["video_files"]
-    assert vf["video_captions_resources"] == {
-        "content": [str(captions.text_id)],
-        "website": website.name,
-    }
-    assert vf["video_transcript_resources"] == {
-        "content": [str(transcript.text_id)],
-        "website": website.name,
-    }
+    assert vf["video_captions_resources"]["content"] == ""
+    assert vf["video_transcript_resources"]["content"] == ""
 
 
 def test_websites_content_create_with_textid(drf_client, global_admin_user):
