@@ -71,6 +71,24 @@ def get_dict_query_field(dict_field_name: str, sub_field: str):
     return dict_field_name + "__" + sub_field.replace(".", "__")
 
 
+def query_field_is_empty(
+    field_path: str,
+    empty_values: tuple = (None, ""),
+    *,
+    include_isnull: bool = True,
+) -> Q:
+    """
+    Build a Q object matching a metadata field that is null/missing (if
+    ``include_isnull`` is True) or equal to any of the given ``empty_values``.
+    """
+    query_field = get_dict_query_field("metadata", field_path)
+    q = Q(**{f"{query_field}__isnull": True}) if include_isnull else None
+    for value in empty_values:
+        empty_q = Q(**{query_field: value})
+        q = empty_q if q is None else q | empty_q
+    return q
+
+
 def get_valid_base_filename(filename: str, content_type: str) -> str:
     """Avoid forbidden filenames that could confuse hugo"""
     if filename in constants.CONTENT_FILENAMES_FORBIDDEN:

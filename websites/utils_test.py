@@ -11,6 +11,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
+from websites.models import WebsiteContent
 from websites.utils import (
     compile_referencing_content,
     get_dict_field,
@@ -18,6 +19,7 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
+    query_field_is_empty,
     resolve_referenced_content_ids,
     set_dict_field,
 )
@@ -66,6 +68,51 @@ def test_get_dict_query_field():
         get_dict_query_field("metadata", "video_files.video_captions_file")
         == "metadata__video_files__video_captions_file"
     )
+
+
+@pytest.mark.parametrize(
+    ("metadata", "matches"),
+    [
+        ({"video_files": {"video_id": None}}, True),
+        ({"video_files": {}}, True),
+        ({"video_files": {"video_id": ""}}, True),
+        ({"video_files": {"video_id": "abc123"}}, False),
+    ],
+)
+@pytest.mark.django_db
+def test_query_field_is_empty_default(metadata, matches):
+    """query_field_is_empty should match null/missing/empty-string metadata fields by default"""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(website=website, metadata=metadata)
+    result = WebsiteContent.objects.filter(pk=content.pk).filter(
+        query_field_is_empty("video_files.video_id")
+    )
+    assert result.exists() is matches
+
+
+@pytest.mark.parametrize(
+    ("metadata", "matches"),
+    [
+        ({"video_files": {"captions": []}}, True),
+        ({"video_files": {"captions": None}}, True),
+        ({"video_files": {"captions": ""}}, True),
+        ({"video_files": {"captions": ["a"]}}, False),
+        ({"video_files": {}}, False),
+    ],
+)
+@pytest.mark.django_db
+def test_query_field_is_empty_custom_values_no_isnull(metadata, matches):
+    """query_field_is_empty should support custom empty_values and skip the isnull check"""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(website=website, metadata=metadata)
+    result = WebsiteContent.objects.filter(pk=content.pk).filter(
+        query_field_is_empty(
+            "video_files.captions",
+            empty_values=(None, [], ""),
+            include_isnull=False,
+        )
+    )
+    assert result.exists() is matches
 
 
 def test_get_dict_field():
