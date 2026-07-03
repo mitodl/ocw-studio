@@ -576,11 +576,6 @@ FIELD_METADATA_TITLE = get_string(
     description="The site metadata field for title",
 )
 # YouTube OCW metadata fields
-YT_FIELD_CAPTIONS = get_string(
-    name="YT_FIELD_CAPTIONS",
-    default="video_files.video_captions_file",
-    description="The site config metadata field for the captions URL",
-)
 YT_FIELD_CAPTIONS_RESOURCES = get_string(
     name="YT_FIELD_CAPTIONS_RESOURCES",
     default="video_files.video_captions_resources",
@@ -611,11 +606,6 @@ YT_FIELD_THUMBNAIL = get_string(
     name="YT_FIELD_THUMBNAIL",
     default="video_files.video_thumbnail_file",
     description="The site config metadata field for YouTube thumbnail URL",
-)
-YT_FIELD_TRANSCRIPT = get_string(
-    name="YT_FIELD_TRANSCRIPT",
-    default="video_files.video_transcript_file",
-    description="The site config metadata field for the transcript URL",
 )
 YT_FIELD_TRANSCRIPT_RESOURCES = get_string(
     name="YT_FIELD_TRANSCRIPT_RESOURCES",
