@@ -966,20 +966,16 @@ def test_video_resource_captions_only_reference_detected():
     assert captions_resource in referenced_content
 
 
-def test_video_resource_file_path_references_detected():
-    """Test that video_captions_file and video_transcript_file paths are resolved to referenced content"""
+def test_video_resource_resources_references_detected():
+    """Test that video_captions_resources and video_transcript_resources content is resolved to referenced content"""
     website = WebsiteFactory.create()
     captions_content = WebsiteContentFactory.create(
         website=website,
         type=CONTENT_TYPE_RESOURCE,
-        filename="nXyqvKrQGZ8_captions",
-        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
     )
     transcript_content = WebsiteContentFactory.create(
         website=website,
         type=CONTENT_TYPE_RESOURCE,
-        filename="pdf_testpage",
-        file=f"courses/{website.name}/pdf_testpage.pdf",
     )
     video_resource = WebsiteContentFactory.create(
         website=website,
@@ -987,8 +983,8 @@ def test_video_resource_file_path_references_detected():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
-                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+                "video_captions_resources": {"content": captions_content.text_id},
+                "video_transcript_resources": {"content": transcript_content.text_id},
             },
         },
     )

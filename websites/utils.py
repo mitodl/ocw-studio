@@ -2,7 +2,6 @@
 
 import logging
 import re
-from pathlib import Path
 from typing import Any
 
 from django.apps import apps
@@ -328,40 +327,29 @@ def resolve_course_list_referenced_content_ids(content) -> set[int]:
 
 
 def resolve_video_file_referenced_content_ids(content) -> set[int]:
-    """Resolve video_captions_file/video_transcript_file paths to WebsiteContent ids.
-
-    Handles both the legacy scalar string format and the new multi-language
-    array-of-objects format (``[{"file": "/path/...", "language": "en"}, ...]``).
-    """
+    """Resolve video_captions/transcript_resources content to WebsiteContent ids."""
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
     referenced_ids = set()
 
-    for field_path in (settings.YT_FIELD_CAPTIONS, settings.YT_FIELD_TRANSCRIPT):
-        value = get_dict_field(content.metadata, field_path)
-        if not value:
+    for field_path in (
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+    ):
+        relation = get_dict_field(content.metadata, field_path)
+        if not isinstance(relation, dict):
+            continue
+        text_ids = relation.get("content")
+        if isinstance(text_ids, str):
+            text_ids = [text_ids] if text_ids else []
+        elif not isinstance(text_ids, list):
+            continue
+        if not text_ids:
             continue
 
-        if isinstance(value, str):
-            # Legacy scalar format — a single URL path string.
-            keys = [value]
-        elif isinstance(value, list):
-            # Multi-language format — list of {"file": ..., "language": ...}.
-            keys = [
-                entry["file"]
-                for entry in value
-                if isinstance(entry, dict) and entry.get("file")
-            ]
-        else:
-            continue
-
-        for key in keys:
-            base_name = Path(key).stem
-            related_ids = (
-                WebsiteContent.objects.filter(website=content.website)
-                .filter(Q(file=key) | Q(file=key.strip("/")) | Q(filename=base_name))
-                .values_list("id", flat=True)
-            )
-            referenced_ids.update(related_ids)
+        related_ids = WebsiteContent.objects.filter(
+            website=content.website, text_id__in=text_ids
+        ).values_list("id", flat=True)
+        referenced_ids.update(related_ids)
 
     return referenced_ids
 

@@ -1275,21 +1275,17 @@ def test_resolve_referenced_content_ids_scopes_course_list_sitemetadata():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_paths():
-    """resolve_referenced_content_ids resolves video_captions_file and video_transcript_file by file path."""
+def test_resolve_referenced_content_ids_video_resources():
+    """resolve_referenced_content_ids resolves video_captions_resources and video_transcript_resources content."""
     website = WebsiteFactory.create()
 
     captions_content = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="nXyqvKrQGZ8_captions",
-        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
     )
     transcript_content = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="pdf_testpage",
-        file=f"courses/{website.name}/pdf_testpage.pdf",
     )
 
     video_resource = WebsiteContentFactory.create(
@@ -1298,8 +1294,8 @@ def test_resolve_referenced_content_ids_video_file_paths():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
-                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+                "video_captions_resources": {"content": captions_content.text_id},
+                "video_transcript_resources": {"content": transcript_content.text_id},
             },
         },
     )
@@ -1310,8 +1306,8 @@ def test_resolve_referenced_content_ids_video_file_paths():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_empty_strings():
-    """resolve_referenced_content_ids handles empty-string video file paths gracefully."""
+def test_resolve_referenced_content_ids_video_resources_empty_strings():
+    """resolve_referenced_content_ids handles empty-string video resource content gracefully."""
     website = WebsiteFactory.create()
 
     video_resource = WebsiteContentFactory.create(
@@ -1320,8 +1316,6 @@ def test_resolve_referenced_content_ids_video_file_empty_strings():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": "",
-                "video_transcript_file": "",
                 "video_captions_resources": "",
                 "video_transcript_resources": "",
             },
@@ -1333,27 +1327,21 @@ def test_resolve_referenced_content_ids_video_file_empty_strings():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_paths_array_format():
-    """resolve_referenced_content_ids resolves multi-language array-of-objects _file format."""
+def test_resolve_referenced_content_ids_video_resources_multiple_content_ids():
+    """resolve_referenced_content_ids resolves multiple text_ids in a video resources relation."""
     website = WebsiteFactory.create()
 
     captions_en = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_captions_vtt",
-        file=f"courses/{website.name}/lecture1_captions.vtt",
     )
     captions_es = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_captions_es_vtt",
-        file=f"courses/{website.name}/lecture1_captions_es.vtt",
     )
     transcript_en = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_transcript_pdf",
-        file=f"courses/{website.name}/lecture1_transcript.pdf",
     )
 
     video_resource = WebsiteContentFactory.create(
@@ -1362,22 +1350,10 @@ def test_resolve_referenced_content_ids_video_file_paths_array_format():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": [
-                    {
-                        "file": f"/courses/{website.name}/lecture1_captions.vtt",
-                        "language": "en",
-                    },
-                    {
-                        "file": f"/courses/{website.name}/lecture1_captions_es.vtt",
-                        "language": "es",
-                    },
-                ],
-                "video_transcript_file": [
-                    {
-                        "file": f"/courses/{website.name}/lecture1_transcript.pdf",
-                        "language": "en",
-                    },
-                ],
+                "video_captions_resources": {
+                    "content": [captions_en.text_id, captions_es.text_id]
+                },
+                "video_transcript_resources": {"content": [transcript_en.text_id]},
             },
         },
     )
