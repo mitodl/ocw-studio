@@ -135,17 +135,27 @@ def test_leading_slash_in_file_is_normalized(mock_s3):
 
 
 def test_video_metadata_files_are_treated_as_related(mock_s3):
-    """video_files metadata protects thumbnails/captions/transcripts.
+    """video_files metadata protects thumbnails; captions/transcripts are now
+    protected via their own WebsiteContent resource row's ``file`` field.
 
-    Covers the three normalization branches in _filter_unrelated_files:
-    a full path already under s3_path is kept as-is, a bare filename is
-    re-rooted under s3_path, and an http(s) value is ignored.
+    Covers the two remaining normalization branches in _filter_unrelated_files
+    for video_thumbnail_file: a full path already under s3_path is kept as-is,
+    and (separately, for the caption resource) an http(s) value is ignored.
+    The caption resource is linked via video_captions_resources, and its S3
+    key is protected by the generic per-row loop over WebsiteContent.file,
+    not by reading video_files directly.
     """
     website = WebsiteFactory.create(name="video-site", short_id="video-site")
     video_file = f"{website.s3_path}/vid_video.mp4"
     thumb = f"{website.s3_path}/thumb.jpg"
     captions_key = f"{website.s3_path}/captions.vtt"
     orphan = f"{website.s3_path}/orphan.bin"
+    caption_content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        file=captions_key,
+        metadata={},
+    )
     WebsiteContentFactory.create(
         website=website,
         type="resource",
@@ -153,8 +163,11 @@ def test_video_metadata_files_are_treated_as_related(mock_s3):
         metadata={
             "video_files": {
                 "video_thumbnail_file": thumb,  # full path -> kept as-is
-                "video_captions_file": "captions.vtt",  # bare name -> re-rooted
-                "video_transcript_file": "https://youtu.be/x",  # http -> ignored
+                "video_captions_resources": {
+                    "content": [str(caption_content.text_id)],
+                    "website": website.name,
+                },
+                "video_transcript_resources": {"content": []},
             }
         },
     )
@@ -168,14 +181,23 @@ def test_video_metadata_files_are_treated_as_related(mock_s3):
 
 
 def test_video_metadata_protected_when_video_row_has_no_file(mock_s3):
-    """A YouTube video resource usually has file=None. Its caption/thumbnail
-    paths in video_files must still be protected -- the related-set scan no
-    longer filters on file__isnull, so the file-less row is still inspected.
+    """A YouTube video resource usually has file=None. Its thumbnail path in
+    video_files must still be protected -- the related-set scan no longer
+    filters on file__isnull, so the file-less row is still inspected. Its
+    caption resource (a separate WebsiteContent row linked via
+    video_captions_resources) is protected independently via that row's own
+    ``file`` field, per the generic per-row loop.
     """
     website = WebsiteFactory.create(name="yt-site", short_id="yt-site")
     thumb = f"{website.s3_path}/thumb.jpg"
     captions = f"{website.s3_path}/captions.vtt"
     orphan = f"{website.s3_path}/orphan.bin"
+    caption_content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        file=captions,
+        metadata={},
+    )
     WebsiteContentFactory.create(
         website=website,
         type="resource",
@@ -184,8 +206,11 @@ def test_video_metadata_protected_when_video_row_has_no_file(mock_s3):
             "resourcetype": "Video",
             "video_files": {
                 "video_thumbnail_file": thumb,
-                "video_captions_file": captions,
-                "video_transcript_file": None,
+                "video_captions_resources": {
+                    "content": [str(caption_content.text_id)],
+                    "website": website.name,
+                },
+                "video_transcript_resources": {"content": []},
             },
         },
     )
@@ -195,7 +220,7 @@ def test_video_metadata_protected_when_video_row_has_no_file(mock_s3):
 
     remaining = mock_s3.current()
     assert thumb in remaining  # protected despite the video row having no file
-    assert captions in remaining
+    assert captions in remaining  # protected via the resource's own file row
     assert orphan not in remaining  # genuine orphan still cleaned
 
 

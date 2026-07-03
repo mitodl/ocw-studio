@@ -198,8 +198,6 @@ class Command(WebsiteFilterCommand):
         """
         video_metadata_fields = [
             "video_thumbnail_file",
-            "video_captions_file",
-            "video_transcript_file",
         ]
 
         website_contents = WebsiteContent.all_objects.filter(
