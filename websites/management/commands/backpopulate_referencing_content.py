@@ -15,12 +15,12 @@ from websites.utils import (
 
 BATCH_SIZE_DEFAULT = 500  # Default batch size for processing content
 
-# Top-level metadata keys under which video file paths are stored, derived from
-# settings so custom field paths are respected.
+# Top-level metadata keys under which video caption/transcript resources are
+# stored, derived from settings so custom field paths are respected.
 _VIDEO_FILE_TOP_KEYS = frozenset(
     {
-        settings.YT_FIELD_CAPTIONS.split(".")[0],
-        settings.YT_FIELD_TRANSCRIPT.split(".")[0],
+        settings.YT_FIELD_CAPTIONS_RESOURCES.split(".")[0],
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES.split(".")[0],
     }
 )
 
