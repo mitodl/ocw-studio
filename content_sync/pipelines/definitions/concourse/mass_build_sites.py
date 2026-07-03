@@ -75,6 +75,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         prefix(str): (Optional) A prefix path to use when deploying the websites to their destination
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
         theme_slug(str): (Optional) Override for the theme slug to use in the builds
+        sync_with_delete(bool): (Optional) If True, non-root site online syncs run with --delete
     """  # noqa: E501
 
     def __init__(  # noqa: PLR0913
@@ -90,6 +91,8 @@ class MassBuildSitesPipelineDefinitionConfig:
         prefix: str | None = "",
         hugo_arg_overrides: str | None = None,
         theme_slug: str | None = None,
+        *,
+        sync_with_delete: bool = False,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
         sites = list(get_publishable_sites(version, is_offline=offline))
@@ -106,6 +109,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         self.hugo_arg_overrides = hugo_arg_overrides
         self.instance_vars = instance_vars
         self.theme_slug = theme_slug or ""
+        self.sync_with_delete = sync_with_delete
         self.web_bucket = (
             vars["preview_bucket_name"]
             if version == VERSION_DRAFT
@@ -321,7 +325,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                         pipeline_vars=site_pipeline_vars,
                         fastly_var=config.version,
                         pipeline_name=config.version,
-                        destructive_sync=False,
+                        destructive_sync=config.sync_with_delete,
                         filter_videos=True,
                         skip_webhooks=is_extra_theme(config.theme_slug),
                     )

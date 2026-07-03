@@ -2,7 +2,7 @@
 
 import json
 from html import unescape
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, unquote, urljoin
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -555,8 +555,7 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
         f"/api/v1/teams/{team}/pipelines/{version}/config{pipeline.instance_vars}"
     )
     mock_post.assert_called_once_with(
-        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}",
-        data=None,
+        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}"
     )
     job_name = "build-theme-assets"
     mock_get = mocker.patch(
@@ -569,54 +568,9 @@ def test_trigger_pipeline_build(settings, mocker, mock_auth, version):
         f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/config{pipeline.instance_vars}"
     )
     mock_post.assert_any_call(
-        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds{pipeline.instance_vars}",
-        data=None,
+        f"/api/v1/teams/{team}/pipelines/ocw-theme-assets/jobs/{job_name}/builds{pipeline.instance_vars}"
     )
     assert build_id == expected_build_id
-
-
-@pytest.mark.parametrize("version", ["live", "draft"])
-def test_trigger_pipeline_build_with_vars(settings, mocker, mock_auth, version):
-    """trigger_pipeline_build passes vars as POST body when provided"""
-    job_name = "build-online-ocw-site"
-    mocker.patch(
-        "content_sync.pipelines.concourse.PipelineApi.get",
-        return_value={"config": {"jobs": [{"name": job_name}]}},
-    )
-    expected_build_id = 999
-    mock_post = mocker.patch(
-        "content_sync.pipelines.concourse.PipelineApi.post",
-        return_value={"id": expected_build_id},
-    )
-    website = WebsiteFactory.create(
-        starter=WebsiteStarterFactory.create(
-            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
-        )
-    )
-    team = settings.CONCOURSE_TEAM
-    pipeline = SitePipeline(website)
-    vars_dict = {"mass_build_delete": " --delete"}
-    build_id = pipeline.trigger_pipeline_build(version, build_vars=vars_dict)
-    assert build_id == expected_build_id
-    mock_post.assert_called_once_with(
-        f"/api/v1/teams/{team}/pipelines/{version}/jobs/{job_name}/builds{pipeline.instance_vars}",
-        data=json.dumps({"vars": vars_dict}),
-    )
-
-
-def test_trigger_with_vars(settings, mocker, mock_auth):
-    """trigger() forwards build_vars to trigger_pipeline_build"""
-    mock_trigger_build = mocker.patch(
-        "content_sync.pipelines.concourse.GeneralPipeline.trigger_pipeline_build",
-        return_value=42,
-    )
-    pipeline = ThemeAssetsPipeline()
-    build_vars = {"mass_build_delete": " --delete"}
-    result = pipeline.trigger(build_vars=build_vars)
-    assert result == 42
-    mock_trigger_build.assert_called_once_with(
-        pipeline.PIPELINE_NAME, build_vars=build_vars
-    )
 
 
 @pytest.mark.parametrize("version", ["live", "draft"])
@@ -825,6 +779,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         prefix="",
         instance_vars=instance_vars_str,
         theme_slug=theme_slug,
+        sync_with_delete=False,
     )
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
@@ -832,6 +787,39 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
+
+
+def test_upsert_mass_build_pipeline_sync_with_delete(
+    pipeline_settings,
+    mocker,
+    mock_auth,
+    mass_build_websites,
+):
+    """The sync_with_delete variant should be a distinct pipeline instance"""
+    mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+    mock_config = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
+    )
+    pipeline = MassBuildSitesPipeline(VERSION_LIVE, sync_with_delete=True)
+    pipeline.upsert_pipeline()
+
+    parsed_instance_vars = json.loads(
+        unquote(pipeline.instance_vars.removeprefix("?vars="))
+    )
+    assert parsed_instance_vars["sync_with_delete"] is True
+    assert mock_config.call_args.kwargs["sync_with_delete"] is True
+    default_pipeline = MassBuildSitesPipeline(VERSION_LIVE)
+    default_instance_vars = json.loads(
+        unquote(default_pipeline.instance_vars.removeprefix("?vars="))
+    )
+    assert "sync_with_delete" not in default_instance_vars
+    mock_put_headers.assert_called_once()
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])

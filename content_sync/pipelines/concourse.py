@@ -312,16 +312,11 @@ class GeneralPipeline(BaseGeneralPipeline):
             data=json.dumps({"from": None}),
         )
 
-    def trigger_pipeline_build(
-        self, pipeline_name: str, build_vars: dict | None = None
-    ) -> int:
+    def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
         pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
         job_name = pipeline_info["config"]["jobs"][0]["name"]
-        data = json.dumps({"vars": build_vars}) if build_vars is not None else None
-        return self.api.post(self._make_builds_url(pipeline_name, job_name), data=data)[
-            "id"
-        ]
+        return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
 
     def pause_pipeline(self, pipeline_name: str):
         """Pause the pipeline"""
@@ -351,12 +346,10 @@ class GeneralPipeline(BaseGeneralPipeline):
             msg = "No default name specified for this pipeline"
             raise ValueError(msg)
 
-    def trigger(self, build_vars: dict | None = None) -> int:
+    def trigger(self) -> int:
         """Use self.PIPELINE_NAME as input to the trigger_pipeline_build function"""
         if self.PIPELINE_NAME:
-            return self.trigger_pipeline_build(
-                self.PIPELINE_NAME, build_vars=build_vars
-            )
+            return self.trigger_pipeline_build(self.PIPELINE_NAME)
         else:
             msg = "No default name specified for this pipeline"
             raise ValueError(msg)
@@ -568,6 +561,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         offline: bool | None = None,
         hugo_args: str | None = None,
         theme_slug: str | None = None,
+        sync_with_delete: bool = False,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
@@ -598,17 +592,21 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         self.OFFLINE = offline
         self.HUGO_ARGS = hugo_args
         self.THEME_SLUG = theme_slug
-        self.set_instance_vars(
-            {
-                "version": version,
-                "themes_branch": self.THEMES_BRANCH,
-                "projects_branch": self.PROJECTS_BRANCH,
-                "prefix": self.PREFIX,
-                "starter": self.STARTER,
-                "offline": self.OFFLINE,
-                "theme_slug": self.THEME_SLUG,
-            }
-        )
+        self.SYNC_WITH_DELETE = sync_with_delete
+        instance_vars = {
+            "version": version,
+            "themes_branch": self.THEMES_BRANCH,
+            "projects_branch": self.PROJECTS_BRANCH,
+            "prefix": self.PREFIX,
+            "starter": self.STARTER,
+            "offline": self.OFFLINE,
+            "theme_slug": self.THEME_SLUG,
+        }
+        if sync_with_delete:
+            # A distinct pipeline instance so the default mass build is never
+            # mutated to run destructive syncs
+            instance_vars["sync_with_delete"] = True
+        self.set_instance_vars(instance_vars)
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -625,6 +623,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
             prefix=self.PREFIX,
             instance_vars=self.instance_vars,
             theme_slug=self.THEME_SLUG,
+            sync_with_delete=self.SYNC_WITH_DELETE,
         )
         pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)

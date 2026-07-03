@@ -323,13 +323,14 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                     upload_online_build_command = "\n".join(
                         upload_online_build_task["config"]["run"]["args"]
                     )
+                    # The root website branch always syncs per-directory with --delete
                     assert "--delete" in upload_online_build_command
-                    assert "$MASS_BUILD_DELETE" in upload_online_build_command
-                    assert "--exclude='*.mp4'" in upload_online_build_command
+                    # By default the non-root sync must not carry the delete flag
                     assert (
-                        upload_online_build_task["params"]["MASS_BUILD_DELETE"]
-                        == "((mass_build_delete:))"
+                        site_pipeline_vars["delete_flag"]
+                        not in upload_online_build_command
                     )
+                    assert "--exclude='*.mp4'" in upload_online_build_command
         if batch_number < batch_count:
             batch_gate = get_dict_list_item_by_field(
                 items=steps,
@@ -339,3 +340,48 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
             assert batch_gate is not None
             assert batch_gate["no_get"] is True
         batch_number += 1
+
+
+@pytest.mark.parametrize("sync_with_delete", [True, False])
+def test_mass_build_sites_definition_sync_with_delete(
+    mass_build_websites,
+    settings,
+    sync_with_delete,
+):
+    """The non-root online sync should only carry the delete flag when sync_with_delete is set"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    settings.OCW_MASS_BUILD_BATCH_SIZE = 2
+    settings.OCW_MASS_BUILD_MAX_IN_FLIGHT = 2
+    site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
+    pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+        version=VERSION_LIVE,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(VERSION_LIVE),
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        offline=False,
+        instance_vars="",
+        sync_with_delete=sync_with_delete,
+    )
+    pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
+    rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
+    upload_online_build_tasks = 0
+    for job in rendered_definition["jobs"]:
+        for step in job["plan"]:
+            if "across" not in step:
+                continue
+            upload_online_build_task = get_dict_list_item_by_field(
+                items=step["do"],
+                field="task",
+                value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
+            )
+            upload_online_build_tasks += 1
+            command = "\n".join(upload_online_build_task["config"]["run"]["args"])
+            if sync_with_delete:
+                assert site_pipeline_vars["delete_flag"] in command
+            else:
+                assert site_pipeline_vars["delete_flag"] not in command
+            # mp4 files are filtered out of the mass build static resources
+            # download, so they must also be excluded from the delete sync
+            assert "--exclude='*.mp4'" in command
+    assert upload_online_build_tasks > 0

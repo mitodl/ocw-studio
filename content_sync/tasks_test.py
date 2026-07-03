@@ -18,7 +18,6 @@ from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import (
-    BaseMassBuildSitesPipeline,
     BaseThemeAssetsPipeline,
     BaseUnpublishedSiteRemovalPipeline,
 )
@@ -736,26 +735,25 @@ def test_check_incomplete_publish_build_statuses_500(settings, mocker, api_mock)
 @pytest.mark.parametrize("backend", ["concourse", None])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_trigger_mass_build(settings, mocker, backend, version, sync_with_delete):
-    """trigger_mass_build should call trigger_pipeline_build with correct vars"""
+    """trigger_mass_build should get the right pipeline variant and trigger it"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
-    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
-    mock_pipeline_unpause = mocker.patch(
-        "content_sync.pipelines.concourse.GeneralPipeline.unpause_pipeline"
+    mock_get_pipeline = mocker.patch(
+        "content_sync.tasks.api.get_mass_build_sites_pipeline"
     )
-    mock_pipeline_trigger = mocker.patch(
-        "content_sync.pipelines.concourse.GeneralPipeline.trigger_pipeline_build"
-    )
-    pipeline_name = BaseMassBuildSitesPipeline.PIPELINE_NAME
+    mock_pipeline = mock_get_pipeline.return_value
     tasks.trigger_mass_build.delay(version, sync_with_delete=sync_with_delete)
     if backend == "concourse":
-        mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        expected_vars = {"mass_build_delete": "--delete"} if sync_with_delete else None
-        mock_pipeline_trigger.assert_called_once_with(
-            pipeline_name, build_vars=expected_vars
+        mock_get_pipeline.assert_called_once_with(
+            version, sync_with_delete=sync_with_delete
         )
+        if sync_with_delete:
+            mock_pipeline.upsert_pipeline.assert_called_once_with()
+        else:
+            mock_pipeline.upsert_pipeline.assert_not_called()
+        mock_pipeline.unpause.assert_called_once_with()
+        mock_pipeline.trigger.assert_called_once_with()
     else:
-        mock_pipeline_trigger.assert_not_called()
-        mock_pipeline_unpause.assert_not_called()
+        mock_get_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("backend", ["concourse", None])
@@ -783,7 +781,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
     if backend == "concourse":
         mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
-        mock_pipeline_trigger.assert_called_once_with(pipeline_name, build_vars=None)
+        mock_pipeline_trigger.assert_called_once_with(pipeline_name)
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()

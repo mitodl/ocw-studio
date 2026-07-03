@@ -234,10 +234,15 @@ def upsert_test_pipeline(
 def trigger_mass_build(version: str, *, sync_with_delete: bool = False) -> bool:
     """Trigger the mass build pipeline for the specified version"""
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        pipeline = api.get_mass_build_sites_pipeline(version)
+        pipeline = api.get_mass_build_sites_pipeline(
+            version, sync_with_delete=sync_with_delete
+        )
+        if sync_with_delete:
+            # The destructive variant is a separate pipeline instance that does
+            # not exist until upserted; delete it manually once the run is done
+            pipeline.upsert_pipeline()
         pipeline.unpause()
-        trigger_vars = {"mass_build_delete": "--delete"} if sync_with_delete else None
-        pipeline.trigger(build_vars=trigger_vars)
+        pipeline.trigger()
     return True
 
 

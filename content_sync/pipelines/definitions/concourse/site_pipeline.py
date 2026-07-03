@@ -562,12 +562,11 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         skip_search_index_update: bool = False,
         skip_webhooks: bool = False,
     ):
-        if destructive_sync:
-            delete_flag = pipeline_vars["delete_flag"]
-            mass_build_delete_param = {}
-        else:
-            delete_flag = " $MASS_BUILD_DELETE"
-            mass_build_delete_param = {"MASS_BUILD_DELETE": "((mass_build_delete:))"}
+        delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
+        # When videos are filtered out of the static resources download, mp4 files
+        # (e.g. archive videos) exist in S3 but not in the local build output, so
+        # they must be excluded from the sync or a --delete run would remove them
+        mp4_exclude = " --exclude='*.mp4'" if filter_videos else ""
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
             filter_videos=filter_videos,
@@ -652,7 +651,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             # Copy only files at the root (exclude directories)
             find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://$S3_PATH/" --metadata site-id={pipeline_vars["site_name"]} \;
         else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip' --exclude='*.mp4' --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
+            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip'{mp4_exclude} --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
         fi
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
@@ -664,7 +663,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                         settings.AWS_MAX_CONCURRENT_CONNECTIONS
                     ),
                     "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
-                    **mass_build_delete_param,
                 },
                 config=TaskConfig(
                     platform="linux",
