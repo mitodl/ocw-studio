@@ -46,7 +46,11 @@ from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from videos.utils import resource_file_paths
-from websites.api import auto_link_video_captions_transcript, get_valid_new_filename
+from websites.api import (
+    auto_link_video_captions_transcript,
+    get_valid_new_filename,
+    sync_website_content_references,
+)
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
@@ -463,6 +467,7 @@ def _link_video_caption_transcript_resources(
 
     if resource_type == RESOURCE_TYPE_VIDEO:
         auto_link_video_captions_transcript(resource)
+        sync_website_content_references(resource)
     elif "_captions" in filename:
         video_base = filename.split("_captions")[0]
         _link_resource_to_video(
@@ -536,6 +541,7 @@ def _link_resource_to_video(
         video_resource.metadata = {}
     video_resource.metadata["video_files"] = video_files
     video_resource.save()
+    sync_website_content_references(video_resource)
 
 
 @transaction.atomic
