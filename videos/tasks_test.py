@@ -753,8 +753,8 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
 
     set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_nested_dicts(metadata, settings.YT_FIELD_ID, "expected_id")
-    set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
-    set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT, None)
+    set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS_RESOURCES, None)
+    set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES, None)
 
     resource.save()
 
@@ -764,7 +764,9 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
         )
         metadata = other_resource.metadata
         set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
-        set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
+        set_nested_dicts(
+            metadata, f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content", None
+        )
         other_resource.save()
 
     update_transcript_mock = mocker.patch(
@@ -811,6 +813,10 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
     else:
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
+            is None
+        )
+        assert (
+            get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES)
             is None
         )
 
@@ -876,16 +882,6 @@ def test_update_transcripts_for_video_no_3play(
 
     set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
-    set_dict_field(
-        metadata,
-        settings.YT_FIELD_CAPTIONS,
-        (f"{base_path}_captions.vtt" if caption_exists else None),
-    )
-    set_dict_field(
-        metadata,
-        settings.YT_FIELD_TRANSCRIPT,
-        (f"{base_path}_transcript.pdf" if transcript_exists else None),
-    )
     resource.save()
 
     captions_list, transcripts_list = video.caption_transcript_resources()
