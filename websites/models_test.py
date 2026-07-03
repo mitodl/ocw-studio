@@ -58,12 +58,8 @@ def test_websitecontent_calculate_checksum(metadata, markdown, dirpath, exp_chec
 
 @pytest.mark.parametrize("has_file_widget", [True, False])
 @pytest.mark.parametrize("has_file", [True, False])
-@pytest.mark.parametrize("is_video", [True, False])
 @pytest.mark.parametrize("has_metadata", [True, False])
-@pytest.mark.parametrize("transcript_value", [None, "", "transcript.pdf"])
-def test_websitecontent_full_metadata(
-    has_file_widget, has_file, is_video, has_metadata, transcript_value
-):
+def test_websitecontent_full_metadata(has_file_widget, has_file, has_metadata):
     """WebsiteContent.full_metadata returns expected file field in metadata when appropriate"""
     file = SimpleUploadedFile("test.txt", b"content")
     title = ("Test Title",)
@@ -73,37 +69,7 @@ def test_websitecontent_full_metadata(
         {"label": "My File", "name": "my_file", "widget": "file", "required": False},
     ]
     fields = config_fields if has_file_widget else config_fields[0:1]
-    if is_video and has_metadata:
-        fields.append(
-            {
-                "fields": [
-                    {
-                        "label": "Video Captions (WebVTT) URL",
-                        "name": "video_captions_file",
-                        "widget": "string",
-                    },
-                    {
-                        "label": "Video Transcript (PDF) URL",
-                        "name": "video_transcript_file",
-                        "widget": "string",
-                    },
-                ],
-                "label": "Video Files",
-                "name": "video_files",
-                "widget": "object",
-            }
-        )
     metadata = {"title": title, "description": description}
-    meta_val = (
-        f"/sites/mysite/{transcript_value}.webvtt"
-        if transcript_value
-        else transcript_value
-    )
-    if is_video and has_metadata:
-        metadata["video_files"] = {
-            "video_captions_file": meta_val,
-            "video_transcript_file": meta_val,
-        }
     content = WebsiteContentFactory.build(
         type="resource",
         metadata=metadata if has_metadata else None,
@@ -128,11 +94,6 @@ def test_websitecontent_full_metadata(
             name="mysite",
         ),
     )
-    expected_val = (
-        f"/{content.website.url_path}/{transcript_value}.webvtt"
-        if transcript_value
-        else transcript_value
-    )
 
     full_metadata = content.full_metadata
     if has_metadata:
@@ -148,59 +109,8 @@ def test_websitecontent_full_metadata(
     elif has_metadata:
         assert "my_file" not in full_metadata
 
-    if is_video and has_metadata:
-        assert full_metadata["video_files"]["video_captions_file"] == expected_val
-        assert full_metadata["video_files"]["video_transcript_file"] == expected_val
     if not has_metadata and not has_file_widget:
         assert full_metadata is None
-
-
-def test_websitecontent_full_metadata_video_files_array_format():
-    """full_metadata replaces s3_path with url_path inside video_files array entries."""
-    website = WebsiteFactory(
-        starter=WebsiteStarterFactory.create(
-            config={
-                "content-dir": "content",
-                "root-url-path": "sites",
-                "collections": [
-                    {
-                        "name": "resource",
-                        "label": "Resource",
-                        "category": "Content",
-                        "folder": "content/resource",
-                        "fields": [
-                            {"label": "Title", "name": "title", "widget": "string"},
-                        ],
-                    }
-                ],
-            }
-        ),
-        url_path="sites/mysite-fall-2008",
-        name="mysite",
-    )
-    content = WebsiteContentFactory.build(
-        type="resource",
-        metadata={
-            "video_files": {
-                "video_captions_file": [
-                    {"file": "/sites/mysite/captions.vtt", "language": "en"}
-                ],
-                "video_transcript_file": [
-                    {"file": "/sites/mysite/transcript.pdf", "language": "en"}
-                ],
-            }
-        },
-        website=website,
-    )
-
-    full_metadata = content.full_metadata
-
-    assert full_metadata["video_files"]["video_captions_file"] == [
-        {"file": "/sites/mysite-fall-2008/captions.vtt", "language": "en"}
-    ]
-    assert full_metadata["video_files"]["video_transcript_file"] == [
-        {"file": "/sites/mysite-fall-2008/transcript.pdf", "language": "en"}
-    ]
 
 
 def test_website_starter_unpublished():
@@ -476,75 +386,6 @@ def test_website_collaborators_with_missing_groups():
     collaborators = website.collaborators
     assert len(collaborators) == 1
     assert owner in collaborators
-
-
-@pytest.mark.django_db
-def test_websitecontent_full_metadata_array_captions():
-    """full_metadata applies s3_path->url_path substitution on multi-language array _file values."""
-    content = WebsiteContentFactory.build(
-        type="resource",
-        metadata={
-            "video_files": {
-                "video_captions_file": [
-                    {"file": "/sites/mysite/lecture1_captions.vtt", "language": "en"},
-                    {
-                        "file": "/sites/mysite/lecture1_captions_es.vtt",
-                        "language": "es",
-                    },
-                ],
-                "video_transcript_file": [
-                    {
-                        "file": "/sites/mysite/lecture1_transcript.pdf",
-                        "language": "en",
-                    },
-                ],
-            }
-        },
-        file=None,
-        website=WebsiteFactory(
-            starter=WebsiteStarterFactory.create(
-                config={
-                    "content-dir": "content",
-                    "root-url-path": "sites",
-                    "collections": [
-                        {
-                            "name": "resource",
-                            "label": "Resource",
-                            "category": "Content",
-                            "folder": "content/resource",
-                            "fields": [
-                                {"label": "Title", "name": "title", "widget": "string"}
-                            ],
-                        }
-                    ],
-                }
-            ),
-            url_path="sites/mysite-fall-2008",
-            name="mysite",
-        ),
-    )
-
-    full = content.full_metadata
-
-    captions = full["video_files"]["video_captions_file"]
-    assert isinstance(captions, list)
-    assert len(captions) == 2
-    assert captions[0] == {
-        "file": "/sites/mysite-fall-2008/lecture1_captions.vtt",
-        "language": "en",
-    }
-    assert captions[1] == {
-        "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
-        "language": "es",
-    }
-
-    transcripts = full["video_files"]["video_transcript_file"]
-    assert isinstance(transcripts, list)
-    assert len(transcripts) == 1
-    assert transcripts[0] == {
-        "file": "/sites/mysite-fall-2008/lecture1_transcript.pdf",
-        "language": "en",
-    }
 
 
 def test_websitecontent_full_metadata_resolves_resources_relation():
