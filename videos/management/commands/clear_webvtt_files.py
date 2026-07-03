@@ -48,6 +48,10 @@ class Command(BaseCommand):
             for resource in website.websitecontent_set.filter(
                 metadata__resourcetype=RESOURCE_TYPE_VIDEO
             ):
-                set_dict_field(resource.metadata, "video_files.video_captions_file", "")
+                set_dict_field(
+                    resource.metadata,
+                    "video_files.video_captions_resources",
+                    {"content": [], "website": website.name},
+                )
                 resource.save()
             self.stdout.write(f"Caption file data cleared for {website.name}")
