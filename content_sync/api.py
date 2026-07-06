@@ -3,6 +3,7 @@
 import logging
 from datetime import datetime
 from time import sleep
+from typing import TYPE_CHECKING
 
 import pytz
 from django.conf import settings
@@ -10,14 +11,16 @@ from django.utils.module_loading import import_string
 from mitol.common.utils import now_in_utc
 
 from content_sync import tasks
-from content_sync.backends.base import BaseSyncBackend
 from content_sync.backends.github import GithubBackend
 from content_sync.constants import VERSION_DRAFT
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
-from content_sync.pipelines.base import BasePipeline
 from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
+
+if TYPE_CHECKING:
+    from content_sync.backends.base import BaseSyncBackend
+    from content_sync.pipelines.base import BasePipeline
 
 log = logging.getLogger()
 

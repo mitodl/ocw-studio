@@ -297,7 +297,7 @@ class ShortcodeTag:
     """
 
     name: str
-    params: "list[ShortcodeParam]"
+    params: list[ShortcodeParam]
     percent_delimiters: bool = False
     closer: bool = False
 

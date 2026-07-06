@@ -3,12 +3,12 @@ name = "ocw-studio"
 version = "0.188.0"
 description = "OCW Studio manages deployments for OCW courses"
 authors = [{ name = "MITODL" }]
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.14,<3.15"
 readme = "README.md"
 license = "BSD-3"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "beautifulsoup4>=4.12.2,<5",
@@ -91,7 +91,7 @@ requires = ["uv_build>=0.11.2,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 88
 
 [tool.ruff.lint]
@@ -214,6 +214,9 @@ filterwarnings = [
     # ol-concoursepy: uses the pydantic v1 `update_forward_refs` API which is
     # deprecated in pydantic v2; upstream fix needed in ol-concoursepy
     "ignore:The `update_forward_refs` method is deprecated",
+    # sentry_sdk calls asyncio.iscoroutinefunction() which is deprecated in
+    # Python 3.14; upstream fix needed in sentry-sdk
+    "ignore:'asyncio.iscoroutinefunction' is deprecated:DeprecationWarning:sentry_sdk",
 ]
 env = [
     "CELERY_TASK_ALWAYS_EAGER=True",

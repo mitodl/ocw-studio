@@ -1,5 +1,7 @@
 """Common utilities"""
 
+from typing import TYPE_CHECKING
+
 import requests
 
 from gdrive_sync.constants import (
@@ -10,13 +12,15 @@ from gdrive_sync.constants import (
     DRIVE_FILE_MODIFIED_TIME,
     DRIVE_FILE_SIZE,
 )
-from gdrive_sync.models import DriveFile
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from gdrive_sync.models import DriveFile
+    from websites.models import WebsiteContent
 
 
 def fetch_content_file_size(
     content: WebsiteContent,
-    bucket: "s3.Bucket",  # noqa: F821
+    bucket: s3.Bucket,  # noqa: F821
 ) -> int | None:
     """Return the size (in bytes) of the file associated with `content`."""
     size = None
@@ -44,7 +48,7 @@ def fetch_content_file_size(
 
 def fetch_drive_file_size(
     drive_file: DriveFile,
-    bucket: "s3.Bucket",  # noqa: F821
+    bucket: s3.Bucket,  # noqa: F821
 ) -> int | None:
     """Return the size (in bytes) of the file associated with `drive_file.s3_key`."""
     size = None

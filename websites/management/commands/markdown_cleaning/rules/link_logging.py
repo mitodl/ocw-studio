@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
@@ -8,7 +9,9 @@ from websites.management.commands.markdown_cleaning.link_parser import (
     LinkParseResult,
 )
 from websites.management.commands.markdown_cleaning.utils import ContentLookup
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from websites.models import WebsiteContent
 
 
 class LinkLoggingRule(PyparsingRule):

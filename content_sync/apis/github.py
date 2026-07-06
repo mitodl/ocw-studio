@@ -2,8 +2,8 @@
 
 import logging
 from base64 import b64decode
-from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import requests
@@ -21,10 +21,7 @@ from github import (
     GithubIntegration,
     InputGitTreeElement,
 )
-from github.Branch import Branch
-from github.Commit import Commit
 from github.InputGitAuthor import InputGitAuthor
-from github.Repository import Repository
 from safedelete.models import HARD_DELETE
 from yamale import YamaleError
 
@@ -44,6 +41,13 @@ from websites.models import (
     WebsiteStarter,
 )
 from websites.site_config_api import SiteConfig
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator
+
+    from github.Branch import Branch
+    from github.Commit import Commit
+    from github.Repository import Repository
 
 log = logging.getLogger(__name__)
 

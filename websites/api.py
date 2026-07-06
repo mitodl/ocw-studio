@@ -3,11 +3,10 @@
 import logging
 import os
 import re
-from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from django.conf import settings
-from django.core.files.uploadedfile import UploadedFile
 from django.db.models import CharField, Q, QuerySet
 from django.db.models.functions import Cast, Length
 from magic import Magic
@@ -41,6 +40,11 @@ from websites.utils import (
     resolve_referenced_content_ids,
     set_dict_field,
 )
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from django.core.files.uploadedfile import UploadedFile
 
 log = logging.getLogger(__name__)
 

@@ -4,9 +4,8 @@ import io
 import json
 import logging
 import os
-from collections.abc import Iterable
-from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from boto3.s3.transfer import TransferConfig
 from django.conf import settings
@@ -58,6 +57,10 @@ from websites.constants import (
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from datetime import datetime
 
 log = logging.getLogger(__name__)
 

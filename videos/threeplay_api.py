@@ -2,6 +2,7 @@
 
 import logging
 from io import BytesIO
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 
 import requests
@@ -9,7 +10,9 @@ from django.conf import settings
 from django.core.files import File
 
 from videos.constants import DESTINATION_YOUTUBE
-from videos.models import Video
+
+if TYPE_CHECKING:
+    from videos.models import Video
 
 log = logging.getLogger(__name__)
 

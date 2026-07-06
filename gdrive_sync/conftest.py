@@ -1,12 +1,15 @@
 """Common functions and variables for gdrive_sync tests"""
 
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import boto3
 
 from websites.constants import CONTENT_TYPE_RESOURCE, WebsiteStarterStatus
 from websites.models import Website, WebsiteStarter
 from websites.site_config_api import ConfigItem, SiteConfig
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 LIST_VIDEO_RESPONSES = [
     {
@@ -149,7 +152,7 @@ def generate_related_content_data(
     return None
 
 
-def setup_s3_test_file_bucket(settings, file_key: str) -> "s3.Bucket":  # noqa: F821
+def setup_s3_test_file_bucket(settings, file_key: str) -> s3.Bucket:  # noqa: F821
     """
     Setup a mock s3 service with a fake file and a bucket.
 

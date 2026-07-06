@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from functools import partial
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -22,8 +23,10 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
 )
 from websites.management.commands.markdown_cleaning.utils import StarterSiteConfigLookup
 from websites.models import Website, WebsiteContent
-from websites.site_config_api import SiteConfig
 from websites.utils import get_valid_base_filename
+
+if TYPE_CHECKING:
+    from websites.site_config_api import SiteConfig
 
 UNESCAPE_MAP = {r"\`": "`", r"\[": "[", r"\]": "]"}
 

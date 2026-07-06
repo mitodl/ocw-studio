@@ -1,6 +1,7 @@
 """External Resources API"""
 
 import logging
+from typing import TYPE_CHECKING
 
 import requests
 
@@ -14,7 +15,9 @@ from external_resources.constants import (
     WAYBACK_HEADERS,
 )
 from external_resources.exceptions import CheckFailedError
-from websites.models import WebsiteContent
+
+if TYPE_CHECKING:
+    from websites.models import WebsiteContent
 
 log = logging.getLogger()
 

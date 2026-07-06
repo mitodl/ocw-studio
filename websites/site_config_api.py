@@ -1,7 +1,7 @@
 """API functionality for working with site configs"""
 
-from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from django.utils.functional import cached_property
 
@@ -12,6 +12,9 @@ from websites.constants import (
     WEBSITE_CONFIG_ROOT_URL_PATH_KEY,
     WEBSITE_CONFIG_SITE_URL_FORMAT_KEY,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @dataclass
@@ -55,7 +58,7 @@ class ConfigItem:
     def iter_fields(
         self,
         only_cross_site: bool = False,  # noqa: FBT001, FBT002
-    ) -> Iterator["ConfigField"]:
+    ) -> Iterator[ConfigField]:
         """
         Yields ConfigField for each field.
 

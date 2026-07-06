@@ -3,8 +3,8 @@
 import json
 import logging
 import re
-from collections.abc import Iterator
 from hashlib import sha256
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
@@ -49,6 +49,9 @@ from websites.utils import (
     permissions_group_name_for_role,
     set_dict_field,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 log = logging.getLogger(__name__)
 

@@ -10,6 +10,7 @@ import json
 import logging
 import os
 from html import unescape
+from typing import TYPE_CHECKING
 from urllib.parse import quote, urljoin, urlparse
 
 import requests
@@ -72,7 +73,9 @@ from content_sync.utils import (
 )
 from main.utils import is_dev
 from websites.constants import STARTER_SOURCE_GITHUB
-from websites.models import Website
+
+if TYPE_CHECKING:
+    from websites.models import Website
 
 log = logging.getLogger(__name__)
 

@@ -1,13 +1,15 @@
 """Tests for base backend implementation"""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.factories import ContentSyncStateFactory
-from content_sync.models import ContentSyncState
 from websites.factories import WebsiteFactory
+
+if TYPE_CHECKING:
+    from content_sync.models import ContentSyncState
 
 
 class _ImplementedBackend(BaseSyncBackend):

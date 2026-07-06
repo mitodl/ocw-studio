@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -31,7 +32,9 @@ from main.s3_utils import get_boto3_resource
 from main.utils import is_dev
 from websites.constants import CONTENT_TYPE_METADATA, WEBSITE_CONTENT_FILETYPE
 from websites.models import Website, WebsiteContent
-from websites.site_config_api import SiteConfig
+
+if TYPE_CHECKING:
+    from websites.site_config_api import SiteConfig
 
 log = logging.getLogger()
 
