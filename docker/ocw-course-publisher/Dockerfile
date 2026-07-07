@@ -13,6 +13,7 @@ ENV GO_VERSION="1.23.0"
 ENV GO_FILE_NAME="go${GO_VERSION}.linux-amd64.tar.gz"
 ENV GO_URL="https://golang.org/dl/${GO_FILE_NAME}"
 ENV HUGO_URL="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${HUGO_NAME}.deb"
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y curl awscli jq git wget zip unzip && \
@@ -23,7 +24,6 @@ RUN apt-get update && \
     tar -xvf ${GO_FILE_NAME} && \
     mv go /usr/local && \
     rm "${GO_FILE_NAME}" && \
-    apt-get remove -y "${BUILD_DEPS}" && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
