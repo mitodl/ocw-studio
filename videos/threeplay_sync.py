@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Callable
+from io import BytesIO
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -6,7 +8,7 @@ from django.conf import settings
 from django.core.files import File
 
 from main.s3_utils import get_boto3_resource
-from main.utils import get_dirpath_and_filename, get_file_extension
+from main.utils import get_base_filename, get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import generate_s3_path, get_content_dirpath
@@ -45,34 +47,29 @@ extension_map = {
 def _append_resource_to_video_files(
     video: WebsiteContent,
     resource_field: str,
-    file_field: str,
     text_id: str,
-    filepath: str,
 ) -> None:
     """
-    Append a caption/transcript resource entry to video_files metadata.
+    Append a caption/transcript resource id to the video's ``_resources``
+    relation field in video_files metadata.
 
     Preserves any existing entries (e.g. other-language variants already
-    linked from GDrive) instead of overwriting them.
+    linked from GDrive) instead of overwriting them.  The legacy ``_file``
+    fields in stored metadata are left untouched.
     """
-    vf = video.metadata["video_files"]
+    if not isinstance(video.metadata, dict):
+        video.metadata = {}
+    vf = video.metadata.setdefault("video_files", {})
     existing_resources = vf.get(resource_field)
     if isinstance(existing_resources, dict) and existing_resources.get("content"):
         if text_id not in existing_resources["content"]:
             existing_resources["content"] = [*existing_resources["content"], text_id]
     else:
         vf[resource_field] = {"content": [text_id], "website": video.website.name}
-    existing_files = vf.get(file_field)
-    new_file_entry = {"file": filepath, "language": "en"}
-    if isinstance(existing_files, list):
-        if not any(e.get("file") == filepath for e in existing_files):
-            vf[file_field] = [*existing_files, new_file_entry]
-    else:
-        vf[file_field] = [new_file_entry]
 
 
 def _threeplay_resource_already_linked(
-    video: WebsiteContent, resource_field: str, filename: str
+    video: WebsiteContent, resource_field: str, filename_prefix: str
 ) -> bool:
     """Return True if the 3Play-generated resource is already in the content list."""
     existing_content = (
@@ -84,7 +81,7 @@ def _threeplay_resource_already_linked(
         and WebsiteContent.objects.filter(
             website=video.website,
             text_id__in=existing_content,
-            filename=filename,
+            filename__startswith=filename_prefix,
         ).exists()
     )
 
@@ -114,14 +111,8 @@ def _attach_transcript_if_missing(
     if pdf_response:
         file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        filepath, text_id = _create_new_content(pdf_file, video, file_size=file_size)
-        _append_resource_to_video_files(
-            video,
-            "video_transcript_resources",
-            "video_transcript_file",
-            text_id,
-            filepath,
-        )
+        _, text_id = _create_new_content(pdf_file, video, file_size=file_size)
+        _append_resource_to_video_files(video, "video_transcript_resources", text_id)
         if summary:
             summary["transcripts"]["updated"] += 1
         write_output(
@@ -160,14 +151,8 @@ def _attach_captions_if_missing(
     if webvtt_response:
         file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        filepath, text_id = _create_new_content(vtt_file, video, file_size)
-        _append_resource_to_video_files(
-            video,
-            "video_captions_resources",
-            "video_captions_file",
-            text_id,
-            filepath,
-        )
+        _, text_id = _create_new_content(vtt_file, video, file_size)
+        _append_resource_to_video_files(video, "video_captions_resources", text_id)
         if summary:
             summary["captions"]["updated"] += 1
         write_output(
@@ -180,6 +165,42 @@ def _attach_captions_if_missing(
         summary["captions"]["missing_details"].append(
             (youtube_id, video.website.short_id)
         )
+
+
+def link_threeplay_files_as_resources(video, video_resource: WebsiteContent) -> bool:
+    """
+    Create caption/transcript WebsiteContent resources from a Video's
+    already-downloaded 3Play files (``webvtt_transcript_file`` /
+    ``pdf_transcript_file``) and link them on the video resource's
+    ``_resources`` relation fields.
+
+    The created resources follow the ``{base}_captions`` / ``{base}_transcript``
+    filename convention (no language suffix — 3Play transcripts are English), so
+    subsequent auto-link passes and ``Video.caption_transcript_resources()``
+    lookups find them.  The legacy ``_file`` fields in stored metadata are left
+    untouched.
+
+    Returns True if the video resource's metadata was modified.
+    """
+    base = get_base_filename(video_resource.filename or "")
+    if not base:
+        return False
+    changed = False
+    for field_file, resource_field, extension in (
+        (video.webvtt_transcript_file, "video_captions_resources", "vtt"),
+        (video.pdf_transcript_file, "video_transcript_resources", "pdf"),
+    ):
+        if not (field_file and field_file.name):
+            continue
+        with field_file.open("rb") as file_handle:
+            content_bytes = file_handle.read()
+        file_obj = File(BytesIO(content_bytes), name=f"{base}.{extension}")
+        _, text_id = _create_new_content(
+            file_obj, video_resource, file_size=len(content_bytes)
+        )
+        _append_resource_to_video_files(video_resource, resource_field, text_id)
+        changed = True
+    return changed
 
 
 def sync_video_captions_and_transcripts(
@@ -274,7 +295,13 @@ def _create_new_content(
         new_text_id, new_s3_loc, file_content, video
     )
     collection_type = "resource"
+    # Append the extension suffix (e.g. _vtt/_pdf) so the created resource
+    # matches the {base}_captions*_vtt / {base}_transcript*_pdf filename
+    # convention used by gdrive ingestion and the auto-link lookups.
     filename = get_dirpath_and_filename(new_s3_loc)[1]
+    extension = get_file_extension(new_s3_loc)
+    if extension:
+        filename = f"{filename}_{extension}"
     dirpath = get_content_dirpath("ocw-course-v2", collection_type)
 
     obj, _ = WebsiteContent.objects.get_or_create(

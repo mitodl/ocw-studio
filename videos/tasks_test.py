@@ -47,7 +47,6 @@ from videos.tasks import (
     delete_s3_objects,
     mail_transcripts_complete_notification,
     start_transcript_job,
-    update_transcript_and_captions,
     update_transcripts_for_updated_videos,
     update_transcripts_for_video,
     update_transcripts_for_website,
@@ -419,27 +418,34 @@ def test_start_transcript_job(
     start_transcript_job.apply([video.id])
 
     video_content.refresh_from_db()
+    # Legacy _file fields in stored metadata are never written
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) is None
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) is None
     if caption_exists:
-        captions_result = get_dict_field(
-            video_content.metadata, settings.YT_FIELD_CAPTIONS
+        captions_relation = get_dict_field(
+            video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES
         )
-        assert isinstance(captions_result, list)
-        assert len(captions_result) == 1
-        assert captions_result[0]["language"] == "en"
+        assert isinstance(captions_relation, dict)
+        assert len(captions_relation["content"]) == 1
+        assert captions_relation["website"] == video.website.name
     else:
         assert (
-            get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) is None
+            get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
+            is None
         )
     if transcript_exists:
-        transcript_result = get_dict_field(
-            video_content.metadata, settings.YT_FIELD_TRANSCRIPT
+        transcript_relation = get_dict_field(
+            video_content.metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES
         )
-        assert isinstance(transcript_result, list)
-        assert len(transcript_result) == 1
-        assert transcript_result[0]["language"] == "en"
+        assert isinstance(transcript_relation, dict)
+        assert len(transcript_relation["content"]) == 1
+        assert transcript_relation["website"] == video.website.name
     else:
         assert (
-            get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) is None
+            get_dict_field(
+                video_content.metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES
+            )
+            is None
         )
 
     if transcript_exists or caption_exists:
@@ -766,18 +772,34 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
         return_value=update_transcript_return_value,
     )
 
+    def fake_link(video_arg, video_resource_arg):
+        set_dict_field(
+            video_resource_arg.metadata,
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            {"content": ["captions-id"], "website": video.website.name},
+        )
+        return True
+
+    link_mock = mocker.patch(
+        "videos.tasks.link_threeplay_files_as_resources", side_effect=fake_link
+    )
+    sync_refs_mock = mocker.patch("videos.tasks.sync_website_content_references")
+
     update_transcripts_for_video(video.id)
     update_transcript_mock.assert_called_with(video)
 
     resource.refresh_from_db()
 
+    # Legacy _file fields in stored metadata are never written
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
+
     if update_transcript_return_value and is_ocw:
-        assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == [
-            {"file": f"/{video.website.url_path}/webvtt_transcript", "language": "en"}
-        ]
-        assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == [
-            {"file": f"/{video.website.url_path}/pdf_transcript", "language": "en"}
-        ]
+        link_mock.assert_any_call(video, resource)
+        sync_refs_mock.assert_called()
+        assert get_dict_field(
+            resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES
+        ) == {"content": ["captions-id"], "website": video.website.name}
 
         if initial_status == VideoStatus.SUBMITTED_FOR_TRANSCRIPTION and (
             not other_incomplete_video
@@ -787,8 +809,10 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
             transcripts_notification_mock.assert_not_called()
 
     else:
-        assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
-        assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
+        assert (
+            get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
+            is None
+        )
 
 
 def test_update_transcripts_for_updated_videos(mocker):
@@ -864,10 +888,11 @@ def test_update_transcripts_for_video_no_3play(
     )
     resource.save()
 
+    captions_list, transcripts_list = video.caption_transcript_resources()
     if caption_exists:
-        assert len(video.caption_transcript_resources()[0]) > 0
+        assert len(captions_list) > 0
     if transcript_exists:
-        assert len(video.caption_transcript_resources()[1]) > 0
+        assert len(transcripts_list) > 0
 
     mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
 
@@ -876,23 +901,29 @@ def test_update_transcripts_for_video_no_3play(
 
     mock_3play.assert_not_called()
 
+    # The pre-existing scalar _file values are left completely untouched
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        [
-            {
-                "file": f"/{video.website.url_path}/{base_resource_filename}_captions.vtt",
-                "language": "en",
-            }
-        ]
+        f"{base_path}_captions.vtt" if caption_exists else None
+    )
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
+        f"{base_path}_transcript.pdf" if transcript_exists else None
+    )
+    # The _resources relation fields are written from the found resources
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES) == (
+        {
+            "content": [str(r.text_id) for r in captions_list],
+            "website": video.website.name,
+        }
         if caption_exists
         else None
     )
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
-        [
-            {
-                "file": f"/{video.website.url_path}/{base_resource_filename}_transcript.pdf",
-                "language": "en",
-            }
-        ]
+    assert get_dict_field(
+        resource.metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES
+    ) == (
+        {
+            "content": [str(r.text_id) for r in transcripts_list],
+            "website": video.website.name,
+        }
         if transcript_exists
         else None
     )
@@ -900,7 +931,7 @@ def test_update_transcripts_for_video_no_3play(
 
 @pytest.mark.django_db
 def test_update_transcripts_for_video_multi_language_with_locale(mocker):
-    """GDrive files with locale suffix produce {file, language, locale} entries."""
+    """All language variants matching the dash convention are linked via _resources."""
     mocker.patch("videos.tasks.is_ocw_site", return_value=True)
 
     videofile = VideoFileFactory.create(
@@ -914,19 +945,18 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     # English (US locale) captions
     captions_en_us = WebsiteContentFactory.create(
         website=video.website,
-        filename=f"{base_resource_filename}_captions_en_us_vtt",
-        file=f"{base_path}_captions_en_us.vtt",
+        filename=f"{base_resource_filename}_captions-en-us_vtt",
+        file=f"{base_path}_captions-en-US.vtt",
     )
-    # French (no locale) captions
+    # French (CA locale) captions
     captions_fr = WebsiteContentFactory.create(
         website=video.website,
-        filename=f"{base_resource_filename}_captions_fr_vtt",
-        file=f"{base_path}_captions_fr.vtt",
+        filename=f"{base_resource_filename}_captions-fr-ca_vtt",
+        file=f"{base_path}_captions-fr-CA.vtt",
     )
 
     set_dict_field(resource.metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_dict_field(resource.metadata, settings.YT_FIELD_ID, "expected_id")
-    set_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS, None)
     resource.save()
 
     mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
@@ -934,20 +964,15 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     update_transcripts_for_video(video.id)
     resource.refresh_from_db()
 
-    captions_result = get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS)
-    assert isinstance(captions_result, list)
-    assert len(captions_result) == 2
-
-    by_file = {entry["file"]: entry for entry in captions_result}
-    en_us_key = f"/{captions_en_us.file.name.lstrip('/')}"
-    fr_key = f"/{captions_fr.file.name.lstrip('/')}"
-    en_us_key = en_us_key.replace(video.website.s3_path, video.website.url_path)
-    fr_key = fr_key.replace(video.website.s3_path, video.website.url_path)
-
-    assert by_file[en_us_key]["language"] == "en"
-    assert by_file[en_us_key]["locale"] == "US"
-    assert by_file[fr_key]["language"] == "fr"
-    assert "locale" not in by_file[fr_key]
+    relation = get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
+    assert isinstance(relation, dict)
+    assert set(relation["content"]) == {
+        str(captions_en_us.text_id),
+        str(captions_fr.text_id),
+    }
+    assert relation["website"] == video.website.name
+    # Legacy _file fields in stored metadata are never written
+    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
 
 
 def test_attempt_to_update_missing_transcripts(mocker):
@@ -1037,29 +1062,6 @@ def test_copy_gdrive_file(mocker):
         fields="id, parents",
         supportsAllDrives=True,
     )
-
-
-def test_update_transcript_and_captions(mocker):
-    """update_transcript_and_captions writes file-data arrays for the build pipeline."""
-    test_resource = WebsiteContentFactory.create()
-    test_resource.metadata = {"video_files": {}}
-    new_transcript_file = "/path/to/new_transcript_file"
-    new_captions_file = "/path/to/new_captions_file"
-    mocker.spy(test_resource, "save")
-    sync_refs_mock = mocker.patch("videos.tasks.sync_website_content_references")
-
-    update_transcript_and_captions(
-        test_resource, new_transcript_file, new_captions_file
-    )
-
-    assert test_resource.metadata["video_files"]["video_transcript_file"] == [
-        {"file": new_transcript_file, "language": "en"}
-    ]
-    assert test_resource.metadata["video_files"]["video_captions_file"] == [
-        {"file": new_captions_file, "language": "en"}
-    ]
-    test_resource.save.assert_called_once()
-    sync_refs_mock.assert_called_once_with(test_resource)
 
 
 @pytest.mark.django_db

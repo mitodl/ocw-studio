@@ -273,12 +273,15 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
-# Regex that matches ``_captions_{lang}_vtt``, ``_transcript_{lang}_pdf``,
-# or ``_captions_{lang}_{locale}_vtt`` at the end of a slugified filename.
-# GDrive files follow the pattern ``<title>_<lang>_<locale>.<ext>`` where
-# the locale is an ISO 3166-1 alpha-2 region code (e.g. ``us``, ``gb``).
+# Regex that matches ``_captions-{lang}-{locale}_vtt`` /
+# ``_transcript-{lang}-{locale}_pdf`` at the end of a slugified filename.
+# GDrive caption/transcript files follow the pattern
+# ``<base>_captions-<lang>-<locale>.<ext>`` (e.g. ``lecture1_captions-en-US.vtt``)
+# where ``<lang>`` is an ISO 639-1 code and ``<locale>`` is an ISO 3166-1
+# alpha-2 region code. Slugification lowercases the name and turns the
+# extension into an ``_<ext>`` suffix.
 _LANG_LOCALE_RE = re.compile(
-    r"(?:_captions|_transcript)_([a-z]{2,3})_(?:([a-z]{2,3})_)?(?:vtt|webvtt|pdf)$"
+    r"(?:_captions|_transcript)-([a-z]{2,3})-([a-z]{2,3})_(?:vtt|webvtt|srt|pdf)$"
 )
 
 
@@ -287,19 +290,17 @@ def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
     filename.
 
     The filename is expected to be the slugified ``WebsiteContent.filename``.  GDrive
-    files follow the pattern ``<title>_captions_<lang>_<locale>_vtt`` where ``<lang>``
-    is an ISO 639-1 code (e.g. ``en``, ``fr``) and ``<locale>`` is an ISO 3166-1
-    alpha-2 region code (e.g. ``us``, ``gb``).  ``locale`` is returned uppercase
-    (e.g. ``"US"``) or ``None`` when absent.
+    files follow the pattern ``<base>_captions-<lang>-<locale>.<ext>`` (e.g.
+    ``lecture1_captions-en-US.vtt``) where ``<lang>`` is an ISO 639-1 code and
+    ``<locale>`` is an ISO 3166-1 alpha-2 region code.  ``locale`` is returned
+    uppercase (e.g. ``"US"``).
 
     Legacy single-language filenames without a language suffix
     (e.g. ``lecture1_captions_vtt``) return ``("en", None)``.
     """
     match = _LANG_LOCALE_RE.search(filename)
     if match:
-        lang = match.group(1)
-        locale = match.group(2).upper() if match.group(2) else None
-        return lang, locale
+        return match.group(1), match.group(2).upper()
     return "en", None
 
 

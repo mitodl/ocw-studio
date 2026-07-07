@@ -585,8 +585,8 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
     )
     captions_es = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_captions_es_vtt",
-        file="sites/mysite/lecture1_captions_es.vtt",
+        filename="lecture1_captions-es-mx_vtt",
+        file="sites/mysite/lecture1_captions-es-MX.vtt",
         type="resource",
     )
 
@@ -616,8 +616,9 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
         "file": "/sites/mysite-fall-2008/lecture1_captions.vtt",
         "language": "en",
     } in resolved
-    # and "es" for the _es suffix — language detection added in this branch
+    # and "es"/"MX" for the -es-mx suffix — dash lang-locale convention
     assert {
-        "file": "/sites/mysite-fall-2008/lecture1_captions_es.vtt",
+        "file": "/sites/mysite-fall-2008/lecture1_captions-es-MX.vtt",
         "language": "es",
+        "locale": "MX",
     } in resolved

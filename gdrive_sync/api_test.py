@@ -1045,8 +1045,8 @@ def test_link_resource_to_video_appends_second_language():
     )
     caption_fr = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        filename="lecture1_captions-fr-ca_vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr-CA.vtt",
     )
 
     # Link English first
@@ -1063,12 +1063,8 @@ def test_link_resource_to_video_appends_second_language():
     assert str(caption_fr.text_id) in vf["video_captions_resources"]["content"]
     assert len(vf["video_captions_resources"]["content"]) == 2
 
-    # _file list must also have both entries with correct languages
-    file_entries = vf["video_captions_file"]
-    assert len(file_entries) == 2
-    languages = {e["language"] for e in file_entries}
-    assert "en" in languages
-    assert "fr" in languages
+    # Legacy _file fields in stored metadata are never written by gdrive linking
+    assert "video_captions_file" not in vf
 
 
 @pytest.mark.django_db

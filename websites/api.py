@@ -21,7 +21,6 @@ from videos.constants import (
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
 )
-from videos.utils import parse_caption_language_locale
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -258,15 +257,17 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
             sync_website_content_references(video)
 
 
-def _merge_caption_resource(  # noqa: PLR0913
+def _merge_caption_resource(
     video_files: dict,
     website: "Website",
     resource_field: str,
-    data_field: str,
     filename_prefix: str,
     filename_suffix: str,
 ) -> bool:
     """Find caption/transcript resources by prefix and merge into video_files.
+
+    Only the ``_resources`` relation field is written; the legacy ``_file``
+    fields in stored metadata are left untouched.
 
     Returns True if video_files was modified.
     """
@@ -294,20 +295,6 @@ def _merge_caption_resource(  # noqa: PLR0913
         "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
         "website": website.name,
     }
-
-    existing_files: list = []
-    existing_files_val = video_files.get(data_field)
-    if isinstance(existing_files_val, list):
-        existing_files = list(existing_files_val)
-    for r in new_resources:
-        if r.file and r.file.name:
-            lang, locale = parse_caption_language_locale(r.filename or "")
-            entry: dict = {"file": f"/{r.file.name.lstrip('/')}", "language": lang}
-            if locale:
-                entry["locale"] = locale
-            existing_files.append(entry)
-    if existing_files:
-        video_files[data_field] = existing_files
     return True
 
 
@@ -315,10 +302,12 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     """
     For a Video resource, auto-populate ``video_captions_resources`` and
     ``video_transcript_resources`` from existing WebsiteContent records in the
-    same website that match the ``{base}_captions_*_vtt`` /
-    ``{base}_transcript_*_pdf`` filename prefix convention.  Finds ALL language
+    same website that match the ``{base}_captions-<lang>-<locale>_vtt`` /
+    ``{base}_transcript-<lang>-<locale>_pdf`` filename convention (or the
+    legacy no-suffix form ``{base}_captions_vtt``).  Finds ALL language
     variants and merges them into the multi-select content list without
-    overwriting existing non-empty entries.
+    overwriting existing non-empty entries.  Only ``_resources`` relation
+    fields are written; legacy ``_file`` fields are left untouched.
     """
     if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
         return
@@ -333,20 +322,16 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
         video_files = {}
 
     results = [
-        _merge_caption_resource(
-            video_files, website, resource_field, data_field, prefix, suffix
-        )
-        for resource_field, data_field, prefix, suffix in [
+        _merge_caption_resource(video_files, website, resource_field, prefix, suffix)
+        for resource_field, prefix, suffix in [
             (
                 "video_captions_resources",
-                "video_captions_file",
-                f"{video_base}_captions_",
+                f"{video_base}_captions",
                 "_vtt",
             ),
             (
                 "video_transcript_resources",
-                "video_transcript_file",
-                f"{video_base}_transcript_",
+                f"{video_base}_transcript",
                 "_pdf",
             ),
         ]
@@ -415,11 +400,21 @@ def videos_missing_captions(website: Website) -> list[WebsiteContent]:
     query_resource_type_field = get_dict_query_field(
         "metadata", settings.FIELD_RESOURCETYPE
     )
-    query_caption_field = get_dict_query_field("metadata", settings.YT_FIELD_CAPTIONS)
+    # A video has captions when its _resources relation has non-empty content;
+    # the key may be entirely absent, JSON null, the site-config default "" or
+    # an emptied list.
+    query_caption_content_field = get_dict_query_field(
+        "metadata", f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content"
+    )
     return WebsiteContent.objects.filter(
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
-        & (Q(**{query_caption_field: None}) | Q(**{query_caption_field: ""}))
+        & (
+            Q(**{f"{query_caption_content_field}__isnull": True})
+            | Q(**{query_caption_content_field: None})
+            | Q(**{query_caption_content_field: ""})
+            | Q(**{query_caption_content_field: []})
+        )
     )
 
 

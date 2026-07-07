@@ -303,26 +303,58 @@ def test_videos_missing_captions(mocker, is_ocw):
     """videos_missing_captions should return WebsiteContent objects for videos with no captions"""
     mocker.patch("websites.api.is_ocw_site", return_value=is_ocw)
     website = WebsiteFactory.create()
+    # Videos WITH captions: non-empty _resources relation content
     WebsiteContentFactory.create_batch(
         3,
         website=website,
         metadata={
             "resourcetype": RESOURCE_TYPE_VIDEO,
-            "video_files": {"video_captions_file": "abc123"},
+            "video_files": {
+                "video_captions_resources": {
+                    "content": ["abc123"],
+                    "website": website.name,
+                }
+            },
         },
     )
-    videos_without_captions = []
-
-    for captions in [None, ""]:
-        videos_without_captions.append(  # noqa: PERF401
-            WebsiteContentFactory.create(
-                website=website,
-                metadata={
-                    "resourcetype": RESOURCE_TYPE_VIDEO,
-                    "video_files": {"video_captions_file": captions},
+    videos_without_captions = [
+        # Relation key entirely absent
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        ),
+        # Site-config default: empty-string content
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_files": {
+                    "video_captions_resources": {"content": "", "website": ""}
                 },
-            )
-        )
+            },
+        ),
+        # Emptied list (e.g. after unlinking a deleted resource)
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_files": {
+                    "video_captions_resources": {
+                        "content": [],
+                        "website": website.name,
+                    }
+                },
+            },
+        ),
+        # Legacy scalar _file value only — no _resources relation
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_files": {"video_captions_file": "abc123"},
+            },
+        ),
+    ]
     WebsiteContentFactory.create(
         website=website,
         metadata={
@@ -333,7 +365,7 @@ def test_videos_missing_captions(mocker, is_ocw):
 
     unassigned_content = videos_missing_captions(website)
     if is_ocw:
-        assert len(unassigned_content) == 2
+        assert len(unassigned_content) == len(videos_without_captions)
         for content in videos_without_captions:
             assert content in unassigned_content
     else:
@@ -777,16 +809,13 @@ def test_auto_link_video_links_existing_captions_and_transcript():
         "content": [str(captions.text_id)],
         "website": website.name,
     }
-    assert vf["video_captions_file"] == [
-        {"file": f"/courses/{website.name}/lecture01_captions.vtt", "language": "en"}
-    ]
     assert vf["video_transcript_resources"] == {
         "content": [str(transcript.text_id)],
         "website": website.name,
     }
-    assert vf["video_transcript_file"] == [
-        {"file": f"/courses/{website.name}/lecture01_transcript.pdf", "language": "en"}
-    ]
+    # Legacy _file fields in stored metadata are never written by auto-link
+    assert "video_captions_file" not in vf
+    assert "video_transcript_file" not in vf
 
 
 def test_auto_link_video_treats_empty_content_as_unset():
@@ -857,13 +886,13 @@ def test_auto_link_video_multi_language_captions():
     website = WebsiteFactory.create()
     captions_en = WebsiteContentFactory.create(
         website=website,
-        filename="lecture01_captions_en_vtt",
-        file=f"courses/{website.name}/lecture01_captions_en.vtt",
+        filename="lecture01_captions-en-us_vtt",
+        file=f"courses/{website.name}/lecture01_captions-en-US.vtt",
     )
     captions_fr = WebsiteContentFactory.create(
         website=website,
-        filename="lecture01_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture01_captions_fr.vtt",
+        filename="lecture01_captions-fr-ca_vtt",
+        file=f"courses/{website.name}/lecture01_captions-fr-CA.vtt",
     )
     video = WebsiteContentFactory.create(
         website=website,
@@ -877,8 +906,8 @@ def test_auto_link_video_multi_language_captions():
     assert str(captions_en.text_id) in content
     assert str(captions_fr.text_id) in content
     assert len(content) == 2
-    languages = {e["language"] for e in vf["video_captions_file"]}
-    assert languages == {"en", "fr"}
+    # Legacy _file fields in stored metadata are never written by auto-link
+    assert "video_captions_file" not in vf
 
 
 # ── unlink_deleted_resource_from_videos ──────────────────────────────────────

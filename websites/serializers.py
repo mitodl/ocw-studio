@@ -24,7 +24,6 @@ from gdrive_sync.tasks import create_gdrive_folders
 from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
-from videos.utils import resource_file_paths
 from websites import constants
 from websites.api import (
     detect_mime_type,
@@ -42,53 +41,12 @@ from websites.constants import (
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.permissions import is_global_admin, is_site_admin
 from websites.site_config_api import SiteConfig
-from websites.utils import (
-    get_dict_field,
-    permissions_group_name_for_role,
-    set_dict_field,
-)
+from websites.utils import permissions_group_name_for_role
 
 log = logging.getLogger(__name__)
 
 
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
-
-
-RELATION_URL_FIELDS = (
-    (settings.YT_FIELD_CAPTIONS_RESOURCES, settings.YT_FIELD_CAPTIONS),
-    (settings.YT_FIELD_TRANSCRIPT_RESOURCES, settings.YT_FIELD_TRANSCRIPT),
-)
-
-
-def sync_video_relation_urls(metadata: dict) -> None:
-    if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
-        return
-    for relation_field, target_field in RELATION_URL_FIELDS:
-        relation_value = get_dict_field(metadata, relation_field)
-        if not isinstance(relation_value, dict):
-            continue
-        content = relation_value.get("content")
-        # Normalize: content may be a scalar str (legacy) or a list (multi-select)
-        if isinstance(content, str):
-            content_ids = [content] if content else []
-        elif isinstance(content, list):
-            content_ids = [c for c in content if c]
-        else:
-            content_ids = []
-        website_name = relation_value.get("website")
-        resources = (
-            list(
-                WebsiteContent.objects.filter(
-                    website__name=website_name, text_id__in=content_ids
-                )
-                if website_name
-                else WebsiteContent.objects.filter(text_id__in=content_ids)
-            )
-            if content_ids
-            else []
-        )
-        file_entries = resource_file_paths(resources)
-        set_dict_field(metadata, target_field, file_entries or None)
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -617,7 +575,6 @@ class WebsiteContentDetailSerializer(
         existing_metadata = instance.metadata if instance.metadata else {}
         if "metadata" in validated_data:
             merged_metadata = {**existing_metadata, **validated_data["metadata"]}
-            sync_video_relation_urls(merged_metadata)
             validated_data["metadata"] = merged_metadata
         instance = super().update(
             instance, {"updated_by": self.user_from_request(), **validated_data}
@@ -759,9 +716,6 @@ class WebsiteContentCreateSerializer(
             validated_data["metadata"]["file_type"] = detect_mime_type(
                 validated_data["file"]
             )
-
-        if validated_data.get("metadata"):
-            sync_video_relation_urls(validated_data["metadata"])
 
         instance = super().create(
             {
