@@ -273,16 +273,16 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
-# Regex that matches "_captions-{lang}-{locale}" / "_transcript-{lang}-{locale}"
-# immediately before the extension, wherever it falls in the string (so it
-# matches whether the input is the raw uploaded file path, e.g.
-# "courses/site/lecture1_captions-en-US.vtt", or a slugified filename, e.g.
-# "lecture1_captions-en-us_vtt"). <lang> is an ISO 639-1 code, <locale> an
-# ISO 3166-1 alpha-2 region code. IGNORECASE handles mixed-case real
-# filenames; [._] handles both the dot (real file) and underscore
-# (slugified filename) extension delimiters.
+# Regex that matches "_captions-{lang}" / "_captions-{lang}-{locale}" (and the
+# _transcript equivalents) immediately before the extension, wherever it falls
+# in the string (so it matches whether the input is the raw uploaded file
+# path, e.g. "courses/site/lecture1_captions-en-US.vtt", or a slugified
+# filename, e.g. "lecture1_captions-en-us_vtt"). <lang> is an ISO 639-1 code,
+# <locale> an optional ISO 3166-1 alpha-2 region code. IGNORECASE handles
+# mixed-case real filenames; [._] handles both the dot (real file) and
+# underscore (slugified filename) extension delimiters.
 _LANG_LOCALE_RE = re.compile(
-    r"(?:_captions|_transcript)-([a-z]{2,3})-([a-z]{2,3})[._](?:vtt|webvtt|srt|pdf)$",
+    r"(?:_captions|_transcript)-([a-z]{2,3})(?:-([a-z]{2,3}))?[._](?:vtt|webvtt|srt|pdf)$",
     re.IGNORECASE,
 )
 
@@ -300,15 +300,17 @@ def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
     GDrive files follow the pattern ``<base>_captions-<lang>-<locale>.<ext>``
     (e.g. ``lecture1_captions-en-US.vtt``) where ``<lang>`` is an ISO 639-1
     code and ``<locale>`` is an ISO 3166-1 alpha-2 region code.  ``locale`` is
-    returned uppercase (e.g. ``"US"``).
+    returned uppercase (e.g. ``"US"``) when present.  A language-only suffix
+    with no locale (e.g. ``lecture1_captions-fr.vtt``) is also recognized and
+    returns ``("fr", None)``.
 
-    Legacy filenames without a language suffix, or with a language-only
-    suffix and no locale (e.g. ``lecture1_captions_vtt``,
-    ``lecture1_captions-fr.vtt``), return ``("en", None)``.
+    Legacy filenames with no language suffix at all (e.g.
+    ``lecture1_captions_vtt``) return ``("en", None)``.
     """
     match = _LANG_LOCALE_RE.search(filename)
     if match:
-        return match.group(1).lower(), match.group(2).upper()
+        locale = match.group(2)
+        return match.group(1).lower(), locale.upper() if locale else None
     return "en", None
 
 

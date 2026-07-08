@@ -287,13 +287,14 @@ def _merge_caption_resource(
     Returns True if video_files was modified.
     """
     existing = video_files.get(resource_field)
-    existing_ids: set[str] = set()
+    existing_ids: list[str] = []
     if isinstance(existing, dict):
         content = existing.get("content")
         if isinstance(content, list):
-            existing_ids = {c for c in content if c}
+            existing_ids = [c for c in content if c]
         elif isinstance(content, str) and content:
-            existing_ids = {content}
+            existing_ids = [content]
+    existing_ids_set = set(existing_ids)
 
     candidates = WebsiteContent.objects.filter(
         website=website, filename__startswith=filename_prefix
@@ -303,7 +304,9 @@ def _merge_caption_resource(
         for r in candidates
         if r.file and get_file_extension(r.file.name) in valid_extensions
     ]
-    new_resources = [r for r in related_resources if str(r.text_id) not in existing_ids]
+    new_resources = [
+        r for r in related_resources if str(r.text_id) not in existing_ids_set
+    ]
     if not new_resources:
         return False
 
@@ -362,7 +365,7 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
         if not isinstance(video_resource.metadata, dict):
             video_resource.metadata = {}
         video_resource.metadata["video_files"] = video_files
-        video_resource.save()
+        video_resource.save(update_fields=["metadata"])
 
 
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:

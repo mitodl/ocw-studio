@@ -189,8 +189,8 @@ def test_get_tags_with_course_whitespace_handling():
         ("lecture1_transcript-fr-gb_pdf", ("fr", "GB")),
         # Longer filename still parsed correctly
         ("my_long_course_lecture_03_captions-pt-br_vtt", ("pt", "BR")),
-        # Language without locale is not part of the pattern — treated as legacy
-        ("lecture1_captions-fr_vtt", ("en", None)),
+        # Language-only suffix, no locale — locale group is optional
+        ("lecture1_captions-fr_vtt", ("fr", None)),
         # No recognised suffix -> defaults to English, no locale
         ("some_random_file_pdf", ("en", None)),
         ("lecture1_vtt", ("en", None)),
