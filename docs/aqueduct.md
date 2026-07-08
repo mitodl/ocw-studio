@@ -1,7 +1,7 @@
 # Typed settings via django-aqueduct (opt-in)
 
 `ocw-studio` ships two **opt-in** settings modules built on top of
-[`django-aqueduct`](https://github.com/mitodl/django-aqueduct) 0.7.0 (codegen
+[`django-aqueduct`](https://github.com/mitodl/django-aqueduct) 0.9.x (codegen
 v2), a typed, Pydantic-based settings layer for Django. They exist alongside
 the project's normal settings and change nothing unless explicitly selected.
 
@@ -51,13 +51,24 @@ explicit env vars always win.
 
 ## Regenerating the scaffold
 
-Generation is driven by the `[tool.aqueduct]` table in `pyproject.toml`
-(modules, output path, parity model/legacy, `parity_ignore`), so the command
-is simply:
+Generation is driven by the `[tool.aqueduct]` table in `pyproject.toml`, which
+supplies the source `modules` to scan (`mitol.common.settings.base`,
+`mitol.common.settings.webpack`, `mitol.mail.settings.email`,
+`mitol.transcoding.settings.job`, `main.settings`) plus the output path, the
+parity model/legacy targets, and `parity_ignore`. Because the config provides
+the modules, no `--modules` flag is needed. The command runs under the default
+`DJANGO_SETTINGS_MODULE=main.settings` — `django_aqueduct` is in that module's
+`INSTALLED_APPS`, so the command is available without selecting an aqueduct
+shim:
 
 ```shell
 python manage.py generate_aqueduct_settings
 ```
+
+(Equivalently, the fully-explicit form is `python manage.py
+generate_aqueduct_settings --modules
+mitol.common.settings.base,mitol.common.settings.webpack,mitol.mail.settings.email,mitol.transcoding.settings.job,main.settings
+--output main/aqueduct_settings.py`.)
 
 Codegen v2 discovers settings by **static AST analysis** — it never imports
 the settings module — and _merges_ into the file's `# >>> aqueduct:generated:*`

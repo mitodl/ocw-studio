@@ -1538,7 +1538,7 @@ requires-dist = [
     { name = "dj-database-url", specifier = "==3.1.2" },
     { name = "django", specifier = "==5.2.15" },
     { name = "django-anymail", extras = ["mailgun"], specifier = "==14.0" },
-    { name = "django-aqueduct", extras = ["vault", "mitol", "derivations"], specifier = ">=0.9.0" },
+    { name = "django-aqueduct", extras = ["vault", "mitol", "derivations"], specifier = ">=0.9.0,<0.10" },
     { name = "django-bulk-update-or-create", specifier = "==0.3.0" },
     { name = "django-guardian", specifier = "==3.3.1" },
     { name = "django-health-check", extras = ["celery", "redis"], specifier = ">=4.0.0" },
