@@ -42,12 +42,14 @@ def test_video_caption_transcript_resources(
     if has_transcript:
         WebsiteContentFactory.create(
             filename=preexisting_captions_filenames["website_content"]["transcript"],
+            file=f"courses/{video.website.name}/file_transcript.pdf",
             website=video.website,
         )
 
     if has_caption:
         WebsiteContentFactory.create(
             filename=preexisting_captions_filenames["website_content"]["captions"],
+            file=f"courses/{video.website.name}/file_captions.vtt",
             website=video.website,
         )
 
@@ -95,18 +97,99 @@ def test_video_caption_transcript_resources_multi_language(
     base = "_".join(video_filename.rsplit("_", 1)[:-1])
     WebsiteContentFactory.create(
         filename=f"{base}_captions_en_vtt",
+        file=f"courses/{video.website.name}/{base}_captions_en.vtt",
         website=video.website,
     )
     WebsiteContentFactory.create(
         filename=f"{base}_captions_es_vtt",
+        file=f"courses/{video.website.name}/{base}_captions_es.vtt",
         website=video.website,
     )
     WebsiteContentFactory.create(
         filename=f"{base}_transcript_fr_pdf",
+        file=f"courses/{video.website.name}/{base}_transcript_fr.pdf",
         website=video.website,
     )
 
     captions, transcripts = video.caption_transcript_resources()
 
     assert len(captions) == 2
+    assert len(transcripts) == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("filename_suffix", ["_vtt", "_webvtt", "_srt"])
+def test_video_caption_transcript_resources_matches_all_extensions(
+    filename_suffix, preexisting_captions_filenames
+):
+    """caption_transcript_resources finds captions regardless of extension.
+
+    A caption file may slugify to _vtt, _webvtt, or _srt depending on its
+    source extension (3Play produces .webvtt). All three must be found.
+    """
+    youtube_id = "yt-ext"
+
+    video = VideoFactory.create()
+    VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, video=video, destination_id=youtube_id
+    )
+    video_filename = preexisting_captions_filenames["website_content"]["video"]
+    WebsiteContentFactory.create(
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        filename=video_filename,
+        website=video.website,
+    )
+    base = "_".join(video_filename.rsplit("_", 1)[:-1])
+    extension = filename_suffix.lstrip("_")
+    WebsiteContentFactory.create(
+        filename=f"{base}_captions-en-us{filename_suffix}",
+        file=f"courses/{video.website.name}/{base}_captions-en-US.{extension}",
+        website=video.website,
+    )
+
+    captions, _ = video.caption_transcript_resources()
+
+    assert len(captions) == 1
+
+
+@pytest.mark.django_db
+def test_video_caption_transcript_resources_survives_filename_uniqueness_suffix(
+    preexisting_captions_filenames,
+):
+    """caption_transcript_resources still matches when Django's filename-uniqueness
+    logic has appended a bare digit to the colliding filename (e.g. "..._vtt2").
+
+    This is the actual production bug: matching must rely on the resource's real
+    uploaded file extension, not the filename field, since find_available_name
+    can mutate the filename's tail with no separator.
+    """
+    youtube_id = "yt-collision"
+
+    video = VideoFactory.create()
+    VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, video=video, destination_id=youtube_id
+    )
+    video_filename = preexisting_captions_filenames["website_content"]["video"]
+    WebsiteContentFactory.create(
+        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        filename=video_filename,
+        website=video.website,
+    )
+    base = "_".join(video_filename.rsplit("_", 1)[:-1])
+    # Simulates a second same-named upload: find_available_name would produce
+    # this exact filename by appending "2" directly onto "..._vtt" / "..._pdf".
+    WebsiteContentFactory.create(
+        filename=f"{base}_captions-en-us_vtt2",
+        file=f"courses/{video.website.name}/{base}_captions-en-US.vtt",
+        website=video.website,
+    )
+    WebsiteContentFactory.create(
+        filename=f"{base}_transcript-en-us_pdf2",
+        file=f"courses/{video.website.name}/{base}_transcript-en-US.pdf",
+        website=video.website,
+    )
+
+    captions, transcripts = video.caption_transcript_resources()
+
+    assert len(captions) == 1
     assert len(transcripts) == 1

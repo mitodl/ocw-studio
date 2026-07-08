@@ -910,6 +910,72 @@ def test_auto_link_video_multi_language_captions():
     assert "video_captions_file" not in vf
 
 
+@pytest.mark.parametrize(
+    ("extension", "filename_suffix"),
+    [
+        ("vtt", "_vtt"),
+        ("webvtt", "_webvtt"),
+        ("srt", "_srt"),
+    ],
+)
+def test_auto_link_video_matches_all_caption_extensions(extension, filename_suffix):
+    """auto_link_video_captions_transcript finds captions regardless of extension.
+
+    Caption files may slugify to _vtt, _webvtt, or _srt depending on the
+    source file's extension (e.g. 3Play produces .webvtt). All three must be
+    found by the video-side lookup, not just .vtt.
+    """
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename=f"lecture01_captions-en-us{filename_suffix}",
+        file=f"courses/{website.name}/lecture01_captions-en-US.{extension}",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_resources"]["content"] == [str(captions.text_id)]
+
+
+def test_auto_link_video_survives_filename_uniqueness_suffix():
+    """auto_link_video_captions_transcript still matches when Django's
+    filename-uniqueness logic has appended a bare digit to the colliding
+    filename (e.g. "..._vtt2").
+
+    This is the actual production bug: matching must rely on the resource's
+    real uploaded file extension, not the filename field, since
+    find_available_name can mutate the filename's tail with no separator.
+    """
+    website = WebsiteFactory.create()
+    # Simulates a second same-named upload: find_available_name would produce
+    # this exact filename by appending "2" directly onto "..._vtt" / "..._pdf".
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions-en-us_vtt2",
+        file=f"courses/{website.name}/lecture01_captions-en-US.vtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_transcript-en-us_pdf2",
+        file=f"courses/{website.name}/lecture01_transcript-en-US.pdf",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+        filename="lecture01_mp4",
+    )
+    auto_link_video_captions_transcript(video)
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert vf["video_captions_resources"]["content"] == [str(captions.text_id)]
+    assert vf["video_transcript_resources"]["content"] == [str(transcript.text_id)]
+
+
 # ── unlink_deleted_resource_from_videos ──────────────────────────────────────
 
 

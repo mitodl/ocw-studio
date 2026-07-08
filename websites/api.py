@@ -14,9 +14,15 @@ from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from main.utils import NestableKeyTextTransform, get_base_filename
+from main.utils import (
+    NestableKeyTextTransform,
+    get_base_filename,
+    get_file_extension,
+)
 from users.models import User
 from videos.constants import (
+    CAPTION_FILE_EXTENSIONS,
+    TRANSCRIPT_FILE_EXTENSIONS,
     YT_MAX_LENGTH_DESCRIPTION,
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
@@ -262,9 +268,18 @@ def _merge_caption_resource(
     website: "Website",
     resource_field: str,
     filename_prefix: str,
-    filename_suffix: str,
+    valid_extensions: tuple[str, ...],
 ) -> bool:
     """Find caption/transcript resources by prefix and merge into video_files.
+
+    Candidates are found by filename prefix only, then filtered by the real
+    extension of their uploaded ``file`` (not the ``filename`` field's tail).
+    Django's filename-uniqueness logic (``find_available_name``) appends a
+    bare digit directly onto a colliding filename with no separator — e.g.
+    ``lecture1_captions-en-us_vtt`` collides and becomes
+    ``lecture1_captions-en-us_vtt2`` — which would silently defeat an exact
+    ``filename__endswith`` suffix check. The uploaded file's own extension is
+    unaffected by that renaming, so it's used here instead.
 
     Only the ``_resources`` relation field is written; the legacy ``_file``
     fields in stored metadata are left untouched.
@@ -280,13 +295,14 @@ def _merge_caption_resource(
         elif isinstance(content, str) and content:
             existing_ids = {content}
 
-    related_resources = list(
-        WebsiteContent.objects.filter(
-            website=website,
-            filename__startswith=filename_prefix,
-            filename__endswith=filename_suffix,
-        ).order_by("filename")
-    )
+    candidates = WebsiteContent.objects.filter(
+        website=website, filename__startswith=filename_prefix
+    ).order_by("filename")
+    related_resources = [
+        r
+        for r in candidates
+        if r.file and get_file_extension(r.file.name) in valid_extensions
+    ]
     new_resources = [r for r in related_resources if str(r.text_id) not in existing_ids]
     if not new_resources:
         return False
@@ -302,12 +318,16 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     """
     For a Video resource, auto-populate ``video_captions_resources`` and
     ``video_transcript_resources`` from existing WebsiteContent records in the
-    same website that match the ``{base}_captions-<lang>-<locale>_vtt`` /
-    ``{base}_transcript-<lang>-<locale>_pdf`` filename convention (or the
-    legacy no-suffix form ``{base}_captions_vtt``).  Finds ALL language
-    variants and merges them into the multi-select content list without
-    overwriting existing non-empty entries.  Only ``_resources`` relation
-    fields are written; legacy ``_file`` fields are left untouched.
+    same website whose filename starts with ``{base}_captions`` /
+    ``{base}_transcript`` (covering both the ``{base}_captions-<lang>-<locale>``
+    convention and the legacy no-suffix form) and whose uploaded file has a
+    matching real extension. The real file extension is used rather than the
+    filename's tail because Django's filename-uniqueness logic can append a
+    bare digit to a colliding filename (e.g. ``..._vtt`` -> ``..._vtt2``),
+    which would defeat an exact suffix match. Finds ALL language variants and
+    merges them into the multi-select content list without overwriting
+    existing non-empty entries. Only ``_resources`` relation fields are
+    written; legacy ``_file`` fields are left untouched.
     """
     if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
         return
@@ -322,17 +342,17 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
         video_files = {}
 
     results = [
-        _merge_caption_resource(video_files, website, resource_field, prefix, suffix)
-        for resource_field, prefix, suffix in [
+        _merge_caption_resource(video_files, website, resource_field, prefix, suffixes)
+        for resource_field, prefix, suffixes in [
             (
                 "video_captions_resources",
                 f"{video_base}_captions",
-                "_vtt",
+                CAPTION_FILE_EXTENSIONS,
             ),
             (
                 "video_transcript_resources",
                 f"{video_base}_transcript",
-                "_pdf",
+                TRANSCRIPT_FILE_EXTENSIONS,
             ),
         ]
     ]

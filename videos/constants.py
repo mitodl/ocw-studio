@@ -67,3 +67,12 @@ class YouTubeStatus:
     REJECTED = "rejected"
     FAILED = "failed"
     RETRY = "retry"
+
+
+# Real file extensions (from WebsiteContent.file, not the filename field —
+# which can carry an appended numeric uniqueness suffix, e.g.
+# "lecture1_captions-en-us_vtt2") that identify a caption/transcript
+# resource. Must stay in sync with the extensions
+# videos.utils.parse_caption_language_locale recognizes.
+CAPTION_FILE_EXTENSIONS = ("vtt", "webvtt", "srt")
+TRANSCRIPT_FILE_EXTENSIONS = ("pdf",)

@@ -273,34 +273,42 @@ def process_video_tags(video_resource, snippet, youtube, *, add_course_tag):
     return "success" if tags_changed else "skip"
 
 
-# Regex that matches ``_captions-{lang}-{locale}_vtt`` /
-# ``_transcript-{lang}-{locale}_pdf`` at the end of a slugified filename.
-# GDrive caption/transcript files follow the pattern
-# ``<base>_captions-<lang>-<locale>.<ext>`` (e.g. ``lecture1_captions-en-US.vtt``)
-# where ``<lang>`` is an ISO 639-1 code and ``<locale>`` is an ISO 3166-1
-# alpha-2 region code. Slugification lowercases the name and turns the
-# extension into an ``_<ext>`` suffix.
+# Regex that matches "_captions-{lang}-{locale}" / "_transcript-{lang}-{locale}"
+# immediately before the extension, wherever it falls in the string (so it
+# matches whether the input is the raw uploaded file path, e.g.
+# "courses/site/lecture1_captions-en-US.vtt", or a slugified filename, e.g.
+# "lecture1_captions-en-us_vtt"). <lang> is an ISO 639-1 code, <locale> an
+# ISO 3166-1 alpha-2 region code. IGNORECASE handles mixed-case real
+# filenames; [._] handles both the dot (real file) and underscore
+# (slugified filename) extension delimiters.
 _LANG_LOCALE_RE = re.compile(
-    r"(?:_captions|_transcript)-([a-z]{2,3})-([a-z]{2,3})_(?:vtt|webvtt|srt|pdf)$"
+    r"(?:_captions|_transcript)-([a-z]{2,3})-([a-z]{2,3})[._](?:vtt|webvtt|srt|pdf)$",
+    re.IGNORECASE,
 )
 
 
 def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
     """Return ``(language_code, locale_code)`` embedded in a caption/transcript
-    filename.
+    filename or file path.
 
-    The filename is expected to be the slugified ``WebsiteContent.filename``.  GDrive
-    files follow the pattern ``<base>_captions-<lang>-<locale>.<ext>`` (e.g.
-    ``lecture1_captions-en-US.vtt``) where ``<lang>`` is an ISO 639-1 code and
-    ``<locale>`` is an ISO 3166-1 alpha-2 region code.  ``locale`` is returned
-    uppercase (e.g. ``"US"``).
+    Pass the resource's real uploaded file path (``resource.file.name``), not
+    the ``WebsiteContent.filename`` field — the latter can carry a numeric
+    uniqueness suffix appended by Django on a name collision (e.g.
+    ``lecture1_captions-en-us_vtt`` -> ``lecture1_captions-en-us_vtt2``),
+    which would prevent the pattern from matching at all.
 
-    Legacy single-language filenames without a language suffix
-    (e.g. ``lecture1_captions_vtt``) return ``("en", None)``.
+    GDrive files follow the pattern ``<base>_captions-<lang>-<locale>.<ext>``
+    (e.g. ``lecture1_captions-en-US.vtt``) where ``<lang>`` is an ISO 639-1
+    code and ``<locale>`` is an ISO 3166-1 alpha-2 region code.  ``locale`` is
+    returned uppercase (e.g. ``"US"``).
+
+    Legacy filenames without a language suffix, or with a language-only
+    suffix and no locale (e.g. ``lecture1_captions_vtt``,
+    ``lecture1_captions-fr.vtt``), return ``("en", None)``.
     """
     match = _LANG_LOCALE_RE.search(filename)
     if match:
-        return match.group(1), match.group(2).upper()
+        return match.group(1).lower(), match.group(2).upper()
     return "en", None
 
 
@@ -308,15 +316,16 @@ def resource_file_paths(resources: list) -> list:
     """Return a list of ``{file, language[, locale]}`` dicts for caption/transcript
     resources.
 
-    Language and optional locale are parsed from each resource's ``filename`` using
-    :func:`parse_caption_language_locale`.  Resources without a resolvable file are
-    omitted.  ``locale`` is only included in the dict when present in the filename.
+    Language and optional locale are parsed from each resource's real
+    uploaded file path (immune to the filename-uniqueness suffix described in
+    :func:`parse_caption_language_locale`).  Resources without a resolvable
+    file are omitted.  ``locale`` is only included in the dict when present.
     """
     result = []
     for resource in resources:
         file_name = getattr(getattr(resource, "file", None), "name", None)
         if file_name:
-            lang, locale = parse_caption_language_locale(resource.filename or "")
+            lang, locale = parse_caption_language_locale(file_name)
             entry: dict = {
                 "file": f"/{file_name.lstrip('/')}",
                 "language": lang,

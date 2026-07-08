@@ -1187,14 +1187,12 @@ def test_websites_content_create_video_resource_sets_3play_references(
         captions.id,
         transcript.id,
     }
-    # build-pipeline file arrays populated by sync_video_relation_urls on create
+    # Only _resources is written; sync_video_relation_urls (which derived
+    # video_captions_file/video_transcript_file) has been removed - _file
+    # fields are left untouched throughout this branch.
     vf = content.metadata["video_files"]
-    assert vf["video_captions_file"] == [
-        {"file": f"/courses/{website.name}/video-captions.webvtt", "language": "en"}
-    ]
-    assert vf["video_transcript_file"] == [
-        {"file": f"/courses/{website.name}/video-transcript.pdf", "language": "en"}
-    ]
+    assert "video_captions_file" not in vf
+    assert "video_transcript_file" not in vf
 
 
 def test_websites_content_create_video_does_not_auto_link_by_filename_convention(
@@ -1816,11 +1814,9 @@ def test_websites_content_update_video_resource_sets_3play_references(
         captions.id,
         transcript.id,
     }
-    # build-pipeline file arrays populated by sync_video_relation_urls on update
+    # Only _resources is written; sync_video_relation_urls (which derived
+    # video_captions_file/video_transcript_file) has been removed - _file
+    # fields are left untouched throughout this branch.
     vf = video.metadata["video_files"]
-    assert vf["video_captions_file"] == [
-        {"file": f"/courses/{website.name}/updated-captions.webvtt", "language": "en"}
-    ]
-    assert vf["video_transcript_file"] == [
-        {"file": f"/courses/{website.name}/updated-transcript.pdf", "language": "en"}
-    ]
+    assert "video_captions_file" not in vf
+    assert "video_transcript_file" not in vf
