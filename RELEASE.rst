@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.193.1
+---------------
+
+- Update Python to 3.14  (#2817)
+- Replace dead server-status config with django-health-check (#3083)
+- feat: migarate captions & transcript file fields to resource fields (#2999)
+
 Version 0.192.0 (Released July 01, 2026)
 ---------------
 
