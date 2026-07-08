@@ -915,15 +915,15 @@ def test_auto_link_video_multi_language_captions():
     [
         ("vtt", "_vtt"),
         ("webvtt", "_webvtt"),
-        ("srt", "_srt"),
     ],
 )
 def test_auto_link_video_matches_all_caption_extensions(extension, filename_suffix):
     """auto_link_video_captions_transcript finds captions regardless of extension.
 
-    Caption files may slugify to _vtt, _webvtt, or _srt depending on the
-    source file's extension (e.g. 3Play produces .webvtt). All three must be
-    found by the video-side lookup, not just .vtt.
+    Caption files may slugify to _vtt or _webvtt depending on the source
+    file's extension (e.g. 3Play produces .webvtt). Both must be found by
+    the video-side lookup, not just .vtt. srt is deliberately excluded -
+    it's not natively playable via the HTML5 <track> element.
     """
     website = WebsiteFactory.create()
     captions = WebsiteContentFactory.create(

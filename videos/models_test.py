@@ -118,14 +118,16 @@ def test_video_caption_transcript_resources_multi_language(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("filename_suffix", ["_vtt", "_webvtt", "_srt"])
+@pytest.mark.parametrize("filename_suffix", ["_vtt", "_webvtt"])
 def test_video_caption_transcript_resources_matches_all_extensions(
     filename_suffix, preexisting_captions_filenames
 ):
     """caption_transcript_resources finds captions regardless of extension.
 
-    A caption file may slugify to _vtt, _webvtt, or _srt depending on its
-    source extension (3Play produces .webvtt). All three must be found.
+    A caption file may slugify to _vtt or _webvtt depending on its source
+    extension (3Play produces .webvtt). Both must be found. srt is
+    deliberately excluded - it's not natively playable via the HTML5
+    <track> element (see test_start_transcript_job's wrong_caption_type).
     """
     youtube_id = "yt-ext"
 
