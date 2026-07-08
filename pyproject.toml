@@ -229,6 +229,8 @@ env = [
     "OCW_STUDIO_USE_S3=False",
     "OCW_IMPORT_STARTER_SLUG=course",
     "OCW_COURSE_STARTER_SLUG=course",
+    "DRIVE_SHARED_ID=",
+    "DRIVE_SERVICE_ACCOUNT_CREDS=",
 ]
 
 [tool.bumpversion]
