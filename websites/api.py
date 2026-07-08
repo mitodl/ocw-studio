@@ -265,7 +265,7 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
 
 def _merge_caption_resource(
     video_files: dict,
-    website: "Website",
+    website: Website,
     resource_field: str,
     filename_prefix: str,
     valid_extensions: tuple[str, ...],
