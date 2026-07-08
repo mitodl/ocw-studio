@@ -57,7 +57,7 @@ dependencies = [
     "posthog>=7.0.0,<8",
     "mitol-django-transcoding>=2026.4.2,<2027",
     "granian>=2.7.2",
-    "django-aqueduct[vault,mitol,derivations]>=0.7.0",
+    "django-aqueduct[vault,mitol,derivations]>=0.8.0",
 ]
 
 [dependency-groups]

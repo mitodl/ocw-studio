@@ -10,14 +10,16 @@
 # >>> aqueduct:generated:imports
 from __future__ import annotations
 
+import ast
+import json
 import logging
 import platform
 
 from main.envs import get_dict_of_str, get_list_of_str
 from mitol.common.envs import get_features, get_site_name, get_string
-from pydantic import AliasChoices, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Any
+from pydantic import AliasChoices, AnyUrl, Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from typing import Annotated, Any
 # <<< aqueduct:generated:imports
 
 # Hand-maintained imports used by the preserved regions below (kept outside
@@ -69,7 +71,7 @@ class AqueductSettings(BaseSettings):
     # ===== main.settings =====
     ADMINS: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     ADMIN_EMAIL: str = Field(default='', validation_alias=AliasChoices('OCW_STUDIO_ADMIN_EMAIL'), description='e-mail configurable admins')
-    ALLOWED_HOSTS: list[Any] = Field(default_factory=lambda: ['*'])
+    ALLOWED_HOSTS: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['*'])
     ANYMAIL: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     API_BEARER_TOKEN: str | None = Field(default=None, validation_alias=AliasChoices('API_BEARER_TOKEN'))  # REDACTED: name looks secret-like — set via a source, not here
     ARCHIVE_URL_REQUEST_TIMEOUT: int = Field(default=120, validation_alias=AliasChoices('ARCHIVE_URL_REQUEST_TIMEOUT'))
@@ -95,9 +97,9 @@ class AqueductSettings(BaseSettings):
     AWS_TEST_BUCKET_NAME: str | None = Field(default=None, validation_alias=AliasChoices('AWS_TEST_BUCKET_NAME'))
     BASE_DIR: Any = Field(default=None, description='Build paths inside the project like this: os.path.join(BASE_DIR, ...)')  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     CACHES: Any = Field(default=None, description='django cache back-ends')  # DERIVED: reproduce in a @model_validator (conditional/computed value)
-    CELERY_ACCEPT_CONTENT: list[Any] = Field(default_factory=lambda: ['json'])
+    CELERY_ACCEPT_CONTENT: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['json'])
     CELERY_BEAT_SCHEDULE: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
-    CELERY_BROKER_URL: str | None = Field(default=None, validation_alias=AliasChoices('CELERY_BROKER_URL'))  # REDACTED: name looks secret-like — set via a source, not here
+    CELERY_BROKER_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('CELERY_BROKER_URL'))  # REDACTED: name looks secret-like — set via a source, not here
     CELERY_RESULT_BACKEND: str | None = Field(default=None, validation_alias=AliasChoices('CELERY_RESULT_BACKEND'))  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     CELERY_RESULT_SERIALIZER: str = Field(default='json')
     CELERY_TASK_ALWAYS_EAGER: bool = Field(default=False, validation_alias=AliasChoices('CELERY_TASK_ALWAYS_EAGER'))
@@ -109,13 +111,13 @@ class AqueductSettings(BaseSettings):
     CONCOURSE_IS_PRIVATE_REPO: bool = Field(default=True, validation_alias=AliasChoices('CONCOURSE_IS_PRIVATE_REPO'))
     CONCOURSE_PASSWORD: str | None = Field(default=None, validation_alias=AliasChoices('CONCOURSE_PASSWORD'))  # REDACTED: name looks secret-like — set via a source, not here
     CONCOURSE_TEAM: str = Field(default='ocw', validation_alias=AliasChoices('CONCOURSE_TEAM'))
-    CONCOURSE_URL: str | None = Field(default=None, validation_alias=AliasChoices('CONCOURSE_URL'), description='Concourse-CI settings')
+    CONCOURSE_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('CONCOURSE_URL'), description='Concourse-CI settings')  # TODO: refine type
     CONCOURSE_USERNAME: str | None = Field(default=None, validation_alias=AliasChoices('CONCOURSE_USERNAME'))
-    CONTENT_FILE_SEARCH_API_URL: str | None = Field(default=None, validation_alias=AliasChoices('CONTENT_FILE_SEARCH_API_URL'))
+    CONTENT_FILE_SEARCH_API_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('CONTENT_FILE_SEARCH_API_URL'))  # TODO: refine type
     CONTENT_SYNC_BACKEND: str | None = Field(default=None, validation_alias=AliasChoices('CONTENT_SYNC_BACKEND'))
     CONTENT_SYNC_PIPELINE_BACKEND: str = Field(default='concourse', validation_alias=AliasChoices('CONTENT_SYNC_PIPELINE_BACKEND'))
     CONTENT_SYNC_RETRIES: int = Field(default=5, validation_alias=AliasChoices('CONTENT_SYNC_RETRIES'))
-    COURSE_SEARCH_API_URL: str | None = Field(default=None, validation_alias=AliasChoices('COURSE_SEARCH_API_URL'))
+    COURSE_SEARCH_API_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('COURSE_SEARCH_API_URL'))  # TODO: refine type
     DATABASES: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     DEBUG: bool = Field(default=False, validation_alias=AliasChoices('DEBUG'), description="SECURITY WARNING: don't run with debug turned on in production!")
     DEFAULT_AUTO_FIELD: str = Field(default='django.db.models.AutoField')
@@ -144,7 +146,7 @@ class AqueductSettings(BaseSettings):
     GITHUB_TIMEOUT: int = Field(default=15, validation_alias=AliasChoices('GITHUB_TIMEOUT'))
     GITHUB_WEBHOOK_BRANCH: str = Field(default='', validation_alias=AliasChoices('GITHUB_WEBHOOK_BRANCH'))
     GITHUB_WEBHOOK_KEY: str = Field(default='', validation_alias=AliasChoices('GITHUB_WEBHOOK_KEY'))
-    GIT_API_URL: str | None = Field(default=None, validation_alias=AliasChoices('GIT_API_URL'))
+    GIT_API_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('GIT_API_URL'))  # TODO: refine type
     GIT_BRANCH_MAIN: str = Field(default='main', validation_alias=AliasChoices('GIT_BRANCH_MAIN'))
     GIT_BRANCH_PREVIEW: str = Field(default='preview', validation_alias=AliasChoices('GIT_BRANCH_PREVIEW'))
     GIT_BRANCH_RELEASE: str = Field(default='release', validation_alias=AliasChoices('GIT_BRANCH_RELEASE'))
@@ -153,14 +155,14 @@ class AqueductSettings(BaseSettings):
     GIT_DOMAIN: str = Field(default='www.github.com', validation_alias=AliasChoices('GIT_DOMAIN'))
     GIT_ORGANIZATION: str | None = Field(default=None, validation_alias=AliasChoices('GIT_ORGANIZATION'))
     GIT_TOKEN: str | None = Field(default=None, validation_alias=AliasChoices('GIT_TOKEN'), description='Git backend settings')  # REDACTED: name looks secret-like — set via a source, not here
-    HEALTH_CHECK: list[Any] = Field(default_factory=lambda: ['CELERY', 'REDIS', 'POSTGRES'])
+    HEALTH_CHECK: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['CELERY', 'REDIS', 'POSTGRES'])
     HEROKU_APP_NAME: str | None = Field(default=None, validation_alias=AliasChoices('HEROKU_APP_NAME'), description='this is only available to heroku review apps')
     HIJACK_ALLOW_GET_REQUESTS: bool = Field(default=True)
-    HIJACK_LOGIN_REDIRECT_URL: str = Field(default='sites')
-    HIJACK_LOGOUT_REDIRECT_URL: str = Field(default='/admin/users/user/')
+    HIJACK_LOGIN_REDIRECT_URL: AnyUrl = Field(default='sites')  # TODO: refine type
+    HIJACK_LOGOUT_REDIRECT_URL: AnyUrl = Field(default='/admin/users/user/')  # TODO: refine type
     HIJACK_REGISTER_ADMIN: bool = Field(default=False)
     HOSTNAME: Any = Field(default_factory=lambda: platform.node().split(".")[0])  # TODO: refine type
-    INSTALLED_APPS: list[Any] = Field(default_factory=lambda: ['django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles', 'django.contrib.sites', 'guardian', 'hijack', 'hijack.contrib.admin', 'safedelete', 'rest_framework', 'social_django', 'robots', 'anymail', 'bulk_update_or_create', 'main', 'users', 'websites', 'news', 'content_sync', 'gdrive_sync', 'videos', 'external_resources', 'django_removals', 'django_aqueduct', 'mitol.common.apps.CommonApp', 'mitol.authentication.apps.AuthenticationApp', 'mitol.mail.apps.MailApp'], description='Application definition')
+    INSTALLED_APPS: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes', 'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles', 'django.contrib.sites', 'guardian', 'hijack', 'hijack.contrib.admin', 'safedelete', 'rest_framework', 'social_django', 'robots', 'anymail', 'bulk_update_or_create', 'main', 'users', 'websites', 'news', 'content_sync', 'gdrive_sync', 'videos', 'external_resources', 'django_removals', 'django_aqueduct', 'mitol.common.apps.CommonApp', 'mitol.authentication.apps.AuthenticationApp', 'mitol.mail.apps.MailApp'], description='Application definition')
     INTERNAL_IPS: Any = Field(default_factory=lambda: (
     get_string(
         name="HOST_IP", default="127.0.0.1", description="This server's host IP"
@@ -168,10 +170,10 @@ class AqueductSettings(BaseSettings):
 ), description='Important to define this so DEBUG works properly')  # TODO: refine type
     LANGUAGE_CODE: str = Field(default='en-us')
     LOGGING: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
-    LOGIN_ERROR_URL: str = Field(default='/')
-    LOGIN_REDIRECT_URL: str = Field(default='/')
-    LOGIN_URL: str = Field(default='/')
-    LOGOUT_REDIRECT_URL: str = Field(default='/')
+    LOGIN_ERROR_URL: AnyUrl = Field(default='/')  # TODO: refine type
+    LOGIN_REDIRECT_URL: AnyUrl = Field(default='/')  # TODO: refine type
+    LOGIN_URL: AnyUrl = Field(default='/')  # TODO: refine type
+    LOGOUT_REDIRECT_URL: AnyUrl = Field(default='/')  # TODO: refine type
     LOG_HOST: str = Field(default='localhost', validation_alias=AliasChoices('OCW_STUDIO_LOG_HOST'), description='For logging to a remote syslog host')
     LOG_HOST_PORT: int = Field(default=514, validation_alias=AliasChoices('OCW_STUDIO_LOG_HOST_PORT'))
     LOG_LEVEL: str = Field(default='INFO', validation_alias=AliasChoices('OCW_STUDIO_LOG_LEVEL'), description='Logging configuration')
@@ -179,24 +181,24 @@ class AqueductSettings(BaseSettings):
     MAILGUN_SENDER_DOMAIN: str = Field(..., validation_alias=AliasChoices('MAILGUN_SENDER_DOMAIN'), description='mitol-django-mail')
     MAX_S3_GET_ITERATIONS: int = Field(default=3, validation_alias=AliasChoices('MAX_S3_GET_ITERATIONS'))
     MEDIA_ROOT: str = Field(default='/var/media/', validation_alias=AliasChoices('MEDIA_ROOT'))
-    MEDIA_URL: str = Field(default='/media/')
-    MIDDLEWARE: list[Any] = Field(default_factory=lambda: ['django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.contrib.messages.middleware.MessageMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware', 'django.contrib.sites.middleware.CurrentSiteMiddleware', 'main.middleware.CachelessAPIMiddleware', 'hijack.middleware.HijackUserMiddleware'])
+    MEDIA_URL: AnyUrl = Field(default='/media/')  # TODO: refine type
+    MIDDLEWARE: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['django.middleware.security.SecurityMiddleware', 'django.contrib.sessions.middleware.SessionMiddleware', 'django.middleware.common.CommonMiddleware', 'django.middleware.csrf.CsrfViewMiddleware', 'django.contrib.auth.middleware.AuthenticationMiddleware', 'django.contrib.messages.middleware.MessageMiddleware', 'django.middleware.clickjacking.XFrameOptionsMiddleware', 'django.contrib.sites.middleware.CurrentSiteMiddleware', 'main.middleware.CachelessAPIMiddleware', 'hijack.middleware.HijackUserMiddleware'])
     MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS: int = Field(default_factory=lambda: 60 * 60, validation_alias=AliasChoices('MIDDLEWARE_FEATURE_FLAG_COOKIE_MAX_AGE_SECONDS'))
     MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME: str = Field(default='OCW_STUDIO_FEATURE_FLAGS', validation_alias=AliasChoices('MIDDLEWARE_FEATURE_FLAG_COOKIE_NAME'))
     MIDDLEWARE_FEATURE_FLAG_QS_PREFIX: str | None = Field(default=None, validation_alias=AliasChoices('MIDDLEWARE_FEATURE_FLAG_QS_PREFIX'))
     MITOL_MAIL_ENABLE_EMAIL_DEBUGGER: bool | None = Field(default=None, validation_alias=AliasChoices('MITOL_MAIL_ENABLE_EMAIL_DEBUGGER'))  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     MITOL_MAIL_FORMAT_RECIPIENT_FUNC: str = Field(default='users.utils.format_recipient', validation_alias=AliasChoices('MITOL_MAIL_FORMAT_RECIPIENT_FUNC'))
     MITOL_MAIL_FROM_EMAIL: str = Field(default='webmaster@localhost', validation_alias=AliasChoices('MITOL_MAIL_FROM_EMAIL'))
-    MITOL_MAIL_MESSAGE_CLASSES: list[Any] = Field(default_factory=lambda: ['videos.messages.YouTubeUploadSuccessMessage', 'videos.messages.YouTubeUploadFailureMessage', 'websites.messages.PreviewOrPublishSuccessMessage', 'websites.messages.PreviewOrPublishFailureMessage', 'websites.messages.videoTranscriptingCompleteMessage'])
+    MITOL_MAIL_MESSAGE_CLASSES: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['videos.messages.YouTubeUploadSuccessMessage', 'videos.messages.YouTubeUploadFailureMessage', 'websites.messages.PreviewOrPublishSuccessMessage', 'websites.messages.PreviewOrPublishFailureMessage', 'websites.messages.videoTranscriptingCompleteMessage'])
     MITOL_MAIL_RECIPIENT_OVERRIDE: str | None = Field(default=None, validation_alias=AliasChoices('MITOL_MAIL_RECIPIENT_OVERRIDE'))
     MITOL_MAIL_REPLY_TO_ADDRESS: str = Field(default='webmaster@localhost', validation_alias=AliasChoices('MITOL_MAIL_REPLY_TO_ADDRESS'))
-    MIT_LEARN_API_BASE_URL: str | None = Field(default=None, validation_alias=AliasChoices('MIT_LEARN_API_BASE_URL'))
-    MIT_LEARN_BASE_URL: str | None = Field(default=None, validation_alias=AliasChoices('MIT_LEARN_BASE_URL'))
+    MIT_LEARN_API_BASE_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('MIT_LEARN_API_BASE_URL'))  # TODO: refine type
+    MIT_LEARN_BASE_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('MIT_LEARN_BASE_URL'))  # TODO: refine type
     NPLUSONE_LOGGER: Any = Field(default_factory=lambda: logging.getLogger("nplusone"), description='nplusone profiler logger configuration')  # TODO: refine type
     NPLUSONE_LOG_LEVEL: Any = Field(default_factory=lambda: logging.ERROR)  # TODO: refine type
     OCW_COURSE_STARTER_SLUG: str = Field(default='course', validation_alias=AliasChoices('OCW_COURSE_STARTER_SLUG'))
     OCW_DEFAULT_COURSE_THEME: str = Field(default='ocw-course-v2', validation_alias=AliasChoices('OCW_DEFAULT_COURSE_THEME'))
-    OCW_EXTRA_COURSE_THEMES: list[str] = Field(default_factory=lambda: [], validation_alias=AliasChoices('OCW_EXTRA_COURSE_THEMES'))
+    OCW_EXTRA_COURSE_THEMES: Annotated[list[str], NoDecode] = Field(default_factory=lambda: [], validation_alias=AliasChoices('OCW_EXTRA_COURSE_THEMES'))
     OCW_EXTRA_THEMES_BASE_URLS: Any = Field(default_factory=lambda: get_dict_of_str(
     name="OCW_EXTRA_THEMES_BASE_URLS",
     default={},
@@ -212,24 +214,24 @@ class AqueductSettings(BaseSettings):
     OCW_IMPORT_STARTER_SLUG: str = Field(default='course', validation_alias=AliasChoices('OCW_IMPORT_STARTER_SLUG'))
     OCW_MASS_BUILD_BATCH_SIZE: int = Field(default=20, validation_alias=AliasChoices('OCW_MASS_BUILD_BATCH_SIZE'))
     OCW_MASS_BUILD_MAX_IN_FLIGHT: int = Field(default=10, validation_alias=AliasChoices('OCW_MASS_BUILD_MAX_IN_FLIGHT'))
-    OCW_STUDIO_DELETABLE_CONTENT_TYPES: list[str] = Field(default_factory=lambda: [], validation_alias=AliasChoices('OCW_STUDIO_DELETABLE_CONTENT_TYPES'))
-    OCW_STUDIO_DRAFT_URL: str | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_DRAFT_URL'))
-    OCW_STUDIO_LIVE_URL: str | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_LIVE_URL'))
+    OCW_STUDIO_DELETABLE_CONTENT_TYPES: Annotated[list[str], NoDecode] = Field(default_factory=lambda: [], validation_alias=AliasChoices('OCW_STUDIO_DELETABLE_CONTENT_TYPES'))
+    OCW_STUDIO_DRAFT_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_DRAFT_URL'))  # TODO: refine type
+    OCW_STUDIO_LIVE_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_LIVE_URL'))  # TODO: refine type
     OCW_STUDIO_SITE_CONFIG_FILE: str = Field(default='ocw-studio.yaml', validation_alias=AliasChoices('OCW_STUDIO_SITE_CONFIG_FILE'))
-    OCW_STUDIO_TEST_URL: str | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_TEST_URL'))
+    OCW_STUDIO_TEST_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('OCW_STUDIO_TEST_URL'))  # TODO: refine type
     OCW_STUDIO_USE_S3: bool = Field(default=False, validation_alias=AliasChoices('OCW_STUDIO_USE_S3'))
     OCW_TEST_SITE_SLUGS: Any = Field(default_factory=lambda: get_list_of_str(name="OCW_TEST_SITE_SLUGS", default=[]))  # TODO: refine type
-    OPEN_CATALOG_URLS: list[str] = Field(default='', validation_alias=AliasChoices('OPEN_CATALOG_URLS'))
+    OPEN_CATALOG_URLS: Annotated[list[str], NoDecode] = Field(default='', validation_alias=AliasChoices('OPEN_CATALOG_URLS'))
     OPEN_CATALOG_WEBHOOK_KEY: str = Field(default='', validation_alias=AliasChoices('OPEN_CATALOG_WEBHOOK_KEY'))
     PLAYWRIGHT_IMAGE_ARCH: str = Field(default='', validation_alias=AliasChoices('PLAYWRIGHT_IMAGE_ARCH'))
-    POSTHOG_API_HOST: str = Field(default='https://app.posthog.com', validation_alias=AliasChoices('POSTHOG_API_HOST'))
+    POSTHOG_API_HOST: AnyUrl = Field(default='https://app.posthog.com', validation_alias=AliasChoices('POSTHOG_API_HOST'))  # TODO: refine type
     POSTHOG_ENABLED: bool = Field(default=False, validation_alias=AliasChoices('POSTHOG_ENABLED'))
     POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS: int = Field(default=3000, validation_alias=AliasChoices('POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS'))
     POSTHOG_MAX_RETRIES: int = Field(default=3, validation_alias=AliasChoices('POSTHOG_MAX_RETRIES'))
     POSTHOG_PROJECT_API_KEY: str | None = Field(default=None, validation_alias=AliasChoices('POSTHOG_PROJECT_API_KEY'))  # REDACTED: name looks secret-like — set via a source, not here
-    PREPUBLISH_ACTIONS: list[str] = Field(default_factory=lambda: [], validation_alias=AliasChoices('PREPUBLISH_ACTIONS'))
+    PREPUBLISH_ACTIONS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: [], validation_alias=AliasChoices('PREPUBLISH_ACTIONS'))
     PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY: int = Field(default=1800, validation_alias=AliasChoices('PUBLISH_INCOMPLETE_BUILD_STATUS_FREQUENCY'))
-    PUBLISH_POSTHOG_API_HOST: str = Field(default='https://app.posthog.com', validation_alias=AliasChoices('PUBLISH_POSTHOG_API_HOST'))
+    PUBLISH_POSTHOG_API_HOST: AnyUrl = Field(default='https://app.posthog.com', validation_alias=AliasChoices('PUBLISH_POSTHOG_API_HOST'))  # TODO: refine type
     PUBLISH_POSTHOG_ENABLED: bool = Field(default=False, validation_alias=AliasChoices('PUBLISH_POSTHOG_ENABLED'))
     PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS: int = Field(default=3000, validation_alias=AliasChoices('PUBLISH_POSTHOG_FEATURE_FLAG_REQUEST_TIMEOUT_MS'))
     PUBLISH_POSTHOG_MAX_RETRIES: int = Field(default=3, validation_alias=AliasChoices('PUBLISH_POSTHOG_MAX_RETRIES'))
@@ -237,18 +239,18 @@ class AqueductSettings(BaseSettings):
     PUBLISH_STATUS_CUTOFF: int = Field(default=1800, validation_alias=AliasChoices('PUBLISH_STATUS_CUTOFF'))
     PUBLISH_STATUS_WAIT_TIME: int = Field(default=600, validation_alias=AliasChoices('PUBLISH_STATUS_WAIT_TIME'), description='Publish status settings')
     REACT_GA_DEBUG: bool = Field(default=False, validation_alias=AliasChoices('REACT_GA_DEBUG'))
-    REDISCLOUD_URL: str | None = Field(default=None, validation_alias=AliasChoices('REDISCLOUD_URL'), description='Celery')
+    REDISCLOUD_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('REDISCLOUD_URL'), description='Celery')  # TODO: refine type
     REDIS_MAX_CONNECTIONS: int = Field(default=48, validation_alias=AliasChoices('REDIS_MAX_CONNECTIONS'))
     RESOURCE_BASE_URL_DRAFT: str = Field(default='', validation_alias=AliasChoices('RESOURCE_BASE_URL_DRAFT'))
     RESOURCE_BASE_URL_LIVE: str = Field(default='', validation_alias=AliasChoices('RESOURCE_BASE_URL_LIVE'))
-    RESOURCE_TYPE_FIELDS: list[str] = Field(default_factory=lambda: ['resourcetype', 'filetype'], validation_alias=AliasChoices('RESOURCE_TYPE_FIELDS'))
-    REST_FRAMEWORK: dict[str, Any] = Field(default_factory=lambda: {'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',), 'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework.authentication.SessionAuthentication',), 'TEST_REQUEST_DEFAULT_FORMAT': 'json'})
+    RESOURCE_TYPE_FIELDS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ['resourcetype', 'filetype'], validation_alias=AliasChoices('RESOURCE_TYPE_FIELDS'))
+    REST_FRAMEWORK: Annotated[dict[str, Any], NoDecode] = Field(default_factory=lambda: {'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',), 'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework.authentication.SessionAuthentication',), 'TEST_REQUEST_DEFAULT_FORMAT': 'json'})
     ROBOTS_CACHE_TIMEOUT: int = Field(default_factory=lambda: 60 * 60 * 24, validation_alias=AliasChoices('ROBOTS_CACHE_TIMEOUT'))
     ROBOTS_USE_HOST: bool = Field(default=False, description='django-robots')
     ROOT_URLCONF: str = Field(default='main.urls')
     ROOT_WEBSITE_NAME: str = Field(default='ocw-www', validation_alias=AliasChoices('ROOT_WEBSITE_NAME'))
     S3_TRANSCRIPTS_PREFIX: str = Field(default='transcript_files', validation_alias=AliasChoices('S3_TRANSCRIPTS_PREFIX'))
-    SEARCH_API_URL: str | None = Field(default=None, validation_alias=AliasChoices('SEARCH_API_URL'))
+    SEARCH_API_URL: AnyUrl | None = Field(default=None, validation_alias=AliasChoices('SEARCH_API_URL'))  # TODO: refine type
     SECRET_KEY: str = Field(..., validation_alias=AliasChoices('SECRET_KEY'), description='SECURITY WARNING: keep the secret key used in production secret!')
     SECURE_PROXY_SSL_HEADER: tuple[Any, ...] = Field(default=('HTTP_X_FORWARDED_PROTO', 'https'))  # TODO: refine type
     SECURE_SSL_REDIRECT: bool = Field(default=True, validation_alias=AliasChoices('OCW_STUDIO_SECURE_SSL_REDIRECT'))
@@ -259,23 +261,23 @@ class AqueductSettings(BaseSettings):
     SITE_ID: int = Field(default=1, validation_alias=AliasChoices('OCW_STUDIO_SITE_ID'))
     SITE_NAME: Any = Field(default_factory=lambda: get_site_name())  # TODO: refine type
     SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
-    SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL: str = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL'))
-    SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL: str = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL'))
-    SOCIAL_AUTH_KEYCLOAK_EXTRA_DATA: list[Any] = Field(default_factory=lambda: [('id_token', 'id_token')])
+    SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL: AnyUrl = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL'))  # TODO: refine type
+    SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL: AnyUrl = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL'))  # TODO: refine type
+    SOCIAL_AUTH_KEYCLOAK_EXTRA_DATA: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: [('id_token', 'id_token')])
     SOCIAL_AUTH_KEYCLOAK_KEY: str = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_KEY'), description='Keycloak social auth settings')
     SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY: str = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY'))
-    SOCIAL_AUTH_KEYCLOAK_SCOPE: list[Any] = Field(default_factory=lambda: ['openid', 'profile', 'email'])
+    SOCIAL_AUTH_KEYCLOAK_SCOPE: Annotated[list[Any], NoDecode] = Field(default_factory=lambda: ['openid', 'profile', 'email'])
     SOCIAL_AUTH_KEYCLOAK_SECRET: str = Field(..., validation_alias=AliasChoices('SOCIAL_AUTH_KEYCLOAK_SECRET'))
-    SOCIAL_AUTH_LOGIN_ERROR_URL: str = Field(default='main-index')
-    SOCIAL_AUTH_LOGIN_REDIRECT_URL: str = Field(default='sites')
+    SOCIAL_AUTH_LOGIN_ERROR_URL: AnyUrl = Field(default='main-index')  # TODO: refine type
+    SOCIAL_AUTH_LOGIN_REDIRECT_URL: AnyUrl = Field(default='sites')  # TODO: refine type
     SOCIAL_AUTH_PIPELINE: tuple[Any, ...] = Field(default=('social_core.pipeline.social_auth.social_details', 'social_core.pipeline.social_auth.social_uid', 'social_core.pipeline.social_auth.auth_allowed', 'social_core.pipeline.social_auth.social_user', 'social_core.pipeline.user.get_username', 'social_core.pipeline.social_auth.associate_by_email', 'social_core.pipeline.user.create_user', 'social_core.pipeline.social_auth.associate_user', 'social_core.pipeline.social_auth.load_extra_data', 'social_core.pipeline.user.user_details'))  # TODO: refine type
-    SOCIAL_AUTH_USER_FIELD_MAPPING: dict[str, Any] = Field(default_factory=lambda: {'fullname': 'name'})
+    SOCIAL_AUTH_USER_FIELD_MAPPING: Annotated[dict[str, Any], NoDecode] = Field(default_factory=lambda: {'fullname': 'name'})
     STATICFILES_DIRS: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     STATIC_API_BASE_URL_DRAFT: str = Field(default='', validation_alias=AliasChoices('STATIC_API_BASE_URL_DRAFT'))
     STATIC_API_BASE_URL_LIVE: str = Field(default='', validation_alias=AliasChoices('STATIC_API_BASE_URL_LIVE'))
     STATIC_API_BASE_URL_TEST: str = Field(default='', validation_alias=AliasChoices('STATIC_API_BASE_URL_TEST'))
     STATIC_ROOT: str = Field(default='staticfiles')
-    STATIC_URL: str = Field(default='/static/', description='Serve static files with dj-static')
+    STATIC_URL: AnyUrl = Field(default='/static/', description='Serve static files with dj-static')  # TODO: refine type
     STATUS_TOKEN: str | None = Field(default=None, validation_alias=AliasChoices('STATUS_TOKEN'), description='server-status')  # REDACTED: name looks secret-like — set via a source, not here
     STORAGES: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
     TEMPLATES: Any = Field(default=None)  # DERIVED: reproduce in a @model_validator (conditional/computed value)
@@ -317,7 +319,7 @@ class AqueductSettings(BaseSettings):
     YT_UPLOAD_FREQUENCY: int = Field(default=60, validation_alias=AliasChoices('YT_UPLOAD_FREQUENCY'))
     YT_UPLOAD_LIMIT: int = Field(default=50, validation_alias=AliasChoices('YT_UPLOAD_LIMIT'))
     # ===== mitol.common.settings.base =====
-    SITE_BASE_URL: str = Field(...)
+    SITE_BASE_URL: AnyUrl = Field(...)  # TODO: refine type
     # ===== mitol.common.settings.webpack =====
     WEBPACK_DEV_SERVER_HOST: str = Field(default='', validation_alias=AliasChoices('WEBPACK_DEV_SERVER_HOST'))
     WEBPACK_DEV_SERVER_PORT: int | None = Field(default=None, validation_alias=AliasChoices('WEBPACK_DEV_SERVER_PORT'))
@@ -335,7 +337,7 @@ class AqueductSettings(BaseSettings):
     EMAIL_USE_TLS: bool = Field(default=False)
     MAILGUN_RECIPIENT_OVERRIDE: str | None = Field(default=None, validation_alias=AliasChoices('MAILGUN_RECIPIENT_OVERRIDE'))
     # ===== mitol.transcoding.settings.job =====
-    POST_TRANSCODE_ACTIONS: list[str] = Field(default_factory=lambda: [], validation_alias=AliasChoices('POST_TRANSCODE_ACTIONS'))
+    POST_TRANSCODE_ACTIONS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: [], validation_alias=AliasChoices('POST_TRANSCODE_ACTIONS'))
     TRANSCODE_JOB_TEMPLATE: str = Field(default='', validation_alias=AliasChoices('TRANSCODE_JOB_TEMPLATE'))
     VIDEO_S3_THUMBNAIL_BUCKET: str = Field(default='', validation_alias=AliasChoices('VIDEO_S3_THUMBNAIL_BUCKET'))
     VIDEO_S3_THUMBNAIL_PREFIX: str = Field(default='', validation_alias=AliasChoices('VIDEO_S3_THUMBNAIL_PREFIX'))
@@ -345,6 +347,39 @@ class AqueductSettings(BaseSettings):
     VIDEO_S3_UPLOAD_PREFIX: str = Field(default='', validation_alias=AliasChoices('VIDEO_S3_UPLOAD_PREFIX'))
     VIDEO_TRANSCODE_QUEUE: str = Field(default='Default', validation_alias=AliasChoices('VIDEO_TRANSCODE_QUEUE'))
     # <<< aqueduct:generated:fields
+
+    # >>> aqueduct:generated:container_decoders
+    @field_validator('ALLOWED_HOSTS', 'CELERY_ACCEPT_CONTENT', 'HEALTH_CHECK', 'INSTALLED_APPS', 'MIDDLEWARE', 'MITOL_MAIL_MESSAGE_CLASSES', 'OCW_EXTRA_COURSE_THEMES', 'OCW_STUDIO_DELETABLE_CONTENT_TYPES', 'OPEN_CATALOG_URLS', 'POST_TRANSCODE_ACTIONS', 'PREPUBLISH_ACTIONS', 'RESOURCE_TYPE_FIELDS', 'SOCIAL_AUTH_KEYCLOAK_EXTRA_DATA', 'SOCIAL_AUTH_KEYCLOAK_SCOPE', mode="before")
+    @classmethod
+    def _aqueduct_decode_list_fields(cls, value: object) -> object:
+        """Parse a list from a JSON, Python-literal, or comma-separated env string."""
+        if not isinstance(value, str):
+            return value
+        try:
+            parsed = json.loads(value)
+        except (ValueError, TypeError):
+            try:
+                parsed = ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                parsed = None
+        if isinstance(parsed, list):
+            return parsed
+        return [item.strip() for item in value.split(",")]
+
+    @field_validator('REST_FRAMEWORK', 'SOCIAL_AUTH_USER_FIELD_MAPPING', mode="before")
+    @classmethod
+    def _aqueduct_decode_dict_fields(cls, value: object) -> object:
+        """Parse a dict from a JSON or Python-literal env string."""
+        if not isinstance(value, str):
+            return value
+        try:
+            parsed = json.loads(value)
+        except (ValueError, TypeError):
+            parsed = None
+        if isinstance(parsed, dict):
+            return parsed
+        return ast.literal_eval(value)
+    # <<< aqueduct:generated:container_decoders
 
     # >>> aqueduct:preserved:validators
     # ------------------------------------------------------------------
@@ -425,6 +460,79 @@ class AqueductSettings(BaseSettings):
             "Base url for the application in the format PROTOCOL://HOSTNAME[:PORT]"
         ),
     )
+
+    # -- URL fields: revert the unconditional *_URL -> AnyUrl enrichment -------
+    # 0.8.0 promotes every *_URL/*_URI field to pydantic.AnyUrl. That is unsafe
+    # for a Django settings model injected via configure_django_settings, which
+    # calls model_dump() in Python mode:
+    #   * many of these hold Django route names / relative paths ("/", "sites",
+    #     "main-index", "/static/") that AnyUrl rejects outright — the model
+    #     would not even instantiate;
+    #   * for the genuinely-absolute ones, Python-mode model_dump() yields AnyUrl
+    #     objects (not str) and normalises a trailing slash, so Django itself and
+    #     every str-consuming client (requests, celery, redis, posthog,
+    #     social-auth, the git client) would receive a changed, wrong-typed value.
+    # Legacy main/settings.py stores all of these as plain str, so we keep str.
+    CELERY_BROKER_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("CELERY_BROKER_URL")
+    )
+    CONCOURSE_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("CONCOURSE_URL")
+    )
+    CONTENT_FILE_SEARCH_API_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("CONTENT_FILE_SEARCH_API_URL")
+    )
+    COURSE_SEARCH_API_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("COURSE_SEARCH_API_URL")
+    )
+    GIT_API_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("GIT_API_URL")
+    )
+    HIJACK_LOGIN_REDIRECT_URL: str = Field(default="sites")
+    HIJACK_LOGOUT_REDIRECT_URL: str = Field(default="/admin/users/user/")
+    LOGIN_ERROR_URL: str = Field(default="/")
+    LOGIN_REDIRECT_URL: str = Field(default="/")
+    LOGIN_URL: str = Field(default="/")
+    LOGOUT_REDIRECT_URL: str = Field(default="/")
+    MEDIA_URL: str = Field(default="/media/")
+    MIT_LEARN_API_BASE_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("MIT_LEARN_API_BASE_URL")
+    )
+    MIT_LEARN_BASE_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("MIT_LEARN_BASE_URL")
+    )
+    OCW_STUDIO_DRAFT_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("OCW_STUDIO_DRAFT_URL")
+    )
+    OCW_STUDIO_LIVE_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("OCW_STUDIO_LIVE_URL")
+    )
+    OCW_STUDIO_TEST_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("OCW_STUDIO_TEST_URL")
+    )
+    POSTHOG_API_HOST: str = Field(
+        default="https://app.posthog.com",
+        validation_alias=AliasChoices("POSTHOG_API_HOST"),
+    )
+    PUBLISH_POSTHOG_API_HOST: str = Field(
+        default="https://app.posthog.com",
+        validation_alias=AliasChoices("PUBLISH_POSTHOG_API_HOST"),
+    )
+    REDISCLOUD_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("REDISCLOUD_URL")
+    )
+    SEARCH_API_URL: str | None = Field(
+        default=None, validation_alias=AliasChoices("SEARCH_API_URL")
+    )
+    SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL: str = Field(
+        ..., validation_alias=AliasChoices("SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL")
+    )
+    SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL: str = Field(
+        ..., validation_alias=AliasChoices("SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL")
+    )
+    SOCIAL_AUTH_LOGIN_ERROR_URL: str = Field(default="main-index")
+    SOCIAL_AUTH_LOGIN_REDIRECT_URL: str = Field(default="sites")
+    STATIC_URL: str = Field(default="/static/")
     EMAIL_BACKEND: str = Field(
         default="django.core.mail.backends.smtp.EmailBackend",
         validation_alias=AliasChoices("OCW_STUDIO_EMAIL_BACKEND"),
@@ -512,38 +620,18 @@ class AqueductSettings(BaseSettings):
             "any FEATURE_* keys supplied by settings sources (e.g. Vault)"
         ),
     )
-    # Comma-delimited in the environment (mitol get_delimited_list); NoDecode
-    # stops pydantic-settings from attempting JSON decoding so the validator
-    # below can split on commas exactly like the legacy parser.
-    OPEN_CATALOG_URLS: Annotated[list[str], NoDecode] = Field(
-        # get_delimited_list(default="") parses the default too: "" -> [""].
-        default_factory=lambda: [""],
-        validation_alias=AliasChoices("OPEN_CATALOG_URLS"),
-        description="Open catalog urls",
-    )
-    PREPUBLISH_ACTIONS: Annotated[list[str], NoDecode] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices("PREPUBLISH_ACTIONS"),
-        description="Actions to perform before publish",
-    )
-    OCW_EXTRA_COURSE_THEMES: Annotated[list[str], NoDecode] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices("OCW_EXTRA_COURSE_THEMES"),
-        description="Additional Hugo themes to build for OCW course sites",
-    )
-    OCW_STUDIO_DELETABLE_CONTENT_TYPES: Annotated[list[str], NoDecode] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices("OCW_STUDIO_DELETABLE_CONTENT_TYPES"),
-        description="List of content types that can be deleted",
-    )
-    RESOURCE_TYPE_FIELDS: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["resourcetype", "filetype"],
-        validation_alias=AliasChoices("RESOURCE_TYPE_FIELDS"),
-        description=(
-            "List of site configuration fields that are used to store resource type"
-        ),
-    )
-    # Python-literal syntax in the environment (main/envs.py helpers).
+    # The comma-delimited mitol get_delimited_list fields (OPEN_CATALOG_URLS,
+    # PREPUBLISH_ACTIONS, OCW_EXTRA_COURSE_THEMES,
+    # OCW_STUDIO_DELETABLE_CONTENT_TYPES, RESOURCE_TYPE_FIELDS) are now typed and
+    # parsed entirely by the generated `container_decoders` region above
+    # (NoDecode + a JSON/literal/comma-split before-validator), so they no
+    # longer need a hand-written override. OPEN_CATALOG_URLS's generated
+    # default="" flows through that decoder to [""], matching legacy.
+
+    # These three read Python-literal env values (main/envs.py get_list_of_str /
+    # get_dict_of_str) and are emitted as `Any` by static discovery (their
+    # default is a mitol call, not a literal), so the generated decoders do not
+    # cover them; declare them typed with NoDecode + the literal parser below.
     OCW_TEST_SITE_SLUGS: Annotated[list[str], NoDecode] = Field(
         default_factory=list,
         validation_alias=AliasChoices("OCW_TEST_SITE_SLUGS"),
@@ -582,21 +670,6 @@ class AqueductSettings(BaseSettings):
     # ------------------------------------------------------------------
     # Field validators
     # ------------------------------------------------------------------
-
-    @field_validator(
-        "OPEN_CATALOG_URLS",
-        "PREPUBLISH_ACTIONS",
-        "OCW_EXTRA_COURSE_THEMES",
-        "OCW_STUDIO_DELETABLE_CONTENT_TYPES",
-        "RESOURCE_TYPE_FIELDS",
-        mode="before",
-    )
-    @classmethod
-    def _split_delimited(cls, value: Any) -> Any:
-        """Split comma-delimited strings, mirroring mitol parse_delimited_list."""
-        if isinstance(value, str):
-            return [item.strip(" ") for item in value.split(",")]
-        return value
 
     @field_validator(
         "OCW_TEST_SITE_SLUGS",
