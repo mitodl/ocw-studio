@@ -57,7 +57,7 @@ dependencies = [
     "posthog>=7.0.0,<8",
     "mitol-django-transcoding>=2026.4.2,<2027",
     "granian>=2.7.2",
-    "django-aqueduct[vault,mitol]>=0.6.0",
+    "django-aqueduct[vault,mitol,derivations]>=0.7.0",
 ]
 
 [dependency-groups]
@@ -94,6 +94,9 @@ build-backend = "uv_build"
 [tool.ruff]
 target-version = "py314"
 line-length = 88
+# main/aqueduct_settings.py carries machine-owned `aqueduct:generated` regions;
+# reformatting them would make `generate_aqueduct_settings --check` report drift.
+extend-exclude = ["main/aqueduct_settings.py"]
 
 [tool.ruff.lint]
 select = [
@@ -189,11 +192,55 @@ inline-quotes = "double"
 "test_*.py" = ["ARG001", "E501", "S101", "PLR2004"]
 "**/migrations/**" = ["ARG001"]
 "**/apps.py" = ["PLC0415"]
-# django-aqueduct codegen scaffold: TODO markers flag fields whose type could be
-# refined further; tracked as follow-up work rather than fixed inline.
-"main/aqueduct_settings.py" = ["TD002", "TD003", "FIX002"]
 "repl.py" = ["S603"]
 
+
+[tool.aqueduct]
+# Static AST scan of the real settings modules (main/settings.py plus the
+# mitol modules pulled in via import_settings_modules) yields fields under
+# their Django attribute names. The EnvParser-registry inspector is disabled:
+# it names fields after env vars (OCW_STUDIO_ENVIRONMENT, OCW_STUDIO_EMAIL_*),
+# duplicating settings the module scan already provides under the right names.
+modules = [
+    "mitol.common.settings.base",
+    "mitol.common.settings.webpack",
+    "mitol.mail.settings.email",
+    "mitol.transcoding.settings.job",
+    "main.settings",
+]
+output = "main/aqueduct_settings.py"
+include_envparser = false
+class_name = "AqueductSettings"
+extra = "allow"
+parity_model = "main.aqueduct_settings:AqueductSettings"
+parity_legacy = "main.settings"
+# Deliberate divergences from main/settings.py:
+# - STORAGES: legacy only defines it when OCW_STUDIO_USE_S3 is set; the model
+#   always declares it, defaulting to Django's built-in STORAGES value.
+# - NPLUSONE_LOGGER: a Logger instance in legacy; the model carries the same
+#   logger but model_dump() copies confuse the comparison.
+# - REDIS_URL / HOST_IP / OCW_STUDIO_DB_* / DATABASE_URL: legacy reads these
+#   inline (they never become module attributes); the model declares them as
+#   real fields so the derivations are typed and testable.
+# - DATABASES / DEFAULT_DATABASE_CONFIG: two deliberate differences. (1) The
+#   legacy module is the active DJANGO_SETTINGS_MODULE during the check, so
+#   Django's ConnectionHandler has already injected ATOMIC_REQUESTS/AUTOCOMMIT/
+#   TIME_ZONE/TEST into its copy — a harness artifact, not real drift. (2) The
+#   model uses derivations.database_config, which omits the bogus
+#   OPTIONS={"sslmode": "require"} that legacy applies even to SQLite (the
+#   shipped odl-video-service bug the derivation exists to fix).
+parity_ignore = [
+    "STORAGES",
+    "NPLUSONE_LOGGER",
+    "REDIS_URL",
+    "HOST_IP",
+    "DATABASE_URL",
+    "DATABASES",
+    "DEFAULT_DATABASE_CONFIG",
+    "OCW_STUDIO_DB_CONN_MAX_AGE",
+    "OCW_STUDIO_DB_DISABLE_SS_CURSORS",
+    "OCW_STUDIO_DB_DISABLE_SSL",
+]
 
 [tool.pytest.ini_options]
 addopts = "--cov . --cov-report term --cov-report html --cov-report xml --ds=main.settings --reuse-db --color=yes"

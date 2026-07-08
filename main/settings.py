@@ -154,6 +154,8 @@ INSTALLED_APPS = [
     "videos",
     "external_resources",
     "django_removals",
+    # typed settings management (generate_aqueduct_settings / parity checks)
+    "django_aqueduct",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
