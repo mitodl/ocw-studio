@@ -197,7 +197,7 @@ def link_threeplay_files_as_resources(video, video_resource: WebsiteContent) -> 
         with field_file.open("rb") as file_handle:
             content_bytes = file_handle.read()
         file_obj = File(BytesIO(content_bytes), name=f"{base}.{extension}")
-        _, text_id = _create_new_content(
+        text_id = _create_new_content(
             file_obj, video_resource, file_size=len(content_bytes)
         )
         _append_resource_to_video_files(video_resource, resource_field, text_id)

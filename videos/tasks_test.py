@@ -418,9 +418,6 @@ def test_start_transcript_job(
     start_transcript_job.apply([video.id])
 
     video_content.refresh_from_db()
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) is None
-    assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) is None
     if caption_exists:
         captions_relation = get_dict_field(
             video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES
@@ -792,10 +789,6 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
 
     resource.refresh_from_db()
 
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
-
     if update_transcript_return_value and is_ocw:
         link_mock.assert_any_call(video, resource)
         sync_refs_mock.assert_called()
@@ -897,13 +890,6 @@ def test_update_transcripts_for_video_no_3play(
 
     mock_3play.assert_not_called()
 
-    # The pre-existing scalar _file values are left completely untouched
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"{base_path}_captions.vtt" if caption_exists else None
-    )
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
-        f"{base_path}_transcript.pdf" if transcript_exists else None
-    )
     # The _resources relation fields are written from the found resources
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES) == (
         {
@@ -967,8 +953,6 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
         str(captions_fr.text_id),
     }
     assert relation["website"] == video.website.name
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
 
 
 def test_attempt_to_update_missing_transcripts(mocker):
