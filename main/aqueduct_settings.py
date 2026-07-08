@@ -1330,7 +1330,14 @@ class AqueductSettings(BaseSettings):
         if self.CELERY_RESULT_BACKEND is None:
             self.CELERY_RESULT_BACKEND = redis_url
 
-        # Caches (redis LOCATION follows the resolved broker URL)
+        # Caches (redis LOCATION follows the resolved broker URL). When no
+        # Redis is configured, CELERY_BROKER_URL is None and dv.redis_cache
+        # returns a "redis" entry with LOCATION=None WITHOUT raising — this is
+        # deliberate and matches legacy main/settings.py, which unconditionally
+        # defines CACHES["redis"] with LOCATION=CELERY_BROKER_URL (also None
+        # when unset). Django instantiates cache backends lazily, so an unused
+        # None-location redis cache never crashes at startup; dropping the entry
+        # here would instead diverge from the legacy settings this model mirrors.
         self.CACHES = {
             "default": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
