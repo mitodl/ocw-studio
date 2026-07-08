@@ -335,9 +335,6 @@ class AqueductSettings(BaseSettings):
         validation_alias=AliasChoices("GIT_TOKEN"),
         description="Git backend settings",
     )  # REDACTED: name looks secret-like — set via a source, not here
-    HEALTH_CHECK: Annotated[list[Any], NoDecode] = Field(
-        default_factory=lambda: ["CELERY", "REDIS", "POSTGRES"]
-    )
     HEROKU_APP_NAME: str | None = Field(
         default=None,
         validation_alias=AliasChoices("HEROKU_APP_NAME"),
@@ -381,6 +378,7 @@ class AqueductSettings(BaseSettings):
             "mitol.common.apps.CommonApp",
             "mitol.authentication.apps.AuthenticationApp",
             "mitol.mail.apps.MailApp",
+            "health_check",
         ],
         description="Application definition",
     )
@@ -752,11 +750,6 @@ class AqueductSettings(BaseSettings):
     STATIC_URL: str = Field(
         default="/static/", description="Serve static files with dj-static"
     )
-    STATUS_TOKEN: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("STATUS_TOKEN"),
-        description="server-status",
-    )  # REDACTED: name looks secret-like — set via a source, not here
     STORAGES: Any = Field(
         default=None
     )  # DERIVED: reproduce in a @model_validator (conditional/computed value)
@@ -831,9 +824,9 @@ class AqueductSettings(BaseSettings):
         validation_alias=AliasChoices("YT_FIELD_CAPTIONS"),
         description="YouTube OCW metadata fields",
     )
-    YT_FIELD_CAPTIONS_RESOURCE: str = Field(
-        default="video_files.video_captions_resource",
-        validation_alias=AliasChoices("YT_FIELD_CAPTIONS_RESOURCE"),
+    YT_FIELD_CAPTIONS_RESOURCES: str = Field(
+        default="video_files.video_captions_resources",
+        validation_alias=AliasChoices("YT_FIELD_CAPTIONS_RESOURCES"),
     )
     YT_FIELD_DESCRIPTION: str = Field(
         default="video_metadata.youtube_description",
@@ -859,9 +852,9 @@ class AqueductSettings(BaseSettings):
         default="video_files.video_transcript_file",
         validation_alias=AliasChoices("YT_FIELD_TRANSCRIPT"),
     )
-    YT_FIELD_TRANSCRIPT_RESOURCE: str = Field(
-        default="video_files.video_transcript_resource",
-        validation_alias=AliasChoices("YT_FIELD_TRANSCRIPT_RESOURCE"),
+    YT_FIELD_TRANSCRIPT_RESOURCES: str = Field(
+        default="video_files.video_transcript_resources",
+        validation_alias=AliasChoices("YT_FIELD_TRANSCRIPT_RESOURCES"),
     )
     YT_PROJECT_ID: str = Field(
         default="", validation_alias=AliasChoices("YT_PROJECT_ID")
@@ -948,7 +941,6 @@ class AqueductSettings(BaseSettings):
     @field_validator(
         "ALLOWED_HOSTS",
         "CELERY_ACCEPT_CONTENT",
-        "HEALTH_CHECK",
         "INSTALLED_APPS",
         "MIDDLEWARE",
         "MITOL_MAIL_MESSAGE_CLASSES",
@@ -1133,11 +1125,6 @@ class AqueductSettings(BaseSettings):
         default="",
         validation_alias=AliasChoices("SENTRY_DSN"),
         description="The connection settings for Sentry",
-    )
-    STATUS_TOKEN: str = Field(
-        default="",
-        validation_alias=AliasChoices("STATUS_TOKEN"),
-        description="Token to access the status API.",
     )
     YT_ACCESS_TOKEN: str = Field(
         default="",
