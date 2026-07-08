@@ -232,6 +232,70 @@ def test_sync_video_captions_and_transcripts_treats_empty_content_as_unset(mocke
     assert isinstance(vf["video_captions_resources"]["content"], list)
 
 
+def test_sync_video_captions_and_transcripts_appends_to_scalar_string_content(mocker):
+    """A legacy scalar-string content value is normalized to a list, not exploded
+    into characters, when 3Play appends a new resource id.
+    """
+    starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    website = WebsiteFactory.create(starter=starter)
+    fr_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_fr_vtt",
+    )
+    fr_transcript = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_transcript_fr_pdf",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt789"},
+            "video_files": {
+                # Legacy single-item relation stored as a bare string, not a list
+                "video_captions_resources": {
+                    "content": str(fr_caption.text_id),
+                    "website": website.name,
+                },
+                "video_transcript_resources": {
+                    "content": str(fr_transcript.text_id),
+                    "website": website.name,
+                },
+            },
+        },
+    )
+
+    mocker.patch(
+        "videos.threeplay_sync.threeplay_transcript_api_request",
+        return_value={"data": [{"status": "complete", "id": 11, "media_file_id": 22}]},
+    )
+    mocker.patch(
+        "videos.threeplay_sync.fetch_file",
+        side_effect=[BytesIO(b"pdf"), BytesIO(b"webvtt")],
+    )
+    mocker.patch(
+        "videos.threeplay_sync.upload_to_s3",
+        side_effect=[
+            f"/courses/{website.name}/yt789_transcript.pdf",
+            f"/courses/{website.name}/yt789_captions.webvtt",
+        ],
+    )
+
+    sync_video_captions_and_transcripts(video)
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    captions_content = vf["video_captions_resources"]["content"]
+    transcript_content = vf["video_transcript_resources"]["content"]
+
+    # Original id preserved whole, not exploded into individual characters
+    assert str(fr_caption.text_id) in captions_content
+    assert str(fr_transcript.text_id) in transcript_content
+    assert len(captions_content) == 2
+    assert len(transcript_content) == 2
+
+
 def test_link_threeplay_files_as_resources(mocker):
     """Downloaded 3Play files become convention-named resources linked via _resources."""
     starter = WebsiteStarterFactory.create(slug="ocw-course-v2")

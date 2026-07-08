@@ -254,12 +254,15 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
             if not isinstance(relation, dict):
                 continue
             content_list = relation.get("content")
-            if isinstance(content_list, list) and text_id in content_list:
+            if isinstance(content_list, str) and content_list == text_id:
+                relation["content"] = []
+                changed = True
+            elif isinstance(content_list, list) and text_id in content_list:
                 relation["content"] = [c for c in content_list if c != text_id]
                 changed = True
         if changed:
             video.metadata["video_files"] = video_files
-            video.save()
+            video.save(update_fields=["metadata"])
             sync_website_content_references(video)
 
 

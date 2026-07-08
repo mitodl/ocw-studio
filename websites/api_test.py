@@ -1011,6 +1011,36 @@ def test_unlink_deleted_resource_removes_from_video_captions_resources():
     assert captions not in video.referenced_by.all()
 
 
+def test_unlink_deleted_resource_removes_legacy_scalar_string_content():
+    """Deleting a resource linked via a legacy scalar-string content value still unlinks it."""
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": str(captions.text_id),
+                    "website": website.name,
+                }
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    sync_website_content_references(video)
+
+    unlink_deleted_resource_from_videos(captions)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == []
+
+
 def test_unlink_deleted_resource_preserves_other_language():
     """Deleting one language variant leaves other linked languages intact."""
     website = WebsiteFactory.create()

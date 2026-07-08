@@ -62,8 +62,10 @@ def _append_resource_to_video_files(
     vf = video.metadata.setdefault("video_files", {})
     existing_resources = vf.get(resource_field)
     if isinstance(existing_resources, dict) and existing_resources.get("content"):
-        if text_id not in existing_resources["content"]:
-            existing_resources["content"] = [*existing_resources["content"], text_id]
+        content = existing_resources["content"]
+        content_list = [content] if isinstance(content, str) else list(content)
+        if text_id not in content_list:
+            existing_resources["content"] = [*content_list, text_id]
     else:
         vf[resource_field] = {"content": [text_id], "website": video.website.name}
 

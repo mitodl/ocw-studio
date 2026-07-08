@@ -330,7 +330,7 @@ def delete_s3_objects(
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
 )
-def update_transcripts_for_video(video_id: int):  # noqa: C901
+def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     captions_list, transcripts_list = video.caption_transcript_resources()
@@ -369,6 +369,7 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                     video_resource.save()
                     sync_website_content_references(video_resource)
             else:
+                resource_changed = False
                 for resource_list, resource_field in [
                     (captions_list, settings.YT_FIELD_CAPTIONS_RESOURCES),
                     (transcripts_list, settings.YT_FIELD_TRANSCRIPT_RESOURCES),
@@ -387,7 +388,9 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901
                                 resource_field,
                                 new_relation,
                             )
-                            video_resource.save()
+                            resource_changed = True
+                if resource_changed:
+                    video_resource.save(update_fields=["metadata"])
 
             if first_transcript_download and len(videos_missing_captions(website)) == 0:
                 mail_transcripts_complete_notification(website)
