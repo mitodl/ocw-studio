@@ -57,7 +57,7 @@ dependencies = [
     "posthog>=7.0.0,<8",
     "mitol-django-transcoding>=2026.4.2,<2027",
     "granian>=2.7.2",
-    "django-aqueduct[vault,mitol,derivations]>=0.8.0",
+    "django-aqueduct[vault,mitol,derivations]>=0.9.0",
 ]
 
 [dependency-groups]
@@ -94,8 +94,14 @@ build-backend = "uv_build"
 [tool.ruff]
 target-version = "py314"
 line-length = 88
-# main/aqueduct_settings.py carries machine-owned `aqueduct:generated` regions;
-# reformatting them would make `generate_aqueduct_settings --check` report drift.
+# main/aqueduct_settings.py is kept out of ruff. django-aqueduct 0.8.1 made the
+# generated output ruff-format-stable and dropped the blanket `# ruff: noqa`,
+# but this project selects rule groups beyond the ~9 that was validated against
+# (the documented `extend-exclude` fallback). The managed-region override
+# pattern re-declares generated fields in the preserved region, which trips
+# PIE794/F811 (duplicate class field) unavoidably; the generated `# TODO: refine
+# type` markers trip TD002/TD003/FIX002; and the ported derivations trip
+# complexity rules (C901/PLR0912/PLR0915). None are real defects.
 extend-exclude = ["main/aqueduct_settings.py"]
 
 [tool.ruff.lint]
@@ -222,21 +228,16 @@ parity_legacy = "main.settings"
 # - REDIS_URL / HOST_IP / OCW_STUDIO_DB_* / DATABASE_URL: legacy reads these
 #   inline (they never become module attributes); the model declares them as
 #   real fields so the derivations are typed and testable.
-# - DATABASES / DEFAULT_DATABASE_CONFIG: two deliberate differences. (1) The
-#   legacy module is the active DJANGO_SETTINGS_MODULE during the check, so
-#   Django's ConnectionHandler has already injected ATOMIC_REQUESTS/AUTOCOMMIT/
-#   TIME_ZONE/TEST into its copy — a harness artifact, not real drift. (2) The
-#   model uses derivations.database_config, which omits the bogus
-#   OPTIONS={"sslmode": "require"} that legacy applies even to SQLite (the
-#   shipped odl-video-service bug the derivation exists to fix).
+# DATABASES / DEFAULT_DATABASE_CONFIG are no longer ignored: 0.9.0 subset-
+# compares dict settings, so the keys Django's ConnectionHandler injects into
+# the legacy copy (ATOMIC_REQUESTS/AUTOCOMMIT/TIME_ZONE/TEST) and the model's
+# SQLite-safe empty OPTIONS (a subset of legacy's stray sslmode) both pass.
 parity_ignore = [
     "STORAGES",
     "NPLUSONE_LOGGER",
     "REDIS_URL",
     "HOST_IP",
     "DATABASE_URL",
-    "DATABASES",
-    "DEFAULT_DATABASE_CONFIG",
     "OCW_STUDIO_DB_CONN_MAX_AGE",
     "OCW_STUDIO_DB_DISABLE_SS_CURSORS",
     "OCW_STUDIO_DB_DISABLE_SSL",
