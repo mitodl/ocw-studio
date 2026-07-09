@@ -166,6 +166,46 @@ def test_migration_0076_appends_to_existing_resources(migration_module, settings
 
 
 @mock_aws
+def test_migration_0076_appends_to_existing_scalar_string_content(
+    migration_module, settings
+):
+    """A legacy scalar-string _resources.content value is preserved, not dropped."""
+    s3_bucket = _setup_s3_bucket(settings)
+    website = WebsiteFactory.create()
+    fr_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_fr_vtt",
+        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+    )
+    en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
+    s3_bucket.put_object(Key=en_key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"/{en_key}",
+                "video_captions_resources": {
+                    "content": str(fr_caption.text_id),
+                    "website": website.name,
+                },
+            },
+        },
+    )
+
+    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+
+    video.refresh_from_db()
+    content = video.metadata["video_files"]["video_captions_resources"]["content"]
+    assert isinstance(content, list)
+    assert str(fr_caption.text_id) in content
+    assert len(content) == 2
+
+
+@mock_aws
 def test_migration_0076_reuses_existing_resource_for_same_s3_key(
     migration_module, settings
 ):

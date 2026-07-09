@@ -11,15 +11,21 @@ Two cases handled per video:
    was ever set for this video. The key is simply removed -- there is nothing to
    back-fill.
 
-2. Non-empty orphan _file path: the referenced S3 object may still exist even
-   though no WebsiteContent record was ever created for it (e.g. content
-   uploaded directly to S3 outside of the GDrive/3Play pipelines, using a
-   Google Drive file ID as the filename). If the object exists in S3, a new
-   WebsiteContent resource is created for it, named after the video's own
-   filename (``{video.filename}_captions`` / ``{video.filename}_transcript``)
-   rather than the orphan path's filename, since the orphan path is often an
-   opaque identifier. If the S3 object no longer exists, the _file path is left
-   in place for manual inspection, matching migration 0074's philosophy.
+2. Non-empty orphan _file path: if a WebsiteContent resource already points at
+   this exact S3 key (e.g. created by a later sync or manual remediation after
+   migration 0074 ran), that resource is reused rather than creating a
+   duplicate. Otherwise, the referenced S3 object may still exist even though
+   no WebsiteContent record was ever created for it (e.g. content uploaded
+   directly to S3 outside of the GDrive/3Play pipelines, using a Google Drive
+   file ID as the filename); if so, a new WebsiteContent resource is created
+   for it, named after the video's own filename (``{video.filename}_captions``
+   / ``{video.filename}_transcript``) rather than the orphan path's filename,
+   since the orphan path is often an opaque identifier. If the S3 object no
+   longer exists, the _file path is left in place for manual inspection,
+   matching migration 0074's philosophy. Either way, the resolved resource's
+   id is appended to the resource field's existing ``content`` list without
+   dropping an already-linked id, whether that existing value is a list or a
+   legacy scalar string.
 
 IMPORTANT: this migration must not run in production until the
 `remove_uuid_from_filenames` management command has been run against
@@ -145,10 +151,18 @@ def _backfill_orphaned_files(apps, schema_editor):  # noqa: ARG001
 
             existing = video_files.get(resource_field)
             existing_ids = []
-            if isinstance(existing, dict) and isinstance(existing.get("content"), list):
-                existing_ids = existing["content"]
+            if isinstance(existing, dict) and existing.get("content"):
+                existing_content = existing["content"]
+                existing_ids = (
+                    [existing_content]
+                    if isinstance(existing_content, str)
+                    else list(existing_content)
+                )
+            resource_text_id = str(resource.text_id)
+            if resource_text_id not in existing_ids:
+                existing_ids = [*existing_ids, resource_text_id]
             video_files[resource_field] = {
-                "content": [*existing_ids, str(resource.text_id)],
+                "content": existing_ids,
                 "website": content.website.name,
             }
             video_files.pop(file_field)
