@@ -1,7 +1,7 @@
 """Management command for upserting the mass build pipeline"""  # noqa: INP001
 
 from django.conf import settings
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, CommandError
 from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_mass_build_sites_pipeline, get_pipeline_api
@@ -78,6 +78,24 @@ class Command(BaseCommand):
             default="",
             help="Optional override for the theme slug to use in the builds",
         )
+        parser.add_argument(
+            "--sync-with-delete",
+            dest="sync_with_delete",
+            action="store_true",
+            help=(
+                "Upsert a separate draft AND live pipeline instance that runs "
+                "'aws s3 sync --delete' for non-root sites, removing files from the "
+                "web buckets that are no longer in the Hugo output. Cannot be combined "
+                "with --offline (destructive sync only applies to online builds) or "
+                "--unpause (unpausing arms the pipeline to auto-trigger on the next "
+                "unrelated ocw-hugo-projects push or webpack manifest rebuild, running "
+                "the destructive sync with no further confirmation; unpause manually "
+                "via the Concourse UI or fly only when ready to watch it run). "
+                "--delete-all removes every mass-build-sites instance, including the "
+                "default (non-destructive) ones - re-upsert and --unpause the "
+                "defaults afterward to restore normal automatic builds."
+            ),
+        )
 
     def handle(self, *args, **options):  # noqa: ARG002
         if not settings.CONTENT_SYNC_PIPELINE_BACKEND:
@@ -95,7 +113,25 @@ class Command(BaseCommand):
         offline = options["offline"]
         hugo_args = options["hugo_args"]
         theme_slug = options["theme_slug"]
+        sync_with_delete = options["sync_with_delete"]
         start = now_in_utc()
+
+        if sync_with_delete and offline:
+            msg = (
+                "--sync-with-delete only applies to online builds and cannot be "
+                "combined with --offline"
+            )
+            raise CommandError(msg)
+
+        if sync_with_delete and unpause:
+            msg = (
+                "--sync-with-delete cannot be combined with --unpause. Unpausing "
+                "arms the pipeline to auto-trigger on the next unrelated "
+                "ocw-hugo-projects push or webpack manifest rebuild, running the "
+                "destructive sync with no further confirmation. Unpause manually "
+                "via the Concourse UI or fly only when ready to watch it run."
+            )
+            raise CommandError(msg)
 
         if delete_all:
             self.stdout.write("Deleting existing mass build pipelines first")
@@ -104,7 +140,7 @@ class Command(BaseCommand):
                 api.delete_pipelines(names=[BaseMassBuildSitesPipeline.PIPELINE_NAME])
                 self.stdout.write("Deleted all mass build pipelines")
             else:
-                self.stdout.error("No pipeline api configured")
+                self.stderr.write("No pipeline api configured")
 
         for version in (VERSION_DRAFT, VERSION_LIVE):
             pipeline = get_mass_build_sites_pipeline(
@@ -116,6 +152,7 @@ class Command(BaseCommand):
                 offline=offline,
                 hugo_args=hugo_args,
                 theme_slug=theme_slug,
+                sync_with_delete=sync_with_delete,
             )
             pipeline.upsert_pipeline()
             self.stdout.write(f"Created {version} mass build pipeline")
