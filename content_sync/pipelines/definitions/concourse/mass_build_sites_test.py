@@ -12,6 +12,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
@@ -19,6 +20,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
@@ -385,3 +387,20 @@ def test_mass_build_sites_definition_sync_with_delete(
             # download, so they must also be excluded from the delete sync
             assert "--exclude='*.mp4'" in command
     assert upload_online_build_tasks > 0
+
+    # A destructive (sync_with_delete) instance must never auto-trigger on an
+    # unrelated themes/projects push - it can only run via an explicit trigger
+    first_batch_steps = rendered_definition["jobs"][0]["plan"]
+    webpack_trigger_step = get_dict_list_item_by_field(
+        items=first_batch_steps,
+        field="get",
+        value=WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+    )
+    projects_trigger_step = get_dict_list_item_by_field(
+        items=first_batch_steps,
+        field="get",
+        value=OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
+    )
+    expected_trigger = not sync_with_delete
+    assert webpack_trigger_step["trigger"] == expected_trigger
+    assert projects_trigger_step["trigger"] == expected_trigger

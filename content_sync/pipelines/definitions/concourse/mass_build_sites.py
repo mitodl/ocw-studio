@@ -253,7 +253,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         for batch in batches:
             tasks = []
             if batch_number == 1:
-                trigger = not config.offline
+                trigger = not config.offline and not config.sync_with_delete
                 tasks.extend(
                     [
                         GetStep(
