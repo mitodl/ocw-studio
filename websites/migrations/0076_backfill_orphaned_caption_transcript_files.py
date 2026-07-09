@@ -78,6 +78,7 @@ def _backfill_orphaned_files(apps, schema_editor):  # noqa: ARG001
     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
 
     updated_website_ids = set()
+    objects_to_update = []
 
     for content in (
         WebsiteContent.objects.filter(
@@ -146,8 +147,11 @@ def _backfill_orphaned_files(apps, schema_editor):  # noqa: ARG001
             changed = True
 
         if changed:
-            content.save(update_fields=["metadata"])
+            objects_to_update.append(content)
             updated_website_ids.add(content.website_id)
+
+    if objects_to_update:
+        WebsiteContent.objects.bulk_update(objects_to_update, ["metadata"])
 
     if updated_website_ids:
         Website.objects.filter(pk__in=updated_website_ids).update(
