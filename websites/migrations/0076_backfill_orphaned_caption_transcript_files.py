@@ -105,35 +105,43 @@ def _backfill_orphaned_files(apps, schema_editor):  # noqa: ARG001
                 changed = True
                 continue
 
-            # Case 2: real orphan path -- verify the S3 object still exists.
+            # Case 2: real orphan path. Reuse a resource already pointing at
+            # this exact S3 key if one exists (e.g. created by a later sync
+            # or manual remediation after migration 0074 ran) instead of
+            # creating a duplicate; otherwise verify the object still exists
+            # in S3 and create a new resource for it.
             key = path.lstrip("/")
-            if not _object_exists_in_s3(bucket_name, key):
-                print(  # noqa: T201
-                    f"[0076] Skipping missing S3 object for "
-                    f"{content.website.name}/{content.filename}: {path}"
-                )
-                continue
+            resource = WebsiteContent.objects.filter(
+                website=content.website, file=key
+            ).first()
+            if resource is None:
+                if not _object_exists_in_s3(bucket_name, key):
+                    print(  # noqa: T201
+                        f"[0076] Skipping missing S3 object for "
+                        f"{content.website.name}/{content.filename}: {path}"
+                    )
+                    continue
 
-            base_filename = f"{content.filename}_{suffix}"
-            filename = _unique_filename(
-                WebsiteContent, content.website, content.dirpath, base_filename
-            )
-            new_text_id = str(uuid.uuid4())
-            title = f"{content.title} {suffix}" if content.title else filename
-            resource = WebsiteContent.objects.create(
-                website=content.website,
-                type="resource",
-                is_page_content=True,
-                filename=filename,
-                dirpath=content.dirpath,
-                file=key,
-                text_id=new_text_id,
-                title=title,
-                metadata={
-                    "file": path,
-                    "resourcetype": resourcetype,
-                },
-            )
+                base_filename = f"{content.filename}_{suffix}"
+                filename = _unique_filename(
+                    WebsiteContent, content.website, content.dirpath, base_filename
+                )
+                new_text_id = str(uuid.uuid4())
+                title = f"{content.title} {suffix}" if content.title else filename
+                resource = WebsiteContent.objects.create(
+                    website=content.website,
+                    type="resource",
+                    is_page_content=True,
+                    filename=filename,
+                    dirpath=content.dirpath,
+                    file=key,
+                    text_id=new_text_id,
+                    title=title,
+                    metadata={
+                        "file": path,
+                        "resourcetype": resourcetype,
+                    },
+                )
 
             existing = video_files.get(resource_field)
             existing_ids = []

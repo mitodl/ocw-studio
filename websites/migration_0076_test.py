@@ -166,6 +166,42 @@ def test_migration_0076_appends_to_existing_resources(migration_module, settings
 
 
 @mock_aws
+def test_migration_0076_reuses_existing_resource_for_same_s3_key(
+    migration_module, settings
+):
+    """An orphan path matching an already-created resource is linked, not duplicated."""
+    _setup_s3_bucket(settings)
+    website = WebsiteFactory.create()
+    key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
+    already_linked = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_captions",
+        file=key,
+    )
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{key}"},
+        },
+    )
+
+    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_captions_file" not in vf
+    resources = vf["video_captions_resources"]
+    assert resources["content"] == [str(already_linked.text_id)]
+
+    WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    assert WebsiteContent.objects.filter(website=website, file=key).count() == 1
+
+
+@mock_aws
 def test_migration_0076_deduplicates_filename_collision(migration_module, settings):
     """Filename collisions in the same (website, dirpath) get a numeric suffix."""
     s3_bucket = _setup_s3_bucket(settings)
