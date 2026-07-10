@@ -16,7 +16,7 @@ ENV HUGO_URL="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y curl awscli jq git wget zip unzip && \
+    apt-get install --no-install-recommends -y ca-certificates curl awscli jq git wget zip unzip && \
     wget --progress=dot:giga "${HUGO_URL}" && \
     apt-get install -y "./${HUGO_NAME}.deb" && \
     rm -rf "./${HUGO_NAME}.deb" "${HUGO_NAME}" && \
