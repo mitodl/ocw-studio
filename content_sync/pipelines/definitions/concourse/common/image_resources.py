@@ -5,7 +5,7 @@ from ol_concourse.lib.models.pipeline import AnonymousResource, RegistryImage
 """
 Docker image for building OCW sites
 
-https://github.com/mitodl/ol-infrastructure/tree/main/dockerfiles/ocw/node-hugo
+Built from docker/ocw-course-publisher/ in this repository.
 """
 OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
