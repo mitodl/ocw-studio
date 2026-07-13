@@ -4,7 +4,10 @@
   "packageRules": [
     {
       "matchManagers": ["custom.regex"],
-      "matchFileNames": ["docker/ocw-course-publisher/Dockerfile"],
+      "matchFileNames": [
+        "docker/ocw-course-publisher/Dockerfile",
+        "main/templates/base.html"
+      ],
       "automerge": false
     }
   ],
@@ -15,6 +18,15 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>.+?)(?: packageName=(?<packageName>.+?))?(?: registryUrl=(?<registryUrl>.+?))?(?: versioning=(?<versioning>[a-z-]+?))?\\s*.+\\s*=\\s*\"(?<currentValue>.+?)\""
       ]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^main/templates/base\\.html$/"],
+      "matchStrings": [
+        "cdn\\.jsdelivr\\.net/npm/mathjax@(?<currentValue>[^/]+)/tex-svg\\.js"
+      ],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "mathjax"
     }
   ]
 }
