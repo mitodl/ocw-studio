@@ -1,3 +1,9 @@
+// mathjax-config must be imported before mathjax/tex-svg.js — it sets
+// window.MathJax which MathJax reads at initialisation time.
+import "./mathjax-config"
+// @ts-expect-error mathjax/tex-svg.js ships no TypeScript declarations
+import "mathjax/tex-svg.js"
+
 import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import AutoformatPlugin from "@ckeditor/ckeditor5-autoformat/src/autoformat"
 import BoldPlugin from "@ckeditor/ckeditor5-basic-styles/src/bold"
