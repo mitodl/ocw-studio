@@ -16,7 +16,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/icon?family=Material+Icons&display=swap"
       media="none"
-      onload="if(media!='all') media='all'"
+      onload="if (media != 'all') media = 'all'"
     />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link
@@ -27,32 +27,6 @@
       var SETTINGS = {{ js_settings_json|safe }};
     </script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-    <script>
-      window.MathJax = {
-        TeX: {
-          equationNumbers: {
-            autoNumber: 'AMS',
-          },
-        },
-        displayAlign: 'left',
-        displayIndent: '2em',
-        menuSettings: {
-          zoom: 'Double-Click',
-          mpContext: true,
-          mpMouse: true,
-        },
-        errorSettings: {
-          message: ['[Math Error]'],
-        },
-      }
-    </script>
-    <script
-      type="text/javascript"
-      id="MathJax-script"
-      async
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
-    ></script>
-
     {% load render_bundle %}
     {% render_bundle 'style' %}
     <title>{% block title %}{% endblock %}</title>
