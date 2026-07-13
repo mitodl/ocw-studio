@@ -27,6 +27,37 @@
       var SETTINGS = {{ js_settings_json|safe }};
     </script>
     <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+    <script>
+      window.MathJax = {
+        tex: {
+          equationNumbers: {
+            autoNumber: 'AMS',
+          },
+        },
+        svg: {
+          displayAlign: 'left',
+          displayIndent: '2em',
+        },
+        startup: {
+          ready() {
+            MathJax.startup.defaultReady()
+            // ckeditor5-math only supports MathJax v2/v3 API detection. It checks
+            // version.startsWith('3') to use the v3 path (tex2svgPromise), and falls
+            // back to the v2 Hub.Queue API otherwise. MathJax 4 exposes the same
+            // tex2svgPromise API as v3, so we expose a v3-compatible version string.
+            MathJax._version = MathJax.version
+            MathJax.version = '3.99.0'
+          },
+        },
+      }
+    </script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-svg.js"
+    ></script>
+
     {% load render_bundle %}
     {% render_bundle 'style' %}
     <title>{% block title %}{% endblock %}</title>
