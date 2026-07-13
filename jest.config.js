@@ -7,9 +7,6 @@ module.exports = {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/static/js/mocks/fileMock.js",
     "\\.(css|less)$": "<rootDir>/static/js/mocks/styleMock.js",
-    // mathjax/tex-svg.js is a large browser-only IIFE bundle; tests don't
-    // need real MathJax rendering so mock it as a no-op.
-    "^mathjax/tex-svg\\.js$": "<rootDir>/static/js/mocks/fileMock.js",
   },
   // this here is a little bit of hackery! we need to mark a few modules in node_modules
   // not to *ignore* them but actually to include them in the transform. Jest doesn't have

@@ -1949,13 +1949,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@mathjax/mathjax-newcm-font@npm:^4.1.2":
-  version: 4.1.2
-  resolution: "@mathjax/mathjax-newcm-font@npm:4.1.2"
-  checksum: 10c0/23867a672706a5cc1a9cfe835a188466202ff5502bd9f65a75343532638184cb53c6a11a76473c37a4e6231b38f6781b1a20a6eb3a3f1ba46144bf533bd25026
-  languageName: node
-  linkType: hard
-
 "@mixmark-io/domino@npm:^2.2.0":
   version: 2.2.0
   resolution: "@mixmark-io/domino@npm:2.2.0"
@@ -9796,15 +9789,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mathjax@npm:^4.0.0":
-  version: 4.1.2
-  resolution: "mathjax@npm:4.1.2"
-  dependencies:
-    "@mathjax/mathjax-newcm-font": "npm:^4.1.2"
-  checksum: 10c0/3d842708029c65bdcaaf621f80aed1248a2f29f180d4e5a42e6e48e935cdf891be1505575e323193ea44347112149b636a3b08b0a72ed2b203004c18044f5dc8
-  languageName: node
-  linkType: hard
-
 "mathml-tag-names@npm:^4.0.0":
   version: 4.0.0
   resolution: "mathml-tag-names@npm:4.0.0"
@@ -10610,7 +10594,6 @@ __metadata:
     js-beautify: "npm:^1.14.0"
     lodash: "npm:^4.17.21"
     luxon: "npm:^3.2.1"
-    mathjax: "npm:^4.0.0"
     mini-css-extract-plugin: "npm:^2.0.0"
     pluralize: "npm:^8.0.0"
     postcss-loader: "npm:^8.0.0"
