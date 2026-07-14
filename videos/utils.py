@@ -293,9 +293,10 @@ def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
 
     Pass the resource's real uploaded file path (``resource.file.name``), not
     the ``WebsiteContent.filename`` field — the latter can carry a numeric
-    uniqueness suffix appended by Django on a name collision (e.g.
-    ``lecture1_captions-en-us_vtt`` -> ``lecture1_captions-en-us_vtt2``),
-    which would prevent the pattern from matching at all.
+    uniqueness suffix appended by this project's own ``find_available_name``
+    helper on a name collision (e.g. ``lecture1_captions-en-us_vtt`` ->
+    ``lecture1_captions-en-us_vtt2``), which would prevent the pattern from
+    matching at all.
 
     GDrive files follow the pattern ``<base>_captions-<lang>-<locale>.<ext>``
     (e.g. ``lecture1_captions-en-US.vtt``) where ``<lang>`` is an ISO 639-1
