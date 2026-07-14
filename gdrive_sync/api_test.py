@@ -314,6 +314,8 @@ def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-argum
         ["file.mp4", False, "video/mp4", RESOURCE_TYPE_VIDEO],  # noqa: PT007
         ["file.jpeg", True, "image/jpeg", RESOURCE_TYPE_IMAGE],  # noqa: PT007
         ["file.py", True, "application/python", RESOURCE_TYPE_OTHER],  # noqa: PT007
+        ["file_captions-en-US.vtt", True, "text/vtt", RESOURCE_TYPE_OTHER],  # noqa: PT007
+        ["file_captions-en-US.webvtt", True, "text/vtt", RESOURCE_TYPE_OTHER],  # noqa: PT007
     ],
 )
 def test_get_resource_type(
@@ -725,6 +727,46 @@ def test_create_gdrive_pdf_no_metadata(mock_get_s3_content_type, mocker):
     assert drive_file.resource.title == drive_file.name
 
 
+def test_create_gdrive_transcript_pdf_ignores_metadata_title(
+    mock_get_s3_content_type, mocker
+):
+    """
+    Transcript PDFs should use the file name for the resource title even when
+    the PDF has its own metadata title, since the file name carries language/
+    locale info (e.g. "-fr") that the PDF's own title metadata doesn't.
+    """
+    mock_get_pdf_title = mocker.patch("gdrive_sync.api.get_pdf_title")
+    drive_file = DriveFileFactory.create(
+        name="lecture1_transcript-fr.pdf",
+        s3_key="test/path/lecture1_transcript-fr.pdf",
+        mime_type="application/pdf",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert drive_file.resource.title == drive_file.name
+    mock_get_pdf_title.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["lecture1_Transcript-fr.pdf", "lecture1_TRANSCRIPT-fr.pdf"],
+)
+def test_create_gdrive_transcript_pdf_ignores_metadata_title_mixed_case(
+    mock_get_s3_content_type, mocker, name
+):
+    """The transcript filename check is case-insensitive."""
+    mock_get_pdf_title = mocker.patch("gdrive_sync.api.get_pdf_title")
+    drive_file = DriveFileFactory.create(
+        name=name,
+        s3_key=f"test/path/{name}",
+        mime_type="application/pdf",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    assert drive_file.resource.title == drive_file.name
+    mock_get_pdf_title.assert_not_called()
+
+
 def test_create_gdrive_resource_content_update(mock_get_s3_content_type):
     """create_resource_from_gdrive should update a WebsiteContent object linked to a DriveFile object"""
     content = WebsiteContentFactory.create(file="test/path/old.doc")
@@ -737,6 +779,28 @@ def test_create_gdrive_resource_content_update(mock_get_s3_content_type):
     drive_file.refresh_from_db()
     assert content.file == drive_file.s3_key
     assert drive_file.resource == content
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["lecture1_transcript-fr.pdf", "lecture1_Transcript-fr.pdf"],
+)
+def test_create_gdrive_resource_content_update_transcript_pdf_ignores_metadata_title(
+    mock_get_s3_content_type, mocker, name
+):
+    """Updating a transcript PDF resource should not pick up its metadata title, case-insensitively."""
+    mock_get_pdf_title = mocker.patch("gdrive_sync.api.get_pdf_title")
+    content = WebsiteContentFactory.create(file="test/path/old.pdf", title="Old Title")
+    drive_file = DriveFileFactory.create(
+        website=content.website,
+        name=name,
+        s3_key=f"test/path/{name}",
+        resource=content,
+    )
+    create_gdrive_resource_content(drive_file)
+    content.refresh_from_db()
+    assert content.title == "Old Title"
+    mock_get_pdf_title.assert_not_called()
 
 
 def test_create_gdrive_resource_content_error(mocker):

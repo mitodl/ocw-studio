@@ -43,7 +43,7 @@ from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
 from main.utils import get_base_filename, get_dirpath_and_filename
 from videos.api import create_media_convert_job
-from videos.constants import VideoJobStatus, VideoStatus
+from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import (
     auto_link_video_captions_transcript,
@@ -403,6 +403,10 @@ def get_resource_type(drive_file: DriveFile) -> str:
         and DRIVE_FOLDER_VIDEOS_FINAL in drive_file.drive_path
     ):
         return RESOURCE_TYPE_VIDEO
+    # WebVTT captions get an S3 content_type starting with "text", which would
+    # otherwise match the generic document check below and misclassify them.
+    if extension.lstrip(".").lower() in CAPTION_FILE_EXTENSIONS:
+        return RESOURCE_TYPE_OTHER
     if content_type.startswith("text") or extension in VALID_TEXT_FILE_TYPES:
         return RESOURCE_TYPE_DOCUMENT
     return RESOURCE_TYPE_OTHER
@@ -558,9 +562,13 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
                 **dict.fromkeys(settings.RESOURCE_TYPE_FIELDS, resource_type),
             }
 
+            # Transcript filenames carry language/locale info (e.g.
+            # "lecture1_transcript-fr.pdf") that a PDF's own internal title
+            # metadata doesn't, so use the filename directly for those instead.
             resource_title = (
                 get_pdf_title(drive_file)
                 if extension.lower() == ".pdf"
+                and "_transcript" not in drive_file.name.lower()
                 else drive_file.name
             )
 
@@ -595,7 +603,10 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
             resource.file = drive_file.s3_key
             if resource.metadata.get("file_size") != drive_file.size:
                 resource.metadata["file_size"] = drive_file.size
-            if extension.lower() == ".pdf":
+            if (
+                extension.lower() == ".pdf"
+                and "_transcript" not in drive_file.name.lower()
+            ):
                 # update resource title if PDF metadata contains title
                 pdf_title = get_pdf_title(drive_file)
                 if pdf_title != drive_file.name:
