@@ -12,6 +12,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
     MASS_BUILD_SITES_JOB_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+    OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
@@ -19,6 +20,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
@@ -222,18 +224,21 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                 )
                 is not None
             )
-        expected_prefix = f"{prefix.strip('/')}/" if prefix != "" else prefix
         for step in steps:
-            if hasattr(step, "across"):
+            if "across" in step:
                 across_vars = step["across"][0]
                 assert across_vars["var"] == "site"
                 for across_values in across_vars["values"]:
-                    site = mass_build_websites.get(short_id=across_values["short_id"])
+                    site = next(
+                        s
+                        for s in mass_build_websites
+                        if s.short_id == across_values["short_id"]
+                    )
                     site_config = SitePipelineDefinitionConfig(
                         site=site,
-                        pipeline_name="test",
-                        instance_vars="test",
-                        site_content_branch="test",
+                        pipeline_name=version,
+                        instance_vars=across_values["instance_vars"],
+                        site_content_branch=site_content_branch,
                         static_api_url="test",
                         storage_bucket=settings.AWS_STORAGE_BUCKET_NAME,
                         artifacts_bucket=artifacts_bucket,
@@ -243,11 +248,13 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         ocw_hugo_themes_branch=ocw_hugo_themes_branch,
                         ocw_hugo_projects_branch=ocw_hugo_projects_branch,
                         hugo_override_args="",
+                        prefix=across_values.get("prefix", ""),
+                        namespace=".:site.",
                     )
                     assert across_values["site_name"] == site.name
                     assert across_values["s3_path"] == site.s3_path
-                    assert across_values["url_path"] == site.get_url_path()
-                    assert across_values["base_url"] == site.get_url_path()
+                    assert across_values["url_path"] == site_config.url_path
+                    assert across_values["base_url"] == site_config.base_url
                     assert (
                         across_values["static_resources_subdirectory"]
                         == site_config.static_resources_subdirectory
@@ -282,7 +289,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                         across_values["hugo_args_offline"]
                         == site_config.hugo_args_offline
                     )
-                    assert across_values["prefix"] == expected_prefix
+                    assert across_values["prefix"] == site_config.prefix
                 build_steps = step["do"]
                 site_content_git_step = get_dict_list_item_by_field(
                     items=build_steps,
@@ -302,22 +309,30 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
                     field="task",
                     value=STATIC_RESOURCES_S3_IDENTIFIER,
                 )
-                static_resources_s3_command = static_resources_s3_step["config"]["run"][
-                    "args"
-                ].join("\n")
+                static_resources_s3_command = "\n".join(
+                    static_resources_s3_step["config"]["run"]["args"]
+                )
                 if offline:
                     assert "--exclude *.mp4" not in static_resources_s3_command
                 else:
                     assert "--exclude *.mp4" in static_resources_s3_command
-                upload_online_build_task = get_dict_list_item_by_field(
-                    items=build_steps,
-                    field="task",
-                    value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
-                )
-                upload_online_build_command = upload_online_build_task["config"]["run"][
-                    "args"
-                ].join("\n")
-                assert "--delete" not in upload_online_build_command
+                if not offline:
+                    upload_online_build_task = get_dict_list_item_by_field(
+                        items=build_steps,
+                        field="task",
+                        value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
+                    )
+                    upload_online_build_command = "\n".join(
+                        upload_online_build_task["config"]["run"]["args"]
+                    )
+                    # The root website branch always syncs per-directory with --delete
+                    assert "--delete" in upload_online_build_command
+                    # By default the non-root sync must not carry the delete flag
+                    assert (
+                        site_pipeline_vars["delete_flag"]
+                        not in upload_online_build_command
+                    )
+                    assert "--exclude='*.mp4'" in upload_online_build_command
         if batch_number < batch_count:
             batch_gate = get_dict_list_item_by_field(
                 items=steps,
@@ -327,3 +342,65 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 P
             assert batch_gate is not None
             assert batch_gate["no_get"] is True
         batch_number += 1
+
+
+@pytest.mark.parametrize("sync_with_delete", [True, False])
+def test_mass_build_sites_definition_sync_with_delete(
+    mass_build_websites,
+    settings,
+    sync_with_delete,
+):
+    """The non-root online sync should only carry the delete flag when sync_with_delete is set"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    settings.OCW_MASS_BUILD_BATCH_SIZE = 2
+    settings.OCW_MASS_BUILD_MAX_IN_FLIGHT = 2
+    site_pipeline_vars = get_site_pipeline_definition_vars(namespace=".:site.")
+    pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+        version=VERSION_LIVE,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(VERSION_LIVE),
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        offline=False,
+        instance_vars="",
+        sync_with_delete=sync_with_delete,
+    )
+    pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
+    rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
+    upload_online_build_tasks = 0
+    for job in rendered_definition["jobs"]:
+        for step in job["plan"]:
+            if "across" not in step:
+                continue
+            upload_online_build_task = get_dict_list_item_by_field(
+                items=step["do"],
+                field="task",
+                value=UPLOAD_ONLINE_BUILD_IDENTIFIER,
+            )
+            upload_online_build_tasks += 1
+            command = "\n".join(upload_online_build_task["config"]["run"]["args"])
+            if sync_with_delete:
+                assert site_pipeline_vars["delete_flag"] in command
+            else:
+                assert site_pipeline_vars["delete_flag"] not in command
+            # mp4 files are filtered out of the mass build static resources
+            # download, so they must also be excluded from the delete sync
+            assert "--exclude='*.mp4'" in command
+    assert upload_online_build_tasks > 0
+
+    # A destructive (sync_with_delete) instance must never auto-trigger on an
+    # unrelated themes/projects push - it can only run via an explicit trigger
+    first_batch_steps = rendered_definition["jobs"][0]["plan"]
+    webpack_trigger_step = get_dict_list_item_by_field(
+        items=first_batch_steps,
+        field="get",
+        value=WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+    )
+    projects_trigger_step = get_dict_list_item_by_field(
+        items=first_batch_steps,
+        field="get",
+        value=OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
+    )
+    expected_trigger = not sync_with_delete
+    assert webpack_trigger_step["trigger"] == expected_trigger
+    assert projects_trigger_step["trigger"] == expected_trigger

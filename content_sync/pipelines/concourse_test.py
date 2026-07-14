@@ -2,7 +2,7 @@
 
 import json
 from html import unescape
-from urllib.parse import quote, urljoin
+from urllib.parse import quote, unquote, urljoin
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -779,6 +779,7 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         prefix="",
         instance_vars=instance_vars_str,
         theme_slug=theme_slug,
+        sync_with_delete=False,
     )
     mock_get.assert_any_call(url_path)
     mock_put_headers.assert_any_call(
@@ -786,6 +787,39 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913
         data=mocker.ANY,
         headers=({"X-Concourse-Config-Version": "3"} if pipeline_exists else None),
     )
+
+
+def test_upsert_mass_build_pipeline_sync_with_delete(
+    pipeline_settings,
+    mocker,
+    mock_auth,
+    mass_build_websites,
+):
+    """The sync_with_delete variant should be a distinct pipeline instance"""
+    mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+    mock_config = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
+    )
+    pipeline = MassBuildSitesPipeline(VERSION_LIVE, sync_with_delete=True)
+    pipeline.upsert_pipeline()
+
+    parsed_instance_vars = json.loads(
+        unquote(pipeline.instance_vars.removeprefix("?vars="))
+    )
+    assert parsed_instance_vars["sync_with_delete"] is True
+    assert mock_config.call_args.kwargs["sync_with_delete"] is True
+    default_pipeline = MassBuildSitesPipeline(VERSION_LIVE)
+    default_instance_vars = json.loads(
+        unquote(default_pipeline.instance_vars.removeprefix("?vars="))
+    )
+    assert "sync_with_delete" not in default_instance_vars
+    mock_put_headers.assert_called_once()
 
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])

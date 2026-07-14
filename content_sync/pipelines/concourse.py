@@ -564,6 +564,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         offline: bool | None = None,
         hugo_args: str | None = None,
         theme_slug: str | None = None,
+        sync_with_delete: bool = False,
     ):
         """Initialize the pipeline instance"""
         self.MANDATORY_SETTINGS = [
@@ -594,17 +595,21 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
         self.OFFLINE = offline
         self.HUGO_ARGS = hugo_args
         self.THEME_SLUG = theme_slug
-        self.set_instance_vars(
-            {
-                "version": version,
-                "themes_branch": self.THEMES_BRANCH,
-                "projects_branch": self.PROJECTS_BRANCH,
-                "prefix": self.PREFIX,
-                "starter": self.STARTER,
-                "offline": self.OFFLINE,
-                "theme_slug": self.THEME_SLUG,
-            }
-        )
+        self.SYNC_WITH_DELETE = sync_with_delete
+        instance_vars = {
+            "version": version,
+            "themes_branch": self.THEMES_BRANCH,
+            "projects_branch": self.PROJECTS_BRANCH,
+            "prefix": self.PREFIX,
+            "starter": self.STARTER,
+            "offline": self.OFFLINE,
+            "theme_slug": self.THEME_SLUG,
+        }
+        if sync_with_delete:
+            # A distinct pipeline instance so the default mass build is never
+            # mutated to run destructive syncs
+            instance_vars["sync_with_delete"] = True
+        self.set_instance_vars(instance_vars)
 
     def upsert_pipeline(self):  # pylint:disable=too-many-locals
         """
@@ -621,6 +626,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
             prefix=self.PREFIX,
             instance_vars=self.instance_vars,
             theme_slug=self.THEME_SLUG,
+            sync_with_delete=self.SYNC_WITH_DELETE,
         )
         pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
         self.upsert_config(pipeline_definition.json(), self.PIPELINE_NAME)
