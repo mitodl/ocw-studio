@@ -5,9 +5,11 @@ from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel, TimestampedModelQuerySet
 
 from main import settings
-from main.utils import get_base_filename
+from main.utils import get_base_filename, get_file_extension
 from videos.constants import (
+    CAPTION_FILE_EXTENSIONS,
     DESTINATION_YOUTUBE,
+    TRANSCRIPT_FILE_EXTENSIONS,
     VideoFileStatus,
     VideoJobStatus,
     VideoStatus,
@@ -53,10 +55,15 @@ class Video(TimestampedModel):
 
         Returns a 2-tuple of lists: (captions, transcripts).  Each list may
         contain zero, one, or multiple WebsiteContent objects — one per
-        language-tagged file discovered in the website.  Captions are matched
-        by filename prefix ``{video_filename}_captions`` with suffix ``_vtt``;
-        transcripts by prefix ``{video_filename}_transcript`` with suffix
-        ``_pdf``.
+        language-tagged file discovered in the website.  Candidates are found
+        by filename prefix (``{video_filename}_captions`` /
+        ``{video_filename}_transcript``) then filtered by the real extension
+        of their uploaded file (one of ``CAPTION_FILE_EXTENSIONS`` /
+        ``TRANSCRIPT_FILE_EXTENSIONS``). The real file extension is used
+        rather than the filename's tail because Django's filename-uniqueness
+        logic can append a bare digit to a colliding filename (e.g.
+        ``..._vtt`` -> ``..._vtt2``), which would defeat an exact suffix
+        match.
         """
         youtube_id = self.youtube_id()
 
@@ -68,19 +75,20 @@ class Video(TimestampedModel):
         )
         if video_resource:
             video_filename = get_base_filename(video_resource.filename)
-            captions = list(
-                WebsiteContent.objects.filter(
-                    website=self.website,
-                    filename__startswith=f"{video_filename}_captions",
-                    filename__endswith="_vtt",
+
+            def _matching(prefix, extensions):
+                candidates = WebsiteContent.objects.filter(
+                    website=self.website, filename__startswith=prefix
                 )
-            )
-            transcripts = list(
-                WebsiteContent.objects.filter(
-                    website=self.website,
-                    filename__startswith=f"{video_filename}_transcript",
-                    filename__endswith="_pdf",
-                )
+                return [
+                    r
+                    for r in candidates
+                    if r.file and get_file_extension(r.file.name) in extensions
+                ]
+
+            captions = _matching(f"{video_filename}_captions", CAPTION_FILE_EXTENSIONS)
+            transcripts = _matching(
+                f"{video_filename}_transcript", TRANSCRIPT_FILE_EXTENSIONS
             )
             return captions, transcripts
         return [], []

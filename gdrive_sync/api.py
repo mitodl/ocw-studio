@@ -45,8 +45,11 @@ from main.utils import get_base_filename, get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
-from videos.utils import resource_file_paths
-from websites.api import get_valid_new_filename
+from websites.api import (
+    auto_link_video_captions_transcript,
+    get_valid_new_filename,
+    sync_website_content_references,
+)
 from websites.constants import (
     CONTENT_TYPE_RESOURCE,
     RESOURCE_TYPE_DOCUMENT,
@@ -451,18 +454,23 @@ def _link_video_caption_transcript_resources(
     fields are kept in sync after a gdrive resource is created or updated.
 
     - If *resource* is a Video, look for existing captions/transcript resources
-      in the same website by the ``{base}_captions_vtt`` / ``{base}_transcript_pdf``
-      filename convention and set the relation fields on the video (without
+      in the same website by the ``{base}_captions-<lang>-<locale>_vtt`` /
+      ``{base}_transcript-<lang>-<locale>_pdf`` filename convention (or the
+      legacy no-suffix form) and set the relation fields on the video (without
       overwriting ones that are already present).
     - If *resource* is a captions or transcript file, find the corresponding
       video resource by the same convention and set the appropriate relation
       field on that video.
+
+    Only ``_resources`` relation fields are written; legacy ``_file`` fields in
+    stored metadata are left untouched.
     """
     resource_type = (resource.metadata or {}).get("resourcetype")
     filename = resource.filename or ""
 
     if resource_type == RESOURCE_TYPE_VIDEO:
-        _link_captions_transcript_to_video(resource, website)
+        auto_link_video_captions_transcript(resource)
+        sync_website_content_references(resource)
     elif "_captions" in filename:
         video_base = filename.split("_captions")[0]
         _link_resource_to_video(
@@ -473,74 +481,6 @@ def _link_video_caption_transcript_resources(
         _link_resource_to_video(
             resource, website, "video_transcript_resources", video_base
         )
-
-
-def _link_captions_transcript_to_video(
-    video_resource: WebsiteContent, website: Website
-) -> None:
-    """Set _resource relation fields on a video from existing captions/transcript."""
-    video_base = get_base_filename(video_resource.filename or "")
-    if not video_base:
-        return
-    video_files = (
-        video_resource.metadata.get("video_files") if video_resource.metadata else None
-    )
-    if not isinstance(video_files, dict):
-        video_files = {}
-
-    changed = False
-    for resource_field, data_field, prefix, suffix in [
-        (
-            "video_captions_resources",
-            "video_captions_file",
-            f"{video_base}_captions",
-            "_vtt",
-        ),
-        (
-            "video_transcript_resources",
-            "video_transcript_file",
-            f"{video_base}_transcript",
-            "_pdf",
-        ),
-    ]:
-        related_list = list(
-            WebsiteContent.objects.filter(
-                website=website,
-                filename__startswith=prefix,
-                filename__endswith=suffix,
-            )
-        )
-        if not related_list:
-            continue
-
-        existing = video_files.get(resource_field)
-        existing_ids = existing.get("content", []) if isinstance(existing, dict) else []
-        new_resources = [r for r in related_list if str(r.text_id) not in existing_ids]
-        if not new_resources:
-            continue
-
-        all_ids = existing_ids + [str(r.text_id) for r in new_resources]
-        video_files[resource_field] = {
-            "content": all_ids,
-            "website": website.name,
-        }
-        new_file_entries = resource_file_paths(new_resources)
-        if new_file_entries:
-            existing_files = video_files.get(data_field)
-            if isinstance(existing_files, list):
-                existing_paths = {e.get("file") for e in existing_files}
-                video_files[data_field] = existing_files + [
-                    e for e in new_file_entries if e["file"] not in existing_paths
-                ]
-            else:
-                video_files[data_field] = new_file_entries
-        changed = True
-
-    if changed:
-        if not isinstance(video_resource.metadata, dict):
-            video_resource.metadata = {}
-        video_resource.metadata["video_files"] = video_files
-        video_resource.save()
 
 
 def _link_resource_to_video(
@@ -584,26 +524,11 @@ def _link_resource_to_video(
             "website": website.name,
         }
 
-    data_field = (
-        "video_captions_file"
-        if "captions" in resource_field
-        else "video_transcript_file"
-    )
-    new_file_entries = resource_file_paths([resource])
-    if new_file_entries:
-        existing_files = video_files.get(data_field)
-        if isinstance(existing_files, list):
-            existing_paths = {e.get("file") for e in existing_files}
-            extra = [e for e in new_file_entries if e["file"] not in existing_paths]
-            if extra:
-                video_files[data_field] = existing_files + extra
-        else:
-            video_files[data_field] = new_file_entries
-
     if not isinstance(video_resource.metadata, dict):
         video_resource.metadata = {}
     video_resource.metadata["video_files"] = video_files
     video_resource.save()
+    sync_website_content_references(video_resource)
 
 
 @transaction.atomic

@@ -14,6 +14,7 @@ from gdrive_sync import api
 from gdrive_sync.api import (
     GDriveStreamReader,
     _link_resource_to_video,
+    _link_video_caption_transcript_resources,
     create_gdrive_resource_content,
     gdrive_root_url,
     get_resource_type,
@@ -1044,8 +1045,8 @@ def test_link_resource_to_video_appends_second_language():
     )
     caption_fr = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        filename="lecture1_captions-fr-ca_vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr-CA.vtt",
     )
 
     # Link English first
@@ -1062,9 +1063,55 @@ def test_link_resource_to_video_appends_second_language():
     assert str(caption_fr.text_id) in vf["video_captions_resources"]["content"]
     assert len(vf["video_captions_resources"]["content"]) == 2
 
-    # _file list must also have both entries with correct languages
-    file_entries = vf["video_captions_file"]
-    assert len(file_entries) == 2
-    languages = {e["language"] for e in file_entries}
-    assert "en" in languages
-    assert "fr" in languages
+    # Legacy _file fields in stored metadata are never written by gdrive linking
+    assert "video_captions_file" not in vf
+
+
+@pytest.mark.django_db
+def test_link_resource_to_video_syncs_content_references():
+    """Linking a caption via gdrive sync must refresh the video's reference tracking."""
+    website = WebsiteFactory.create()
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture1_mp4",
+        metadata={"resourcetype": "Video", "video_files": {}},
+    )
+    caption_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
+    )
+
+    assert caption_en not in video.referenced_by.all()
+
+    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+
+    video.refresh_from_db()
+    assert caption_en in video.referenced_by.all()
+
+
+@pytest.mark.django_db
+def test_link_video_caption_transcript_resources_syncs_content_references():
+    """Auto-linking captions onto a newly-synced video resource must refresh reference tracking."""
+    website = WebsiteFactory.create()
+
+    caption_en = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture1_mp4",
+        metadata={"resourcetype": "Video", "video_files": {}},
+    )
+
+    assert caption_en not in video.referenced_by.all()
+
+    _link_video_caption_transcript_resources(video, website)
+
+    video.refresh_from_db()
+    assert caption_en in video.referenced_by.all()

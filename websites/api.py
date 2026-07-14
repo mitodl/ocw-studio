@@ -14,9 +14,15 @@ from mitol.common.utils import max_or_none, now_in_utc
 from mitol.mail.api import get_message_sender
 
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
-from main.utils import NestableKeyTextTransform
+from main.utils import (
+    NestableKeyTextTransform,
+    get_base_filename,
+    get_file_extension,
+)
 from users.models import User
 from videos.constants import (
+    CAPTION_FILE_EXTENSIONS,
+    TRANSCRIPT_FILE_EXTENSIONS,
     YT_MAX_LENGTH_DESCRIPTION,
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
@@ -223,6 +229,148 @@ def sync_website_content_references(content: WebsiteContent) -> None:
     content.referenced_by.set(referenced_content)
 
 
+def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
+    """
+    Remove a deleted resource's id from any video's
+    ``video_captions_resources``/``video_transcript_resources`` content list.
+
+    Relies on ``referencing_content`` (populated by ``sync_website_content_references``)
+    to find affected videos, rather than scanning every resource's metadata.
+    """
+    videos = resource.referencing_content.all()
+    text_id = str(resource.text_id)
+    for video in videos:
+        if (video.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
+            continue
+        video_files = video.metadata.get("video_files")
+        if not isinstance(video_files, dict):
+            continue
+        changed = False
+        for resource_field in (
+            "video_captions_resources",
+            "video_transcript_resources",
+        ):
+            relation = video_files.get(resource_field)
+            if not isinstance(relation, dict):
+                continue
+            content_list = relation.get("content")
+            if isinstance(content_list, str) and content_list == text_id:
+                relation["content"] = []
+                changed = True
+            elif isinstance(content_list, list) and text_id in content_list:
+                relation["content"] = [c for c in content_list if c != text_id]
+                changed = True
+        if changed:
+            video.metadata["video_files"] = video_files
+            video.save(update_fields=["metadata"])
+            sync_website_content_references(video)
+
+
+def _merge_caption_resource(
+    video_files: dict,
+    website: Website,
+    resource_field: str,
+    filename_prefix: str,
+    valid_extensions: tuple[str, ...],
+) -> bool:
+    """Find caption/transcript resources by prefix and merge into video_files.
+
+    Candidates are found by filename prefix only, then filtered by the real
+    extension of their uploaded ``file`` (not the ``filename`` field's tail).
+    Django's filename-uniqueness logic (``find_available_name``) appends a
+    bare digit directly onto a colliding filename with no separator — e.g.
+    ``lecture1_captions-en-us_vtt`` collides and becomes
+    ``lecture1_captions-en-us_vtt2`` — which would silently defeat an exact
+    ``filename__endswith`` suffix check. The uploaded file's own extension is
+    unaffected by that renaming, so it's used here instead.
+
+    Only the ``_resources`` relation field is written; the legacy ``_file``
+    fields in stored metadata are left untouched.
+
+    Returns True if video_files was modified.
+    """
+    existing = video_files.get(resource_field)
+    existing_ids: list[str] = []
+    if isinstance(existing, dict):
+        content = existing.get("content")
+        if isinstance(content, list):
+            existing_ids = [c for c in content if c]
+        elif isinstance(content, str) and content:
+            existing_ids = [content]
+    existing_ids_set = set(existing_ids)
+
+    candidates = WebsiteContent.objects.filter(
+        website=website, filename__startswith=filename_prefix
+    ).order_by("filename")
+    related_resources = [
+        r
+        for r in candidates
+        if r.file and get_file_extension(r.file.name) in valid_extensions
+    ]
+    new_resources = [
+        r for r in related_resources if str(r.text_id) not in existing_ids_set
+    ]
+    if not new_resources:
+        return False
+
+    video_files[resource_field] = {
+        "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
+        "website": website.name,
+    }
+    return True
+
+
+def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
+    """
+    For a Video resource, auto-populate ``video_captions_resources`` and
+    ``video_transcript_resources`` from existing WebsiteContent records in the
+    same website whose filename starts with ``{base}_captions`` /
+    ``{base}_transcript`` (covering both the ``{base}_captions-<lang>-<locale>``
+    convention and the legacy no-suffix form) and whose uploaded file has a
+    matching real extension. The real file extension is used rather than the
+    filename's tail because Django's filename-uniqueness logic can append a
+    bare digit to a colliding filename (e.g. ``..._vtt`` -> ``..._vtt2``),
+    which would defeat an exact suffix match. Finds ALL language variants and
+    merges them into the multi-select content list without overwriting
+    existing non-empty entries. Only ``_resources`` relation fields are
+    written; legacy ``_file`` fields are left untouched.
+    """
+    if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
+        return
+    video_base = get_base_filename(video_resource.filename or "")
+    if not video_base:
+        return
+    website = video_resource.website
+    video_files = (
+        video_resource.metadata.get("video_files") if video_resource.metadata else None
+    )
+    if not isinstance(video_files, dict):
+        video_files = {}
+
+    results = [
+        _merge_caption_resource(video_files, website, resource_field, prefix, suffixes)
+        for resource_field, prefix, suffixes in [
+            (
+                "video_captions_resources",
+                f"{video_base}_captions",
+                CAPTION_FILE_EXTENSIONS,
+            ),
+            (
+                "video_transcript_resources",
+                f"{video_base}_transcript",
+                TRANSCRIPT_FILE_EXTENSIONS,
+            ),
+        ]
+    ]
+    changed = any(results)
+
+    if changed:
+        if not isinstance(video_resource.metadata, dict):
+            video_resource.metadata = {}
+        video_resource.metadata["video_files"] = video_files
+        video_resource.save(update_fields=["metadata"])
+
+
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:
     """Return a list of WebsiteContent objects for videos with unassigned youtube ids"""
     if not is_ocw_site(website):
@@ -278,11 +426,21 @@ def videos_missing_captions(website: Website) -> list[WebsiteContent]:
     query_resource_type_field = get_dict_query_field(
         "metadata", settings.FIELD_RESOURCETYPE
     )
-    query_caption_field = get_dict_query_field("metadata", settings.YT_FIELD_CAPTIONS)
+    # A video has captions when its _resources relation has non-empty content;
+    # the key may be entirely absent, JSON null, the site-config default "" or
+    # an emptied list.
+    query_caption_content_field = get_dict_query_field(
+        "metadata", f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content"
+    )
     return WebsiteContent.objects.filter(
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
-        & (Q(**{query_caption_field: None}) | Q(**{query_caption_field: ""}))
+        & (
+            Q(**{f"{query_caption_content_field}__isnull": True})
+            | Q(**{query_caption_content_field: None})
+            | Q(**{query_caption_content_field: ""})
+            | Q(**{query_caption_content_field: []})
+        )
     )
 
 

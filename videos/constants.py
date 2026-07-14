@@ -67,3 +67,13 @@ class YouTubeStatus:
     REJECTED = "rejected"
     FAILED = "failed"
     RETRY = "retry"
+
+
+# Real file extensions (from WebsiteContent.file, not the filename field —
+# which can carry an appended numeric uniqueness suffix, e.g.
+# "lecture1_captions-en-us_vtt2") that identify a caption/transcript
+# resource. srt is deliberately excluded: it is not natively playable by
+# the HTML5 <track> element the way vtt/webvtt are (see the long-standing
+# "wrong_caption_type" case in videos/tasks_test.py::test_start_transcript_job).
+CAPTION_FILE_EXTENSIONS = ("vtt", "webvtt")
+TRANSCRIPT_FILE_EXTENSIONS = ("pdf",)

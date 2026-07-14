@@ -1187,14 +1187,69 @@ def test_websites_content_create_video_resource_sets_3play_references(
         captions.id,
         transcript.id,
     }
-    # build-pipeline file arrays populated by sync_video_relation_urls on create
+    # Only _resources is written; sync_video_relation_urls (which derived
+    # video_captions_file/video_transcript_file) has been removed - _file
+    # fields are left untouched throughout this branch.
     vf = content.metadata["video_files"]
-    assert vf["video_captions_file"] == [
-        {"file": f"/courses/{website.name}/video-captions.webvtt", "language": "en"}
-    ]
-    assert vf["video_transcript_file"] == [
-        {"file": f"/courses/{website.name}/video-transcript.pdf", "language": "en"}
-    ]
+    assert "video_captions_file" not in vf
+    assert "video_transcript_file" not in vf
+
+
+def test_websites_content_create_video_does_not_auto_link_by_filename_convention(
+    drf_client, global_admin_user
+):
+    """
+    Creating a video via the API must NOT auto-link existing captions/transcript
+    resources by filename convention, even when they'd match. Auto-linking by
+    convention only happens during gdrive/3play sync, not on CMS form saves —
+    the relation widget content is authoritative for whatever the user submits.
+    """
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="vid_captions_vtt",
+        file=f"courses/{website.name}/vid_captions.vtt",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="vid_transcript_pdf",
+        file=f"courses/{website.name}/vid_transcript.pdf",
+    )
+
+    # Simulate what the site config relation widget sends when left empty.
+    payload = {
+        "type": constants.CONTENT_TYPE_RESOURCE,
+        "title": "vid",
+        "filename": "vid_mp4",
+        "metadata": {
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": ""},
+            "video_files": {
+                "video_captions_resources": {"content": "", "website": website.name},
+                "video_transcript_resources": {"content": "", "website": website.name},
+            },
+        },
+    }
+    resp = drf_client.post(
+        reverse(
+            "websites_content_api-list",
+            kwargs={"parent_lookup_website": website.name},
+        ),
+        data=payload,
+        format="json",
+    )
+
+    assert resp.status_code == 201
+    content = WebsiteContent.objects.get(
+        website=website,
+        text_id=resp.data["text_id"],
+    )
+    vf = content.metadata["video_files"]
+    assert vf["video_captions_resources"]["content"] == ""
+    assert vf["video_transcript_resources"]["content"] == ""
 
 
 def test_websites_content_create_with_textid(drf_client, global_admin_user):
@@ -1759,11 +1814,9 @@ def test_websites_content_update_video_resource_sets_3play_references(
         captions.id,
         transcript.id,
     }
-    # build-pipeline file arrays populated by sync_video_relation_urls on update
+    # Only _resources is written; sync_video_relation_urls (which derived
+    # video_captions_file/video_transcript_file) has been removed - _file
+    # fields are left untouched throughout this branch.
     vf = video.metadata["video_files"]
-    assert vf["video_captions_file"] == [
-        {"file": f"/courses/{website.name}/updated-captions.webvtt", "language": "en"}
-    ]
-    assert vf["video_transcript_file"] == [
-        {"file": f"/courses/{website.name}/updated-transcript.pdf", "language": "en"}
-    ]
+    assert "video_captions_file" not in vf
+    assert "video_transcript_file" not in vf
