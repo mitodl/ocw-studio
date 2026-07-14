@@ -567,7 +567,8 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
             # metadata doesn't, so use the filename directly for those instead.
             resource_title = (
                 get_pdf_title(drive_file)
-                if extension.lower() == ".pdf" and "_transcript" not in drive_file.name
+                if extension.lower() == ".pdf"
+                and "_transcript" not in drive_file.name.lower()
                 else drive_file.name
             )
 
@@ -602,7 +603,10 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
             resource.file = drive_file.s3_key
             if resource.metadata.get("file_size") != drive_file.size:
                 resource.metadata["file_size"] = drive_file.size
-            if extension.lower() == ".pdf" and "_transcript" not in drive_file.name:
+            if (
+                extension.lower() == ".pdf"
+                and "_transcript" not in drive_file.name.lower()
+            ):
                 # update resource title if PDF metadata contains title
                 pdf_title = get_pdf_title(drive_file)
                 if pdf_title != drive_file.name:
