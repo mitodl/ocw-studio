@@ -158,8 +158,8 @@ def test_video_caption_transcript_resources_matches_all_extensions(
 def test_video_caption_transcript_resources_survives_filename_uniqueness_suffix(
     preexisting_captions_filenames,
 ):
-    """caption_transcript_resources still matches when Django's filename-uniqueness
-    logic has appended a bare digit to the colliding filename (e.g. "..._vtt2").
+    """caption_transcript_resources still matches when find_available_name has
+    appended a bare digit to the colliding filename (e.g. "..._vtt2").
 
     This is the actual production bug: matching must rely on the resource's real
     uploaded file extension, not the filename field, since find_available_name

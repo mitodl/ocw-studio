@@ -60,10 +60,9 @@ class Video(TimestampedModel):
         ``{video_filename}_transcript``) then filtered by the real extension
         of their uploaded file (one of ``CAPTION_FILE_EXTENSIONS`` /
         ``TRANSCRIPT_FILE_EXTENSIONS``). The real file extension is used
-        rather than the filename's tail because Django's filename-uniqueness
-        logic can append a bare digit to a colliding filename (e.g.
-        ``..._vtt`` -> ``..._vtt2``), which would defeat an exact suffix
-        match.
+        rather than the filename's tail because ``find_available_name`` can
+        append a bare digit to a colliding filename (e.g. ``..._vtt`` ->
+        ``..._vtt2``), which would defeat an exact suffix match.
         """
         youtube_id = self.youtube_id()
 

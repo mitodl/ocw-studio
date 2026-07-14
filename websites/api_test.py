@@ -354,6 +354,19 @@ def test_videos_missing_captions(mocker, is_ocw):
                 "video_files": {"video_captions_file": "abc123"},
             },
         ),
+        # video_captions_resources present but has no "content" key at all
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={
+                "resourcetype": RESOURCE_TYPE_VIDEO,
+                "video_files": {"video_captions_resources": {"website": website.name}},
+            },
+        ),
+        # video_files key itself absent from metadata
+        WebsiteContentFactory.create(
+            website=website,
+            metadata={"resourcetype": RESOURCE_TYPE_VIDEO},
+        ),
     ]
     WebsiteContentFactory.create(
         website=website,

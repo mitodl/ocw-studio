@@ -113,7 +113,7 @@ def _attach_transcript_if_missing(
     if pdf_response:
         file_size = len(pdf_response.getvalue())
         pdf_file = File(pdf_response, name=f"{youtube_id}.pdf")
-        _, text_id = _create_new_content(pdf_file, video, file_size=file_size)
+        text_id = _create_new_content(pdf_file, video, file_size=file_size)
         _append_resource_to_video_files(video, "video_transcript_resources", text_id)
         if summary:
             summary["transcripts"]["updated"] += 1
@@ -153,7 +153,7 @@ def _attach_captions_if_missing(
     if webvtt_response:
         file_size = len(webvtt_response.getvalue())
         vtt_file = File(webvtt_response, name=f"{youtube_id}.webvtt")
-        _, text_id = _create_new_content(vtt_file, video, file_size)
+        text_id = _create_new_content(vtt_file, video, file_size)
         _append_resource_to_video_files(video, "video_captions_resources", text_id)
         if summary:
             summary["captions"]["updated"] += 1
@@ -197,7 +197,7 @@ def link_threeplay_files_as_resources(video, video_resource: WebsiteContent) -> 
         with field_file.open("rb") as file_handle:
             content_bytes = file_handle.read()
         file_obj = File(BytesIO(content_bytes), name=f"{base}.{extension}")
-        _, text_id = _create_new_content(
+        text_id = _create_new_content(
             file_obj, video_resource, file_size=len(content_bytes)
         )
         _append_resource_to_video_files(video_resource, resource_field, text_id)
@@ -285,11 +285,11 @@ def generate_metadata(
 
 def _create_new_content(
     file_content: File, video: WebsiteContent, file_size: int | None = None
-) -> tuple[str, str]:
+) -> str:
     """
     Create and save a new WebsiteContent object
     for a caption or transcript file.
-    Returns a (s3_path, text_id) tuple.
+    Returns the new resource's text_id.
     """
     new_text_id = str(uuid4())
     new_s3_loc = upload_to_s3(file_content, video)
@@ -322,4 +322,4 @@ def _create_new_content(
     obj.file = new_s3_loc
     obj.save()
 
-    return new_s3_loc, str(obj.text_id)
+    return str(obj.text_id)

@@ -43,6 +43,7 @@ from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.utils import (
     get_dict_field,
     get_dict_query_field,
+    query_field_is_empty,
     resolve_referenced_content_ids,
     set_dict_field,
 )
@@ -277,12 +278,11 @@ def _merge_caption_resource(
 
     Candidates are found by filename prefix only, then filtered by the real
     extension of their uploaded ``file`` (not the ``filename`` field's tail).
-    Django's filename-uniqueness logic (``find_available_name``) appends a
-    bare digit directly onto a colliding filename with no separator — e.g.
-    ``lecture1_captions-en-us_vtt`` collides and becomes
-    ``lecture1_captions-en-us_vtt2`` — which would silently defeat an exact
-    ``filename__endswith`` suffix check. The uploaded file's own extension is
-    unaffected by that renaming, so it's used here instead.
+    ``find_available_name`` appends a bare digit directly onto a colliding
+    filename with no separator — e.g. ``lecture1_captions-en-us_vtt`` collides
+    and becomes ``lecture1_captions-en-us_vtt2`` — which would silently
+    defeat an exact ``filename__endswith`` suffix check. The uploaded file's
+    own extension is unaffected by that renaming, so it's used here instead.
 
     Only the ``_resources`` relation field is written; the legacy ``_file``
     fields in stored metadata are left untouched.
@@ -328,9 +328,9 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     ``{base}_transcript`` (covering both the ``{base}_captions-<lang>-<locale>``
     convention and the legacy no-suffix form) and whose uploaded file has a
     matching real extension. The real file extension is used rather than the
-    filename's tail because Django's filename-uniqueness logic can append a
-    bare digit to a colliding filename (e.g. ``..._vtt`` -> ``..._vtt2``),
-    which would defeat an exact suffix match. Finds ALL language variants and
+    filename's tail because ``find_available_name`` can append a bare digit
+    to a colliding filename (e.g. ``..._vtt`` -> ``..._vtt2``), which would
+    defeat an exact suffix match. Finds ALL language variants and
     merges them into the multi-select content list without overwriting
     existing non-empty entries. Only ``_resources`` relation fields are
     written; legacy ``_file`` fields are left untouched.
@@ -378,15 +378,10 @@ def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]
     query_resource_type_field = get_dict_query_field(
         "metadata", settings.FIELD_RESOURCETYPE
     )
-    query_id_field = f"metadata__{'__'.join(settings.YT_FIELD_ID.split('.'))}"
     return WebsiteContent.objects.filter(
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
-        & (
-            Q(**{f"{query_id_field}__isnull": True})
-            | Q(**{f"{query_id_field}": None})
-            | Q(**{query_id_field: ""})
-        )
+        & query_field_is_empty(settings.YT_FIELD_ID)
     )
 
 
@@ -426,20 +421,12 @@ def videos_missing_captions(website: Website) -> list[WebsiteContent]:
     query_resource_type_field = get_dict_query_field(
         "metadata", settings.FIELD_RESOURCETYPE
     )
-    # A video has captions when its _resources relation has non-empty content;
-    # the key may be entirely absent, JSON null, the site-config default "" or
-    # an emptied list.
-    query_caption_content_field = get_dict_query_field(
-        "metadata", f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content"
-    )
     return WebsiteContent.objects.filter(
         Q(website=website)
         & Q(**{query_resource_type_field: RESOURCE_TYPE_VIDEO})
-        & (
-            Q(**{f"{query_caption_content_field}__isnull": True})
-            | Q(**{query_caption_content_field: None})
-            | Q(**{query_caption_content_field: ""})
-            | Q(**{query_caption_content_field: []})
+        & query_field_is_empty(
+            f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content",
+            empty_values=(None, [], ""),
         )
     )
 

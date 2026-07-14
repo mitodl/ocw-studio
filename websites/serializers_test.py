@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 import pytest
 from dateutil.parser import parse as parse_date
-from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models import CharField, Value
 from django.utils.text import slugify
@@ -55,7 +54,6 @@ from websites.serializers import (
     WebsiteUrlSerializer,
 )
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_field, set_dict_field
 
 pytestmark = pytest.mark.django_db
 # pylint:disable=redefined-outer-name
@@ -936,58 +934,3 @@ def test_update_page_url_on_title_change_legacy_index_behavior(
     page.refresh_from_db()
     assert page.filename == expected_filename
     assert page.title == "New Title"
-
-
-def test_website_content_detail_serializer_leaves_file_fields_untouched(
-    mocker, mocked_website_funcs
-):
-    """Saving _resources relations stores them as-is and never derives _file fields."""
-    mocker.patch("websites.serializers.update_youtube_thumbnail")
-    video_metadata = {
-        settings.FIELD_RESOURCETYPE: RESOURCE_TYPE_VIDEO,
-        "video_files": {
-            # Legacy scalar _file values must survive the save untouched
-            "video_captions_file": "/old/captions.vtt",
-            "video_transcript_file": "/old/transcript.pdf",
-        },
-    }
-
-    video = WebsiteContentFactory.create(
-        type=CONTENT_TYPE_RESOURCE,
-        metadata=video_metadata,
-    )
-    caption = WebsiteContentFactory.create(
-        type=CONTENT_TYPE_RESOURCE, is_page_content=True
-    )
-
-    metadata_patch = {"video_files": video.metadata["video_files"].copy()}
-    relation_value = {
-        "content": [str(caption.text_id)],
-        "website": video.website.name,
-    }
-    set_dict_field(metadata_patch, settings.YT_FIELD_CAPTIONS_RESOURCES, relation_value)
-
-    serializer = WebsiteContentDetailSerializer(
-        instance=video,
-        data={"metadata": metadata_patch},
-        partial=True,
-        context={"request": mocker.Mock(user=UserFactory.create())},
-    )
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    video.refresh_from_db()
-
-    # The relation is stored exactly as sent
-    assert (
-        get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
-        == relation_value
-    )
-    # The legacy scalar _file values are untouched
-    assert (
-        get_dict_field(video.metadata, settings.YT_FIELD_CAPTIONS)
-        == "/old/captions.vtt"
-    )
-    assert (
-        get_dict_field(video.metadata, settings.YT_FIELD_TRANSCRIPT)
-        == "/old/transcript.pdf"
-    )

@@ -127,8 +127,6 @@ def test_sync_video_captions_and_transcripts_appends_english_when_other_language
         website=website,
         filename="lecture1_transcript_fr_pdf",
     )
-    fr_caption_path = f"courses/{website.name}/lecture1_captions_fr.vtt"
-    fr_transcript_path = f"courses/{website.name}/lecture1_transcript_fr.pdf"
     video = WebsiteContentFactory.create(
         website=website,
         type=CONTENT_TYPE_RESOURCE,
@@ -144,10 +142,6 @@ def test_sync_video_captions_and_transcripts_appends_english_when_other_language
                     "content": [str(fr_transcript.text_id)],
                     "website": website.name,
                 },
-                "video_captions_file": [{"file": fr_caption_path, "language": "fr"}],
-                "video_transcript_file": [
-                    {"file": fr_transcript_path, "language": "fr"}
-                ],
             },
         },
     )
@@ -180,12 +174,6 @@ def test_sync_video_captions_and_transcripts_appends_english_when_other_language
     assert str(fr_caption.text_id) in captions_content
     assert len(transcript_content) == 2
     assert len(captions_content) == 2
-
-    # Pre-existing _file values in stored metadata are left untouched
-    assert vf["video_captions_file"] == [{"file": fr_caption_path, "language": "fr"}]
-    assert vf["video_transcript_file"] == [
-        {"file": fr_transcript_path, "language": "fr"}
-    ]
 
 
 def test_sync_video_captions_and_transcripts_treats_empty_content_as_unset(mocker):

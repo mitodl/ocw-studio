@@ -77,11 +77,6 @@ class Command(BaseCommand):
                             "content": [str(source_captions.text_id)],
                             "website": to_course.name,
                         }
-                        if source_captions.file and source_captions.file.name:
-                            file_path = f"/{source_captions.file.name.lstrip('/')}"
-                            video.metadata["video_files"]["video_captions_file"] = [
-                                {"file": file_path, "language": "en"}
-                            ]
                         video.save()
 
                 elif (  # create a new captions object
@@ -100,11 +95,6 @@ class Command(BaseCommand):
                             "content": [str(new_captions.text_id)],
                             "website": to_course.name,
                         }
-                        if new_captions.file and new_captions.file.name:
-                            file_path = f"/{new_captions.file.name.lstrip('/')}"
-                            video.metadata["video_files"]["video_captions_file"] = [
-                                {"file": file_path, "language": "en"}
-                            ]
                         video.save()
 
             transcript_resource = (
@@ -132,11 +122,6 @@ class Command(BaseCommand):
                             "content": [str(source_transcript.text_id)],
                             "website": to_course.name,
                         }
-                        if source_transcript.file and source_transcript.file.name:
-                            file_path = f"/{source_transcript.file.name.lstrip('/')}"
-                            video.metadata["video_files"]["video_transcript_file"] = [
-                                {"file": file_path, "language": "en"}
-                            ]
                         video.save()
                 elif (  # create a new transcript object
                     video_youtube_id in from_course_videos
@@ -156,11 +141,6 @@ class Command(BaseCommand):
                             "content": [str(new_transcript.text_id)],
                             "website": to_course.name,
                         }
-                        if new_transcript.file and new_transcript.file.name:
-                            file_path = f"/{new_transcript.file.name.lstrip('/')}"
-                            video.metadata["video_files"]["video_transcript_file"] = [
-                                {"file": file_path, "language": "en"}
-                            ]
                         video.save()
 
         self.stdout.write(

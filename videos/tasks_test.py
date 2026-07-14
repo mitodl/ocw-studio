@@ -418,9 +418,6 @@ def test_start_transcript_job(
     start_transcript_job.apply([video.id])
 
     video_content.refresh_from_db()
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS) is None
-    assert get_dict_field(video_content.metadata, settings.YT_FIELD_TRANSCRIPT) is None
     if caption_exists:
         captions_relation = get_dict_field(
             video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES
@@ -753,8 +750,8 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
 
     set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_nested_dicts(metadata, settings.YT_FIELD_ID, "expected_id")
-    set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
-    set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT, None)
+    set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS_RESOURCES, None)
+    set_nested_dicts(metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES, None)
 
     resource.save()
 
@@ -764,7 +761,9 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
         )
         metadata = other_resource.metadata
         set_nested_dicts(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
-        set_nested_dicts(metadata, settings.YT_FIELD_CAPTIONS, None)
+        set_nested_dicts(
+            metadata, f"{settings.YT_FIELD_CAPTIONS_RESOURCES}.content", None
+        )
         other_resource.save()
 
     update_transcript_mock = mocker.patch(
@@ -790,10 +789,6 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
 
     resource.refresh_from_db()
 
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) is None
-
     if update_transcript_return_value and is_ocw:
         link_mock.assert_any_call(video, resource)
         sync_refs_mock.assert_called()
@@ -811,6 +806,10 @@ def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # 
     else:
         assert (
             get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)
+            is None
+        )
+        assert (
+            get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT_RESOURCES)
             is None
         )
 
@@ -876,16 +875,6 @@ def test_update_transcripts_for_video_no_3play(
 
     set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
     set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
-    set_dict_field(
-        metadata,
-        settings.YT_FIELD_CAPTIONS,
-        (f"{base_path}_captions.vtt" if caption_exists else None),
-    )
-    set_dict_field(
-        metadata,
-        settings.YT_FIELD_TRANSCRIPT,
-        (f"{base_path}_transcript.pdf" if transcript_exists else None),
-    )
     resource.save()
 
     captions_list, transcripts_list = video.caption_transcript_resources()
@@ -901,13 +890,6 @@ def test_update_transcripts_for_video_no_3play(
 
     mock_3play.assert_not_called()
 
-    # The pre-existing scalar _file values are left completely untouched
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) == (
-        f"{base_path}_captions.vtt" if caption_exists else None
-    )
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_TRANSCRIPT) == (
-        f"{base_path}_transcript.pdf" if transcript_exists else None
-    )
     # The _resources relation fields are written from the found resources
     assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES) == (
         {
@@ -971,8 +953,6 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
         str(captions_fr.text_id),
     }
     assert relation["website"] == video.website.name
-    # Legacy _file fields in stored metadata are never written
-    assert get_dict_field(resource.metadata, settings.YT_FIELD_CAPTIONS) is None
 
 
 def test_attempt_to_update_missing_transcripts(mocker):

@@ -11,6 +11,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
+from websites.models import WebsiteContent
 from websites.utils import (
     compile_referencing_content,
     get_dict_field,
@@ -18,6 +19,7 @@ from websites.utils import (
     get_metadata_content_key,
     parse_resource_uuid,
     permissions_group_name_for_role,
+    query_field_is_empty,
     resolve_referenced_content_ids,
     set_dict_field,
 )
@@ -66,6 +68,51 @@ def test_get_dict_query_field():
         get_dict_query_field("metadata", "video_files.video_captions_file")
         == "metadata__video_files__video_captions_file"
     )
+
+
+@pytest.mark.parametrize(
+    ("metadata", "matches"),
+    [
+        ({"video_files": {"video_id": None}}, True),
+        ({"video_files": {}}, True),
+        ({"video_files": {"video_id": ""}}, True),
+        ({"video_files": {"video_id": "abc123"}}, False),
+    ],
+)
+@pytest.mark.django_db
+def test_query_field_is_empty_default(metadata, matches):
+    """query_field_is_empty should match null/missing/empty-string metadata fields by default"""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(website=website, metadata=metadata)
+    result = WebsiteContent.objects.filter(pk=content.pk).filter(
+        query_field_is_empty("video_files.video_id")
+    )
+    assert result.exists() is matches
+
+
+@pytest.mark.parametrize(
+    ("metadata", "matches"),
+    [
+        ({"video_files": {"captions": []}}, True),
+        ({"video_files": {"captions": None}}, True),
+        ({"video_files": {"captions": ""}}, True),
+        ({"video_files": {"captions": ["a"]}}, False),
+        ({"video_files": {}}, False),
+    ],
+)
+@pytest.mark.django_db
+def test_query_field_is_empty_custom_values_no_isnull(metadata, matches):
+    """query_field_is_empty should support custom empty_values and skip the isnull check"""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(website=website, metadata=metadata)
+    result = WebsiteContent.objects.filter(pk=content.pk).filter(
+        query_field_is_empty(
+            "video_files.captions",
+            empty_values=(None, [], ""),
+            include_isnull=False,
+        )
+    )
+    assert result.exists() is matches
 
 
 def test_get_dict_field():
@@ -1228,21 +1275,17 @@ def test_resolve_referenced_content_ids_scopes_course_list_sitemetadata():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_paths():
-    """resolve_referenced_content_ids resolves video_captions_file and video_transcript_file by file path."""
+def test_resolve_referenced_content_ids_video_resources():
+    """resolve_referenced_content_ids resolves video_captions_resources and video_transcript_resources content."""
     website = WebsiteFactory.create()
 
     captions_content = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="nXyqvKrQGZ8_captions",
-        file=f"courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
     )
     transcript_content = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="pdf_testpage",
-        file=f"courses/{website.name}/pdf_testpage.pdf",
     )
 
     video_resource = WebsiteContentFactory.create(
@@ -1251,8 +1294,8 @@ def test_resolve_referenced_content_ids_video_file_paths():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": f"/courses/{website.name}/nXyqvKrQGZ8_captions.webvtt",
-                "video_transcript_file": f"/courses/{website.name}/pdf_testpage.pdf",
+                "video_captions_resources": {"content": captions_content.text_id},
+                "video_transcript_resources": {"content": transcript_content.text_id},
             },
         },
     )
@@ -1263,8 +1306,8 @@ def test_resolve_referenced_content_ids_video_file_paths():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_empty_strings():
-    """resolve_referenced_content_ids handles empty-string video file paths gracefully."""
+def test_resolve_referenced_content_ids_video_resources_empty_strings():
+    """resolve_referenced_content_ids handles empty-string video resource content gracefully."""
     website = WebsiteFactory.create()
 
     video_resource = WebsiteContentFactory.create(
@@ -1273,8 +1316,6 @@ def test_resolve_referenced_content_ids_video_file_empty_strings():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": "",
-                "video_transcript_file": "",
                 "video_captions_resources": "",
                 "video_transcript_resources": "",
             },
@@ -1286,27 +1327,21 @@ def test_resolve_referenced_content_ids_video_file_empty_strings():
 
 
 @pytest.mark.django_db
-def test_resolve_referenced_content_ids_video_file_paths_array_format():
-    """resolve_referenced_content_ids resolves multi-language array-of-objects _file format."""
+def test_resolve_referenced_content_ids_video_resources_multiple_content_ids():
+    """resolve_referenced_content_ids resolves multiple text_ids in a video resources relation."""
     website = WebsiteFactory.create()
 
     captions_en = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_captions_vtt",
-        file=f"courses/{website.name}/lecture1_captions.vtt",
     )
     captions_es = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_captions_es_vtt",
-        file=f"courses/{website.name}/lecture1_captions_es.vtt",
     )
     transcript_en = WebsiteContentFactory.create(
         website=website,
         type=constants.CONTENT_TYPE_RESOURCE,
-        filename="lecture1_transcript_pdf",
-        file=f"courses/{website.name}/lecture1_transcript.pdf",
     )
 
     video_resource = WebsiteContentFactory.create(
@@ -1315,22 +1350,10 @@ def test_resolve_referenced_content_ids_video_file_paths_array_format():
         metadata={
             "resourcetype": "Video",
             "video_files": {
-                "video_captions_file": [
-                    {
-                        "file": f"/courses/{website.name}/lecture1_captions.vtt",
-                        "language": "en",
-                    },
-                    {
-                        "file": f"/courses/{website.name}/lecture1_captions_es.vtt",
-                        "language": "es",
-                    },
-                ],
-                "video_transcript_file": [
-                    {
-                        "file": f"/courses/{website.name}/lecture1_transcript.pdf",
-                        "language": "en",
-                    },
-                ],
+                "video_captions_resources": {
+                    "content": [captions_en.text_id, captions_es.text_id]
+                },
+                "video_transcript_resources": {"content": [transcript_en.text_id]},
             },
         },
     )

@@ -27,9 +27,7 @@ from safedelete.queryset import SafeDeleteQueryset
 
 from content_sync.constants import VERSION_LIVE
 from main.settings import (
-    YT_FIELD_CAPTIONS,
     YT_FIELD_CAPTIONS_RESOURCES,
-    YT_FIELD_TRANSCRIPT,
     YT_FIELD_TRANSCRIPT_RESOURCES,
 )
 from main.utils import uuid_string
@@ -420,7 +418,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         ).hexdigest()
 
     @property
-    def full_metadata(self) -> dict:  # noqa: C901, PLR0912
+    def full_metadata(self) -> dict:
         """Return the metadata field with file upload included"""
         file_field = self.get_config_file_field()
         s3_path = self.website.s3_path
@@ -475,30 +473,6 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                     set_dict_field(full_metadata, resource_field, resolved)
                     modified = True
 
-        # Update video transcript/caption paths in _file fields if they exist.
-        # Handles both the legacy scalar string format and the new
-        # multi-language array-of-objects format.
-        if full_metadata:
-            for field in (YT_FIELD_TRANSCRIPT, YT_FIELD_CAPTIONS):
-                value = get_dict_field(full_metadata, field)
-                if not value or not url_path:
-                    continue
-                if isinstance(value, str):
-                    # Legacy scalar — a single URL path string.
-                    set_dict_field(
-                        full_metadata, field, value.replace(s3_path, url_path, 1)
-                    )
-                    modified = True
-                elif isinstance(value, list):
-                    # Multi-language format — list of {"file": ..., "language": ...}.
-                    updated = [
-                        {**entry, "file": entry["file"].replace(s3_path, url_path, 1)}
-                        if isinstance(entry, dict) and entry.get("file")
-                        else entry
-                        for entry in value
-                    ]
-                    set_dict_field(full_metadata, field, updated)
-                    modified = True
         return full_metadata if modified else self.metadata
 
     def get_config_file_field(self) -> dict:
