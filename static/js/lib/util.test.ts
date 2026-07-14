@@ -168,7 +168,7 @@ describe("util", () => {
     })
 
     it("returns false when PostHog hook returns undefined", () => {
-      mockUseFeatureFlagEnabled.mockReturnValue(undefined)
+      mockUseFeatureFlagEnabled.mockReturnValue(undefined as unknown as boolean)
 
       const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
