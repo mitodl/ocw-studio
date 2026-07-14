@@ -278,12 +278,11 @@ def _merge_caption_resource(
 
     Candidates are found by filename prefix only, then filtered by the real
     extension of their uploaded ``file`` (not the ``filename`` field's tail).
-    This project's own filename-uniqueness helper (``find_available_name``)
-    appends a bare digit directly onto a colliding filename with no
-    separator — e.g. ``lecture1_captions-en-us_vtt`` collides and becomes
-    ``lecture1_captions-en-us_vtt2`` — which would silently defeat an exact
-    ``filename__endswith`` suffix check. The uploaded file's own extension is
-    unaffected by that renaming, so it's used here instead.
+    ``find_available_name`` appends a bare digit directly onto a colliding
+    filename with no separator — e.g. ``lecture1_captions-en-us_vtt`` collides
+    and becomes ``lecture1_captions-en-us_vtt2`` — which would silently
+    defeat an exact ``filename__endswith`` suffix check. The uploaded file's
+    own extension is unaffected by that renaming, so it's used here instead.
 
     Only the ``_resources`` relation field is written; the legacy ``_file``
     fields in stored metadata are left untouched.
@@ -329,10 +328,9 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     ``{base}_transcript`` (covering both the ``{base}_captions-<lang>-<locale>``
     convention and the legacy no-suffix form) and whose uploaded file has a
     matching real extension. The real file extension is used rather than the
-    filename's tail because this project's own filename-uniqueness helper
-    (``find_available_name``) can append a bare digit to a colliding filename
-    (e.g. ``..._vtt`` -> ``..._vtt2``), which would defeat an exact suffix
-    match. Finds ALL language variants and
+    filename's tail because ``find_available_name`` can append a bare digit
+    to a colliding filename (e.g. ``..._vtt`` -> ``..._vtt2``), which would
+    defeat an exact suffix match. Finds ALL language variants and
     merges them into the multi-select content list without overwriting
     existing non-empty entries. Only ``_resources`` relation fields are
     written; legacy ``_file`` fields are left untouched.
