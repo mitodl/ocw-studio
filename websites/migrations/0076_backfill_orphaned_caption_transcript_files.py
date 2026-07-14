@@ -29,8 +29,7 @@ Two cases handled per video:
 
 IMPORTANT: this migration must not run in production until the
 `remove_uuid_from_filenames` management command has been run against
-production data (see docs/superpowers/specs/2026-07-02-multi-language-cleanup-design.md,
-kept locally in the ocw-studio repo -- not committed).
+production data.
 
 This migration is irreversible: reverse_code is a no-op. Cleanly reversing would
 require deleting the WebsiteContent rows this migration creates, which needs a
