@@ -89,7 +89,11 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "SENTRY_ENV": settings.ENVIRONMENT,
             "POSTHOG_ENABLED": str(settings.PUBLISH_POSTHOG_ENABLED).lower(),
             "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
+            "POSTHOG_UI_HOST": settings.PUBLISH_POSTHOG_UI_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
+            "POSTHOG_COURSE_V3_ENABLED": str(
+                settings.PUBLISH_POSTHOG_COURSE_V3_ENABLED
+            ).lower(),
         }
         if (
             settings.PUBLISH_POSTHOG_ENABLED
@@ -100,6 +104,13 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             ).lower()
             themes_env["POSTHOG_PROJECT_API_KEY"] = (
                 settings.PUBLISH_POSTHOG_PROJECT_API_KEY
+            )
+        if (
+            settings.PUBLISH_POSTHOG_COURSE_V3_ENABLED
+            and settings.PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY
+        ):
+            themes_env["POSTHOG_COURSE_V3_PROJECT_API_KEY"] = (
+                settings.PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY
             )
         tasks = [
             GetStep(

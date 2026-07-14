@@ -1395,6 +1395,17 @@ PUBLISH_POSTHOG_API_HOST = get_string(
     description="API host for PostHog, published to pipelines",
     required=False,
 )
+PUBLISH_POSTHOG_COURSE_V3_ENABLED = get_bool(
+    name="PUBLISH_POSTHOG_COURSE_V3_ENABLED",
+    default=False,
+    description="Whether PostHog is enabled for course v3",
+)
+PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY = get_string(
+    name="PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY",
+    default=None,
+    description="API token for communicating with PostHog for course v3",
+    required=False,
+)
 PUBLISH_POSTHOG_ENABLED = get_bool(
     name="PUBLISH_POSTHOG_ENABLED",
     default=False,
@@ -1422,6 +1433,12 @@ PUBLISH_POSTHOG_PROJECT_API_KEY = get_string(
     name="PUBLISH_POSTHOG_PROJECT_API_KEY",
     default=None,
     description="API token for communicating with PostHog, published to pipelines",
+    required=False,
+)
+PUBLISH_POSTHOG_UI_HOST = get_string(
+    name="PUBLISH_POSTHOG_UI_HOST",
+    default="https://app.posthog.com",
+    description="UI host for PostHog, published to pipelines",
     required=False,
 )
 OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
