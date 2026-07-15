@@ -18,9 +18,8 @@ _FIELD_CONFIG = (
 )
 
 
-def _object_exists_in_s3(bucket_name, key):
+def _object_exists_in_s3(s3, bucket_name, key):
     """Return True if the S3 object exists."""
-    s3 = get_boto3_resource("s3")
     try:
         s3.Object(bucket_name, key).load()
     except ClientError as exc:
@@ -74,13 +73,13 @@ class Command(WebsiteFilterCommand):
         left in place for manual inspection in that case).
         """
         resource = WebsiteContent.objects.filter(
-            website=content.website, file=key
+            website_id=content.website_id, file=key
         ).first()
         if resource is not None:
             return resource
 
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-        if not _object_exists_in_s3(bucket_name, key):
+        if not _object_exists_in_s3(self.s3, bucket_name, key):
             self.stdout.write(
                 f"Skipping missing S3 object for "
                 f"{content.website.name}/{content.filename}: {path}"
@@ -101,7 +100,7 @@ class Command(WebsiteFilterCommand):
         )
         title = f"{content.title} {suffix}" if content.title else filename
         return WebsiteContent.objects.create(
-            website=content.website,
+            website_id=content.website_id,
             type="resource",
             is_page_content=True,
             filename=filename,
@@ -115,7 +114,9 @@ class Command(WebsiteFilterCommand):
             },
         )
 
-    def _merge_resource_into_video_files(self, video_files, resource_field, resource):
+    def _merge_resource_into_video_files(
+        self, video_files, resource_field, resource, website_name
+    ):
         """Append resource's id to video_files[resource_field], no duplicates."""
         existing = video_files.get(resource_field)
         existing_ids = []
@@ -131,7 +132,7 @@ class Command(WebsiteFilterCommand):
             existing_ids = [*existing_ids, resource_text_id]
         video_files[resource_field] = {
             "content": existing_ids,
-            "website": resource.website.name,
+            "website": website_name,
         }
 
     def _backfill_video(self, content):
@@ -165,7 +166,9 @@ class Command(WebsiteFilterCommand):
             if resource is None:
                 continue
 
-            self._merge_resource_into_video_files(video_files, resource_field, resource)
+            self._merge_resource_into_video_files(
+                video_files, resource_field, resource, content.website.name
+            )
             video_files.pop(file_field)
             changed = True
 
@@ -175,6 +178,7 @@ class Command(WebsiteFilterCommand):
         """Run the backfill."""
         super().handle(*args, **options)
 
+        self.s3 = get_boto3_resource("s3")
         updated_website_ids = set()
         objects_to_update = []
         website_qset = self.filter_websites(Website.objects.all())
@@ -189,6 +193,10 @@ class Command(WebsiteFilterCommand):
             .only("id", "filename", "dirpath", "title", "metadata", "website__name")
         )
 
+        # Not a small, curated set: this matches every video with a
+        # video_files key across every website, in the thousands on real
+        # data, so .iterator() avoiding loading the whole queryset into
+        # memory at once matters here.
         for content in content_qset.iterator():
             if self._backfill_video(content):
                 objects_to_update.append(content)
