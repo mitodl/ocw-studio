@@ -190,6 +190,11 @@ if DEBUG:
     INSTALLED_APPS.append("nplusone.ext.django")
     MIDDLEWARE.append("nplusone.ext.django.NPlusOneMiddleware")
 
+SESSION_COOKIE_NAME = get_string(
+    name="SESSION_COOKIE_NAME",
+    default="sessionid",
+    description="Name of the Django session cookie",
+)
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 
 LOGIN_REDIRECT_URL = "/"
