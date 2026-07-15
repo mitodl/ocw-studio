@@ -8,7 +8,7 @@ from django.conf import settings
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
 from websites.api import get_valid_new_filename
-from websites.constants import CONTENT_FILENAME_MAX_LEN
+from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TITLE_MAX_LEN
 from websites.models import Website, WebsiteContent
 
 # Each entry: file_field, resource_field, filename_suffix, resourcetype.
@@ -66,6 +66,15 @@ class Command(WebsiteFilterCommand):
 
     help = __doc__
 
+    @staticmethod
+    def _build_title(content_title, suffix, filename):
+        """Build the new resource's title, truncated to fit the title column."""
+        if not content_title:
+            return filename
+        suffix_part = f" {suffix}"
+        max_base_len = CONTENT_TITLE_MAX_LEN - len(suffix_part)
+        return f"{content_title[:max_base_len]}{suffix_part}"
+
     def _resolve_or_create_resource(self, content, key, path, suffix, resourcetype):
         """Find a resource already pointing at this S3 key, or create one.
 
@@ -98,7 +107,7 @@ class Command(WebsiteFilterCommand):
             dirpath=content.dirpath,
             filename_base=base_filename,
         )
-        title = f"{content.title} {suffix}" if content.title else filename
+        title = self._build_title(content.title, suffix, filename)
         return WebsiteContent.objects.create(
             website_id=content.website_id,
             type="resource",

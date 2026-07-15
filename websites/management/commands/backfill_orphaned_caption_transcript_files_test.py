@@ -8,7 +8,7 @@ from moto import mock_aws
 
 from main.s3_utils import get_boto3_resource
 from videos.conftest import MOCK_BUCKET_NAME, setup_s3
-from websites.constants import CONTENT_FILENAME_MAX_LEN
+from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TITLE_MAX_LEN
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
@@ -350,3 +350,33 @@ def test_truncates_long_video_filename_to_fit_length_limit(mock_s3):
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert len(created.filename) <= CONTENT_FILENAME_MAX_LEN
     assert created.filename.endswith("_captions")
+
+
+def test_truncates_long_video_title_to_fit_length_limit(mock_s3):
+    """
+    A video title already at the length limit must not produce a too-long
+    title when suffixed with captions/transcript.
+    """
+    website = WebsiteFactory.create()
+    long_title = "a" * CONTENT_TITLE_MAX_LEN
+    key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        title=long_title,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    resources = video.metadata["video_files"]["video_captions_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert len(created.title) <= CONTENT_TITLE_MAX_LEN
+    assert created.title.endswith(" captions")
