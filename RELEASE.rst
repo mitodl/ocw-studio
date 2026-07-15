@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.193.2
+Version 0.193.2 (Released July 15, 2026)
 ---------------
 
 - feat: optional sync with delete in online mass build (#3079)
