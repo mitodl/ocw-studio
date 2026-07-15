@@ -1,48 +1,38 @@
-"""Tests for website migration 0076 -- backfill orphaned caption/transcript files"""
+"""Tests for the backfill_orphaned_caption_transcript_files management command"""  # noqa: INP001
 
-import importlib
+from io import StringIO
 
 import pytest
-from django.apps import apps
+from django.core.management import call_command
 from moto import mock_aws
 
 from main.s3_utils import get_boto3_resource
+from videos.conftest import MOCK_BUCKET_NAME, setup_s3
+from websites.constants import CONTENT_FILENAME_MAX_LEN
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def migration_module():
-    """Import the migration module (names with leading digits need importlib)."""
-    return importlib.import_module(
-        "websites.migrations.0076_backfill_orphaned_caption_transcript_files"
-    )
+def mock_s3(settings):
+    """Provide a moto-backed S3 bucket, matching the repo's setup_s3 convention."""
+    with mock_aws():
+        setup_s3(settings)
+        settings.AWS_STORAGE_BUCKET_NAME = MOCK_BUCKET_NAME
+        yield get_boto3_resource("s3").Bucket(MOCK_BUCKET_NAME)
 
 
-def _setup_s3_bucket(settings):
-    """Create a mocked S3 bucket for the test.
-
-    Must be called from inside a function decorated with @mock_aws (not from
-    a pytest fixture) -- get_boto3_options() injects a hardcoded minio
-    endpoint_url whenever ENVIRONMENT == "dev" (the default in this repo's
-    .env), which bypasses moto's interception if the settings mutation and
-    S3 calls happen outside the mock context. This matches the pattern used
-    by videos/conftest.py's setup_s3() and gdrive_sync/utils_test.py.
-    """
-    settings.ENVIRONMENT = "test"
-    settings.AWS_ACCESS_KEY_ID = "abc"
-    settings.AWS_SECRET_ACCESS_KEY = "abc"  # noqa: S105
-    settings.AWS_STORAGE_BUCKET_NAME = "test-bucket"
-    conn = get_boto3_resource("s3")
-    conn.create_bucket(Bucket=settings.AWS_STORAGE_BUCKET_NAME)
-    return conn.Bucket(name=settings.AWS_STORAGE_BUCKET_NAME)
+def _run(**kwargs):
+    """Invoke the command, returning captured stdout."""
+    out = StringIO()
+    call_command("backfill_orphaned_caption_transcript_files", stdout=out, **kwargs)
+    return out.getvalue()
 
 
-@mock_aws
-def test_migration_0076_removes_empty_string_leftovers(migration_module, settings):
+def test_removes_empty_string_leftovers(mock_s3):
     """Empty-string _file values are removed with no resource created."""
-    _setup_s3_bucket(settings)
     video = WebsiteContentFactory.create(
         filename="lecture1_mp4",
         metadata={
@@ -54,7 +44,7 @@ def test_migration_0076_removes_empty_string_leftovers(migration_module, setting
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     vf = video.metadata["video_files"]
@@ -64,15 +54,11 @@ def test_migration_0076_removes_empty_string_leftovers(migration_module, setting
     assert "video_transcript_resources" not in vf
 
 
-@mock_aws
-def test_migration_0076_creates_resource_for_existing_s3_object(
-    migration_module, settings
-):
+def test_creates_resource_for_existing_s3_object(mock_s3):
     """A real orphan path with an existing S3 object gets a new resource created."""
-    s3_bucket = _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     caption_key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
-    s3_bucket.put_object(Key=caption_key, Body=b"WEBVTT")
+    mock_s3.put_object(Key=caption_key, Body=b"WEBVTT")
 
     video = WebsiteContentFactory.create(
         website=website,
@@ -85,7 +71,7 @@ def test_migration_0076_creates_resource_for_existing_s3_object(
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     vf = video.metadata["video_files"]
@@ -94,7 +80,6 @@ def test_migration_0076_creates_resource_for_existing_s3_object(
     assert resources["website"] == website.name
     assert len(resources["content"]) == 1
 
-    WebsiteContent = apps.get_model("websites", "WebsiteContent")
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert created.filename == "lecture1_mp4_captions"
     assert created.dirpath == "content/resources"
@@ -103,10 +88,8 @@ def test_migration_0076_creates_resource_for_existing_s3_object(
     assert created.metadata["file"] == f"/{caption_key}"
 
 
-@mock_aws
-def test_migration_0076_skips_missing_s3_object(migration_module, settings, capsys):
+def test_skips_missing_s3_object(mock_s3):
     """A real orphan path whose S3 object no longer exists is left untouched."""
-    _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     transcript_path = f"/courses/{website.name}/1Missing_transcript.pdf"
 
@@ -119,19 +102,17 @@ def test_migration_0076_skips_missing_s3_object(migration_module, settings, caps
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    output = _run()
 
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert vf["video_transcript_file"] == transcript_path
     assert "video_transcript_resources" not in vf
-    assert "Skipping missing S3 object" in capsys.readouterr().out
+    assert "Skipping missing S3 object" in output
 
 
-@mock_aws
-def test_migration_0076_appends_to_existing_resources(migration_module, settings):
+def test_appends_to_existing_resources(mock_s3):
     """A backfilled resource is appended to an existing _resources content list."""
-    s3_bucket = _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     fr_caption = WebsiteContentFactory.create(
         website=website,
@@ -139,7 +120,7 @@ def test_migration_0076_appends_to_existing_resources(migration_module, settings
         file=f"courses/{website.name}/lecture1_captions_fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
-    s3_bucket.put_object(Key=en_key, Body=b"WEBVTT")
+    mock_s3.put_object(Key=en_key, Body=b"WEBVTT")
 
     video = WebsiteContentFactory.create(
         website=website,
@@ -157,7 +138,7 @@ def test_migration_0076_appends_to_existing_resources(migration_module, settings
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     content = video.metadata["video_files"]["video_captions_resources"]["content"]
@@ -165,12 +146,8 @@ def test_migration_0076_appends_to_existing_resources(migration_module, settings
     assert len(content) == 2
 
 
-@mock_aws
-def test_migration_0076_appends_to_existing_scalar_string_content(
-    migration_module, settings
-):
+def test_appends_to_existing_scalar_string_content(mock_s3):
     """A legacy scalar-string _resources.content value is preserved, not dropped."""
-    s3_bucket = _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     fr_caption = WebsiteContentFactory.create(
         website=website,
@@ -178,7 +155,7 @@ def test_migration_0076_appends_to_existing_scalar_string_content(
         file=f"courses/{website.name}/lecture1_captions_fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
-    s3_bucket.put_object(Key=en_key, Body=b"WEBVTT")
+    mock_s3.put_object(Key=en_key, Body=b"WEBVTT")
 
     video = WebsiteContentFactory.create(
         website=website,
@@ -196,7 +173,7 @@ def test_migration_0076_appends_to_existing_scalar_string_content(
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     content = video.metadata["video_files"]["video_captions_resources"]["content"]
@@ -205,12 +182,8 @@ def test_migration_0076_appends_to_existing_scalar_string_content(
     assert len(content) == 2
 
 
-@mock_aws
-def test_migration_0076_reuses_existing_resource_for_same_s3_key(
-    migration_module, settings
-):
+def test_reuses_existing_resource_for_same_s3_key(mock_s3):
     """An orphan path matching an already-created resource is linked, not duplicated."""
-    _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
     already_linked = WebsiteContentFactory.create(
@@ -229,7 +202,7 @@ def test_migration_0076_reuses_existing_resource_for_same_s3_key(
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     vf = video.metadata["video_files"]
@@ -237,20 +210,17 @@ def test_migration_0076_reuses_existing_resource_for_same_s3_key(
     resources = vf["video_captions_resources"]
     assert resources["content"] == [str(already_linked.text_id)]
 
-    WebsiteContent = apps.get_model("websites", "WebsiteContent")
     assert WebsiteContent.objects.filter(website=website, file=key).count() == 1
 
 
-@mock_aws
-def test_migration_0076_deduplicates_filename_collision(migration_module, settings):
+def test_deduplicates_filename_collision(mock_s3):
     """Filename collisions in the same (website, dirpath) get a numeric suffix."""
-    s3_bucket = _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
         website=website, filename="lecture1_mp4_captions", dirpath="content/resources"
     )
     key = f"courses/{website.name}/1AbC_transcript.webvtt"
-    s3_bucket.put_object(Key=key, Body=b"WEBVTT")
+    mock_s3.put_object(Key=key, Body=b"WEBVTT")
 
     video = WebsiteContentFactory.create(
         website=website,
@@ -262,16 +232,15 @@ def test_migration_0076_deduplicates_filename_collision(migration_module, settin
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     resources = video.metadata["video_files"]["video_captions_resources"]
-    WebsiteContent = apps.get_model("websites", "WebsiteContent")
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
-    assert created.filename == "lecture1_mp4_captions_2"
+    assert created.filename == "lecture1_mp4_captions2"
 
 
-def test_migration_0076_skips_non_video_content(migration_module):
+def test_skips_non_video_content(mock_s3):
     """Content without resourcetype=Video is not modified even if it has video_files."""
     content = WebsiteContentFactory.create(
         metadata={
@@ -280,24 +249,20 @@ def test_migration_0076_skips_non_video_content(migration_module):
         }
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     content.refresh_from_db()
     # Non-video content is untouched because the queryset filters to resourcetype=Video
     assert "video_captions_file" in content.metadata["video_files"]
 
 
-@mock_aws
-def test_migration_0076_backfills_both_captions_and_transcript_for_same_video(
-    migration_module, settings
-):
+def test_backfills_both_captions_and_transcript_for_same_video(mock_s3):
     """A video with both orphaned fields gets both backfilled in the same run."""
-    s3_bucket = _setup_s3_bucket(settings)
     website = WebsiteFactory.create()
     captions_key = f"courses/{website.name}/1Caption_transcript.webvtt"
     transcript_key = f"courses/{website.name}/1Transcript_transcript.pdf"
-    s3_bucket.put_object(Key=captions_key, Body=b"WEBVTT")
-    s3_bucket.put_object(Key=transcript_key, Body=b"%PDF")
+    mock_s3.put_object(Key=captions_key, Body=b"WEBVTT")
+    mock_s3.put_object(Key=transcript_key, Body=b"%PDF")
 
     video = WebsiteContentFactory.create(
         website=website,
@@ -312,14 +277,13 @@ def test_migration_0076_backfills_both_captions_and_transcript_for_same_video(
         },
     )
 
-    migration_module._backfill_orphaned_files(apps, None)  # noqa: SLF001
+    _run()
 
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert "video_captions_file" not in vf
     assert "video_transcript_file" not in vf
 
-    WebsiteContent = apps.get_model("websites", "WebsiteContent")
     captions_resource = WebsiteContent.objects.get(
         text_id=vf["video_captions_resources"]["content"][0]
     )
@@ -330,3 +294,59 @@ def test_migration_0076_backfills_both_captions_and_transcript_for_same_video(
     assert transcript_resource.filename == "lecture1_mp4_transcript"
     assert captions_resource.metadata["resourcetype"] == "Other"
     assert transcript_resource.metadata["resourcetype"] == "Document"
+
+
+def test_filter_by_website(mock_s3):
+    """--filter restricts the backfill to the named website(s)."""
+    included = WebsiteFactory.create()
+    excluded = WebsiteFactory.create()
+    for website in (included, excluded):
+        WebsiteContentFactory.create(
+            website=website,
+            filename="lecture1_mp4",
+            metadata={
+                "resourcetype": "Video",
+                "video_files": {"video_captions_file": ""},
+            },
+        )
+
+    _run(filter=included.name)
+
+    included_video = WebsiteContent.objects.get(
+        website=included, filename="lecture1_mp4"
+    )
+    excluded_video = WebsiteContent.objects.get(
+        website=excluded, filename="lecture1_mp4"
+    )
+    assert "video_captions_file" not in included_video.metadata["video_files"]
+    assert "video_captions_file" in excluded_video.metadata["video_files"]
+
+
+def test_truncates_long_video_filename_to_fit_length_limit(mock_s3):
+    """
+    A video filename already at the length limit must not produce a
+    too-long filename when suffixed with _captions/_transcript (the actual
+    staging DataError this command was written to fix).
+    """
+    website = WebsiteFactory.create()
+    long_filename = "a" * CONTENT_FILENAME_MAX_LEN
+    key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename=long_filename,
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    resources = video.metadata["video_files"]["video_captions_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert len(created.filename) <= CONTENT_FILENAME_MAX_LEN
+    assert created.filename.endswith("_captions")
