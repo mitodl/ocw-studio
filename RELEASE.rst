@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Version 0.193.3
+---------------
+
+- Add setting for SESSION_COOKIE_NAME (#3098)
+- fix: gdrive resourcetype misclassification and transcript pdf titles (#3097)
+- refactor: backfill orphaned captions/transcripts, remove legacy _file fields (#3087)
+
 Version 0.193.2 (Released July 15, 2026)
 ---------------
 
