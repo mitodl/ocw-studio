@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+Version 0.193.2 (Released July 15, 2026)
+---------------
+
+- feat: optional sync with delete in online mass build (#3079)
+- feat: auto-link video caption/transcript resource fields (#3086)
+- Co-locate ocw-course-publisher Dockerfile with its build workflow (#3088)
+- Bump redis to >=5.0.1 to fix django-health-check redis probe 500s (#3092)
+- Update dependency django to v5.2.16 [SECURITY] (#3093)
+- Update Python to 3.14  (#2817)
+- Replace dead server-status config with django-health-check (#3083)
+- feat: migarate captions & transcript file fields to resource fields (#2999)
+
 Version 0.192.0 (Released July 01, 2026)
 ---------------
 
