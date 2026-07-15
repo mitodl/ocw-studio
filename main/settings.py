@@ -1395,11 +1395,6 @@ PUBLISH_POSTHOG_API_HOST = get_string(
     description="API host for PostHog, published to pipelines",
     required=False,
 )
-PUBLISH_POSTHOG_COURSE_V3_ENABLED = get_bool(
-    name="PUBLISH_POSTHOG_COURSE_V3_ENABLED",
-    default=False,
-    description="Whether PostHog is enabled for course v3",
-)
 PUBLISH_POSTHOG_ENABLED = get_bool(
     name="PUBLISH_POSTHOG_ENABLED",
     default=False,

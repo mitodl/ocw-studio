@@ -91,9 +91,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
             "POSTHOG_UI_HOST": settings.PUBLISH_POSTHOG_UI_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
-            "POSTHOG_COURSE_V3_ENABLED": str(
-                settings.PUBLISH_POSTHOG_COURSE_V3_ENABLED
-            ).lower(),
         }
         if (
             settings.PUBLISH_POSTHOG_ENABLED

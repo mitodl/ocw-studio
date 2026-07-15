@@ -61,9 +61,6 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
         build_ocw_hugo_themes_params["POSTHOG_UI_HOST"]
         == settings.PUBLISH_POSTHOG_UI_HOST
     )
-    assert build_ocw_hugo_themes_params["POSTHOG_COURSE_V3_ENABLED"] == (
-        str(settings.PUBLISH_POSTHOG_COURSE_V3_ENABLED).lower()
-    )
     upload_theme_assets_tasks = [
         task
         for task in build_theme_assets_job["plan"]
