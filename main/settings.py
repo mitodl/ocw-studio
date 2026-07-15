@@ -1400,12 +1400,6 @@ PUBLISH_POSTHOG_COURSE_V3_ENABLED = get_bool(
     default=False,
     description="Whether PostHog is enabled for course v3",
 )
-PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY = get_string(
-    name="PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY",
-    default=None,
-    description="API token for communicating with PostHog for course v3",
-    required=False,
-)
 PUBLISH_POSTHOG_ENABLED = get_bool(
     name="PUBLISH_POSTHOG_ENABLED",
     default=False,

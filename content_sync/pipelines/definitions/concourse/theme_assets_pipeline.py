@@ -105,13 +105,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             themes_env["POSTHOG_PROJECT_API_KEY"] = (
                 settings.PUBLISH_POSTHOG_PROJECT_API_KEY
             )
-        if (
-            settings.PUBLISH_POSTHOG_COURSE_V3_ENABLED
-            and settings.PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY
-        ):
-            themes_env["POSTHOG_COURSE_V3_PROJECT_API_KEY"] = (
-                settings.PUBLISH_POSTHOG_COURSE_V3_PROJECT_API_KEY
-            )
         tasks = [
             GetStep(
                 get=OCW_HUGO_THEMES_GIT_IDENTIFIER,
