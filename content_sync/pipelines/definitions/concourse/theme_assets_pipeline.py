@@ -89,6 +89,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "SENTRY_ENV": settings.ENVIRONMENT,
             "POSTHOG_ENABLED": str(settings.PUBLISH_POSTHOG_ENABLED).lower(),
             "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
+            "POSTHOG_UI_HOST": settings.PUBLISH_POSTHOG_UI_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
         }
         if (

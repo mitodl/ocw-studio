@@ -1419,6 +1419,12 @@ PUBLISH_POSTHOG_PROJECT_API_KEY = get_string(
     description="API token for communicating with PostHog, published to pipelines",
     required=False,
 )
+PUBLISH_POSTHOG_UI_HOST = get_string(
+    name="PUBLISH_POSTHOG_UI_HOST",
+    default="https://app.posthog.com",
+    description="UI host for PostHog, published to pipelines",
+    required=False,
+)
 OCW_STUDIO_DELETABLE_CONTENT_TYPES = get_delimited_list(
     name="OCW_STUDIO_DELETABLE_CONTENT_TYPES",
     default=[],
