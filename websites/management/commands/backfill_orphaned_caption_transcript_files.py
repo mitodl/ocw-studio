@@ -15,6 +15,11 @@ _FIELD_CONFIG = (
     ("video_transcript_file", "video_transcript_resources", "transcript", "Document"),
 )
 
+# Flushed periodically rather than once at the end, so a crash partway
+# through a run (e.g. a transient S3 error) only loses the current batch's
+# work instead of every row processed so far.
+_BULK_UPDATE_BATCH_SIZE = 500
+
 
 def _object_exists_in_s3(s3, bucket_name, key):
     """Return True if the S3 object exists."""
@@ -183,13 +188,24 @@ class Command(WebsiteFilterCommand):
 
         return changed
 
+    @staticmethod
+    def _flush(objects_to_update, website_ids):
+        """Persist one batch's metadata writes and website flags together."""
+        WebsiteContent.objects.bulk_update(objects_to_update, ["metadata"])
+        Website.objects.filter(pk__in=website_ids).update(
+            has_unpublished_draft=True,
+            has_unpublished_live=True,
+        )
+
     def handle(self, *args, **options):
         """Run the backfill."""
         super().handle(*args, **options)
 
         self.s3 = get_boto3_resource("s3")
-        updated_website_ids = set()
+        total_updated = 0
+        all_updated_website_ids = set()
         objects_to_update = []
+        batch_website_ids = set()
         website_qset = self.filter_websites(Website.objects.all())
 
         content_qset = (
@@ -209,18 +225,21 @@ class Command(WebsiteFilterCommand):
         for content in content_qset.iterator():
             if self._backfill_video(content):
                 objects_to_update.append(content)
-                updated_website_ids.add(content.website_id)
+                batch_website_ids.add(content.website_id)
+
+            if len(objects_to_update) >= _BULK_UPDATE_BATCH_SIZE:
+                self._flush(objects_to_update, batch_website_ids)
+                total_updated += len(objects_to_update)
+                all_updated_website_ids |= batch_website_ids
+                objects_to_update = []
+                batch_website_ids = set()
 
         if objects_to_update:
-            WebsiteContent.objects.bulk_update(objects_to_update, ["metadata"])
-
-        if updated_website_ids:
-            Website.objects.filter(pk__in=updated_website_ids).update(
-                has_unpublished_draft=True,
-                has_unpublished_live=True,
-            )
+            self._flush(objects_to_update, batch_website_ids)
+            total_updated += len(objects_to_update)
+            all_updated_website_ids |= batch_website_ids
 
         self.stdout.write(
-            f"Backfilled {len(objects_to_update)} video resources across "
-            f"{len(updated_website_ids)} websites."
+            f"Backfilled {total_updated} video resources across "
+            f"{len(all_updated_website_ids)} websites."
         )

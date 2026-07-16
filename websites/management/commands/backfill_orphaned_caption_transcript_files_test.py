@@ -1,9 +1,12 @@
 """Tests for the backfill_orphaned_caption_transcript_files management command"""  # noqa: INP001
 
+import importlib
 from io import StringIO
 
 import pytest
 from django.core.management import call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from moto import mock_aws
 
 from main.s3_utils import get_boto3_resource
@@ -13,6 +16,10 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
+
+
+class TransientS3Error(Exception):
+    """Simulates a transient S3 failure (e.g. throttling) mid-run."""
 
 
 @pytest.fixture
@@ -211,6 +218,95 @@ def test_reuses_existing_resource_for_same_s3_key(mock_s3):
     assert resources["content"] == [str(already_linked.text_id)]
 
     assert WebsiteContent.objects.filter(website=website, file=key).count() == 1
+
+
+def test_reusing_resources_costs_one_query_per_resource(mock_s3):
+    """Reusing an existing resource costs one query per resource, not two.
+
+    Regression test: the reused-resource lookup has no select_related, so
+    reading its website through it (`resource.website.name`) costs an extra
+    query per resource on top of the lookup itself, unlike reading the
+    website through the already select_related video (`content.website.name`).
+    A second reused resource should add exactly one query (its own lookup),
+    not two.
+    """
+
+    def _reused_resource_query_count(website, video_count):
+        for i in range(video_count):
+            key = f"courses/{website.name}/{i}_transcript.webvtt"
+            WebsiteContentFactory.create(
+                website=website, filename=f"l{i}_captions", file=key
+            )
+            WebsiteContentFactory.create(
+                website=website,
+                filename=f"lecture{i}_mp4",
+                dirpath="content/resources",
+                metadata={
+                    "resourcetype": "Video",
+                    "video_files": {"video_captions_file": f"/{key}"},
+                },
+            )
+        with CaptureQueriesContext(connection) as ctx:
+            _run(filter=website.name)
+        return len(ctx.captured_queries)
+
+    one_video_queries = _reused_resource_query_count(WebsiteFactory.create(), 1)
+    two_video_queries = _reused_resource_query_count(WebsiteFactory.create(), 2)
+
+    assert two_video_queries - one_video_queries == 1
+
+
+def test_partial_progress_persists_on_mid_run_failure(mock_s3, monkeypatch):
+    """A crash partway through only loses the current unflushed batch.
+
+    Regression test for periodic batch flushing: rows already flushed before
+    a transient failure (e.g. an S3 throttling error) stay persisted, so a
+    retry only has to redo the unflushed remainder, not the whole run.
+    """
+    cmd_module = importlib.import_module(
+        "websites.management.commands.backfill_orphaned_caption_transcript_files"
+    )
+    monkeypatch.setattr(cmd_module, "_BULK_UPDATE_BATCH_SIZE", 1)
+
+    website = WebsiteFactory.create()
+    videos = []
+    for i in range(3):
+        key = f"courses/{website.name}/{i}_transcript.webvtt"
+        mock_s3.put_object(Key=key, Body=b"WEBVTT")
+        video = WebsiteContentFactory.create(
+            website=website,
+            filename=f"lecture{i}_mp4",
+            dirpath="content/resources",
+            metadata={
+                "resourcetype": "Video",
+                "video_files": {"video_captions_file": f"/{key}"},
+            },
+        )
+        videos.append(video)
+
+    original_check = cmd_module._object_exists_in_s3  # noqa: SLF001
+    call_count = 0
+
+    def _fail_on_third_call(s3, bucket_name, key):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 3:
+            raise TransientS3Error
+        return original_check(s3, bucket_name, key)
+
+    monkeypatch.setattr(cmd_module, "_object_exists_in_s3", _fail_on_third_call)
+
+    with pytest.raises(TransientS3Error):
+        _run(filter=website.name)
+
+    for video in videos:
+        video.refresh_from_db()
+    processed_count = sum(
+        1
+        for video in videos
+        if "video_captions_file" not in video.metadata["video_files"]
+    )
+    assert processed_count == 2
 
 
 def test_deduplicates_filename_collision(mock_s3):
