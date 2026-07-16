@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Version 0.193.4
+---------------
+
+- Remove reconcile_open_textbook_lrt management command (#3094)
+- fix: move orphan caption/transcript backfill to a command, truncate long filenames (#3100)
+- Add PostHog UI host var to theme assets pipeline (#3096)
+- chore: added environment variables to pyproject.toml (#3089)
+- Add setting for SESSION_COOKIE_NAME (#3098)
+- fix: gdrive resourcetype misclassification and transcript pdf titles (#3097)
+- refactor: backfill orphaned captions/transcripts, remove legacy _file fields (#3087)
+
 Version 0.193.2 (Released July 15, 2026)
 ---------------
 
