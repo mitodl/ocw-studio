@@ -37,6 +37,7 @@ from websites.constants import (
     CONTENT_DIRPATH_MAX_LEN,
     CONTENT_FILENAME_MAX_LEN,
     CONTENT_FILEPATH_UNIQUE_CONSTRAINT,
+    CONTENT_TITLE_MAX_LEN,
     CONTENT_TYPE_METADATA,
     WEBSITE_STARTER_STATUS_CHOICES,
     WebsiteStarterStatus,
@@ -359,7 +360,7 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         max_length=36, null=False, blank=False, default=uuid_string, db_index=True
     )
     title = models.CharField(  # noqa: DJ001
-        max_length=512, null=True, blank=True, db_index=True
+        max_length=CONTENT_TITLE_MAX_LEN, null=True, blank=True, db_index=True
     )
     type = models.CharField(max_length=24, blank=False, null=False)
     parent = models.ForeignKey(

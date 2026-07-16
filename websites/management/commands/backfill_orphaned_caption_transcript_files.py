@@ -1,7 +1,5 @@
 """Back-populate video_captions_resources / video_transcript_resources for orphaned legacy caption/transcript files"""  # noqa: E501, INP001
 
-import uuid
-
 from botocore.exceptions import ClientError
 from django.conf import settings
 
@@ -67,13 +65,10 @@ class Command(WebsiteFilterCommand):
     help = __doc__
 
     @staticmethod
-    def _build_title(content_title, suffix, filename):
-        """Build the new resource's title, truncated to fit the title column."""
-        if not content_title:
-            return filename
-        suffix_part = f" {suffix}"
-        max_base_len = CONTENT_TITLE_MAX_LEN - len(suffix_part)
-        return f"{content_title[:max_base_len]}{suffix_part}"
+    def _truncate_with_suffix(base, suffix, max_length):
+        """Truncate base so f"{base}{suffix}" fits within max_length."""
+        max_base_len = max_length - len(suffix)
+        return f"{base[:max_base_len]}{suffix}"
 
     def _resolve_or_create_resource(self, content, key, path, suffix, resourcetype):
         """Find a resource already pointing at this S3 key, or create one.
@@ -99,15 +94,21 @@ class Command(WebsiteFilterCommand):
         # exceeds the filename length limit on its own, before
         # get_valid_new_filename handles any additional numbered-suffix
         # truncation needed for a collision.
-        suffix_part = f"_{suffix}"
-        max_base_len = CONTENT_FILENAME_MAX_LEN - len(suffix_part)
-        base_filename = f"{content.filename[:max_base_len]}{suffix_part}"
+        base_filename = self._truncate_with_suffix(
+            content.filename, f"_{suffix}", CONTENT_FILENAME_MAX_LEN
+        )
         filename = get_valid_new_filename(
             website_pk=content.website_id,
             dirpath=content.dirpath,
             filename_base=base_filename,
         )
-        title = self._build_title(content.title, suffix, filename)
+        title = (
+            self._truncate_with_suffix(
+                content.title, f" {suffix}", CONTENT_TITLE_MAX_LEN
+            )
+            if content.title
+            else filename
+        )
         return WebsiteContent.objects.create(
             website_id=content.website_id,
             type="resource",
@@ -115,7 +116,6 @@ class Command(WebsiteFilterCommand):
             filename=filename,
             dirpath=content.dirpath,
             file=key,
-            text_id=str(uuid.uuid4()),
             title=title,
             metadata={
                 "file": path,
