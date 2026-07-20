@@ -665,14 +665,14 @@ wheels = [
 
 [[package]]
 name = "django-removals"
-version = "1.1.6"
+version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/d2/c418abb518959f04a35955612b309da613e581aeb7f3991e2da23e3c06b1/django_removals-1.1.6.tar.gz", hash = "sha256:c452cabe5b2353f019c5b2731d24f3e1b308a5234f08124112dd5f66e623db24", size = 100278, upload-time = "2025-12-16T11:23:06.639Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/f6/f05e4c22451781c0a863321dca785039e1c4d6fdad5e7ae03964278c2417/django_removals-1.3.1.tar.gz", hash = "sha256:d09a8765aca2e50693bd8fec2847b451065691b3263541dca790ed46937534d8", size = 114924, upload-time = "2026-07-03T13:49:51.019Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/eb/7eece749fee293ac7fc54219131eb8a2aa90b982a520bfd1007ac9e2b87e/django_removals-1.1.6-py3-none-any.whl", hash = "sha256:cb2643a6e927574eb792e0ea28e41d5d8bb20c8dc1ec917db50b904e0d0cadd7", size = 6793, upload-time = "2025-12-16T11:23:05.569Z" },
+    { url = "https://files.pythonhosted.org/packages/99/ac/7af9cff3a130ec43ee00f87c69bdb7c81a9e7b2c4b45ff341caa66456efc/django_removals-1.3.1-py3-none-any.whl", hash = "sha256:15fedfff87e16a6fb73977fef9e7661814a512899f8794785f29bfef0472cf2e", size = 7162, upload-time = "2026-07-03T13:49:49.81Z" },
 ]
 
 [[package]]
@@ -1506,7 +1506,7 @@ requires-dist = [
     { name = "django-hijack", specifier = "==3.7.8" },
     { name = "django-model-utils", specifier = "==5.0.0" },
     { name = "django-redis", specifier = "==6.0.0" },
-    { name = "django-removals", specifier = "~=1.1.6" },
+    { name = "django-removals", specifier = "~=1.3.1" },
     { name = "django-robots", specifier = "==7.0b0" },
     { name = "django-safedelete", specifier = "==1.4.1" },
     { name = "django-storages", specifier = "==1.14.6" },
