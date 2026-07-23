@@ -5,6 +5,7 @@ from django.conf import settings
 
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
+from videos.utils import parse_caption_language_locale
 from websites.api import get_valid_new_filename
 from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TITLE_MAX_LEN
 from websites.models import Website, WebsiteContent
@@ -40,31 +41,45 @@ class Command(WebsiteFilterCommand):
     empty-string _file leftovers from the pre-relation-widget string field,
     which 0074's falsy-value guard correctly skipped but never cleaned up.
 
-    Two cases handled per video:
+    Three cases handled per video:
 
     1. Empty-string _file value (e.g. video_captions_file == ""): no
        caption/transcript was ever set for this video. The key is simply
        removed, there is nothing to back-fill.
 
-    2. Non-empty orphan _file path: the stored path is relative to the
-       *publish* bucket (prefixed by the website's url_path), while
-       WebsiteContent.file and the storage bucket are keyed relative to the
-       website's s3_path (site_config.root_url_path + website.name). When
-       url_path differs from s3_path, the path is converted to its storage
-       key before any lookup, mirroring the same swap WebsiteContent.
-       full_metadata does in reverse when generating the published path. If
-       a WebsiteContent resource already points at that storage key (e.g.
-       created by a later sync or manual remediation after migration 0074
-       ran), that resource is reused rather than creating a duplicate.
-       Otherwise, the referenced S3 object may still exist even though no
-       WebsiteContent record was ever created for it (e.g. content uploaded
-       directly to S3 outside of the GDrive/3Play pipelines, using a Google
-       Drive file ID as the filename); if so, a new WebsiteContent resource
-       is created for it, named after the video's own filename (truncated as
-       needed to fit the filename length limit) rather than the orphan
-       path's filename, since the orphan path is often an opaque identifier.
-       If the S3 object no longer exists under the storage key, the _file
-       path is left in place for manual inspection. Either way, the resolved
+    2. A resource in the same language is already linked in the
+       corresponding _resources field: GDrive's filename-convention
+       auto-link and the scheduled 3Play sync both populate _resources
+       independently of this command and never clean up the legacy _file
+       key afterward, so a video can already have a current, correctly-
+       linked resource while _file is still sitting there stale. Since
+       legacy _file values predate per-language suffixes and always resolve
+       to "en", such a case means the field is already resolved -- the _file
+       key is dropped without creating or linking anything, rather than
+       adding a same-language duplicate. A different-language existing
+       entry (e.g. an "fr" caption) does not block this: the orphan is
+       still linked alongside it.
+
+    3. Non-empty orphan _file path, no same-language resource linked yet:
+       the stored path is relative to the *publish* bucket (prefixed by the
+       website's url_path), while WebsiteContent.file and the storage
+       bucket are keyed relative to the website's s3_path
+       (site_config.root_url_path + website.name). When url_path differs
+       from s3_path, the path is converted to its storage key before any
+       lookup, mirroring the same swap WebsiteContent.full_metadata does in
+       reverse when generating the published path. If a WebsiteContent
+       resource already points at that storage key (e.g. created by a later
+       sync or manual remediation after migration 0074 ran), that resource
+       is reused rather than creating a duplicate. Otherwise, the
+       referenced S3 object may still exist even though no WebsiteContent
+       record was ever created for it (e.g. content uploaded directly to S3
+       outside of the GDrive/3Play pipelines, using a Google Drive file ID
+       as the filename); if so, a new WebsiteContent resource is created
+       for it, named after the video's own filename (truncated as needed to
+       fit the filename length limit) rather than the orphan path's
+       filename, since the orphan path is often an opaque identifier. If
+       the S3 object no longer exists under the storage key, the _file path
+       is left in place for manual inspection. Either way, the resolved
        resource's id is appended to the resource field's existing content
        list without dropping an already-linked id, whether that existing
        value is a list or a legacy scalar string.
@@ -175,6 +190,35 @@ class Command(WebsiteFilterCommand):
             "website": website_name,
         }
 
+    @staticmethod
+    def _existing_resource_languages(video_files, resource_field, website_id):
+        """Return the set of languages already linked for resource_field.
+
+        Videos, GDrive's filename-convention auto-link, and the scheduled
+        3Play sync can all populate this field independently of this
+        command, and none of them clean up the legacy _file key afterward.
+        """
+        existing = video_files.get(resource_field)
+        if not isinstance(existing, dict):
+            return set()
+        content = existing.get("content")
+        if isinstance(content, str):
+            text_ids = [content] if content else []
+        elif isinstance(content, list):
+            text_ids = content
+        else:
+            return set()
+        if not text_ids:
+            return set()
+
+        return {
+            parse_caption_language_locale(file_name)[0]
+            for file_name in WebsiteContent.objects.filter(
+                website_id=website_id, text_id__in=text_ids
+            ).values_list("file", flat=True)
+            if file_name
+        }
+
     def _backfill_video(self, content):
         """Back-fill one video's orphaned _file fields. Returns True if changed."""
         video_files = content.metadata.get("video_files")
@@ -194,12 +238,31 @@ class Command(WebsiteFilterCommand):
                 changed = True
                 continue
 
-            # Case 2: real orphan path. Reuse a resource already pointing at
-            # this exact S3 key if one exists (e.g. created by a later sync
-            # or manual remediation after migration 0074 ran) instead of
-            # creating a duplicate; otherwise verify the object still exists
-            # in S3 and create a new resource for it.
             key = self._to_storage_key(content.website, path)
+
+            # Case 1b: a resource is already linked for the same language
+            # this orphan would resolve to. It was linked by something
+            # other than this command (legacy _file values predate
+            # language suffixes, so they always resolve to "en" by
+            # convention) -- that link is authoritative for this language,
+            # so drop the stale _file value rather than adding a duplicate.
+            # A different-language existing entry (e.g. an "fr" caption) is
+            # left alone and the orphan is still linked alongside it.
+            orphan_language, _ = parse_caption_language_locale(key)
+            existing_languages = self._existing_resource_languages(
+                video_files, resource_field, content.website_id
+            )
+            if orphan_language in existing_languages:
+                video_files.pop(file_field)
+                changed = True
+                continue
+
+            # Case 2: real orphan path, no same-language resource linked
+            # yet. Reuse a resource already pointing at this exact S3 key
+            # if one exists (e.g. created by a later sync or manual
+            # remediation after migration 0074 ran) instead of creating a
+            # duplicate; otherwise verify the object still exists in S3 and
+            # create a new resource for it.
             resource = self._resolve_or_create_resource(
                 content, key, path, suffix, resourcetype
             )

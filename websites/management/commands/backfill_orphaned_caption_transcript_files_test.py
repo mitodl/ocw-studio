@@ -290,7 +290,7 @@ def test_appends_to_existing_resources(mock_s3):
     fr_caption = WebsiteContentFactory.create(
         website=website,
         filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
     mock_s3.put_object(Key=en_key, Body=b"WEBVTT")
@@ -325,7 +325,7 @@ def test_appends_to_existing_scalar_string_content(mock_s3):
     fr_caption = WebsiteContentFactory.create(
         website=website,
         filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
     mock_s3.put_object(Key=en_key, Body=b"WEBVTT")

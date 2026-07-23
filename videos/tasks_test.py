@@ -911,6 +911,107 @@ def test_update_transcripts_for_video_no_3play(
     )
 
 
+def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mocker):
+    """Avoid calling 3play when an English resource matches the backfill's
+    own naming convention, even though caption_transcript_resources()'s
+    filename-prefix search (base-stem convention) doesn't find it.
+
+    Regression test: a one-off backfill command names created resources
+    after the video's own (unstripped) filename plus a suffix -- e.g. a
+    video named "lecture1_mp4" gets a resource "lecture1_mp4_transcript" --
+    which does not match the base-stem prefix "lecture1_transcript" that
+    caption_transcript_resources() searches for. update_transcripts_for_video
+    must search that second convention directly to recognize this and skip
+    the redundant 3Play fetch.
+    """
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+
+    # Matches {resource.filename}_transcript -- the backfill command's own
+    # naming convention -- not {get_base_filename(resource.filename)}_transcript.
+    linked_transcript = WebsiteContentFactory.create(
+        website=video.website,
+        filename=f"{resource.filename}_transcript_pdf",
+        file=f"{resource.website.s3_path}/{resource.filename}_transcript.pdf",
+    )
+
+    set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+    set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        {
+            "content": [str(linked_transcript.text_id)],
+            "website": video.website.name,
+        },
+    )
+    resource.save()
+
+    # Confirm the base-stem filename-prefix search alone would NOT find it
+    # (the gap this test exists for).
+    captions_list, transcripts_list = video.caption_transcript_resources()
+    assert captions_list == []
+    assert transcripts_list == []
+
+    mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_not_called()
+
+
+def test_update_transcripts_for_video_still_fetches_english_when_only_french_linked(
+    mocker,
+):
+    """A French-only _resources entry must not block fetching the English one.
+
+    Regression test for a stricter, over-eager version of the "already
+    linked" check that treated any existing entry -- regardless of language
+    -- as reason to skip 3Play. 3Play only ever supplies an English
+    transcript/caption, so an existing French one must not prevent it.
+    """
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+
+    french_transcript = WebsiteContentFactory.create(
+        website=video.website,
+        filename=f"{resource.filename}_transcript-fr_pdf",
+        file=f"{resource.website.s3_path}/{resource.filename}_transcript-fr.pdf",
+    )
+
+    set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+    set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        {
+            "content": [str(french_transcript.text_id)],
+            "website": video.website.name,
+        },
+    )
+    resource.save()
+
+    mock_3play = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=False
+    )
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_called_once_with(video)
+
+
 @pytest.mark.django_db
 def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     """All language variants matching the dash convention are linked via _resources."""

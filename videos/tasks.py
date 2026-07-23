@@ -33,11 +33,14 @@ from gdrive_sync.utils import get_gdrive_file, get_resource_name
 from main.celery import app
 from main.constants import STATUS_CREATED
 from main.s3_utils import get_boto3_resource
+from main.utils import get_file_extension
 from videos import threeplay_api
 from videos.constants import (
     ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT,
+    CAPTION_FILE_EXTENSIONS,
     DESTINATION_YOUTUBE,
     S3_FILESIZE_TASK_RATE_LIMIT,
+    TRANSCRIPT_FILE_EXTENSIONS,
     YT_THUMBNAIL_IMG,
     YTAGS_BATCH_LOCK_TTL,
     VideoFileStatus,
@@ -54,6 +57,7 @@ from videos.threeplay_sync import link_threeplay_files_as_resources
 from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
+    parse_caption_language_locale,
     process_video_tags,
 )
 from videos.youtube import (
@@ -326,6 +330,40 @@ def delete_s3_objects(
             obj.delete()
 
 
+def _find_by_filename_prefix(website, prefix, extensions):
+    """Find WebsiteContent resources by filename prefix and real file extension.
+
+    Matches Video.caption_transcript_resources()'s own candidate search: the
+    real uploaded file's extension is used rather than the filename's tail,
+    since find_available_name can append a bare digit to a colliding
+    filename (e.g. "..._vtt" -> "..._vtt2"), which would defeat an exact
+    suffix match.
+    """
+    candidates = WebsiteContent.objects.filter(
+        website=website, filename__startswith=prefix
+    )
+    return [
+        r
+        for r in candidates
+        if r.file and get_file_extension(r.file.name) in extensions
+    ]
+
+
+def _has_english_resource(resources):
+    """Return True if any resource resolves to English via its real file path.
+
+    3Play only ever provides an English transcript/caption (see
+    videos.threeplay_sync.link_threeplay_files_as_resources), so only an
+    existing English resource should gate a 3Play fetch -- an existing
+    French/Spanish/etc resource must not block fetching the English one.
+    """
+    return any(
+        parse_caption_language_locale(r.file.name)[0] == "en"
+        for r in resources
+        if r.file
+    )
+
+
 @app.task(acks_late=True)
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
@@ -334,9 +372,42 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     captions_list, transcripts_list = video.caption_transcript_resources()
+
+    website = video.website
+    video_resources = []
+    if is_ocw_site(website):
+        search_fields = {}
+        search_fields[get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)] = (
+            RESOURCE_TYPE_VIDEO
+        )
+        search_fields[get_dict_query_field("metadata", settings.YT_FIELD_ID)] = (
+            video.youtube_id()
+        )
+        video_resources = list(website.websitecontent_set.filter(**search_fields))
+
+    # A one-off backfill command can create/link resources named after the
+    # video's own (unstripped) filename rather than the base-stem convention
+    # caption_transcript_resources() searches for -- search that convention
+    # too, so such a resource is visible to the English-availability check
+    # below, without being folded into captions_list/transcripts_list
+    # themselves (those still drive the _resources sync further down, which
+    # should stay scoped to the base-stem convention it already understands).
+    backfill_captions = []
+    backfill_transcripts = []
+    for video_resource in video_resources:
+        backfill_captions += _find_by_filename_prefix(
+            website, f"{video_resource.filename}_captions", CAPTION_FILE_EXTENSIONS
+        )
+        backfill_transcripts += _find_by_filename_prefix(
+            website, f"{video_resource.filename}_transcript", TRANSCRIPT_FILE_EXTENSIONS
+        )
+
     has_threeplay_update = (
         False
-        if captions_list or transcripts_list
+        if (
+            _has_english_resource([*captions_list, *backfill_captions])
+            or _has_english_resource([*transcripts_list, *backfill_transcripts])
+        )
         else threeplay_api.update_transcripts_for_video(video)
     )
     if not captions_list and not transcripts_list and not has_threeplay_update:
@@ -350,17 +421,8 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
         if has_threeplay_update:
             first_transcript_download = True
 
-    website = video.website
-    if is_ocw_site(website):  # pylint: disable=too-many-nested-blocks
-        search_fields = {}
-        search_fields[get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)] = (
-            RESOURCE_TYPE_VIDEO
-        )
-        search_fields[get_dict_query_field("metadata", settings.YT_FIELD_ID)] = (
-            video.youtube_id()
-        )
-
-        for video_resource in website.websitecontent_set.filter(**search_fields):
+    if video_resources:  # pylint: disable=too-many-nested-blocks
+        for video_resource in video_resources:
             if has_threeplay_update:
                 # Create resources from the downloaded 3Play files and link
                 # them via the _resources relation fields. The legacy _file
