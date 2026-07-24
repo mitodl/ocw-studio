@@ -95,6 +95,172 @@ def test_creates_resource_for_existing_s3_object(mock_s3):
     assert created.metadata["file"] == f"/{caption_key}"
 
 
+def test_converts_url_path_relative_orphan_to_storage_key(mock_s3):
+    """An orphan path stored relative to url_path is looked up via s3_path.
+
+    Regression test for hq#12436: the legacy _file path is relative to the
+    publish bucket (prefixed by url_path), not the storage bucket (prefixed
+    by s3_path). When the two differ, the raw path must be converted before
+    any S3 lookup or resource creation, or an object that genuinely exists
+    gets reported as missing and left orphaned.
+    """
+    website = WebsiteFactory.create()
+    assert website.url_path != website.s3_path  # sanity: factory defaults differ
+
+    storage_key = f"{website.s3_path}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=storage_key, Body=b"WEBVTT")
+
+    orphan_path = f"/{website.url_path}/1AbCdEf_transcript.webvtt"
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": orphan_path},
+        },
+    )
+
+    output = _run()
+
+    assert "Skipping missing S3 object" not in output
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_captions_file" not in vf
+    resources = vf["video_captions_resources"]
+    assert len(resources["content"]) == 1
+
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert created.file.name == storage_key
+    assert created.metadata["file"] == orphan_path
+
+
+def test_reuses_existing_resource_via_corrected_storage_key(mock_s3):
+    """An orphan path resolves to an existing resource keyed by s3_path.
+
+    Same hq#12436 scenario as above, but the resource already exists (e.g.
+    created by a prior GDrive sync, which always keys new uploads by
+    s3_path) rather than needing to be created fresh.
+    """
+    website = WebsiteFactory.create()
+    storage_key = f"{website.s3_path}/1AbCdEf_transcript.webvtt"
+    already_linked = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_captions",
+        file=storage_key,
+    )
+
+    orphan_path = f"/{website.url_path}/1AbCdEf_transcript.webvtt"
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": orphan_path},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_captions_file" not in vf
+    resources = vf["video_captions_resources"]
+    assert resources["content"] == [str(already_linked.text_id)]
+    assert WebsiteContent.objects.filter(website=website, file=storage_key).count() == 1
+
+
+def test_no_key_swap_when_url_path_unset(mock_s3):
+    """No prefix swap is attempted when the website has no url_path set."""
+    website = WebsiteFactory.create(url_path=None)
+    storage_key = f"{website.s3_path}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=storage_key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{storage_key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_captions_file" not in vf
+    resources = vf["video_captions_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert created.file.name == storage_key
+
+
+def test_no_key_swap_when_starter_is_none(mock_s3):
+    """The swap is skipped, not crashed, when the website has no starter.
+
+    s3_path can't be computed without a starter's site config, so the raw
+    path is used as-is rather than raising.
+    """
+    website = WebsiteFactory.create(starter=None, url_path="courses/some-path")
+    raw_key = f"{website.url_path}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=raw_key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{raw_key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_captions_file" not in vf
+    resources = vf["video_captions_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert created.file.name == raw_key
+
+
+def test_no_key_swap_when_url_path_not_a_prefix(mock_s3):
+    """The swap only applies when url_path is the actual leading prefix.
+
+    Regression test: a naive substring replace could corrupt a path where
+    url_path's value happens to appear later in the string (e.g. embedded in
+    an opaque legacy filename) even though the path is already s3_path-
+    relative and was never url_path-relative to begin with.
+    """
+    website = WebsiteFactory.create()
+    storage_key = (
+        f"{website.s3_path}/backup-of-{website.url_path}-file_transcript.webvtt"
+    )
+    mock_s3.put_object(Key=storage_key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_transcript_file": f"/{storage_key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    vf = video.metadata["video_files"]
+    assert "video_transcript_file" not in vf
+    resources = vf["video_transcript_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert created.file.name == storage_key
+
+
 def test_skips_missing_s3_object(mock_s3):
     """A real orphan path whose S3 object no longer exists is left untouched."""
     website = WebsiteFactory.create()
