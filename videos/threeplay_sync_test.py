@@ -166,6 +166,59 @@ def test_sync_video_captions_and_transcripts_skips_for_non_3play_naming_conventi
     fetch_file_mock.assert_not_called()
 
 
+def test_sync_video_captions_and_transcripts_skips_for_scalar_string_content(
+    mocker,
+):
+    """3Play sync skips fetching when an already-linked English resource is
+    stored as legacy scalar-string content, not just a single-item list.
+
+    Regression test: _append_resource_to_video_files explicitly supports a
+    bare string content value (pre-10982 single-select relation data). The
+    guard must recognize a linked resource in that shape too, or it will
+    fetch and link a redundant second English resource.
+    """
+    starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    website = WebsiteFactory.create(starter=starter)
+    transcript_resource = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_transcript",
+        file=f"courses/{website.name}/1AbCdEf_transcript.pdf",
+    )
+    captions_resource = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_captions",
+        file=f"courses/{website.name}/1AbCdEf_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt789"},
+            "video_files": {
+                "video_captions_resources": {
+                    "content": str(captions_resource.text_id),
+                    "website": website.name,
+                },
+                "video_transcript_resources": {
+                    "content": str(transcript_resource.text_id),
+                    "website": website.name,
+                },
+            },
+        },
+    )
+
+    mocker.patch(
+        "videos.threeplay_sync.threeplay_transcript_api_request",
+        return_value={"data": [{"status": "complete", "id": 11, "media_file_id": 22}]},
+    )
+    fetch_file_mock = mocker.patch("videos.threeplay_sync.fetch_file")
+
+    sync_video_captions_and_transcripts(video)
+
+    fetch_file_mock.assert_not_called()
+
+
 def test_sync_video_captions_and_transcripts_appends_english_when_other_languages_exist(
     mocker,
 ):

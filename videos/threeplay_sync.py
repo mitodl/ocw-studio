@@ -100,6 +100,8 @@ def _threeplay_resource_already_linked(
     existing_content = (
         video.metadata["video_files"].get(resource_field, {}).get("content") or []
     )
+    if isinstance(existing_content, str):
+        existing_content = [existing_content]
     if not isinstance(existing_content, list) or not existing_content:
         return False
     return any(
