@@ -11,7 +11,11 @@ from main.s3_utils import get_boto3_resource
 from main.utils import get_base_filename, get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
-from videos.utils import generate_s3_path, get_content_dirpath
+from videos.utils import (
+    generate_s3_path,
+    get_content_dirpath,
+    parse_caption_language_locale,
+)
 from websites.api import sync_website_content_references
 from websites.models import WebsiteContent
 
@@ -70,21 +74,39 @@ def _append_resource_to_video_files(
         vf[resource_field] = {"content": [text_id], "website": video.website.name}
 
 
+def _resolved_language(resource: WebsiteContent) -> str | None:
+    """Return a linked resource's resolved language, or None if unresolvable.
+
+    Prefers the resource's real uploaded file path (immune to a
+    find_available_name collision suffix on the filename field), falling
+    back to the filename when no file has been set yet.
+    """
+    file_name = resource.file.name if resource.file else resource.filename
+    return parse_caption_language_locale(file_name)[0] if file_name else None
+
+
 def _threeplay_resource_already_linked(
-    video: WebsiteContent, resource_field: str, filename_prefix: str
+    video: WebsiteContent, resource_field: str
 ) -> bool:
-    """Return True if the 3Play-generated resource is already in the content list."""
+    """Return True if an English resource is already linked in the content list.
+
+    Checked by resolved language rather than by filename convention, so a
+    resource linked by GDrive, a one-off backfill command, or 3Play's own
+    youtube-id-based naming are all recognized equally -- only the language
+    actually matters here, since 3Play only ever supplies an English
+    transcript/caption. An existing French/Spanish/etc entry must not block
+    fetching the English one.
+    """
     existing_content = (
         video.metadata["video_files"].get(resource_field, {}).get("content") or []
     )
-    return bool(
-        isinstance(existing_content, list)
-        and existing_content
-        and WebsiteContent.objects.filter(
-            website=video.website,
-            text_id__in=existing_content,
-            filename__startswith=filename_prefix,
-        ).exists()
+    if not isinstance(existing_content, list) or not existing_content:
+        return False
+    return any(
+        _resolved_language(resource) == "en"
+        for resource in WebsiteContent.objects.filter(
+            website=video.website, text_id__in=existing_content
+        )
     )
 
 
@@ -99,9 +121,7 @@ def _attach_transcript_if_missing(
     Attach transcript to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if _threeplay_resource_already_linked(
-        video, "video_transcript_resources", f"{youtube_id}_transcript"
-    ):
+    if _threeplay_resource_already_linked(video, "video_transcript_resources"):
         return
 
     pdf_url = base_url + f"&format_id={PDF_FORMAT_ID}"
@@ -140,9 +160,7 @@ def _attach_captions_if_missing(
     Attach captions to video if it does not exist.
     Fetches from 3Play API and updates the video metadata.
     """
-    if _threeplay_resource_already_linked(
-        video, "video_captions_resources", f"{youtube_id}_captions"
-    ):
+    if _threeplay_resource_already_linked(video, "video_captions_resources"):
         return
 
     webvtt_url = base_url + f"&format_id={WEBVTT_FORMAT_ID}"

@@ -111,21 +111,77 @@ def test_sync_video_captions_and_transcripts_skips_if_resource_exists(mocker):
     fetch_file_mock.assert_not_called()
 
 
+def test_sync_video_captions_and_transcripts_skips_for_non_3play_naming_convention(
+    mocker,
+):
+    """3Play sync skips fetching when an English resource is already linked,
+    even if it doesn't match 3Play's own {youtube_id}_transcript/_captions
+    filename convention.
+
+    Regression test: a resource created by a one-off backfill command (or
+    GDrive) uses a different naming convention than 3Play's own
+    youtube-id-based one. The guard must recognize it by resolved language,
+    not by filename pattern, or it would fetch and link a redundant second
+    English resource.
+    """
+    starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    website = WebsiteFactory.create(starter=starter)
+    transcript_resource = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_transcript",
+        file=f"courses/{website.name}/1AbCdEf_transcript.pdf",
+    )
+    captions_resource = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4_captions",
+        file=f"courses/{website.name}/1AbCdEf_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt789"},
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(captions_resource.text_id)],
+                    "website": website.name,
+                },
+                "video_transcript_resources": {
+                    "content": [str(transcript_resource.text_id)],
+                    "website": website.name,
+                },
+            },
+        },
+    )
+
+    mocker.patch(
+        "videos.threeplay_sync.threeplay_transcript_api_request",
+        return_value={"data": [{"status": "complete", "id": 11, "media_file_id": 22}]},
+    )
+    fetch_file_mock = mocker.patch("videos.threeplay_sync.fetch_file")
+
+    sync_video_captions_and_transcripts(video)
+
+    fetch_file_mock.assert_not_called()
+
+
 def test_sync_video_captions_and_transcripts_appends_english_when_other_languages_exist(
     mocker,
 ):
     """3Play adds English even when other-language entries already exist from GDrive."""
     starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
     website = WebsiteFactory.create(starter=starter)
-    # Simulate GDrive having already linked French caption/transcript resources.
-    # These use filenames that don't match the 3Play pattern, so the guard won't fire.
+    # Simulate GDrive having already linked French caption/transcript
+    # resources. The "-fr" suffix resolves to French, not English, so the
+    # guard must not treat these as already covering the 3Play fetch.
     fr_caption = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_captions_fr_vtt",
+        filename="lecture1_captions-fr_vtt",
     )
     fr_transcript = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_transcript_fr_pdf",
+        filename="lecture1_transcript-fr_pdf",
     )
     video = WebsiteContentFactory.create(
         website=website,
@@ -228,11 +284,11 @@ def test_sync_video_captions_and_transcripts_appends_to_scalar_string_content(mo
     website = WebsiteFactory.create(starter=starter)
     fr_caption = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_captions_fr_vtt",
+        filename="lecture1_captions-fr_vtt",
     )
     fr_transcript = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_transcript_fr_pdf",
+        filename="lecture1_transcript-fr_pdf",
     )
     video = WebsiteContentFactory.create(
         website=website,
