@@ -1,5 +1,7 @@
 """Back-populate video_captions_resources / video_transcript_resources for orphaned legacy caption/transcript files"""  # noqa: E501, INP001
 
+from collections import namedtuple
+
 from botocore.exceptions import ClientError
 from django.conf import settings
 
@@ -7,13 +9,34 @@ from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
 from videos.utils import parse_caption_language_locale
 from websites.api import get_valid_new_filename
-from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TITLE_MAX_LEN
+from websites.constants import (
+    CONTENT_FILENAME_MAX_LEN,
+    CONTENT_TITLE_MAX_LEN,
+    CONTENT_TYPE_RESOURCE,
+)
 from websites.models import Website, WebsiteContent
+from websites.site_config_api import SiteConfig
 
-# Each entry: file_field, resource_field, filename_suffix, resourcetype.
+FieldConfig = namedtuple(  # noqa: PYI024
+    "FieldConfig",
+    ["file_field", "resource_field", "suffix", "resourcetype", "file_type"],
+)
+
 _FIELD_CONFIG = (
-    ("video_captions_file", "video_captions_resources", "captions", "Other"),
-    ("video_transcript_file", "video_transcript_resources", "transcript", "Document"),
+    FieldConfig(
+        file_field="video_captions_file",
+        resource_field="video_captions_resources",
+        suffix="captions",
+        resourcetype="Other",
+        file_type="application/x-subrip",
+    ),
+    FieldConfig(
+        file_field="video_transcript_file",
+        resource_field="video_transcript_resources",
+        suffix="transcript",
+        resourcetype="Document",
+        file_type="application/pdf",
+    ),
 )
 
 # Flushed periodically rather than once at the end, so a crash partway
@@ -22,15 +45,16 @@ _FIELD_CONFIG = (
 _BULK_UPDATE_BATCH_SIZE = 500
 
 
-def _object_exists_in_s3(s3, bucket_name, key):
-    """Return True if the S3 object exists."""
+def _load_s3_object(s3, bucket_name, key):
+    """Return the loaded S3 object, or None if it doesn't exist."""
+    obj = s3.Object(bucket_name, key)
     try:
-        s3.Object(bucket_name, key).load()
+        obj.load()
     except ClientError as exc:
         if exc.response["Error"]["Code"] in ("404", "NoSuchKey"):
-            return False
+            return None
         raise
-    return True
+    return obj
 
 
 class Command(WebsiteFilterCommand):
@@ -116,7 +140,7 @@ class Command(WebsiteFilterCommand):
             key = s3_path + key[len(url_path) :]
         return key
 
-    def _resolve_or_create_resource(self, content, key, path, suffix, resourcetype):
+    def _resolve_or_create_resource(self, content, key, path, field_config):
         """Find a resource already pointing at this S3 key, or create one.
 
         Returns None if the S3 object no longer exists (the orphan path is
@@ -129,7 +153,8 @@ class Command(WebsiteFilterCommand):
             return resource
 
         bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-        if not _object_exists_in_s3(self.s3, bucket_name, key):
+        s3_object = _load_s3_object(self.s3, bucket_name, key)
+        if s3_object is None:
             self.stdout.write(
                 f"Skipping missing S3 object for "
                 f"{content.website.name}/{content.filename}: {path}"
@@ -141,7 +166,7 @@ class Command(WebsiteFilterCommand):
         # get_valid_new_filename handles any additional numbered-suffix
         # truncation needed for a collision.
         base_filename = self._truncate_with_suffix(
-            content.filename, f"_{suffix}", CONTENT_FILENAME_MAX_LEN
+            content.filename, f"_{field_config.suffix}", CONTENT_FILENAME_MAX_LEN
         )
         filename = get_valid_new_filename(
             website_pk=content.website_id,
@@ -150,11 +175,32 @@ class Command(WebsiteFilterCommand):
         )
         title = (
             self._truncate_with_suffix(
-                content.title, f" {suffix}", CONTENT_TITLE_MAX_LEN
+                content.title, f" {field_config.suffix}", CONTENT_TITLE_MAX_LEN
             )
             if content.title
             else filename
         )
+        # Same schema-defaulted metadata GDrive sync uses (draft,
+        # learning_resource_types, gdrive_url, etc. all get their configured
+        # defaults), instead of a bare {file, resourcetype} dict. Falls back
+        # to the bare shape if there's no starter to read a schema from.
+        resource_type_fields = {
+            "file_type": field_config.file_type,
+            "file_size": s3_object.content_length,
+            **dict.fromkeys(settings.RESOURCE_TYPE_FIELDS, field_config.resourcetype),
+        }
+        if content.website.starter is not None:
+            metadata = {
+                **SiteConfig(content.website.starter.config).generate_item_metadata(
+                    CONTENT_TYPE_RESOURCE,
+                    cls=WebsiteContent,
+                    use_defaults=True,
+                    values=resource_type_fields,
+                ),
+                "file": path,
+            }
+        else:
+            metadata = {"file": path, **resource_type_fields}
         return WebsiteContent.objects.create(
             website_id=content.website_id,
             type="resource",
@@ -163,10 +209,7 @@ class Command(WebsiteFilterCommand):
             dirpath=content.dirpath,
             file=key,
             title=title,
-            metadata={
-                "file": path,
-                "resourcetype": resourcetype,
-            },
+            metadata=metadata,
         )
 
     def _merge_resource_into_video_files(
@@ -227,14 +270,14 @@ class Command(WebsiteFilterCommand):
 
         changed = False
 
-        for file_field, resource_field, suffix, resourcetype in _FIELD_CONFIG:
-            path = video_files.get(file_field)
+        for field_config in _FIELD_CONFIG:
+            path = video_files.get(field_config.file_field)
             if not isinstance(path, str):
                 continue
 
             # Case 1: empty-string leftover, nothing to back-fill, just drop it.
             if not path:
-                video_files.pop(file_field)
+                video_files.pop(field_config.file_field)
                 changed = True
                 continue
 
@@ -250,10 +293,10 @@ class Command(WebsiteFilterCommand):
             # left alone and the orphan is still linked alongside it.
             orphan_language, _ = parse_caption_language_locale(key)
             existing_languages = self._existing_resource_languages(
-                video_files, resource_field, content.website_id
+                video_files, field_config.resource_field, content.website_id
             )
             if orphan_language in existing_languages:
-                video_files.pop(file_field)
+                video_files.pop(field_config.file_field)
                 changed = True
                 continue
 
@@ -264,15 +307,15 @@ class Command(WebsiteFilterCommand):
             # duplicate; otherwise verify the object still exists in S3 and
             # create a new resource for it.
             resource = self._resolve_or_create_resource(
-                content, key, path, suffix, resourcetype
+                content, key, path, field_config
             )
             if resource is None:
                 continue
 
             self._merge_resource_into_video_files(
-                video_files, resource_field, resource, content.website.name
+                video_files, field_config.resource_field, resource, content.website.name
             )
-            video_files.pop(file_field)
+            video_files.pop(field_config.file_field)
             changed = True
 
         return changed

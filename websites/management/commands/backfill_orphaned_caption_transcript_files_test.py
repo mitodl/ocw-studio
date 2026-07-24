@@ -93,6 +93,11 @@ def test_creates_resource_for_existing_s3_object(mock_s3):
     assert created.file.name == caption_key
     assert created.metadata["resourcetype"] == "Other"
     assert created.metadata["file"] == f"/{caption_key}"
+    # Schema-defaulted metadata (from the site config, same as GDrive sync
+    # uses), not just the bare {file, resourcetype} shape.
+    assert created.metadata["file_type"] == "application/x-subrip"
+    assert created.metadata["file_size"] == len(b"WEBVTT")
+    assert created.metadata["license"] == "default_license_specificed_in_config"
 
 
 def test_converts_url_path_relative_orphan_to_storage_key(mock_s3):
@@ -201,7 +206,9 @@ def test_no_key_swap_when_starter_is_none(mock_s3):
     """The swap is skipped, not crashed, when the website has no starter.
 
     s3_path can't be computed without a starter's site config, so the raw
-    path is used as-is rather than raising.
+    path is used as-is rather than raising. Schema-defaulted metadata also
+    can't be computed without a starter, so it falls back to the bare
+    {file, resourcetype, ...} shape instead of crashing.
     """
     website = WebsiteFactory.create(starter=None, url_path="courses/some-path")
     raw_key = f"{website.url_path}/1AbCdEf_transcript.webvtt"
@@ -225,6 +232,10 @@ def test_no_key_swap_when_starter_is_none(mock_s3):
     resources = vf["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert created.file.name == raw_key
+    assert created.metadata["file"] == f"/{raw_key}"
+    assert created.metadata["resourcetype"] == "Other"
+    assert created.metadata["file_type"] == "application/x-subrip"
+    assert created.metadata["file_size"] == len(b"WEBVTT")
 
 
 def test_no_key_swap_when_url_path_not_a_prefix(mock_s3):
@@ -450,7 +461,7 @@ def test_partial_progress_persists_on_mid_run_failure(mock_s3, monkeypatch):
         )
         videos.append(video)
 
-    original_check = cmd_module._object_exists_in_s3  # noqa: SLF001
+    original_load = cmd_module._load_s3_object  # noqa: SLF001
     call_count = 0
 
     def _fail_on_third_call(s3, bucket_name, key):
@@ -458,9 +469,9 @@ def test_partial_progress_persists_on_mid_run_failure(mock_s3, monkeypatch):
         call_count += 1
         if call_count == 3:
             raise TransientS3Error
-        return original_check(s3, bucket_name, key)
+        return original_load(s3, bucket_name, key)
 
-    monkeypatch.setattr(cmd_module, "_object_exists_in_s3", _fail_on_third_call)
+    monkeypatch.setattr(cmd_module, "_load_s3_object", _fail_on_third_call)
 
     with pytest.raises(TransientS3Error):
         _run(filter=website.name)
