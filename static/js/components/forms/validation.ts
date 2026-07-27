@@ -30,9 +30,7 @@ const defaultTitleFieldSchema = yup.string().required().label("Title")
 const minMax = (
   schema: ArraySchema<any, any>,
   field:
-    | RelationConfigField
-    | SelectConfigField
-    | HierarchicalSelectConfigField,
+    RelationConfigField | SelectConfigField | HierarchicalSelectConfigField,
 ) => {
   if (field.min) {
     schema = schema.min(
