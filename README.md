@@ -31,6 +31,7 @@ OCW Studio manages deployments for OCW courses.
 - [Checking External Resource Availability](#checking-external-resource-availability)
 - [Enabling PostHog Integration](#enabling-posthog-integration)
 - [Cloning Production Data](#cloning-production-data)
+- [Typed settings via django-aqueduct (opt-in)](#typed-settings-via-django-aqueduct-opt-in)
 
 # Initial Setup
 
@@ -526,3 +527,13 @@ POSTHOG_MAX_RETRIES=<3 by default>
 For information on duplicating OCW Studio data from production for local development, see the [Production to Local Data Cloning Guide](docs/production-to-local-data-cloning.md).
 
 For information on duplicating OCW Studio data from production to RC/staging environments, see the [Production to RC Data Cloning Guide](docs/production-to-rc-data-cloning.md).
+
+# Typed settings via django-aqueduct (opt-in)
+
+`main/settings.py` remains the default settings module and is unaffected by
+any of this. Two additional, **opt-in** settings modules built on
+[`django-aqueduct`](https://github.com/mitodl/django-aqueduct) are also
+available: `main.settings_aqueduct` (typed settings from env vars/`.env`)
+and `main.settings_aqueduct_dev` (same, plus a Vault/OIDC fallback for local
+dev). Select either by setting `DJANGO_SETTINGS_MODULE` accordingly. See
+[docs/aqueduct.md](docs/aqueduct.md) for details.

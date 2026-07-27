@@ -154,6 +154,13 @@ INSTALLED_APPS = [
     "videos",
     "external_resources",
     "django_removals",
+    # Typed-settings tooling. django_aqueduct ships only management commands
+    # (generate_aqueduct_settings / check_aqueduct_settings) — no models,
+    # migrations, middleware, signals, or AppConfig.ready() hooks — so listing
+    # it here has no runtime effect for deployments that don't opt into the
+    # aqueduct settings modules; it only makes those commands discoverable
+    # under the default settings module (which CI uses for the parity check).
+    "django_aqueduct",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
