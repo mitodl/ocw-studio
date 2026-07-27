@@ -46,17 +46,24 @@ class Command(WebsiteFilterCommand):
        caption/transcript was ever set for this video. The key is simply
        removed, there is nothing to back-fill.
 
-    2. Non-empty orphan _file path: if a WebsiteContent resource already
-       points at this exact S3 key (e.g. created by a later sync or manual
-       remediation after migration 0074 ran), that resource is reused rather
-       than creating a duplicate. Otherwise, the referenced S3 object may
-       still exist even though no WebsiteContent record was ever created for
-       it (e.g. content uploaded directly to S3 outside of the GDrive/3Play
-       pipelines, using a Google Drive file ID as the filename); if so, a new
-       WebsiteContent resource is created for it, named after the video's own
-       filename (truncated as needed to fit the filename length limit)
-       rather than the orphan path's filename, since the orphan path is often
-       an opaque identifier. If the S3 object no longer exists, the _file
+    2. Non-empty orphan _file path: the stored path is relative to the
+       *publish* bucket (prefixed by the website's url_path), while
+       WebsiteContent.file and the storage bucket are keyed relative to the
+       website's s3_path (site_config.root_url_path + website.name). When
+       url_path differs from s3_path, the path is converted to its storage
+       key before any lookup, mirroring the same swap WebsiteContent.
+       full_metadata does in reverse when generating the published path. If
+       a WebsiteContent resource already points at that storage key (e.g.
+       created by a later sync or manual remediation after migration 0074
+       ran), that resource is reused rather than creating a duplicate.
+       Otherwise, the referenced S3 object may still exist even though no
+       WebsiteContent record was ever created for it (e.g. content uploaded
+       directly to S3 outside of the GDrive/3Play pipelines, using a Google
+       Drive file ID as the filename); if so, a new WebsiteContent resource
+       is created for it, named after the video's own filename (truncated as
+       needed to fit the filename length limit) rather than the orphan
+       path's filename, since the orphan path is often an opaque identifier.
+       If the S3 object no longer exists under the storage key, the _file
        path is left in place for manual inspection. Either way, the resolved
        resource's id is appended to the resource field's existing content
        list without dropping an already-linked id, whether that existing
@@ -74,6 +81,25 @@ class Command(WebsiteFilterCommand):
         """Truncate base so f"{base}{suffix}" fits within max_length."""
         max_base_len = max_length - len(suffix)
         return f"{base[:max_base_len]}{suffix}"
+
+    @staticmethod
+    def _to_storage_key(website, path):
+        """Convert a url_path-relative orphan path to its s3_path storage key.
+
+        Mirrors WebsiteContent.full_metadata's equivalent swap in reverse.
+        Leaves the path unchanged if the swap can't be determined (no
+        starter, so s3_path can't be computed) or doesn't apply (no
+        url_path, prefixes already match, or the path doesn't actually
+        start with url_path).
+        """
+        key = path.lstrip("/")
+        url_path = website.url_path
+        if not url_path or website.starter is None:
+            return key
+        s3_path = website.s3_path
+        if s3_path != url_path and key.startswith(url_path):
+            key = s3_path + key[len(url_path) :]
+        return key
 
     def _resolve_or_create_resource(self, content, key, path, suffix, resourcetype):
         """Find a resource already pointing at this S3 key, or create one.
@@ -173,7 +199,7 @@ class Command(WebsiteFilterCommand):
             # or manual remediation after migration 0074 ran) instead of
             # creating a duplicate; otherwise verify the object still exists
             # in S3 and create a new resource for it.
-            key = path.lstrip("/")
+            key = self._to_storage_key(content.website, path)
             resource = self._resolve_or_create_resource(
                 content, key, path, suffix, resourcetype
             )
@@ -214,8 +240,17 @@ class Command(WebsiteFilterCommand):
                 metadata__resourcetype="Video",
                 metadata__video_files__isnull=False,
             )
-            .select_related("website")
-            .only("id", "filename", "dirpath", "title", "metadata", "website__name")
+            .select_related("website", "website__starter")
+            .only(
+                "id",
+                "filename",
+                "dirpath",
+                "title",
+                "metadata",
+                "website__name",
+                "website__url_path",
+                "website__starter__config",
+            )
         )
 
         # Not a small, curated set: this matches every video with a
