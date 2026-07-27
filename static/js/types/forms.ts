@@ -10,8 +10,7 @@ export type FormSchema = Schema<any>
 export type SiteFormPrimitive = string | File | string[] | null | boolean
 
 export type SiteFormValue =
-  | SiteFormPrimitive
-  | Record<string, SiteFormPrimitive>
+  SiteFormPrimitive | Record<string, SiteFormPrimitive>
 
 export type SiteFormValues = Record<string, SiteFormValue>
 
