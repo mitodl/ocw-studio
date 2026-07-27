@@ -912,17 +912,14 @@ def test_update_transcripts_for_video_no_3play(
 
 
 def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mocker):
-    """Avoid calling 3play when an English resource matches the backfill's
-    own naming convention, even though caption_transcript_resources()'s
-    filename-prefix search (base-stem convention) doesn't find it.
+    """Avoid calling 3play when the orphan backfill already created an English
+    transcript for the video.
 
-    Regression test: a one-off backfill command names created resources
-    after the video's own (unstripped) filename plus a suffix -- e.g. a
-    video named "lecture1_mp4" gets a resource "lecture1_mp4_transcript" --
-    which does not match the base-stem prefix "lecture1_transcript" that
-    caption_transcript_resources() searches for. update_transcripts_for_video
-    must search that second convention directly to recognize this and skip
-    the redundant 3Play fetch.
+    Regression test for the duplicate-resource bug: the backfill names what
+    it creates with the same "{base_stem}_transcript_{ext}" convention GDrive
+    ingestion uses, so caption_transcript_resources() discovers it and 3Play
+    is skipped. Naming it any other way (e.g. off the video's full, unstripped
+    filename) made it invisible here and produced a second English transcript.
     """
     mocker.patch("videos.tasks.is_ocw_site", return_value=True)
 
@@ -933,12 +930,13 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
 
-    # Matches {resource.filename}_transcript -- the backfill command's own
-    # naming convention -- not {get_base_filename(resource.filename)}_transcript.
+    # What the backfill creates: named off the video's base stem, while the
+    # file itself keeps the orphan's opaque S3 key.
+    base_stem = get_base_filename(resource.filename)
     linked_transcript = WebsiteContentFactory.create(
         website=video.website,
-        filename=f"{resource.filename}_transcript_pdf",
-        file=f"{resource.website.s3_path}/{resource.filename}_transcript.pdf",
+        filename=f"{base_stem}_transcript_pdf",
+        file=f"{resource.website.s3_path}/1AbCdEf_transcript.pdf",
     )
 
     set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
@@ -953,11 +951,10 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     )
     resource.save()
 
-    # Confirm the base-stem filename-prefix search alone would NOT find it
-    # (the gap this test exists for).
-    captions_list, transcripts_list = video.caption_transcript_resources()
-    assert captions_list == []
-    assert transcripts_list == []
+    # The base-stem search finds it, which is the point of matching the
+    # convention rather than teaching the gate about a second one.
+    _, transcripts_list = video.caption_transcript_resources()
+    assert transcripts_list == [linked_transcript]
 
     mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
 

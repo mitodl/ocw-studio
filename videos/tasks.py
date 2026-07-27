@@ -33,14 +33,11 @@ from gdrive_sync.utils import get_gdrive_file, get_resource_name
 from main.celery import app
 from main.constants import STATUS_CREATED
 from main.s3_utils import get_boto3_resource
-from main.utils import get_file_extension
 from videos import threeplay_api
 from videos.constants import (
     ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT,
-    CAPTION_FILE_EXTENSIONS,
     DESTINATION_YOUTUBE,
     S3_FILESIZE_TASK_RATE_LIMIT,
-    TRANSCRIPT_FILE_EXTENSIONS,
     YT_THUMBNAIL_IMG,
     YTAGS_BATCH_LOCK_TTL,
     VideoFileStatus,
@@ -330,25 +327,6 @@ def delete_s3_objects(
             obj.delete()
 
 
-def _find_by_filename_prefix(website, prefix, extensions):
-    """Find WebsiteContent resources by filename prefix and real file extension.
-
-    Matches Video.caption_transcript_resources()'s own candidate search: the
-    real uploaded file's extension is used rather than the filename's tail,
-    since find_available_name can append a bare digit to a colliding
-    filename (e.g. "..._vtt" -> "..._vtt2"), which would defeat an exact
-    suffix match.
-    """
-    candidates = WebsiteContent.objects.filter(
-        website=website, filename__startswith=prefix
-    )
-    return [
-        r
-        for r in candidates
-        if r.file and get_file_extension(r.file.name) in extensions
-    ]
-
-
 def _has_english_resource(resources):
     """Return True if any resource resolves to English via its real file path.
 
@@ -385,28 +363,18 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
         )
         video_resources = list(website.websitecontent_set.filter(**search_fields))
 
-    # A one-off backfill command can create/link resources named after the
-    # video's own (unstripped) filename rather than the base-stem convention
-    # caption_transcript_resources() searches for -- search that convention
-    # too, so such a resource is visible to the English-availability check
-    # below, without being folded into captions_list/transcripts_list
-    # themselves (those still drive the _resources sync further down, which
-    # should stay scoped to the base-stem convention it already understands).
-    backfill_captions = []
-    backfill_transcripts = []
-    for video_resource in video_resources:
-        backfill_captions += _find_by_filename_prefix(
-            website, f"{video_resource.filename}_captions", CAPTION_FILE_EXTENSIONS
-        )
-        backfill_transcripts += _find_by_filename_prefix(
-            website, f"{video_resource.filename}_transcript", TRANSCRIPT_FILE_EXTENSIONS
-        )
-
+    # Only the language check is new here: every process that creates a
+    # caption/transcript resource (GDrive ingestion, 3Play's own sync, the
+    # one-off orphan backfill) names it with the "{base_stem}_captions" /
+    # "{base_stem}_transcript" convention that caption_transcript_resources()
+    # already searches, so no extra lookup is needed to see them. A
+    # French/Spanish/etc resource must not count as coverage, though, since
+    # 3Play only ever supplies English.
     has_threeplay_update = (
         False
         if (
-            _has_english_resource([*captions_list, *backfill_captions])
-            or _has_english_resource([*transcripts_list, *backfill_transcripts])
+            _has_english_resource(captions_list)
+            or _has_english_resource(transcripts_list)
         )
         else threeplay_api.update_transcripts_for_video(video)
     )

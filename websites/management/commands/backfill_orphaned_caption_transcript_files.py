@@ -7,6 +7,7 @@ from django.conf import settings
 
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
+from main.utils import get_base_filename, get_file_extension
 from videos.utils import parse_caption_language_locale
 from websites.api import get_valid_new_filename
 from websites.constants import (
@@ -99,9 +100,17 @@ class Command(WebsiteFilterCommand):
        record was ever created for it (e.g. content uploaded directly to S3
        outside of the GDrive/3Play pipelines, using a Google Drive file ID
        as the filename); if so, a new WebsiteContent resource is created
-       for it, named after the video's own filename (truncated as needed to
-       fit the filename length limit) rather than the orphan path's
-       filename, since the orphan path is often an opaque identifier. If
+       for it, named with the same convention GDrive ingestion uses --
+       the video's base stem plus the caption/transcript suffix plus the
+       real file extension, e.g. "lecture1_captions_vtt" for a video named
+       "lecture1_mp4" (truncated as needed to fit the filename length
+       limit). The orphan path's own filename is not used, since it is
+       often an opaque identifier. Matching GDrive's convention matters:
+       auto_link_video_captions_transcript and
+       Video.caption_transcript_resources() both discover resources by the
+       "{base_stem}_captions" / "{base_stem}_transcript" prefix, so a
+       resource named any other way is invisible to them and gets
+       re-fetched from 3Play as a duplicate. If
        the S3 object no longer exists under the storage key, the _file path
        is left in place for manual inspection. Either way, the resolved
        resource's id is appended to the resource field's existing content
@@ -161,12 +170,26 @@ class Command(WebsiteFilterCommand):
             )
             return None
 
-        # Truncate the video's own filename so the suffixed base never
-        # exceeds the filename length limit on its own, before
-        # get_valid_new_filename handles any additional numbered-suffix
-        # truncation needed for a collision.
+        # Name the created resource exactly as GDrive ingestion and
+        # link_threeplay_files_as_resources would: the video's *base stem*
+        # (get_base_filename strips the trailing format tag, e.g.
+        # "lecture1_mp4" -> "lecture1") plus the caption/transcript suffix
+        # plus the real file extension, giving "lecture1_captions_vtt".
+        # auto_link_video_captions_transcript and
+        # Video.caption_transcript_resources() both search the
+        # "{base_stem}_captions" / "{base_stem}_transcript" prefix, so
+        # anything named off the *full* filename would be invisible to them
+        # and get re-fetched from 3Play as a duplicate. The orphan path's own
+        # filename is not used because it is often an opaque identifier.
+        #
+        # Truncated so the suffixed base never exceeds the filename length
+        # limit on its own, before get_valid_new_filename handles any
+        # additional numbered-suffix truncation needed for a collision.
+        suffix = f"_{field_config.suffix}"
+        if extension := get_file_extension(key):
+            suffix = f"{suffix}_{extension}"
         base_filename = self._truncate_with_suffix(
-            content.filename, f"_{field_config.suffix}", CONTENT_FILENAME_MAX_LEN
+            get_base_filename(content.filename), suffix, CONTENT_FILENAME_MAX_LEN
         )
         filename = get_valid_new_filename(
             website_pk=content.website_id,

@@ -88,7 +88,11 @@ def test_creates_resource_for_existing_s3_object(mock_s3):
     assert len(resources["content"]) == 1
 
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
-    assert created.filename == "lecture1_mp4_captions"
+    # Named with GDrive's convention: the video's base stem ("lecture1_mp4" ->
+    # "lecture1") plus the suffix plus the real extension. This is what makes
+    # the resource discoverable by the auto-link and 3Play gate lookups, which
+    # both search the "{base_stem}_captions" prefix.
+    assert created.filename == "lecture1_captions_webvtt"
     assert created.dirpath == "content/resources"
     assert created.file.name == caption_key
     assert created.metadata["resourcetype"] == "Other"
@@ -151,7 +155,7 @@ def test_reuses_existing_resource_via_corrected_storage_key(mock_s3):
     storage_key = f"{website.s3_path}/1AbCdEf_transcript.webvtt"
     already_linked = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_webvtt",
         file=storage_key,
     )
 
@@ -372,7 +376,7 @@ def test_reuses_existing_resource_for_same_s3_key(mock_s3):
     key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
     already_linked = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_webvtt",
         file=key,
     )
 
@@ -490,7 +494,9 @@ def test_deduplicates_filename_collision(mock_s3):
     """Filename collisions in the same (website, dirpath) get a numeric suffix."""
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
-        website=website, filename="lecture1_mp4_captions", dirpath="content/resources"
+        website=website,
+        filename="lecture1_captions_webvtt",
+        dirpath="content/resources",
     )
     key = f"courses/{website.name}/1AbC_transcript.webvtt"
     mock_s3.put_object(Key=key, Body=b"WEBVTT")
@@ -510,7 +516,7 @@ def test_deduplicates_filename_collision(mock_s3):
     video.refresh_from_db()
     resources = video.metadata["video_files"]["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
-    assert created.filename == "lecture1_mp4_captions2"
+    assert created.filename == "lecture1_captions_webvtt2"
 
 
 def test_skips_non_video_content(mock_s3):
@@ -563,8 +569,8 @@ def test_backfills_both_captions_and_transcript_for_same_video(mock_s3):
     transcript_resource = WebsiteContent.objects.get(
         text_id=vf["video_transcript_resources"]["content"][0]
     )
-    assert captions_resource.filename == "lecture1_mp4_captions"
-    assert transcript_resource.filename == "lecture1_mp4_transcript"
+    assert captions_resource.filename == "lecture1_captions_webvtt"
+    assert transcript_resource.filename == "lecture1_transcript_pdf"
     assert captions_resource.metadata["resourcetype"] == "Other"
     assert transcript_resource.metadata["resourcetype"] == "Document"
 
@@ -622,7 +628,7 @@ def test_truncates_long_video_filename_to_fit_length_limit(mock_s3):
     resources = video.metadata["video_files"]["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert len(created.filename) <= CONTENT_FILENAME_MAX_LEN
-    assert created.filename.endswith("_captions")
+    assert created.filename.endswith("_captions_webvtt")
 
 
 def test_truncates_long_video_title_to_fit_length_limit(mock_s3):

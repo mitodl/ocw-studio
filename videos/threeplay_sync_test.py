@@ -118,22 +118,22 @@ def test_sync_video_captions_and_transcripts_skips_for_non_3play_naming_conventi
     even if it doesn't match 3Play's own {youtube_id}_transcript/_captions
     filename convention.
 
-    Regression test: a resource created by a one-off backfill command (or
-    GDrive) uses a different naming convention than 3Play's own
-    youtube-id-based one. The guard must recognize it by resolved language,
-    not by filename pattern, or it would fetch and link a redundant second
-    English resource.
+    Regression test: a resource created by GDrive ingestion (or by the
+    orphan backfill, which follows the same convention) is named after the
+    video's base stem, not 3Play's youtube id. The guard must recognize it
+    by resolved language, not by filename pattern, or it would fetch and
+    link a redundant second English resource.
     """
     starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
     website = WebsiteFactory.create(starter=starter)
     transcript_resource = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_transcript",
+        filename="lecture1_transcript_pdf",
         file=f"courses/{website.name}/1AbCdEf_transcript.pdf",
     )
     captions_resource = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_vtt",
         file=f"courses/{website.name}/1AbCdEf_captions.vtt",
     )
     video = WebsiteContentFactory.create(
@@ -181,12 +181,12 @@ def test_sync_video_captions_and_transcripts_skips_for_scalar_string_content(
     website = WebsiteFactory.create(starter=starter)
     transcript_resource = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_transcript",
+        filename="lecture1_transcript_pdf",
         file=f"courses/{website.name}/1AbCdEf_transcript.pdf",
     )
     captions_resource = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_vtt",
         file=f"courses/{website.name}/1AbCdEf_captions.vtt",
     )
     video = WebsiteContentFactory.create(
