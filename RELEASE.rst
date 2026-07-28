@@ -1,6 +1,25 @@
 Release Notes
 =============
 
+Version 0.194.0
+---------------
+
+- Update dependency django-anymail to v15 (#3119)
+- Update dependency requests to v2.34.2 (#3117)
+- Update dependency prettier to v3.9.6 (#3108)
+- Update dependency django-removals to ~=1.4.0 (#3116)
+- fix: convert url_path-relative orphan paths to their s3_path storage key (#3113)
+- Update dependency pypdf to v6.14.0 [SECURITY] (#3114)
+- [pre-commit.ci] pre-commit autoupdate (#3063)
+- Update dependency cryptography to v48 [SECURITY] (#3072)
+- Update Yarn to v4.17.1 (#3110)
+- Update actions/checkout action to v7 (#3111)
+- Update dependency sentry-sdk to v2.64.0 (#3109)
+- Update dependency django-guardian to v3.3.2 (#3104)
+- Update dependency django-removals to ~=1.3.1 (#3106)
+- Update astral-sh/setup-uv action to v8.3.0 (#3105)
+- Update dependency boto3 to v1.43.40 (#3103)
+
 Version 0.193.4 (Released July 16, 2026)
 ---------------
 
