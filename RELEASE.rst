@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.194.0
+Version 0.194.0 (Released July 30, 2026)
 ---------------
 
 - Update dependency django-anymail to v15 (#3119)
