@@ -39,6 +39,7 @@ dependencies = [
     "mitol-django-common>=2026.4.2,<2027",
     "mitol-django-mail>=2026.4.2,<2027",
     "more-itertools>=11.0.2,<12",
+    "nh3>=0.3.0,<0.4",
     "ol-concourse>=0.5.8,<0.6",
     "ol-concoursepy==0.0.41",
     "psycopg2>=2.9.6,<3",

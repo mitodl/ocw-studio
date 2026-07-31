@@ -644,6 +644,30 @@ def test_website_content_detail_serializer_save_null_metadata(
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
 
 
+def test_website_content_detail_serializer_sanitizes_markdown(
+    mocker, mocked_website_funcs
+):
+    """WebsiteContentDetailSerializer should strip dangerous HTML from markdown on save"""
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
+    user = UserFactory.create()
+    serializer = WebsiteContentDetailSerializer(
+        data={
+            "markdown": '<img src=x onerror="alert(1)">safe text',
+            "metadata": {},
+        },
+        instance=content,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=user),
+        },
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content.refresh_from_db()
+    assert "onerror" not in content.markdown
+    assert "safe text" in content.markdown
+
+
 @pytest.mark.parametrize("add_context_data", [True, False])
 def test_website_content_create_serializer(
     mocker, mocked_website_funcs, add_context_data
@@ -703,6 +727,32 @@ def test_website_content_create_serializer(
     assert content.filename == (
         "myfile" if not add_context_data else override_context_data["filename"]
     )
+
+
+def test_website_content_create_serializer_sanitizes_markdown(
+    mocker, mocked_website_funcs
+):
+    """WebsiteContentCreateSerializer should strip dangerous HTML from markdown on save"""
+    website = WebsiteFactory.create()
+    user = UserFactory.create()
+    payload = {
+        "website_id": website.pk,
+        "title": "a title",
+        "type": CONTENT_TYPE_RESOURCE,
+        "markdown": '<img src=x onerror="alert(1)">safe text',
+        "metadata": {},
+    }
+    context = {
+        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+        "request": mocker.Mock(user=user),
+        "website_id": website.pk,
+    }
+    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content = WebsiteContent.objects.get(title=payload["title"])
+    assert "onerror" not in content.markdown
+    assert "safe text" in content.markdown
 
 
 @pytest.mark.parametrize("is_root_site", [True, False])

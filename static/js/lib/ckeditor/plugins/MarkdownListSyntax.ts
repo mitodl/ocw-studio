@@ -2,6 +2,8 @@ import { ShowdownExtension } from "showdown"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 
+const domParser = new DOMParser()
+
 /**
  * This "extension" is addresses an incompatibility between
  *  - the HTML that showdown produces for lists
@@ -27,15 +29,14 @@ export default class MarkdownListSyntax extends MarkdownSyntaxPlugin {
       {
         type: "output",
         filter: (htmlString) => {
-          const container = document.createElement("div")
-          container.innerHTML = htmlString
+          const doc = domParser.parseFromString(htmlString, "text/html")
 
-          container.querySelectorAll("li > p").forEach((node) => {
+          doc.body.querySelectorAll("li > p").forEach((node) => {
             const suffix = node.nextSibling === null ? "" : " <br><br>"
             node.outerHTML = `${node.innerHTML}${suffix}`
           })
 
-          return container.innerHTML
+          return doc.body.innerHTML
         },
       },
     ]
