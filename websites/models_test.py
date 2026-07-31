@@ -463,3 +463,102 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
         "language": "es",
         "locale": "MX",
     } in resolved
+
+
+@pytest.mark.parametrize(
+    ("stored_content", "reason"),
+    [
+        ("", "site-config initialises a relation widget to an empty string"),
+        ([], "empty multi-select list"),
+        (["no-such-text-id"], "dangling text_id matching no resource"),
+    ],
+)
+def test_websitecontent_full_metadata_normalizes_unresolvable_resources(
+    stored_content, reason
+):
+    """An unresolvable _resources relation is published as [], never as the raw dict.
+
+    full_metadata used to leave the stored {"content": ..., "website": ...}
+    relation dict untouched whenever resolution produced nothing, so the CMS's
+    internal storage shape reached Hugo frontmatter. There
+    video_caption_tracks.html treats a non-empty map as truthy, ranges it (which
+    yields the map's *values*), and dies on `.language` with "can't evaluate
+    field language in type interface {}", breaking the whole site build.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": stored_content,
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == [], f"{reason}: got {published!r}"
+
+
+def test_websitecontent_full_metadata_normalizes_unresolved_when_resource_has_no_file():
+    """A linked resource with no uploaded file resolves to [], not the raw dict."""
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    no_file = WebsiteContentFactory.create(
+        website=website, filename="lecture1_captions_vtt", type="resource", file=None
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(no_file.text_id)],
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == []
+
+
+def test_websitecontent_full_metadata_resolves_scalar_string_content():
+    """A legacy single-select relation stores content as a bare string.
+
+    Without normalizing it to a list first, text_id__in would iterate the
+    string character by character and match nothing.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": str(captions.text_id),
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == [
+        {"file": "/sites/mysite-fall-2008/lecture1_captions.vtt", "language": "en"}
+    ]

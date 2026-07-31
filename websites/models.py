@@ -451,28 +451,44 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                 YT_FIELD_TRANSCRIPT_RESOURCES,
             ):
                 resource_data = get_dict_field(full_metadata, resource_field)
-                if not resource_data or not isinstance(resource_data, dict):
+                if not isinstance(resource_data, dict):
+                    # Already a resolved list, or the field isn't set at all.
                     continue
-                text_ids = resource_data.get("content", [])
-                if not text_ids:
-                    continue
-                # self.__class__ is WebsiteContent — no circular import needed
-                related_contents = list(
-                    self.__class__.objects.filter(
-                        website=self.website,
-                        text_id__in=text_ids,
+                content = resource_data.get("content") or []
+                # A single-select relation predating the multi-select widget
+                # stores content as a bare string. Without this, text_id__in
+                # would iterate it character by character.
+                text_ids = [content] if isinstance(content, str) else list(content)
+                text_ids = [text_id for text_id in text_ids if text_id]
+                resolved = []
+                if text_ids:
+                    # self.__class__ is WebsiteContent — no circular import needed
+                    related_contents = list(
+                        self.__class__.objects.filter(
+                            website=self.website,
+                            text_id__in=text_ids,
+                        )
                     )
-                )
-                resolved = resource_file_paths(related_contents)
-                # Apply URL path substitution if s3 and url paths differ
-                if resolved and url_path and s3_path != url_path:
-                    resolved = [
-                        {**entry, "file": entry["file"].replace(s3_path, url_path, 1)}
-                        for entry in resolved
-                    ]
-                if resolved:
-                    set_dict_field(full_metadata, resource_field, resolved)
-                    modified = True
+                    resolved = resource_file_paths(related_contents)
+                    # Apply URL path substitution if s3 and url paths differ
+                    if resolved and url_path and s3_path != url_path:
+                        resolved = [
+                            {
+                                **entry,
+                                "file": entry["file"].replace(s3_path, url_path, 1),
+                            }
+                            for entry in resolved
+                        ]
+                # Always replace, even when nothing resolved. Leaving the raw
+                # {"content": ..., "website": ...} relation dict in place would
+                # publish the CMS's internal storage shape into Hugo
+                # frontmatter, where video_caption_tracks.html iterates it and
+                # fails on `.language` (a map yields its values, not objects).
+                # An empty list is what "no caption/transcript for this video"
+                # has to look like, and it keeps the field's published contract
+                # honest: always an array of {file, language} objects.
+                set_dict_field(full_metadata, resource_field, resolved)
+                modified = True
 
         return full_metadata if modified else self.metadata
 
