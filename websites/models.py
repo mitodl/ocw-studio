@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+from copy import deepcopy
 from hashlib import sha256
 from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
@@ -424,8 +425,16 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         file_field = self.get_config_file_field()
         s3_path = self.website.s3_path
         url_path = self.website.url_path
+        # Deep-copied rather than aliased: everything below rewrites keys into
+        # their *published* form, which must not leak back onto the stored
+        # metadata. Aliasing meant merely reading this property replaced an
+        # editor's {"content": [...]} relation with a resolved file list on the
+        # instance, so any later save() persisted that and lost the links, and
+        # calculate_checksum() returned a different value before and after.
         full_metadata = (
-            self.metadata if (self.metadata and isinstance(self.metadata, dict)) else {}
+            deepcopy(self.metadata)
+            if (self.metadata and isinstance(self.metadata, dict))
+            else {}
         )
         modified = False
         if file_field:
