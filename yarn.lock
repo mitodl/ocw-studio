@@ -3620,12 +3620,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/sinon@npm:^21.0.0":
-  version: 21.0.1
-  resolution: "@types/sinon@npm:21.0.1"
+"@types/sinon@npm:^22.0.0":
+  version: 22.0.0
+  resolution: "@types/sinon@npm:22.0.0"
   dependencies:
     "@types/sinonjs__fake-timers": "npm:*"
-  checksum: 10c0/b6cdc8420de4a657b1643c4da6cdc6f418de1c633b8022503929fc11538b5a691d70d74a93f3b82472018a6c778c8d543d2c3e23a4b68f73c37233277c436f16
+  checksum: 10c0/ee665a33b5fb639e1d552b1064cbfc911ccdf8523d48ee53098e82b099279d6f18b473da858740374b8a9dd607f65884c67923db822be21681249d2ac418e3cd
   languageName: node
   linkType: hard
 
@@ -10579,7 +10579,7 @@ __metadata:
     "@types/react-select": "npm:^4.0.17"
     "@types/redux-logger": "npm:^3.0.9"
     "@types/showdown": "npm:^2.0.0"
-    "@types/sinon": "npm:^21.0.0"
+    "@types/sinon": "npm:^22.0.0"
     "@types/turndown": "npm:^5.0.1"
     "@types/url-assembler": "npm:^2.1.1"
     "@typescript-eslint/eslint-plugin": "npm:^5.59.8"
