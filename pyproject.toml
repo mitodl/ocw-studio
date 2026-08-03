@@ -86,6 +86,7 @@ package = false
 default-groups = "all"
 no-binary-package = ["lxml"]
 exclude-newer = "7d"
+required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
 ol-concourse = "0d"
