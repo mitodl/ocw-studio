@@ -1260,7 +1260,7 @@ CONTENT_FILE_SEARCH_API_URL = get_string(
 )
 HUGO_CSRF_COOKIE_NAME = get_string(
     name="HUGO_CSRF_COOKIE_NAME",
-    default=None,
+    default="learn_csrftoken",
     description="The name of the CSRF cookie to inject into the theme assets build",
 )
 STATIC_API_BASE_URL_DRAFT = get_string(
