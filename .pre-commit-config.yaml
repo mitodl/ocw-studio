@@ -113,6 +113,10 @@ repos:
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]
+- repo: https://github.com/zizmorcore/zizmor-pre-commit
+  rev: v1.29.0
+  hooks:
+  - id: zizmor
 - repo: local
   hooks:
   - id: drf-serializer-orm-check
