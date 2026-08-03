@@ -29,7 +29,15 @@ export default class MarkdownListSyntax extends MarkdownSyntaxPlugin {
       {
         type: "output",
         filter: (htmlString) => {
-          const doc = domParser.parseFromString(htmlString, "text/html")
+          // Wrapped in <body> so the parser is already in "in body" insertion
+          // mode for the very first token: otherwise a leading comment, a
+          // head-context tag like <title>/<style>, or whitespace-only input
+          // gets consumed by earlier HTML5 parsing modes and never reaches
+          // doc.body at all.
+          const doc = domParser.parseFromString(
+            `<body>${htmlString}</body>`,
+            "text/html",
+          )
 
           doc.body.querySelectorAll("li > p").forEach((node) => {
             const suffix = node.nextSibling === null ? "" : " <br><br>"
