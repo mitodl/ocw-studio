@@ -683,6 +683,11 @@ class WebsiteContentDetailSerializer(
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
 
+        # Sanitize on read too, as defense in depth for rows written before
+        # validate_markdown existed, or by a path that bypasses this serializer
+        if result.get("markdown") is not None:
+            result["markdown"] = nh3.clean(result["markdown"])
+
         return result
 
     class Meta:

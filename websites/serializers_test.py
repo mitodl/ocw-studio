@@ -669,6 +669,23 @@ def test_website_content_detail_serializer_sanitizes_markdown(
     assert "H<sup>2</sup>O" in content.markdown
 
 
+def test_website_content_detail_serializer_sanitizes_markdown_on_read():
+    """WebsiteContentDetailSerializer should sanitize markdown on read too, for rows written before this existed"""
+    # bypasses validate_markdown entirely, simulating a row written before
+    # this sanitization existed, or by a path that writes directly to the model
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        markdown='<img src=x onerror="alert(1)">safe text H<sup>2</sup>O',
+    )
+    result = WebsiteContentDetailSerializer(instance=content).data
+    assert "onerror" not in result["markdown"]
+    assert "safe text" in result["markdown"]
+    assert "H<sup>2</sup>O" in result["markdown"]
+    # the stored value itself is untouched, only the API response is sanitized
+    content.refresh_from_db()
+    assert "onerror" in content.markdown
+
+
 @pytest.mark.parametrize("add_context_data", [True, False])
 def test_website_content_create_serializer(
     mocker, mocked_website_funcs, add_context_data
