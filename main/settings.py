@@ -1258,6 +1258,11 @@ CONTENT_FILE_SEARCH_API_URL = get_string(
     default=None,
     description="The URL to open discussions content file search to inject into the theme assets build",  # noqa: E501
 )
+HUGO_CSRF_COOKIE_NAME = get_string(
+    name="HUGO_CSRF_COOKIE_NAME",
+    default=None,
+    description="The name of the CSRF cookie to inject into the theme assets build",
+)
 STATIC_API_BASE_URL_DRAFT = get_string(
     name="STATIC_API_BASE_URL_DRAFT",
     description="The static api base url to use when building and deploying draft sites locally to minio",  # noqa: E501
