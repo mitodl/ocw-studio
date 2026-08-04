@@ -277,6 +277,16 @@ def test_resource_file_paths_falls_back_to_filename():
     ]
 
 
+def test_resource_file_paths_skips_fileless_resource_with_language():
+    """A metadata language alone is not enough to publish an entry.
+
+    There is no file to point at, so the resource is omitted exactly as it was
+    before the language override existed.
+    """
+    resource = WebsiteContentFactory.build(metadata={"language": "es"}, file="")
+    assert resource_file_paths([resource]) == []
+
+
 def test_resource_file_paths_omits_locale_when_absent():
     """The locale key is only present when there is a locale to publish."""
     resource = WebsiteContentFactory.build(

@@ -363,9 +363,9 @@ def resource_file_paths(resources: list) -> list:
     resources.
 
     Language and optional locale come from :func:`resolve_language_locale`, so an
-    explicit value set in Studio wins over whatever the filename says.  Resources
-    without a resolvable file are omitted.  ``locale`` is only included in the
-    dict when present.
+    explicit value set in Studio wins over the language parsed from the resource's
+    real uploaded file path.  Resources without a resolvable file are omitted.
+    ``locale`` is only included in the dict when present.
     """
     result = []
     for resource in resources:
