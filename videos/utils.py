@@ -314,6 +314,35 @@ def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
     return "en", None
 
 
+def resolve_language_locale(resource) -> tuple[str, str | None]:
+    """Return ``(language, locale)`` for a resource.
+
+    An explicit metadata value wins.  Otherwise the value is parsed from the
+    resource's real uploaded file path, which itself falls back to
+    ``("en", None)`` when the filename carries no language suffix.
+
+    Language and locale resolve independently: an explicit language with no
+    explicit locale yields no locale, rather than inheriting a region parsed
+    from a filename that the language no longer agrees with.
+
+    This is the single source of precedence.  Both the edit form and the
+    publish path go through it, so what an editor is shown cannot drift from
+    what actually gets published.
+    """
+    metadata = resource.metadata if isinstance(resource.metadata, dict) else {}
+    language = metadata.get("language") or None
+    locale = metadata.get("locale") or None
+
+    if language:
+        return language, locale
+
+    file_name = getattr(getattr(resource, "file", None), "name", None)
+    parsed_language, parsed_locale = (
+        parse_caption_language_locale(file_name) if file_name else ("en", None)
+    )
+    return parsed_language, locale or parsed_locale
+
+
 def resource_file_paths(resources: list) -> list:
     """Return a list of ``{file, language[, locale]}`` dicts for caption/transcript
     resources.

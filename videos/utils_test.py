@@ -12,6 +12,7 @@ from videos.utils import (
     get_content_dirpath,
     get_tags_with_course,
     parse_caption_language_locale,
+    resolve_language_locale,
     update_metadata,
 )
 from websites.factories import (
@@ -199,3 +200,46 @@ def test_get_tags_with_course_whitespace_handling():
 def test_parse_caption_language_locale(filename, expected):
     """parse_caption_language_locale returns (language, locale) from slugified filename."""
     assert parse_caption_language_locale(filename) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("metadata", "file_name", "expected"),
+    [
+        # explicit metadata wins over the filename
+        ({"language": "es"}, "courses/s/l1_captions-fr.vtt", ("es", None)),
+        # explicit language with no locale does not inherit the parsed region
+        ({"language": "es"}, "courses/s/l1_captions-fr-CA.vtt", ("es", None)),
+        # explicit locale wins while language still comes from the filename
+        ({"locale": "BR"}, "courses/s/l1_captions-pt.vtt", ("pt", "BR")),
+        # both explicit
+        ({"language": "pt", "locale": "BR"}, "courses/s/l1_captions.vtt", ("pt", "BR")),
+        # no metadata: parsed from the filename
+        ({}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
+        ({}, "courses/s/l1_captions-en-US.vtt", ("en", "US")),
+        # no metadata and no language suffix: the "en" default
+        ({}, "courses/s/l1_captions.vtt", ("en", None)),
+        # empty-string metadata is treated as unset, not as a language
+        ({"language": "", "locale": ""}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
+    ],
+)
+def test_resolve_language_locale(metadata, file_name, expected):
+    """Explicit metadata wins, otherwise the filename is parsed, otherwise 'en'."""
+    resource = WebsiteContentFactory.build(metadata=metadata, file=file_name)
+    assert resolve_language_locale(resource) == expected
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_without_file():
+    """A resource with no uploaded file falls back to the 'en' default."""
+    resource = WebsiteContentFactory.build(metadata={}, file=None)
+    assert resolve_language_locale(resource) == ("en", None)
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_non_dict_metadata():
+    """Metadata that is not a dict is treated as absent rather than raising."""
+    resource = WebsiteContentFactory.build(
+        metadata=None, file="courses/s/l1_captions-fr.vtt"
+    )
+    assert resolve_language_locale(resource) == ("fr", None)
