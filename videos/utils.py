@@ -362,16 +362,16 @@ def resource_file_paths(resources: list) -> list:
     """Return a list of ``{file, language[, locale]}`` dicts for caption/transcript
     resources.
 
-    Language and optional locale are parsed from each resource's real
-    uploaded file path (immune to the filename-uniqueness suffix described in
-    :func:`parse_caption_language_locale`).  Resources without a resolvable
-    file are omitted.  ``locale`` is only included in the dict when present.
+    Language and optional locale come from :func:`resolve_language_locale`, so an
+    explicit value set in Studio wins over whatever the filename says.  Resources
+    without a resolvable file are omitted.  ``locale`` is only included in the
+    dict when present.
     """
     result = []
     for resource in resources:
         file_name = getattr(getattr(resource, "file", None), "name", None)
         if file_name:
-            lang, locale = parse_caption_language_locale(file_name)
+            lang, locale = resolve_language_locale(resource)
             entry: dict = {
                 "file": f"/{file_name.lstrip('/')}",
                 "language": lang,

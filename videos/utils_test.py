@@ -13,6 +13,7 @@ from videos.utils import (
     get_tags_with_course,
     parse_caption_language_locale,
     resolve_language_locale,
+    resource_file_paths,
     update_metadata,
 )
 from websites.factories import (
@@ -249,3 +250,38 @@ def test_resolve_language_locale_non_dict_metadata(metadata):
         metadata=metadata, file="courses/s/l1_captions-fr.vtt"
     )
     assert resolve_language_locale(resource) == ("fr", None)
+
+
+def test_resource_file_paths_honors_metadata_override():
+    """An explicit language overrides what the filename says."""
+    resource = WebsiteContentFactory.build(
+        metadata={"language": "es", "locale": "MX"},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+    assert resource_file_paths([resource]) == [
+        {
+            "file": "/courses/s/lecture1_captions-fr.vtt",
+            "language": "es",
+            "locale": "MX",
+        }
+    ]
+
+
+def test_resource_file_paths_falls_back_to_filename():
+    """With no metadata language, output is unchanged from before this feature."""
+    resource = WebsiteContentFactory.build(
+        metadata={}, file="courses/s/lecture1_captions-fr.vtt"
+    )
+    assert resource_file_paths([resource]) == [
+        {"file": "/courses/s/lecture1_captions-fr.vtt", "language": "fr"}
+    ]
+
+
+def test_resource_file_paths_omits_locale_when_absent():
+    """The locale key is only present when there is a locale to publish."""
+    resource = WebsiteContentFactory.build(
+        metadata={"language": "de"}, file="courses/s/lecture1_captions.vtt"
+    )
+    assert resource_file_paths([resource]) == [
+        {"file": "/courses/s/lecture1_captions.vtt", "language": "de"}
+    ]
