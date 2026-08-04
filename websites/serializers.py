@@ -6,6 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
+import nh3
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import transaction
@@ -476,6 +477,16 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
+class MarkdownSanitizationMixin(serializers.Serializer):
+    """Mixin for stripping dangerous HTML from a markdown field"""
+
+    def validate_markdown(self, value):
+        """Sanitize HTML embedded in markdown so it can't execute in a browser"""
+        if value is None:
+            return value
+        return nh3.clean(value)
+
+
 class WebsiteContentDeletableMixin(serializers.Serializer):
     """Mixin for checking if content is deletable by resource type"""
 
@@ -529,6 +540,7 @@ class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
     WebsiteContentDeletableMixin,
+    MarkdownSanitizationMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -671,6 +683,11 @@ class WebsiteContentDetailSerializer(
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
 
+        # Sanitize on read too, as defense in depth for rows written before
+        # validate_markdown existed, or by a path that bypasses this serializer
+        if result.get("markdown") is not None:
+            result["markdown"] = nh3.clean(result["markdown"])
+
         return result
 
     class Meta:
@@ -694,7 +711,7 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer, RequestUserSerializerMixin, MarkdownSanitizationMixin
 ):
     """Serializer which creates a new WebsiteContent"""
 
