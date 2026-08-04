@@ -24,6 +24,7 @@ from gdrive_sync.tasks import create_gdrive_folders
 from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
+from videos.utils import resolve_language_locale
 from websites import constants
 from websites.api import (
     detect_mime_type,
@@ -525,6 +526,21 @@ class WebsiteContentSerializer(
         fields = read_only_fields
 
 
+def _declared_field_names(instance) -> set:
+    """Return the top-level field names the starter declares for this content type.
+
+    Used to gate derived-value injection so it only happens where the form
+    actually has a matching widget.
+    """
+    starter = instance.website.starter
+    if starter is None:
+        return set()
+    item = SiteConfig(starter.config).find_item_by_name(instance.type)
+    if item is None:
+        return set()
+    return {field.get("name") for field in item.fields}
+
+
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
@@ -670,6 +686,19 @@ class WebsiteContentDetailSerializer(
         drivefile = instance.drivefile_set.first()  # noqa: ORM002
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
+
+        declared = _declared_field_names(instance)
+        if declared & {"language", "locale"}:
+            # Copied, never mutated in place: result["metadata"] can be the
+            # same dict as instance.metadata, and writing a derived value onto
+            # the instance would let a later save persist it.
+            metadata = dict(result.get("metadata") or {})
+            language, locale = resolve_language_locale(instance)
+            if "language" in declared and not metadata.get("language"):
+                metadata["language"] = language
+            if "locale" in declared and locale and not metadata.get("locale"):
+                metadata["locale"] = locale
+            result["metadata"] = metadata
 
         return result
 

@@ -16,6 +16,7 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
 from videos.constants import YT_THUMBNAIL_IMG
+from videos.utils import resource_file_paths
 from websites.constants import (
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
@@ -934,3 +935,141 @@ def test_update_page_url_on_title_change_legacy_index_behavior(
     page.refresh_from_db()
     assert page.filename == expected_filename
     assert page.title == "New Title"
+
+
+LANGUAGE_FIELD_CONFIG = {
+    "collections": [
+        {
+            "name": "resource",
+            "label": "Resource",
+            "category": "Content",
+            "folder": "content/resources",
+            "fields": [
+                {"label": "Title", "name": "title", "widget": "string"},
+                {"label": "Language", "name": "language", "widget": "select"},
+                {"label": "Locale", "name": "locale", "widget": "select"},
+            ],
+        }
+    ],
+}
+
+
+@pytest.mark.django_db
+def test_detail_serializer_fills_language_from_filename():
+    """An unset language is shown as the value that would publish."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "fr"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_defaults_language_to_english():
+    """A filename with no language suffix resolves to English."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "en"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_keeps_explicit_language():
+    """A stored value is never overwritten by the derived one."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={"language": "es"},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "es"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_skips_when_starter_lacks_the_field():
+    """Nothing is injected for a starter that does not declare the field.
+
+    This keeps ocw-studio inert until the starter ships, and stops the keys
+    appearing on content types that have no such form field.
+    """
+    content = WebsiteContentFactory.create(
+        type="resource", metadata={}, file="courses/s/lecture1_captions-fr.vtt"
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert "language" not in data["metadata"]
+
+
+@pytest.mark.django_db
+def test_detail_serializer_does_not_mutate_stored_metadata():
+    """Serializing must not write the derived value onto the instance.
+
+    to_representation's result can alias instance.metadata. Mutating it in
+    place would let a derived guess be persisted by any later save, which is
+    the failure mode fixed in full_metadata under hq#12635.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    WebsiteContentDetailSerializer(instance=content).data  # noqa: B018
+
+    assert content.metadata == {}
+    content.save()
+    content.refresh_from_db()
+    assert content.metadata == {}
+
+
+@pytest.mark.django_db
+def test_detail_serializer_agrees_with_what_gets_published():
+    """The form and the publish path must never disagree.
+
+    Both route through resolve_language_locale precisely so an editor cannot
+    be shown one language while a different one ships.  This pins that
+    invariant from the form side; resource_file_paths pins the publish side.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions-pt-BR.vtt",
+    )
+
+    shown = WebsiteContentDetailSerializer(instance=content).data["metadata"]
+    published = resource_file_paths([content])[0]
+
+    assert shown["language"] == published["language"] == "pt"
+    assert shown["locale"] == published["locale"] == "BR"
