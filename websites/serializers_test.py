@@ -1050,26 +1050,84 @@ def test_detail_serializer_does_not_mutate_stored_metadata():
     assert content.metadata == {}
 
 
+@pytest.mark.parametrize(
+    ("metadata", "file_name", "exp_language", "exp_locale"),
+    [
+        # No metadata: both sides parse the filename identically.
+        ({}, "courses/s/l1_captions-pt-BR.vtt", "pt", "BR"),
+        # The distinguishing case: an explicit language against a filename that
+        # carries a region. A direct parse in the serializer would show locale
+        # "BR" here while publishing none, so this is what actually pins both
+        # callers to the shared resolver.
+        ({"language": "es"}, "courses/s/l1_captions-pt-BR.vtt", "es", None),
+        # A stored value is echoed back normalized, not raw.
+        ({"language": "ES"}, "courses/s/l1_captions.vtt", "es", None),
+    ],
+)
 @pytest.mark.django_db
-def test_detail_serializer_agrees_with_what_gets_published():
+def test_detail_serializer_agrees_with_what_gets_published(
+    metadata, file_name, exp_language, exp_locale
+):
     """The form and the publish path must never disagree.
 
     Both route through resolve_language_locale precisely so an editor cannot
-    be shown one language while a different one ships.  This pins that
-    invariant from the form side; resource_file_paths pins the publish side.
+    be shown one language while a different one ships.
     """
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
     )
     content = WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={},
-        file="courses/s/lecture1_captions-pt-BR.vtt",
+        website=website, type="resource", metadata=metadata, file=file_name
     )
 
     shown = WebsiteContentDetailSerializer(instance=content).data["metadata"]
     published = resource_file_paths([content])[0]
 
-    assert shown["language"] == published["language"] == "pt"
-    assert shown["locale"] == published["locale"] == "BR"
+    assert shown["language"] == published["language"] == exp_language
+    assert shown.get("locale") == published.get("locale") == exp_locale
+
+
+@pytest.mark.parametrize(
+    ("declared_fields", "expect_language", "expect_locale"),
+    [
+        (["language", "locale"], True, True),
+        (["language"], True, False),
+        (["locale"], False, True),
+    ],
+)
+@pytest.mark.django_db
+def test_detail_serializer_injects_only_declared_fields(
+    declared_fields, expect_language, expect_locale
+):
+    """A key is injected only when the starter declares that specific field.
+
+    Collapsing this to "inject both when either is declared" would put a
+    locale onto a starter with no locale widget, which a later save would
+    then persist.
+    """
+    config = {
+        "collections": [
+            {
+                "name": "resource",
+                "label": "Resource",
+                "category": "Content",
+                "folder": "content/resources",
+                "fields": [
+                    {"label": name.title(), "name": name, "widget": "select"}
+                    for name in declared_fields
+                ],
+            }
+        ],
+    }
+    website = WebsiteFactory.create(starter=WebsiteStarterFactory.create(config=config))
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/l1_captions-pt-BR.vtt",
+    )
+
+    shown = WebsiteContentDetailSerializer(instance=content).data["metadata"]
+
+    assert ("language" in shown) is expect_language
+    assert ("locale" in shown) is expect_locale

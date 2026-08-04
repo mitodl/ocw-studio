@@ -693,10 +693,17 @@ class WebsiteContentDetailSerializer(
             # same dict as instance.metadata, and writing a derived value onto
             # the instance would let a later save persist it.
             metadata = dict(result.get("metadata") or {})
+            # Assigned unconditionally rather than only when absent.
+            # resolve_language_locale already gives a stored value precedence,
+            # so re-checking here would only serve to echo a stored value back
+            # *unnormalized* -- showing "ES" in the form while "es" publishes.
+            # Writing what the resolver returns keeps the form and the publish
+            # path identical for every input, which is the whole point of both
+            # routing through it.
             language, locale = resolve_language_locale(instance)
-            if "language" in declared and not metadata.get("language"):
+            if "language" in declared:
                 metadata["language"] = language
-            if "locale" in declared and locale and not metadata.get("locale"):
+            if "locale" in declared and locale:
                 metadata["locale"] = locale
             result["metadata"] = metadata
 
