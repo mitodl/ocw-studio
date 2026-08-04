@@ -142,18 +142,25 @@ def test_hugo_file_serialize(tmp_path, markdown, exp_sections):
         assert len(md_file_sections) == exp_sections
         front_matter = md_file_sections[0]
         front_matter_lines = list(filter(None, sorted(front_matter.split("\n"))))
+        image_line = (
+            f"image: /media/{content.website.get_url_path()}/"
+            f"{content.file.name.split('/')[-1]}"
+        )
+        # The file field is stated explicitly rather than read back out of
+        # `metadata`: full_metadata adds it to the *published* front matter
+        # only, and must not write it back onto the stored metadata.
         assert front_matter_lines == sorted(
             [
                 f"title: {content.title}",
                 f"content_type: {content.type}",
                 f"uid: {content.text_id}",
+                image_line,
             ]
             + [f"{k}: {v}" for k, v in metadata.items()]
         )
-        assert (
-            f"image: /media/{content.website.get_url_path()}/{content.file.name.split('/')[-1]}"
-            in front_matter_lines
-        )
+        assert image_line in front_matter_lines
+        # Serializing left the stored metadata alone
+        assert set(content.metadata) == {"metadata1", "metadata2"}
         if exp_sections > 1:
             assert md_file_sections[1] == markdown
 
