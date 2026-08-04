@@ -911,6 +911,104 @@ def test_update_transcripts_for_video_no_3play(
     )
 
 
+def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mocker):
+    """Avoid calling 3play when the orphan backfill already created an English
+    transcript for the video.
+
+    Regression test for the duplicate-resource bug: the backfill names what
+    it creates with the same "{base_stem}_transcript_{ext}" convention GDrive
+    ingestion uses, so caption_transcript_resources() discovers it and 3Play
+    is skipped. Naming it any other way (e.g. off the video's full, unstripped
+    filename) made it invisible here and produced a second English transcript.
+    """
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+
+    # What the backfill creates: named off the video's base stem, while the
+    # file itself keeps the orphan's opaque S3 key.
+    base_stem = get_base_filename(resource.filename)
+    linked_transcript = WebsiteContentFactory.create(
+        website=video.website,
+        filename=f"{base_stem}_transcript_pdf",
+        file=f"{resource.website.s3_path}/1AbCdEf_transcript.pdf",
+    )
+
+    set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+    set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        {
+            "content": [str(linked_transcript.text_id)],
+            "website": video.website.name,
+        },
+    )
+    resource.save()
+
+    # The base-stem search finds it, which is the point of matching the
+    # convention rather than teaching the gate about a second one.
+    _, transcripts_list = video.caption_transcript_resources()
+    assert transcripts_list == [linked_transcript]
+
+    mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_not_called()
+
+
+def test_update_transcripts_for_video_still_fetches_english_when_only_french_linked(
+    mocker,
+):
+    """A French-only _resources entry must not block fetching the English one.
+
+    Regression test for a stricter, over-eager version of the "already
+    linked" check that treated any existing entry -- regardless of language
+    -- as reason to skip 3Play. 3Play only ever supplies an English
+    transcript/caption, so an existing French one must not prevent it.
+    """
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    resource = WebsiteContentFactory.create(website=video.website, metadata={})
+    metadata = resource.metadata
+
+    french_transcript = WebsiteContentFactory.create(
+        website=video.website,
+        filename=f"{resource.filename}_transcript-fr_pdf",
+        file=f"{resource.website.s3_path}/{resource.filename}_transcript-fr.pdf",
+    )
+
+    set_dict_field(metadata, settings.FIELD_RESOURCETYPE, RESOURCE_TYPE_VIDEO)
+    set_dict_field(metadata, settings.YT_FIELD_ID, "expected_id")
+    set_dict_field(
+        metadata,
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        {
+            "content": [str(french_transcript.text_id)],
+            "website": video.website.name,
+        },
+    )
+    resource.save()
+
+    mock_3play = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=False
+    )
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_called_once_with(video)
+
+
 @pytest.mark.django_db
 def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     """All language variants matching the dash convention are linked via _resources."""

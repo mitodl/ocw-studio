@@ -88,11 +88,20 @@ def test_creates_resource_for_existing_s3_object(mock_s3):
     assert len(resources["content"]) == 1
 
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
-    assert created.filename == "lecture1_mp4_captions"
+    # Named with GDrive's convention: the video's base stem ("lecture1_mp4" ->
+    # "lecture1") plus the suffix plus the real extension. This is what makes
+    # the resource discoverable by the auto-link and 3Play gate lookups, which
+    # both search the "{base_stem}_captions" prefix.
+    assert created.filename == "lecture1_captions_webvtt"
     assert created.dirpath == "content/resources"
     assert created.file.name == caption_key
     assert created.metadata["resourcetype"] == "Other"
     assert created.metadata["file"] == f"/{caption_key}"
+    # Schema-defaulted metadata (from the site config, same as GDrive sync
+    # uses), not just the bare {file, resourcetype} shape.
+    assert created.metadata["file_type"] == "application/x-subrip"
+    assert created.metadata["file_size"] == len(b"WEBVTT")
+    assert created.metadata["license"] == "default_license_specificed_in_config"
 
 
 def test_converts_url_path_relative_orphan_to_storage_key(mock_s3):
@@ -146,7 +155,7 @@ def test_reuses_existing_resource_via_corrected_storage_key(mock_s3):
     storage_key = f"{website.s3_path}/1AbCdEf_transcript.webvtt"
     already_linked = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_webvtt",
         file=storage_key,
     )
 
@@ -201,7 +210,9 @@ def test_no_key_swap_when_starter_is_none(mock_s3):
     """The swap is skipped, not crashed, when the website has no starter.
 
     s3_path can't be computed without a starter's site config, so the raw
-    path is used as-is rather than raising.
+    path is used as-is rather than raising. Schema-defaulted metadata also
+    can't be computed without a starter, so it falls back to the bare
+    {file, resourcetype, ...} shape instead of crashing.
     """
     website = WebsiteFactory.create(starter=None, url_path="courses/some-path")
     raw_key = f"{website.url_path}/1AbCdEf_transcript.webvtt"
@@ -225,6 +236,10 @@ def test_no_key_swap_when_starter_is_none(mock_s3):
     resources = vf["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert created.file.name == raw_key
+    assert created.metadata["file"] == f"/{raw_key}"
+    assert created.metadata["resourcetype"] == "Other"
+    assert created.metadata["file_type"] == "application/x-subrip"
+    assert created.metadata["file_size"] == len(b"WEBVTT")
 
 
 def test_no_key_swap_when_url_path_not_a_prefix(mock_s3):
@@ -290,7 +305,7 @@ def test_appends_to_existing_resources(mock_s3):
     fr_caption = WebsiteContentFactory.create(
         website=website,
         filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
     mock_s3.put_object(Key=en_key, Body=b"WEBVTT")
@@ -325,7 +340,7 @@ def test_appends_to_existing_scalar_string_content(mock_s3):
     fr_caption = WebsiteContentFactory.create(
         website=website,
         filename="lecture1_captions_fr_vtt",
-        file=f"courses/{website.name}/lecture1_captions_fr.vtt",
+        file=f"courses/{website.name}/lecture1_captions-fr.vtt",
     )
     en_key = f"courses/{website.name}/1EnglishId_transcript.webvtt"
     mock_s3.put_object(Key=en_key, Body=b"WEBVTT")
@@ -361,7 +376,7 @@ def test_reuses_existing_resource_for_same_s3_key(mock_s3):
     key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
     already_linked = WebsiteContentFactory.create(
         website=website,
-        filename="lecture1_mp4_captions",
+        filename="lecture1_captions_webvtt",
         file=key,
     )
 
@@ -450,7 +465,7 @@ def test_partial_progress_persists_on_mid_run_failure(mock_s3, monkeypatch):
         )
         videos.append(video)
 
-    original_check = cmd_module._object_exists_in_s3  # noqa: SLF001
+    original_load = cmd_module._load_s3_object  # noqa: SLF001
     call_count = 0
 
     def _fail_on_third_call(s3, bucket_name, key):
@@ -458,9 +473,9 @@ def test_partial_progress_persists_on_mid_run_failure(mock_s3, monkeypatch):
         call_count += 1
         if call_count == 3:
             raise TransientS3Error
-        return original_check(s3, bucket_name, key)
+        return original_load(s3, bucket_name, key)
 
-    monkeypatch.setattr(cmd_module, "_object_exists_in_s3", _fail_on_third_call)
+    monkeypatch.setattr(cmd_module, "_load_s3_object", _fail_on_third_call)
 
     with pytest.raises(TransientS3Error):
         _run(filter=website.name)
@@ -479,7 +494,9 @@ def test_deduplicates_filename_collision(mock_s3):
     """Filename collisions in the same (website, dirpath) get a numeric suffix."""
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
-        website=website, filename="lecture1_mp4_captions", dirpath="content/resources"
+        website=website,
+        filename="lecture1_captions_webvtt",
+        dirpath="content/resources",
     )
     key = f"courses/{website.name}/1AbC_transcript.webvtt"
     mock_s3.put_object(Key=key, Body=b"WEBVTT")
@@ -499,7 +516,7 @@ def test_deduplicates_filename_collision(mock_s3):
     video.refresh_from_db()
     resources = video.metadata["video_files"]["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
-    assert created.filename == "lecture1_mp4_captions2"
+    assert created.filename == "lecture1_captions_webvtt2"
 
 
 def test_skips_non_video_content(mock_s3):
@@ -552,8 +569,8 @@ def test_backfills_both_captions_and_transcript_for_same_video(mock_s3):
     transcript_resource = WebsiteContent.objects.get(
         text_id=vf["video_transcript_resources"]["content"][0]
     )
-    assert captions_resource.filename == "lecture1_mp4_captions"
-    assert transcript_resource.filename == "lecture1_mp4_transcript"
+    assert captions_resource.filename == "lecture1_captions_webvtt"
+    assert transcript_resource.filename == "lecture1_transcript_pdf"
     assert captions_resource.metadata["resourcetype"] == "Other"
     assert transcript_resource.metadata["resourcetype"] == "Document"
 
@@ -611,7 +628,7 @@ def test_truncates_long_video_filename_to_fit_length_limit(mock_s3):
     resources = video.metadata["video_files"]["video_captions_resources"]
     created = WebsiteContent.objects.get(text_id=resources["content"][0])
     assert len(created.filename) <= CONTENT_FILENAME_MAX_LEN
-    assert created.filename.endswith("_captions")
+    assert created.filename.endswith("_captions_webvtt")
 
 
 def test_truncates_long_video_title_to_fit_length_limit(mock_s3):
