@@ -8,8 +8,12 @@ jest.mock("posthog-js/react")
 import { useFeatureFlag } from "./util"
 import { useFeatureFlagEnabled } from "posthog-js/react"
 
+// useFeatureFlagEnabled is overloaded: the 1-arg form returns
+// `boolean | undefined`, the 2-arg form returns `boolean`. Deriving the mock
+// type via `typeof` resolves to the last overload, wrongly excluding
+// `undefined`, so pin it to the 1-arg signature that useFeatureFlag uses.
 const mockUseFeatureFlagEnabled = useFeatureFlagEnabled as jest.MockedFunction<
-  typeof useFeatureFlagEnabled
+  (flag: string) => boolean | undefined
 >
 
 import {
@@ -168,7 +172,7 @@ describe("util", () => {
     })
 
     it("returns false when PostHog hook returns undefined", () => {
-      mockUseFeatureFlagEnabled.mockReturnValue(undefined as unknown as boolean)
+      mockUseFeatureFlagEnabled.mockReturnValue(undefined)
 
       const { result } = renderHook(() => useFeatureFlag("test_flag"))
 
