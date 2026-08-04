@@ -314,7 +314,22 @@ def parse_caption_language_locale(filename: str) -> tuple[str, str | None]:
     return "en", None
 
 
-def resolve_language_locale(resource) -> tuple[str, str | None]:
+def _normalized_code(value, *, upper: bool = False) -> str | None:
+    """Return a trimmed, case-normalized language or locale code, or None.
+
+    Anything that is not a usable string (wrong type, empty, whitespace-only)
+    is treated as unset rather than raising, because this runs in the publish
+    path where an exception would fail the whole site build.
+    """
+    if not isinstance(value, str):
+        return None
+    code = value.strip()
+    if not code:
+        return None
+    return code.upper() if upper else code.lower()
+
+
+def resolve_language_locale(resource: WebsiteContent) -> tuple[str, str | None]:
     """Return ``(language, locale)`` for a resource.
 
     An explicit metadata value wins.  Otherwise the value is parsed from the
@@ -325,13 +340,13 @@ def resolve_language_locale(resource) -> tuple[str, str | None]:
     explicit locale yields no locale, rather than inheriting a region parsed
     from a filename that the language no longer agrees with.
 
-    This is the single source of precedence.  Both the edit form and the
-    publish path go through it, so what an editor is shown cannot drift from
-    what actually gets published.
+    This is the single source of precedence.  The edit form and the publish
+    path are both intended to route through it, so what an editor is shown
+    cannot drift from what actually gets published.
     """
     metadata = resource.metadata if isinstance(resource.metadata, dict) else {}
-    language = metadata.get("language") or None
-    locale = metadata.get("locale") or None
+    language = _normalized_code(metadata.get("language"))
+    locale = _normalized_code(metadata.get("locale"), upper=True)
 
     if language:
         return language, locale

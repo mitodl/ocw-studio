@@ -202,7 +202,6 @@ def test_parse_caption_language_locale(filename, expected):
     assert parse_caption_language_locale(filename) == expected
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("metadata", "file_name", "expected"),
     [
@@ -212,6 +211,7 @@ def test_parse_caption_language_locale(filename, expected):
         ({"language": "es"}, "courses/s/l1_captions-fr-CA.vtt", ("es", None)),
         # explicit locale wins while language still comes from the filename
         ({"locale": "BR"}, "courses/s/l1_captions-pt.vtt", ("pt", "BR")),
+        ({"locale": "BR"}, "courses/s/l1_captions-pt-PT.vtt", ("pt", "BR")),
         # both explicit
         ({"language": "pt", "locale": "BR"}, "courses/s/l1_captions.vtt", ("pt", "BR")),
         # no metadata: parsed from the filename
@@ -221,6 +221,13 @@ def test_parse_caption_language_locale(filename, expected):
         ({}, "courses/s/l1_captions.vtt", ("en", None)),
         # empty-string metadata is treated as unset, not as a language
         ({"language": "", "locale": ""}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
+        # explicit codes are normalized to match what the filename parse yields
+        ({"language": "EN"}, "courses/s/l1_captions-fr.vtt", ("en", None)),
+        ({"language": "pt", "locale": "br"}, "courses/s/l1_captions.vtt", ("pt", "BR")),
+        # unusable values are unset, never a crash and never published as-is
+        ({"language": "   "}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
+        ({"language": 5}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
+        ({"language": ["fr"]}, "courses/s/l1_captions-fr.vtt", ("fr", None)),
     ],
 )
 def test_resolve_language_locale(metadata, file_name, expected):
@@ -229,17 +236,16 @@ def test_resolve_language_locale(metadata, file_name, expected):
     assert resolve_language_locale(resource) == expected
 
 
-@pytest.mark.django_db
 def test_resolve_language_locale_without_file():
     """A resource with no uploaded file falls back to the 'en' default."""
     resource = WebsiteContentFactory.build(metadata={}, file=None)
     assert resolve_language_locale(resource) == ("en", None)
 
 
-@pytest.mark.django_db
-def test_resolve_language_locale_non_dict_metadata():
+@pytest.mark.parametrize("metadata", [None, "en", ["en"], 42])
+def test_resolve_language_locale_non_dict_metadata(metadata):
     """Metadata that is not a dict is treated as absent rather than raising."""
     resource = WebsiteContentFactory.build(
-        metadata=None, file="courses/s/l1_captions-fr.vtt"
+        metadata=metadata, file="courses/s/l1_captions-fr.vtt"
     )
     assert resolve_language_locale(resource) == ("fr", None)
