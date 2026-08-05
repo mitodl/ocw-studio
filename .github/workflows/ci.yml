@@ -7,6 +7,10 @@ on:
     - release
     - release-candidate
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   python-tests:
     runs-on: ubuntu-24.04
