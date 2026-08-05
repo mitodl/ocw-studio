@@ -170,7 +170,7 @@ def test_website_content_unpublished():
         ],
     ],
 )
-def test_website_get_full_url(  # noqa: PLR0913
+def test_website_get_full_url(  # noqa: PLR0913, PLR0917
     settings, name, root_url, is_home, version, expected_path
 ):  # pylint:disable=too-many-arguments
     """Verify that Website.get_full_url returns the expected value"""

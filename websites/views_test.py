@@ -740,7 +740,7 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
         ["", "", "courses", 0],  # noqa: PT007
     ],
 )
-def test_websites_content_list(  # pylint: disable=too-many-locals  # noqa: PLR0913
+def test_websites_content_list(  # pylint: disable=too-many-locals  # noqa: PLR0913, PLR0917
     drf_client,
     detailed_list,
     global_admin_user,
@@ -1287,7 +1287,7 @@ def test_websites_content_create_with_textid(drf_client, global_admin_user):
         ["/test/sites/", "test/sites"],  # noqa: PT007
     ],
 )
-def test_websites_content_create_with_upload(  # noqa: PLR0913
+def test_websites_content_create_with_upload(  # noqa: PLR0913, PLR0917
     mocker, drf_client, global_admin_user, file_upload, root_url_path, expected_prefix
 ):
     """Uploading a file when creating a new WebsiteContent object should work"""
@@ -1373,7 +1373,7 @@ def test_websites_content_edit_with_upload(
         [True, False, False],  # noqa: PT007
     ],
 )
-def test_content_create_page_content(  # noqa: PLR0913
+def test_content_create_page_content(  # noqa: PLR0913, PLR0917
     mocker,
     drf_client,
     global_admin_user,
@@ -1527,7 +1527,7 @@ def test_websites_content_create_empty(drf_client, global_admin_user):
 )
 @pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
 @pytest.mark.parametrize("unpublished", [True, False])
-def test_websites_endpoint_pipeline_status(  # noqa: PLR0913
+def test_websites_endpoint_pipeline_status(  # noqa: PLR0913, PLR0917
     settings, mocker, drf_client, permission_groups, version, status, unpublished
 ):
     """The pipeline_complete endpoint should send notifications to site owner/admins"""
@@ -1678,7 +1678,7 @@ def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_t
     ],
 )
 @patch("websites.views.update_website_status")
-def test_pipeline_status_build_type(  # noqa: PLR0913
+def test_pipeline_status_build_type(  # noqa: PLR0913, PLR0917
     mock_update_website_status,
     drf_client,
     settings,

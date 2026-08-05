@@ -154,7 +154,7 @@ class SitePipelineDefinitionConfig:
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
 
-    def __init__(  # noqa: PLR0913 PLR0915
+    def __init__(  # noqa: PLR0913, PLR0915, PLR0917
         self,
         site: Website,
         pipeline_name: str,

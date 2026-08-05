@@ -174,7 +174,7 @@ def upsert_website_pipeline_batch(
 
 
 @app.task(bind=True)
-def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+def upsert_pipelines(  # pylint: disable=too-many-arguments  # noqa: PLR0913, PLR0917
     self,
     website_names: list[str],
     chunk_size=500,

@@ -291,7 +291,7 @@ def test_upsert_website_pipeline_missing_settings(settings):
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("hard_purge", [True, False])
 @pytest.mark.parametrize("with_api", [True, False])
-def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915
+def test_upsert_website_pipelines(  # noqa: PLR0913, PLR0915, PLR0917
     settings,
     pipeline_settings,
     mocker,
@@ -714,7 +714,7 @@ def test_upsert_pipeline(
 @pytest.mark.parametrize("starter", ["", "ocw-course"])
 @pytest.mark.parametrize("offline", [True, False])
 @pytest.mark.parametrize("theme_slug", [None, "ocw-course-v3"])
-def test_upsert_mass_build_pipeline(  # noqa: PLR0913
+def test_upsert_mass_build_pipeline(  # noqa: PLR0913, PLR0917
     settings,
     pipeline_settings,
     mocker,
@@ -824,7 +824,7 @@ def test_upsert_mass_build_pipeline_sync_with_delete(
 
 @pytest.mark.parametrize("pipeline_exists", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_unpublished_site_removal_pipeline(  # noqa: PLR0913
+def test_unpublished_site_removal_pipeline(  # noqa: PLR0913, PLR0917
     settings, pipeline_settings, mocker, mock_auth, pipeline_exists, version
 ):  # pylint:disable=too-many-locals,too-many-arguments
     """The unpublished sites removal pipeline should have expected configuration"""
@@ -872,7 +872,7 @@ def test_unpublished_site_removal_pipeline(  # noqa: PLR0913
 @pytest.mark.parametrize("password", [None, "password"])
 @pytest.mark.parametrize("get_status", [200, 500])
 @pytest.mark.parametrize("post_status", [200, 500])
-def test_api_auth(  # noqa: PLR0913
+def test_api_auth(  # noqa: PLR0913, PLR0917
     mocker,
     settings,
     get_urls,
@@ -926,7 +926,7 @@ def test_api_auth(  # noqa: PLR0913
 
 @pytest.mark.parametrize("theme_slug", [None, "ocw-course-v2", "ocw-course-v3"])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_upsert_pipeline_with_theme_slug(  # noqa: PLR0913
+def test_upsert_pipeline_with_theme_slug(  # noqa: PLR0913, PLR0917
     settings, pipeline_settings, mocker, mock_auth, theme_slug, version
 ):
     settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
@@ -979,7 +979,7 @@ def test_upsert_pipeline_with_theme_slug(  # noqa: PLR0913
 
 @pytest.mark.parametrize("noindex", [None, True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
-def test_upsert_pipeline_with_noindex(  # noqa: PLR0913
+def test_upsert_pipeline_with_noindex(  # noqa: PLR0913, PLR0917
     settings, pipeline_settings, mocker, mock_auth, noindex, version
 ):
     settings.ENV_NAME = "prod"

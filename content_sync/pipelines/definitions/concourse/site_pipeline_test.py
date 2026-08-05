@@ -120,7 +120,7 @@ def root_website(settings):
 @pytest.mark.parametrize(
     "prefix", ["", "test_prefix", "/test_prefix", "/test_prefix/subfolder/"]
 )
-def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0913, PLR0915
+def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
     website,
     settings,
     mocker,
@@ -1142,7 +1142,7 @@ def test_site_pipeline_definition_config_gtm_account_id(settings, mocker, gtm_ca
     ],
     ids=["learn-site", "root-site"],
 )
-def test_site_pipeline_definition_config_ocw_course_v3_baseurl(  # noqa: PLR0913
+def test_site_pipeline_definition_config_ocw_course_v3_baseurl(  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     root_website,

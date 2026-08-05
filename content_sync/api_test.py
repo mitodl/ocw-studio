@@ -225,7 +225,7 @@ def test_get_site_pipeline(settings, mocker, hugo_args, pipeline_api):
 @pytest.mark.parametrize("status", [None, PUBLISH_STATUS_NOT_STARTED])
 @pytest.mark.parametrize("trigger", [True, False])
 @pytest.mark.parametrize("publish_date", [None, now_in_utc()])
-def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments  # noqa: PLR0913
+def test_publish_website(  # pylint:disable=redefined-outer-name,too-many-arguments  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     mock_api_funcs,

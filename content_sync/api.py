@@ -46,7 +46,7 @@ def get_pipeline_api() -> BasePipeline:
 
 
 @is_publish_pipeline_enabled
-def get_site_pipeline(  # noqa: PLR0913
+def get_site_pipeline(  # noqa: PLR0913, PLR0917
     website: Website,
     hugo_args: str | None = "",
     api: object | None = None,

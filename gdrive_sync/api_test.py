@@ -204,7 +204,7 @@ def test_stream_to_s3_error_marks_failed(settings, mocker, fail_at):
     [(None, False), ("correct_parent", False), ("correct_parent", True)],
 )
 @pytest.mark.parametrize("folder_exists", [True, False])
-def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-arguments  # noqa: PLR0913
+def test_create_gdrive_folders(  # pylint:disable=too-many-locals,too-many-arguments  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     parent_folder,
@@ -344,7 +344,7 @@ def test_get_resource_type(
 @pytest.mark.parametrize("in_video_folder", [True, False])
 @pytest.mark.parametrize("checksum", ["633410252", None])
 @pytest.mark.parametrize("link", ["http://download/url", None])
-def test_process_file_result(  # noqa: PLR0913
+def test_process_file_result(  # noqa: PLR0913, PLR0917
     settings, mocker, is_video, in_video_folder, checksum, link
 ):
     """process_file_result should create a DriveFile only if all conditions are met"""

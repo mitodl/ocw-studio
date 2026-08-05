@@ -440,7 +440,7 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
         "OCW_GTM_ACCOUNT_ID",
     ]
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         website: Website,
         hugo_args: str | None = None,
@@ -552,7 +552,7 @@ class MassBuildSitesPipeline(BaseMassBuildSitesPipeline, GeneralPipeline):  # py
 
     PIPELINE_NAME = BaseMassBuildSitesPipeline.PIPELINE_NAME
 
-    def __init__(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    def __init__(  # pylint: disable=too-many-arguments  # noqa: PLR0913, PLR0917
         self,
         version,
         api: PipelineApi | None = None,

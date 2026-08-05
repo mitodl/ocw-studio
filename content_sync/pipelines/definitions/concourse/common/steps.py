@@ -33,7 +33,7 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 from content_sync.utils import get_ocw_studio_api_url
 
 
-def add_error_handling(  # noqa: PLR0913
+def add_error_handling(  # noqa: PLR0913, PLR0917
     step: StepModifierMixin,
     step_description: str,
     pipeline_name: str,
@@ -108,7 +108,7 @@ class ErrorHandlingStep(TryStep):
     Extends TryStep and sets error handling steps
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         pipeline_name: str,
         status: str,
@@ -222,7 +222,7 @@ class OcwStudioWebhookStep(TryStep):
         skip(bool): Whether to skip the webhook with a no-op task.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         pipeline_name: str,
         status: str,

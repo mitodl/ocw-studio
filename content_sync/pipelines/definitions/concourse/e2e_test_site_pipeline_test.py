@@ -50,7 +50,7 @@ def test_sites(request, django_db_setup, django_db_blocker):
 
 @pytest.mark.parametrize("ocw_hugo_themes_branch", ["main", "test_branch"])
 @pytest.mark.parametrize("ocw_hugo_projects_branch", ["main", "test_branch"])
-def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913 PLR0915
+def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913, PLR0915, PLR0917
     test_sites,
     mock_environments,
     settings,

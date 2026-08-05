@@ -498,7 +498,7 @@ def test_threeplay_submission_called_once_per_video(mocker, settings):
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])
-def test_update_youtube_statuses(  # pylint:disable=too-many-arguments  # noqa: PLR0913
+def test_update_youtube_statuses(  # pylint:disable=too-many-arguments  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     youtube_video_files_processing,
@@ -720,7 +720,7 @@ def test_delete_s3_objects(settings):
     "initial_status", [VideoStatus.SUBMITTED_FOR_TRANSCRIPTION, VideoStatus.COMPLETE]
 )
 @pytest.mark.parametrize("other_incomplete_video", [True, False])
-def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+def test_update_transcripts_for_video(  # pylint: disable=too-many-arguments  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     update_transcript_return_value,
