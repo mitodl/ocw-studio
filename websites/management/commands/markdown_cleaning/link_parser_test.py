@@ -123,8 +123,8 @@ def test_link_parser_with_shortcodes_in_destination():
     [
         "no link here",
         "",
-        "[unbalcned] square brackets](url)"
-        "[not a link] but [this is](url)"
+        "[unbalcned] square brackets](url)",
+        "[not a link] but [this is](url)",
         "[ unbalanced] ](blarg)",
         '[some text](too "many" "things")',
         "[some text](./path/to/thing no_quotation_marks_around_title)",

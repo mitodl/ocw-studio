@@ -185,7 +185,7 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
 
     @classmethod
-    def do_handle(  # noqa: PLR0913
+    def do_handle(  # noqa: PLR0913, PLR0917
         cls,
         alias,
         commit,
