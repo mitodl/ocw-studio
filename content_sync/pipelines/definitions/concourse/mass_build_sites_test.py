@@ -51,7 +51,7 @@ ocw_hugo_projects_path = "https://github.com/org/repo"
 @pytest.mark.parametrize(
     "prefix", ["", "test_prefix", "/test_prefix", "/test_prefix/subfolder/"]
 )
-def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912 PLR0915, PLR0917
+def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, PLR0915, PLR0917
     mass_build_websites,
     settings,
     mocker,
