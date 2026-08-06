@@ -223,7 +223,7 @@ class Command(WebsiteFilterCommand):
             merged_tags != youtube_tags_set or has_formatting_issues,
         )
 
-    def process_video(  # noqa: C901, PLR0912, PLR0913, PLR0915
+    def process_video(  # noqa: C901, PLR0912, PLR0913, PLR0915, PLR0917
         self,
         video_resource,
         youtube,

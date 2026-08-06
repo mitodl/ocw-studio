@@ -54,6 +54,7 @@ from videos.threeplay_sync import link_threeplay_files_as_resources
 from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
+    parse_caption_language_locale,
     process_video_tags,
 )
 from videos.youtube import (
@@ -326,6 +327,21 @@ def delete_s3_objects(
             obj.delete()
 
 
+def _has_english_resource(resources):
+    """Return True if any resource resolves to English via its real file path.
+
+    3Play only ever provides an English transcript/caption (see
+    videos.threeplay_sync.link_threeplay_files_as_resources), so only an
+    existing English resource should gate a 3Play fetch -- an existing
+    French/Spanish/etc resource must not block fetching the English one.
+    """
+    return any(
+        parse_caption_language_locale(r.file.name)[0] == "en"
+        for r in resources
+        if r.file
+    )
+
+
 @app.task(acks_late=True)
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
@@ -334,9 +350,32 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     captions_list, transcripts_list = video.caption_transcript_resources()
+
+    website = video.website
+    video_resources = []
+    if is_ocw_site(website):
+        search_fields = {}
+        search_fields[get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)] = (
+            RESOURCE_TYPE_VIDEO
+        )
+        search_fields[get_dict_query_field("metadata", settings.YT_FIELD_ID)] = (
+            video.youtube_id()
+        )
+        video_resources = list(website.websitecontent_set.filter(**search_fields))
+
+    # Only the language check is new here: every process that creates a
+    # caption/transcript resource (GDrive ingestion, 3Play's own sync, the
+    # one-off orphan backfill) names it with the "{base_stem}_captions" /
+    # "{base_stem}_transcript" convention that caption_transcript_resources()
+    # already searches, so no extra lookup is needed to see them. A
+    # French/Spanish/etc resource must not count as coverage, though, since
+    # 3Play only ever supplies English.
     has_threeplay_update = (
         False
-        if captions_list or transcripts_list
+        if (
+            _has_english_resource(captions_list)
+            or _has_english_resource(transcripts_list)
+        )
         else threeplay_api.update_transcripts_for_video(video)
     )
     if not captions_list and not transcripts_list and not has_threeplay_update:
@@ -350,17 +389,8 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
         if has_threeplay_update:
             first_transcript_download = True
 
-    website = video.website
-    if is_ocw_site(website):  # pylint: disable=too-many-nested-blocks
-        search_fields = {}
-        search_fields[get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)] = (
-            RESOURCE_TYPE_VIDEO
-        )
-        search_fields[get_dict_query_field("metadata", settings.YT_FIELD_ID)] = (
-            video.youtube_id()
-        )
-
-        for video_resource in website.websitecontent_set.filter(**search_fields):
+    if video_resources:  # pylint: disable=too-many-nested-blocks
+        for video_resource in video_resources:
             if has_threeplay_update:
                 # Create resources from the downloaded 3Play files and link
                 # them via the _resources relation fields. The legacy _file

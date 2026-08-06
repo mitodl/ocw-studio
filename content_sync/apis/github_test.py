@@ -263,7 +263,7 @@ def test_rename_branch(mocker, mock_api_wrapper):
 
 
 @pytest.mark.parametrize("is_existing_file", [True, False])
-def test_upsert_content_file(  # noqa: PLR0913
+def test_upsert_content_file(  # noqa: PLR0913, PLR0917
     mocker,
     db_data,
     mock_api_wrapper,
@@ -442,7 +442,7 @@ def test_upsert_content_files_for_user_update_checksum(
         ["filename", "brand-new-test-case-filename"],  # noqa: PT007
     ],
 )
-def test_upsert_content_files_modified_only(  # noqa: PLR0913
+def test_upsert_content_files_modified_only(  # noqa: PLR0913, PLR0917
     mocker,
     mock_api_wrapper,
     db_data,

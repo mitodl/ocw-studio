@@ -431,7 +431,7 @@ def test_website_content_detail_with_file_serializer():
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
 @pytest.mark.parametrize("field_order_reversed", [True, False])
-def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals  # noqa: PLR0913
+def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals  # noqa: PLR0913, PLR0917
     content_context, multiple, cross_site, invalid_data, nested, field_order_reversed
 ):
     """WebsiteContentDetailSerializer should serialize content_context for relation and menu fields"""
@@ -862,7 +862,7 @@ def test_website_content_export_serializer(ocw_site):
         (True, "Test Page", "Some New Title", False, "some-new-title"),
     ],
 )
-def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
+def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913, PLR0917
     mocker,
     enable_websitecontent_signal,
     is_page,

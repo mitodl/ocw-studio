@@ -78,7 +78,7 @@ class MassBuildSitesPipelineDefinitionConfig:
         sync_with_delete(bool): (Optional) If True, non-root site online syncs run with --delete
     """  # noqa: E501
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         version: str,
         artifacts_bucket: str,

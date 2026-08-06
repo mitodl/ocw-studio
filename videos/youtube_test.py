@@ -715,7 +715,7 @@ def test_mail_youtube_upload_failure_sender_exception(mocker, mock_mail):
     ("version", "privacy"),
     [[VERSION_DRAFT, "unlisted"], [VERSION_LIVE, "public"]],  # noqa: PT007
 )
-def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: PLR0913
+def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: PLR0913, PLR0917
     mocker,
     settings,
     youtube_website,

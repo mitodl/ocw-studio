@@ -26,7 +26,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.194.0"
+VERSION = "0.194.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -1257,6 +1257,11 @@ CONTENT_FILE_SEARCH_API_URL = get_string(
     name="CONTENT_FILE_SEARCH_API_URL",
     default=None,
     description="The URL to open discussions content file search to inject into the theme assets build",  # noqa: E501
+)
+HUGO_CSRF_COOKIE_NAME = get_string(
+    name="HUGO_CSRF_COOKIE_NAME",
+    default="learn_csrftoken",
+    description="The name of the CSRF cookie to inject into the theme assets build",
 )
 STATIC_API_BASE_URL_DRAFT = get_string(
     name="STATIC_API_BASE_URL_DRAFT",
