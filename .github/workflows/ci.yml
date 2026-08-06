@@ -7,6 +7,10 @@ on:
     - release
     - release-candidate
   pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   python-tests:
     runs-on: ubuntu-24.04
@@ -33,7 +37,9 @@ jobs:
         - 6379:6379
 
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
 
     - name: update
       run: sudo apt-get update -y
@@ -44,7 +50,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@d31148d669074a8d0a63714ba94f3201e7020bc3 # v8.3.0
       with:
-        enable-cache: true
+        enable-cache: false
 
     - name: Install Python
       run: uv python install 3.14
@@ -77,13 +83,14 @@ jobs:
   frontend-tests:
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
 
     - name: Setup NodeJS
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020   # v7
       with:
         node-version: 24
-        cache: yarn
 
     - name: Install dependencies
       run: yarn install --immutable
