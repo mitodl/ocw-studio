@@ -29,16 +29,11 @@ const createEditor = (config: EditorConfigUnderTest) =>
 
 /**
  * Third tuple entry is every warning the config is currently expected to log
- * while booting. `FullEditorConfig.image.toolbar` still asks for
- * `imageStyle:full`, a style name CKEditor no longer ships, so it warns. That
- * is pre-existing, so it is pinned here rather than fixed.
+ * while booting. All three configs are expected to boot silently; a non-empty
+ * list here would mean a known, deliberately tolerated warning.
  */
 const CONFIGS: [string, EditorConfigUnderTest, string[]][] = [
-  [
-    "FullEditorConfig",
-    FullEditorConfig,
-    ['toolbarview-item-unavailable {"item":"imageStyle:full"}'],
-  ],
+  ["FullEditorConfig", FullEditorConfig, []],
   ["MinimalEditorConfig", MinimalEditorConfig, []],
   ["MinimalWithMathEditorConfig", MinimalWithMathEditorConfig, []],
 ]

@@ -38,10 +38,14 @@ export default class ResourceLinkUI extends Plugin {
 
   init() {
     this.contextualBalloon.on("change:visibleView", () => {
-      if (this.contextualBalloon.visibleView === this.linkUI.actionsView) {
+      // LinkUI creates its actions view lazily, so it is null until the link
+      // balloon is first shown. Guard on it explicitly: an empty balloon also
+      // reports a null visibleView, and comparing the two nulls would
+      // otherwise read as "the link actions view is showing".
+      const { actionsView } = this.linkUI
+      if (actionsView && this.contextualBalloon.visibleView === actionsView) {
         if (this.originalEditinkLabel === undefined) {
-          this.originalEditinkLabel =
-            this.linkUI.actionsView.editButtonView.label
+          this.originalEditinkLabel = actionsView.editButtonView.label
         }
         this.modifyLinkUI()
       }

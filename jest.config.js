@@ -20,10 +20,14 @@ module.exports = {
   transformIgnorePatterns: [
     "/node_modules/(?!(" +
       "@ckeditor/*" +
+      "|@isaul32/ckeditor5-math/*" +
       "|ckeditor5/*" +
-      "|ckeditor5-math/*" +
       "|lodash-es" +
       "|sinon" +
+      // @ckeditor/ckeditor5-markdown-gfm resolves turndown to its ESM browser build
+      "|turndown" +
+      // pulled in by @ckeditor/ckeditor5-ui's color picker; ships untranspiled ESM
+      "|vanilla-colorful" +
       ")/)",
   ],
   testPathIgnorePatterns: [
