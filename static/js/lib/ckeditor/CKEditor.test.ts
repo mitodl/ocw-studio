@@ -1,0 +1,113 @@
+import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
+
+import {
+  FullEditorConfig,
+  MinimalEditorConfig,
+  MinimalWithMathEditorConfig,
+} from "./CKEditor"
+import { RESOURCE_LINK_CONFIG_KEY, WEBSITE_NAME } from "./plugins/constants"
+
+/**
+ * Characterization tests. These boot each real editor config so that a plugin
+ * failing to load, or a toolbar item losing its factory, is caught by CI rather
+ * than by manual smoke testing.
+ */
+const REQUIRED_CONFIG = {
+  [RESOURCE_LINK_CONFIG_KEY]: {
+    hrefTemplate: "https://example.com/courses/test-site/",
+  },
+  [WEBSITE_NAME]: "test-site",
+}
+
+interface EditorConfigUnderTest {
+  plugins: unknown[]
+  toolbar: { items: string[] }
+}
+
+const createEditor = (config: EditorConfigUnderTest) =>
+  ClassicEditor.create("", { ...config, ...REQUIRED_CONFIG })
+
+/**
+ * Third tuple entry is every warning the config is currently expected to log
+ * while booting. `FullEditorConfig.image.toolbar` still asks for
+ * `imageStyle:full`, a style name CKEditor no longer ships, so it warns. That
+ * is pre-existing, so it is pinned here rather than fixed.
+ */
+const CONFIGS: [string, EditorConfigUnderTest, string[]][] = [
+  [
+    "FullEditorConfig",
+    FullEditorConfig,
+    ['toolbarview-item-unavailable {"item":"imageStyle:full"}'],
+  ],
+  ["MinimalEditorConfig", MinimalEditorConfig, []],
+  ["MinimalWithMathEditorConfig", MinimalWithMathEditorConfig, []],
+]
+
+/** CKEditor appends this argument to every warning it logs. */
+const DOCS_LINK_PREFIX = "\nRead more:"
+
+const describeArg = (arg: unknown): string => {
+  if (typeof arg === "string") return arg
+  try {
+    return JSON.stringify(arg)
+  } catch {
+    return String(arg)
+  }
+}
+
+describe.each(CONFIGS)("%s", (_name, config, expectedWarnings) => {
+  let warnSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    // CKEditor warns via console.warn, which jest-fail-on-console turns into an
+    // opaque failure. Capture the warnings so they can be asserted on instead.
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
+
+  /**
+   * Every console.warn call, flattened to a readable one-liner. Only CKEditor's
+   * boilerplate docs-link argument is dropped; no call is filtered out, so an
+   * unexpected warning of any kind fails the assertion below and names itself
+   * in the diff.
+   */
+  const warnings = (): string[] =>
+    warnSpy.mock.calls.map((call) =>
+      call
+        .filter(
+          (arg: unknown) =>
+            !(typeof arg === "string" && arg.startsWith(DOCS_LINK_PREFIX)),
+        )
+        .map(describeArg)
+        .join(" "),
+    )
+
+  it("instantiates every plugin without error", async () => {
+    const editor = await createEditor(config)
+    expect(editor).toBeTruthy()
+    await editor.destroy()
+  })
+
+  it("registers a UI factory for every configured toolbar item", async () => {
+    const editor = await createEditor(config)
+    const items = config.toolbar.items.filter((item) => item !== "|")
+
+    expect(items.length).toBeGreaterThan(0)
+    items.forEach((item) => {
+      expect([item, editor.ui.componentFactory.has(item)]).toEqual([item, true])
+    })
+
+    await editor.destroy()
+  })
+
+  it("logs no warnings beyond the known ones while booting", async () => {
+    const editor = await createEditor(config)
+
+    expect(warnings()).toEqual(expectedWarnings)
+
+    await editor.destroy()
+  })
+})
