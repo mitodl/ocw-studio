@@ -4,7 +4,8 @@ module.exports = {
   cacheDirectory: ".jest-cache",
   transform: { "^.+\\.(t|j)sx?$": ["@swc/jest"] },
   moduleNameMapper: {
-    "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
+    "\\.svg$": "<rootDir>/static/js/mocks/svgMock.js",
+    "\\.(jpg|jpeg|png|gif|eot|otf|webp|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/static/js/mocks/fileMock.js",
     "\\.(css|less)$": "<rootDir>/static/js/mocks/styleMock.js",
   },
@@ -19,13 +20,21 @@ module.exports = {
   transformIgnorePatterns: [
     "/node_modules/(?!(" +
       "@ckeditor/*" +
+      "|@isaul32/ckeditor5-math/*" +
       "|ckeditor5/*" +
-      "|ckeditor5-math/*" +
       "|lodash-es" +
       "|sinon" +
+      // @ckeditor/ckeditor5-markdown-gfm resolves turndown to its ESM browser build
+      "|turndown" +
+      // pulled in by @ckeditor/ckeditor5-ui's color picker; ships untranspiled ESM
+      "|vanilla-colorful" +
       ")/)",
   ],
-  testPathIgnorePatterns: ["<rootDir>/staticfiles/", "<rootDir>/node_modules/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/staticfiles/",
+    "<rootDir>/node_modules/",
+    "<rootDir>/.claude/",
+  ],
   testEnvironment: "jsdom",
   watchPlugins: [
     "jest-watch-typeahead/filename",

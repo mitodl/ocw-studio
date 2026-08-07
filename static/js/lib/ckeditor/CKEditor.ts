@@ -11,13 +11,13 @@ import ImageCaptionPlugin from "@ckeditor/ckeditor5-image/src/imagecaption"
 import ImageStylePlugin from "@ckeditor/ckeditor5-image/src/imagestyle"
 import ImageToolbarPlugin from "@ckeditor/ckeditor5-image/src/imagetoolbar"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
-import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
+import ListPlugin from "@ckeditor/ckeditor5-list/src/legacylist"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
 import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
-import Mathematics from "ckeditor5-math/src/math"
+import Mathematics from "@isaul32/ckeditor5-math/src/math"
 import MathSyntax from "./plugins/MathSyntax"
 
 import Markdown from "./plugins/Markdown"
@@ -114,12 +114,7 @@ export const FullEditorConfig = {
     ],
   },
   image: {
-    toolbar: [
-      "imageStyle:full",
-      "imageStyle:side",
-      "|",
-      "imageTextAlternative",
-    ],
+    toolbar: ["imageStyle:side", "|", "imageTextAlternative"],
   },
   codeBlock: {
     languages: SUPPORTED_PROGRAMMING_LANGUAGES,

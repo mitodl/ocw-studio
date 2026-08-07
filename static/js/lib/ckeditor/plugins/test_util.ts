@@ -1,12 +1,14 @@
 import ClassicEditorBase from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
-import { Editor } from "@ckeditor/ckeditor5-core"
+import { Editor, EditorConfig } from "@ckeditor/ckeditor5-core"
 import { html_beautify as htmlBeautify } from "js-beautify"
 import { MarkdownDataProcessor } from "./Markdown"
 
 class ClassicTestEditor extends ClassicEditorBase {}
 
+type EditorPlugins = NonNullable<EditorConfig["plugins"]>
+
 export const createTestEditor =
-  (plugins: unknown[], remainingConfig: Record<string, unknown> = {}) =>
+  (plugins: EditorPlugins, remainingConfig: Record<string, unknown> = {}) =>
   async (
     initialData = "",
     configOverrides: Record<string, unknown> = {},

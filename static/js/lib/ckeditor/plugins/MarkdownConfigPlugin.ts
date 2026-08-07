@@ -2,6 +2,7 @@ import { Editor, Plugin } from "@ckeditor/ckeditor5-core"
 
 import { MarkdownConfig } from "../../../types/ckeditor_markdown"
 import { MARKDOWN_CONFIG_KEY } from "./constants"
+import { getOcwConfig } from "./util"
 
 /**
  * Abstract class providing functionality to get and set the
@@ -9,9 +10,16 @@ import { MARKDOWN_CONFIG_KEY } from "./constants"
  * syntax rules need to inherit from this plugin.
  */
 export default abstract class MarkdownConfigPlugin extends Plugin {
-  static defaults = {
+  /**
+   * `allowedHtml` is defaulted here as well. `getMarkdownConfig` has always
+   * claimed to return a complete `MarkdownConfig`, but an editor booted
+   * without a `markdown-config` entry used to get `allowedHtml: undefined`,
+   * which `Markdown` then handed to `turndownService.keep()`.
+   */
+  static defaults: MarkdownConfig = {
     showdownExtensions: [],
     turndownRules: [],
+    allowedHtml: [],
   }
 
   constructor(editor: Editor) {
@@ -22,7 +30,7 @@ export default abstract class MarkdownConfigPlugin extends Plugin {
    * Returns the Markdown configuration set on this.editor
    */
   getMarkdownConfig(): MarkdownConfig {
-    const provided = this.editor.config.get(MARKDOWN_CONFIG_KEY)
+    const provided = getOcwConfig(this.editor, MARKDOWN_CONFIG_KEY)
 
     return { ...MarkdownConfigPlugin.defaults, ...provided }
   }

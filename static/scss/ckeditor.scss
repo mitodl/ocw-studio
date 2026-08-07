@@ -18,3 +18,10 @@
     border: 1px solid $studio-text-gray;
   }
 }
+
+// CKEditor v38 and later render a "Powered by CKEditor" balloon on GPL
+// installations. Matches the approach already in use in mitodl/open-discussions.
+.ck.ck-balloon-panel.ck-powered-by-balloon,
+.ck.ck-balloon-panel_visible.ck-powered-by-balloon {
+  display: none !important;
+}

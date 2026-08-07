@@ -8,6 +8,7 @@ import {
   CKEDITOR_RESOURCE_UTILS,
   RESOURCE_EMBED,
 } from "./constants"
+import { getOcwConfig } from "./util"
 
 /**
  * Plugin for opening the ResourcePicker
@@ -20,8 +21,13 @@ export default class ResourcePicker extends Plugin {
   init(): void {
     const editor = this.editor
 
-    const { openResourcePicker } =
-      this.editor.config.get(CKEDITOR_RESOURCE_UTILS) ?? {}
+    // The host app supplies this callback through the editor config. An editor
+    // booted without it still gets the buttons, so call it optionally rather
+    // than throwing a TypeError on click.
+    const openResourcePicker = getOcwConfig(
+      this.editor,
+      CKEDITOR_RESOURCE_UTILS,
+    )?.openResourcePicker
 
     editor.ui.componentFactory.add(ADD_RESOURCE_LINK, (locale: any) => {
       const view = new ButtonView(locale)
@@ -32,7 +38,7 @@ export default class ResourcePicker extends Plugin {
       })
 
       view.on("execute", () => {
-        openResourcePicker(RESOURCE_LINK)
+        openResourcePicker?.(RESOURCE_LINK)
       })
 
       return view
@@ -47,7 +53,7 @@ export default class ResourcePicker extends Plugin {
       })
 
       view.on("execute", () => {
-        openResourcePicker(RESOURCE_EMBED)
+        openResourcePicker?.(RESOURCE_EMBED)
       })
 
       return view

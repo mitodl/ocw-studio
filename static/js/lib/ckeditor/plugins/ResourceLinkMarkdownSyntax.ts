@@ -6,7 +6,7 @@ import invariant from "tiny-invariant"
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
 
-import { Shortcode, escapeShortcodes } from "./util"
+import { Shortcode, escapeShortcodes, getOcwConfig } from "./util"
 import { turndownService } from "../turndown"
 import { RESOURCE_LINK_CONFIG_KEY } from "./constants"
 
@@ -50,12 +50,16 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
 
   constructor(editor: Editor) {
     super(editor)
-    this.hrefTemplate = editor.config.get(RESOURCE_LINK_CONFIG_KEY).hrefTemplate
+    // The whole `resource-link-config` entry is optional as far as the type
+    // system is concerned, so assert before assigning rather than declaring
+    // hrefTemplate optional and re-checking it at every use.
+    const config = getOcwConfig(editor, RESOURCE_LINK_CONFIG_KEY)
+    invariant(config?.hrefTemplate !== undefined, "hrefTemplate is undefined")
+    this.hrefTemplate = config.hrefTemplate
     this.validateConfig()
   }
 
   private validateConfig() {
-    invariant(this.hrefTemplate !== undefined, "hrefTemplate is undefined")
     try {
       this.makeResourceLinkHref("fake-uuid", "fake-fragment")
     } catch (err) {
@@ -64,7 +68,11 @@ export default class ResourceLinkMarkdownSyntax extends MarkdownSyntaxPlugin {
     }
   }
 
-  isResourceLinkHref = (href?: string): boolean => {
+  /**
+   * `null` is accepted because CKEditor's automatic link decorators hand their
+   * callback `string | null`.
+   */
+  isResourceLinkHref = (href?: string | null): boolean => {
     if (!href) return false
     try {
       const url = new URL(href)
