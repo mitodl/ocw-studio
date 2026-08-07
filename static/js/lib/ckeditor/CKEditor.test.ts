@@ -1,4 +1,5 @@
 import ClassicEditor from "@ckeditor/ckeditor5-editor-classic/src/classiceditor"
+import { EditorConfig } from "@ckeditor/ckeditor5-core"
 
 import {
   FullEditorConfig,
@@ -20,7 +21,7 @@ const REQUIRED_CONFIG = {
 }
 
 interface EditorConfigUnderTest {
-  plugins: unknown[]
+  plugins: NonNullable<EditorConfig["plugins"]>
   toolbar: { items: string[] }
 }
 

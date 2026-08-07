@@ -4,6 +4,12 @@ import { LinkUI } from "@ckeditor/ckeditor5-link"
 import { ContextualBalloon } from "@ckeditor/ckeditor5-ui"
 import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 
+/**
+ * LinkUI does not export the type of its lazily built actions view, so name it
+ * off the property itself.
+ */
+type LinkActionsView = NonNullable<LinkUI["actionsView"]>
+
 const RESOURCE_LINK_CLASS = "resource-link"
 
 /**
@@ -29,7 +35,7 @@ export default class ResourceLinkUI extends Plugin {
     return this.editor.plugins.get(ContextualBalloon)
   }
 
-  private originalEditinkLabel!: string
+  private originalEditinkLabel: string | undefined
 
   constructor(editor: Editor) {
     super(editor)
@@ -47,15 +53,15 @@ export default class ResourceLinkUI extends Plugin {
         if (this.originalEditinkLabel === undefined) {
           this.originalEditinkLabel = actionsView.editButtonView.label
         }
-        this.modifyLinkUI()
+        this.modifyLinkUI(actionsView)
       }
     })
   }
 
-  private modifyLinkUI() {
-    const actionsView = this.editor.plugins.get(LinkUI).actionsView
-    // @ts-expect-error href is documented but not in TS yet
-    const href: string = actionsView.href
+  private modifyLinkUI(actionsView: LinkActionsView) {
+    // `href` is only set once the balloon has been pointed at a link, so it is
+    // legitimately undefined on a freshly created actions view.
+    const href = actionsView.href ?? ""
     if (this.syntax.isResourceLinkHref(href)) {
       actionsView.editButtonView.label = ""
       actionsView.editButtonView.isEnabled = false
@@ -81,10 +87,10 @@ export default class ResourceLinkUI extends Plugin {
     this.editor.config.set("link", {
       ...linkConfig,
       decorators: {
-        ...linkConfig.decorators,
+        ...linkConfig?.decorators,
         addTargetToExternalLinks: {
           mode: "automatic",
-          callback: (url?: string) => this.syntax.isResourceLinkHref(url),
+          callback: (url: string | null) => this.syntax.isResourceLinkHref(url),
           attributes: {
             class: RESOURCE_LINK_CLASS,
           },

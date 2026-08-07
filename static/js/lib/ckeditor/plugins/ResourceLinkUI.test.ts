@@ -2,6 +2,7 @@ import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import { LinkUI } from "@ckeditor/ckeditor5-link"
 import { ContextualBalloon } from "@ckeditor/ckeditor5-ui"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
+import invariant from "tiny-invariant"
 
 import ResourceLinkUI from "./ResourceLinkUI"
 import { createTestEditor } from "./test_util"
@@ -27,12 +28,18 @@ describe("ResourceLinkUI", () => {
     const editor = await getEditor("")
     const linkConfig = editor.config.get("link")
 
-    expect(linkConfig.decorators.addTargetToExternalLinks.attributes).toEqual({
+    // Both are optional on CKEditor's LinkConfig. Assert rather than
+    // optional-chain, so that ResourceLinkUI failing to register its decorator
+    // at all fails this test instead of quietly comparing undefined.
+    invariant(linkConfig, "Expected a link config to have been set.")
+    invariant(linkConfig.decorators, "Expected link decorators to be set.")
+
+    const decorator = linkConfig.decorators.addTargetToExternalLinks
+
+    expect(decorator.attributes).toEqual({
       class: "resource-link",
     })
-    expect(linkConfig.decorators.addTargetToExternalLinks.mode).toBe(
-      "automatic",
-    )
+    expect(decorator.mode).toBe("automatic")
 
     await editor.destroy()
   })

@@ -1,4 +1,5 @@
 import { Plugin } from "@ckeditor/ckeditor5-core"
+import invariant from "tiny-invariant"
 import ResourceLinkMarkdownSyntax from "./ResourceLinkMarkdownSyntax"
 import ResourceLinkUI from "./ResourceLinkUI"
 
@@ -62,9 +63,18 @@ export default class ResourceLink extends Plugin {
        *  - [selection.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_view_selection-Selection.html#member-isCollapsed)
        *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
        */
+      const insertPosition =
+        this.editor.model.document.selection.getFirstPosition()
+      // A collapsed selection always has a position unless the selection is
+      // not attached to the document at all. Passing the null on to
+      // `insertText` used to fail with an opaque TypeError from deep inside
+      // CKEditor.
+      invariant(
+        insertPosition,
+        "Expected the collapsed selection to have a position.",
+      )
+
       this.editor.model.change((writer) => {
-        const insertPosition =
-          this.editor.model.document.selection.getFirstPosition()
         writer.insertText(
           title,
           {

@@ -1,4 +1,8 @@
-import HtmlDataProcessor from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
+import type {
+  ViewDocument,
+  ViewDocumentFragment,
+} from "@ckeditor/ckeditor5-engine"
+import type HtmlDataProcessorType from "@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor"
 import { Converter } from "showdown"
 import GFMDataProcessor from "@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor"
 import { Editor } from "@ckeditor/ckeditor5-core"
@@ -43,7 +47,7 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
   html2md: (s: string) => string
 
   constructor(
-    document: DocumentFragment,
+    document: ViewDocument,
     md2html: (s: string) => string,
     html2md: (s: string) => string,
   ) {
@@ -54,19 +58,30 @@ export class MarkdownDataProcessor extends GFMDataProcessor {
   }
 
   /**
+   * `_htmlDP` is private on GFMDataProcessor, but the whole point of this
+   * subclass is to reuse its HTML conversion for the last mile. Reach it
+   * through a cast at the point of use rather than redeclaring the base class,
+   * which would reintroduce the hand-written CKEditor typings this upgrade
+   * removed.
+   */
+  private get htmlDP(): HtmlDataProcessorType {
+    return (this as unknown as { _htmlDP: HtmlDataProcessorType })._htmlDP
+  }
+
+  /**
    * Convert markdown string to CKEditor View
    */
-  toView(md: string): DocumentFragment {
+  toView(md: string): ViewDocumentFragment {
     // Decode HTML URLs to Markdown Syntax
     const html = decodeParentheses(this.md2html(md))
-    return this._htmlDP.toView(html)
+    return this.htmlDP.toView(html)
   }
 
   /**
    * Convert CKEditor View to Markdown string
    */
-  toData(viewFragment: DocumentFragment): string {
-    const html = this._htmlDP.toData(viewFragment)
+  toData(viewFragment: ViewDocumentFragment): string {
+    const html = this.htmlDP.toData(viewFragment)
 
     // Encode parentheses in URL to HTML encoding for URLs
     return this.html2md(encodeParentheses(html))
@@ -138,14 +153,11 @@ export default class Markdown extends MarkdownConfigPlugin {
       return md
     }
 
-    // some typescript wrangling necessary here unfortunately b/c of some
-    // shortcomings in the typings for @ckeditor/ckeditor5-engine
-    // and @ckeditor/ckeditor5-core
     editor.data.processor = new MarkdownDataProcessor(
-      (editor.data as any).viewDocument,
+      editor.data.viewDocument,
       md2html,
       html2md,
-    ) as typeof HtmlDataProcessor
+    )
   }
 
   /**

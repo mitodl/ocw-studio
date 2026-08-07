@@ -1,7 +1,50 @@
 import { pickBy } from "lodash"
-import { TABLE_ALLOWED_ATTRS } from "./constants"
+import type { Editor } from "@ckeditor/ckeditor5-core"
+import {
+  CKEDITOR_RESOURCE_UTILS,
+  MARKDOWN_CONFIG_KEY,
+  RESOURCE_LINK_CONFIG_KEY,
+  TABLE_ALLOWED_ATTRS,
+  WEBSITE_NAME,
+} from "./constants"
+import type { RenderResourceFunc, ResourceDialogMode } from "./constants"
 import { hasTruthyProp, isNotNil } from "../../../util"
+import type { MarkdownConfig } from "../../../types/ckeditor_markdown"
 import { ReplacementFunction } from "turndown"
+
+/**
+ * The OCW-specific entries we add to CKEditor's editor config. CKEditor knows
+ * nothing about these keys, so they are not part of its `EditorConfig`
+ * interface. See {@link getOcwConfig}.
+ *
+ * Kept in sync by hand with the config assembled in
+ * `static/js/components/widgets/MarkdownEditor.tsx`.
+ */
+export interface OcwEditorConfig {
+  [MARKDOWN_CONFIG_KEY]: Partial<MarkdownConfig>
+  [RESOURCE_LINK_CONFIG_KEY]: { hrefTemplate: string }
+  [WEBSITE_NAME]: string
+  [CKEDITOR_RESOURCE_UTILS]: {
+    renderResource: RenderResourceFunc
+    openResourcePicker: (mode: ResourceDialogMode) => void
+  }
+}
+
+/**
+ * Read one of OCW's own entries from the CKEditor config.
+ *
+ * `editor.config.get` is typed against CKEditor's `EditorConfig`, so keys we
+ * invent ourselves resolve to `unknown`. CKEditor's own answer to that is
+ * module augmentation of `@ckeditor/ckeditor5-core`, but this project
+ * deliberately declares no CKEditor module of its own (see
+ * `static/js/types/node_modules.d.ts`). So the shape is asserted here instead,
+ * once, rather than at every read site.
+ */
+export const getOcwConfig = <K extends keyof OcwEditorConfig>(
+  editor: Editor,
+  key: K,
+): OcwEditorConfig[K] | undefined =>
+  editor.config.get(key) as OcwEditorConfig[K] | undefined
 
 /**
  * Given a string encased in quotes and in which all interior quote characters
