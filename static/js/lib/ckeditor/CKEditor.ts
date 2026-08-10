@@ -114,7 +114,15 @@ export const FullEditorConfig = {
     ],
   },
   image: {
-    toolbar: ["imageStyle:side", "|", "imageTextAlternative"],
+    // `imageStyle:block` is what CKEditor renamed the old `full` option to.
+    // Pairing it with `side` keeps the two-way style control this toolbar has
+    // always meant to offer.
+    toolbar: [
+      "imageStyle:block",
+      "imageStyle:side",
+      "|",
+      "imageTextAlternative",
+    ],
   },
   codeBlock: {
     languages: SUPPORTED_PROGRAMMING_LANGUAGES,
