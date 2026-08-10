@@ -178,6 +178,9 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913, PLR0915, 
     assert www_values["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert www_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     assert www_values["sitemap_domain"] == sitemap_domain
+    assert (
+        www_values["course_v3_canonical_domain"] == settings.COURSE_V3_CANONICAL_DOMAIN
+    )
     course_values = next(
         values
         for values in across_values
@@ -191,6 +194,10 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913, PLR0915, 
     assert course_values["ocw_hugo_themes_branch"] == ocw_hugo_themes_branch
     assert course_values["ocw_hugo_projects_branch"] == ocw_hugo_projects_branch
     assert course_values["sitemap_domain"] == sitemap_domain
+    assert (
+        course_values["course_v3_canonical_domain"]
+        == settings.COURSE_V3_CANONICAL_DOMAIN
+    )
     across_step_build_steps = across_steps[0]["do"]
     cdn_cache_clear_steps = [
         step
@@ -249,6 +256,10 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913, PLR0915, 
     assert playwright_task_params["RESOURCE_BASE_URL"] == static_api_base_url
     assert (
         playwright_task_params["SITEMAP_DOMAIN"] == urlparse(static_api_base_url).netloc
+    )
+    assert (
+        playwright_task_params["COURSE_V3_CANONICAL_DOMAIN"]
+        == settings.COURSE_V3_CANONICAL_DOMAIN
     )
     assert playwright_task_params["WEBPACK_WATCH_MODE"] == "false"
     assert playwright_task_params["SENTRY_ENV"] == ""

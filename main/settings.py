@@ -1348,6 +1348,11 @@ SITEMAP_DOMAIN = get_string(
     default="ocw.mit.edu",
     description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap",  # noqa: E501
 )
+COURSE_V3_CANONICAL_DOMAIN = get_string(
+    name="COURSE_V3_CANONICAL_DOMAIN",
+    default="learn.mit.edu",
+    description="The domain to be used in Hugo builds for canonical URLs on ocw-course-v3 sites",  # noqa: E501
+)
 OCW_HUGO_THEMES_SENTRY_DSN = get_string(
     name="OCW_HUGO_THEMES_SENTRY_DSN",
     required=False,

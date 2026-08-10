@@ -290,6 +290,10 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                         == site_config.hugo_args_offline
                     )
                     assert across_values["prefix"] == site_config.prefix
+                    assert (
+                        across_values["course_v3_canonical_domain"]
+                        == settings.COURSE_V3_CANONICAL_DOMAIN
+                    )
                 build_steps = step["do"]
                 site_content_git_step = get_dict_list_item_by_field(
                     items=build_steps,
