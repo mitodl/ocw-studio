@@ -672,7 +672,7 @@ ClassicEditor.defaultConfig = {
   },
   image: {
     toolbar: [
-      "imageStyle:full",
+      "imageStyle:block",
       "imageStyle:side",
       "|",
       "imageTextAlternative",
@@ -681,5 +681,14 @@ ClassicEditor.defaultConfig = {
   language: "en",
 }
 ```
+
+The toolbar above is illustrative rather than a copy of what Studio actually
+ships. The live configuration is in `static/js/lib/ckeditor/CKEditor.ts`, and it
+differs in ways worth knowing before you copy from here. Studio loads no upload
+adapter, so `imageUpload` would not resolve to a button. CKEditor also silently
+drops toolbar items it cannot resolve, logging `toolbarview-item-unavailable`
+rather than failing, so a stale name here costs you a button with no obvious
+error. `imageStyle:block` is a case in point: it was called `imageStyle:full`
+until CKEditor renamed it.
 
 After that, if all goes well, it should be possible to insert an embedded YouTube video into the document. If not, something hasn't gone well at all!
