@@ -23,7 +23,25 @@ const REQUIRED_CONFIG = {
 interface EditorConfigUnderTest {
   plugins: NonNullable<EditorConfig["plugins"]>
   toolbar: { items: string[] }
+  image?: { toolbar: string[] }
+  table?: { contentToolbar: string[] }
 }
+
+/**
+ * Every toolbar item a config asks for, main toolbar and widget toolbars alike.
+ *
+ * The widget toolbars matter more than they look. CKEditor only resolves them
+ * in `WidgetToolbarRepository#_showToolbar`, which runs the first time an image
+ * or table is selected, so an unresolvable item there logs nothing at boot and
+ * the warning assertion below cannot see it. `imageStyle:full` sat in
+ * `image.toolbar` unresolvable for years for exactly that reason.
+ */
+const allToolbarItems = (config: EditorConfigUnderTest): string[] =>
+  [
+    ...config.toolbar.items,
+    ...(config.image?.toolbar ?? []),
+    ...(config.table?.contentToolbar ?? []),
+  ].filter((item) => item !== "|")
 
 const createEditor = (config: EditorConfigUnderTest) =>
   ClassicEditor.create("", { ...config, ...REQUIRED_CONFIG })
@@ -89,7 +107,7 @@ describe.each(CONFIGS)("%s", (_name, config, expectedWarnings) => {
 
   it("registers a UI factory for every configured toolbar item", async () => {
     const editor = await createEditor(config)
-    const items = config.toolbar.items.filter((item) => item !== "|")
+    const items = allToolbarItems(config)
 
     expect(items.length).toBeGreaterThan(0)
     items.forEach((item) => {

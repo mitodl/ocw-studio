@@ -70,7 +70,6 @@ export default class ResourceLinkUI extends Plugin {
       if (previewEl instanceof HTMLAnchorElement) {
         previewEl.href = this.syntax.makePreviewHref(href)
       }
-      actionsView.previewButtonView.element
     } else {
       actionsView.editButtonView.label = this.originalEditinkLabel
       actionsView.editButtonView.isEnabled = true

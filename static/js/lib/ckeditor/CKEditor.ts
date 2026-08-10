@@ -11,6 +11,17 @@ import ImageCaptionPlugin from "@ckeditor/ckeditor5-image/src/imagecaption"
 import ImageStylePlugin from "@ckeditor/ckeditor5-image/src/imagestyle"
 import ImageToolbarPlugin from "@ckeditor/ckeditor5-image/src/imagetoolbar"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
+/**
+ * Deliberately `legacylist`, not `list`. CKEditor v41 replaced the contents of
+ * `src/list` with the document list implementation and moved the original to
+ * `src/legacylist`, so the old import path silently changes the editing model
+ * from `listItem` elements to paragraphs carrying `listItemId`/`listIndent`.
+ * This import pins the behaviour Studio has always had.
+ *
+ * `LegacyList` is removed in CKEditor 45, so upgrading past 43 requires
+ * migrating to the document list and re-checking how nested lists and list
+ * items containing block content round-trip through Markdown.
+ */
 import ListPlugin from "@ckeditor/ckeditor5-list/src/legacylist"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
