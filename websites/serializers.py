@@ -477,6 +477,37 @@ class WebsiteCollaboratorSerializer(serializers.Serializer):
         fields = ["user_id", "email", "name", "group", "role"]
 
 
+_FENCED_CODE_BLOCK_RE = re.compile(
+    r"(?:^|\n)(`{3,}|~{3,})[^\n]*\n.*?\n\1[ \t]*(?=\n|$)", re.DOTALL
+)
+_INLINE_CODE_SPAN_RE = re.compile(r"`+[^`\n]*?`+")
+_CODE_PLACEHOLDER_RE = re.compile(r"CODE(\d+)")
+
+
+def _protect_code_regions(markdown):
+    """
+    Stash markdown code blocks/spans behind placeholders so an HTML sanitizer
+    doesn't mangle their literal contents (e.g. a `<script>` tag shown as a
+    code example). Code block/span content is never parsed as markup by a
+    correct markdown renderer, so it doesn't need sanitizing in the first
+    place, only protecting from a sanitizer that doesn't know that.
+    """
+    stashed = []
+
+    def _stash(match):
+        stashed.append(match.group(0))
+        return f"CODE{len(stashed) - 1}"
+
+    protected = _FENCED_CODE_BLOCK_RE.sub(_stash, markdown)
+    protected = _INLINE_CODE_SPAN_RE.sub(_stash, protected)
+    return protected, stashed
+
+
+def _restore_code_regions(markdown, stashed):
+    """Substitute back the original code block/span contents stashed by _protect_code_regions"""  # noqa: E501
+    return _CODE_PLACEHOLDER_RE.sub(lambda m: stashed[int(m.group(1))], markdown)
+
+
 class MarkdownSanitizationMixin(serializers.Serializer):
     """Mixin for stripping dangerous HTML from a markdown field"""
 
@@ -484,7 +515,9 @@ class MarkdownSanitizationMixin(serializers.Serializer):
         """Sanitize HTML embedded in markdown so it can't execute in a browser"""
         if value is None:
             return value
-        return nh3.clean(value)
+        protected, stashed = _protect_code_regions(value)
+        cleaned = nh3.clean(protected)
+        return _restore_code_regions(cleaned, stashed)
 
 
 class WebsiteContentDeletableMixin(serializers.Serializer):

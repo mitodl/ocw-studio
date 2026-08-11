@@ -774,6 +774,42 @@ def test_website_content_create_serializer_sanitizes_markdown(
     assert "H<sup>2</sup>O" in content.markdown
 
 
+def test_website_content_create_serializer_preserves_code_blocks(
+    mocker, mocked_website_funcs
+):
+    """Sanitizing markdown should not mangle a <script> tag shown literally inside a code block or span"""
+    website = WebsiteFactory.create()
+    user = UserFactory.create()
+    payload = {
+        "website_id": website.pk,
+        "title": "a title",
+        "type": CONTENT_TYPE_RESOURCE,
+        "markdown": (
+            "Some text before.\n\n"
+            "```js\n<script>alert(1)</script>\n```\n\n"
+            "Some text after. Inline: `<img onerror>` here too.\n\n"
+            '<img src=x onerror="alert(2)">'
+        ),
+        "metadata": {},
+    }
+    context = {
+        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+        "request": mocker.Mock(user=user),
+        "website_id": website.pk,
+    }
+    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content = WebsiteContent.objects.get(title=payload["title"])
+    # code block and inline code span survive verbatim, including their "onerror" text,
+    # since that text is never live markup there
+    assert "```js\n<script>alert(1)</script>\n```" in content.markdown
+    assert "`<img onerror>`" in content.markdown
+    # the actual live tag outside any code context loses its onerror attribute
+    assert '<img src=x onerror="alert(2)">' not in content.markdown
+    assert '<img src="x">' in content.markdown
+
+
 @pytest.mark.parametrize("is_root_site", [True, False])
 def test_website_publish_serializer_base_url(settings, is_root_site):
     """The WebsitePublishSerializer should return the correct base_url value"""
