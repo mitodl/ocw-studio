@@ -449,7 +449,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-autoformat@npm:41.4.2, @ckeditor/ckeditor5-autoformat@npm:^41.4.2":
+"@ckeditor/ckeditor5-autoformat@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-autoformat@npm:41.4.2"
   dependencies:
@@ -468,7 +468,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-basic-styles@npm:41.4.2, @ckeditor/ckeditor5-basic-styles@npm:^41.4.2":
+"@ckeditor/ckeditor5-basic-styles@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-basic-styles@npm:41.4.2"
   dependencies:
@@ -477,7 +477,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-block-quote@npm:41.4.2, @ckeditor/ckeditor5-block-quote@npm:^41.4.2":
+"@ckeditor/ckeditor5-block-quote@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-block-quote@npm:41.4.2"
   dependencies:
@@ -710,7 +710,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-core@npm:41.4.2, @ckeditor/ckeditor5-core@npm:^41.4.2":
+"@ckeditor/ckeditor5-core@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-core@npm:41.4.2"
   dependencies:
@@ -785,7 +785,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-editor-classic@npm:41.4.2, @ckeditor/ckeditor5-editor-classic@npm:^41.4.2":
+"@ckeditor/ckeditor5-editor-classic@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-editor-classic@npm:41.4.2"
   dependencies:
@@ -825,7 +825,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-engine@npm:41.4.2, @ckeditor/ckeditor5-engine@npm:^41.4.2":
+"@ckeditor/ckeditor5-engine@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-engine@npm:41.4.2"
   dependencies:
@@ -846,7 +846,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-essentials@npm:41.4.2, @ckeditor/ckeditor5-essentials@npm:^41.4.2":
+"@ckeditor/ckeditor5-essentials@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-essentials@npm:41.4.2"
   dependencies:
@@ -875,7 +875,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-heading@npm:41.4.2, @ckeditor/ckeditor5-heading@npm:^41.4.2":
+"@ckeditor/ckeditor5-heading@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-heading@npm:41.4.2"
   dependencies:
@@ -921,7 +921,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-image@npm:41.4.2, @ckeditor/ckeditor5-image@npm:^41.4.2":
+"@ckeditor/ckeditor5-image@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-image@npm:41.4.2"
   dependencies:
@@ -957,7 +957,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-link@npm:41.4.2, @ckeditor/ckeditor5-link@npm:^41.4.2":
+"@ckeditor/ckeditor5-link@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-link@npm:41.4.2"
   dependencies:
@@ -968,7 +968,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-list@npm:41.4.2, @ckeditor/ckeditor5-list@npm:^41.4.2":
+"@ckeditor/ckeditor5-list@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-list@npm:41.4.2"
   dependencies:
@@ -977,7 +977,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-markdown-gfm@npm:41.4.2, @ckeditor/ckeditor5-markdown-gfm@npm:^41.4.2":
+"@ckeditor/ckeditor5-markdown-gfm@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-markdown-gfm@npm:41.4.2"
   dependencies:
@@ -1027,7 +1027,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-paragraph@npm:41.4.2, @ckeditor/ckeditor5-paragraph@npm:^41.4.2":
+"@ckeditor/ckeditor5-paragraph@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-paragraph@npm:41.4.2"
   dependencies:
@@ -1131,7 +1131,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-table@npm:41.4.2, @ckeditor/ckeditor5-table@npm:^41.4.2":
+"@ckeditor/ckeditor5-table@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-table@npm:41.4.2"
   dependencies:
@@ -1142,7 +1142,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-theme-lark@npm:41.4.2, @ckeditor/ckeditor5-theme-lark@npm:^41.4.2":
+"@ckeditor/ckeditor5-theme-lark@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-theme-lark@npm:41.4.2"
   dependencies:
@@ -1163,7 +1163,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-ui@npm:41.4.2, @ckeditor/ckeditor5-ui@npm:^41.4.2":
+"@ckeditor/ckeditor5-ui@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-ui@npm:41.4.2"
   dependencies:
@@ -1198,7 +1198,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-utils@npm:41.4.2, @ckeditor/ckeditor5-utils@npm:^41.4.2":
+"@ckeditor/ckeditor5-utils@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-utils@npm:41.4.2"
   dependencies:
@@ -1216,7 +1216,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ckeditor/ckeditor5-widget@npm:41.4.2, @ckeditor/ckeditor5-widget@npm:^41.4.2":
+"@ckeditor/ckeditor5-widget@npm:41.4.2":
   version: 41.4.2
   resolution: "@ckeditor/ckeditor5-widget@npm:41.4.2"
   dependencies:
@@ -10657,29 +10657,29 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "ocw_studio@workspace:."
   dependencies:
-    "@ckeditor/ckeditor5-autoformat": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-basic-styles": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-block-quote": "npm:^41.4.2"
+    "@ckeditor/ckeditor5-autoformat": "npm:41.4.2"
+    "@ckeditor/ckeditor5-basic-styles": "npm:41.4.2"
+    "@ckeditor/ckeditor5-block-quote": "npm:41.4.2"
     "@ckeditor/ckeditor5-code-block": "npm:41.4.2"
-    "@ckeditor/ckeditor5-core": "npm:^41.4.2"
+    "@ckeditor/ckeditor5-core": "npm:41.4.2"
     "@ckeditor/ckeditor5-dev-translations": "npm:^43.0.0"
     "@ckeditor/ckeditor5-dev-utils": "npm:^43.0.0"
-    "@ckeditor/ckeditor5-editor-classic": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-engine": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-essentials": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-heading": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-image": "npm:^41.4.2"
+    "@ckeditor/ckeditor5-editor-classic": "npm:41.4.2"
+    "@ckeditor/ckeditor5-engine": "npm:41.4.2"
+    "@ckeditor/ckeditor5-essentials": "npm:41.4.2"
+    "@ckeditor/ckeditor5-heading": "npm:41.4.2"
+    "@ckeditor/ckeditor5-image": "npm:41.4.2"
     "@ckeditor/ckeditor5-inspector": "npm:^5.0.0"
-    "@ckeditor/ckeditor5-link": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-list": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-markdown-gfm": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-paragraph": "npm:^41.4.2"
+    "@ckeditor/ckeditor5-link": "npm:41.4.2"
+    "@ckeditor/ckeditor5-list": "npm:41.4.2"
+    "@ckeditor/ckeditor5-markdown-gfm": "npm:41.4.2"
+    "@ckeditor/ckeditor5-paragraph": "npm:41.4.2"
     "@ckeditor/ckeditor5-react": "npm:^7.0.0"
-    "@ckeditor/ckeditor5-table": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-theme-lark": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-ui": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-utils": "npm:^41.4.2"
-    "@ckeditor/ckeditor5-widget": "npm:^41.4.2"
+    "@ckeditor/ckeditor5-table": "npm:41.4.2"
+    "@ckeditor/ckeditor5-theme-lark": "npm:41.4.2"
+    "@ckeditor/ckeditor5-ui": "npm:41.4.2"
+    "@ckeditor/ckeditor5-utils": "npm:41.4.2"
+    "@ckeditor/ckeditor5-widget": "npm:41.4.2"
     "@dnd-kit/core": "npm:^3.1.1"
     "@dnd-kit/sortable": "npm:^4.0.0"
     "@isaul32/ckeditor5-math": "npm:41.4.2"

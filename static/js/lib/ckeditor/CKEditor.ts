@@ -125,9 +125,11 @@ export const FullEditorConfig = {
     ],
   },
   image: {
-    // `imageStyle:block` is what CKEditor renamed the old `full` option to.
-    // Pairing it with `side` keeps the two-way style control this toolbar has
-    // always meant to offer.
+    // These style buttons only affect how the image looks inside the editor.
+    // Neither `block` nor `side` survives a save: our Markdown output for an
+    // image is `![alt](src)` either way, so nothing reaches Hugo. `block` is
+    // here only because it is the current name for the option this toolbar
+    // used to spell `full`, which stopped resolving to a button years ago.
     toolbar: [
       "imageStyle:block",
       "imageStyle:side",
