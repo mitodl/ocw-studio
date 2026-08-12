@@ -1029,8 +1029,8 @@ def test_detail_serializer_does_not_mutate_stored_metadata():
     """Serializing must not write the derived value onto the instance.
 
     to_representation's result can alias instance.metadata. Mutating it in
-    place would let a derived guess be persisted by any later save, which is
-    the failure mode fixed in full_metadata under hq#12635.
+    place would let a derived guess be persisted by any later save, as if the
+    editor had chosen it.
     """
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
