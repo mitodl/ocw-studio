@@ -91,6 +91,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "POSTHOG_API_HOST": settings.PUBLISH_POSTHOG_API_HOST,
             "POSTHOG_UI_HOST": settings.PUBLISH_POSTHOG_UI_HOST,
             "POSTHOG_ENV": settings.ENVIRONMENT,
+            "CSRF_COOKIE_NAME": settings.HUGO_CSRF_COOKIE_NAME,
         }
         if (
             settings.PUBLISH_POSTHOG_ENABLED

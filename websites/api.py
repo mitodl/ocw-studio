@@ -485,7 +485,7 @@ def reset_publishing_fields(website_name: str):
     )
 
 
-def update_website_status(  # noqa: PLR0913
+def update_website_status(  # noqa: PLR0913, PLR0917
     website: Website,
     version: str,
     status: str,

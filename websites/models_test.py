@@ -170,7 +170,7 @@ def test_website_content_unpublished():
         ],
     ],
 )
-def test_website_get_full_url(  # noqa: PLR0913
+def test_website_get_full_url(  # noqa: PLR0913, PLR0917
     settings, name, root_url, is_home, version, expected_path
 ):  # pylint:disable=too-many-arguments
     """Verify that Website.get_full_url returns the expected value"""
@@ -463,3 +463,211 @@ def test_websitecontent_full_metadata_resolves_resources_relation():
         "language": "es",
         "locale": "MX",
     } in resolved
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["video_captions_resources", "video_transcript_resources"],
+)
+@pytest.mark.parametrize(
+    ("stored_content", "reason"),
+    [
+        ("", "site-config initialises a relation widget to an empty string"),
+        ([], "empty multi-select list"),
+        (["no-such-text-id"], "dangling text_id matching no resource"),
+    ],
+)
+def test_websitecontent_full_metadata_normalizes_unresolvable_resources(
+    stored_content, reason, field
+):
+    """An unresolvable _resources relation is published as [], never as the raw dict.
+
+    full_metadata used to leave the stored {"content": ..., "website": ...}
+    relation dict untouched whenever resolution produced nothing, so the CMS's
+    internal storage shape reached Hugo frontmatter. There
+    video_caption_tracks.html treats a non-empty map as truthy, ranges it (which
+    yields the map's *values*), and dies on `.language` with "can't evaluate
+    field language in type interface {}", breaking the whole site build.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                field: {
+                    "content": stored_content,
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"][field]
+
+    assert published == [], f"{field} / {reason}: got {published!r}"
+
+
+def test_websitecontent_full_metadata_normalizes_unresolved_when_resource_has_no_file():
+    """A linked resource with no uploaded file resolves to [], not the raw dict."""
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    no_file = WebsiteContentFactory.create(
+        website=website, filename="lecture1_captions_vtt", type="resource", file=None
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(no_file.text_id)],
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == []
+
+
+def test_websitecontent_full_metadata_does_not_mutate_stored_metadata():
+    """Reading full_metadata must leave the stored metadata untouched.
+
+    full_metadata rewrites keys into their published form. It used to alias
+    self.metadata, so merely reading the property replaced an editor's
+    {"content": [...]} relation with a resolved file list on the instance. Any
+    later save() then persisted that and the links were gone.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    stored = {"content": [str(captions.text_id)], "website": website.name}
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={"video_files": {"video_captions_resources": dict(stored)}},
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    # The published form resolved, and the stored form is still the relation
+    assert isinstance(published, list)
+    assert video.metadata["video_files"]["video_captions_resources"] == stored
+
+    # ...and it survives a round trip through the database
+    video.save()
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"] == stored
+
+
+def test_websitecontent_full_metadata_leaves_checksum_stable():
+    """calculate_checksum must not depend on whether full_metadata was read.
+
+    content_sync computes the checksum on both sides of serialization. If
+    reading full_metadata mutates the instance, the two never agree and the
+    content looks perpetually unsynced.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                }
+            }
+        },
+        file=None,
+    )
+
+    before = video.calculate_checksum()
+    video.full_metadata  # noqa: B018
+    assert video.calculate_checksum() == before
+
+
+def test_websitecontent_full_metadata_resolves_partially_resolvable_content():
+    """Entries that resolve are published; unresolvable ones are dropped."""
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    resolvable = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    no_file = WebsiteContentFactory.create(
+        website=website, filename="lecture1_captions-fr_vtt", type="resource", file=None
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [
+                        str(resolvable.text_id),
+                        str(no_file.text_id),
+                        "does-not-exist",
+                    ],
+                    "website": website.name,
+                }
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == [
+        {"file": "/sites/mysite-fall-2008/lecture1_captions.vtt", "language": "en"}
+    ]
+
+
+def test_websitecontent_full_metadata_resolves_scalar_string_content():
+    """A legacy single-select relation stores content as a bare string.
+
+    Without normalizing it to a list first, text_id__in would iterate the
+    string character by character and match nothing.
+    """
+    website = WebsiteFactory.create(name="mysite", url_path="sites/mysite-fall-2008")
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file="sites/mysite/lecture1_captions.vtt",
+        type="resource",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "video_files": {
+                "video_captions_resources": {
+                    "content": str(captions.text_id),
+                    "website": website.name,
+                },
+            }
+        },
+        file=None,
+    )
+
+    published = video.full_metadata["video_files"]["video_captions_resources"]
+
+    assert published == [
+        {"file": "/sites/mysite-fall-2008/lecture1_captions.vtt", "language": "en"}
+    ]

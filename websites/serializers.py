@@ -25,6 +25,7 @@ from gdrive_sync.tasks import create_gdrive_folders
 from main.posthog import is_feature_enabled
 from main.serializers import RequestUserSerializerMixin
 from users.models import User
+from videos.utils import resolve_language_locale
 from websites import constants
 from websites.api import (
     detect_mime_type,
@@ -569,6 +570,21 @@ class WebsiteContentSerializer(
         fields = read_only_fields
 
 
+def _declared_field_names(instance) -> set:
+    """Return the top-level field names the starter declares for this content type.
+
+    Used to gate derived-value injection so it only happens where the form
+    actually has a matching widget.
+    """
+    starter = instance.website.starter
+    if starter is None:
+        return set()
+    item = SiteConfig(starter.config).find_item_by_name(instance.type)
+    if item is None:
+        return set()
+    return {field.get("name") for field in item.fields}
+
+
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
@@ -715,6 +731,26 @@ class WebsiteContentDetailSerializer(
         drivefile = instance.drivefile_set.first()  # noqa: ORM002
         if drivefile:
             result["gdrive_url"] = DRIVE_FILE_VIEW_URL.format(file_id=drivefile.file_id)
+
+        declared = _declared_field_names(instance)
+        if declared & {"language", "locale"}:
+            # Copied, never mutated in place: result["metadata"] can be the
+            # same dict as instance.metadata, and writing a derived value onto
+            # the instance would let a later save persist it.
+            metadata = dict(result.get("metadata") or {})
+            # Assigned unconditionally rather than only when absent.
+            # resolve_language_locale already gives a stored value precedence,
+            # so re-checking here would only serve to echo a stored value back
+            # *unnormalized* -- showing "ES" in the form while "es" publishes.
+            # Writing what the resolver returns keeps the form and the publish
+            # path identical for every input, which is the whole point of both
+            # routing through it.
+            language, locale = resolve_language_locale(instance)
+            if "language" in declared:
+                metadata["language"] = language
+            if "locale" in declared and locale:
+                metadata["locale"] = locale
+            result["metadata"] = metadata
 
         # Sanitize on read too, as defense in depth for rows written before
         # validate_markdown existed, or by a path that bypasses this serializer

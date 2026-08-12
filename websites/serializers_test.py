@@ -16,6 +16,7 @@ from main.constants import ISO_8601_FORMAT
 from users.factories import UserFactory
 from users.models import User
 from videos.constants import YT_THUMBNAIL_IMG
+from videos.utils import resource_file_paths
 from websites.constants import (
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
@@ -431,7 +432,7 @@ def test_website_content_detail_with_file_serializer():
 @pytest.mark.parametrize("invalid_data", [True, False])
 @pytest.mark.parametrize("nested", [True, False])
 @pytest.mark.parametrize("field_order_reversed", [True, False])
-def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals  # noqa: PLR0913
+def test_website_content_detail_serializer_content_context(  # pylint:disable=too-many-arguments,too-many-locals  # noqa: PLR0913, PLR0917
     content_context, multiple, cross_site, invalid_data, nested, field_order_reversed
 ):
     """WebsiteContentDetailSerializer should serialize content_context for relation and menu fields"""
@@ -967,7 +968,7 @@ def test_website_content_export_serializer(ocw_site):
         (True, "Test Page", "Some New Title", False, "some-new-title"),
     ],
 )
-def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913
+def test_update_page_url_on_title_change_parametrized(  # noqa: PLR0913, PLR0917
     mocker,
     enable_websitecontent_signal,
     is_page,
@@ -1039,3 +1040,199 @@ def test_update_page_url_on_title_change_legacy_index_behavior(
     page.refresh_from_db()
     assert page.filename == expected_filename
     assert page.title == "New Title"
+
+
+LANGUAGE_FIELD_CONFIG = {
+    "collections": [
+        {
+            "name": "resource",
+            "label": "Resource",
+            "category": "Content",
+            "folder": "content/resources",
+            "fields": [
+                {"label": "Title", "name": "title", "widget": "string"},
+                {"label": "Language", "name": "language", "widget": "select"},
+                {"label": "Locale", "name": "locale", "widget": "select"},
+            ],
+        }
+    ],
+}
+
+
+@pytest.mark.django_db
+def test_detail_serializer_fills_language_from_filename():
+    """An unset language is shown as the value that would publish."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "fr"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_defaults_language_to_english():
+    """A filename with no language suffix resolves to English."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "en"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_keeps_explicit_language():
+    """A stored value is never overwritten by the derived one."""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={"language": "es"},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert data["metadata"]["language"] == "es"
+
+
+@pytest.mark.django_db
+def test_detail_serializer_skips_when_starter_lacks_the_field():
+    """Nothing is injected for a starter that does not declare the field.
+
+    This keeps ocw-studio inert until the starter ships, and stops the keys
+    appearing on content types that have no such form field.
+    """
+    content = WebsiteContentFactory.create(
+        type="resource", metadata={}, file="courses/s/lecture1_captions-fr.vtt"
+    )
+
+    data = WebsiteContentDetailSerializer(instance=content).data
+
+    assert "language" not in data["metadata"]
+
+
+@pytest.mark.django_db
+def test_detail_serializer_does_not_mutate_stored_metadata():
+    """Serializing must not write the derived value onto the instance.
+
+    to_representation's result can alias instance.metadata. Mutating it in
+    place would let a derived guess be persisted by any later save, as if the
+    editor had chosen it.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/lecture1_captions-fr.vtt",
+    )
+
+    WebsiteContentDetailSerializer(instance=content).data  # noqa: B018
+
+    assert content.metadata == {}
+    content.save()
+    content.refresh_from_db()
+    assert content.metadata == {}
+
+
+@pytest.mark.parametrize(
+    ("metadata", "file_name", "exp_language", "exp_locale"),
+    [
+        # No metadata: both sides parse the filename identically.
+        ({}, "courses/s/l1_captions-pt-BR.vtt", "pt", "BR"),
+        # The distinguishing case: an explicit language against a filename that
+        # carries a region. A direct parse in the serializer would show locale
+        # "BR" here while publishing none, so this is what actually pins both
+        # callers to the shared resolver.
+        ({"language": "es"}, "courses/s/l1_captions-pt-BR.vtt", "es", None),
+        # A stored value is echoed back normalized, not raw.
+        ({"language": "ES"}, "courses/s/l1_captions.vtt", "es", None),
+    ],
+)
+@pytest.mark.django_db
+def test_detail_serializer_agrees_with_what_gets_published(
+    metadata, file_name, exp_language, exp_locale
+):
+    """The form and the publish path must never disagree.
+
+    Both route through resolve_language_locale precisely so an editor cannot
+    be shown one language while a different one ships.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=LANGUAGE_FIELD_CONFIG)
+    )
+    content = WebsiteContentFactory.create(
+        website=website, type="resource", metadata=metadata, file=file_name
+    )
+
+    shown = WebsiteContentDetailSerializer(instance=content).data["metadata"]
+    published = resource_file_paths([content])[0]
+
+    assert shown["language"] == published["language"] == exp_language
+    assert shown.get("locale") == published.get("locale") == exp_locale
+
+
+@pytest.mark.parametrize(
+    ("declared_fields", "expect_language", "expect_locale"),
+    [
+        (["language", "locale"], True, True),
+        (["language"], True, False),
+        (["locale"], False, True),
+    ],
+)
+@pytest.mark.django_db
+def test_detail_serializer_injects_only_declared_fields(
+    declared_fields, expect_language, expect_locale
+):
+    """A key is injected only when the starter declares that specific field.
+
+    Collapsing this to "inject both when either is declared" would put a
+    locale onto a starter with no locale widget, which a later save would
+    then persist.
+    """
+    config = {
+        "collections": [
+            {
+                "name": "resource",
+                "label": "Resource",
+                "category": "Content",
+                "folder": "content/resources",
+                "fields": [
+                    {"label": name.title(), "name": name, "widget": "select"}
+                    for name in declared_fields
+                ],
+            }
+        ],
+    }
+    website = WebsiteFactory.create(starter=WebsiteStarterFactory.create(config=config))
+    content = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={},
+        file="courses/s/l1_captions-pt-BR.vtt",
+    )
+
+    shown = WebsiteContentDetailSerializer(instance=content).data["metadata"]
+
+    assert ("language" in shown) is expect_language
+    assert ("locale" in shown) is expect_locale

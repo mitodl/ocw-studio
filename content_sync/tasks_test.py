@@ -330,7 +330,7 @@ def test_upsert_web_publishing_pipeline_missing(api_mock, log_mock):
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize(("chunk_size", "chunks"), [[3, 1], [2, 2]])  # noqa: PT007
-def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument  # noqa: PLR0913
+def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument  # noqa: PLR0913, PLR0917
     mocker, mocked_celery, create_backend, unpause, hugo_args, chunk_size, chunks
 ):
     """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
@@ -387,7 +387,7 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("check_limit", [True, False])
-def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # noqa: PLR0913
+def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # noqa: PLR0913, PLR0917
     mocker, settings, create_backend, unpause, hugo_args, check_limit
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
@@ -472,7 +472,7 @@ def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpau
 @pytest.mark.parametrize("has_mass_build", [True, False])
 @pytest.mark.parametrize("no_mass_build", [True, False])
 @pytest.mark.parametrize("sync_with_delete", [True, False])
-def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments  # noqa: PLR0913
+def test_publish_websites(  # pylint:disable=unused-argument,too-many-arguments  # noqa: PLR0913, PLR0917
     mocker,
     mocked_celery,
     api_mock,
@@ -567,7 +567,7 @@ def test_publish_website_batch(mocker, version, prepublish, trigger):
     ],
 )
 @pytest.mark.parametrize("pipeline", [None, "concourse"])
-def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913
+def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913, PLR0917
     settings,
     mocker,
     api_mock,
