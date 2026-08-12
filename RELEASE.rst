@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.194.1
+Version 0.194.1 (Released August 12, 2026)
 ---------------
 
 - Add HUGO_CSRF_COOKIE_NAME setting to theme_assets_pipeline env (#3126)
