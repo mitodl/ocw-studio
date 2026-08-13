@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.195.0
+Version 0.195.0 (Released August 13, 2026)
 ---------------
 
 - Update dependency sass to v1.102.0 (#3145)
