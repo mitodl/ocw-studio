@@ -123,7 +123,7 @@
     "reselect": "^4.0.0",
     "sass": "^1.38.1",
     "sass-loader": "^16.0.0",
-    "sentry-testkit": "^6.0.0",
+    "sentry-testkit": "^7.0.0",
     "showdown": "^2.0.0",
     "sinon": "^22.0.0",
     "style-loader": "^4.0.0",
