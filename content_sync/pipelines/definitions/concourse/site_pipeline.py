@@ -1,4 +1,4 @@
-from typing import Optional  # noqa: F401
+from typing import ClassVar, Optional  # noqa: F401
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -970,17 +970,16 @@ class SitePipelineDefinition(Pipeline):
         config(SitePipelineDefinitionConfig): The site pipeline configuration object
     """
 
-    _offline_build_gate_identifier = Identifier(
+    _offline_build_gate_identifier: ClassVar[str] = Identifier(
         OCW_STUDIO_WEBHOOK_OFFLINE_GATE_IDENTIFIER
     ).root
-    _online_site_job_identifier = Identifier("online-site-job").root
-    _offline_site_job_identifier = Identifier("offline-site-job").root
+    _online_site_job_identifier: ClassVar[str] = Identifier("online-site-job").root
+    _offline_site_job_identifier: ClassVar[str] = Identifier("offline-site-job").root
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, config: SitePipelineDefinitionConfig, **kwargs):
         base = super()
-        base.__init__(**kwargs)
         resource_types = SitePipelineResourceTypes()
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)

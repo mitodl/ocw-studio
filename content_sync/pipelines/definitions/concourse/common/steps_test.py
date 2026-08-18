@@ -9,6 +9,7 @@ from ol_concourse.lib.models.pipeline import (
     Identifier,
     PutStep,
     Step,
+    TaskConfig,
     TaskStep,
 )
 
@@ -26,10 +27,17 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 )
 
 
+def _build_mock_step(step_type):
+    """Construct a minimal instance of step_type for error-handling tests"""
+    if step_type is TaskStep:
+        return step_type(config=TaskConfig(platform="linux"))
+    return step_type()
+
+
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_add_error_handling(step_type):
     """Ensure that add_error_handling has all the correct steps"""
-    mock_step = step_type()
+    mock_step = _build_mock_step(step_type)
     add_error_handling(
         step=mock_step,
         step_description="test step",
@@ -61,7 +69,7 @@ def test_add_error_handling_incorrect_type():
 @pytest.mark.parametrize("step_type", [GetStep, PutStep, TaskStep])
 def test_calling_add_error_handling_twice(step_type):
     """Calling add_error_handling twice on the same step should throw a ValueError"""
-    mock_step = step_type()
+    mock_step = _build_mock_step(step_type)
     add_error_handling(
         step=mock_step,
         step_description="test step",

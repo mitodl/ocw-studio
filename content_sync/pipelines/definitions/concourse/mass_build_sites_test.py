@@ -80,6 +80,10 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
         "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev"
     )
     mock_is_dev.return_value = is_dev
+    mock_mass_build_is_dev = mocker.patch(
+        "content_sync.pipelines.definitions.concourse.mass_build_sites.is_dev"
+    )
+    mock_mass_build_is_dev.return_value = is_dev
     site_content_branch = get_site_content_branch(version)
     artifacts_bucket = settings.AWS_ARTIFACTS_BUCKET_NAME
     web_bucket = (

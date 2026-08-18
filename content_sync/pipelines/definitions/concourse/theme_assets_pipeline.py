@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     Command,
@@ -52,14 +54,22 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         instance_vars:(str): Instance vars for the pipeline in query string format
     """  # noqa: E501
 
-    _build_theme_assets_job_identifier = Identifier("build-theme-assets-job").root
-    _build_ocw_hugo_themes_identifier = Identifier("build-ocw-hugo-themes-task").root
-    _upload_theme_assets_task_identifier = Identifier("upload-theme-assets-task").root
-    _clear_draft_cdn_cache_task_identifier = Identifier(
+    _build_theme_assets_job_identifier: ClassVar[str] = Identifier(
+        "build-theme-assets-job"
+    ).root
+    _build_ocw_hugo_themes_identifier: ClassVar[str] = Identifier(
+        "build-ocw-hugo-themes-task"
+    ).root
+    _upload_theme_assets_task_identifier: ClassVar[str] = Identifier(
+        "upload-theme-assets-task"
+    ).root
+    _clear_draft_cdn_cache_task_identifier: ClassVar[str] = Identifier(
         "clear-draft-cdn-cache-task"
     ).root
-    _clear_live_cdn_cache_identifier = Identifier("clear-live-cdn-cache-task").root
-    _slack_resource = SlackAlertResource()
+    _clear_live_cdn_cache_identifier: ClassVar[str] = Identifier(
+        "clear-live-cdn-cache-task"
+    ).root
+    _slack_resource: ClassVar[SlackAlertResource] = SlackAlertResource()
 
     def __init__(
         self,
@@ -71,7 +81,6 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         **kwargs,
     ):
         base = super()
-        base.__init__(**kwargs)
         ocw_hugo_themes_resource = GitResource(
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
