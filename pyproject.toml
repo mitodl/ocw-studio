@@ -12,12 +12,12 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4>=4.12.2,<5",
-    "boto3==1.43.56",
+    "boto3==1.43.62",
     "celery>=5.3.0,<6",
     "cryptography>=50,<51",
     "dj-database-url==3.1.2",
     "django==5.2.16",
-    "django-anymail[mailgun]==15.0",
+    "django-anymail[mailgun]==15.1",
     "django-bulk-update-or-create==0.3.0",
     "django-guardian==3.3.3",
     "django-health-check[celery,redis]>=4.0.0",
@@ -98,7 +98,7 @@ mitol-drf-lint = "0d"
 ol-concourse = "0d"
 
 [build-system]
-requires = ["uv_build>=0.11.2,<0.12.0"]
+requires = ["uv_build>=0.12.1,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
