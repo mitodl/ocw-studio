@@ -7,7 +7,7 @@ from websites.constants import (
     WEBSITE_CONFIG_DEFAULT_CONTENT_DIR,
 )
 from websites.models import WebsiteContent
-from websites.site_config_api import ConfigItem, SiteConfig
+from websites.site_config_api import ConfigItem, SiteConfig, _blank_relation_value
 
 # pylint:disable=redefined-outer-name
 
@@ -185,8 +185,8 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments  # noqa: 
         "video_metadata": {"youtube_id": "", "video_speakers": "", "video_tags": ""},
         "video_files": {
             "video_thumbnail_file": "",
-            "video_captions_resources": [],
-            "video_transcript_resources": [],
+            "video_captions_resources": {"content": []},
+            "video_transcript_resources": {"content": []},
         },
         **class_data,
     }
@@ -198,3 +198,61 @@ def test_generate_item_metadata(  # pylint: disable=too-many-arguments  # noqa: 
         )
         == expected_data
     )
+
+
+def test_generate_item_metadata_relation_blank_carries_website(parsed_site_config):
+    """A blank relation value carries the site name when one is supplied.
+
+    The CMS relation widget stores {"content": [...], "website": name}, and the
+    content form binds to the nested "content" key, so a bare [] fails the
+    form's object schema as a type error and surfaces as a false "is a
+    required field" on a field that is not required.
+    """
+    metadata = SiteConfig(parsed_site_config).generate_item_metadata(
+        "resource", WebsiteContent, website_name="test-site"
+    )
+    assert metadata["video_files"]["video_captions_resources"] == {
+        "content": [],
+        "website": "test-site",
+    }
+    assert metadata["video_files"]["video_transcript_resources"] == {
+        "content": [],
+        "website": "test-site",
+    }
+
+
+@pytest.mark.parametrize(
+    ("field_props", "expected"),
+    [
+        ({"multiple": True}, {"content": [], "website": "test-site"}),
+        # sortable alone also means a list. The content form decides on
+        # "multiple || sortable", so a scalar here fails its object schema
+        # exactly the way a bare [] does.
+        ({"sortable": True}, {"content": [], "website": "test-site"}),
+        ({"multiple": True, "sortable": True}, {"content": [], "website": "test-site"}),
+        (
+            {"cross_site": True, "sortable": True},
+            {"content": [], "website": "test-site"},
+        ),
+        ({}, {"content": "", "website": "test-site"}),
+        ({"multiple": False}, {"content": "", "website": "test-site"}),
+        # A field-level website targets another site, and the widget stores
+        # that rather than the site being edited.
+        (
+            {"multiple": True, "website": "ocw-www"},
+            {"content": [], "website": "ocw-www"},
+        ),
+    ],
+)
+def test_blank_relation_value(field_props, expected):
+    """A blank relation matches the shape the CMS widget itself writes."""
+    assert (
+        _blank_relation_value({"name": "rel", **field_props}, "test-site") == expected
+    )
+
+
+def test_blank_relation_value_without_website():
+    """With no site known the website key is left out, which still validates."""
+    assert _blank_relation_value({"name": "rel", "multiple": True}, None) == {
+        "content": []
+    }
