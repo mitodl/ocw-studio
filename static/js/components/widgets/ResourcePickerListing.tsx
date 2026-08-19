@@ -23,6 +23,11 @@ interface Props {
   focusedResource: WebsiteContent | null
   sourceWebsiteName?: string
   singleColumn: boolean
+  /**
+   * When the picker is in multi-select mode, the uuids chosen so far. Items in
+   * this list are highlighted the same way a focused item is.
+   */
+  selectedUuids?: string[]
 }
 
 export default function ResourcePickerListing(
@@ -36,6 +41,7 @@ export default function ResourcePickerListing(
     contentType,
     sourceWebsiteName,
     singleColumn,
+    selectedUuids,
   } = props
   const website = useWebsite()
 
@@ -82,7 +88,10 @@ export default function ResourcePickerListing(
             isWholeRow={singleColumn}
             websiteContent={item}
             onClick={focusItem}
-            isFocused={item.text_id === focusedResource?.text_id}
+            isFocused={
+              item.text_id === focusedResource?.text_id ||
+              (selectedUuids?.includes(item.text_id) ?? false)
+            }
           />
         )
       })}
