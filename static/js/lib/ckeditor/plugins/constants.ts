@@ -12,6 +12,12 @@ export const RESOURCE_LINK = "resourceLink"
 
 export const RESOURCE_EMBED_COMMAND = "insertResourceEmbed"
 
+export const IMAGE_GALLERY = "imageGallery"
+
+export const IMAGE_GALLERY_COMMAND = "insertImageGallery"
+
+export const ADD_IMAGE_GALLERY = "addImageGallery"
+
 export const MARKDOWN_CONFIG_KEY = "markdown-config"
 
 export const RESOURCE_LINK_CONFIG_KEY = "resource-link-config"
@@ -38,6 +44,33 @@ export type CKEResourceNodeType = typeof RESOURCE_LINK | typeof RESOURCE_EMBED
  */
 export interface RenderResourceFunc {
   (uuid: string, el: HTMLElement): void
+}
+
+/**
+ * A handle passed to the React layer for a single image gallery widget.
+ *
+ * The gallery widget needs to *write* to the CKEditor model, not just read
+ * from it like `RenderResourceFunc` does. These callbacks are built in the
+ * editingDowncast converter, where the model element for this particular
+ * gallery is in scope, so React never has to know about CKEditor internals.
+ */
+export interface ImageGalleryHandle {
+  getUuids(): string[]
+  setUuids(uuids: string[]): void
+  /** Subscribe to model changes. Returns an unsubscribe function. */
+  onModelChange(cb: () => void): () => void
+  /** Open the resource picker to append more images to this gallery. */
+  openPicker(): void
+}
+
+/**
+ * A 'gallery renderer', analogous to RenderResourceFunc.
+ *
+ * Passed from the React component wrapping CKEditor into the editor config,
+ * then called in the editingDowncast handler for image galleries.
+ */
+export interface RenderGalleryFunc {
+  (el: HTMLElement, handle: ImageGalleryHandle): void
 }
 
 export type ResourceDialogMode = typeof RESOURCE_LINK | typeof RESOURCE_EMBED
@@ -81,8 +114,6 @@ export const LEGACY_SHORTCODES = [
   "div-with-class",
   "fullwidth-cell",
   "h",
-  "image-gallery-item",
-  "image-gallery",
   "quote",
   "simplecast",
   "sub",
