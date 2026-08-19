@@ -76,6 +76,21 @@ def omnibus_config(settings, db):  # noqa: ARG001
     return SiteConfig(parsed_config)
 
 
+@pytest.fixture
+def ocw_course_config(settings):
+    """Returns the parsed OCW course site config.
+
+    WebsiteStarterFactory's default config has no relation widgets, so tests
+    that care about relation fields build a starter from this instead.
+    """  # noqa: D401
+    with open(  # noqa: PTH123
+        os.path.join(  # noqa: PTH118
+            settings.BASE_DIR, "localdev/configs/ocw-course-site-config.yml"
+        )
+    ) as f:
+        return yaml.load(f.read().strip(), Loader=yaml.SafeLoader)
+
+
 def pytest_addoption(parser):
     """Pytest hook that adds command line parameters"""
     parser.addoption(

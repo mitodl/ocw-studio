@@ -595,6 +595,7 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
                         cls=WebsiteContent,
                         use_defaults=True,
                         values=resource_type_fields,
+                        website_name=drive_file.website.name,
                     )
                 },
                 **ownership_fields,

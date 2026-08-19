@@ -81,6 +81,48 @@ class ConfigField:
     parent_field: dict | None = None
 
 
+def _blank_relation_value(field: dict, website_name: str | None) -> dict:
+    """Return a relation field's blank value in the widget's own shape.
+
+    A relation stores {"content": [...], "website": name}, unlike every other
+    widget, whose blank value is a bare container. A bare [] or "" fails the
+    content form's object schema as a type error, which the form reports as a
+    false "is a required field", blocking every save of the item.
+
+    List-vs-scalar content and the site name both mirror what the widget
+    itself writes: multiple or sortable means a list, and a field-level
+    website overrides the site being edited. The website key is omitted when
+    no site is known, which still validates, and the widget attaches it on
+    the first edit.
+    """
+    is_list = field.get("multiple") or field.get("sortable")
+    blank = {"content": [] if is_list else ""}
+    website = field.get("website") or website_name
+    if website:
+        blank["website"] = website
+    return blank
+
+
+def _leaf_field_value(
+    field: dict,
+    values: dict,
+    *,
+    use_defaults: bool,
+    website_name: str | None,
+):
+    """Return the blank or default value for a field with no subfields."""
+    key = field["name"]
+    if values.get(key) is not None:
+        return values.get(key)
+    if use_defaults and field.get("default") is not None:
+        return field.get("default")
+    if field.get("widget") == "relation":
+        return _blank_relation_value(field, website_name)
+    if field.get("multiple"):
+        return []
+    return ""
+
+
 class SiteConfig:
     """Utility class for parsing and introspecting site configs"""
 
@@ -151,24 +193,17 @@ class SiteConfig:
         cls: object = None,
         use_defaults=False,  # noqa: FBT002
         values: dict | None = None,
+        website_name: str | None = None,
     ) -> dict:
         """Generate a metadata dict with blank keys for the specified item. If
         use_defaults is True, fill the keys with default values from config.
+
+        Pass website_name when the metadata is being generated for a known
+        site so relation fields carry it, matching what the CMS form writes.
         """
         values = values or {}
         item_dict = {}
         item = self.find_item_by_name(name)
-
-        def get_leaf_field_value(config_field: ConfigField):
-            key = config_field.field["name"]
-            if values.get(key) is not None:
-                return values.get(key)
-            if use_defaults and config_field.field.get("default") is not None:
-                return config_field.field.get("default")
-            if config_field.field.get("multiple"):
-                return []
-            return ""
-
         if not item:
             return item_dict
         for config_field in self.iter_item_fields(item):
@@ -179,7 +214,12 @@ class SiteConfig:
                 if subfields:
                     item_dict[key] = {}
                 else:
-                    value = get_leaf_field_value(config_field)
+                    value = _leaf_field_value(
+                        config_field.field,
+                        values,
+                        use_defaults=use_defaults,
+                        website_name=website_name,
+                    )
                     if config_field.parent_field is None:
                         item_dict[key] = value
                     else:

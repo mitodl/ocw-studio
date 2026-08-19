@@ -60,7 +60,7 @@ def build_external_resource(
     This does not save the object to the database.
     """
     metadata = site_config.generate_item_metadata(
-        CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True
+        CONTENT_TYPE_EXTERNAL_RESOURCE, use_defaults=True, website_name=website.name
     )
     metadata["external_url"] = url
     metadata["has_external_license_warning"] = (

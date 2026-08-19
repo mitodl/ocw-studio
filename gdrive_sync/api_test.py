@@ -51,7 +51,11 @@ from websites.constants import (
     RESOURCE_TYPE_OTHER,
     RESOURCE_TYPE_VIDEO,
 )
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
@@ -586,6 +590,32 @@ def test_create_gdrive_resource_content(mime_type, mock_get_s3_content_type, wit
         assert content.updated_by_id == user_pk
         drive_file.refresh_from_db()
         assert drive_file.resource == content
+
+
+def test_create_gdrive_resource_content_relation_fields_use_widget_shape(
+    ocw_course_config, mock_get_s3_content_type
+):
+    """An ingested resource's blank relation fields carry the widget's shape.
+
+    A bare [] here is not editable in the CMS: the content form's object
+    schema rejects it as a type error and reports it as a required-field
+    error on a field that is not required, blocking every save of that
+    resource until the value is replaced.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=ocw_course_config)
+    )
+    drive_file = DriveFileFactory.create(
+        website=website,
+        name="lecture1.mp4",
+        s3_key="test/path/lecture1_mp4.mp4",
+        mime_type="video/mp4",
+    )
+    create_gdrive_resource_content(drive_file)
+    drive_file.refresh_from_db()
+    video_files = drive_file.resource.metadata["video_files"]
+    for field in ("video_captions_resources", "video_transcript_resources"):
+        assert video_files[field] == {"content": [], "website": website.name}
 
 
 def test_create_gdrive_resource_content_forbidden_name(
