@@ -27,6 +27,18 @@ interface Props {
   closeDialog: () => void
   insertEmbed: (id: string, title: string, variant: CKEResourceNodeType) => void
   contentNames: string[]
+  /**
+   * Opt in to selecting several resources at once. Existing callers leave this
+   * unset and keep the original single-selection behavior.
+   */
+  multiple?: boolean
+  /** Required when `multiple` is set. Receives the uuids in selection order. */
+  insertMultiple?: (uuids: string[]) => void
+  /** Restrict the visible tabs, e.g. to images only. */
+  restrictToTabIds?: string[]
+  /** Overrides the dialog heading and accept button label. */
+  dialogTitle?: string
+  acceptLabel?: string
 }
 
 interface TabSettings {
@@ -107,7 +119,18 @@ const modeText = {
 }
 
 export default function ResourcePickerDialog(props: Props): JSX.Element {
-  const { mode, isOpen, closeDialog, insertEmbed, contentNames } = props
+  const {
+    mode,
+    isOpen,
+    closeDialog,
+    insertEmbed,
+    contentNames,
+    multiple = false,
+    insertMultiple,
+    restrictToTabIds,
+    dialogTitle,
+    acceptLabel,
+  } = props
   const website = useWebsite()
   const definedCategories = useMemo(() => {
     const contentCollections =
@@ -131,8 +154,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
             ]
           } else return []
         })
-        .filter((tab) => tab && (mode !== RESOURCE_EMBED || tab.embeddable)),
-    [contentNames, definedCategories, mode],
+        .filter((tab) => tab && (mode !== RESOURCE_EMBED || tab.embeddable))
+        .filter(
+          (tab) => !restrictToTabIds || restrictToTabIds.includes(tab.id),
+        ),
+    [contentNames, definedCategories, mode, restrictToTabIds],
   )
 
   const [activeTabId, setActiveTabId] = useState(tabs[0].id)
@@ -159,6 +185,31 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     null,
   )
 
+  const [selectedUuids, setSelectedUuids] = useState<string[]>([])
+
+  // Start from a clean selection every time the dialog is opened.
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedUuids([])
+      setFocusedResource(null)
+    }
+  }, [isOpen])
+
+  const toggleResource = useCallback((item: WebsiteContent) => {
+    setSelectedUuids((current) =>
+      current.includes(item.text_id)
+        ? current.filter((uuid) => uuid !== item.text_id)
+        : [...current, item.text_id],
+    )
+  }, [])
+
+  const addSelectedResources = useCallback(() => {
+    if (selectedUuids.length > 0 && isOpen) {
+      insertMultiple?.(selectedUuids)
+      closeDialog()
+    }
+  }, [insertMultiple, selectedUuids, closeDialog, isOpen])
+
   const addResource = useCallback(() => {
     if (focusedResource && isOpen) {
       insertEmbed(
@@ -172,14 +223,22 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
 
   const { acceptText, title } = modeText[mode]
 
+  const hasSelection = multiple
+    ? selectedUuids.length > 0
+    : focusedResource !== null
+  const onAccept = multiple ? addSelectedResources : addResource
+  const resolvedAcceptText = multiple
+    ? `${acceptLabel ?? acceptText} (${selectedUuids.length})`
+    : acceptText
+
   return (
     <Dialog
       open={isOpen}
       onCancel={closeDialog}
       wrapClassName="resource-picker-dialog"
-      headerContent={title}
-      onAccept={focusedResource ? addResource : undefined}
-      acceptText={focusedResource ? acceptText : undefined}
+      headerContent={dialogTitle ?? title}
+      onAccept={hasSelection ? onAccept : undefined}
+      acceptText={hasSelection ? resolvedAcceptText : undefined}
       bodyContent={
         <>
           <Nav tabs>
@@ -211,8 +270,11 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     resourcetype={tab.resourcetype}
                     contentType={tab.contentType}
                     filter={filter ?? null}
-                    focusResource={setFocusedResource}
+                    focusResource={
+                      multiple ? toggleResource : setFocusedResource
+                    }
                     focusedResource={focusedResource}
+                    selectedUuids={multiple ? selectedUuids : undefined}
                     singleColumn={tab.singleColumn}
                   />
                 ) : null}
