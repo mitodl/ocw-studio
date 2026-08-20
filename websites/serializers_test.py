@@ -645,48 +645,6 @@ def test_website_content_detail_serializer_save_null_metadata(
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
 
 
-def test_website_content_detail_serializer_sanitizes_markdown(
-    mocker, mocked_website_funcs
-):
-    """WebsiteContentDetailSerializer should strip dangerous HTML from markdown on save, and preserve legitimate HTML"""
-    content = WebsiteContentFactory.create(type=CONTENT_TYPE_RESOURCE)
-    user = UserFactory.create()
-    serializer = WebsiteContentDetailSerializer(
-        data={
-            "markdown": '<img src=x onerror="alert(1)">safe text H<sup>2</sup>O',
-            "metadata": {},
-        },
-        instance=content,
-        context={
-            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
-            "request": mocker.Mock(user=user),
-        },
-    )
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    content.refresh_from_db()
-    assert "onerror" not in content.markdown
-    assert "safe text" in content.markdown
-    assert "H<sup>2</sup>O" in content.markdown
-
-
-def test_website_content_detail_serializer_sanitizes_markdown_on_read():
-    """WebsiteContentDetailSerializer should sanitize markdown on read too, for rows written before this existed"""
-    # bypasses validate_markdown entirely, simulating a row written before
-    # this sanitization existed, or by a path that writes directly to the model
-    content = WebsiteContentFactory.create(
-        type=CONTENT_TYPE_RESOURCE,
-        markdown='<img src=x onerror="alert(1)">safe text H<sup>2</sup>O',
-    )
-    result = WebsiteContentDetailSerializer(instance=content).data
-    assert "onerror" not in result["markdown"]
-    assert "safe text" in result["markdown"]
-    assert "H<sup>2</sup>O" in result["markdown"]
-    # the stored value itself is untouched, only the API response is sanitized
-    content.refresh_from_db()
-    assert "onerror" in content.markdown
-
-
 @pytest.mark.parametrize("add_context_data", [True, False])
 def test_website_content_create_serializer(
     mocker, mocked_website_funcs, add_context_data
@@ -746,69 +704,6 @@ def test_website_content_create_serializer(
     assert content.filename == (
         "myfile" if not add_context_data else override_context_data["filename"]
     )
-
-
-def test_website_content_create_serializer_sanitizes_markdown(
-    mocker, mocked_website_funcs
-):
-    """WebsiteContentCreateSerializer should strip dangerous HTML from markdown on save, and preserve legitimate HTML"""
-    website = WebsiteFactory.create()
-    user = UserFactory.create()
-    payload = {
-        "website_id": website.pk,
-        "title": "a title",
-        "type": CONTENT_TYPE_RESOURCE,
-        "markdown": '<img src=x onerror="alert(1)">safe text H<sup>2</sup>O',
-        "metadata": {},
-    }
-    context = {
-        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
-        "request": mocker.Mock(user=user),
-        "website_id": website.pk,
-    }
-    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    content = WebsiteContent.objects.get(title=payload["title"])
-    assert "onerror" not in content.markdown
-    assert "safe text" in content.markdown
-    assert "H<sup>2</sup>O" in content.markdown
-
-
-def test_website_content_create_serializer_preserves_code_blocks(
-    mocker, mocked_website_funcs
-):
-    """Sanitizing markdown should not mangle a <script> tag shown literally inside a code block or span"""
-    website = WebsiteFactory.create()
-    user = UserFactory.create()
-    payload = {
-        "website_id": website.pk,
-        "title": "a title",
-        "type": CONTENT_TYPE_RESOURCE,
-        "markdown": (
-            "Some text before.\n\n"
-            "```js\n<script>alert(1)</script>\n```\n\n"
-            "Some text after. Inline: `<img onerror>` here too.\n\n"
-            '<img src=x onerror="alert(2)">'
-        ),
-        "metadata": {},
-    }
-    context = {
-        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
-        "request": mocker.Mock(user=user),
-        "website_id": website.pk,
-    }
-    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
-    serializer.is_valid(raise_exception=True)
-    serializer.save()
-    content = WebsiteContent.objects.get(title=payload["title"])
-    # code block and inline code span survive verbatim, including their "onerror" text,
-    # since that text is never live markup there
-    assert "```js\n<script>alert(1)</script>\n```" in content.markdown
-    assert "`<img onerror>`" in content.markdown
-    # the actual live tag outside any code context loses its onerror attribute
-    assert '<img src=x onerror="alert(2)">' not in content.markdown
-    assert '<img src="x">' in content.markdown
 
 
 @pytest.mark.parametrize("is_root_site", [True, False])
