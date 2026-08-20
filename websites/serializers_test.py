@@ -849,6 +849,36 @@ def test_markdown_reject_dangerous_payload(serializer_class):
 
 
 @pytest.mark.parametrize(
+    "bypass_markdown",
+    [
+        "```\n```\n<script>alert(1)</script>\n```",
+        "```\n```\n<img onerror=alert(1)>\n```",
+        "```\n```\n[x](javascript:alert(1))\n```",
+    ],
+)
+@pytest.mark.parametrize(
+    "serializer_class",
+    [WebsiteContentDetailSerializer, WebsiteContentCreateSerializer],
+)
+def test_markdown_reject_consecutive_fence_bypass(serializer_class, bypass_markdown):
+    """Consecutive fences must not let dangerous HTML evade detection.
+
+    A naive regex closes the first fence only when it finds content between the
+    openers, so two adjacent ``` lines fool it into treating the text that
+    follows as code. The state machine closes at the first matching line.
+    """
+    content = WebsiteContentFactory.create()
+    serializer = serializer_class(
+        content,
+        data={"markdown": bypass_markdown},
+        partial=True,
+        context={"website_id": content.website.pk},
+    )
+    assert not serializer.is_valid()
+    assert "markdown" in serializer.errors
+
+
+@pytest.mark.parametrize(
     "markdown",
     [
         '```html\n<img src="x" onerror="alert(1)">\n```',
