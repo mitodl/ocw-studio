@@ -830,6 +830,74 @@ def test_website_export_serializer(ocw_site):
     assert data["fields"]["last_unpublished_by"] is None
 
 
+@pytest.mark.parametrize(
+    "serializer_class",
+    [WebsiteContentDetailSerializer, WebsiteContentCreateSerializer],
+)
+def test_markdown_reject_dangerous_payload(serializer_class):
+    """Serializers should reject markdown containing dangerous HTML outside code regions."""
+    content = WebsiteContentFactory.create()
+    payload = '<img src="x" onerror="alert(1)">'
+    serializer = serializer_class(
+        content,
+        data={"markdown": payload},
+        partial=True,
+        context={"website_id": content.website.pk},
+    )
+    assert not serializer.is_valid()
+    assert "markdown" in serializer.errors
+
+
+@pytest.mark.parametrize(
+    "markdown",
+    [
+        '```html\n<img src="x" onerror="alert(1)">\n```',
+        "`<script>alert(1)</script>`",
+    ],
+)
+@pytest.mark.parametrize(
+    "serializer_class",
+    [WebsiteContentDetailSerializer, WebsiteContentCreateSerializer],
+)
+def test_markdown_allow_dangerous_payload_in_code(serializer_class, markdown):
+    """Serializers should accept dangerous HTML when it is inside a code region."""
+    content = WebsiteContentFactory.create()
+    serializer = serializer_class(
+        content,
+        data={"markdown": markdown},
+        partial=True,
+        context={"website_id": content.website.pk},
+    )
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.validated_data["markdown"] == markdown
+
+
+@pytest.mark.parametrize(
+    "markdown",
+    [
+        '{{< resource uuid="abc" >}} some text',
+        "{{% resource %}}",
+        "area is \\(A = \\pi r^2\\)",
+        "[link](https://example.com?a=1&b=2)",
+    ],
+)
+@pytest.mark.parametrize(
+    "serializer_class",
+    [WebsiteContentDetailSerializer, WebsiteContentCreateSerializer],
+)
+def test_markdown_allow_legitimate_content(serializer_class, markdown):
+    """Serializers should accept legitimate markdown with angle brackets, entities, and shortcodes."""
+    content = WebsiteContentFactory.create()
+    serializer = serializer_class(
+        content,
+        data={"markdown": markdown},
+        partial=True,
+        context={"website_id": content.website.pk},
+    )
+    assert serializer.is_valid(), serializer.errors
+    assert serializer.validated_data["markdown"] == markdown
+
+
 def test_website_content_export_serializer(ocw_site):
     """ExportWebsiteSerializer should strip out user information"""
     user = UserFactory.create()

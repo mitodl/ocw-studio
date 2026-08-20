@@ -541,10 +541,43 @@ def _declared_field_names(instance) -> set:
     return {field.get("name") for field in item.fields}
 
 
+_FENCED_CODE_BLOCK_RE = re.compile(
+    r"(?:^|\n)(`{3,}|~{3,})[^\n]*\n.*?\n\1[ \t]*(?=\n|$)", re.DOTALL
+)
+_INLINE_CODE_SPAN_RE = re.compile(r"`+[^`\n]*?`+")
+_DANGEROUS_MARKDOWN_PATTERNS = [
+    re.compile(r"<\s*script\b", re.IGNORECASE),
+    re.compile(r"<[^>]+\bon\w+\s*=", re.IGNORECASE),
+    re.compile(r"javascript\s*:", re.IGNORECASE),
+]
+
+
+def _strip_code_regions(markdown: str) -> str:
+    """Return markdown with fenced code blocks and inline code spans removed."""
+    stripped = _FENCED_CODE_BLOCK_RE.sub("", markdown)
+    return _INLINE_CODE_SPAN_RE.sub("", stripped)
+
+
+class RejectDangerousMarkdownMixin(serializers.Serializer):
+    """Reject markdown containing dangerous HTML patterns on write."""
+
+    def validate_markdown(self, value):
+        """Raise ValidationError if markdown contains dangerous HTML."""
+        if value is None:
+            return value
+        checked = _strip_code_regions(value)
+        for pattern in _DANGEROUS_MARKDOWN_PATTERNS:
+            if pattern.search(checked):
+                msg = "Markdown contains disallowed HTML."
+                raise serializers.ValidationError(msg)
+        return value
+
+
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
     WebsiteContentDeletableMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -730,7 +763,9 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    RequestUserSerializerMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializer which creates a new WebsiteContent"""
 
