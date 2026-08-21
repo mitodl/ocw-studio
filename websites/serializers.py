@@ -541,10 +541,65 @@ def _declared_field_names(instance) -> set:
     return {field.get("name") for field in item.fields}
 
 
+_FENCE_START_RE = re.compile(r"^( {0,3})(`{3,}|~{3,})")
+_INLINE_CODE_SPAN_RE = re.compile(r"(?<!\\)`+[^`\n]*?`+")
+_DANGEROUS_MARKDOWN_PATTERNS = [
+    re.compile(r"<\s*script\b", re.IGNORECASE),
+    re.compile(r"<[^>]+\bon\w+\s*=", re.IGNORECASE),
+    re.compile(r"javascript\s*:", re.IGNORECASE),
+]
+
+
+def _strip_code_regions(markdown: str) -> str:
+    """Return markdown with fenced code blocks and inline code spans removed.
+
+    Uses a line-by-line state machine so that consecutive fences (e.g. two
+    adjacent ``` lines) close at the first matching line, matching CommonMark
+    semantics rather than allowing a regex to extend past the closer.
+    """
+    lines = markdown.split("\n")
+    result = []
+    fence_char = None
+    fence_min_len = 0
+    for line in lines:
+        m = _FENCE_START_RE.match(line)
+        if fence_char is None:
+            if m:
+                fence_char = m.group(2)[0]
+                fence_min_len = len(m.group(2))
+            else:
+                result.append(line)
+        elif (
+            m
+            and m.group(2)[0] == fence_char
+            and len(m.group(2)) >= fence_min_len
+            and not line[m.end() :].strip()
+        ):
+            fence_char = None
+            fence_min_len = 0
+    return _INLINE_CODE_SPAN_RE.sub("", "\n".join(result))
+
+
+class RejectDangerousMarkdownMixin(serializers.Serializer):
+    """Reject markdown containing dangerous HTML patterns on write."""
+
+    def validate_markdown(self, value):
+        """Raise ValidationError if markdown contains dangerous HTML."""
+        if value is None:
+            return value
+        checked = _strip_code_regions(value)
+        for pattern in _DANGEROUS_MARKDOWN_PATTERNS:
+            if pattern.search(checked):
+                msg = "Markdown contains disallowed HTML."
+                raise serializers.ValidationError(msg)
+        return value
+
+
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
     WebsiteContentDeletableMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -730,7 +785,9 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    RequestUserSerializerMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializer which creates a new WebsiteContent"""
 
