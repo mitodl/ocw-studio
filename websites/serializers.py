@@ -33,6 +33,7 @@ from websites.api import (
     update_youtube_thumbnail,
 )
 from websites.constants import (
+    CONTENT_TYPE_EXTERNAL_RESOURCE,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
@@ -48,6 +49,41 @@ log = logging.getLogger(__name__)
 
 
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
+
+_URL_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def validate_external_resource_metadata(metadata):
+    """
+    Validate and normalize an external-resource's `external_url`, raising a
+    ValidationError for characters known to make Hugo's Go url.Parse reject
+    the URL at build time (see link_parser.py's _DESTINATION_FORBIDDEN_CHARS
+    for the same underlying set of characters).
+    """
+    if not isinstance(metadata, dict) or not metadata.get("external_url"):
+        return metadata
+    if not isinstance(metadata["external_url"], str):
+        msg = "External URL must be a string."
+        raise serializers.ValidationError(msg)
+    url = metadata["external_url"].strip()
+    if _URL_CONTROL_CHAR_RE.search(url):
+        msg = (
+            "External URL contains an invalid control character "
+            "(e.g. a stray newline or tab)."
+        )
+        raise serializers.ValidationError(msg)
+    if "\\" in url:
+        msg = "External URL contains a backslash, which is not a valid URL character."
+        raise serializers.ValidationError(msg)
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        msg = (
+            "External URL must be a complete, absolute URL "
+            "(e.g. https://example.com/page)."
+        )
+        raise serializers.ValidationError(msg)
+    metadata["external_url"] = url
+    return metadata
 
 
 class WebsiteStarterSerializer(serializers.ModelSerializer):
@@ -551,6 +587,15 @@ class WebsiteContentDetailSerializer(
     content_context = serializers.SerializerMethodField()
     url_path = serializers.SerializerMethodField()
 
+    def validate_metadata(self, value):
+        """Validate metadata contents that need cross-field/content-type context"""
+        content_type = (
+            self.instance.type if self.instance else self.initial_data.get("type")
+        )
+        if content_type == CONTENT_TYPE_EXTERNAL_RESOURCE:
+            value = validate_external_resource_metadata(value)
+        return value
+
     def update(self, instance, validated_data):
         """Update WebsiteContent, handling filename and metadata."""
         title = validated_data.get("title", instance.title)
@@ -733,6 +778,12 @@ class WebsiteContentCreateSerializer(
     serializers.ModelSerializer, RequestUserSerializerMixin
 ):
     """Serializer which creates a new WebsiteContent"""
+
+    def validate_metadata(self, value):
+        """Validate metadata contents that need cross-field/content-type context"""
+        if self.initial_data.get("type") == CONTENT_TYPE_EXTERNAL_RESOURCE:
+            value = validate_external_resource_metadata(value)
+        return value
 
     def create(self, validated_data):
         user = self.user_from_request()

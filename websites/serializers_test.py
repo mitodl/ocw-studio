@@ -18,6 +18,7 @@ from users.models import User
 from videos.constants import YT_THUMBNAIL_IMG
 from videos.utils import resource_file_paths
 from websites.constants import (
+    CONTENT_TYPE_EXTERNAL_RESOURCE,
     CONTENT_TYPE_INSTRUCTOR,
     CONTENT_TYPE_METADATA,
     CONTENT_TYPE_PAGE,
@@ -643,6 +644,127 @@ def test_website_content_detail_serializer_save_null_metadata(
     assert content.metadata == {"meta": "data"}
     assert content.updated_by == user
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
+
+
+@pytest.mark.parametrize(
+    ("bad_url", "expected_message"),
+    [
+        (
+            "http://example.com/pa\x00ge",
+            (
+                "External URL contains an invalid control character "
+                "(e.g. a stray newline or tab)."
+            ),
+        ),
+        (
+            "http://example.com\\page",
+            "External URL contains a backslash, which is not a valid URL character.",
+        ),
+        (
+            "not a url",
+            (
+                "External URL must be a complete, absolute URL "
+                "(e.g. https://example.com/page)."
+            ),
+        ),
+        (12345, "External URL must be a string."),
+        (["http://example.com"], "External URL must be a string."),
+    ],
+)
+def test_website_content_detail_serializer_rejects_bad_external_url(
+    mocker, bad_url, expected_message
+):
+    """WebsiteContentDetailSerializer should reject external_url values that would break Hugo's build"""
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "https://example.com/original"},
+    )
+    serializer = WebsiteContentDetailSerializer(
+        instance=content,
+        data={"metadata": {"external_url": bad_url}},
+        partial=True,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=UserFactory.create()),
+        },
+    )
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("metadata") == [expected_message]
+
+
+@pytest.mark.parametrize(
+    "raw_url",
+    [
+        " https://example.com/page ",
+        "https://example.com/page\n",
+        "\nhttps://example.com/page",
+        "\thttps://example.com/page",
+    ],
+)
+def test_website_content_detail_serializer_strips_external_url_whitespace(
+    mocker, mocked_website_funcs, raw_url
+):
+    """WebsiteContentDetailSerializer should strip leading/trailing whitespace from external_url"""
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "https://example.com/original"},
+    )
+    serializer = WebsiteContentDetailSerializer(
+        instance=content,
+        data={"metadata": {"external_url": raw_url}},
+        partial=True,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=UserFactory.create()),
+        },
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == "https://example.com/page"
+
+
+def test_website_content_detail_serializer_ignores_backslash_for_other_types(mocker):
+    """The external_url guard should not apply to non-external-resource content"""
+    content = WebsiteContentFactory.create(
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={"external_url": "http://example.com\\page"},
+    )
+    serializer = WebsiteContentDetailSerializer(
+        instance=content,
+        data={"metadata": {"external_url": "http://example.com\\page"}},
+        partial=True,
+        context={
+            "view": mocker.Mock(kwargs={"parent_lookup_website": content.website.name}),
+            "request": mocker.Mock(user=UserFactory.create()),
+        },
+    )
+    assert serializer.is_valid() is True
+
+
+def test_website_content_create_serializer_rejects_bad_external_url(mocker):
+    """WebsiteContentCreateSerializer should reject an external_url that would break Hugo's build"""
+    website = WebsiteFactory.create()
+    payload = {
+        "website_id": website.pk,
+        "text_id": "my-text-id",
+        "title": "a title",
+        "type": CONTENT_TYPE_EXTERNAL_RESOURCE,
+        "metadata": {"external_url": "http://example.com\\page"},
+        "is_page_content": False,
+        "dirpath": "content/external-resources",
+        "filename": "myfile",
+    }
+    context = {
+        "view": mocker.Mock(kwargs={"parent_lookup_website": website.name}),
+        "request": mocker.Mock(user=UserFactory.create()),
+        "website_id": website.pk,
+    }
+    serializer = WebsiteContentCreateSerializer(data=payload, context=context)
+    assert serializer.is_valid() is False
+    assert serializer.errors.get("metadata") == [
+        "External URL contains a backslash, which is not a valid URL character."
+    ]
 
 
 @pytest.mark.parametrize("add_context_data", [True, False])
