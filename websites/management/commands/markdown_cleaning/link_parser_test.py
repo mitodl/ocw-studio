@@ -139,6 +139,12 @@ def test_link_parser_with_shortcodes_in_destination():
         "[text] (dest)",
         "[text]\n(dest)",
         "[text] \n (dest)",
+        "[some text](http://example.com/page\n)",
+        "[some text](\nhttp://example.com/page)",
+        "[some text](http://example.com/\npage)",
+        "[some text](http://example.com\\page)",
+        "[some text](http://example.com/page\r)",
+        "[some text](http://example.com/pa\x00ge)",
     ],
 )
 def test_link_parser_rejects_bad_links(markdown):

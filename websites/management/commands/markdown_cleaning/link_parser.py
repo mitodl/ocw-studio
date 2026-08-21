@@ -25,6 +25,17 @@ from websites.management.commands.markdown_cleaning.parsing_utils import (
     unescape_quoted_string,
 )
 
+# Characters that must never be silently absorbed into a link destination:
+# space/tab (existing separator logic), ASCII control characters (Go's
+# net/url.Parse rejects these outright with "invalid control character in
+# URL"), and backslash (Go's net/url.Parse rejects it specifically with
+# "invalid character \"\\\\\" in host name"). A source markdown link with one
+# of these inside its `(destination)` most likely comes from a hard-wrapped
+# or otherwise mangled URL, not a deliberate one.
+_DESTINATION_FORBIDDEN_CHARS = (
+    " " + "".join(chr(c) for c in range(0x20)) + "\x7f" + "\\"
+)
+
 
 @dataclass
 class MarkdownLink:
@@ -200,7 +211,7 @@ class LinkParser(WrappedParser):
             ZeroOrMore(
                 original_text_for(nested_expr(opener=R"{{<", closer=">}}"))
                 | original_text_for(nested_expr(opener=R"{{%", closer="%}}"))
-                | CharsNotIn(" \t", exact=1)
+                | CharsNotIn(_DESTINATION_FORBIDDEN_CHARS, exact=1)
             )
         ).set_results_name("destination")
 
