@@ -127,3 +127,6 @@ s3/
 
 # VS-Code workspace settings
 .vscode
+
+# Claude Code local state and worktrees
+.claude/

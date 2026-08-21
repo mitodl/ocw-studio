@@ -2,7 +2,12 @@ import { turndownService as ckeditorTurndownService } from "@ckeditor/ckeditor5-
 import Turndown from "turndown"
 import { TABLE_ELS } from "./plugins/constants"
 
-export const turndownService = ckeditorTurndownService
+/**
+ * CKEditor exports its single shared Turndown instance as `any`. Name the real
+ * type here so that everything we do to it below (swapping rule sets, reading
+ * options) is actually checked.
+ */
+export const turndownService: Turndown = ckeditorTurndownService
 
 export function ruleMatches(rule: Turndown.Rule, node: HTMLElement): boolean {
   const filter = rule.filter

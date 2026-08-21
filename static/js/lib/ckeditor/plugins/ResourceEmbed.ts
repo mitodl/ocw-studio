@@ -14,7 +14,7 @@ import {
   RESOURCE_EMBED,
   RESOURCE_EMBED_COMMAND,
 } from "./constants"
-import { Shortcode, makeHtmlString } from "./util"
+import { Shortcode, makeHtmlString, getOcwConfig } from "./util"
 import { isNotNil } from "../../../util"
 
 const RESOURCE_SHORTCODE_REGEX = Shortcode.regex("resource", false)
@@ -93,10 +93,12 @@ class InsertResourceEmbedCommand extends Command {
   refresh() {
     const model = this.editor.model
     const selection = model.document.selection
-    const allowedIn = model.schema.findAllowedParent(
-      selection.getFirstPosition(),
-      RESOURCE_EMBED,
-    )
+    const position = selection.getFirstPosition()
+    // A selection with no position has nowhere to insert into, so the command
+    // is simply unavailable rather than being asked about an absent position.
+    const allowedIn = position
+      ? model.schema.findAllowedParent(position, RESOURCE_EMBED)
+      : null
     this.isEnabled = allowedIn !== null
   }
 }
@@ -178,9 +180,10 @@ class ResourceEmbedEditing extends CKEPlugin {
       },
     })
 
-    const renderResource: RenderResourceFunc = (
-      this.editor.config.get(CKEDITOR_RESOURCE_UTILS) ?? {}
-    ).renderResource
+    const renderResource: RenderResourceFunc | undefined = getOcwConfig(
+      this.editor,
+      CKEDITOR_RESOURCE_UTILS,
+    )?.renderResource
 
     /**
      * editingDowncast converts a view element to HTML which is actually shown
