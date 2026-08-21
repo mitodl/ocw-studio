@@ -420,13 +420,18 @@ class GithubApiWrapper:
         return commit
 
     @retry_on_failure
-    def delete_content_file(self, content: WebsiteContent) -> Commit:
+    def delete_content_file(self, content: WebsiteContent) -> Commit | None:
         """
-        Delete a file from git
+        Delete a file from git. Returns None if the file is already gone.
         """
         repo = self.get_repo()
         filepath = get_destination_filepath(content, self.site_config)
-        sha = repo.get_contents(filepath).sha
+        try:
+            sha = repo.get_contents(filepath).sha
+        except GithubException as ge:
+            if ge.status == 404:  # noqa: PLR2004
+                return None
+            raise
         return repo.delete_file(
             filepath,
             f"Delete {filepath}",
