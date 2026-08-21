@@ -542,7 +542,7 @@ def _declared_field_names(instance) -> set:
 
 
 _FENCE_START_RE = re.compile(r"^( {0,3})(`{3,}|~{3,})")
-_INLINE_CODE_SPAN_RE = re.compile(r"`+[^`\n]*?`+")
+_INLINE_CODE_SPAN_RE = re.compile(r"(?<!\\)`+[^`\n]*?`+")
 _DANGEROUS_MARKDOWN_PATTERNS = [
     re.compile(r"<\s*script\b", re.IGNORECASE),
     re.compile(r"<[^>]+\bon\w+\s*=", re.IGNORECASE),
