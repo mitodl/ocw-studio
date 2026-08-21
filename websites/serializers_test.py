@@ -669,6 +669,16 @@ def test_website_content_detail_serializer_save_null_metadata(
         ),
         (12345, "External URL must be a string."),
         (["http://example.com"], "External URL must be a string."),
+        ("", "External URL is required."),
+        ("   ", "External URL is required."),
+        (
+            "http://[::1",
+            "External URL could not be parsed.",
+        ),
+        (
+            "https://example.com/%zz",
+            "External URL contains a malformed percent-encoded character.",
+        ),
     ],
 )
 def test_website_content_detail_serializer_rejects_bad_external_url(

@@ -51,6 +51,7 @@ log = logging.getLogger(__name__)
 ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is required"}
 
 _URL_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
+_INVALID_PERCENT_ENCODING_RE = re.compile(r"%(?![0-9A-Fa-f]{2})")
 
 
 def validate_external_resource_metadata(metadata):
@@ -60,12 +61,16 @@ def validate_external_resource_metadata(metadata):
     the URL at build time (see link_parser.py's _DESTINATION_FORBIDDEN_CHARS
     for the same underlying set of characters).
     """
-    if not isinstance(metadata, dict) or not metadata.get("external_url"):
+    if not isinstance(metadata, dict) or "external_url" not in metadata:
         return metadata
-    if not isinstance(metadata["external_url"], str):
+    value = metadata["external_url"]
+    if not isinstance(value, str):
         msg = "External URL must be a string."
         raise serializers.ValidationError(msg)
-    url = metadata["external_url"].strip()
+    url = value.strip()
+    if not url:
+        msg = "External URL is required."
+        raise serializers.ValidationError(msg)
     if _URL_CONTROL_CHAR_RE.search(url):
         msg = (
             "External URL contains an invalid control character "
@@ -75,7 +80,14 @@ def validate_external_resource_metadata(metadata):
     if "\\" in url:
         msg = "External URL contains a backslash, which is not a valid URL character."
         raise serializers.ValidationError(msg)
-    parsed = urlparse(url)
+    if _INVALID_PERCENT_ENCODING_RE.search(url):
+        msg = "External URL contains a malformed percent-encoded character."
+        raise serializers.ValidationError(msg)
+    try:
+        parsed = urlparse(url)
+    except ValueError:
+        msg = "External URL could not be parsed."
+        raise serializers.ValidationError(msg) from None
     if not parsed.scheme or not parsed.netloc:
         msg = (
             "External URL must be a complete, absolute URL "
