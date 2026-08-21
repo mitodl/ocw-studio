@@ -4,7 +4,6 @@ Django settings for ocw_studio.
 
 import logging
 import os
-import platform
 from urllib.parse import urlparse
 
 import dj_database_url
@@ -26,7 +25,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.194.0"
+VERSION = "0.195.0"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -158,6 +157,7 @@ INSTALLED_APPS = [
     "mitol.common.apps.CommonApp",
     "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
+    "mitol.observability.apps.ObservabilityConfig",
     "health_check",
 ]
 
@@ -305,82 +305,57 @@ LOG_LEVEL = get_string(
 DJANGO_LOG_LEVEL = get_string(
     name="DJANGO_LOG_LEVEL", default="INFO", description="The log level for django"
 )
-# For logging to a remote syslog host
-LOG_HOST = get_string(
-    name="OCW_STUDIO_LOG_HOST",
-    default="localhost",
-    description="Remote syslog server hostname",
-)
-LOG_HOST_PORT = get_int(
-    name="OCW_STUDIO_LOG_HOST_PORT",
-    default=514,
-    description="Remote syslog server port",
-)
 
-HOSTNAME = platform.node().split(".")[0]
+# mitol-django-observability reads LOG_LEVEL directly from os.environ, not from
+# Django settings; bridge the OCW_STUDIO_LOG_LEVEL env var so operators keep the
+# log-level control they have today.
+os.environ.setdefault("LOG_LEVEL", LOG_LEVEL)
 
 # nplusone profiler logger configuration
 NPLUSONE_LOGGER = logging.getLogger("nplusone")
 NPLUSONE_LOG_LEVEL = logging.ERROR
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "filters": {
-        "require_debug_false": {
-            "()": "django.utils.log.RequireDebugFalse",
-        }
-    },
-    "formatters": {
-        "verbose": {
-            "format": (
-                "[%(asctime)s] %(levelname)s %(process)d [%(name)s] "
-                "%(filename)s:%(lineno)d - "
-                f"[{HOSTNAME}] - %(message)s"
-            ),
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-        }
-    },
-    "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-        "syslog": {
-            "level": LOG_LEVEL,
-            "class": "logging.handlers.SysLogHandler",
-            "facility": "local7",
-            "formatter": "verbose",
-            "address": (LOG_HOST, LOG_HOST_PORT),
-        },
-        "mail_admins": {
-            "level": "ERROR",
-            "filters": ["require_debug_false"],
-            "class": "django.utils.log.AdminEmailHandler",
-        },
-    },
-    "loggers": {
-        "django": {
-            "propagate": True,
-            "level": DJANGO_LOG_LEVEL,
-            "handlers": ["console", "syslog"],
-        },
-        "django.request": {
-            "handlers": ["mail_admins"],
-            "level": DJANGO_LOG_LEVEL,
-            "propagate": True,
-        },
-        "nplusone": {
-            "handlers": ["console"],
-            "level": "ERROR",
-        },
-    },
-    "root": {
-        "handlers": ["console", "syslog"],
-        "level": LOG_LEVEL,
-    },
+# LOGGING is provided by mitol-django-observability (structlog-based, JSON in
+# prod). ObservabilityConfig.ready() calls configure_structlog(), which
+# reconfigures stdlib logging unconditionally, so keeping a local LOGGING dict
+# here would describe a configuration that is overwritten seconds later.
+#
+# The syslog handler is gone with it: nothing sets OCW_STUDIO_LOG_HOST, so it
+# addressed localhost:514, where no syslog daemon runs in the container. Grafana
+# Alloy collects from pod stdout.
+#
+# Imported rather than pulled in through import_settings_modules so that the
+# LOGGING name is statically visible -- the mutations below would otherwise read
+# as undefined.
+from mitol.observability.settings.logging import LOGGING  # noqa: E402
+
+# Restore the AdminEmailHandler so Django still emails ADMINS on unhandled 500
+# errors when DEBUG=False. Sentry captures errors too; this is the independent
+# email-based safety net the replaced LOGGING dict provided.
+LOGGING.setdefault("filters", {})
+LOGGING["filters"]["require_debug_false"] = {"()": "django.utils.log.RequireDebugFalse"}
+LOGGING["handlers"]["mail_admins"] = {
+    "level": "ERROR",
+    "filters": ["require_debug_false"],
+    "class": "django.utils.log.AdminEmailHandler",
 }
+LOGGING["loggers"]["django.request"]["handlers"].append("mail_admins")
+
+# OpenTelemetry configuration (consumed by mitol-django-observability).
+# Tracing turns on when either this setting or the OTEL_EXPORTER_OTLP_ENDPOINT
+# environment variable is set -- those two and no others; the signal-specific
+# OTEL_EXPORTER_OTLP_TRACES_ENDPOINT is not consulted by the released library.
+# There is no flag to disable it.
+#
+# The value the library hands to the exporter is used verbatim, so this carries
+# the full signal path (.../v1/traces) rather than a base URL. service.name comes
+# from the OTEL_SERVICE_NAME environment variable, which the library reads
+# directly, so it needs no setting here.
+OPENTELEMETRY_ENDPOINT = get_string(
+    name="OPENTELEMETRY_ENDPOINT",
+    default=None,
+    description="OTLP/HTTP traces endpoint, including the /v1/traces path",
+)
 
 GA_TRACKING_ID = get_string(
     name="GA_TRACKING_ID", default="", description="Google analytics tracking ID"
@@ -1347,6 +1322,11 @@ SITEMAP_DOMAIN = get_string(
     name="SITEMAP_DOMAIN",
     default="ocw.mit.edu",
     description="The domain to be used in Hugo builds for fully qualified URLs in the sitemap",  # noqa: E501
+)
+COURSE_V3_CANONICAL_DOMAIN = get_string(
+    name="COURSE_V3_CANONICAL_DOMAIN",
+    default="learn.mit.edu",
+    description="The domain to be used in Hugo builds for canonical URLs on ocw-course-v3 sites",  # noqa: E501
 )
 OCW_HUGO_THEMES_SENTRY_DSN = get_string(
     name="OCW_HUGO_THEMES_SENTRY_DSN",

@@ -90,6 +90,7 @@ def required_concourse_settings(settings):
     settings.OCW_GTM_ACCOUNT_ID = "abc123"
     settings.OCW_EXTRA_THEMES_GTM_IDS = {}
     settings.OCW_EXTRA_THEMES_BASE_URLS = {}
+    settings.COURSE_V3_CANONICAL_DOMAIN = "learn-test.mit.edu"
     settings.TEST_ROOT_WEBSITE_NAME = "ocw-ci-test-www"
     settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-www", "ocw-ci-test-course"]
     return settings

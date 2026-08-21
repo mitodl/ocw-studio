@@ -386,6 +386,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+        "COURSE_V3_CANONICAL_DOMAIN": settings.COURSE_V3_CANONICAL_DOMAIN,
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
         "NOINDEX": config.noindex,
     }
@@ -403,6 +404,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert (
         build_online_site_task["params"]["GTM_ACCOUNT_ID"]
         == config.vars["gtm_account_id"]
+    )
+    assert (
+        build_online_site_task["params"]["COURSE_V3_CANONICAL_DOMAIN"]
+        == config.vars["course_v3_canonical_domain"]
     )
     upload_online_build_task = get_dict_list_item_by_field(
         items=online_site_tasks, field="task", value=UPLOAD_ONLINE_BUILD_IDENTIFIER
@@ -607,6 +612,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         "OCW_IMPORT_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
         "SITEMAP_DOMAIN": settings.SITEMAP_DOMAIN,
+        "COURSE_V3_CANONICAL_DOMAIN": settings.COURSE_V3_CANONICAL_DOMAIN,
         "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
         "NOINDEX": config.noindex,
     }
@@ -624,6 +630,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert (
         build_offline_site_task["params"]["GTM_ACCOUNT_ID"]
         == config.vars["gtm_account_id"]
+    )
+    assert (
+        build_offline_site_task["params"]["COURSE_V3_CANONICAL_DOMAIN"]
+        == config.vars["course_v3_canonical_domain"]
     )
     upload_offline_build_task = get_dict_list_item_by_field(
         offline_site_tasks, "task", UPLOAD_OFFLINE_BUILD_IDENTIFIER
@@ -736,6 +746,9 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     assert dummy_vars["noindex"] == config.noindex
     assert dummy_vars["pipeline_name"] == branch_vars["pipeline_name"]
     assert dummy_vars["instance_vars"] == instance_vars
+    assert (
+        dummy_vars["course_v3_canonical_domain"] == settings.COURSE_V3_CANONICAL_DOMAIN
+    )
     assert dummy_vars["static_api_url"] == branch_vars["static_api_url"]
     assert dummy_vars["storage_bucket"] == storage_bucket
     assert dummy_vars["artifacts_bucket"] == artifacts_bucket

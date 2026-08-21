@@ -1,6 +1,38 @@
 Release Notes
 =============
 
+Version 0.195.0 (Released August 13, 2026)
+---------------
+
+- Update dependency sass to v1.102.0 (#3145)
+- feat: language and locale override for resources (#3137)
+- Update dependency pytest-env to v1.7.0 (#3144)
+- Update dependency sentry-sdk to v2.66.1 (#3143)
+- Update dependency django-guardian to v3.3.3 (#3142)
+- Update dependency boto3 to v1.43.56 (#3141)
+- Update astral-sh/setup-uv action to v9 (#3146)
+- Update actions/checkout action to v7.0.1 (#3140)
+- Harden GH Actions supply chain: zizmor scanning + 7-day dependency cool-down (#3134)
+
+Version 0.194.1 (Released August 12, 2026)
+---------------
+
+- Add HUGO_CSRF_COOKIE_NAME setting to theme_assets_pipeline env (#3126)
+- [pre-commit.ci] pre-commit autoupdate (#3121)
+- Update dependency cryptography to v50 [SECURITY] (#3136)
+- Update dependency ramda to ^0.32.0 (#3015)
+- Update dependency sinon to v22.1.0 (#3131)
+- Update actions/setup-node action to v7 (#3133)
+- fix: publish an empty array when no caption/transcript resource resolves (#3123)
+- fix: skip 3Play sync when an English caption/transcript is already linked under another naming convention (#3115)
+- Update dependency autoprefixer to v10.5.4 (#3129)
+- Update dependency sentry-sdk to v2.66.0 (#3130)
+- Update dependency django-webpack-loader to v3.2.4 (#3128)
+- Update Yarn to v4.18.0 (#3132)
+- Update dependency boto3 to v1.43.51 (#3127)
+- Update dependency django-debug-toolbar to v7 (#3120)
+- Update dependency @types/sinon to v22 (#3118)
+
 Version 0.194.0 (Released July 30, 2026)
 ---------------
 
