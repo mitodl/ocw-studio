@@ -57,6 +57,7 @@ jest.mock("@ckeditor/ckeditor5-react", () => ({
 let lastResourcePickerProps: any = null
 jest.mock("../../components/widgets/ResourcePickerDialog", () => ({
   __esModule: true,
+  ...jest.requireActual("../../components/widgets/ResourcePickerDialog"),
   default: (props: any) => {
     lastResourcePickerProps = props
     return props.isOpen ? <div data-testid="resource-picker" /> : null

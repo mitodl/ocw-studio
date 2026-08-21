@@ -20,15 +20,21 @@ import {
   RESOURCE_EMBED_COMMAND,
   ResourceDialogMode,
   ADD_RESOURCE_EMBED,
+  RESOURCE_EMBED,
   RESOURCE_LINK,
   MARKDOWN_CONFIG_KEY,
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
   MINIMAL_WITH_MATH,
+  IMAGE_GALLERY_COMMAND,
+  ImageGalleryHandle,
+  RenderGalleryFunc,
 } from "../../lib/ckeditor/plugins/constants"
-import ResourcePickerDialog from "./ResourcePickerDialog"
+import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
+import ImageGalleryWidget from "./ImageGalleryWidget"
 import useThrowSynchronously from "../../hooks/useAsyncError"
 import { useWebsite } from "../../context/Website"
+import { ContentType } from "../../constants"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { useFeatureFlag } from "../../lib/util"
 import { FEATURE_FLAG_CUSTOM_LINKUI } from "../../common/feature_flags"
@@ -46,6 +52,8 @@ export interface Props {
 }
 
 type RenderQueueEntry = [string, HTMLElement]
+
+type GalleryQueueEntry = [HTMLElement, ImageGalleryHandle]
 
 /**
  * A component for editing Markdown using CKEditor.
@@ -111,10 +119,57 @@ export default function MarkdownEditor(props: Props): JSX.Element {
 
   const openResourcePicker = useCallback(
     (resourceDialogType: CKEResourceNodeType) => {
+      setIsGalleryPicker(false)
       setResourcePickerMode(resourceDialogType)
       setIsResourcePickerOpen(true)
     },
     [setResourcePickerMode, setIsResourcePickerOpen],
+  )
+
+  const [galleryQueue, setGalleryQueue] = useState<GalleryQueueEntry[]>([])
+
+  const renderImageGallery: RenderGalleryFunc = useCallback(
+    (el: HTMLElement, handle: ImageGalleryHandle) => {
+      setGalleryQueue((xs) => [...xs, [el, handle]])
+    },
+    [setGalleryQueue],
+  )
+
+  /**
+   * The gallery being added to, or null when the picker's selection should
+   * become a brand new gallery.
+   */
+  const [galleryHandle, setGalleryHandle] = useState<ImageGalleryHandle | null>(
+    null,
+  )
+  const [isGalleryPicker, setIsGalleryPicker] = useState(false)
+
+  const openImageGalleryPicker = useCallback(
+    (handle: ImageGalleryHandle | null) => {
+      setGalleryHandle(handle)
+      setIsGalleryPicker(true)
+      setResourcePickerMode(RESOURCE_EMBED)
+      setIsResourcePickerOpen(true)
+    },
+    [],
+  )
+
+  const addGalleryImages = useCallback(
+    (uuids: string[]) => {
+      if (galleryHandle) {
+        // Appending to an existing gallery. Skip anything already present so a
+        // re-pick cannot duplicate an image.
+        const existing = galleryHandle.getUuids()
+        galleryHandle.setUuids([
+          ...existing,
+          ...uuids.filter((uuid) => !existing.includes(uuid)),
+        ])
+      } else {
+        editor.current?.execute(IMAGE_GALLERY_COMMAND, uuids)
+      }
+      editor.current?.editing.view.focus()
+    },
+    [galleryHandle],
   )
 
   const editorConfig = useMemo(() => {
@@ -163,6 +218,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       [CKEDITOR_RESOURCE_UTILS]: {
         renderResource,
         openResourcePicker,
+        renderImageGallery,
+        openImageGalleryPicker,
       },
       toolbar: {
         ...baseConfig.toolbar,
@@ -177,6 +234,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     minimal,
     renderResource,
     openResourcePicker,
+    renderImageGallery,
+    openImageGalleryPicker,
     link,
     embed,
     allowedHtml,
@@ -204,8 +263,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       setRenderQueue((xs) =>
         xs.filter((entry) => document.body.contains(entry[1])),
       )
+      setGalleryQueue((xs) =>
+        xs.filter((entry) => document.body.contains(entry[0])),
+      )
     },
-    [onChange, setRenderQueue, name],
+    [onChange, setRenderQueue, setGalleryQueue, name],
   )
 
   const closeResourcePicker = useCallback(() => {
@@ -224,17 +286,31 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           onError={throwSynchronously}
         />
       </div>
-      {(link.length > 0 || embed.length > 0) && (
+      {(link.length > 0 || embed.length > 0 || isGalleryPicker) && (
         <ResourcePickerDialog
           isOpen={isResourcePickerOpen}
           mode={resourcePickerMode}
-          contentNames={resourcePickerMode === RESOURCE_LINK ? link : embed}
+          contentNames={
+            isGalleryPicker
+              ? [ContentType.Resource]
+              : resourcePickerMode === RESOURCE_LINK
+                ? link
+                : embed
+          }
           closeDialog={closeResourcePicker}
           insertEmbed={addResourceEmbed}
+          multiple={isGalleryPicker}
+          insertMultiple={addGalleryImages}
+          restrictToTabIds={isGalleryPicker ? [TabIds.Images] : undefined}
+          dialogTitle={isGalleryPicker ? "Add Images to Gallery" : undefined}
+          acceptLabel={isGalleryPicker ? "Add images" : undefined}
         />
       )}
       {renderQueue.map(([uuid, el], idx) => (
         <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
+      ))}
+      {galleryQueue.map(([el, handle], idx) => (
+        <ImageGalleryWidget key={`gallery_${idx}`} el={el} handle={handle} />
       ))}
     </>
   )
