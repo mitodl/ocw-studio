@@ -1,6 +1,7 @@
 """Tests for the fix_external_resource_urls management command."""  # noqa: INP001
 
 import csv
+from io import StringIO
 
 import pytest
 from django.core.management import call_command
@@ -152,6 +153,41 @@ def test_dry_run_writes_csv_plan(tmp_path, mock_sync_task):
     # dry run: DB itself is untouched even though the plan was written
     content.refresh_from_db()
     assert content.metadata["external_url"] == original_url
+
+
+def test_dry_run_prints_affected_content_list(mock_sync_task):
+    """Without --commit, the affected content prints to stdout for inspection (e.g. on production)."""
+    website = WebsiteFactory.create()
+    original_url = "http://www.gutenberg.org/etext/141\n"
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+    out = StringIO()
+
+    call_command("fix_external_resource_urls", stdout=out)
+
+    output = out.getvalue()
+    assert "pk_id,text_id,website_name,external_link" in output
+    assert f"{content.pk},{content.text_id},{website.name},{original_url}" in output
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == original_url
+
+
+def test_dry_run_prints_nothing_when_no_content_affected(mock_sync_task):
+    """When nothing is affected, no affected-content list is printed."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "http://example.com/already-clean"},
+    )
+    out = StringIO()
+
+    call_command("fix_external_resource_urls", stdout=out)
+
+    assert "pk_id,text_id,website_name,external_link" not in out.getvalue()
 
 
 def test_filter_limits_to_specified_website(mock_sync_task):

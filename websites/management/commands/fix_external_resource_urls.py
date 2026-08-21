@@ -80,6 +80,7 @@ class Command(WebsiteFilterCommand):
             f"Found {len(modified_content)} external-resource(s) with control "
             "characters in external_url"
         )
+        self.print_affected_content(modified_content)
 
         if csv_output and modified_content:
             self.stdout.write(f"Writing affected content to csv file {csv_output}")
@@ -100,6 +101,17 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
 
         self.stdout.write(f"Finished with commit={commit_changes}")
+
+    def print_affected_content(self, modified_content: list[dict]):
+        """Print affected content to stdout, e.g. to inspect production in a dry run."""
+        if not modified_content:
+            return
+        self.stdout.write("pk_id,text_id,website_name,external_link")
+        for content in modified_content:
+            self.stdout.write(
+                f"{content['pk_id']},{content['text_id']},"
+                f"{content['website_name']},{content['original_url']}"
+            )
 
     def write_to_csv(self, path: str, modified_content: list[dict]):
         """Write modified contents to csv."""
