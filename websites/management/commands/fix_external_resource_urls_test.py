@@ -15,10 +15,10 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture
 def mock_sync_task(mocker):
-    """Mock the sync_unsynced_websites task used by the command."""
+    """Mock the sync_website_content task used by the command."""
     mock_delay = mocker.patch(
         "websites.management.commands.fix_external_resource_urls"
-        ".sync_unsynced_websites.delay"
+        ".sync_website_content.delay"
     )
     mock_delay.return_value.get.return_value = None
     return mock_delay
@@ -235,7 +235,7 @@ def test_marks_website_dirty_after_fix(mock_sync_task):
 
 
 def test_triggers_sync_when_committed(settings, mock_sync_task):
-    """A committed run with affected content triggers sync_unsynced_websites."""
+    """A committed run with affected content syncs that content's website."""
     # pytest overrides CONTENT_SYNC_BACKEND to "" globally (pyproject.toml) to keep
     # the suite from touching a real backend; restore a truthy value to exercise
     # the branch that's actually gated on it.
@@ -249,7 +249,28 @@ def test_triggers_sync_when_committed(settings, mock_sync_task):
 
     call_command("fix_external_resource_urls", commit=True)
 
-    mock_sync_task.assert_called_once_with(create_backends=True)
+    mock_sync_task.assert_called_once_with(website.name)
+
+
+def test_sync_scoped_to_affected_websites_only(settings, mock_sync_task):
+    """A committed run only syncs websites it actually modified, not every unsynced site."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    affected_website = WebsiteFactory.create()
+    unaffected_website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=affected_website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "http://example.com/bad\n"},
+    )
+    WebsiteContentFactory.create(
+        website=unaffected_website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "http://example.com/already-clean"},
+    )
+
+    call_command("fix_external_resource_urls", commit=True)
+
+    mock_sync_task.assert_called_once_with(affected_website.name)
 
 
 def test_skip_sync_flag_prevents_sync(mock_sync_task):

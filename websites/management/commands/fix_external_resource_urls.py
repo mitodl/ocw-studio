@@ -6,7 +6,7 @@ import re
 from django.conf import settings
 from mitol.common.utils import now_in_utc
 
-from content_sync.tasks import sync_unsynced_websites
+from content_sync.tasks import sync_website_content
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.constants import CONTENT_TYPE_EXTERNAL_RESOURCE
 from websites.models import WebsiteContent
@@ -43,7 +43,7 @@ class Command(WebsiteFilterCommand):
             dest="skip_sync",
             action="store_true",
             default=False,
-            help="Whether to skip running the sync_unsynced_websites task",
+            help="Whether to skip syncing affected websites to the backend",
         )
 
     def handle(self, *args, **options):
@@ -92,11 +92,14 @@ class Command(WebsiteFilterCommand):
             and modified_content
             and not options["skip_sync"]
         ):
-            self.stdout.write("Syncing all unsynced content to the designated backend")
+            website_names = sorted({row["website_name"] for row in modified_content})
+            self.stdout.write(
+                f"Syncing {len(website_names)} affected website(s) to the backend"
+            )
             start = now_in_utc()
-            task = sync_unsynced_websites.delay(create_backends=True)
-            self.stdout.write(f"Starting task {task}...")
-            task.get()
+            for website_name in website_names:
+                task = sync_website_content.delay(website_name)
+                task.get()
             total_seconds = (now_in_utc() - start).total_seconds()
             self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
 
