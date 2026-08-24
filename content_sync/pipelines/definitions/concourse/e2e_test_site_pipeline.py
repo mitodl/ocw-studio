@@ -319,6 +319,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
                         "POSTHOG_ENV": "development",
                         "RESOURCE_BASE_URL": static_api_base_url,
                         "SITEMAP_DOMAIN": sitemap_domain,
+                        "COURSE_V3_CANONICAL_DOMAIN": settings.COURSE_V3_CANONICAL_DOMAIN,  # noqa: E501
                         "SEARCH_API_URL": "https://discussions-rc.odl.mit.edu/api/v0/search/",
                         "COURSE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/learning_resources_search/",
                         "CONTENT_FILE_SEARCH_API_URL": "https://mit-open-rc.odl.mit.edu/api/v1/content_file_search/",

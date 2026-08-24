@@ -93,6 +93,7 @@ def get_site_pipeline_definition_vars(namespace: str):
         "pipeline_name": f"(({namespace}pipeline_name))",
         "instance_vars": f"(({namespace}instance_vars))",
         "sitemap_domain": f"(({namespace}sitemap_domain))",
+        "course_v3_canonical_domain": f"(({namespace}course_v3_canonical_domain))",
         "static_api_url": f"(({namespace}static_api_url))",
         "storage_bucket": f"(({namespace}storage_bucket))",
         "artifacts_bucket": f"(({namespace}artifacts_bucket))",
@@ -150,6 +151,7 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_themes_branch(str): The branch of ocw-hugo-themes to use
         ocw_hugo_projects_branch(str): The branch of ocw-hugo-projects to use
         hugo_override_args(str): (Optional) Arguments to override in the hugo command
+        course_v3_canonical_domain(str): (Optional) The domain to use for canonical URLs on ocw-course-v3 sites
         prefix(str): (Optional) A prefix to deploy the site at
         namespace(str): The Concourse vars namespace to use
     """  # noqa: E501
@@ -170,6 +172,7 @@ class SitePipelineDefinitionConfig:
         ocw_hugo_projects_branch: str,
         hugo_override_args: str | None = "",
         sitemap_domain: str | None = settings.SITEMAP_DOMAIN,
+        course_v3_canonical_domain: str | None = None,
         prefix: str = "",
         namespace: str = "site:",
         noindex: bool | None = None,  # noqa: FBT001
@@ -189,6 +192,13 @@ class SitePipelineDefinitionConfig:
         self.offline_bucket = offline_bucket
         self.static_api_url = static_api_url
         self.sitemap_domain = sitemap_domain
+        # Resolved here rather than as a kwarg default so that the setting is read at
+        # pipeline generation time instead of at module import time.
+        self.course_v3_canonical_domain = (
+            course_v3_canonical_domain
+            if course_v3_canonical_domain is not None
+            else settings.COURSE_V3_CANONICAL_DOMAIN
+        )
         self.prefix = prefix.strip("/") if prefix else ""
         self.url_path = site.get_url_path()
         self.resource_base_url = resource_base_url
@@ -286,6 +296,7 @@ class SitePipelineDefinitionConfig:
             "pipeline_name": pipeline_name,
             "instance_vars": instance_vars,
             "sitemap_domain": self.sitemap_domain,
+            "course_v3_canonical_domain": self.course_v3_canonical_domain,
             "static_api_url": self.static_api_url,
             "storage_bucket": storage_bucket,
             "artifacts_bucket": artifacts_bucket,
@@ -587,6 +598,9 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"],
                     "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
+                    "COURSE_V3_CANONICAL_DOMAIN": pipeline_vars[
+                        "course_v3_canonical_domain"
+                    ],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
                 },
@@ -809,6 +823,9 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     "OCW_COURSE_STARTER_SLUG": settings.OCW_COURSE_STARTER_SLUG,
                     "RESOURCE_BASE_URL": pipeline_vars["resource_base_url"] or "",
                     "SITEMAP_DOMAIN": pipeline_vars["sitemap_domain"],
+                    "COURSE_V3_CANONICAL_DOMAIN": pipeline_vars[
+                        "course_v3_canonical_domain"
+                    ],
                     "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
                     "NOINDEX": pipeline_vars["noindex"],
                     "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
@@ -1038,6 +1055,9 @@ class SitePipelineDefinition(Pipeline):
                     "pipeline_name": config.values["pipeline_name"],
                     "instance_vars": config.values["instance_vars"],
                     "sitemap_domain": config.values["sitemap_domain"],
+                    "course_v3_canonical_domain": config.values[
+                        "course_v3_canonical_domain"
+                    ],
                     "static_api_url": config.values["static_api_url"],
                     "storage_bucket": config.values["storage_bucket"],
                     "artifacts_bucket": config.values["artifacts_bucket"],
