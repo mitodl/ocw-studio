@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.195.1 (Released August 24, 2026)
+---------------
+
+- chore: add the COURSE_V3_CANONICAL_DOMAIN variable to site pipelines (#3148)
+- Update dependency posthog-js to v1.417.0 (#3157)
+- Update dependency sentry-testkit to v7 (#3147)
+- Update dependency uv_build to >=0.12.1,<0.13.0 (#3155)
+- Update dependency expect-type to v1.4.0 (#3154)
+- Update dependency django-anymail to v15.1 (#3153)
+- Update dependency boto3 to v1.43.62 (#3152)
+- Update dependency posthog-js to v1.399.2 (#3061)
+- Update dependency pypdf to v6.15.0 [SECURITY] (#3151)
+
 Version 0.195.0 (Released August 13, 2026)
 ---------------
 
