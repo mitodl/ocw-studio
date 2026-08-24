@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.195.1
+Version 0.195.1 (Released August 24, 2026)
 ---------------
 
 - chore: add the COURSE_V3_CANONICAL_DOMAIN variable to site pipelines (#3148)
