@@ -662,10 +662,7 @@ def test_website_content_detail_serializer_save_null_metadata(
         ),
         (
             "not a url",
-            (
-                "External URL must be a complete, absolute URL "
-                "(e.g. https://example.com/page)."
-            ),
+            "Enter a valid URL.",
         ),
         (12345, "External URL must be a string."),
         (["http://example.com"], "External URL must be a string."),
@@ -673,7 +670,7 @@ def test_website_content_detail_serializer_save_null_metadata(
         ("   ", "External URL is required."),
         (
             "http://[::1",
-            "External URL could not be parsed.",
+            "Enter a valid URL.",
         ),
         (
             "https://example.com/%zz",

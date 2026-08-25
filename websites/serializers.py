@@ -8,6 +8,7 @@ from urllib.parse import urljoin, urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.core.validators import URLValidator
 from django.db import transaction
 from django.db.models import Q
 from django.utils.text import slugify
@@ -52,6 +53,7 @@ ROLE_ERROR_MESSAGES = {"invalid_choice": "Invalid role", "required": "Role is re
 
 _URL_CONTROL_CHAR_RE = re.compile(r"[\x00-\x1f\x7f]")
 _INVALID_PERCENT_ENCODING_RE = re.compile(r"%(?![0-9A-Fa-f]{2})")
+_validate_url_format = URLValidator()
 
 
 def validate_external_resource_metadata(metadata):
@@ -83,17 +85,7 @@ def validate_external_resource_metadata(metadata):
     if _INVALID_PERCENT_ENCODING_RE.search(url):
         msg = "External URL contains a malformed percent-encoded character."
         raise serializers.ValidationError(msg)
-    try:
-        parsed = urlparse(url)
-    except ValueError:
-        msg = "External URL could not be parsed."
-        raise serializers.ValidationError(msg) from None
-    if not parsed.scheme or not parsed.netloc:
-        msg = (
-            "External URL must be a complete, absolute URL "
-            "(e.g. https://example.com/page)."
-        )
-        raise serializers.ValidationError(msg)
+    _validate_url_format(url)
     metadata["external_url"] = url
     return metadata
 
