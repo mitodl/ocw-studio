@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.196.0
+---------------
+
+- fix: reject invalid characters in external resource URLs (#3163)
+- fix: store relation blanks in the widget's shape so new content stays editable (#3160)
+- Update dependency django to v5.2.17 [SECURITY] (#3161)
+- feat(observability): adopt mitol-django-observability for OTel tracing (#3158)
+
 Version 0.195.1 (Released August 24, 2026)
 ---------------
 
