@@ -769,7 +769,10 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913, PLR0917
     mock_mass_build_sites_pipeline_definition_config = mocker.patch(
         "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
     )
-    mocker.patch("content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition")
+    mock_definition = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition"
+    )
+    mock_definition.return_value.json.return_value = "{}"
     pipeline = MassBuildSitesPipeline(**instance_vars)
     pipeline.upsert_pipeline()
 
@@ -810,7 +813,10 @@ def test_upsert_mass_build_pipeline_sync_with_delete(
     mock_config = mocker.patch(
         "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
     )
-    mocker.patch("content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition")
+    mock_definition = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition"
+    )
+    mock_definition.return_value.json.return_value = "{}"
     pipeline = MassBuildSitesPipeline(VERSION_LIVE, sync_with_delete=True)
     pipeline.upsert_pipeline()
 
