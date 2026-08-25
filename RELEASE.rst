@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.196.0
+Version 0.196.0 (Released August 25, 2026)
 ---------------
 
 - fix: reject invalid characters in external resource URLs (#3163)
