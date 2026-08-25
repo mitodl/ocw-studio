@@ -219,6 +219,7 @@ class Command(WebsiteFilterCommand):
                     cls=WebsiteContent,
                     use_defaults=True,
                     values=resource_type_fields,
+                    website_name=content.website.name,
                 ),
                 "file": path,
             }

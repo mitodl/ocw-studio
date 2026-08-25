@@ -12,7 +12,11 @@ from moto import mock_aws
 from main.s3_utils import get_boto3_resource
 from videos.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.constants import CONTENT_FILENAME_MAX_LEN, CONTENT_TITLE_MAX_LEN
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
@@ -102,6 +106,42 @@ def test_creates_resource_for_existing_s3_object(mock_s3):
     assert created.metadata["file_type"] == "application/x-subrip"
     assert created.metadata["file_size"] == len(b"WEBVTT")
     assert created.metadata["license"] == "default_license_specificed_in_config"
+
+
+def test_created_resource_relation_fields_use_widget_shape(mock_s3, ocw_course_config):
+    """A resource this command creates is editable in the CMS afterwards.
+
+    Its own blank relation fields have to carry the widget's shape, not a
+    bare container, or the content form rejects them as a type error and
+    reports a false required-field error that blocks every save.
+    """
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(config=ocw_course_config)
+    )
+    caption_key = f"courses/{website.name}/1AbCdEf_transcript.webvtt"
+    mock_s3.put_object(Key=caption_key, Body=b"WEBVTT")
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_mp4",
+        dirpath="content/resources",
+        title="Lecture 1",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{caption_key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    created = WebsiteContent.objects.get(
+        text_id=video.metadata["video_files"]["video_captions_resources"]["content"][0]
+    )
+    for field in ("video_captions_resources", "video_transcript_resources"):
+        assert created.metadata["video_files"][field] == {
+            "content": [],
+            "website": website.name,
+        }
 
 
 def test_converts_url_path_relative_orphan_to_storage_key(mock_s3):
