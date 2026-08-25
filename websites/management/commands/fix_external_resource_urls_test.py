@@ -68,6 +68,119 @@ def test_cleans_control_characters(
     assert content.metadata["external_url"] == expected_cleaned, label
 
 
+@pytest.mark.parametrize(
+    ("label", "original_url", "expected_cleaned"),
+    [
+        (
+            "backslash path separators",
+            "http://mobilizingideas.wordpress.com\\2012\\01\\20\\article",
+            "http://mobilizingideas.wordpress.com/2012/01/20/article",
+        ),
+        (
+            "single backslash",
+            "http://example.com\\page",
+            "http://example.com/page",
+        ),
+    ],
+)
+def test_cleans_backslashes(mock_sync_task, label, original_url, expected_cleaned):
+    """Backslashes are converted to forward slashes, not deleted."""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+
+    call_command("fix_external_resource_urls", commit=True)
+
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == expected_cleaned, label
+
+
+@pytest.mark.parametrize(
+    ("label", "original_url", "expected_cleaned"),
+    [
+        ("leading space", " https://example.com/page", "https://example.com/page"),
+        ("trailing space", "https://example.com/page ", "https://example.com/page"),
+        (
+            "leading and trailing space",
+            "  https://example.com/page  ",
+            "https://example.com/page",
+        ),
+    ],
+)
+def test_strips_leading_and_trailing_whitespace(
+    mock_sync_task, label, original_url, expected_cleaned
+):
+    """Plain leading/trailing spaces are stripped even with no control character present."""
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+
+    call_command("fix_external_resource_urls", commit=True)
+
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == expected_cleaned, label
+
+
+def test_flags_malformed_percent_encoding_for_manual_review(mock_sync_task):
+    """Malformed percent-encoding has no safe auto-fix, so it's reported, not changed."""
+    website = WebsiteFactory.create()
+    original_url = "https://example.com/%zz"
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+    out = StringIO()
+
+    call_command("fix_external_resource_urls", commit=True, stdout=out)
+
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == original_url
+    assert "Needs manual review" in out.getvalue()
+    assert f"{content.pk},{content.text_id},{website.name},{original_url}" in (
+        out.getvalue()
+    )
+
+
+def test_manual_review_only_does_not_trigger_sync(settings, mock_sync_task):
+    """Content that only needs manual review isn't treated as modified, so no sync fires."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": "https://example.com/%zz"},
+    )
+
+    call_command("fix_external_resource_urls", commit=True)
+
+    mock_sync_task.assert_not_called()
+
+
+def test_fixes_auto_fixable_part_while_flagging_percent_encoding(mock_sync_task):
+    """A URL with a fixable issue and malformed percent-encoding gets the fixable part corrected and is still flagged."""
+    website = WebsiteFactory.create()
+    original_url = "http://example.com/%zz\n"
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+    out = StringIO()
+
+    call_command("fix_external_resource_urls", commit=True, stdout=out)
+
+    content.refresh_from_db()
+    assert content.metadata["external_url"] == "http://example.com/%zz"
+    assert "Needs manual review" in out.getvalue()
+
+
 def test_leaves_clean_url_untouched(mock_sync_task):
     """A URL with no control characters is left exactly as-is and not reported."""
     website = WebsiteFactory.create()
@@ -150,9 +263,32 @@ def test_dry_run_writes_csv_plan(tmp_path, mock_sync_task):
     assert rows[0]["website_name"] == website.name
     assert rows[0]["original_url"] == original_url
     assert rows[0]["cleaned_url"] == "http://www.gutenberg.org/etext/98"
+    assert rows[0]["needs_manual_review"] == "False"
     # dry run: DB itself is untouched even though the plan was written
     content.refresh_from_db()
     assert content.metadata["external_url"] == original_url
+
+
+def test_csv_flags_percent_encoding_for_manual_review(tmp_path, mock_sync_task):
+    """A percent-encoding-only issue is included in the CSV, flagged, and unmodified."""
+    website = WebsiteFactory.create()
+    original_url = "https://example.com/%zz"
+    content = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        metadata={"external_url": original_url},
+    )
+    output_file = tmp_path / "plan.csv"
+
+    call_command("fix_external_resource_urls", out=str(output_file))
+
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["pk_id"] == str(content.pk)
+    assert rows[0]["original_url"] == original_url
+    assert rows[0]["cleaned_url"] == original_url
+    assert rows[0]["needs_manual_review"] == "True"
 
 
 def test_dry_run_prints_affected_content_list(mock_sync_task):
