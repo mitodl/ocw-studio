@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.197.0
+---------------
+
+- Update CKEditor to 41.4.2 and remove community type definitions (#3139)
+
 Version 0.196.0 (Released August 25, 2026)
 ---------------
 
