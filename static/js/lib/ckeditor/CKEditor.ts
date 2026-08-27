@@ -11,13 +11,24 @@ import ImageCaptionPlugin from "@ckeditor/ckeditor5-image/src/imagecaption"
 import ImageStylePlugin from "@ckeditor/ckeditor5-image/src/imagestyle"
 import ImageToolbarPlugin from "@ckeditor/ckeditor5-image/src/imagetoolbar"
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
-import ListPlugin from "@ckeditor/ckeditor5-list/src/list"
+/**
+ * Deliberately `legacylist`, not `list`. CKEditor v41 replaced the contents of
+ * `src/list` with the document list implementation and moved the original to
+ * `src/legacylist`, so the old import path silently changes the editing model
+ * from `listItem` elements to paragraphs carrying `listItemId`/`listIndent`.
+ * This import pins the behaviour Studio has always had.
+ *
+ * `LegacyList` is removed in CKEditor 45, so upgrading past 43 requires
+ * migrating to the document list and re-checking how nested lists and list
+ * items containing block content round-trip through Markdown.
+ */
+import ListPlugin from "@ckeditor/ckeditor5-list/src/legacylist"
 import ParagraphPlugin from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import TablePlugin from "@ckeditor/ckeditor5-table/src/table"
 import TableToolbarPlugin from "@ckeditor/ckeditor5-table/src/tabletoolbar"
 import CodeBlockPlugin from "@ckeditor/ckeditor5-code-block/src/codeblock"
 import CodePlugin from "@ckeditor/ckeditor5-basic-styles/src/code"
-import Mathematics from "ckeditor5-math/src/math"
+import Mathematics from "@isaul32/ckeditor5-math/src/math"
 import MathSyntax from "./plugins/MathSyntax"
 
 import Markdown from "./plugins/Markdown"
@@ -114,8 +125,13 @@ export const FullEditorConfig = {
     ],
   },
   image: {
+    // These style buttons only affect how the image looks inside the editor.
+    // Neither `block` nor `side` survives a save: our Markdown output for an
+    // image is `![alt](src)` either way, so nothing reaches Hugo. `block` is
+    // here only because it is the current name for the option this toolbar
+    // used to spell `full`, which stopped resolving to a button years ago.
     toolbar: [
-      "imageStyle:full",
+      "imageStyle:block",
       "imageStyle:side",
       "|",
       "imageTextAlternative",

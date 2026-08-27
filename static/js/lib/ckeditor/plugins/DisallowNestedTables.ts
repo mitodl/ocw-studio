@@ -7,7 +7,6 @@ import {
 // based on https://ckeditor.com/docs/ckeditor5/latest/features/table.html#disallow-nesting-tables
 export default function DisallowNestedTables(editor: Editor): void {
   editor.model.schema.addChildCheck(
-    // @ts-expect-error The CKEditor docs return undefined in the check, maybe their types are wrong?
     (
       context: SchemaContext,
       childDefinition: SchemaCompiledItemDefinition,

@@ -11,6 +11,8 @@ import { WEBSITE_NAME } from "./constants"
 import { Range } from "@ckeditor/ckeditor5-engine"
 import { DiffItem } from "@ckeditor/ckeditor5-engine/src/model/differ"
 import Writer from "@ckeditor/ckeditor5-engine/src/model/writer"
+import invariant from "tiny-invariant"
+import { getOcwConfig } from "./util"
 
 /**
  * CustomLinkCommand extends CKEditor's default LinkCommand to provide automatic
@@ -45,7 +47,7 @@ class CustomLinkCommand extends LinkCommand {
     let title = ""
     for (const range of ranges) {
       for (const item of range.getItems()) {
-        if (item.is("text") || item.is("textProxy")) {
+        if (item.is("$text") || item.is("$textProxy")) {
           title += item.data
         }
       }
@@ -55,7 +57,7 @@ class CustomLinkCommand extends LinkCommand {
       super.execute(href)
     } else {
       getExternalResource(
-        this.editor.config.get(WEBSITE_NAME),
+        getOcwConfig(this.editor, WEBSITE_NAME),
         href,
         title,
       ).then((externalResource) => {
@@ -136,7 +138,7 @@ export default class CustomLink extends Plugin {
     this.editor.model.document.on("change:data", () => {
       const changes = Array.from(this.editor.model.document.differ.getChanges())
 
-      for (const entry of changes as [DiffItem]) {
+      for (const entry of changes as DiffItem[]) {
         if (entry.type === "attribute" && entry.attributeKey === "linkHref") {
           this._modifyHref(entry.range)
         }
@@ -163,16 +165,19 @@ export default class CustomLink extends Plugin {
   _modifyHref(range: Range) {
     // Get the link element in the given range
     for (const item of range.getItems()) {
-      // Modify href only if its not a ResourceLink
-      if (
-        item.hasAttribute("linkHref") &&
-        !this.syntax.isResourceLinkHref(item.getAttribute("linkHref"))
-      ) {
-        const originalHref = item.getAttribute("linkHref")
+      if (!item.hasAttribute("linkHref")) continue
 
+      // Model attribute values are untyped, so check that linkHref really is
+      // the string the link feature stores rather than stringifying whatever
+      // happens to be there.
+      const originalHref = item.getAttribute("linkHref")
+      if (typeof originalHref !== "string") continue
+
+      // Modify href only if its not a ResourceLink
+      if (!this.syntax.isResourceLinkHref(originalHref)) {
         getExternalResource(
-          this.editor.config.get(WEBSITE_NAME),
-          String(originalHref),
+          getOcwConfig(this.editor, WEBSITE_NAME),
+          originalHref,
           "",
         ).then((externalResource) => {
           if (externalResource && externalResource.textId) {
@@ -225,17 +230,24 @@ export default class CustomLink extends Plugin {
  *
  * 4. ERROR HANDLING: Gracefully handles network failures and invalid responses
  *
- * @param siteName - The name of the OCW site (from editor config)
+ * @param siteName - The name of the OCW site (from editor config). Optional
+ *   because the config entry it comes from is; without it there is no content
+ *   API endpoint to post to, so the call is abandoned.
  * @param linkValue - The external URL to create a resource for
  * @param title - Optional title for the resource (defaults to URL)
  * @returns Promise resolving to resource info (title, textId) or null on failure
  */
 export async function getExternalResource(
-  siteName: string,
+  siteName: string | undefined,
   linkValue: string,
   title: string,
 ): Promise<{ title: string; textId: string } | null> {
   const hasWarning = false
+
+  if (!siteName) {
+    console.error("Cannot create an external resource without a site name.")
+    return null
+  }
 
   try {
     new URL(linkValue)
@@ -320,8 +332,16 @@ export function updateHref(
      *  - [selection.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_view_selection-Selection.html#member-isCollapsed)
      *  - [range.isCollapsed](https://ckeditor.com/docs/ckeditor5/latest/api/module_engine_model_range-Range.html#member-isCollapsed)
      */
+    const insertPosition = editor.model.document.selection.getFirstPosition()
+    // A collapsed selection always has a position unless the selection is not
+    // attached to the document at all. Passing the null on to `insertText`
+    // used to fail with an opaque TypeError from deep inside CKEditor.
+    invariant(
+      insertPosition,
+      "Expected the collapsed selection to have a position.",
+    )
+
     editor.model.change((writer) => {
-      const insertPosition = editor.model.document.selection.getFirstPosition()
       writer.insertText(
         title,
         {

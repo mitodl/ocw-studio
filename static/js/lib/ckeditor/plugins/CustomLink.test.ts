@@ -644,6 +644,12 @@ describe("CustomLink Plugin", () => {
 
   describe("updateHref", () => {
     let editor: any, superExecute: jest.Mock
+    /**
+     * Stand-in for a model Position. `getFirstPosition` returns
+     * `Position | null`, never undefined, so the mock has to hand back
+     * something for the insert position to be forwarded to `insertText`.
+     */
+    const insertPosition = { __fakeModelPosition: true }
     beforeEach(() => {
       superExecute = jest.fn()
       const syntax = {
@@ -654,7 +660,10 @@ describe("CustomLink Plugin", () => {
         plugins: { get: () => syntax },
         model: {
           document: {
-            selection: { isCollapsed: true, getFirstPosition: jest.fn() },
+            selection: {
+              isCollapsed: true,
+              getFirstPosition: jest.fn(() => insertPosition),
+            },
           },
           change: jest.fn((cb) => cb({ insertText: jest.fn() })),
         },
@@ -672,7 +681,7 @@ describe("CustomLink Plugin", () => {
           linkHref:
             "https://fake.mit.edu/id?ocw_resource_link_uuid=id&ocw_resource_link_suffix=",
         },
-        undefined,
+        insertPosition,
       )
     })
 
@@ -705,7 +714,7 @@ describe("CustomLink Plugin", () => {
           linkHref:
             "https://fake.mit.edu/valid-id?ocw_resource_link_uuid=valid-id&ocw_resource_link_suffix=",
         },
-        undefined,
+        insertPosition,
       )
     })
   })
