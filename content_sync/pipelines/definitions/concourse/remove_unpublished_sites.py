@@ -1,4 +1,5 @@
 import json
+from typing import ClassVar
 
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
@@ -57,23 +58,32 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
        - Clear CDN cache
     """
 
-    _remove_unpublished_sites_job_identifier = Identifier(
+    _remove_unpublished_sites_job_identifier: ClassVar[str] = Identifier(
         "remove-unpublished-sites-job"
     ).root
-    _get_unpublished_sites_task_identifier = Identifier(
+    _get_unpublished_sites_task_identifier: ClassVar[str] = Identifier(
         "get-unpublished-sites-task"
     ).root
-    _unpublished_sites_output_identifier = Identifier("unpublished-sites-output").root
-    _unpublished_sites_var_identifier = Identifier("unpublished-sites-var").root
-    _search_index_removal_task_prefix = "search-index-removal-task"
-    _empty_s3_bucket_task_identifier = Identifier("empty-s3-bucket-task").root
-    _clear_cdn_cache_task_identifier = Identifier("clear-cdn-cache-task").root
-    _ocw_studio_webhook_task_identifier = Identifier("ocw-studio-webhook-task").root
-    _slack_resource = SlackAlertResource()
+    _unpublished_sites_output_identifier: ClassVar[str] = Identifier(
+        "unpublished-sites-output"
+    ).root
+    _unpublished_sites_var_identifier: ClassVar[str] = Identifier(
+        "unpublished-sites-var"
+    ).root
+    _search_index_removal_task_prefix: ClassVar[str] = "search-index-removal-task"
+    _empty_s3_bucket_task_identifier: ClassVar[str] = Identifier(
+        "empty-s3-bucket-task"
+    ).root
+    _clear_cdn_cache_task_identifier: ClassVar[str] = Identifier(
+        "clear-cdn-cache-task"
+    ).root
+    _ocw_studio_webhook_task_identifier: ClassVar[str] = Identifier(
+        "ocw-studio-webhook-task"
+    ).root
+    _slack_resource: ClassVar[SlackAlertResource] = SlackAlertResource()
 
     def __init__(self, **kwargs):
         base = super()
-        base.__init__(**kwargs)
         common_pipeline_vars = get_common_pipeline_vars()
         web_bucket = common_pipeline_vars["publish_bucket_name"]
         offline_bucket = common_pipeline_vars["offline_publish_bucket_name"]

@@ -1581,7 +1581,7 @@ requires-dist = [
     { name = "mitol-django-observability", specifier = ">=2026.1.0,<2027" },
     { name = "mitol-django-transcoding", specifier = ">=2026.4.2,<2027" },
     { name = "more-itertools", specifier = ">=11.0.2,<12" },
-    { name = "ol-concourse", specifier = ">=0.5.8,<0.6" },
+    { name = "ol-concourse", specifier = ">=0.10,<0.11" },
     { name = "ol-concoursepy", specifier = "==0.0.41" },
     { name = "opentelemetry-instrumentation-celery", specifier = ">=0.52b0" },
     { name = "opentelemetry-instrumentation-django", specifier = ">=0.52b0" },
@@ -1628,14 +1628,14 @@ dev = [
 
 [[package]]
 name = "ol-concourse"
-version = "0.5.8"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/f0/592fcd6fdabfd83faf972b9285e4fb69ffceae0ef56f26b5aca958f13c7a/ol_concourse-0.5.8.tar.gz", hash = "sha256:16c4d0ea604b8d15df485951b6fb70478e8c263435a7006f65201bd353cd4ee5", size = 36536, upload-time = "2025-03-14T18:40:58.738Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/f6/aff50811afe4957f92d888d79df7845dc62d3ec90bd514f5a951e5e1bd80/ol_concourse-0.10.0.tar.gz", hash = "sha256:ea6e303d24d38e77dcab5befc03f74218918d42f46ad49efb484f2c2d5f914f4", size = 53751, upload-time = "2026-07-30T18:30:45.586Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/51/99ba60dd2ee44a14e718095db091bc31a933cb5f3bef536498a51e716df1/ol_concourse-0.5.8-py3-none-any.whl", hash = "sha256:96b2bab29f9b03f5d4b264951d48d8408acd32a7193d151e61a92db95f72fa8d", size = 39758, upload-time = "2025-03-14T18:40:57.56Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/33/761ff3eadc1fe106636b93b6ab95c52995072e4619ad171df5f16517ca85/ol_concourse-0.10.0-py3-none-any.whl", hash = "sha256:211d37aa43f51c6b8fbcd38721c8b060f7de096508e220fea23c1d154a65bc4a", size = 51922, upload-time = "2026-07-30T18:30:44.716Z" },
 ]
 
 [[package]]

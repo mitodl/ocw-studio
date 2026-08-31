@@ -136,7 +136,10 @@ def pipeline_settings(settings, request):
     settings.OCW_IMPORT_STARTER_SLUG = "custom_slug"
     settings.OCW_COURSE_STARTER_SLUG = "another_custom_slug"
     settings.OPEN_CATALOG_WEBHOOK_KEY = "abc123"
-    settings.OPEN_CATALOG_URLS = "https://open.mit.edu/api/v0/ocw_next_webhook/,http://mitopen.odl.mit.edu/api/v1/ocw_next_webhook/"
+    settings.OPEN_CATALOG_URLS = [
+        "https://open.mit.edu/api/v0/ocw_next_webhook/",
+        "http://mitopen.odl.mit.edu/api/v1/ocw_next_webhook/",
+    ]
     if env == "dev":
         settings.AWS_ACCESS_KEY_ID = "minio_root_user"
         settings.AWS_SECRET_ACCESS_KEY = "minio_root_password"  # noqa: S105
@@ -766,6 +769,10 @@ def test_upsert_mass_build_pipeline(  # noqa: PLR0913, PLR0917
     mock_mass_build_sites_pipeline_definition_config = mocker.patch(
         "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
     )
+    mock_definition = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition"
+    )
+    mock_definition.return_value.json.return_value = "{}"
     pipeline = MassBuildSitesPipeline(**instance_vars)
     pipeline.upsert_pipeline()
 
@@ -806,6 +813,10 @@ def test_upsert_mass_build_pipeline_sync_with_delete(
     mock_config = mocker.patch(
         "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinitionConfig"
     )
+    mock_definition = mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipelineDefinition"
+    )
+    mock_definition.return_value.json.return_value = "{}"
     pipeline = MassBuildSitesPipeline(VERSION_LIVE, sync_with_delete=True)
     pipeline.upsert_pipeline()
 

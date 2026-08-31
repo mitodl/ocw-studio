@@ -150,9 +150,8 @@ class EndToEndTestPipelineDefinition(Pipeline):
         projects_branch(str): The branch of ocw-hugo-projects to use
     """
 
-    def __init__(self, themes_branch: str, projects_branch: str, **kwargs):
+    def __init__(self, themes_branch: str, projects_branch: str):
         base = super()
-        base.__init__(**kwargs)
         common_pipeline_vars = get_common_pipeline_vars()
         namespace = ".:site."
         site_pipeline_vars = get_site_pipeline_definition_vars(namespace=namespace)
