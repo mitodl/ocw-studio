@@ -74,7 +74,7 @@ repos:
     - --exclude-files
     - "config/keycloak/realms/ocw-studio-realm.json"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.16.1"
+  rev: "v0.16.5"
   hooks:
   - id: ruff-format
     exclude: ".*/migrations/.*"
@@ -109,12 +109,12 @@ repos:
     exclude: "(node_modules/|static/css/vendor/)"
     require_serial: false
 - repo: https://github.com/shellcheck-py/shellcheck-py
-  rev: v0.11.0.1
+  rev: v0.11.0.1-1
   hooks:
   - id: shellcheck
     args: ["--severity=warning"]
 - repo: https://github.com/zizmorcore/zizmor-pre-commit
-  rev: v1.29.0
+  rev: v1.30.0
   hooks:
   - id: zizmor
     args: [--no-progress, --min-severity=medium, --min-confidence=medium]
