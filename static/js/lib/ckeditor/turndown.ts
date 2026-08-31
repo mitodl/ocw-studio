@@ -82,9 +82,31 @@ turndownService.rules.blankRule.replacement = (
   if (matchingRules.length === 1) {
     const [rule] = matchingRules
     return rule.replacement?.(content, node as HTMLElement, options)
-  } else {
-    return "\n\n"
   }
+
+  /**
+   * Fall back to rules whose filter is a function or an array rather than a
+   * plain tag name. The string comparison above cannot see those, so without
+   * this a blank node handled by such a rule would be silently dropped.
+   *
+   * This is only reached when no string-filter rule matched, so it cannot
+   * change the behavior of any rule that already worked.
+   */
+  const functionMatchedRules = turndownService.rules.array.filter(
+    (rule) =>
+      typeof rule.filter !== "string" && ruleMatches(rule, node as HTMLElement),
+  )
+
+  if (functionMatchedRules.length > 1) {
+    throw new Error("should only be a single matching rule")
+  }
+
+  if (functionMatchedRules.length === 1) {
+    const [rule] = functionMatchedRules
+    return rule.replacement?.(content, node as HTMLElement, options)
+  }
+
+  return "\n\n"
 }
 
 // fix for the default behavior in turndown which, for some reason, adds
