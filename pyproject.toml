@@ -12,7 +12,7 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4>=4.12.2,<5",
-    "boto3==1.43.62",
+    "boto3==1.43.72",
     "celery>=5.3.0,<6",
     "cryptography>=50,<51",
     "dj-database-url==3.1.2",
