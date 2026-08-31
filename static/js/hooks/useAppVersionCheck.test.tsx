@@ -4,6 +4,9 @@ import React, { PropsWithChildren } from "react"
 import { createMemoryHistory } from "history"
 import { Router, Route } from "react-router"
 import useAppVersionCheck from "./useAppVersionCheck"
+import { reloadPage } from "../lib/navigation"
+
+jest.mock("../lib/navigation")
 
 const wrapper: React.FC<PropsWithChildren> = ({ children }) => (
   <MemoryRouter>{children}</MemoryRouter>
@@ -11,26 +14,14 @@ const wrapper: React.FC<PropsWithChildren> = ({ children }) => (
 
 describe("useAppVersionCheck", () => {
   let fetchSpy: jest.SpyInstance
-  const originalLocation = window.location
-  const reloadMock = jest.fn()
 
   beforeEach(() => {
     fetchSpy = jest.spyOn(global, "fetch")
-    Object.defineProperty(window, "location", {
-      value: { ...originalLocation, reload: reloadMock },
-      writable: true,
-      configurable: true,
-    })
   })
 
   afterEach(() => {
     fetchSpy.mockRestore()
-    reloadMock.mockReset()
-    Object.defineProperty(window, "location", {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    })
+    jest.mocked(reloadPage).mockReset()
   })
 
   it("fetches the hash on mount", async () => {
@@ -79,7 +70,7 @@ describe("useAppVersionCheck", () => {
       expect(fetchSpy).toHaveBeenCalledTimes(2)
     })
 
-    expect(reloadMock).not.toHaveBeenCalled()
+    expect(reloadPage).not.toHaveBeenCalled()
   })
 
   it("does not throw when fetch fails", async () => {
@@ -128,7 +119,7 @@ describe("useAppVersionCheck", () => {
       })
 
       await waitFor(() => {
-        expect(reloadMock).toHaveBeenCalled()
+        expect(reloadPage).toHaveBeenCalled()
       })
     },
   )
