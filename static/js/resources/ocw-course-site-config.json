@@ -197,7 +197,7 @@
               "widget": "string"
             },
             {
-              "label": "Youtube Tags (comma separated; max 100 characters)",
+              "label": "Youtube Tags (comma separated; max 100 characters per tag, max 500 characters total)",
               "name": "video_tags",
               "widget": "text"
             }
