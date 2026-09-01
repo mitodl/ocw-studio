@@ -133,7 +133,7 @@
             "filter_type": "equals",
             "value": "Image"
           },
-          "help": "Image dimensions should be 1920x1080 (16:9 aspect ratio) for best results.",
+          "help": "Recommended image size is 1920x1080 (16:9 aspect ratio).",
           "label": "Image",
           "max": 1,
           "min": 1,
