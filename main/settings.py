@@ -1427,3 +1427,9 @@ MIT_LEARN_API_BASE_URL = get_string(
     description="URL to an instance of the MIT Learn API",
     required=False,
 )
+LEARN_AI_SYLLABUS_ENDPOINT = get_string(
+    name="LEARN_AI_SYLLABUS_ENDPOINT",
+    default=None,
+    description="The AskTIM syllabus endpoint to inject into the theme assets build",
+    required=False,
+)

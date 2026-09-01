@@ -94,6 +94,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             "CONTENT_FILE_SEARCH_API_URL": settings.CONTENT_FILE_SEARCH_API_URL,
             "MIT_LEARN_BASE_URL": settings.MIT_LEARN_BASE_URL,
             "MIT_LEARN_API_BASE_URL": settings.MIT_LEARN_API_BASE_URL,
+            "LEARN_AI_SYLLABUS_ENDPOINT": settings.LEARN_AI_SYLLABUS_ENDPOINT,
             "SENTRY_DSN": settings.OCW_HUGO_THEMES_SENTRY_DSN,
             "SENTRY_ENV": settings.ENVIRONMENT,
             "POSTHOG_ENABLED": str(settings.PUBLISH_POSTHOG_ENABLED).lower(),

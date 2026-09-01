@@ -58,6 +58,10 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
     assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_ocw_hugo_themes_command
     build_ocw_hugo_themes_params = build_ocw_hugo_themes_task["config"]["params"]
     assert (
+        build_ocw_hugo_themes_params["LEARN_AI_SYLLABUS_ENDPOINT"]
+        == settings.LEARN_AI_SYLLABUS_ENDPOINT
+    )
+    assert (
         build_ocw_hugo_themes_params["POSTHOG_UI_HOST"]
         == settings.PUBLISH_POSTHOG_UI_HOST
     )
