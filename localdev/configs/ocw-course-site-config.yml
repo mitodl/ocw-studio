@@ -157,9 +157,10 @@ collections:
     - label: Youtube Speakers
       name: video_speakers
       widget: string
-    - label: Youtube Tags (comma separated; max 100 chars/tag, 500 total)
+    - label: Youtube Tags (comma separated)
       name: video_tags
       widget: text
+      help: Maximum 100 characters per tag, 500 characters total.
   - label: Video Files
     name: video_files
     widget: object
