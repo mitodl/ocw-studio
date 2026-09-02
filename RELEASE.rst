@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-Version 0.198.0
+Version 0.198.0 (Released September 02, 2026)
 ---------------
 
 - Add AskTIM vars to theme assets pipeline (#3184)
