@@ -1,6 +1,21 @@
 Release Notes
 =============
 
+Version 0.198.0
+---------------
+
+- Add AskTIM vars to theme assets pipeline (#3184)
+- fix: clarify youtube tags help text is per-tag not total (#3182)
+- feat: add image dimension help text to promo image field (#3183)
+- Update dependency ol-concourse to >=0.10,<0.11 (#3156)
+- Update dependency core-js to v3.50.0 (#3169)
+- Update dependency sass-loader to v17 (#3174)
+- Update dependency js-beautify to v2 (#3173)
+- Update dependency djangorestframework to v3.18.0 (#3170)
+- Update dependency posthog-js to v1.422.2 (#3171)
+- Update dependency boto3 to v1.43.72 (#3168)
+- Update CKEditor to 41.4.2 and remove community type definitions (#3139)
+
 Version 0.196.0 (Released August 25, 2026)
 ---------------
 
