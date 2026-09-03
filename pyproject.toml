@@ -38,7 +38,7 @@ dependencies = [
     "mitol-django-authentication==2026.4.29,<2027",
     "mitol-django-common>=2026.4.2,<2027",
     "mitol-django-mail>=2026.4.2,<2027",
-    "mitol-django-observability>=2026.1.0,<2027",
+    "mitol-django-observability>=2026.8.19,<2027",
     "more-itertools>=11.0.2,<12",
     # OTel instrumentors. mitol-django-observability auto-discovers these through
     # the `opentelemetry_instrumentor` entry point group; without them it stands
