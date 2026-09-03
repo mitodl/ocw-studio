@@ -19,10 +19,15 @@ import {
 import { getWebsiteContentDetailCursor } from "../selectors/websites"
 import {
   contentFormValuesToPayload,
+  hasMainContentField,
   isSingletonCollectionItem,
   needsContentContext,
 } from "../lib/site_content"
 import { getResponseBodyError, isErrorResponse } from "../lib/util"
+import {
+  MAIN_PAGE_CONTENT_DB_FIELD,
+  MAIN_PAGE_CONTENT_FIELD,
+} from "../constants"
 
 import {
   EditableConfigItem,
@@ -137,6 +142,17 @@ export default function SiteContentEditor(
         // Non-field error
         setStatus(errors)
       } else {
+        // The API names the main content field "markdown", but the form
+        // field is named "body" (see contentFormValuesToPayload), so a
+        // server-side error on that field needs the same rename in reverse
+        // or it won't match the ErrorMessage listening for "body".
+        if (
+          hasMainContentField(configItem.fields) &&
+          MAIN_PAGE_CONTENT_DB_FIELD in errors
+        ) {
+          errors[MAIN_PAGE_CONTENT_FIELD] = errors[MAIN_PAGE_CONTENT_DB_FIELD]
+          delete errors[MAIN_PAGE_CONTENT_DB_FIELD]
+        }
         setErrors(errors)
       }
       return

@@ -1,5 +1,8 @@
 """Serializers for websites"""
 
+import base64
+import binascii
+import html
 import logging
 import re
 from collections import defaultdict
@@ -581,10 +584,113 @@ def _declared_field_names(instance) -> set:
     return {field.get("name") for field in item.fields}
 
 
+_FENCE_START_RE = re.compile(r"^( {0,3})(`{3,}|~{3,})")
+_INLINE_CODE_SPAN_RE = re.compile(r"(?<!\\)`+[^`\n]*?`+")
+_DATA_URI_BASE64_RE = re.compile(
+    r"data:[^,\s\"'>]*;base64,([A-Za-z0-9+/=]+)", re.IGNORECASE
+)
+_URL_CONTROL_CHARS_RE = re.compile(r"[\t\r\n]")
+_DANGEROUS_MARKDOWN_PATTERNS = [
+    re.compile(r"<\s*script\b", re.IGNORECASE),
+    re.compile(r"<[^>]+\bon\w+\s*=", re.IGNORECASE),
+    re.compile(r"javascript\s*:", re.IGNORECASE),
+]
+
+
+def _strip_code_regions(markdown: str) -> str:
+    """Return markdown with fenced code blocks and inline code spans removed.
+
+    Uses a line-by-line state machine so that consecutive fences (e.g. two
+    adjacent ``` lines) close at the first matching line, matching CommonMark
+    semantics rather than allowing a regex to extend past the closer.
+    """
+    lines = markdown.split("\n")
+    result = []
+    fence_char = None
+    fence_min_len = 0
+    for line in lines:
+        m = _FENCE_START_RE.match(line)
+        if fence_char is None:
+            if m:
+                fence_char = m.group(2)[0]
+                fence_min_len = len(m.group(2))
+            else:
+                result.append(line)
+        elif (
+            m
+            and m.group(2)[0] == fence_char
+            and len(m.group(2)) >= fence_min_len
+            and not line[m.end() :].strip()
+        ):
+            fence_char = None
+            fence_min_len = 0
+    return _INLINE_CODE_SPAN_RE.sub("", "\n".join(result))
+
+
+def _normalize_for_scan(text: str) -> str:
+    """Undo HTML-entity encoding and browser-stripped URL control characters.
+
+    Mirrors two things a browser does before treating text as markup or
+    navigating a URL: decoding entity references, and dropping tabs,
+    newlines, and carriage returns from a URL scheme/target. Without this, an
+    entity-encoded `&lt;script&gt;` or a `java\\tscript:` scheme reads as
+    harmless text to a literal pattern match but is live once rendered.
+    """
+    decoded = html.unescape(text)
+    return _URL_CONTROL_CHARS_RE.sub("", decoded)
+
+
+def _extract_data_uri_payloads(text: str) -> list[str]:
+    """Best-effort base64-decode of any data URIs found in text.
+
+    A `data:...;base64,...` URI hides its content from a literal pattern
+    match until decoded. Malformed base64 is skipped rather than treated as
+    suspicious, since the goal is to inspect real payloads, not to flag
+    truncated or unrelated base64-looking text.
+    """
+    payloads = []
+    for match in _DATA_URI_BASE64_RE.finditer(text):
+        try:
+            decoded_bytes = base64.b64decode(match.group(1))
+        except binascii.Error, ValueError:
+            continue
+        payloads.append(decoded_bytes.decode("utf-8", errors="replace"))
+    return payloads
+
+
+class RejectDangerousMarkdownMixin(serializers.Serializer):
+    """Reject markdown containing dangerous HTML patterns on write."""
+
+    def validate_markdown(self, value):
+        """Raise ValidationError if markdown contains dangerous HTML."""
+        if value is None:
+            return value
+        checked = _strip_code_regions(value)
+        normalized = _normalize_for_scan(checked)
+        candidates = [
+            normalized,
+            *[
+                _normalize_for_scan(payload)
+                for payload in _extract_data_uri_payloads(normalized)
+            ],
+        ]
+        for candidate in candidates:
+            self._raise_if_dangerous(candidate)
+        return value
+
+    @staticmethod
+    def _raise_if_dangerous(text: str) -> None:
+        for pattern in _DANGEROUS_MARKDOWN_PATTERNS:
+            if pattern.search(text):
+                msg = "Markdown contains disallowed HTML."
+                raise serializers.ValidationError(msg)
+
+
 class WebsiteContentDetailSerializer(
     serializers.ModelSerializer,
     RequestUserSerializerMixin,
     WebsiteContentDeletableMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializes more parts of WebsiteContent, including content or other things which are too big for the list view"""  # noqa: E501
 
@@ -779,7 +885,9 @@ class WebsiteContentDetailSerializer(
 
 
 class WebsiteContentCreateSerializer(
-    serializers.ModelSerializer, RequestUserSerializerMixin
+    serializers.ModelSerializer,
+    RequestUserSerializerMixin,
+    RejectDangerousMarkdownMixin,
 ):
     """Serializer which creates a new WebsiteContent"""
 
