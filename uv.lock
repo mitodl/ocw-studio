@@ -1363,7 +1363,7 @@ wheels = [
 
 [[package]]
 name = "mitol-django-observability"
-version = "2026.3.11"
+version = "2026.8.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
@@ -1375,9 +1375,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "structlog" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/84/3b/8c07a0a0feda332656213a8af4f055fa83fb9e0d6d483d77f12d8e63b47e/mitol_django_observability-2026.3.11.tar.gz", hash = "sha256:4539eff6b7da18e500fb0f23c0abf6bdba67eb65e35e890b08c338318494a1e6", size = 10093, upload-time = "2026-03-13T20:21:41.271Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/60/ef5807301c6aa3a6ddbe2f48118a98d134f5fc324632f7715f270f3bb504/mitol_django_observability-2026.8.19.tar.gz", hash = "sha256:3bf3afbd16c2f0ae087ed7911f301f31e3361ed170acdc9ef29e3cee8a8d0192", size = 19173, upload-time = "2026-08-19T17:50:14.016Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cf/76/3f730dec3ff4ff6c5ab044d7b1e027b6f3214cedb66a2532301b6eb4b285/mitol_django_observability-2026.3.11-py3-none-any.whl", hash = "sha256:7523782802c09cad3003cacecdb62cc055efdbd8a80a9ea27a12cb5aaf3f59bc", size = 16052, upload-time = "2026-03-13T20:21:40.216Z" },
+    { url = "https://files.pythonhosted.org/packages/80/dd/6e6608392f587f29a950b7e6b27ef4748458dfdfcac70e7fb81907d56deb/mitol_django_observability-2026.8.19-py3-none-any.whl", hash = "sha256:442741f6b6d3ddacd85f5d32c8581c18899af2f7f299a74bc8a4116f0ae3bb8a", size = 27907, upload-time = "2026-08-19T17:50:12.945Z" },
 ]
 
 [[package]]
@@ -1578,7 +1578,7 @@ requires-dist = [
     { name = "mitol-django-authentication", specifier = "==2026.4.29,<2027" },
     { name = "mitol-django-common", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-mail", specifier = ">=2026.4.2,<2027" },
-    { name = "mitol-django-observability", specifier = ">=2026.1.0,<2027" },
+    { name = "mitol-django-observability", specifier = ">=2026.8.19,<2027" },
     { name = "mitol-django-transcoding", specifier = ">=2026.4.2,<2027" },
     { name = "more-itertools", specifier = ">=11.0.2,<12" },
     { name = "ol-concourse", specifier = ">=0.10,<0.11" },
