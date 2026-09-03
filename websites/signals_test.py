@@ -3,6 +3,7 @@
 import pytest
 from safedelete.models import HARD_DELETE
 
+from content_sync.apis.github import GIT_DATA_FILEPATH
 from users.factories import UserFactory
 from websites import constants
 from websites.api import sync_website_content_references
@@ -92,55 +93,111 @@ def test_deleting_linked_resource_unlinks_it_from_video():
 
 
 @pytest.mark.django_db
-def test_hard_delete_removes_content_from_backend(settings, mocker):
-    """Hard-deleting a WebsiteContent should delete its file from the git backend"""
+def test_hard_delete_enqueues_cleanup_with_last_synced_path(
+    settings, mocker, django_capture_on_commit_callbacks
+):
+    """Hard-deleting content enqueues backend cleanup using its last-synced path"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    mock_get_backend = mocker.patch("websites.signals.get_sync_backend")
+    mock_task = mocker.patch("websites.signals.delete_orphaned_content_file")
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+    content.content_sync_state.data = {GIT_DATA_FILEPATH: "path/to/synced-file.md"}
+    content.content_sync_state.save()
+    website_pk = content.website.pk
+    updated_by_id = content.updated_by_id
 
-    content.delete(force_policy=HARD_DELETE)
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(force_policy=HARD_DELETE)
 
-    mock_get_backend.assert_called_once_with(content.website)
-    mock_get_backend.return_value.api.delete_content_file.assert_called_once_with(
-        content
+    mock_task.delay.assert_called_once_with(
+        str(website_pk), "path/to/synced-file.md", updated_by_id
     )
 
 
 @pytest.mark.django_db
-def test_hard_delete_skips_backend_when_sync_disabled(settings, mocker):
-    """No backend call should be made when CONTENT_SYNC_BACKEND isn't configured"""
-    settings.CONTENT_SYNC_BACKEND = ""
-    mock_get_backend = mocker.patch("websites.signals.get_sync_backend")
+def test_hard_delete_falls_back_to_computed_path_when_never_synced(
+    settings, mocker, django_capture_on_commit_callbacks
+):
+    """Content with no recorded synced path falls back to a freshly computed one"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    mock_task = mocker.patch("websites.signals.delete_orphaned_content_file")
+    mocker.patch(
+        "websites.signals.get_destination_filepath",
+        return_value="path/to/computed-file.md",
+    )
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+    website_pk = content.website.pk
+    updated_by_id = content.updated_by_id
 
-    content.delete(force_policy=HARD_DELETE)
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(force_policy=HARD_DELETE)
 
-    mock_get_backend.assert_not_called()
+    mock_task.delay.assert_called_once_with(
+        str(website_pk), "path/to/computed-file.md", updated_by_id
+    )
 
 
 @pytest.mark.django_db
-def test_soft_delete_does_not_touch_backend(settings, mocker):
+def test_hard_delete_skips_cleanup_when_path_cannot_be_determined(
+    settings, mocker, django_capture_on_commit_callbacks
+):
+    """No task is enqueued when neither a synced path nor a computed one is available"""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    mock_task = mocker.patch("websites.signals.delete_orphaned_content_file")
+    mocker.patch("websites.signals.get_destination_filepath", return_value=None)
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(force_policy=HARD_DELETE)
+
+    mock_task.delay.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_hard_delete_skips_backend_when_sync_disabled(
+    settings, mocker, django_capture_on_commit_callbacks
+):
+    """No cleanup should be enqueued when CONTENT_SYNC_BACKEND isn't configured"""
+    settings.CONTENT_SYNC_BACKEND = ""
+    mock_task = mocker.patch("websites.signals.delete_orphaned_content_file")
+    content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(force_policy=HARD_DELETE)
+
+    mock_task.delay.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_soft_delete_does_not_touch_backend(
+    settings, mocker, django_capture_on_commit_callbacks
+):
     """A regular (soft) delete should not trigger the hard-delete backend cleanup"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    mock_get_backend = mocker.patch("websites.signals.get_sync_backend")
+    mock_task = mocker.patch("websites.signals.delete_orphaned_content_file")
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
 
-    content.delete()
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete()
 
-    mock_get_backend.assert_not_called()
+    mock_task.delay.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_hard_delete_backend_error_does_not_block_deletion(settings, mocker):
-    """A backend failure while cleaning up should be logged, not raised"""
+def test_hard_delete_backend_error_does_not_block_deletion(
+    settings, mocker, django_capture_on_commit_callbacks
+):
+    """A backend failure while cleaning up (end-to-end, task included) is logged, not raised"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    mock_get_backend = mocker.patch("websites.signals.get_sync_backend")
+    mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
     mock_get_backend.return_value.api.delete_content_file.side_effect = Exception(
         "backend unavailable"
     )
     content = WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+    content.content_sync_state.data = {GIT_DATA_FILEPATH: "path/to/synced-file.md"}
+    content.content_sync_state.save()
     content_id = content.id
 
-    content.delete(force_policy=HARD_DELETE)  # must not raise
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(force_policy=HARD_DELETE)  # must not raise
 
     assert not WebsiteContent.all_objects.filter(id=content_id).exists()

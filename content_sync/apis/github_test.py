@@ -573,16 +573,42 @@ def test_delete_content_file_already_gone(
     mock_repo.delete_file.assert_not_called()
 
 
+def test_delete_content_file_uses_explicit_filepath_override(
+    mocker, mock_api_wrapper, patched_destination_filepath
+):
+    """An explicit filepath should be used instead of the content's current computed path."""
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    mock_repo.get_contents.return_value.sha.return_value = sha1(  # noqa: S324
+        b"fake_sha"
+    )
+    override_path = "path/to/a-previously-synced-file.md"
+
+    mock_api_wrapper.delete_content_file(content, filepath=override_path)
+
+    mock_repo.get_contents.assert_called_once_with(override_path)
+    mock_repo.delete_file.assert_called_once_with(
+        override_path,
+        f"Delete {override_path}",
+        mock_repo.get_contents.return_value.sha,
+        committer=mocker.ANY,
+        **{},
+    )
+
+
 def test_hard_delete_signal_redundant_call_is_safe(
-    settings, mock_api_wrapper, patched_destination_filepath
+    settings,
+    mock_api_wrapper,
+    patched_destination_filepath,
+    django_capture_on_commit_callbacks,
 ):
     """
     GithubBackend.delete_content_in_backend deletes a content's backend file
     and then hard-deletes the row. That hard-delete also fires
-    websites.signals' safety-net receiver, which tries to delete the same,
-    now-already-gone file again. That redundant second call must be a
-    silent no-op rather than a retried failure that surfaces as a raised
-    exception here.
+    websites.signals' safety-net receiver (deferred to a background task via
+    transaction.on_commit), which tries to delete the same, now-already-gone
+    file again. That redundant second call must be a silent no-op rather
+    than a retried failure that surfaces as a raised exception here.
     """
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     content = mock_api_wrapper.website.websitecontent_set.first()
@@ -593,7 +619,10 @@ def test_hard_delete_signal_redundant_call_is_safe(
     ]
 
     mock_api_wrapper.delete_content_file(content)  # the explicit, sanctioned delete
-    content.delete(force_policy=HARD_DELETE)  # fires the signal; must not retry-storm
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(
+            force_policy=HARD_DELETE
+        )  # fires the signal; must not retry-storm
 
     # Exactly one get_contents call per delete_content_file invocation: the
     # redundant second call must be recognized as "already gone" on its

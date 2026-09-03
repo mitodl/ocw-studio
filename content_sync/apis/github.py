@@ -420,12 +420,21 @@ class GithubApiWrapper:
         return commit
 
     @retry_on_failure
-    def delete_content_file(self, content: WebsiteContent) -> Commit | None:
+    def delete_content_file(
+        self, content: WebsiteContent, filepath: str | None = None
+    ) -> Commit | None:
         """
         Delete a file from git. Returns None if the file is already gone.
+
+        `filepath` overrides the path computed from `content`'s current
+        fields, for callers that already know the path the file was last
+        actually synced to (e.g. a hard-deleted WebsiteContent whose current
+        fields could reflect a rename that was never resynced).
         """
         repo = self.get_repo()
-        filepath = get_destination_filepath(content, self.site_config)
+        filepath = filepath or get_destination_filepath(content, self.site_config)
+        if not filepath:
+            return None
         try:
             sha = repo.get_contents(filepath).sha
         except GithubException as ge:

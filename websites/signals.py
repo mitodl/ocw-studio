@@ -3,13 +3,16 @@
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_delete, post_save, pre_save
+from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 from safedelete.signals import post_softdelete
 
-from content_sync.api import get_sync_backend
+from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.decorators import is_sync_enabled
+from content_sync.models import ContentSyncState
+from content_sync.tasks import delete_orphaned_content_file
+from content_sync.utils import get_destination_filepath
 from websites.api import unlink_deleted_resource_from_videos
 from websites.constants import (
     CONTENT_TYPE_NAVMENU,
@@ -19,6 +22,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.permissions import setup_website_groups_permissions
+from websites.site_config_api import SiteConfig
 
 log = logging.getLogger(__name__)
 
@@ -99,7 +103,7 @@ def unlink_deleted_resource_on_softdelete(
 
 
 @receiver(
-    post_delete,
+    pre_delete,
     sender=WebsiteContent,
     dispatch_uid="delete_content_from_backend_on_hard_delete",
 )
@@ -115,20 +119,38 @@ def delete_content_from_backend_on_hard_delete(
     `.delete(force_policy=HARD_DELETE)` directly): removes the content's
     file from the git backend so it doesn't stay orphaned forever.
 
-    Hard-deletes that already go through the normal flow (GithubBackend's
-    delete_content_in_backend / sync_all_content_to_db /
-    upsert_content_files_for_user) have already removed the backend file by
-    the time this fires; the resulting redundant call is a cheap no-op
-    because delete_content_file treats an already-missing file as success
-    rather than an error.
+    Runs on pre_delete, not post_delete, so the content's ContentSyncState
+    (cascade-deleted along with it) can still be read here to recover the
+    path it was last actually synced to. Recomputing the path fresh from the
+    row's current fields would target the wrong file for content that was
+    renamed but never resynced before being hard-deleted.
+
+    The actual backend call is deferred via transaction.on_commit into a
+    background task rather than made inline: inline, it would run inside
+    the same transaction as the delete (so a later rollback couldn't undo an
+    already-made GitHub API call), and for a bulk hard-delete it would turn
+    every row into a blocking, synchronous network request even though the
+    sanctioned bulk-delete flows already remove their own backend files.
     """
     website = instance.website
+    filepath = None
     try:
-        backend = get_sync_backend(website)
-        backend.api.delete_content_file(instance)
-    except Exception:  # pylint:disable=broad-except
-        log.exception(
-            "Failed to delete backend file for hard-deleted content %s (%s)",
-            instance.text_id,
-            website.name,
+        sync_state = instance.content_sync_state
+    except ContentSyncState.DoesNotExist:
+        sync_state = None
+    if sync_state and sync_state.data:
+        filepath = sync_state.data.get(GIT_DATA_FILEPATH)
+    if not filepath:
+        site_config = SiteConfig(website.starter.config)
+        filepath = get_destination_filepath(instance, site_config)
+    if not filepath:
+        return
+
+    website_pk = website.pk
+    updated_by_pk = instance.updated_by_id
+
+    transaction.on_commit(
+        lambda: delete_orphaned_content_file.delay(
+            str(website_pk), filepath, updated_by_pk
         )
+    )
