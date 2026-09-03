@@ -436,6 +436,38 @@ describe("SiteContent", () => {
         expect(formikStubs.setErrors).toHaveBeenCalledWith(errorObj)
       })
 
+      it("renames a markdown field error back to body", async () => {
+        const apiErrorObj = { markdown: "uh oh" }
+        if (editorState.editing()) {
+          helper.mockPatchRequest(
+            siteApiContentDetailUrl
+              .param({ name: website.name, textId: content.text_id })
+              .toString(),
+            apiErrorObj,
+            500,
+          )
+        } else {
+          helper.mockPostRequest(
+            siteApiContentUrl.param({ name: website.name }).toString(),
+            apiErrorObj,
+            500,
+          )
+        }
+        await renderComponent(
+          {
+            editorState,
+            ...successStubs,
+          },
+          editorState.editing() ? content : null,
+        )
+
+        const onSubmit = capturedFormProps!.onSubmit
+        await act(async () => {
+          await onSubmit({}, formikStubs as unknown as FormikHelpers<any>)
+        })
+        expect(formikStubs.setErrors).toHaveBeenCalledWith({ body: "uh oh" })
+      })
+
       it("handles non-field errors", async () => {
         const errorMessage = "uh oh"
         if (editorState.editing()) {
