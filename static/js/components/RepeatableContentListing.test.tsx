@@ -303,6 +303,22 @@ describe("RepeatableContentListing", () => {
     },
   )
 
+  it("preserves existing query params (e.g. search) in the Add link href", async () => {
+    await renderListing({}, "some-search-term")
+
+    const link = screen.getByRole("link", { name: /add/i })
+    expect(link).toHaveAttribute(
+      "href",
+      siteContentNewUrl
+        .param({
+          name: website.name,
+          contentType: configItem.name,
+        })
+        .query({ q: "some-search-term" })
+        .toString(),
+    )
+  })
+
   test.each([true, false])(
     "shows the sync status indicator when gdrive enabled=%p",
     async (gdriveEnabled) => {

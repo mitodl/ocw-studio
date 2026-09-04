@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useLocation } from "react-router-dom"
+import { reloadPage } from "../lib/navigation"
 
 const HASH_URL = "/static/hash.txt"
 
@@ -35,7 +36,7 @@ export default function useAppVersionCheck(): void {
       if (!hashRef.current) {
         hashRef.current = hash
       } else if (hash !== hashRef.current) {
-        window.location.reload()
+        reloadPage()
       }
     })
 
