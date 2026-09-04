@@ -179,6 +179,33 @@ batch.update(synced_checksum=None)
 3. Trigger github sync for this batch by publishing through the UI. Verify from the github content repo that the sync completed.
 4. Repeat for remaining batches
 
+### 3.4 Clean Up Orphaned Backend Files
+
+The steps above only push whatever content currently exists in the database. They never remove a file from a site's GitHub repo whose corresponding row didn't survive the restore, for example RC-only test content that isn't in production, or content whose destination path changed. Those files stay in the repo and Hugo keeps building them.
+
+For each site (excluding `ocw-www`, which needs the same batching consideration as step 3.3), run:
+
+```bash
+./manage.py sync_website_to_backend --filter-json /path/to/site_names.json --delete
+```
+
+`site_names.json` should be a JSON array of the same site names published in step 3.2. You can generate it in a Django shell:
+
+```python
+import json
+from websites.constants import STARTER_SOURCE_GITHUB
+from websites.models import Website
+
+names = list(
+    Website.objects.filter(starter__source=STARTER_SOURCE_GITHUB)
+    .exclude(name="ocw-www")
+    .values_list("name", flat=True)
+)
+json.dump(names, open("/tmp/site_names.json", "w"))
+```
+
+**Warning:** `--delete` permanently removes files from the GitHub repo. Only run this after step 3.2's mass publish has finished successfully, so the database and the repo are in sync before reconciling.
+
 ## Step 4: Pipeline Management and Mass build
 
 ### 4.1 Refresh Pipeline Definitions
