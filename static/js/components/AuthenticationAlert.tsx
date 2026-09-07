@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { useAppSelector } from "../hooks/redux"
+import { redirectTo } from "../lib/navigation"
 import Dialog from "./Dialog"
 
 const AuthenticationAlert: React.FC = () => {
@@ -8,7 +9,7 @@ const AuthenticationAlert: React.FC = () => {
   useEffect(() => setIsDismissed(false), [authenticationErrors])
   const dismiss = useCallback(() => setIsDismissed(true), [])
   const goToLogin = useCallback(() => {
-    window.location.href = "/auth/login/keycloak/"
+    redirectTo("/auth/login/keycloak/")
   }, [])
 
   const isVisible = authenticationErrors > 0 && !isDismissed

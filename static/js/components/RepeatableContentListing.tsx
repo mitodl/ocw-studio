@@ -227,7 +227,7 @@ export default function RepeatableContentListing(props: {
                   name: website.name,
                   contentType: configItem.name,
                 })
-                .query(searchParams)
+                .query(Object.fromEntries(searchParams))
                 .toString()}
             >
               {isResource ? "Add Video Resource" : `Add ${labelSingular}`}

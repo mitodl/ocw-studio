@@ -3,16 +3,14 @@ import * as dom from "@testing-library/dom"
 import _ from "lodash"
 import { act, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import {
-  IntegrationTestHelper,
-  assertInstanceOf,
-  withFakeLocation,
-  wait,
-} from "../testing_utils"
+import { IntegrationTestHelper, assertInstanceOf, wait } from "../testing_utils"
 import { makeWebsites, makeWebsiteListing } from "../util/factories/websites"
 import { siteApiDetailUrl, siteApiListingUrl } from "../lib/urls"
+import { redirectTo } from "../lib/navigation"
 
 import App from "../pages/App"
+
+jest.mock("../lib/navigation")
 
 /**
  * Response body for auth rejection from Django
@@ -54,27 +52,22 @@ describe("Prompting for authentication", () => {
   ])(
     "prompts for authentication when APIs reject with auth errors",
     async () => {
-      await withFakeLocation(async () => {
-        const { result, setMockWebsiteResponse, website, user } = await setup()
+      const { result, setMockWebsiteResponse, website, user } = await setup()
 
-        setMockWebsiteResponse(authRejectionBody, 403)
+      setMockWebsiteResponse(authRejectionBody, 403)
 
-        const siteLink = await waitFor(() => result.getByText(website.title))
-        await act(() => user.click(siteLink))
+      const siteLink = await waitFor(() => result.getByText(website.title))
+      await act(() => user.click(siteLink))
 
-        const dialog = await waitFor(() => result.getByRole("dialog"))
+      const dialog = await waitFor(() => result.getByRole("dialog"))
 
-        expect(dialog).toHaveTextContent("Session Expired")
-        expect(dialog).toHaveTextContent("Please log in and try again.")
-        const goToLogin = dom.queryByText(dialog, "Go to Login")
-        assertInstanceOf(goToLogin, HTMLButtonElement)
-        await act(() => user.click(goToLogin))
-        expect(window.location.href).toBe("/auth/login/keycloak/")
-        result.unmount()
-      })
-
-      // Test is inside a callback. Let's make sure it actually ran.
-      expect.assertions(3)
+      expect(dialog).toHaveTextContent("Session Expired")
+      expect(dialog).toHaveTextContent("Please log in and try again.")
+      const goToLogin = dom.queryByText(dialog, "Go to Login")
+      assertInstanceOf(goToLogin, HTMLButtonElement)
+      await act(() => user.click(goToLogin))
+      expect(redirectTo).toHaveBeenCalledWith("/auth/login/keycloak/")
+      result.unmount()
     },
   )
 
