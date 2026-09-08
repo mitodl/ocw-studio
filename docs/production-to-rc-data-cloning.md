@@ -14,92 +14,102 @@ At a high level, the process consists of the following steps:
 
 ## Step 1: Database Replication
 
-### 1.1 Set up Concourse Pipeline Config
+### 1.1 Prerequisites
 
-Create a concourse pipeline configuration for database replication. This is essentially a pg_dump followed by a pg_restore. Set the postgres image version as appropriate.
+Follow the [Platform Engineering guide](https://pe.ol.mit.edu/getting_started/developer_eks_access/) for getting set up with EKS credentials, if you haven't already.
 
-```yaml
-jobs:
-  - build_log_retention:
-      builds: 10
-    name: restore-db
-    plan:
-      - config:
-          image_resource:
-            name: ""
-            source:
-              repository: postgres
-              tag: "16"
-            type: registry-image
-          outputs:
-            - name: dump
-          params:
-            PGHOST: ((source.host))
-            PGPASSWORD: ((source.password))
-            PGPORT: ((source.port))
-            PGUSER: ((source.username))
-          platform: linux
-          run:
-            args:
-              - -c
-              - pg_dump -v -Fc -d ((source.database)) > ./dump/db.dump
-            path: /bin/sh
-        task: run-pg-dump
-      - config:
-          image_resource:
-            name: ""
-            source:
-              repository: postgres
-              tag: "16"
-            type: registry-image
-          inputs:
-            - name: dump
-          params:
-            PGHOST: ((destination.host))
-            PGPASSWORD: ((destination.password))
-            PGPORT: ((destination.port))
-            PGUSER: ((destination.username))
-          platform: linux
-          run:
-            args:
-              - -c
-              - pg_restore -v --clean --no-privileges --no-owner -d ((destination.database))
-                ./dump/db.dump
-            path: /bin/sh
-        task: run-pg-restore
+### 1.2 Get connection info
+
+Save the production and RC `DATABASE_URL`s to local shell variables, rather than printing them to the terminal:
+
+```
+PROD_DATABASE_URL=$(kubectl get secret -n ocw-studio postgres-ocw-studio-dynamic-secret --context applications-production -o jsonpath='{.data.DATABASE_URL}' | base64 --decode)
+RC_DATABASE_URL=$(kubectl get secret -n ocw-studio postgres-ocw-studio-dynamic-secret --context applications-qa -o jsonpath='{.data.DATABASE_URL}' | base64 --decode)
 ```
 
-### 1.2 Configure Pipeline Variables
+### 1.3 Create ephemeral pods
 
-Create a `vars.yaml` file with database connection information:
+Production and RC/QA can't reach each other's database directly, so the dump is piped from a pod in one cluster to a pod in the other, through your own machine.
 
-```yaml
-source:
-  database: ocw_studio
-  host: [PRODUCTION_HOST]
-  port: 5432
-  username: [PRODUCTION_USERNAME]
-  password: [PRODUCTION_PASSWORD]
-destination:
-  database: [RC_DATABASE]
-  host: [RC_HOST]
-  port: 5432
-  username: [RC_USERNAME]
-  password: [RC_PASSWORD]
+Create one in production:
+
+```
+kubectl run pg-client-<your name> \
+  --image=postgres:18 \
+  --restart=Never \
+  --context applications-production \
+  -n ocw-studio \
+  --command -- sleep 3600
+
+kubectl wait --for=condition=Ready pod/pg-client-<your name> --context applications-production -n ocw-studio --timeout=120s
 ```
 
-**Getting Connection Information:**
-At MIT, ocw-studio is run in heroku, hence the database name, host, username, and password can be obtained through the heroku cli as `heroku config:get -a <app_name> DATABASE_URL`
+And one in RC/QA:
 
-### 1.3 Deploy and Run Pipeline
+```
+kubectl run pg-client-<your name> \
+  --image=postgres:18 \
+  --restart=Never \
+  --context applications-qa \
+  -n ocw-studio \
+  --command -- sleep 3600
 
-Push the pipeline to Concourse:
-
-```bash
-fly -t rc set-pipeline -p db-restore -c db-restore.yml --load-vars-from vars.yaml
+kubectl wait --for=condition=Ready pod/pg-client-<your name> --context applications-qa -n ocw-studio --timeout=120s
 ```
 
-Then trigger the pipeline through the Concourse UI.
+### 1.4 Dump and restore
+
+Try the direct pipe first — simplest option, fine for smaller databases:
+
+```
+kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- pg_dump -v -Fc -d "$PROD_DATABASE_URL" | kubectl exec -i -n ocw-studio --context applications-qa pg-client-<your name> -- pg_restore -v --clean --no-privileges --no-owner -d "$RC_DATABASE_URL"
+```
+
+**If it drops partway through** (`unexpected EOF`, `could not read from input file: end of file`): this is a hard limit, not a fluke. `kubectl exec` on these clusters authenticates with an AWS EKS token that expires after ~15 minutes, and that isn't configurable — any single continuous `kubectl exec`/`cp` session gets cut at that mark regardless of what's transferring. The fix is to move the dump in chunks small enough to each finish inside that window.
+
+Dump to a file in the production pod:
+
+```
+kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- pg_dump -v -Fc -d "$PROD_DATABASE_URL" -f /tmp/prod.dump
+```
+
+Split it into chunks (size `-b` based on how much data moved before the connection dropped last time, so each chunk comfortably finishes in a few minutes):
+
+```
+kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- sh -c 'cd /tmp && split -b 5m prod.dump prod.dump.part'
+```
+
+Copy each chunk to the RC pod under its own name — don't combine yet, so a dropped chunk is caught before it can corrupt the restore:
+
+```
+kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- sh -c 'ls /tmp/prod.dump.part*' | while IFS= read -r part; do
+  echo "Copying $part"
+  kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- cat "$part" | kubectl exec -i -n ocw-studio --context applications-qa pg-client-<your name> -- sh -c "cat > $part"
+done
+```
+
+Verify every chunk arrived before combining — compare the file lists and sizes on both sides:
+
+```
+kubectl exec -n ocw-studio --context applications-production pg-client-<your name> -- sh -c 'ls -la /tmp/prod.dump.part*'
+kubectl exec -n ocw-studio --context applications-qa pg-client-<your name> -- sh -c 'ls -la /tmp/prod.dump.part*'
+```
+
+Only once both listings match exactly (same files, same sizes), combine the chunks and restore:
+
+```
+kubectl exec -n ocw-studio --context applications-qa pg-client-<your name> -- sh -c 'cat /tmp/prod.dump.part* > /tmp/prod.dump'
+kubectl exec -n ocw-studio --context applications-qa pg-client-<your name> -- pg_restore -v --clean --no-privileges --no-owner -d "$RC_DATABASE_URL" /tmp/prod.dump
+```
+
+If the dump or restore step itself runs past ~15 minutes rather than the transfer, background it the same way (`nohup ... > /tmp/dump.log 2>&1 &` inside the pod), then check progress with a fresh, short `kubectl exec ... -- tail /tmp/dump.log`.
+
+### 1.5 Clean up
+
+```
+kubectl delete pod -n ocw-studio --context applications-production pg-client-<your name>
+kubectl delete pod -n ocw-studio --context applications-qa pg-client-<your name>
+```
 
 ## Step 2: Google Drive Folder Management
 
@@ -132,7 +142,15 @@ This command will:
 
 The RC environment needs to synchronize all content with GitHub repositories. This can be done by clearing sync states for the ContentSyncState objects and subsequently running a mass publish.
 
-### 3.1 Reset Sync States
+### 3.1 Backpopulate Site Pipelines
+
+Cloned websites already have a `publish_date` (inherited from production), which the publish flow (`content_sync/api.py::publish_website`) treats as "this site's Concourse pipeline already exists," skipping pipeline creation. RC's Concourse has no pipeline for these sites yet, so publishing before this step fails to trigger a build — you'll see `Could not find live build <id> for <site>` / `A live pipeline build failed for <site>` in the celery logs, and the stale production build ID is left in place. Create the missing per-site pipelines first:
+
+```bash
+./manage.py backpopulate_pipelines
+```
+
+### 3.2 Reset Sync States
 
 Reset all sync states to ensure complete synchronization:
 
@@ -140,17 +158,18 @@ Reset all sync states to ensure complete synchronization:
 ./manage.py reset_sync_states --skip_sync
 ```
 
-### 3.2 Mass Publish (Excluding ocw-www)
+### 3.3 Mass Publish (Excluding ocw-www)
 
-Publish all websites except `ocw-www`:
+Publish all websites except `ocw-www`, for both live and draft:
 
 ```bash
-./manage.py mass_publish --exclude ocw-www
+./manage.py mass_publish live --exclude ocw-www
+./manage.py mass_publish draft --exclude ocw-www
 ```
 
 **Note:** This process can take a long time as it publishes every website to GitHub.
 
-### 3.3 Publish ocw-www separately
+### 3.4 Publish ocw-www separately
 
 The `ocw-www` website requires special handling due to its large size. This is the reason we exclude it during the mass publish as its publication is prone to network failures.
 
@@ -181,14 +200,13 @@ batch.update(synced_checksum=None)
 
 ## Step 4: Pipeline Management and Mass build
 
-### 4.1 Refresh Pipeline Definitions
+### 4.1 Refresh Mass Build Pipeline Definitions
 
-After all content has been published, refresh the pipeline definitions:
+After all content has been published, refresh the mass build pipeline definitions:
 
 ```bash
 ./manage.py upsert_mass_build_pipeline
 ./manage.py upsert_mass_build_pipeline --offline
-./manage.py backpopulate_pipelines
 ```
 
 ### 4.2 Trigger Mass Build
