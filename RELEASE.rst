@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.198.2
+---------------
+
+- Update jest monorepo to v30 (#3179)
+- feat(websites): add backfill_mit_learn_topics management command (#3187)
+- chore(deps): bump mitol-django-observability to >=2026.8.19 (#3188)
+- fix: sanitize markdown HTML to close stored XSS in content editor (#3125)
+
 Version 0.198.0 (Released September 02, 2026)
 ---------------
 
