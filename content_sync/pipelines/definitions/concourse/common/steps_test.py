@@ -17,6 +17,8 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SITE_CONTENT_GIT_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
+    LEARN_FASTLY_VAR,
+    LIVE_FASTLY_VAR,
     ClearCdnCacheStep,
     ErrorHandlingStep,
     OcwStudioWebhookStep,
@@ -147,29 +149,77 @@ def test_site_content_git_task_step(
             assert step_output["params"] == {}
 
 
-def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
-    """Assert that the ClearCdnCacheStep renders with the correct attributes"""
-    name = Identifier("clear-cdn-cache-test")
-    fastly_var = "fastly_test"
-    site_name = "test_site"
-    clear_cdn_cache_step = ClearCdnCacheStep(
-        name=name,
+def _rendered_curl_args(fastly_var, site_name):
+    """Render a ClearCdnCacheStep and return its curl arguments"""
+    step = ClearCdnCacheStep(
+        name=Identifier("clear-cdn-cache-test"),
         fastly_var=fastly_var,
         site_name=site_name,
     )
-    rendered_step = json.loads(clear_cdn_cache_step.model_dump_json())
-    rendered_args = rendered_step["config"]["run"]["args"]
-    for arg in rendered_args:
-        assert "'" not in arg
+    rendered_step = json.loads(step.model_dump_json())
+    return rendered_step["config"]["run"]["args"]
+
+
+def _assert_purges(rendered_args, fastly_var, site_name):
+    """Assert that rendered_args contain one Fastly purge for fastly_var"""
     assert f"Fastly-Key: (({fastly_var}.api_token))" in rendered_args
-    if settings.CONCOURSE_HARD_PURGE:
-        assert "Fastly-Soft-Purge: 1" not in rendered_args
-    else:
-        assert "Fastly-Soft-Purge: 1" in rendered_args
     assert (
         f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
         in rendered_args
     )
+
+
+def test_clear_cdn_cache_step_live(settings, mock_concourse_hard_purge):
+    """
+    Assert that a live ClearCdnCacheStep purges both the live distribution and the
+    MIT Learn distribution in a single curl invocation.
+    """
+    site_name = "test_site"
+    rendered_args = _rendered_curl_args(LIVE_FASTLY_VAR, site_name)
+    # Concourse passes args straight to exec, so shell quoting must never appear
+    for arg in rendered_args:
+        assert "'" not in arg
+    _assert_purges(rendered_args, LIVE_FASTLY_VAR, site_name)
+    _assert_purges(rendered_args, LEARN_FASTLY_VAR, site_name)
+    expected_soft_purge_count = 0 if settings.CONCOURSE_HARD_PURGE else 2
+    assert rendered_args.count("Fastly-Soft-Purge: 1") == expected_soft_purge_count
+    # --fail-early is global and must precede the first URL, otherwise curl exits 0
+    # when the first purge fails and the second succeeds
+    assert rendered_args.count("--fail-early") == 1
+    assert rendered_args.index("--fail-early") == 0
+    # --next is what scopes each Fastly-Key header to its own transfer, so it must
+    # fall between the first purge URL and the learn credentials
+    assert rendered_args.count("--next") == 1
+    next_index = rendered_args.index("--next")
+    assert next_index > rendered_args.index(
+        f"https://api.fastly.com/service/(({LIVE_FASTLY_VAR}.service_id))/purge/{site_name}"
+    )
+    assert next_index < rendered_args.index(
+        f"Fastly-Key: (({LEARN_FASTLY_VAR}.api_token))"
+    )
+
+
+@pytest.mark.parametrize("fastly_var", ["fastly_draft", "fastly_test"])
+def test_clear_cdn_cache_step_not_live(
+    settings,
+    mock_concourse_hard_purge,
+    fastly_var,
+):
+    """
+    Assert that a non-live ClearCdnCacheStep purges only its own distribution.
+    Draft and test builds are not served through the MIT Learn distribution.
+    """
+    site_name = "test_site"
+    rendered_args = _rendered_curl_args(fastly_var, site_name)
+    for arg in rendered_args:
+        assert "'" not in arg
+    _assert_purges(rendered_args, fastly_var, site_name)
+    assert not any(LEARN_FASTLY_VAR in arg for arg in rendered_args)
+    expected_soft_purge_count = 0 if settings.CONCOURSE_HARD_PURGE else 1
+    assert rendered_args.count("Fastly-Soft-Purge: 1") == expected_soft_purge_count
+    # A single transfer needs neither flag, keeping draft pipeline configs unchanged
+    assert "--next" not in rendered_args
+    assert "--fail-early" not in rendered_args
 
 
 def test_no_get_property_on_put_steps():

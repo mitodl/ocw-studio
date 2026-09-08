@@ -25,6 +25,9 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
     BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
+from content_sync.pipelines.definitions.concourse.common.steps import (
+    LEARN_FASTLY_VAR,
+)
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     BUILD_OFFLINE_SITE_IDENTIFIER,
     BUILD_ONLINE_SITE_IDENTIFIER,
@@ -490,6 +493,14 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             clear_cdn_cache_online_success_steps[-1]["try"]["put"]
             == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
         )
+        # The MIT Learn distribution only serves live content
+        clear_cdn_cache_online_args = clear_cdn_cache_online_step["config"]["run"][
+            "args"
+        ]
+        purges_learn = any(
+            LEARN_FASTLY_VAR in arg for arg in clear_cdn_cache_online_args
+        )
+        assert purges_learn == (branch_vars["pipeline_name"] == VERSION_LIVE)
         assert ocw_webhook_step_online_params["build_type"] == "online"
         assert ocw_webhook_step_online_cdn_cache_failure_step["build_type"] == "online"
         if branch_vars["pipeline_name"] == VERSION_DRAFT:
@@ -707,6 +718,14 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             clear_cdn_cache_offline_success_steps[-1]["try"]["put"]
             == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
         )
+        # The MIT Learn distribution only serves live content
+        clear_cdn_cache_offline_args = clear_cdn_cache_offline_step["config"]["run"][
+            "args"
+        ]
+        purges_learn = any(
+            LEARN_FASTLY_VAR in arg for arg in clear_cdn_cache_offline_args
+        )
+        assert purges_learn == (branch_vars["pipeline_name"] == VERSION_LIVE)
         assert ocw_webhook_step_offline_params["build_type"] == "offline"
         assert (
             ocw_webhook_step_offline_cdn_cache_failure_step["build_type"] == "offline"
