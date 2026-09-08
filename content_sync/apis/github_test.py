@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from github import Auth, GithubException, GithubIntegration
 from requests import HTTPError
+from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import (
     GIT_DATA_FILEPATH,
@@ -556,6 +557,81 @@ def test_delete_content_file(mocker, mock_api_wrapper, patched_destination_filep
         committer=mocker.ANY,
         **{},
     )
+
+
+def test_delete_content_file_already_gone(
+    mock_api_wrapper, patched_destination_filepath
+):
+    """delete_content_file should treat an already-deleted file as a no-op, not an error"""
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    mock_repo.get_contents.side_effect = GithubException(404)
+
+    result = mock_api_wrapper.delete_content_file(content)
+
+    assert result is None
+    mock_repo.delete_file.assert_not_called()
+
+
+def test_delete_content_file_uses_explicit_filepath_override(
+    mocker, mock_api_wrapper, patched_destination_filepath
+):
+    """An explicit filepath should be used instead of the content's current computed path."""
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    mock_repo.get_contents.return_value.sha.return_value = sha1(  # noqa: S324
+        b"fake_sha"
+    )
+    override_path = "path/to/a-previously-synced-file.md"
+
+    mock_api_wrapper.delete_content_file(content, filepath=override_path)
+
+    mock_repo.get_contents.assert_called_once_with(override_path)
+    mock_repo.delete_file.assert_called_once_with(
+        override_path,
+        f"Delete {override_path}",
+        mock_repo.get_contents.return_value.sha,
+        committer=mocker.ANY,
+        **{},
+    )
+
+
+def test_hard_delete_signal_redundant_call_is_safe(
+    settings,
+    mock_api_wrapper,
+    patched_destination_filepath,
+    django_capture_on_commit_callbacks,
+):
+    """
+    GithubBackend.delete_content_in_backend deletes a content's backend file
+    and then hard-deletes the row. That hard-delete also fires
+    websites.signals' safety-net receiver (deferred to a background task via
+    transaction.on_commit), which tries to delete the same, now-already-gone
+    file again. That redundant second call must be a silent no-op rather
+    than a retried failure that surfaces as a raised exception here.
+    """
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    content = mock_api_wrapper.website.websitecontent_set.first()
+    mock_repo = mock_api_wrapper.org.get_repo.return_value
+    mock_repo.get_contents.side_effect = [
+        SimpleNamespace(sha=sha1(b"fake_sha").hexdigest()),  # noqa: S324
+        GithubException(404),
+    ]
+
+    mock_api_wrapper.delete_content_file(content)  # the explicit, sanctioned delete
+    with django_capture_on_commit_callbacks(execute=True):
+        content.delete(
+            force_policy=HARD_DELETE
+        )  # fires the signal; must not retry-storm
+
+    # Exactly one get_contents call per delete_content_file invocation: the
+    # redundant second call must be recognized as "already gone" on its
+    # first attempt, not exhaust retry_on_failure's retries (which would
+    # also silently vanish into the signal's own try/except, masking a
+    # regression here if this test only asserted "does not raise").
+    assert mock_repo.get_contents.call_count == 2
+    assert mock_repo.delete_file.call_count == 1
+    assert WebsiteContent.objects.filter(id=content.id).first() is None
 
 
 def test_merge_branches(mock_api_wrapper):
