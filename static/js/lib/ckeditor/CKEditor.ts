@@ -34,12 +34,17 @@ import MathSyntax from "./plugins/MathSyntax"
 import Markdown from "./plugins/Markdown"
 import ResourceEmbed from "./plugins/ResourceEmbed"
 import ResourcePicker from "./plugins/ResourcePicker"
-import { ADD_RESOURCE_EMBED, ADD_RESOURCE_LINK } from "./plugins/constants"
+import {
+  ADD_IMAGE_GALLERY,
+  ADD_RESOURCE_EMBED,
+  ADD_RESOURCE_LINK,
+} from "./plugins/constants"
 import ResourceLink from "./plugins/ResourceLink"
 import DisallowNestedTables from "./plugins/DisallowNestedTables"
 import TableMarkdownSyntax from "./plugins/TableMarkdownSyntax"
 import MarkdownListSyntax from "./plugins/MarkdownListSyntax"
 import LegacyShortcodes from "./plugins/LegacyShortcodes"
+import ImageGallery from "./plugins/ImageGallery"
 
 /**
  * Programming languages we support in CKEditor code blocks
@@ -97,6 +102,7 @@ export const FullEditorConfig = {
     TableMarkdownSyntax,
     MathSyntax, // Needs to go before MarkdownListSyntax
     MarkdownListSyntax,
+    ImageGallery,
     LegacyShortcodes,
     Mathematics,
     Markdown,
@@ -122,6 +128,7 @@ export const FullEditorConfig = {
       "redo",
       ADD_RESOURCE_LINK,
       ADD_RESOURCE_EMBED,
+      ADD_IMAGE_GALLERY,
     ],
   },
   image: {
@@ -169,6 +176,7 @@ export const MinimalEditorConfig = {
     ResourceLink,
     MarkdownListSyntax,
     Markdown,
+    ImageGallery,
     LegacyShortcodes,
   ],
   toolbar: {
@@ -207,6 +215,7 @@ export const MinimalWithMathEditorConfig = {
     MarkdownListSyntax,
     Mathematics,
     Markdown,
+    ImageGallery,
     LegacyShortcodes,
   ],
   toolbar: {
