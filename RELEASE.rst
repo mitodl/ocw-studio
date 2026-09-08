@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+Version 0.199.0
+---------------
+
+- Update dependency ol-concourse to >=0.17,<0.18 (#3193)
+- Update dependency sass to v1.104.0 (#3176)
+- Update dependency boto3 to v1.43.78 (#3191)
+- Update dependency pygithub to v2.10.0 (#3195)
+- Update dependency sentry-testkit to v7.5.0 (#3196)
+- Update dependency posthog-js to v1.427.0 (#3194)
+- Update dependency sentry-sdk to v2.68.0 (#3177)
+- Update dependency sass-loader to v17.0.1 (#3192)
+- Update astral-sh/setup-uv action to v10 (#3178)
+- Update dependency pypdf to v6.16.1 [SECURITY] (#3185)
+- Update dependency mathjax to v4.1.3 (#3059)
+- Update dependency jest-watch-typeahead to v3 (#3023)
+
 Version 0.198.2
 ---------------
 
