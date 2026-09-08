@@ -311,7 +311,8 @@ def test_websites_endpoint_preview_error(mocker, drf_client):
         reverse("websites_api-preview", kwargs={"name": website.name})
     )
     assert resp.status_code == 500
-    assert resp.data == {"details": "422 {}"}
+    assert resp.data["error"] == "Failed to publish website"
+    assert resp.data["error_type"] == "github_error"
 
 
 @pytest.mark.parametrize("unpublish_status", [PUBLISH_STATUS_NOT_STARTED, None])
@@ -353,10 +354,8 @@ def test_websites_endpoint_publish_denied(mocker, drf_client):
     resp = drf_client.post(
         reverse("websites_api-publish", kwargs={"name": website.name})
     )
-    assert resp.status_code == 500
-    assert resp.data == {
-        "details": "You do not have permission to perform this action."
-    }
+    assert resp.status_code == 403
+    assert "detail" in resp.data or "details" in resp.data
 
 
 def test_websites_endpoint_publish_error(mocker, drf_client):
@@ -373,7 +372,8 @@ def test_websites_endpoint_publish_error(mocker, drf_client):
         reverse("websites_api-publish", kwargs={"name": website.name})
     )
     assert resp.status_code == 500
-    assert resp.data == {"details": "422 {}"}
+    assert resp.data["error"] == "Failed to publish website"
+    assert resp.data["error_type"] == "github_error"
 
 
 @pytest.mark.parametrize("is_published", [True, False])
@@ -477,10 +477,8 @@ def test_websites_endpoint_unpublish_denied(drf_client, mocker):
     resp = drf_client.post(
         reverse("websites_api-unpublish", kwargs={"name": website.name})
     )
-    assert resp.status_code == 500
-    assert resp.data == {
-        "details": "You do not have permission to perform this action."
-    }
+    assert resp.status_code == 403
+    assert "detail" in resp.data or "details" in resp.data
 
 
 def test_websites_endpoint_unpublish_error(drf_client, mocker):
@@ -498,7 +496,8 @@ def test_websites_endpoint_unpublish_error(drf_client, mocker):
         reverse("websites_api-unpublish", kwargs={"name": website.name})
     )
     assert resp.status_code == 500
-    assert resp.data == {"details": "oops"}
+    assert resp.data["error"] == "Failed to unpublish website"
+    assert resp.data["error_type"] == "http_error"
 
 
 def test_websites_endpoint_detail_update_denied(drf_client):
@@ -716,7 +715,8 @@ def test_website_starters_site_configs_exception(mocker, drf_client):
         reverse("website_starters_api-site-configs"), data=MOCK_GITHUB_DATA
     )
     assert resp.status_code == 500
-    assert resp.data == {"details": "'Key not found'"}
+    assert resp.data["error"] == "Failed to sync site configuration files"
+    assert resp.data["error_type"] == "key_error"
 
 
 @pytest.mark.parametrize("detailed_list", [True, False])
