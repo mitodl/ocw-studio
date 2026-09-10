@@ -113,6 +113,40 @@ def test_preserves_nested_shortcodes_in_text():
 
 
 @pytest.mark.django_db
+def test_preserves_nested_resource_link_in_text():
+    """
+    A percent-delimited resource_link, escaped quotes and all, nested inside an
+    angle-delimited item param. 10 items in the production corpus look like
+    this; the `{{< sub >}}` case above covers the angle-delimited variant.
+    """
+    website = WebsiteFactory.create()
+    make_image(website)
+    text = (
+        R"{{% resource_link \"d625c74d-9975-490c-809c-f5593c583cce\" \"Spindle\" %}}"
+        R" - The screw to which the bar of the press is affixed."
+    )
+    page = make_page(website, gallery(item(text=text)))
+
+    assert outcomes(page) == ["ok"]
+    assert page.markdown == gallery(item(text=text, uuid=IMAGE_UUID))
+
+
+@pytest.mark.django_db
+def test_preserves_entities_accents_and_escapes_in_captions():
+    """Shapes counted in the production corpus: HTML entities (44 items),
+    non-ASCII (90) and backslash escapes (23).
+    """
+    website = WebsiteFactory.create()
+    make_image(website)
+    ngdesc = R"Dar al-&grave;Adl as represented by Robert Hay."
+    text = R"Niépce's view. \[signed:\] Martha. A \"quoted\" phrase mid-value."
+    page = make_page(website, gallery(item(text=text, ngdesc=ngdesc)))
+
+    assert outcomes(page) == ["ok"]
+    assert page.markdown == gallery(item(text=text, ngdesc=ngdesc, uuid=IMAGE_UUID))
+
+
+@pytest.mark.django_db
 def test_leaves_other_shortcodes_untouched():
     """Only image-gallery-item is rewritten; the container and friends are not."""
     website = WebsiteFactory.create()
