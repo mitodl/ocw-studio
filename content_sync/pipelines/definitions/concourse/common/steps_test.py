@@ -17,6 +17,8 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SITE_CONTENT_GIT_IDENTIFIER,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
+    LEARN_FASTLY_VAR,
+    LIVE_FASTLY_VAR,
     ClearCdnCacheStep,
     ErrorHandlingStep,
     OcwStudioWebhookStep,
@@ -147,28 +149,98 @@ def test_site_content_git_task_step(
             assert step_output["params"] == {}
 
 
-def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
-    """Assert that the ClearCdnCacheStep renders with the correct attributes"""
-    name = Identifier("clear-cdn-cache-test")
-    fastly_var = "fastly_test"
-    site_name = "test_site"
-    clear_cdn_cache_step = ClearCdnCacheStep(
-        name=name,
+def _rendered_curl_args(fastly_var, site_name):
+    """Render a ClearCdnCacheStep and return its curl arguments"""
+    step = ClearCdnCacheStep(
+        name=Identifier("clear-cdn-cache-test"),
         fastly_var=fastly_var,
         site_name=site_name,
     )
-    rendered_step = json.loads(clear_cdn_cache_step.model_dump_json())
-    rendered_args = rendered_step["config"]["run"]["args"]
+    rendered_step = json.loads(step.model_dump_json())
+    return rendered_step["config"]["run"]["args"]
+
+
+def _transfers(rendered_args):
+    """
+    Split rendered curl args into one list per transfer.
+
+    curl resets most options at --next, so each transfer must carry its own -f and
+    Fastly-Key. Global options are hoisted out before splitting.
+    """
+    global_flags = {"--fail-early"}
+    transfers = [[]]
+    for arg in rendered_args:
+        if arg in global_flags:
+            continue
+        if arg == "--next":
+            transfers.append([])
+        else:
+            transfers[-1].append(arg)
+    return transfers
+
+
+def _assert_transfer(transfer, fastly_var, site_name, *, soft_purge):
+    """Assert that one curl transfer is a complete Fastly purge for fastly_var"""
+    # -f is per-transfer: without it curl exits 0 on an HTTP error even under
+    # --fail-early, so a failed purge would be reported as a successful publish
+    assert "-f" in transfer
+    assert transfer[transfer.index("-X") + 1] == "POST"
+    assert transfer.count(f"Fastly-Key: (({fastly_var}.api_token))") == 1
+    assert len([arg for arg in transfer if arg.startswith("Fastly-Key:")]) == 1
+    purge_url = (
+        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
+    )
+    assert transfer.count(purge_url) == 1
+    assert len([arg for arg in transfer if arg.startswith("https://")]) == 1
+    assert ("Fastly-Soft-Purge: 1" in transfer) == soft_purge
+
+
+def test_clear_cdn_cache_step_live(settings, mock_concourse_hard_purge):
+    """
+    Assert that a live ClearCdnCacheStep purges both the live distribution and the
+    MIT Learn distribution, each as a self-contained curl transfer.
+    """
+    site_name = "test_site"
+    rendered_args = _rendered_curl_args(LIVE_FASTLY_VAR, site_name)
+    # Concourse passes args straight to exec, so shell quoting must never appear
     for arg in rendered_args:
         assert "'" not in arg
-    assert f"Fastly-Key: (({fastly_var}.api_token))" in rendered_args
-    if settings.CONCOURSE_HARD_PURGE:
-        assert "Fastly-Soft-Purge: 1" not in rendered_args
-    else:
-        assert "Fastly-Soft-Purge: 1" in rendered_args
-    assert (
-        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
-        in rendered_args
+    # --fail-early is global and must lead, otherwise curl exits 0 when the first
+    # transfer fails and a later one succeeds
+    assert rendered_args.count("--fail-early") == 1
+    assert rendered_args.index("--fail-early") == 0
+    transfers = _transfers(rendered_args)
+    assert len(transfers) == 2
+    soft_purge = not settings.CONCOURSE_HARD_PURGE
+    _assert_transfer(transfers[0], LIVE_FASTLY_VAR, site_name, soft_purge=soft_purge)
+    _assert_transfer(transfers[1], LEARN_FASTLY_VAR, site_name, soft_purge=soft_purge)
+
+
+@pytest.mark.parametrize("fastly_var", ["fastly_draft", "fastly_test"])
+def test_clear_cdn_cache_step_not_live(
+    settings,
+    mock_concourse_hard_purge,
+    fastly_var,
+):
+    """
+    Assert that a non-live ClearCdnCacheStep purges only its own distribution.
+    Draft and test builds are not served through the MIT Learn distribution.
+    """
+    site_name = "test_site"
+    rendered_args = _rendered_curl_args(fastly_var, site_name)
+    for arg in rendered_args:
+        assert "'" not in arg
+    assert not any(LEARN_FASTLY_VAR in arg for arg in rendered_args)
+    # A single transfer needs neither flag, keeping draft pipeline configs unchanged
+    assert "--next" not in rendered_args
+    assert "--fail-early" not in rendered_args
+    transfers = _transfers(rendered_args)
+    assert len(transfers) == 1
+    _assert_transfer(
+        transfers[0],
+        fastly_var,
+        site_name,
+        soft_purge=not settings.CONCOURSE_HARD_PURGE,
     )
 
 

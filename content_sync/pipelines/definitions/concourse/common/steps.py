@@ -19,6 +19,7 @@ from ol_concourse.lib.models.pipeline import (
     TryStep,
 )
 
+from content_sync.constants import VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_CURL_STEP_IDENTIFIER,
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
@@ -31,6 +32,41 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
     CURL_REGISTRY_IMAGE,
 )
 from content_sync.utils import get_ocw_studio_api_url
+
+# The Concourse var holding Fastly credentials for the MIT Learn distribution,
+# which serves ocw-course-v3 content.
+LEARN_FASTLY_VAR = "fastly_learn"
+# Only live content reaches the MIT Learn distribution, so it is purged alongside
+# this var and no other. Keying off the Fastly var rather than the pipeline name is
+# deliberate: the e2e test pipeline runs under pipeline_name "live" but purges
+# fastly_test, and it must not touch the learn distribution.
+LIVE_FASTLY_VAR = f"fastly_{VERSION_LIVE}"
+
+
+def fastly_purge_args(fastly_var: str, site_name: str) -> list[str]:
+    """
+    Build the curl arguments for a single Fastly surrogate key purge.
+
+    Args:
+        fastly_var(str): The name of the var to pull Fastly properties from
+        site_name(str): The surrogate key to purge from the cache
+
+    Returns:
+        list[str]: curl arguments for one purge request
+    """
+    args = [
+        "-f",
+        "-X",
+        "POST",
+        "-H",
+        f"Fastly-Key: (({fastly_var}.api_token))",
+    ]
+    if not settings.CONCOURSE_HARD_PURGE:
+        args.extend(["-H", "Fastly-Soft-Purge: 1"])
+    args.append(
+        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
+    )
+    return args
 
 
 def add_error_handling(  # noqa: PLR0913, PLR0917
@@ -172,8 +208,17 @@ class SlackAlertStep(TryStep):
 
 class ClearCdnCacheStep(TaskStep):
     """
-    A TaskStep using the curlimages/curl Docker image that sends an
-    API request to Fastly to clear the cache for a given URL
+    A TaskStep using the curlimages/curl Docker image that sends an API request to
+    Fastly to clear the cache for a given URL.
+
+    When purging the live distribution, the MIT Learn distribution that serves
+    ocw-course-v3 content is purged as well. Draft and test builds are not served
+    through it, so they render a single purge exactly as before.
+
+    The two purges run as separate transfers of one curl invocation, separated by
+    --next so that each carries its own Fastly-Key header. --fail-early is required:
+    without it curl exits 0 when an earlier transfer fails but a later one succeeds,
+    which would report a failed purge as a success.
 
     Args:
         name(str): The name to use as the Identifier for the task argument
@@ -182,18 +227,14 @@ class ClearCdnCacheStep(TaskStep):
     """
 
     def __init__(self, name: Identifier, fastly_var: str, site_name: str, **kwargs):
-        curl_args = [
-            "-f",
-            "-X",
-            "POST",
-            "-H",
-            f"Fastly-Key: (({fastly_var}.api_token))",
-        ]
-        if not settings.CONCOURSE_HARD_PURGE:
-            curl_args.extend(["-H", "Fastly-Soft-Purge: 1"])
-        curl_args.append(
-            f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
-        )
+        curl_args = fastly_purge_args(fastly_var, site_name)
+        if fastly_var == LIVE_FASTLY_VAR:
+            curl_args = [
+                "--fail-early",
+                *curl_args,
+                "--next",
+                *fastly_purge_args(LEARN_FASTLY_VAR, site_name),
+            ]
         super().__init__(
             task=name,
             timeout="5m",
