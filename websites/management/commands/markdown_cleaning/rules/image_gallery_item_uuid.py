@@ -124,11 +124,6 @@ class ImageGalleryItemUuidRule(PyparsingRule):
             return "wrong_resourcetype"
         return "ok"
 
-    @staticmethod
-    def _text_id_spellings(uuid: UUID):
-        """text_id is stored dashed, but do not assume every legacy import was."""
-        return [str(uuid), uuid.hex]
-
     def _find_in_website(self, uuid: UUID, website_id):
         """
         Find the referenced content within `website_id`.
@@ -136,17 +131,18 @@ class ImageGalleryItemUuidRule(PyparsingRule):
         Scoped to the one website deliberately: text_id is unique per
         (website, text_id) and not globally, so a match in another site is not
         safe to treat as the intended target.
+
+        Matched on the canonical dashed spelling alone. Every text_id in
+        production carries dashes, and `unique_text_id` covers the exact pair,
+        so this returns at most one row. Accepting an undashed spelling as well
+        would allow two rows in one website to normalise to the same uuid, and
+        the lookup would then have to guess which of them the emitted dashed
+        uuid actually names.
         """
-        return (
-            WebsiteContent.all_objects.filter(
-                website_id=website_id, text_id__in=self._text_id_spellings(uuid)
-            )
-            .order_by("id")
-            .first()
-        )
+        return WebsiteContent.all_objects.filter(
+            website_id=website_id, text_id=str(uuid)
+        ).first()
 
     def _exists_elsewhere(self, uuid: UUID):
         """Distinguish a dangling uuid from one belonging to a different site."""
-        return WebsiteContent.all_objects.filter(
-            text_id__in=self._text_id_spellings(uuid)
-        ).exists()
+        return WebsiteContent.all_objects.filter(text_id=str(uuid)).exists()
