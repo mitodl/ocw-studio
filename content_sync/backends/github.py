@@ -1,8 +1,8 @@
 """Github backend"""
 
 import logging
-from typing import TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from github.GithubObject import NotSet
