@@ -128,7 +128,7 @@ repos:
     language: python
     files: 'serializers\.py$'
     additional_dependencies:
-    # Pinned to match pyproject.toml. Unpinned, pre-commit.ci installs the
-    # latest release, which reports checks the project's own version does not
-    # and which are absent from drf_lint_baseline.json.
-    - mitol-drf-lint==2026.4.2
+    # Pinned, and kept in step with pyproject.toml. Unpinned, pre-commit.ci
+    # silently follows the newest release, so the hook can start reporting
+    # checks the project's own version does not.
+    - mitol-drf-lint==2026.8.28
