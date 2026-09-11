@@ -130,3 +130,5 @@ s3/
 
 # Claude Code local state and worktrees
 .claude/
+
+.drf_lint_cache.json
