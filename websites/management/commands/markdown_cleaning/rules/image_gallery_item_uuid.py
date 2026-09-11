@@ -112,10 +112,9 @@ class ImageGalleryItemUuidRule(PyparsingRule):
         if resource is None:
             return "cross_site" if self._exists_elsewhere(uuid) else "uuid_not_found"
 
+        metadata = resource.metadata if isinstance(resource.metadata, dict) else {}
         notes.resolved_type = resource.type
-        notes.resolved_resourcetype = (resource.metadata or {}).get(
-            "resourcetype"
-        ) or ""
+        notes.resolved_resourcetype = metadata.get("resourcetype") or ""
 
         if resource.deleted is not None:
             return "target_deleted"
