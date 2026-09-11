@@ -1013,6 +1013,18 @@ GITHUB_TIMEOUT = get_int(
     description="Timeout in seconds for Github API requests",
     required=False,
 )
+GITLAB_TIMEOUT = get_int(
+    name="GITLAB_TIMEOUT",
+    default=None,
+    description="Timeout in seconds for GitLab API requests, or None for no timeout",
+    required=False,
+)
+GITLAB_COMMIT_BATCH_SIZE = get_int(
+    name="GITLAB_COMMIT_BATCH_SIZE",
+    default=200,
+    description="Number of content records to include in each GitLab sync commit",
+    required=False,
+)
 GIT_ORGANIZATION = get_string(
     name="GIT_ORGANIZATION",
     default=None,
@@ -1089,6 +1101,24 @@ GITHUB_RATE_LIMIT_MIN_SLEEP = get_int(
     name="GITHUB_RATE_LIMIT_MIN_SLEEP",
     default=5,
     description="Minimum time to sleep between when throttling github calls",
+    required=False,
+)
+GITLAB_RATE_LIMIT_CHECK = get_bool(
+    name="GITLAB_RATE_LIMIT_CHECK",
+    default=False,
+    description="True if the GitLab domain has API rate limits",
+    required=False,
+)
+GITLAB_RATE_LIMIT_CUTOFF = get_int(
+    name="GITLAB_RATE_LIMIT_CUTOFF",
+    default=100,
+    description="Number of remaining GitLab API calls that triggers throttling",
+    required=False,
+)
+GITLAB_RATE_LIMIT_MIN_SLEEP = get_int(
+    name="GITLAB_RATE_LIMIT_MIN_SLEEP",
+    default=5,
+    description="Minimum time to sleep between when throttling GitLab calls",
     required=False,
 )
 OCW_IMPORT_STARTER_SLUG = get_string(
