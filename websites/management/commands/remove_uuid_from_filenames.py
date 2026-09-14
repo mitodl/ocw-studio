@@ -78,12 +78,17 @@ class _PlannedGalleryHrefRule(BaseGalleryHrefRewriteRule):
 
     def resolve_new_href(self, website_id, href, uuid):
         site = str(website_id)
+        # A rename only ever changes the basename, so match on the basename
+        # and put the href's own prefix back.
+        prefix, sep, basename = href.rpartition("/")
+        new_basename = None
         if uuid:
             new_basename = self.uuid_map.get(site, {}).get(uuid)
-            if new_basename is not None:
-                # Already correct, so nothing to rewrite.
-                return None if new_basename == href else new_basename
-        return self.basename_map.get(site, {}).get(href)
+        if new_basename is None:
+            new_basename = self.basename_map.get(site, {}).get(basename)
+        if new_basename is None or new_basename == basename:
+            return None
+        return f"{prefix}{sep}{new_basename}"
 
 
 def _collect_renames(queryset):
@@ -281,12 +286,19 @@ def _collect_gallery_patches(renames):
                 file=sys.stderr,
             )
             continue
-        if changed:
-            patches.append(MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown))
-        # Discard per-match bookkeeping the cleaner isn't asked to report here
-        # (no CSV export in this path) — otherwise it grows unboundedly across
-        # a large scan, holding a reference to every scanned WebsiteContent.
-        cleaner.replacement_matches.clear()
+        else:
+            if changed:
+                patches.append(
+                    MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown)
+                )
+        finally:
+            # Discard per-match bookkeeping the cleaner isn't asked to report
+            # here (no CSV export in this path) — otherwise it grows
+            # unboundedly across a large scan, holding a reference to every
+            # scanned WebsiteContent. A page that raised part way through has
+            # already recorded its earlier matches, so this has to run on that
+            # path too.
+            cleaner.replacement_matches.clear()
     return patches
 
 

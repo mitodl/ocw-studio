@@ -348,3 +348,81 @@ def test_uuid_is_scoped_to_the_same_website(mock_s3):
     cleaner.update_website_content(gallery)
 
     assert gallery.markdown == markdown
+
+
+def test_uuid_resolution_preserves_a_path_valued_href(mock_s3):
+    """image_gallery_item_uuid accepts a path-valued href, so the path must survive."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=IMAGE_UUID,
+        file=f"sites/{website.name}/photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=gallery_item(href=f"/courses/{website.name}/{UUID_PREFIX}_photo.jpg"),
+    )
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{IMAGE_UUID}" '
+        f'href="/courses/{website.name}/photo.jpg" text="a caption" >}}}}'
+    )
+
+
+def test_uuid_resolution_leaves_correct_path_valued_href_alone(mock_s3):
+    """An already-correct path-valued href must not be flattened to its basename."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, text_id=IMAGE_UUID, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = gallery_item(href=f"/courses/{website.name}/photo.jpg")
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown
+
+
+def test_basename_fallback_preserves_a_path_valued_href(mock_s3):
+    """Without a uuid param a path-valued href is still repaired, path intact."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=gallery_item(
+            uuid=None, href=f"/courses/{website.name}/{UUID_PREFIX}_photo.jpg"
+        ),
+    )
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item href="/courses/{website.name}/photo.jpg" '
+        'text="a caption" >}}'
+    )
+
+
+def test_uuid_resolution_is_cached_across_pages(mock_s3, django_assert_num_queries):
+    """A resource referenced by many pages is looked up once, not once per page."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=IMAGE_UUID,
+        file=f"sites/{website.name}/renamed-photo.jpg",
+    )
+    first = WebsiteContentFactory.create(website=website, markdown=gallery_item())
+    second = WebsiteContentFactory.create(website=website, markdown=gallery_item())
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(first)
+    with django_assert_num_queries(0):
+        cleaner.update_website_content(second)
+
+    assert 'href="renamed-photo.jpg"' in second.markdown

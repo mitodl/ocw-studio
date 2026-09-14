@@ -107,29 +107,39 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
 
     def __init__(self):
         super().__init__()
-        self._keys_by_website: dict[str, dict[str, set[str]]] = {}
+        self._site_cache: dict[str, tuple[dict[str, set[str]], dict[str, str]]] = {}
         self._key_exists: dict[str, bool] = {}
         self._s3_client = None
 
-    def _keys_for_website(self, website_id) -> dict[str, set[str]]:
-        """Map each file basename in *website_id* to its normalized S3 keys."""
+    def _site_maps(self, website_id) -> tuple[dict[str, set[str]], dict[str, str]]:
+        """
+        Return this website's files as (basename -> S3 keys, text_id -> S3 key).
+
+        Both lookups come from one query per website, cached for the life of
+        the rule. A repair run walks every gallery page in a site and one
+        image is usually referenced by several of them, so resolving per item
+        would mean a query per reference.
+        """
         cache_key = str(website_id)
-        if cache_key not in self._keys_by_website:
-            files = (
+        if cache_key not in self._site_cache:
+            rows = (
                 WebsiteContent.objects.filter(website_id=website_id)
                 .exclude(file="")
-                .values_list("file", flat=True)
+                .values_list("file", "text_id")
             )
             by_basename: dict[str, set[str]] = {}
-            for file_value in files:
+            by_text_id: dict[str, str] = {}
+            for file_value, text_id in rows:
                 if not file_value:
                     continue
                 # Legacy values may be stored as /courses/...; S3 keys never
                 # start with a slash.
                 s3_key = file_value.lstrip("/")
                 by_basename.setdefault(s3_key.rpartition("/")[2], set()).add(s3_key)
-            self._keys_by_website[cache_key] = by_basename
-        return self._keys_by_website[cache_key]
+                if text_id:
+                    by_text_id[str(text_id)] = s3_key
+            self._site_cache[cache_key] = (by_basename, by_text_id)
+        return self._site_cache[cache_key]
 
     def _exists_in_s3(self, s3_keys: set[str]) -> bool:
         """
@@ -162,54 +172,58 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
                 return True
         return False
 
-    def _resolve_by_uuid(self, website_id, href: str, uuid: str) -> str | None:
+    def _resolve_by_uuid(self, website_id, basename: str, uuid: str) -> str | None:
         """
         Resolve the target from the item's uuid param.
 
         Scoped to the one website because text_id is unique per website, not
         globally, so a match in another site is not the intended target.
-        Deleted resources are excluded by the default manager: a href should
-        not be pointed at content that is on its way out.
+        Deleted resources never enter the map, since it is built through the
+        default manager: a href should not be pointed at content that is on
+        its way out.
         """
-        resource = (
-            WebsiteContent.objects.filter(website_id=website_id, text_id=uuid)
-            .exclude(file="")
-            .first()
-        )
-        if resource is None or not resource.file:
+        _, by_text_id = self._site_maps(website_id)
+        s3_key = by_text_id.get(uuid)
+        if not s3_key:
             return None
-        s3_key = str(resource.file).lstrip("/")
-        basename = s3_key.rpartition("/")[2]
-        if basename == href:
+        current = s3_key.rpartition("/")[2]
+        if current == basename:
             # Not renamed (a collision skip, or already correct).
             return None
         if not self._exists_in_s3({s3_key}):
             return None
-        return basename
+        return current
 
-    def _resolve_by_basename(self, website_id, href: str) -> str | None:
-        """Resolve the target by stripping the prefix off the href itself."""
-        if not UUID_FILENAME_RE.match(href):
+    def _resolve_by_basename(self, website_id, basename: str) -> str | None:
+        """Resolve the target by stripping the prefix off the href basename."""
+        if not UUID_FILENAME_RE.match(basename):
             return None
-        candidate = strip_uuid_prefix(href)
-        if candidate == href:
+        candidate = strip_uuid_prefix(basename)
+        if candidate == basename:
             return None
-        keys_by_basename = self._keys_for_website(website_id)
+        by_basename, _ = self._site_maps(website_id)
         # Database check first -- it is a local dict lookup, so a file ruled
         # out here costs no S3 call.
-        if candidate not in keys_by_basename or href in keys_by_basename:
+        if candidate not in by_basename or basename in by_basename:
             return None
-        if not self._exists_in_s3(keys_by_basename[candidate]):
+        if not self._exists_in_s3(by_basename[candidate]):
             return None
         return candidate
 
     def resolve_new_href(self, website_id, href: str, uuid: str | None) -> str | None:
         if not href:
             return None
+        # A rename only ever changes the basename, so match on the basename
+        # and put the href's own prefix back. image_gallery_item_uuid accepts
+        # a path-valued href, so one can arrive carrying a uuid param.
+        prefix, sep, basename = href.rpartition("/")
+        new_basename = None
         if uuid:
-            resolved = self._resolve_by_uuid(website_id, href, uuid)
-            if resolved is not None:
-                return resolved
+            new_basename = self._resolve_by_uuid(website_id, basename, uuid)
             # A uuid that no longer names a resource here is stale rather than
             # authoritative, so fall through to the basename check.
-        return self._resolve_by_basename(website_id, href)
+        if new_basename is None:
+            new_basename = self._resolve_by_basename(website_id, basename)
+        if new_basename is None:
+            return None
+        return f"{prefix}{sep}{new_basename}"

@@ -1087,3 +1087,76 @@ def test_gallery_uuid_param_is_preserved_alongside_rewritten_href(mock_s3):
         f'{{{{< image-gallery-item uuid="{image_uuid}" '
         'href="photo.jpg" data-ngdesc="A rock" text="cap" >}}'
     )
+
+
+def test_gallery_path_valued_href_keeps_its_path(mock_s3):
+    """A path-valued gallery href is repaired without losing its directory."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="/courses/{website.name}/{UUID_PREFIX}_photo.jpg" text="cap" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        f'href="/courses/{website.name}/photo.jpg" text="cap" >}}}}'
+    )
+
+
+def test_gallery_scan_clears_bookkeeping_for_malformed_pages(mocker, mock_s3):
+    """A page that fails to parse must not leave match bookkeeping behind."""
+    from websites.management.commands import (  # noqa: PLC0415
+        remove_uuid_from_filenames as command_module,
+    )
+    from websites.management.commands.remove_uuid_from_filenames import (  # noqa: PLC0415
+        _collect_gallery_patches,
+        _collect_renames,
+    )
+
+    cleaners = []
+    real_cleaner = command_module.WebsiteContentMarkdownCleaner
+
+    def capture(rule):
+        instance = real_cleaner(rule)
+        cleaners.append(instance)
+        return instance
+
+    mocker.patch.object(
+        command_module, "WebsiteContentMarkdownCleaner", side_effect=capture
+    )
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_good.jpg"
+    )
+    # A valid item followed by an unquoted nested shortcode on the same page.
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_PREFIX}_good.jpg" text="ok" >}}}}\n'
+            '{{< image-gallery-item {{< sup 4 >}} text="broken" >}}'
+        ),
+    )
+
+    renames, _ = _collect_renames(
+        WebsiteContent.objects.filter(website=website)
+        .filter(file__isnull=False)
+        .exclude(file="")
+    )
+    # Must not raise, and must not leave the failed page's matches behind.
+    _collect_gallery_patches(renames)
+
+    assert cleaners, "expected the scan to build a cleaner"
+    assert cleaners[0].replacement_matches == []
