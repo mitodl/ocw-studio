@@ -26,9 +26,10 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
     """
     Shared shortcode-rewrite mechanics for image-gallery-item href fixes.
 
-    Subclasses implement resolve_new_href to decide, for a given website and
-    href value, what the href should become (or None to leave it alone). All
-    other shortcode params are preserved verbatim.
+    Subclasses implement resolve_new_href to decide, for a given website,
+    href and item uuid, what the href should become (or None to leave it
+    alone). All other shortcode params are preserved verbatim, including the
+    uuid that image_gallery_item_uuid adds.
     """
 
     Parser = ShortcodeParser
@@ -36,7 +37,7 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
     def should_parse(self, text: str):
         return GALLERY_ITEM_SHORTCODE_NAME in text
 
-    def resolve_new_href(self, website_id, href: str) -> str | None:
+    def resolve_new_href(self, website_id, href: str, uuid: str | None) -> str | None:
         raise NotImplementedError
 
     def replace_match(
@@ -53,7 +54,9 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
             return original_text
 
         href = shortcode.get("href")
-        new_href = self.resolve_new_href(website_content.website_id, href)
+        new_href = self.resolve_new_href(
+            website_content.website_id, href, shortcode.get("uuid")
+        )
         if new_href is None:
             return original_text
 
@@ -79,21 +82,25 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
     left gallery markdown stale (e.g. runs that predate gallery-href
     patching, or a separate operator session).
 
-    A href is only rewritten once two independent checks agree the rename
-    really happened:
+    The target is resolved two ways, in order of how much the data pins it
+    down:
 
-    1. Database: the stripped basename exists as a current file in the same
-       website, and the original UUID-prefixed basename does not. A file
-       whose rename was skipped for a target-key collision still carries its
-       UUID prefix, so it fails this check and is left alone.
-    2. S3: the object for the stripped name actually exists in the bucket.
-       The database check alone is only a proxy, and this rule exists to
-       repair historical runs, where WebsiteContent.file and S3 may have
-       drifted. Rewriting a href on the strength of a database value that S3
-       does not back would point the gallery at a key that is not there.
+    1. By the item's uuid param, which image_gallery_item_uuid records as the
+       image resource's text_id. That names the resource outright, so its
+       current file is authoritative no matter what the href says. A rename
+       skipped for a target-key collision needs no special case here: the
+       file still carries its prefix, so the href already matches and nothing
+       changes.
+    2. By basename, for items the uuid backfill left alone. The stripped
+       basename must exist as a current file in the same website and the
+       UUID-prefixed original must not, which is what keeps
+       collision-skipped files out.
 
-    Anything that cannot be positively confirmed is left untouched -- an
-    unfixed href is re-runnable, a wrongly rewritten one is not.
+    Either way the object is then confirmed present in S3 before the href is
+    rewritten. The database is only a proxy for what the bucket holds, and
+    this rule exists to repair historical runs, where the two may have
+    drifted. Anything that cannot be positively confirmed is left untouched:
+    an unfixed href is re-runnable, a wrongly rewritten one is not.
     """
 
     alias = "gallery_image_rename"
@@ -155,8 +162,34 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
                 return True
         return False
 
-    def resolve_new_href(self, website_id, href: str) -> str | None:
-        if not href or not UUID_FILENAME_RE.match(href):
+    def _resolve_by_uuid(self, website_id, href: str, uuid: str) -> str | None:
+        """
+        Resolve the target from the item's uuid param.
+
+        Scoped to the one website because text_id is unique per website, not
+        globally, so a match in another site is not the intended target.
+        Deleted resources are excluded by the default manager: a href should
+        not be pointed at content that is on its way out.
+        """
+        resource = (
+            WebsiteContent.objects.filter(website_id=website_id, text_id=uuid)
+            .exclude(file="")
+            .first()
+        )
+        if resource is None or not resource.file:
+            return None
+        s3_key = str(resource.file).lstrip("/")
+        basename = s3_key.rpartition("/")[2]
+        if basename == href:
+            # Not renamed (a collision skip, or already correct).
+            return None
+        if not self._exists_in_s3({s3_key}):
+            return None
+        return basename
+
+    def _resolve_by_basename(self, website_id, href: str) -> str | None:
+        """Resolve the target by stripping the prefix off the href itself."""
+        if not UUID_FILENAME_RE.match(href):
             return None
         candidate = strip_uuid_prefix(href)
         if candidate == href:
@@ -169,3 +202,14 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         if not self._exists_in_s3(keys_by_basename[candidate]):
             return None
         return candidate
+
+    def resolve_new_href(self, website_id, href: str, uuid: str | None) -> str | None:
+        if not href:
+            return None
+        if uuid:
+            resolved = self._resolve_by_uuid(website_id, href, uuid)
+            if resolved is not None:
+                return resolved
+            # A uuid that no longer names a resource here is stale rather than
+            # authoritative, so fall through to the basename check.
+        return self._resolve_by_basename(website_id, href)

@@ -1035,3 +1035,55 @@ def test_collect_metadata_patches_scoped_to_website_uuids():
     patches = _collect_metadata_patches({str(website_a.uuid)})
 
     assert patches == []
+
+
+def test_gallery_uuid_param_resolves_href_that_basename_matching_would_miss(mock_s3):
+    """The uuid param names the renamed resource, so a stale href is still corrected."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_actual.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="{UUID_PREFIX}_stale.jpg" text="a caption" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        'href="actual.jpg" text="a caption" >}}'
+    )
+
+
+def test_gallery_uuid_param_is_preserved_alongside_rewritten_href(mock_s3):
+    """The uuid image_gallery_item_uuid added survives the href rewrite."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="{UUID_PREFIX}_photo.jpg" data-ngdesc="A rock" text="cap" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        'href="photo.jpg" data-ngdesc="A rock" text="cap" >}}'
+    )

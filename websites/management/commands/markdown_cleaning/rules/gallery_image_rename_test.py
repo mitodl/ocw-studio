@@ -11,7 +11,10 @@ from websites.management.commands.markdown_cleaning.rules.gallery_image_rename i
 
 pytestmark = pytest.mark.django_db
 
-UUID_PREFIX = "ab3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+# A resource's legacy filename prefix is its text_id with the dashes removed,
+# which is what image_gallery_item_uuid records in the item's uuid param.
+IMAGE_UUID = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+UUID_PREFIX = IMAGE_UUID.replace("-", "")
 
 
 @pytest.fixture
@@ -242,3 +245,106 @@ def test_no_s3_lookup_when_db_check_already_fails(mock_s3):
     cleaner.update_website_content(gallery)
 
     mock_s3.return_value.head_object.assert_not_called()
+
+
+def gallery_item(uuid=IMAGE_UUID, href=f"{UUID_PREFIX}_photo.jpg"):
+    """Build an image-gallery-item shortcode, uuid first as the uuid rule emits it."""
+    params = []
+    if uuid is not None:
+        params.append(f'uuid="{uuid}"')
+    params.append(f'href="{href}"')
+    return "{{< image-gallery-item " + " ".join(params) + ' text="a caption" >}}'
+
+
+def test_uuid_param_resolves_target_that_basename_matching_would_miss(mock_s3):
+    """The uuid param names the resource directly, so the current filename is authoritative.
+
+    Stripping the prefix off the href would look for photo.jpg, which is not
+    what the resource is called any more.
+    """
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=IMAGE_UUID,
+        file=f"sites/{website.name}/renamed-photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=gallery_item())
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{IMAGE_UUID}" '
+        'href="renamed-photo.jpg" text="a caption" >}}'
+    )
+
+
+def test_uuid_resolution_leaves_collision_skipped_file_alone(mock_s3):
+    """A file whose rename was skipped still carries its prefix, so the href already matches."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=IMAGE_UUID,
+        file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+    markdown = gallery_item()
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown
+
+
+def test_uuid_resolution_still_confirms_s3(mock_s3):
+    """A uuid-resolved target is verified in S3 like any other."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, text_id=IMAGE_UUID, file=f"sites/{website.name}/photo.jpg"
+    )
+    mock_s3.return_value.head_object.side_effect = missing_key_error()
+    markdown = gallery_item()
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown
+
+
+def test_falls_back_to_basename_when_uuid_matches_nothing(mock_s3):
+    """A uuid that no longer names a resource falls back to the basename check."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=gallery_item(uuid="99999999-9999-4999-8999-999999999999"),
+    )
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        '{{< image-gallery-item uuid="99999999-9999-4999-8999-999999999999" '
+        'href="photo.jpg" text="a caption" >}}'
+    )
+
+
+def test_uuid_is_scoped_to_the_same_website(mock_s3):
+    """text_id is unique per website, so a match in another site is not the target."""
+    website_a = WebsiteFactory.create()
+    website_b = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website_b,
+        text_id=IMAGE_UUID,
+        file=f"sites/{website_b.name}/renamed-photo.jpg",
+    )
+    markdown = gallery_item()
+    gallery = WebsiteContentFactory.create(website=website_a, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown

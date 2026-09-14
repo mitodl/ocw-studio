@@ -28,6 +28,7 @@ class RenameTask(NamedTuple):
 
     pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
     website_id: str  # str(Website.uuid) — UUID FK used for dirty-flag bulk update
+    text_id: str  # WebsiteContent.text_id — what a gallery item's uuid param names
     old_key: str
     new_key: str
 
@@ -52,20 +53,37 @@ class _PlannedGalleryHrefRule(BaseGalleryHrefRewriteRule):
 
     Unlike GalleryImageRenameRule (which infers renames from current
     WebsiteContent state for standalone backfills), this uses the precise
-    old-basename -> new-basename mapping already computed by
-    _collect_renames, scoped per website. This means it works correctly
-    even before any rename has been applied to the database, so the same
-    logic can back both the --dry-run preview and the live-run patch.
+    mapping already computed by _collect_renames, scoped per website. This
+    means it works correctly even before any rename has been applied to the
+    database, so the same logic can back both the --dry-run preview and the
+    live-run patch.
+
+    An item's uuid param names the resource being renamed, so it is matched
+    first and does not care whether the href was accurate to begin with.
+    Items the uuid backfill left alone fall back to the old basename. Either
+    way only files in this run's plan are in the maps, so a collision skip
+    can never be matched.
     """
 
     alias = "planned_gallery_href_rewrite"  # internal use only; not CLI-registered
 
-    def __init__(self, basename_map: dict[str, dict[str, str]]):
+    def __init__(
+        self,
+        basename_map: dict[str, dict[str, str]],
+        uuid_map: dict[str, dict[str, str]],
+    ):
         super().__init__()
         self.basename_map = basename_map
+        self.uuid_map = uuid_map
 
-    def resolve_new_href(self, website_id, href):
-        return self.basename_map.get(str(website_id), {}).get(href)
+    def resolve_new_href(self, website_id, href, uuid):
+        site = str(website_id)
+        if uuid:
+            new_basename = self.uuid_map.get(site, {}).get(uuid)
+            if new_basename is not None:
+                # Already correct, so nothing to rewrite.
+                return None if new_basename == href else new_basename
+        return self.basename_map.get(site, {}).get(href)
 
 
 def _collect_renames(queryset):
@@ -116,16 +134,18 @@ def _collect_renames(queryset):
                 skipped += 1
             continue
 
-        candidates.append((content.pk, str(content.website_id), old_key, new_key))
+        candidates.append(
+            (content.pk, str(content.website_id), content.text_id, old_key, new_key)
+        )
 
     # Pass 2: find target keys claimed by more than one source — ALL must be skipped.
     # Normalize with lstrip to catch collisions between slash-prefixed and non-prefixed
     # variants that resolve to the same S3 key.
-    target_counts = Counter(new_key.lstrip("/") for _, _, _, new_key in candidates)
+    target_counts = Counter(new_key.lstrip("/") for *_, new_key in candidates)
 
     # Pass 3: build the final task list, dropping ambiguous and conflicting targets.
     tasks = []
-    for pk, website_id, old_key, new_key in candidates:
+    for pk, website_id, text_id, old_key, new_key in candidates:
         norm_new = new_key.lstrip("/")
         if target_counts[norm_new] > 1:
             print(  # noqa: T201
@@ -148,6 +168,7 @@ def _collect_renames(queryset):
             RenameTask(
                 pk=str(pk),
                 website_id=website_id,
+                text_id=str(text_id),
                 old_key=old_key,
                 new_key=new_key,
             )
@@ -233,12 +254,16 @@ def _collect_gallery_patches(renames):
         return []
 
     basename_map: dict[str, dict[str, str]] = {}
+    uuid_map: dict[str, dict[str, str]] = {}
     for task in renames:
         old_basename = task.old_key.rpartition("/")[2]
         new_basename = task.new_key.rpartition("/")[2]
         basename_map.setdefault(task.website_id, {})[old_basename] = new_basename
+        uuid_map.setdefault(task.website_id, {})[task.text_id] = new_basename
 
-    cleaner = WebsiteContentMarkdownCleaner(_PlannedGalleryHrefRule(basename_map))
+    cleaner = WebsiteContentMarkdownCleaner(
+        _PlannedGalleryHrefRule(basename_map, uuid_map)
+    )
 
     contents = (
         WebsiteContent.objects.filter(website__uuid__in=basename_map.keys())
