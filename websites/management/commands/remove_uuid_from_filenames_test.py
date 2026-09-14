@@ -702,6 +702,88 @@ def test_dry_run_does_not_patch_video_metadata(tmp_path, mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
 
+def test_patches_gallery_markdown_href(mock_s3):
+    """Renaming a file also rewrites any image-gallery-item href that referenced it."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}',
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert (
+        gallery.markdown
+        == '{{< image-gallery-item href="photo.jpg" text="a caption" >}}'
+    )
+
+
+def test_does_not_patch_gallery_for_skipped_collision(mock_s3):
+    """A collision-skipped rename must not rewrite the gallery href either."""
+    website = WebsiteFactory.create()
+    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    # Two sources collide on the same target -- both get skipped.
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        file=f"sites/{website.name}/{uuid_b}_photo.jpg",
+    )
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery = WebsiteContentFactory.create(website=website, markdown=original_markdown)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == original_markdown
+
+
+def test_dry_run_reports_gallery_patch_count(tmp_path, mock_s3):
+    """Dry-run summary includes the number of gallery references that would be patched."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}',
+    )
+
+    stdout = StringIO()
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=stdout,
+    )
+
+    output = stdout.getvalue()
+    assert "1 gallery references would be patched" in output
+
+
+def test_dry_run_does_not_patch_gallery_markdown(tmp_path, mock_s3):
+    """With --dry-run, gallery markdown is not modified."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery = WebsiteContentFactory.create(website=website, markdown=original_markdown)
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == original_markdown
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for _collect_metadata_patches
 # ---------------------------------------------------------------------------

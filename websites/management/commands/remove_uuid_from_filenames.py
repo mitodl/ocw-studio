@@ -1,7 +1,6 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
 import csv
-import re
 import sys
 from collections import Counter
 from typing import NamedTuple
@@ -13,7 +12,14 @@ from django.db import transaction
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
+from websites.management.commands.markdown_cleaning.cleaner import (
+    WebsiteContentMarkdownCleaner,
+)
+from websites.management.commands.markdown_cleaning.rules.gallery_image_rename import (
+    BaseGalleryHrefRewriteRule,
+)
 from websites.models import Website, WebsiteContent
+from websites.utils import UUID_FILENAME_RE, strip_uuid_prefix
 
 
 class RenameTask(NamedTuple):
@@ -32,27 +38,33 @@ class MetadataPatch(NamedTuple):
     updated_metadata: dict
 
 
-UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
+class MarkdownPatch(NamedTuple):
+    """A planned markdown update for one WebsiteContent record."""
+
+    pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
+    updated_markdown: str
 
 
-def strip_uuid_prefix(path):
+class _PlannedGalleryHrefRule(BaseGalleryHrefRewriteRule):
     """
-    Strip a UUID prefix from the basename of a path value.
+    Resolve image-gallery-item hrefs using this run's exact rename plan.
 
-    Handles values stored with or without a leading slash.
-    Returns the original value unchanged if no UUID prefix is found or if
-    stripping would leave an empty basename.
+    Unlike GalleryImageRenameRule (which infers renames from current
+    WebsiteContent state for standalone backfills), this uses the precise
+    old-basename -> new-basename mapping already computed by
+    _collect_renames, scoped per website. This means it works correctly
+    even before any rename has been applied to the database, so the same
+    logic can back both the --dry-run preview and the live-run patch.
     """
-    stripped = path.lstrip("/")
-    lead = path[: len(path) - len(stripped)]  # "" or "/"
-    prefix_path, _, basename = stripped.rpartition("/")
-    if not UUID_FILENAME_RE.match(basename):
-        return path
-    new_basename = basename[33:]  # 32 hex chars + 1 underscore
-    if not new_basename:
-        return path
-    new_path = f"{prefix_path}/{new_basename}" if prefix_path else new_basename
-    return f"{lead}{new_path}"
+
+    alias = "planned_gallery_href_rewrite"  # internal use only; not CLI-registered
+
+    def __init__(self, basename_map: dict[str, dict[str, str]]):
+        super().__init__()
+        self.basename_map = basename_map
+
+    def resolve_new_href(self, website_id, href):
+        return self.basename_map.get(str(website_id), {}).get(href)
 
 
 def _collect_renames(queryset):
@@ -196,6 +208,43 @@ def _collect_metadata_patches(website_uuids, renamed_keys=None):
     return patches
 
 
+def _collect_gallery_patches(renames):
+    """
+    Scan gallery markdown in the same websites as *renames* for
+    image-gallery-item shortcodes whose href matches an old basename from
+    this run's rename plan, and compute the patched markdown.
+
+    Returns list[MarkdownPatch]. Does not write to the database. Works
+    identically whether or not the underlying file renames have already been
+    applied to WebsiteContent.file, since matching is driven entirely by the
+    *renames* plan already computed by _collect_renames — not by querying
+    live WebsiteContent.file state. This lets the same function back both
+    the --dry-run preview and the live-run patch.
+    """
+    if not renames:
+        return []
+
+    basename_map: dict[str, dict[str, str]] = {}
+    for task in renames:
+        old_basename = task.old_key.rpartition("/")[2]
+        new_basename = task.new_key.rpartition("/")[2]
+        basename_map.setdefault(task.website_id, {})[old_basename] = new_basename
+
+    cleaner = WebsiteContentMarkdownCleaner(_PlannedGalleryHrefRule(basename_map))
+
+    contents = (
+        WebsiteContent.objects.filter(website__uuid__in=basename_map.keys())
+        .exclude(markdown="")
+        .exclude(markdown__isnull=True)
+        .iterator()
+    )
+    return [
+        MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown)
+        for wc in contents
+        if cleaner.update_website_content(wc)
+    ]
+
+
 _CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
 
 
@@ -253,6 +302,7 @@ class Command(WebsiteFilterCommand):
             planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
+            planned_gallery_patches = _collect_gallery_patches(renames)
             # Look up website names for the human-readable CSV column.
             # Use str(uuid) as key to match task.website_id (already stringified).
             website_names = (
@@ -274,7 +324,8 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
-                f"{len(planned_patches)} video metadata records would be patched. "
+                f"{len(planned_patches)} video metadata records would be patched, "
+                f"{len(planned_gallery_patches)} gallery references would be patched. "
                 f"Plan written to {output_path}."
             )
             return
@@ -363,7 +414,25 @@ class Command(WebsiteFilterCommand):
                 ["metadata"],
             )
 
+        # Same exclusion rationale as the metadata patches above: only rewrite
+        # gallery hrefs for renames that actually committed.
+        successful_renames = [
+            task
+            for task in renames
+            if task.old_key.lstrip("/") in successfully_renamed_old_keys
+        ]
+        gallery_patches = _collect_gallery_patches(successful_renames)
+        if gallery_patches:
+            WebsiteContent.objects.bulk_update(
+                [
+                    WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
+                    for patch in gallery_patches
+                ],
+                ["markdown"],
+            )
+
         self.stdout.write(
             f"Done: {renamed_count} renamed, {skipped_count} skipped, "
-            f"{error_count} errors, {len(patches)} video metadata records patched"
+            f"{error_count} errors, {len(patches)} video metadata records patched, "
+            f"{len(gallery_patches)} gallery references patched"
         )
