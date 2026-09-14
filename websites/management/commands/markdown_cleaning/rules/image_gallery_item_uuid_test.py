@@ -175,15 +175,7 @@ def test_leaves_other_shortcodes_untouched():
 
 @pytest.mark.django_db
 def test_rewrites_every_gallery_on_a_page():
-    """
-    Two galleries on one page, with prose around and between them.
-
-    Production has none of these — 330 galleries across 330 pages, one each —
-    but the Studio editor (mitodl/hq#13088) can produce them, and the rule
-    matches per shortcode rather than per gallery, so a second container must
-    not change the outcome. The second gallery reuses the first image, which
-    production does do: 8 uuids are referenced more than once.
-    """
+    """Two galleries on one page, with prose around and between them."""
     website = WebsiteFactory.create()
     make_image(website)
     make_image(website, text_id=SECOND_UUID)
