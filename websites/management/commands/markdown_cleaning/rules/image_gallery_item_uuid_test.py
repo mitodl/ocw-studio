@@ -20,7 +20,9 @@ IMAGE_UUID = "c3e28341-74a4-2a89-c56c-3a1a5bcc0eff"
 IMAGE_HEX = IMAGE_UUID.replace("-", "")
 HREF = f"{IMAGE_HEX}_2.Niepce.jpg"
 
-GALLERY_OPEN = '{{< image-gallery id="g1" baseUrl="/courses/site/" >}}'
+SECOND_UUID = "b106a5f8-545d-075e-7334-07e2193c40ea"
+SECOND_HREF = f"{SECOND_UUID.replace('-', '')}_3.Niepce_2.jpg"
+
 GALLERY_CLOSE = "{{</ image-gallery >}}"
 
 
@@ -38,8 +40,9 @@ def item(href=HREF, uuid=None, text="Fig 1.", ngdesc="A diagram"):
     return "{{< image-gallery-item " + " ".join(params) + " >}}"
 
 
-def gallery(*items):
-    return "\n".join([GALLERY_OPEN, *items, GALLERY_CLOSE])
+def gallery(*items, gallery_id="g1"):
+    opener = f'{{{{< image-gallery id="{gallery_id}" baseUrl="/courses/site/" >}}}}'
+    return "\n".join([opener, *items, GALLERY_CLOSE])
 
 
 def get_cleaner():
@@ -167,6 +170,48 @@ def test_leaves_other_shortcodes_untouched():
             gallery(item(uuid=IMAGE_UUID)),
             "{{< /image-gallery >}}",
         ]
+    )
+
+
+@pytest.mark.django_db
+def test_rewrites_every_gallery_on_a_page():
+    """
+    Two galleries on one page, with prose around and between them.
+
+    Production has none of these — 330 galleries across 330 pages, one each —
+    but the Studio editor (mitodl/hq#13088) can produce them, and the rule
+    matches per shortcode rather than per gallery, so a second container must
+    not change the outcome. The second gallery reuses the first image, which
+    production does do: 8 uuids are referenced more than once.
+    """
+    website = WebsiteFactory.create()
+    make_image(website)
+    make_image(website, text_id=SECOND_UUID)
+
+    def page_with(first_items, second_items):
+        return "\n".join(
+            [
+                "Intro prose.",
+                "",
+                gallery(*first_items, gallery_id="g1"),
+                "",
+                "Prose between the galleries.",
+                "",
+                gallery(*second_items, gallery_id="g2"),
+                "",
+                "Trailing prose.",
+            ]
+        )
+
+    page = make_page(
+        website,
+        page_with([item(), item(href=SECOND_HREF)], [item(text="Fig 2.")]),
+    )
+
+    assert outcomes(page) == ["ok", "ok", "ok"]
+    assert page.markdown == page_with(
+        [item(uuid=IMAGE_UUID), item(href=SECOND_HREF, uuid=SECOND_UUID)],
+        [item(text="Fig 2.", uuid=IMAGE_UUID)],
     )
 
 
