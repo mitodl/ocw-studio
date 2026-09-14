@@ -4,7 +4,10 @@ import re
 from urllib.parse import quote, urljoin
 
 import pytest
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -19,14 +22,15 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_ARTIFACTS_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    get_fastly_identifier,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
     BASH_REGISTRY_IMAGE,
     OCW_COURSE_PUBLISHER_REGISTRY_IMAGE,
 )
-from content_sync.pipelines.definitions.concourse.common.steps import (
-    LEARN_FASTLY_VAR,
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_LEARN,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     BUILD_OFFLINE_SITE_IDENTIFIER,
@@ -190,6 +194,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         KEYVAL_RESOURCE_TYPE_IDENTIFIER,
         S3_IAM_RESOURCE_TYPE_IDENTIFIER,
         slack_notification_resource().name,
+        fastly_resource_type().name,
     ]
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
@@ -471,13 +476,33 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             }
         ).issubset(set(upload_online_build_task["params"]))
     if not is_dev:
-        clear_cdn_cache_online_step = get_dict_list_item_by_field(
-            online_site_tasks, "task", CLEAR_CDN_CACHE_IDENTIFIER
+        clear_cdn_cache_online_steps = [
+            task
+            for task in online_site_tasks
+            if (task.get("put") or "").startswith(CLEAR_CDN_CACHE_IDENTIFIER)
+        ]
+        # A live build also purges the MIT Learn distribution, which serves
+        # ocw-course-v3 content. Draft builds never reach it.
+        assert [task["resource"] for task in clear_cdn_cache_online_steps] == (
+            [
+                get_fastly_identifier(VERSION_LIVE),
+                get_fastly_identifier(FASTLY_PURPOSE_LEARN),
+            ]
+            if branch_vars["pipeline_name"] == VERSION_LIVE
+            else [get_fastly_identifier(VERSION_DRAFT)]
         )
+        for clear_cdn_cache_step in clear_cdn_cache_online_steps:
+            assert clear_cdn_cache_step["params"]["mode"] == "surrogate_key"
+            assert clear_cdn_cache_step["no_get"] is True
+            assert clear_cdn_cache_step["inputs"] == []
+        # Success is reported once, after every distribution has been purged
+        if len(clear_cdn_cache_online_steps) > 1:
+            assert clear_cdn_cache_online_steps[0].get("on_success") is None
+        clear_cdn_cache_online_step = clear_cdn_cache_online_steps[-1]
         clear_cdn_cache_online_success_steps = clear_cdn_cache_online_step[
             "on_success"
         ]["try"]["do"]
-        clear_cdn_cache_online_failure_steps = clear_cdn_cache_online_step[
+        clear_cdn_cache_online_failure_steps = clear_cdn_cache_online_steps[0][
             "on_failure"
         ]["try"]["do"]
         open_discussions_webhook_step_online_params = json.loads(
@@ -493,14 +518,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             clear_cdn_cache_online_success_steps[-1]["try"]["put"]
             == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
         )
-        # The MIT Learn distribution only serves live content
-        clear_cdn_cache_online_args = clear_cdn_cache_online_step["config"]["run"][
-            "args"
-        ]
-        purges_learn = any(
-            LEARN_FASTLY_VAR in arg for arg in clear_cdn_cache_online_args
-        )
-        assert purges_learn == (branch_vars["pipeline_name"] == VERSION_LIVE)
         assert ocw_webhook_step_online_params["build_type"] == "online"
         assert ocw_webhook_step_online_cdn_cache_failure_step["build_type"] == "online"
         if branch_vars["pipeline_name"] == VERSION_DRAFT:
@@ -696,13 +713,33 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             }
         ).issubset(set(upload_offline_build_task["params"]))
     if not is_dev:
-        clear_cdn_cache_offline_step = get_dict_list_item_by_field(
-            offline_site_tasks, "task", CLEAR_CDN_CACHE_IDENTIFIER
+        clear_cdn_cache_offline_steps = [
+            task
+            for task in offline_site_tasks
+            if (task.get("put") or "").startswith(CLEAR_CDN_CACHE_IDENTIFIER)
+        ]
+        # A live build also purges the MIT Learn distribution, which serves
+        # ocw-course-v3 content. Draft builds never reach it.
+        assert [task["resource"] for task in clear_cdn_cache_offline_steps] == (
+            [
+                get_fastly_identifier(VERSION_LIVE),
+                get_fastly_identifier(FASTLY_PURPOSE_LEARN),
+            ]
+            if branch_vars["pipeline_name"] == VERSION_LIVE
+            else [get_fastly_identifier(VERSION_DRAFT)]
         )
+        for clear_cdn_cache_step in clear_cdn_cache_offline_steps:
+            assert clear_cdn_cache_step["params"]["mode"] == "surrogate_key"
+            assert clear_cdn_cache_step["no_get"] is True
+            assert clear_cdn_cache_step["inputs"] == []
+        # Success is reported once, after every distribution has been purged
+        if len(clear_cdn_cache_offline_steps) > 1:
+            assert clear_cdn_cache_offline_steps[0].get("on_success") is None
+        clear_cdn_cache_offline_step = clear_cdn_cache_offline_steps[-1]
         clear_cdn_cache_offline_success_steps = clear_cdn_cache_offline_step[
             "on_success"
         ]["try"]["do"]
-        clear_cdn_cache_offline_failure_steps = clear_cdn_cache_offline_step[
+        clear_cdn_cache_offline_failure_steps = clear_cdn_cache_offline_steps[0][
             "on_failure"
         ]["try"]["do"]
         open_discussions_webhook_step_offline_params = json.loads(
@@ -718,14 +755,6 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             clear_cdn_cache_offline_success_steps[-1]["try"]["put"]
             == OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER
         )
-        # The MIT Learn distribution only serves live content
-        clear_cdn_cache_offline_args = clear_cdn_cache_offline_step["config"]["run"][
-            "args"
-        ]
-        purges_learn = any(
-            LEARN_FASTLY_VAR in arg for arg in clear_cdn_cache_offline_args
-        )
-        assert purges_learn == (branch_vars["pipeline_name"] == VERSION_LIVE)
         assert ocw_webhook_step_offline_params["build_type"] == "offline"
         assert (
             ocw_webhook_step_offline_cdn_cache_failure_step["build_type"] == "offline"

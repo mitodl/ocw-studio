@@ -42,6 +42,8 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     OpenCatalogResource,
     SlackAlertResource,
     WebpackManifestResource,
+    fastly_resource_types,
+    fastly_resources,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     SiteContentGitTaskStep,
@@ -181,6 +183,8 @@ class MassBuildSitesResources(list[Resource]):
                 )
             )
         self.append(SlackAlertResource())
+        if not is_dev():
+            self.extend(fastly_resources(config.version))
         if not is_dev() and config.version == "live":
             self.extend(
                 [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
@@ -239,6 +243,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
         site_pipeline_vars = get_site_pipeline_definition_vars(namespace)
         resource_types = MassBuildSitesPipelineResourceTypes()
         resources = MassBuildSitesResources(config=config)
+        resource_types.extend(fastly_resource_types(resources))
         base_tasks = MassBuildSitesPipelineBaseTasks()
         filter_webpack_artifacts_step = FilterWebpackArtifactsStep(
             web_bucket=config.web_bucket
@@ -323,7 +328,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                 site_build_tasks.extend(
                     SitePipelineOnlineTasks(
                         pipeline_vars=site_pipeline_vars,
-                        fastly_var=config.version,
+                        fastly_purpose=config.version,
                         pipeline_name=config.version,
                         destructive_sync=config.sync_with_delete,
                         filter_videos=True,
@@ -334,7 +339,7 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                 site_build_tasks.extend(
                     SitePipelineOfflineTasks(
                         pipeline_vars=site_pipeline_vars,
-                        fastly_var=config.version,
+                        fastly_purpose=config.version,
                         pipeline_name=config.version,
                         skip_webhooks=is_extra_theme(config.theme_slug),
                     )

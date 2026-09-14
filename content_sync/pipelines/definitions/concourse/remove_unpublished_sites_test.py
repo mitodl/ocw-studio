@@ -1,6 +1,12 @@
 import json
 
 from content_sync.constants import VERSION_LIVE
+from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    get_fastly_identifier,
+)
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_LEARN,
+)
 from content_sync.pipelines.definitions.concourse.remove_unpublished_sites import (
     UnpublishedSiteRemovalPipelineDefinition,
 )
@@ -78,7 +84,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
             task
             for task in across_tasks
             if pipeline_definition._search_index_removal_task_prefix  # noqa: SLF001
-            in task.get("task")
+            in (task.get("task") or "")
         ]
         assert len(search_index_removal_tasks) == len(open_catalog_urls)
         for idx, task in enumerate(search_index_removal_tasks):
@@ -88,15 +94,31 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
             )
             assert f'"version": "{VERSION_LIVE}"' in search_index_removal_command
             assert f"{open_catalog_urls[idx]}" in search_index_removal_command
+        base_identifier = pipeline_definition._clear_cdn_cache_task_identifier  # noqa: SLF001
         clear_cdn_cache_tasks = [
             task
             for task in across_tasks
-            if task.get("task") == pipeline_definition._clear_cdn_cache_task_identifier  # noqa: SLF001
+            if (task.get("put") or "").startswith(base_identifier)
         ]
-        assert len(clear_cdn_cache_tasks) == 1
-        clear_cdn_cache_task = clear_cdn_cache_tasks[0]
-        assert clear_cdn_cache_task["on_success"] is not None
-        assert clear_cdn_cache_task["on_failure"] is not None
+        # The live distribution, plus MIT Learn which also serves this content
+        assert [task["put"] for task in clear_cdn_cache_tasks] == [
+            base_identifier,
+            f"{base_identifier}-{FASTLY_PURPOSE_LEARN}",
+        ]
+        assert [task["resource"] for task in clear_cdn_cache_tasks] == [
+            get_fastly_identifier(VERSION_LIVE),
+            get_fastly_identifier(FASTLY_PURPOSE_LEARN),
+        ]
+        for clear_cdn_cache_task in clear_cdn_cache_tasks:
+            # The surrogate key is an across var resolved by Concourse at runtime, so
+            # it must survive into the put params verbatim
+            assert clear_cdn_cache_task["params"]["surrogate_key"] == "((.:site.name))"
+            assert clear_cdn_cache_task["params"]["mode"] == "surrogate_key"
+            assert clear_cdn_cache_task["no_get"] is True
+            assert clear_cdn_cache_task["on_failure"] is not None
+        # Success is reported once, after every distribution has been purged
+        assert clear_cdn_cache_tasks[0].get("on_success") is None
+        assert clear_cdn_cache_tasks[-1].get("on_success") is not None
     empty_s3_buckets_tasks = [
         task
         for task in across_tasks
