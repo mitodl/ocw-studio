@@ -1,5 +1,10 @@
 """Fix image-gallery-item hrefs left pointing at a pre-rename UUID-prefixed filename."""
 
+import logging
+
+from django.conf import settings
+
+from main.s3_utils import get_boto3_client
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
 from websites.management.commands.markdown_cleaning.parsing_utils import (
     ShortcodeParam,
@@ -11,6 +16,8 @@ from websites.management.commands.markdown_cleaning.shortcode_parser import (
 )
 from websites.models import WebsiteContent
 from websites.utils import UUID_FILENAME_RE, strip_uuid_prefix
+
+log = logging.getLogger(__name__)
 
 GALLERY_ITEM_SHORTCODE_NAME = "image-gallery-item"
 
@@ -70,31 +77,83 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
 
     For use as a backfill when remove_uuid_from_filenames already ran and
     left gallery markdown stale (e.g. runs that predate gallery-href
-    patching, or a separate operator session). A href is only rewritten when
-    current data confirms the rename actually happened: the stripped
-    basename exists as a current file in the same website, and the original
-    UUID-prefixed basename does not. This avoids touching hrefs for files
-    that were skipped due to a collision.
+    patching, or a separate operator session).
+
+    A href is only rewritten once two independent checks agree the rename
+    really happened:
+
+    1. Database: the stripped basename exists as a current file in the same
+       website, and the original UUID-prefixed basename does not. A file
+       whose rename was skipped for a target-key collision still carries its
+       UUID prefix, so it fails this check and is left alone.
+    2. S3: the object for the stripped name actually exists in the bucket.
+       The database check alone is only a proxy, and this rule exists to
+       repair historical runs, where WebsiteContent.file and S3 may have
+       drifted. Rewriting a href on the strength of a database value that S3
+       does not back would point the gallery at a key that is not there.
+
+    Anything that cannot be positively confirmed is left untouched -- an
+    unfixed href is re-runnable, a wrongly rewritten one is not.
     """
 
     alias = "gallery_image_rename"
 
     def __init__(self):
         super().__init__()
-        self._basenames_by_website: dict[str, set[str]] = {}
+        self._keys_by_website: dict[str, dict[str, set[str]]] = {}
+        self._key_exists: dict[str, bool] = {}
+        self._s3_client = None
 
-    def _basenames_for_website(self, website_id) -> set[str]:
-        key = str(website_id)
-        if key not in self._basenames_by_website:
+    def _keys_for_website(self, website_id) -> dict[str, set[str]]:
+        """Map each file basename in *website_id* to its normalized S3 keys."""
+        cache_key = str(website_id)
+        if cache_key not in self._keys_by_website:
             files = (
                 WebsiteContent.objects.filter(website_id=website_id)
                 .exclude(file="")
                 .values_list("file", flat=True)
             )
-            self._basenames_by_website[key] = {
-                f.lstrip("/").rpartition("/")[2] for f in files if f
-            }
-        return self._basenames_by_website[key]
+            by_basename: dict[str, set[str]] = {}
+            for file_value in files:
+                if not file_value:
+                    continue
+                # Legacy values may be stored as /courses/...; S3 keys never
+                # start with a slash.
+                s3_key = file_value.lstrip("/")
+                by_basename.setdefault(s3_key.rpartition("/")[2], set()).add(s3_key)
+            self._keys_by_website[cache_key] = by_basename
+        return self._keys_by_website[cache_key]
+
+    def _exists_in_s3(self, s3_keys: set[str]) -> bool:
+        """
+        Return True if any of *s3_keys* is a real object in the storage bucket.
+
+        Results are cached per key: one renamed image is typically referenced
+        by several gallery pages, and a full repair run scans thousands of
+        them.
+        """
+        if self._s3_client is None:
+            self._s3_client = get_boto3_client("s3")
+        for s3_key in sorted(s3_keys):
+            if s3_key not in self._key_exists:
+                try:
+                    self._s3_client.head_object(
+                        Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=s3_key
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    # Either the object is gone (database/S3 drift) or the
+                    # lookup itself failed. Neither confirms the rename.
+                    log.warning(
+                        "Gallery href fix: could not confirm S3 object %s (%s)",
+                        s3_key,
+                        exc,
+                    )
+                    self._key_exists[s3_key] = False
+                else:
+                    self._key_exists[s3_key] = True
+            if self._key_exists[s3_key]:
+                return True
+        return False
 
     def resolve_new_href(self, website_id, href: str) -> str | None:
         if not href or not UUID_FILENAME_RE.match(href):
@@ -102,7 +161,11 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         candidate = strip_uuid_prefix(href)
         if candidate == href:
             return None
-        basenames = self._basenames_for_website(website_id)
-        if candidate in basenames and href not in basenames:
-            return candidate
-        return None
+        keys_by_basename = self._keys_for_website(website_id)
+        # Database check first -- it is a local dict lookup, so a file ruled
+        # out here costs no S3 call.
+        if candidate not in keys_by_basename or href in keys_by_basename:
+            return None
+        if not self._exists_in_s3(keys_by_basename[candidate]):
+            return None
+        return candidate
