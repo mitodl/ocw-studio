@@ -1,4 +1,19 @@
 [
   "content_sync/serializers.py:142:21:ORM001",
-  "content_sync/serializers.py:61:21:ORM001"
+  "content_sync/serializers.py:167:15:ORM004",
+  "content_sync/serializers.py:187:15:ORM004",
+  "content_sync/serializers.py:296:25:ORM004",
+  "content_sync/serializers.py:306:15:ORM004",
+  "content_sync/serializers.py:61:21:ORM001",
+  "websites/serializers.py:131:15:ORM004",
+  "websites/serializers.py:234:15:ORM006",
+  "websites/serializers.py:242:15:ORM003",
+  "websites/serializers.py:317:19:ORM004",
+  "websites/serializers.py:322:15:ORM004",
+  "websites/serializers.py:326:15:ORM004",
+  "websites/serializers.py:761:15:ORM006",
+  "websites/serializers.py:774:33:ORM006",
+  "websites/serializers.py:806:39:ORM006",
+  "websites/serializers.py:837:25:ORM004",
+  "websites/serializers.py:990:38:ORM006"
 ]
