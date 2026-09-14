@@ -58,6 +58,7 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
             name=shortcode.name,
             params=new_params,
             percent_delimiters=shortcode.percent_delimiters,
+            closer=shortcode.closer,
         )
         return new_shortcode.to_hugo()
 

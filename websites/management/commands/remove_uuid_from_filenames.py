@@ -16,6 +16,7 @@ from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
 from websites.management.commands.markdown_cleaning.rules.gallery_image_rename import (
+    GALLERY_ITEM_SHORTCODE_NAME,
     BaseGalleryHrefRewriteRule,
 )
 from websites.models import Website, WebsiteContent
@@ -220,6 +221,13 @@ def _collect_gallery_patches(renames):
     *renames* plan already computed by _collect_renames — not by querying
     live WebsiteContent.file state. This lets the same function back both
     the --dry-run preview and the live-run patch.
+
+    A single record whose markdown contains a malformed shortcode (invalid
+    Hugo syntax elsewhere on the page, unrelated to the gallery item itself)
+    is skipped with a stderr warning rather than aborting the whole scan —
+    legacy-imported markdown across tens of thousands of pages can't be
+    assumed to all parse cleanly, and one bad page must not cost every other
+    page in the batch its gallery-href fix.
     """
     if not renames:
         return []
@@ -234,15 +242,27 @@ def _collect_gallery_patches(renames):
 
     contents = (
         WebsiteContent.objects.filter(website__uuid__in=basename_map.keys())
+        .filter(markdown__contains=GALLERY_ITEM_SHORTCODE_NAME)
         .exclude(markdown="")
-        .exclude(markdown__isnull=True)
         .iterator()
     )
-    return [
-        MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown)
-        for wc in contents
-        if cleaner.update_website_content(wc)
-    ]
+    patches = []
+    for wc in contents:
+        try:
+            changed = cleaner.update_website_content(wc)
+        except Exception as exc:  # noqa: BLE001
+            print(  # noqa: T201
+                f"Skipping gallery-href scan for content pk={wc.pk}: {exc!s}",
+                file=sys.stderr,
+            )
+            continue
+        if changed:
+            patches.append(MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown))
+        # Discard per-match bookkeeping the cleaner isn't asked to report here
+        # (no CSV export in this path) — otherwise it grows unboundedly across
+        # a large scan, holding a reference to every scanned WebsiteContent.
+        cleaner.replacement_matches.clear()
+    return patches
 
 
 _CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
@@ -302,7 +322,6 @@ class Command(WebsiteFilterCommand):
             planned_website_ids = {task.website_id for task in renames}
             # Compute planned patches only for the dry-run summary count.
             planned_patches = _collect_metadata_patches(planned_website_ids)
-            planned_gallery_patches = _collect_gallery_patches(renames)
             # Look up website names for the human-readable CSV column.
             # Use str(uuid) as key to match task.website_id (already stringified).
             website_names = (
@@ -315,17 +334,23 @@ class Command(WebsiteFilterCommand):
                 if planned_website_ids
                 else {}
             )
+            # Write the CSV rename plan before scanning gallery markdown: the
+            # plan is the operator's safety artifact and must not depend on
+            # markdown parsing succeeding. _collect_gallery_patches guards
+            # per-record internally, but this ordering means even an
+            # unanticipated failure there can't cost the CSV export.
             with open(output_path, "w", newline="", encoding="utf-8") as f:  # noqa: PTH123
                 _write_csv_rows(
                     csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),
                     renames,
                     website_names,
                 )
+            planned_gallery_patches = _collect_gallery_patches(renames)
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
                 f"{len(planned_patches)} video metadata records would be patched, "
-                f"{len(planned_gallery_patches)} gallery references would be patched. "
+                f"{len(planned_gallery_patches)} gallery pages would be patched. "
                 f"Plan written to {output_path}."
             )
             return
@@ -434,5 +459,5 @@ class Command(WebsiteFilterCommand):
         self.stdout.write(
             f"Done: {renamed_count} renamed, {skipped_count} skipped, "
             f"{error_count} errors, {len(patches)} video metadata records patched, "
-            f"{len(gallery_patches)} gallery references patched"
+            f"{len(gallery_patches)} gallery pages patched"
         )

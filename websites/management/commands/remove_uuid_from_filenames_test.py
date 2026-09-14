@@ -743,7 +743,7 @@ def test_does_not_patch_gallery_for_skipped_collision(mock_s3):
 
 
 def test_dry_run_reports_gallery_patch_count(tmp_path, mock_s3):
-    """Dry-run summary includes the number of gallery references that would be patched."""
+    """Dry-run summary includes the number of gallery pages that would be patched."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
     WebsiteContentFactory.create(website=website, file=old_key)
@@ -762,7 +762,7 @@ def test_dry_run_reports_gallery_patch_count(tmp_path, mock_s3):
     )
 
     output = stdout.getvalue()
-    assert "1 gallery references would be patched" in output
+    assert "1 gallery pages would be patched" in output
 
 
 def test_dry_run_does_not_patch_gallery_markdown(tmp_path, mock_s3):
@@ -782,6 +782,124 @@ def test_dry_run_does_not_patch_gallery_markdown(tmp_path, mock_s3):
 
     gallery.refresh_from_db()
     assert gallery.markdown == original_markdown
+
+
+def test_gallery_patch_isolated_by_website_via_command(mock_s3):
+    """A rename in one website must not touch a byte-identical href in another website.
+
+    Regression test for the command-integrated _PlannedGalleryHrefRule path,
+    not just the standalone GalleryImageRenameRule (which already has
+    equivalent coverage).
+    """
+    website_a = WebsiteFactory.create()
+    website_b = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website_a, file=f"sites/{website_a.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery_a = WebsiteContentFactory.create(
+        website=website_a, markdown=original_markdown
+    )
+    gallery_b = WebsiteContentFactory.create(
+        website=website_b, markdown=original_markdown
+    )
+
+    call_command("remove_uuid_from_filenames")
+
+    gallery_a.refresh_from_db()
+    gallery_b.refresh_from_db()
+    assert (
+        gallery_a.markdown
+        == '{{< image-gallery-item href="photo.jpg" text="a caption" >}}'
+    )
+    assert gallery_b.markdown == original_markdown
+
+
+def test_patches_multiple_gallery_items_in_one_body(mock_s3):
+    """A single markdown body referencing two different renamed files gets both hrefs updated."""
+    website = WebsiteFactory.create()
+    uuid_b = "cb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_a.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{uuid_b}_b.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_PREFIX}_a.jpg" text="first" >}}}}\n'
+            f'{{{{< image-gallery-item href="{uuid_b}_b.jpg" text="second" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        '{{< image-gallery-item href="a.jpg" text="first" >}}\n'
+        '{{< image-gallery-item href="b.jpg" text="second" >}}'
+    )
+
+
+def test_gallery_scan_survives_malformed_shortcode_elsewhere(mock_s3):
+    """A malformed shortcode on one page must not prevent gallery patching on other pages."""
+    website = WebsiteFactory.create()
+    uuid_b = "db3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_good.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{uuid_b}_bad.jpg"
+    )
+    good_markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_good.jpg" text="fine" >}}}}'
+    )
+    good_gallery = WebsiteContentFactory.create(website=website, markdown=good_markdown)
+    # Unquoted nested shortcode -- raises ValueError("... nesting ...") during parsing.
+    malformed_markdown = (
+        f'{{{{< image-gallery-item href="{uuid_b}_bad.jpg" '
+        '{{< sup 4 >}} text="broken" >}}'
+    )
+    bad_gallery = WebsiteContentFactory.create(
+        website=website, markdown=malformed_markdown
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    good_gallery.refresh_from_db()
+    bad_gallery.refresh_from_db()
+    assert (
+        good_gallery.markdown
+        == '{{< image-gallery-item href="good.jpg" text="fine" >}}'
+    )
+    assert bad_gallery.markdown == malformed_markdown
+
+
+def test_dry_run_writes_csv_even_if_gallery_scan_fails(tmp_path, mock_s3):
+    """A malformed shortcode must not prevent the dry-run CSV rename plan from being written."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    malformed_markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_doc.pdf" '
+        '{{< sup 4 >}} text="broken" >}}'
+    )
+    WebsiteContentFactory.create(website=website, markdown=malformed_markdown)
+    output_file = tmp_path / "plan.csv"
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+
+    assert output_file.exists()
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["old_key"] == old_key
 
 
 # ---------------------------------------------------------------------------
