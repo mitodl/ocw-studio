@@ -240,6 +240,7 @@ def test_get_common_pipeline_vars(settings, mocker, is_dev):
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_get_cli_endpoint_url(settings, mocker, is_dev):
     """get_cli_endpoint_url should return the correct value based on environment"""
+    settings.AWS_S3_ENDPOINT_URL = None
     mock_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_is_dev.return_value = is_dev
     cli_endpoint_url = get_cli_endpoint_url()
@@ -248,8 +249,20 @@ def test_get_cli_endpoint_url(settings, mocker, is_dev):
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
+def test_get_cli_endpoint_url_configured(settings, mocker, is_dev):
+    """AWS_S3_ENDPOINT_URL should win in any environment"""
+    settings.AWS_S3_ENDPOINT_URL = "http://rustfs.local-infra.svc.cluster.local:9000"
+    mock_is_dev = mocker.patch("content_sync.utils.is_dev")
+    mock_is_dev.return_value = is_dev
+    assert get_cli_endpoint_url() == (
+        " --endpoint-url http://rustfs.local-infra.svc.cluster.local:9000"
+    )
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
 def test_get_ocw_studio_api_url(settings, mocker, is_dev):
     """get_cli_endpoint_url should return the correct value based on environment"""
+    settings.OCW_STUDIO_PIPELINE_API_URL = None
     mock_is_dev = mocker.patch("content_sync.utils.is_dev")
     mock_is_dev.return_value = is_dev
     ocw_studio_api_url = get_ocw_studio_api_url()
@@ -257,6 +270,13 @@ def test_get_ocw_studio_api_url(settings, mocker, is_dev):
         "http://10.1.0.102:8043" if is_dev else settings.SITE_BASE_URL
     )
     assert ocw_studio_api_url == expected_ocw_studio_api_url
+
+
+def test_get_ocw_studio_api_url_configured(settings, mocker):
+    """OCW_STUDIO_PIPELINE_API_URL should override the compose address in dev"""
+    settings.OCW_STUDIO_PIPELINE_API_URL = "https://studio.ocw.example.test"
+    mocker.patch("content_sync.utils.is_dev", return_value=True)
+    assert get_ocw_studio_api_url() == "https://studio.ocw.example.test"
 
 
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
