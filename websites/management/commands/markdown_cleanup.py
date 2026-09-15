@@ -59,6 +59,7 @@ class Command(WebsiteFilterCommand):
         rules.LinkToExternalResourceRule,
         rules.NavItemToExternalResourceRule,
         rules.ImageGalleryItemUuidRule,
+        rules.GalleryImageRenameRule,
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
