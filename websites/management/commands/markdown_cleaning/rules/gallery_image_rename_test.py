@@ -559,3 +559,65 @@ def test_unparseable_page_is_skipped_rather_than_raising(mock_s3):
 
     assert changed is False
     assert gallery.markdown == markdown
+
+
+def test_data_href_is_not_mistaken_for_the_href(mock_s3):
+    """A longer param name ending in href must not be rewritten in its place."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item data-href="decoy.jpg" '
+            f'href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+        ),
+    )
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        '{{< image-gallery-item data-href="decoy.jpg" '
+        'href="photo.jpg" text="a caption" >}}'
+    )
+
+
+def test_single_quoted_href_is_repaired(mock_s3):
+    """ShortcodeParam keeps the quotes on a single-quoted value, so unwrap them."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f"{{{{< image-gallery-item href='{UUID_PREFIX}_photo.jpg' "
+            'text="a caption" >}}'
+        ),
+    )
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        "{{< image-gallery-item href='photo.jpg' text=\"a caption\" >}}"
+    )
+
+
+def test_uuid_whose_resource_has_no_file_blocks_the_basename_guess(mock_s3):
+    """A uuid naming a fileless resource is still a real reference, not an unknown."""
+    website = WebsiteFactory.create()
+    # The named resource carries no file, and another file owns the stripped name.
+    WebsiteContentFactory.create(website=website, text_id=IMAGE_UUID, file="")
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = gallery_item()
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown

@@ -19,8 +19,12 @@ log = logging.getLogger(__name__)
 GALLERY_ITEM_SHORTCODE_NAME = "image-gallery-item"
 
 # The href value, quoted either way or bare. Captured so only that span is
-# replaced, leaving the rest of the tag exactly as the author wrote it.
-_HREF_VALUE_RE = re.compile(r"""href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""")
+# replaced, leaving the rest of the tag exactly as the author wrote it. The
+# lookbehind keeps the match from starting inside a longer parameter name, so
+# a data-href sitting before the real href cannot be rewritten in its place.
+_HREF_VALUE_RE = re.compile(
+    r"""(?<![\w-])href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))"""
+)
 
 
 def _splice_href(original_text: str, new_href: str) -> str:
@@ -114,6 +118,12 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
             # in each resolver so one such item cannot take down the parse for
             # the whole page it sits on.
             return original_text
+        # ShortcodeParam only unwraps double quotes, so a single-quoted value
+        # still arrives with its quotes attached and would not match the UUID
+        # pattern. _HREF_VALUE_RE handles that spelling, so the resolver has to
+        # see the same value the author meant.
+        if len(href) > 1 and href[0] == href[-1] == "'":
+            href = href[1:-1]
         new_href = self.resolve_new_href(
             website_content.website_id, href, shortcode.get("uuid")
         )
@@ -157,11 +167,11 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
 
     def __init__(self):
         super().__init__()
-        self._site_cache: dict[str, tuple[dict[str, set[str]], dict[str, str]]] = {}
+        self._site_cache = {}
         self._key_exists: dict[str, bool] = {}
         self._s3_client = None
 
-    def _site_maps(self, website_id) -> tuple[dict[str, set[str]], dict[str, str]]:
+    def _site_maps(self, website_id):
         """
         Return this website's files as (basename -> S3 keys, text_id -> S3 key).
 
@@ -172,6 +182,17 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         """
         cache_key = str(website_id)
         if cache_key not in self._site_cache:
+            # Every text_id in the site, whether or not it currently has a
+            # file and including soft-deleted rows. A uuid that names anything
+            # here is a real reference, so the basename guess must not be
+            # allowed to answer for it and land on an unrelated image.
+            known_text_ids = {
+                str(text_id)
+                for text_id in WebsiteContent.all_objects.filter(
+                    website_id=website_id
+                ).values_list("text_id", flat=True)
+                if text_id
+            }
             rows = (
                 WebsiteContent.objects.filter(website_id=website_id)
                 .exclude(file="")
@@ -188,7 +209,7 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
                 by_basename.setdefault(s3_key.rpartition("/")[2], set()).add(s3_key)
                 if text_id:
                     by_text_id[str(text_id)] = s3_key
-            self._site_cache[cache_key] = (by_basename, by_text_id)
+            self._site_cache[cache_key] = (by_basename, by_text_id, known_text_ids)
         return self._site_cache[cache_key]
 
     def _exists_in_s3(self, s3_keys: set[str]) -> bool:
@@ -232,7 +253,7 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         default manager: a href should not be pointed at content that is on
         its way out.
         """
-        _, by_text_id = self._site_maps(website_id)
+        _, by_text_id, _ = self._site_maps(website_id)
         s3_key = by_text_id.get(uuid)
         if not s3_key:
             return None
@@ -251,7 +272,7 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         candidate = strip_uuid_prefix(basename)
         if candidate == basename:
             return None
-        by_basename, _ = self._site_maps(website_id)
+        by_basename, _, _ = self._site_maps(website_id)
         # Database check first -- it is a local dict lookup, so a file ruled
         # out here costs no S3 call.
         if candidate not in by_basename or basename in by_basename:
@@ -267,8 +288,8 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         # and put the href's own prefix back. image_gallery_item_uuid accepts
         # a path-valued href, so one can arrive carrying a uuid param.
         prefix, sep, basename = href.rpartition("/")
-        _, by_text_id = self._site_maps(website_id)
-        if uuid and uuid in by_text_id:
+        _, _, known_text_ids = self._site_maps(website_id)
+        if uuid and uuid in known_text_ids:
             # The uuid names a resource in this website, so it is the target,
             # full stop. Falling back to a basename guess when it cannot be
             # confirmed could point the gallery at a different image that

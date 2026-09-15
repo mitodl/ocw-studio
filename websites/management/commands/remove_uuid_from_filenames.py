@@ -23,6 +23,9 @@ from websites.management.commands.markdown_cleaning.rules.gallery_image_rename i
     GALLERY_ITEM_SHORTCODE_NAME,
     BaseGalleryHrefRewriteRule,
 )
+from websites.management.commands.markdown_cleaning.shortcode_parser import (
+    ShortcodeParser,
+)
 from websites.models import Website, WebsiteContent
 from websites.utils import UUID_FILENAME_RE, strip_uuid_prefix
 
@@ -306,6 +309,66 @@ def _collect_gallery_patches(renames):
     return patches
 
 
+def _drop_renames_blocked_by_unparseable_galleries(renames):
+    """
+    Hold back renames referenced by a gallery page that will not parse.
+
+    The rename deletes the old key, and the href pointing at it can only be
+    repaired by parsing the page. A page that will not parse therefore cannot
+    be fixed by this run, by a re-run (the file no longer carries a prefix to
+    match on) or by the standalone backfill, so the gallery would be broken
+    for good. Leaving the file alone keeps the href and the key consistent
+    and leaves the page repairable once its markdown is corrected.
+
+    Returns (kept_renames, blocked_count).
+    """
+    if not renames:
+        return renames, 0
+
+    basenames_by_site = {}
+    for task in renames:
+        basenames_by_site.setdefault(task.website_id, set()).add(
+            task.old_key.rpartition("/")[2]
+        )
+
+    parser = ShortcodeParser()
+    parser.set_parse_action(lambda s, l, toks: None)  # noqa: ARG005, E741
+    blocked = set()
+    contents = (
+        WebsiteContent.objects.filter(website__uuid__in=basenames_by_site.keys())
+        .filter(markdown__contains=GALLERY_ITEM_SHORTCODE_NAME)
+        .exclude(markdown="")
+        .values_list("website_id", "markdown")
+        .iterator()
+    )
+    for website_id, markdown in contents:
+        try:
+            parser.transform_string(markdown)
+        except Exception:  # noqa: BLE001
+            site = str(website_id)
+            # Substring rather than a parse, since the page is what would not
+            # parse. Over-matching only costs a skipped rename.
+            blocked.update(
+                (site, basename)
+                for basename in basenames_by_site.get(site, ())
+                if basename in markdown
+            )
+
+    if not blocked:
+        return renames, 0
+
+    kept = []
+    for task in renames:
+        if (task.website_id, task.old_key.rpartition("/")[2]) in blocked:
+            print(  # noqa: T201
+                f"Skipping {task.old_key}: referenced by a gallery page whose markdown does not parse",  # noqa: E501
+                file=sys.stderr,
+            )
+            continue
+        kept.append(task)
+    return kept, len(renames) - len(kept)
+
+
 _SYNC_STATE_BATCH = 2000
 # A site's git commit is slow but not unbounded. Without a cap the command
 # blocks forever if no worker ever picks the task up.
@@ -524,6 +587,8 @@ class Command(WebsiteFilterCommand):
 
         # --- Discovery phase (no S3/DB writes) ---
         renames, skipped_count = _collect_renames(contents)
+        renames, blocked_count = _drop_renames_blocked_by_unparseable_galleries(renames)
+        skipped_count += blocked_count
 
         if dry_run:
             output_path = options.get("output")
