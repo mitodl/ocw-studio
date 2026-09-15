@@ -14,7 +14,6 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
@@ -30,10 +29,11 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
     SlackAlertStep,
 )
+from content_sync.utils import get_cli_endpoint_url
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+CLI_ENDPOINT_URL = get_cli_endpoint_url()
 
 
 class ThemeAssetsPipelineDefinition(Pipeline):

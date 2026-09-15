@@ -452,6 +452,15 @@ AWS_S3_ENDPOINT_URL = get_string(
         "file storage backend."
     ),
 )
+OCW_STUDIO_PIPELINE_API_URL = get_string(
+    name="OCW_STUDIO_PIPELINE_API_URL",
+    default=None,
+    description=(
+        "Base URL for this app as a Concourse task container reaches it, for "
+        "local setups where neither SITE_BASE_URL nor the docker-compose "
+        "address resolves from inside a pipeline task."
+    ),
+)
 AWS_S3_CUSTOM_DOMAIN = get_string(
     name="AWS_S3_CUSTOM_DOMAIN",
     default=None,
