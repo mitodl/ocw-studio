@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Version 0.200.0
+---------------
+
+- feat: reference image gallery images by their resource uuid (#3200)
+- chore: upgrade mitol-drf-lint to 2026.8.28 and keep the pre-commit pin in step (#3202)
+
 Version 0.199.0
 ---------------
 
