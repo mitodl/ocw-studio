@@ -8,7 +8,7 @@ resource_types:
   - name: s3-resource-iam
     type: registry-image
     source:
-      repository: governmentpaas/s3-resource
+      repository: concourse/s3-resource
       tag: latest
 task-config: &webhook-config
   platform: linux

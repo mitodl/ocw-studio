@@ -186,6 +186,11 @@ class WebpackManifestResource(Resource):
             source={
                 "bucket": bucket,
                 "versioned_file": f"ocw-hugo-themes/{branch}/webpack.json",
+                # Opt into the AWS SDK default credential chain so the resource
+                # picks up the worker's EC2 instance profile over IMDSv2. Without
+                # this the official s3-resource uses anonymous credentials. The
+                # dev overrides below take precedence when they are set.
+                "enable_aws_creds_provider": True,
             },
             **kwargs,
         )
