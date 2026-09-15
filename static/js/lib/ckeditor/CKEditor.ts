@@ -233,3 +233,43 @@ export const MinimalWithMathEditorConfig = {
   },
   language: "en",
 }
+
+export const MinimalWithSubSupEditorConfig = {
+  plugins: [
+    EssentialsPlugin,
+    AutoformatPlugin,
+    BoldPlugin,
+    ItalicPlugin,
+    CodePlugin,
+    BlockQuotePlugin,
+    LinkPlugin,
+    ListPlugin,
+    ParagraphPlugin,
+    ResourceEmbed,
+    ResourcePicker,
+    ResourceLink,
+    SubscriptPlugin,
+    SuperscriptPlugin,
+    MarkdownListSyntax,
+    Markdown,
+    LegacyShortcodes,
+  ],
+  toolbar: {
+    items: [
+      "bold",
+      "italic",
+      "subscript",
+      "superscript",
+      "code",
+      "link",
+      "bulletedList",
+      "numberedList",
+      "blockQuote",
+      "undo",
+      "redo",
+      ADD_RESOURCE_LINK,
+      ADD_RESOURCE_EMBED,
+    ],
+  },
+  language: "en",
+}

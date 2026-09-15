@@ -5,6 +5,7 @@ import {
   FullEditorConfig,
   MinimalEditorConfig,
   MinimalWithMathEditorConfig,
+  MinimalWithSubSupEditorConfig,
 } from "./CKEditor"
 import { RESOURCE_LINK_CONFIG_KEY, WEBSITE_NAME } from "./plugins/constants"
 
@@ -55,6 +56,7 @@ const CONFIGS: [string, EditorConfigUnderTest, string[]][] = [
   ["FullEditorConfig", FullEditorConfig, []],
   ["MinimalEditorConfig", MinimalEditorConfig, []],
   ["MinimalWithMathEditorConfig", MinimalWithMathEditorConfig, []],
+  ["MinimalWithSubSupEditorConfig", MinimalWithSubSupEditorConfig, []],
 ]
 
 /** CKEditor appends this argument to every warning it logs. */
