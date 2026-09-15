@@ -10,13 +10,13 @@ from ol_concourse.lib.models.pipeline import (
     TaskStep,
 )
 
-from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     AWS_CLI_REGISTRY_IMAGE,
 )
+from content_sync.utils import get_cli_endpoint_url
 from main.utils import is_dev
 
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+CLI_ENDPOINT_URL = get_cli_endpoint_url()
 
 s3_sync_timer_identifier = Identifier("s3-sync-timer").root
 s3_sync_task_identifier = Identifier("s3-sync-task").root

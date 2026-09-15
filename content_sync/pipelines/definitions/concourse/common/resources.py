@@ -5,7 +5,6 @@ from django.conf import settings
 from ol_concourse.lib.models.pipeline import Identifier, Resource
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
@@ -16,8 +15,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SLACK_ALERT_RESOURCE_IDENTIFIER,
     get_ocw_catalog_identifier,
 )
-from content_sync.utils import get_ocw_studio_api_url
-from main.utils import is_dev
+from content_sync.utils import get_ocw_studio_api_url, get_s3_endpoint_url
 from websites.constants import OCW_HUGO_THEMES_GIT
 
 
@@ -183,10 +181,11 @@ class WebpackManifestResource(Resource):
             },
             **kwargs,
         )
-        if is_dev():
+        endpoint_url = get_s3_endpoint_url()
+        if endpoint_url:
             self.source.update(
                 {
-                    "endpoint": DEV_ENDPOINT_URL,
+                    "endpoint": endpoint_url,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
                     "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
                 }

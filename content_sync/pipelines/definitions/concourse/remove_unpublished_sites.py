@@ -16,7 +16,7 @@ from ol_concourse.lib.models.pipeline import (
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
+from content_sync.constants import VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     get_ocw_catalog_identifier,
 )
@@ -44,7 +44,7 @@ from content_sync.utils import (
 )
 from main.utils import is_dev
 
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+CLI_ENDPOINT_URL = get_cli_endpoint_url()
 
 
 class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
