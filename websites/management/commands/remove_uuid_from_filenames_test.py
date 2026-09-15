@@ -1160,3 +1160,34 @@ def test_gallery_scan_clears_bookkeeping_for_malformed_pages(mocker, mock_s3):
 
     assert cleaners, "expected the scan to build a cleaner"
     assert cleaners[0].replacement_matches == []
+
+
+def test_gallery_patch_refreshes_content_sync_state(mock_s3):
+    """bulk_update skips post_save, so the sync state must be refreshed explicitly.
+
+    Without this the row keeps current_checksum == synced_checksum, which
+    upsert_content_files_for_user treats as already synced and excludes, so the
+    markdown fix never reaches git.
+    """
+    from content_sync.models import ContentSyncState  # noqa: PLC0415
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="cap" >}}}}',
+    )
+    # Put the row in the "already synced" state the exclusion filter looks for.
+    state = ContentSyncState.objects.get(content=gallery)
+    state.synced_checksum = state.current_checksum
+    state.save()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    state.refresh_from_db()
+    assert 'href="photo.jpg"' in gallery.markdown
+    assert state.current_checksum == gallery.calculate_checksum()
+    assert state.current_checksum != state.synced_checksum

@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
 
+from content_sync.models import ContentSyncState
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
@@ -302,6 +303,37 @@ def _collect_gallery_patches(renames):
     return patches
 
 
+def _refresh_sync_states(pks):
+    """
+    Recompute ContentSyncState.current_checksum for *pks*.
+
+    Every write in this command goes through update()/bulk_update() for speed,
+    which skips WebsiteContent.save() and so never fires the post_save receiver
+    that normally keeps this column current. Left alone the row keeps
+    current_checksum == synced_checksum, which upsert_content_files_for_user
+    reads as "already synced" and excludes before its in-loop recompute can
+    correct it, so the change never reaches git and the published site keeps
+    serving the old content.
+    """
+    if not pks:
+        return
+    states = {
+        state.content_id: state
+        for state in ContentSyncState.objects.filter(content_id__in=pks)
+    }
+    stale = []
+    for content in WebsiteContent.objects.filter(pk__in=pks).iterator():
+        state = states.get(content.pk)
+        if state is None:
+            continue
+        checksum = content.calculate_checksum()
+        if state.current_checksum != checksum:
+            state.current_checksum = checksum
+            stale.append(state)
+    if stale:
+        ContentSyncState.objects.bulk_update(stale, ["current_checksum"])
+
+
 _CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
 
 
@@ -339,6 +371,65 @@ class Command(WebsiteFilterCommand):
             default=None,
             help="File path for the CSV plan. Required with --dry-run.",
         )
+
+    def _apply_followups(
+        self, renames, actually_renamed_website_ids, successfully_renamed_old_keys
+    ):
+        """
+        Apply everything that follows a successful rename batch.
+
+        Dirty flags, video metadata and gallery hrefs are all scoped to renames
+        that actually committed, never the full planned set, so a skipped or
+        failed file leaves its dependants alone. Returns the metadata and
+        gallery patches for the run summary.
+        """
+        if actually_renamed_website_ids:
+            Website.objects.filter(uuid__in=actually_renamed_website_ids).update(
+                has_unpublished_live=True,
+                has_unpublished_draft=True,
+            )
+
+        # renamed_keys keeps metadata patches off captions/transcripts whose
+        # own rename was skipped, which would otherwise be pointed at a path
+        # that does not exist.
+        patches = _collect_metadata_patches(
+            actually_renamed_website_ids,
+            renamed_keys=successfully_renamed_old_keys,
+        )
+        if patches:
+            WebsiteContent.objects.bulk_update(
+                [
+                    WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
+                    for patch in patches
+                ],
+                ["metadata"],
+            )
+
+        successful_renames = [
+            task
+            for task in renames
+            if task.old_key.lstrip("/") in successfully_renamed_old_keys
+        ]
+        gallery_patches = _collect_gallery_patches(successful_renames)
+        if gallery_patches:
+            WebsiteContent.objects.bulk_update(
+                [
+                    WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
+                    for patch in gallery_patches
+                ],
+                ["markdown"],
+            )
+
+        # Every write above bypassed post_save, so the sync states still carry
+        # the pre-change checksums. Refresh them or the git sync treats this
+        # content as already synced and the published site keeps the old
+        # filenames.
+        _refresh_sync_states(
+            {task.pk for task in successful_renames}
+            | {patch.pk for patch in patches}
+            | {patch.pk for patch in gallery_patches}
+        )
+        return patches, gallery_patches
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -449,49 +540,9 @@ class Command(WebsiteFilterCommand):
                     f"Warning: failed to delete old key {s3_old_key}: {exc!s}"
                 )
 
-        # Dirty-flag and metadata updates are scoped to websites where at least
-        # one rename actually committed to the DB — not the full planned set.
-        # This prevents marking websites dirty or patching video metadata when
-        # the underlying S3/DB rename failed.
-        if actually_renamed_website_ids:
-            Website.objects.filter(uuid__in=actually_renamed_website_ids).update(
-                has_unpublished_live=True,
-                has_unpublished_draft=True,
-            )
-
-        # Pass successfully_renamed_old_keys so metadata is only patched for
-        # captions/transcript files whose underlying rename actually committed.
-        # Skipped files (e.g. due to a conflict) are excluded, preventing
-        # metadata from pointing at the wrong S3 path.
-        patches = _collect_metadata_patches(
-            actually_renamed_website_ids,
-            renamed_keys=successfully_renamed_old_keys,
+        patches, gallery_patches = self._apply_followups(
+            renames, actually_renamed_website_ids, successfully_renamed_old_keys
         )
-        if patches:
-            WebsiteContent.objects.bulk_update(
-                [
-                    WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
-                    for patch in patches
-                ],
-                ["metadata"],
-            )
-
-        # Same exclusion rationale as the metadata patches above: only rewrite
-        # gallery hrefs for renames that actually committed.
-        successful_renames = [
-            task
-            for task in renames
-            if task.old_key.lstrip("/") in successfully_renamed_old_keys
-        ]
-        gallery_patches = _collect_gallery_patches(successful_renames)
-        if gallery_patches:
-            WebsiteContent.objects.bulk_update(
-                [
-                    WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
-                    for patch in gallery_patches
-                ],
-                ["markdown"],
-            )
 
         self.stdout.write(
             f"Done: {renamed_count} renamed, {skipped_count} skipped, "
