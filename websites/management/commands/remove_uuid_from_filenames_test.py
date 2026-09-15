@@ -1327,3 +1327,22 @@ def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock
     content.refresh_from_db()
     state.refresh_from_db()
     assert state.current_checksum == content.calculate_checksum()
+
+
+def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sync):
+    """get(timeout) does not stop the worker, so dispatching on would overlap syncs."""
+    from celery.exceptions import TimeoutError as CeleryTimeoutError  # noqa: PLC0415
+
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    first = _website_with_rename()
+    second = _website_with_rename()
+    mock_sync.delay.return_value.get.side_effect = CeleryTimeoutError("no answer")
+
+    stderr = StringIO()
+    call_command("remove_uuid_from_filenames", stderr=stderr)
+
+    # Only the first site is dispatched, and both are reported as unsynced.
+    assert mock_sync.delay.call_count == 1
+    message = stderr.getvalue()
+    assert "Timed out" in message
+    assert first.name in message or second.name in message

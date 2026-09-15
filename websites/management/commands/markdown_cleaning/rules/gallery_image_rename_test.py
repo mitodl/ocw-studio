@@ -470,3 +470,28 @@ def test_item_that_does_not_round_trip_is_left_alone(mock_s3):
     cleaner.update_website_content(gallery)
 
     assert gallery.markdown == markdown
+
+
+def test_unparseable_page_is_skipped_rather_than_raising(mock_s3):
+    """The rule must survive bad markdown on its own.
+
+    markdown_cleanup's loop has no per-record exception handling, so a raise
+    here would abort a backfill part way through and leave later galleries
+    unrepaired.
+    """
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    # Unquoted nested shortcode: ShortcodeParser raises on this.
+    markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" '
+        '{{< sup 4 >}} text="broken" >}}'
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    changed = cleaner.update_website_content(gallery)
+
+    assert changed is False
+    assert gallery.markdown == markdown

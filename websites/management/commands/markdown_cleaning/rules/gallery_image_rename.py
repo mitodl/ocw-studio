@@ -37,6 +37,25 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
     def should_parse(self, text: str):
         return GALLERY_ITEM_SHORTCODE_NAME in text
 
+    def transform_text(self, website_content, text, on_match):
+        """
+        Parse and rewrite, treating unparseable markdown as nothing to do.
+
+        ShortcodeParser raises on constructs like an unquoted nested
+        shortcode. markdown_cleanup's loop has no per-record handling, so
+        letting that escape would abort a backfill part way through, after
+        earlier pages had already been saved, and leave the rest unrepaired.
+        """
+        try:
+            return super().transform_text(website_content, text, on_match)
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "Gallery href fix: skipping content %s, markdown did not parse (%s)",
+                website_content.pk,
+                exc,
+            )
+            return text
+
     def resolve_new_href(self, website_id, href: str, uuid: str | None) -> str | None:
         raise NotImplementedError
 

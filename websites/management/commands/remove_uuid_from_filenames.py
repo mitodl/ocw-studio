@@ -5,6 +5,7 @@ import sys
 from collections import Counter
 from typing import NamedTuple
 
+from celery.exceptions import TimeoutError as CeleryTimeoutError
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -449,10 +450,12 @@ class Command(WebsiteFilterCommand):
         # the pre-change checksums. Refresh them or the git sync treats this
         # content as already synced and the published site keeps the old
         # filenames.
+        # Only the follow-up writes. Each rename already refreshed its own sync
+        # state inside its transaction, and a record that was both renamed and
+        # patched here is in one of these sets anyway, so re-scanning every
+        # renamed pk would recompute tens of thousands of checksums for nothing.
         _refresh_sync_states(
-            {task.pk for task in successful_renames}
-            | {patch.pk for patch in patches}
-            | {patch.pk for patch in gallery_patches}
+            {patch.pk for patch in patches} | {patch.pk for patch in gallery_patches}
         )
         return patches, gallery_patches
 
@@ -480,10 +483,24 @@ class Command(WebsiteFilterCommand):
         # once would put the whole batch against the git backend's API limit
         # simultaneously. A site that fails is reported rather than aborting the
         # command, since by this point every rename has already committed.
-        for name in names:
+        for index, name in enumerate(names):
             try:
                 sync_website_content.delay(name).get(timeout=_SYNC_TIMEOUT_SECONDS)
+            except CeleryTimeoutError:
+                # get(timeout) bounds our wait, it does not stop the worker, so
+                # that task is still running. Dispatching the next site now
+                # would let syncs overlap, which is what serialising this loop
+                # was meant to avoid. A timeout points at an unhealthy worker
+                # pool or backend, so stop rather than piling on more work.
+                failed.extend(names[index:])
+                self.stderr.write(
+                    f"Timed out after {_SYNC_TIMEOUT_SECONDS}s waiting for {name}, "
+                    "stopping before the remaining site(s)"
+                )
+                break
             except Exception as exc:  # noqa: BLE001
+                # The task finished and failed, so nothing is still holding the
+                # backend. Safe to carry on to the next site.
                 failed.append(name)
                 self.stderr.write(f"Failed to sync {name}: {exc!s}")
         total_seconds = (now_in_utc() - start).total_seconds()
