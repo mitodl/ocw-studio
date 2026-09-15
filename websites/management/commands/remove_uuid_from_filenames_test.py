@@ -1191,3 +1191,92 @@ def test_gallery_patch_refreshes_content_sync_state(mock_s3):
     assert 'href="photo.jpg"' in gallery.markdown
     assert state.current_checksum == gallery.calculate_checksum()
     assert state.current_checksum != state.synced_checksum
+
+
+@pytest.fixture
+def mock_sync(mocker):
+    """Mock the backend sync task the command kicks off after a live run."""
+    return mocker.patch(
+        "websites.management.commands.remove_uuid_from_filenames.sync_website_content"
+    )
+
+
+def _website_with_rename():
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    return website
+
+
+def test_triggers_sync_after_a_live_run(settings, mock_s3, mock_sync):
+    """A live run that changed something pushes it to the configured backend."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_called_once_with(website.name)
+
+
+def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_sync):
+    """An untouched website must not be dragged into the push."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    renamed = _website_with_rename()
+    untouched = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=untouched, file=f"sites/{untouched.name}/plain.pdf"
+    )
+
+    call_command("remove_uuid_from_filenames")
+
+    synced = {call.args[0] for call in mock_sync.delay.call_args_list}
+    assert synced == {renamed.name}
+
+
+def test_skip_sync_suppresses_the_sync_task(settings, mock_s3, mock_sync):
+    """--skip-sync leaves the push to the operator."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name, skip_sync=True)
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
+    """A dry run changes nothing, so there is nothing to push."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
+    """With no backend configured there is nowhere to sync to."""
+    settings.CONTENT_SYNC_BACKEND = None
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
+    """A run with no renames must not kick off a global sync of unrelated sites."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/plain.pdf"
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_not_called()

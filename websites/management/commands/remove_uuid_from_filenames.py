@@ -8,8 +8,10 @@ from typing import NamedTuple
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
+from mitol.common.utils import now_in_utc
 
 from content_sync.models import ContentSyncState
+from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
@@ -371,6 +373,14 @@ class Command(WebsiteFilterCommand):
             default=None,
             help="File path for the CSV plan. Required with --dry-run.",
         )
+        parser.add_argument(
+            "-ss",
+            "--skip-sync",
+            dest="skip_sync",
+            action="store_true",
+            default=False,
+            help="Whether to skip syncing the changed websites to the backend",
+        )
 
     def _apply_followups(
         self, renames, actually_renamed_website_ids, successfully_renamed_old_keys
@@ -430,6 +440,29 @@ class Command(WebsiteFilterCommand):
             | {patch.pk for patch in gallery_patches}
         )
         return patches, gallery_patches
+
+    def _sync_backend(self, *, skip_sync, website_ids):
+        """
+        Push the changed websites to the configured content-sync backend.
+
+        Scoped to the sites this run actually touched. The alternative,
+        sync_unsynced_websites, takes no filter and walks every site with
+        unsynced content, so a --filter run would push unrelated sites that
+        happened to be pending.
+        """
+        if not settings.CONTENT_SYNC_BACKEND or skip_sync or not website_ids:
+            return
+        names = list(
+            Website.objects.filter(uuid__in=website_ids).values_list("name", flat=True)
+        )
+        if not names:
+            return
+        self.stdout.write(f"Syncing {len(names)} website(s) to the backend")
+        start = now_in_utc()
+        for result in [sync_website_content.delay(name) for name in names]:
+            result.get()
+        total_seconds = (now_in_utc() - start).total_seconds()
+        self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -548,4 +581,9 @@ class Command(WebsiteFilterCommand):
             f"Done: {renamed_count} renamed, {skipped_count} skipped, "
             f"{error_count} errors, {len(patches)} video metadata records patched, "
             f"{len(gallery_patches)} gallery pages patched"
+        )
+
+        self._sync_backend(
+            skip_sync=options["skip_sync"],
+            website_ids=actually_renamed_website_ids,
         )
