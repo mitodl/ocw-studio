@@ -25,10 +25,14 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_SKIPPED_IDENTIFIER,
     SITE_CONTENT_GIT_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
+    get_fastly_identifier,
     get_ocw_catalog_identifier,
 )
 from content_sync.pipelines.definitions.concourse.common.image_resources import (
     CURL_REGISTRY_IMAGE,
+)
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    get_fastly_purge_purposes,
 )
 from content_sync.utils import get_ocw_studio_api_url
 
@@ -170,42 +174,76 @@ class SlackAlertStep(TryStep):
         self.model_rebuild()
 
 
-class ClearCdnCacheStep(TaskStep):
+class ClearCdnCacheStep(PutStep):
     """
-    A TaskStep using the curlimages/curl Docker image that sends an
-    API request to Fastly to clear the cache for a given URL
+    A PutStep to the ol-concourse Fastly resource that purges a site's surrogate key
+    from one Fastly distribution.
+
+    The step is labelled with `name` and targets the resource for `purpose`, so the
+    step keeps a readable identifier rather than being named after the resource.
+
+    The resource has no internal retry, so `attempts` is kept here. A surrogate key
+    purge is idempotent, so retrying is safe.
 
     Args:
-        name(str): The name to use as the Identifier for the task argument
-        fastly_var(str): The name of the var to pull Fastly properties from
-        site_name(str): The site to purge from the cache
+        name(str): The name to use as the Identifier for the step
+        purpose(str): The distribution to purge, e.g. "draft", "live" or "learn"
+        site_name(str): The surrogate key to purge from the cache
     """
 
-    def __init__(self, name: Identifier, fastly_var: str, site_name: str, **kwargs):
-        curl_args = [
-            "-f",
-            "-X",
-            "POST",
-            "-H",
-            f"Fastly-Key: (({fastly_var}.api_token))",
-        ]
+    def __init__(self, name: Identifier, purpose: str, site_name: str, **kwargs):
+        params = {
+            "mode": "surrogate_key",
+            "surrogate_key": site_name,
+        }
         if not settings.CONCOURSE_HARD_PURGE:
-            curl_args.extend(["-H", "Fastly-Soft-Purge: 1"])
-        curl_args.append(
-            f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
-        )
+            params["soft"] = True
         super().__init__(
-            task=name,
+            put=name,
+            resource=get_fastly_identifier(purpose),
             timeout="5m",
             attempts=3,
-            config=TaskConfig(
-                platform="linux",
-                image_resource=CURL_REGISTRY_IMAGE,
-                run=Command(path="curl", args=curl_args),
-            ),
+            params=params,
+            inputs=[],
+            no_get=True,
             **kwargs,
         )
         self.model_rebuild()
+
+
+def clear_cdn_cache_steps(
+    name: Identifier,
+    purpose: str,
+    site_name: str,
+    **kwargs,
+) -> list[ClearCdnCacheStep]:
+    """
+    Build one purge step per distribution a build for `purpose` must purge.
+
+    A live build also purges the MIT Learn distribution, which serves ocw-course-v3
+    content. The first step keeps `name` so the primary purge has a stable identifier;
+    any additional purge is suffixed with its purpose.
+
+    Callers that attach an on_success handler should attach it to the last step only,
+    so it fires once all purges have succeeded.
+
+    Args:
+        name(str): The Identifier to use for the primary purge step
+        purpose(str): The distribution being published to, e.g. "draft" or "live"
+        site_name(str): The surrogate key to purge from the cache
+
+    Returns:
+        list[ClearCdnCacheStep]: One step per distribution, the primary one first
+    """
+    return [
+        ClearCdnCacheStep(
+            name=name if index == 0 else Identifier(f"{name}-{item}").root,
+            purpose=item,
+            site_name=site_name,
+            **kwargs,
+        )
+        for index, item in enumerate(get_fastly_purge_purposes(purpose))
+    ]
 
 
 class OcwStudioWebhookStep(TryStep):

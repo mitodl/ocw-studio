@@ -17,7 +17,10 @@ from ol_concourse.lib.models.pipeline import (
     TaskConfig,
     TaskStep,
 )
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
 
 from content_sync.constants import DEV_ENDPOINT_URL, DEV_TEST_URL, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -34,11 +37,13 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
     S3IamResourceType,
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_TEST,
     OcwHugoProjectsGitResource,
     OcwHugoThemesGitResource,
     OcwStudioWebhookResource,
     SlackAlertResource,
     WebpackManifestResource,
+    fastly_resources,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     SiteContentGitTaskStep,
@@ -194,6 +199,15 @@ class EndToEndTestPipelineDefinition(Pipeline):
             ocw_studio_webhook_resource,
             SlackAlertResource(),
         ]
+        # Only the test distribution: this pipeline runs under pipeline_name "live"
+        # but publishes to the test distribution, so it must never purge MIT Learn.
+        # The purge steps themselves are skipped in dev, so the resource is too.
+        test_fastly_resources = (
+            [] if is_dev() else fastly_resources(FASTLY_PURPOSE_TEST)
+        )
+        if test_fastly_resources:
+            resource_types.append(fastly_resource_type())
+            resources.extend(test_fastly_resources)
 
         across_var_values = []
         for test_site in test_sites:
@@ -226,7 +240,7 @@ class EndToEndTestPipelineDefinition(Pipeline):
         site_tasks.extend(
             SitePipelineOnlineTasks(
                 pipeline_vars=site_pipeline_vars,
-                fastly_var="test",
+                fastly_purpose=FASTLY_PURPOSE_TEST,
                 pipeline_name=VERSION_LIVE,
                 skip_cache_clear=is_dev(),
                 skip_search_index_update=True,

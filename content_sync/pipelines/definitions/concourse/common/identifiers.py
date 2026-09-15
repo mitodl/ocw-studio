@@ -27,6 +27,22 @@ STATIC_RESOURCES_S3_IDENTIFIER = Identifier("static-resources-s3").root
 MASS_BULID_SITES_PIPELINE_IDENTIFIER = Identifier("mass-build-sites").root
 MASS_BUILD_SITES_JOB_IDENTIFIER = Identifier("mass-build-sites-job").root
 MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER = Identifier("batch-gate").root
+# The name of the ResourceType registered by ol_concourse's fastly_resource_type().
+# Resources of this type must be named something else, e.g. "fastly-live".
+FASTLY_RESOURCE_TYPE_IDENTIFIER = Identifier("fastly").root
+
+
+def get_fastly_identifier(purpose: str):
+    """
+    Get the identifier for the Fastly resource purging a given distribution
+
+    Args:
+        purpose(str): The distribution to purge, e.g. "live" or "learn"
+
+    Returns:
+        Identifier
+    """
+    return Identifier(f"fastly-{purpose}").root
 
 
 def get_ocw_catalog_identifier(url: str, prefix="open-catalog-webhook"):

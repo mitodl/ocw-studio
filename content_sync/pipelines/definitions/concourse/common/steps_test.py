@@ -13,8 +13,14 @@ from ol_concourse.lib.models.pipeline import (
     TaskStep,
 )
 
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     SITE_CONTENT_GIT_IDENTIFIER,
+    get_fastly_identifier,
+)
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_LEARN,
+    FASTLY_PURPOSE_TEST,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
     ClearCdnCacheStep,
@@ -24,6 +30,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     SiteContentGitTaskStep,
     SlackAlertStep,
     add_error_handling,
+    clear_cdn_cache_steps,
 )
 
 
@@ -115,6 +122,16 @@ def test_put_steps_empty_inputs():
         )["try"]["do"][0]["inputs"]
         == []
     )
+    assert (
+        json.loads(
+            ClearCdnCacheStep(
+                name=Identifier("clear-cdn-cache-test"),
+                purpose=VERSION_LIVE,
+                site_name="test_site",
+            ).model_dump_json(by_alias=True)
+        )["inputs"]
+        == []
+    )
 
 
 @pytest.mark.parametrize("concourse_is_private_repo", [True, False])
@@ -147,29 +164,83 @@ def test_site_content_git_task_step(
             assert step_output["params"] == {}
 
 
-def test_clear_cdn_cache_step(settings, mock_concourse_hard_purge):
-    """Assert that the ClearCdnCacheStep renders with the correct attributes"""
-    name = Identifier("clear-cdn-cache-test")
-    fastly_var = "fastly_test"
+def _rendered_steps(purpose, site_name):
+    """Render the purge steps for a purpose and return them as dicts"""
+    return [
+        json.loads(step.model_dump_json(exclude_none=True))
+        for step in clear_cdn_cache_steps(
+            name=Identifier("clear-cdn-cache-test"),
+            purpose=purpose,
+            site_name=site_name,
+        )
+    ]
+
+
+def _assert_purge_step(step, purpose, site_name, *, soft_purge):
+    """Assert that a rendered step is a complete Fastly purge for one distribution"""
+    assert step["resource"] == get_fastly_identifier(purpose)
+    assert step["params"]["mode"] == "surrogate_key"
+    assert step["params"]["surrogate_key"] == site_name
+    # soft is only sent when soft-purging; the resource defaults it to false
+    assert step["params"].get("soft", False) == soft_purge
+    # A put with neither would make Concourse run an implicit get of a version the
+    # resource never publishes, and would consume the job's inputs
+    assert step["no_get"] is True
+    assert step["inputs"] == []
+    # The resource has no internal retry of its own
+    assert step["attempts"] == 3
+    assert step["timeout"] == "5m"
+
+
+def test_clear_cdn_cache_step_live(settings, mock_concourse_hard_purge):
+    """
+    Assert that a live build purges both the live distribution and the MIT Learn
+    distribution, as two puts against two separate Fastly resources.
+    """
     site_name = "test_site"
-    clear_cdn_cache_step = ClearCdnCacheStep(
-        name=name,
-        fastly_var=fastly_var,
-        site_name=site_name,
+    steps = _rendered_steps(VERSION_LIVE, site_name)
+    assert len(steps) == 2
+    soft_purge = not settings.CONCOURSE_HARD_PURGE
+    _assert_purge_step(steps[0], VERSION_LIVE, site_name, soft_purge=soft_purge)
+    _assert_purge_step(steps[1], FASTLY_PURPOSE_LEARN, site_name, soft_purge=soft_purge)
+    # The primary purge keeps the step name it is given; only the extra one is
+    # suffixed, so build history and Slack alerts stay readable
+    assert steps[0]["put"] == "clear-cdn-cache-test"
+    assert steps[1]["put"] == f"clear-cdn-cache-test-{FASTLY_PURPOSE_LEARN}"
+
+
+@pytest.mark.parametrize("purpose", [VERSION_DRAFT, FASTLY_PURPOSE_TEST])
+def test_clear_cdn_cache_step_not_live(
+    settings,
+    mock_concourse_hard_purge,
+    purpose,
+):
+    """
+    Assert that a non-live build purges only its own distribution. Draft and test
+    builds are not served through the MIT Learn distribution.
+    """
+    site_name = "test_site"
+    steps = _rendered_steps(purpose, site_name)
+    assert len(steps) == 1
+    _assert_purge_step(
+        steps[0],
+        purpose,
+        site_name,
+        soft_purge=not settings.CONCOURSE_HARD_PURGE,
     )
-    rendered_step = json.loads(clear_cdn_cache_step.model_dump_json())
-    rendered_args = rendered_step["config"]["run"]["args"]
-    for arg in rendered_args:
-        assert "'" not in arg
-    assert f"Fastly-Key: (({fastly_var}.api_token))" in rendered_args
-    if settings.CONCOURSE_HARD_PURGE:
-        assert "Fastly-Soft-Purge: 1" not in rendered_args
-    else:
-        assert "Fastly-Soft-Purge: 1" in rendered_args
-    assert (
-        f"https://api.fastly.com/service/(({fastly_var}.service_id))/purge/{site_name}"
-        in rendered_args
-    )
+    assert steps[0]["put"] == "clear-cdn-cache-test"
+    assert get_fastly_identifier(FASTLY_PURPOSE_LEARN) not in json.dumps(steps)
+
+
+def test_clear_cdn_cache_step_omitted_without_domain(settings):
+    """
+    Assert that a distribution with no configured domain is omitted rather than
+    rendering a purge that cannot resolve a Fastly service. CI has no OCW Fastly
+    service at all.
+    """
+    settings.OCW_STUDIO_LIVE_URL = None
+    settings.COURSE_V3_CANONICAL_DOMAIN = None
+    assert _rendered_steps(VERSION_LIVE, "test_site") == []
 
 
 def test_no_get_property_on_put_steps():
@@ -183,12 +254,19 @@ def test_no_get_property_on_put_steps():
         pipeline_name="test_pipeline",
         open_catalog_url="http://test_open_catalog/api/v0/ocw_next_webhook/",
     )
+    clear_cdn_cache_step = ClearCdnCacheStep(
+        name=Identifier("clear-cdn-cache-test"),
+        purpose=VERSION_LIVE,
+        site_name="test_site",
+    )
     slack_json = json.loads(slack_alert_step.model_dump_json())
     ocw_studio_json = json.loads(ocw_studio_webhook_step.model_dump_json())
     open_catalog_json = json.loads(open_catalog_webhook_step.model_dump_json())
+    clear_cdn_cache_json = json.loads(clear_cdn_cache_step.model_dump_json())
     assert slack_json["try_"]["do"][0]["no_get"] is True
     assert ocw_studio_json["try_"]["no_get"] is True
     assert open_catalog_json["try_"]["no_get"] is True
+    assert clear_cdn_cache_json["no_get"] is True
 
 
 @pytest.mark.parametrize("skip", [True, False])
