@@ -1,15 +1,12 @@
 """Fix image-gallery-item hrefs left pointing at a pre-rename UUID-prefixed filename."""
 
 import logging
+import re
 
 from django.conf import settings
 
 from main.s3_utils import get_boto3_client
 from websites.management.commands.markdown_cleaning.cleanup_rule import PyparsingRule
-from websites.management.commands.markdown_cleaning.parsing_utils import (
-    ShortcodeParam,
-    ShortcodeTag,
-)
 from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParser,
     ShortcodeParseResult,
@@ -20,6 +17,34 @@ from websites.utils import UUID_FILENAME_RE, strip_uuid_prefix
 log = logging.getLogger(__name__)
 
 GALLERY_ITEM_SHORTCODE_NAME = "image-gallery-item"
+
+# The href value, quoted either way or bare. Captured so only that span is
+# replaced, leaving the rest of the tag exactly as the author wrote it.
+_HREF_VALUE_RE = re.compile(r"""href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""")
+
+
+def _splice_href(original_text: str, new_href: str) -> str:
+    """
+    Replace only the href value inside *original_text*.
+
+    Rebuilding the tag through ShortcodeTag.to_hugo() would round-trip every
+    other param too, which both risks mangling anything the parser did not
+    capture losslessly (a value carrying a newline tokenises apart, a
+    single-quoted one keeps its quotes) and rewrites incidental spacing and
+    quote style. Editing the one span leaves the rest byte for byte, so an
+    item written in a non-canonical style is still repaired rather than
+    skipped.
+    """
+    match = _HREF_VALUE_RE.search(original_text)
+    if match is None:
+        return original_text
+    group = next(i for i in (1, 2, 3) if match.group(i) is not None)
+    if '"' in new_href or "'" in new_href:
+        # Would break out of the quoting. No real basename looks like this.
+        log.warning("Gallery href fix: refusing a quote-bearing href %s", new_href)
+        return original_text
+    start, end = match.span(group)
+    return f"{original_text[:start]}{new_href}{original_text[end:]}"
 
 
 class BaseGalleryHrefRewriteRule(PyparsingRule):
@@ -46,8 +71,16 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
         letting that escape would abort a backfill part way through, after
         earlier pages had already been saved, and leave the rest unrepaired.
         """
+        # Buffered rather than passed straight through: the parse action fires
+        # per shortcode as it goes, so a valid item sitting before a malformed
+        # one would already have been recorded when the exception lands. The
+        # page is then left unchanged while --out still reports the row, a
+        # change the operator can never find applied.
+        buffered = []
         try:
-            return super().transform_text(website_content, text, on_match)
+            result = super().transform_text(
+                website_content, text, lambda *args: buffered.append(args)
+            )
         except Exception as exc:  # noqa: BLE001
             log.warning(
                 "Gallery href fix: skipping content %s, markdown did not parse (%s)",
@@ -55,6 +88,9 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
                 exc,
             )
             return text
+        for args in buffered:
+            on_match(*args)
+        return result
 
     def resolve_new_href(self, website_id, href: str, uuid: str | None) -> str | None:
         raise NotImplementedError
@@ -84,30 +120,7 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
         if new_href is None:
             return original_text
 
-        if shortcode.to_hugo() != original_text:
-            # Re-emission rebuilds the whole tag, so anything the parser did
-            # not capture losslessly would be silently rewritten along with the
-            # href. A value carrying a newline tokenises apart, and a
-            # single-quoted one keeps its quotes through unescaping. Neither
-            # appears in the current corpus, but the damage would be silent and
-            # unrecoverable, so decline the item rather than risk it.
-            log.warning(
-                "Gallery href fix: skipping an item that does not round-trip: %s",
-                original_text[:120],
-            )
-            return original_text
-
-        new_params = [
-            ShortcodeParam(name=p.name, value=new_href) if p.name == "href" else p
-            for p in shortcode.params
-        ]
-        new_shortcode = ShortcodeTag(
-            name=shortcode.name,
-            params=new_params,
-            percent_delimiters=shortcode.percent_delimiters,
-            closer=shortcode.closer,
-        )
-        return new_shortcode.to_hugo()
+        return _splice_href(original_text, new_href)
 
 
 class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
@@ -254,12 +267,16 @@ class GalleryImageRenameRule(BaseGalleryHrefRewriteRule):
         # and put the href's own prefix back. image_gallery_item_uuid accepts
         # a path-valued href, so one can arrive carrying a uuid param.
         prefix, sep, basename = href.rpartition("/")
-        new_basename = None
-        if uuid:
+        _, by_text_id = self._site_maps(website_id)
+        if uuid and uuid in by_text_id:
+            # The uuid names a resource in this website, so it is the target,
+            # full stop. Falling back to a basename guess when it cannot be
+            # confirmed could point the gallery at a different image that
+            # happens to own the stripped name.
             new_basename = self._resolve_by_uuid(website_id, basename, uuid)
-            # A uuid that no longer names a resource here is stale rather than
-            # authoritative, so fall through to the basename check.
-        if new_basename is None:
+        else:
+            # No uuid, or one that no longer names anything here, so it is
+            # stale rather than authoritative.
             new_basename = self._resolve_by_basename(website_id, basename)
         if new_basename is None:
             return None

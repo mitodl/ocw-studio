@@ -450,11 +450,11 @@ def test_item_without_href_is_left_alone(mock_s3):
     assert 'href="photo.jpg"' in gallery.markdown
 
 
-def test_item_that_does_not_round_trip_is_left_alone(mock_s3):
-    """A value the parser cannot reproduce must not be rewritten alongside the href.
+def test_only_the_href_span_is_rewritten(mock_s3):
+    """Everything but the href survives byte for byte, including a newline value.
 
-    A newline inside a param tokenises apart, so re-emitting the tag would
-    mangle the description. Declining is the only safe outcome.
+    Rebuilding the tag would tokenise that description apart. Splicing the one
+    span cannot.
     """
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
@@ -469,7 +469,71 @@ def test_item_that_does_not_round_trip_is_left_alone(mock_s3):
     cleaner = get_markdown_cleaner()
     cleaner.update_website_content(gallery)
 
+    assert gallery.markdown == markdown.replace(f"{UUID_PREFIX}_photo.jpg", "photo.jpg")
+    assert 'data-ngdesc="line one\nline two"' in gallery.markdown
+
+
+def test_non_canonical_href_is_still_repaired(mock_s3):
+    """An unquoted href is repairable, and its spacing and quoting are preserved."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = (
+        f"{{{{< image-gallery-item href={UUID_PREFIX}_photo.jpg   "
+        "text='single quoted' >}}"
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == (
+        "{{< image-gallery-item href=photo.jpg   text='single quoted' >}}"
+    )
+
+
+def test_known_uuid_is_not_second_guessed_by_basename(mock_s3):
+    """An unconfirmed uuid target must not fall through to a different image.
+
+    Another resource owns the stripped basename here, so a fallback would
+    repoint the gallery at an unrelated file.
+    """
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, text_id=IMAGE_UUID, file=f"sites/{website.name}/wanted.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    mock_s3.return_value.head_object.side_effect = missing_key_error()
+    markdown = gallery_item()
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
     assert gallery.markdown == markdown
+
+
+def test_unparseable_page_records_no_matches(mock_s3):
+    """A page left unchanged must not leave a row behind for --out to report."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="fine" >}}}}\n'
+        '{{< image-gallery-item {{< sup 4 >}} text="broken" >}}'
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    changed = cleaner.update_website_content(gallery)
+
+    assert changed is False
+    assert gallery.markdown == markdown
+    assert cleaner.replacement_matches == []
 
 
 def test_unparseable_page_is_skipped_rather_than_raising(mock_s3):
