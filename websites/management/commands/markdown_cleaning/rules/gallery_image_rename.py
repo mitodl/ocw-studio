@@ -54,10 +54,28 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
             return original_text
 
         href = shortcode.get("href")
+        if not href:
+            # An item can legitimately carry no href. Guarded here rather than
+            # in each resolver so one such item cannot take down the parse for
+            # the whole page it sits on.
+            return original_text
         new_href = self.resolve_new_href(
             website_content.website_id, href, shortcode.get("uuid")
         )
         if new_href is None:
+            return original_text
+
+        if shortcode.to_hugo() != original_text:
+            # Re-emission rebuilds the whole tag, so anything the parser did
+            # not capture losslessly would be silently rewritten along with the
+            # href. A value carrying a newline tokenises apart, and a
+            # single-quoted one keeps its quotes through unescaping. Neither
+            # appears in the current corpus, but the damage would be silent and
+            # unrecoverable, so decline the item rather than risk it.
+            log.warning(
+                "Gallery href fix: skipping an item that does not round-trip: %s",
+                original_text[:120],
+            )
             return original_text
 
         new_params = [

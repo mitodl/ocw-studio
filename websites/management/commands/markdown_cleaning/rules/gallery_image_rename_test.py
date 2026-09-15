@@ -426,3 +426,47 @@ def test_uuid_resolution_is_cached_across_pages(mock_s3, django_assert_num_queri
         cleaner.update_website_content(second)
 
     assert 'href="renamed-photo.jpg"' in second.markdown
+
+
+def test_item_without_href_is_left_alone(mock_s3):
+    """An item carrying no href must not take down the page it sits on."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = (
+        '{{< image-gallery-item data-ngdesc="no href here" text="a caption" >}}\n'
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="fine" >}}}}'
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    # The href-less item is untouched and the valid one beside it is still fixed.
+    assert '{{< image-gallery-item data-ngdesc="no href here" text="a caption" >}}' in (
+        gallery.markdown
+    )
+    assert 'href="photo.jpg"' in gallery.markdown
+
+
+def test_item_that_does_not_round_trip_is_left_alone(mock_s3):
+    """A value the parser cannot reproduce must not be rewritten alongside the href.
+
+    A newline inside a param tokenises apart, so re-emitting the tag would
+    mangle the description. Declining is the only safe outcome.
+    """
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/photo.jpg"
+    )
+    markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" '
+        'data-ngdesc="line one\nline two" text="a caption" >}}'
+    )
+    gallery = WebsiteContentFactory.create(website=website, markdown=markdown)
+
+    cleaner = get_markdown_cleaner()
+    cleaner.update_website_content(gallery)
+
+    assert gallery.markdown == markdown

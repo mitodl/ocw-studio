@@ -305,6 +305,12 @@ def _collect_gallery_patches(renames):
     return patches
 
 
+_SYNC_STATE_BATCH = 2000
+# A site's git commit is slow but not unbounded. Without a cap the command
+# blocks forever if no worker ever picks the task up.
+_SYNC_TIMEOUT_SECONDS = 600
+
+
 def _refresh_sync_states(pks):
     """
     Recompute ContentSyncState.current_checksum for *pks*.
@@ -317,23 +323,32 @@ def _refresh_sync_states(pks):
     correct it, so the change never reaches git and the published site keeps
     serving the old content.
     """
+    pks = list(pks)
     if not pks:
         return
-    states = {
-        state.content_id: state
-        for state in ContentSyncState.objects.filter(content_id__in=pks)
-    }
-    stale = []
-    for content in WebsiteContent.objects.filter(pk__in=pks).iterator():
-        state = states.get(content.pk)
-        if state is None:
-            continue
-        checksum = content.calculate_checksum()
-        if state.current_checksum != checksum:
-            state.current_checksum = checksum
-            stale.append(state)
-    if stale:
-        ContentSyncState.objects.bulk_update(stale, ["current_checksum"])
+    # Chunked because a full run hands this tens of thousands of pks. Postgres
+    # does not cap bulk_batch_size, so an unbatched bulk_update would build one
+    # UPDATE with a CASE branch per record, and the IN clause would pull every
+    # sync state into memory at once.
+    for start in range(0, len(pks), _SYNC_STATE_BATCH):
+        chunk = pks[start : start + _SYNC_STATE_BATCH]
+        states = {
+            state.content_id: state
+            for state in ContentSyncState.objects.filter(content_id__in=chunk)
+        }
+        stale = []
+        for content in WebsiteContent.objects.filter(pk__in=chunk).iterator():
+            state = states.get(content.pk)
+            if state is None:
+                continue
+            checksum = content.calculate_checksum()
+            if state.current_checksum != checksum:
+                state.current_checksum = checksum
+                stale.append(state)
+        if stale:
+            ContentSyncState.objects.bulk_update(
+                stale, ["current_checksum"], batch_size=_SYNC_STATE_BATCH
+            )
 
 
 _CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
@@ -459,10 +474,28 @@ class Command(WebsiteFilterCommand):
             return
         self.stdout.write(f"Syncing {len(names)} website(s) to the backend")
         start = now_in_utc()
-        for result in [sync_website_content.delay(name) for name in names]:
-            result.get()
+        failed = []
+        # One site at a time. sync_website_content has no rate-limit throttle of
+        # its own (unlike sync_unsynced_websites), so dispatching every site at
+        # once would put the whole batch against the git backend's API limit
+        # simultaneously. A site that fails is reported rather than aborting the
+        # command, since by this point every rename has already committed.
+        for name in names:
+            try:
+                sync_website_content.delay(name).get(timeout=_SYNC_TIMEOUT_SECONDS)
+            except Exception as exc:  # noqa: BLE001
+                failed.append(name)
+                self.stderr.write(f"Failed to sync {name}: {exc!s}")
         total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
+        self.stdout.write(
+            f"Backend sync finished for {len(names) - len(failed)} of {len(names)} "
+            f"website(s) in {total_seconds} seconds"
+        )
+        if failed:
+            self.stderr.write(
+                f"{len(failed)} website(s) did not sync and still need publishing: "
+                f"{', '.join(sorted(failed))}"
+            )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -544,6 +577,12 @@ class Command(WebsiteFilterCommand):
                     DriveFile.objects.filter(
                         resource_id=task.pk, s3_key=s3_old_key
                     ).update(s3_key=s3_new_key)
+                    # Inside the same transaction as the rename it belongs to.
+                    # Deferring this to the end of the run would mean an
+                    # interrupted job leaves committed renames stranded with a
+                    # stale checksum, and a re-run cannot repair them because
+                    # the file no longer carries a UUID prefix to match on.
+                    _refresh_sync_states([task.pk])
             except Exception as exc:  # noqa: BLE001
                 self.stderr.write(
                     f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"

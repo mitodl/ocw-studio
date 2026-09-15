@@ -1280,3 +1280,50 @@ def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
     call_command("remove_uuid_from_filenames", filter=website.name)
 
     mock_sync.delay.assert_not_called()
+
+
+def test_sync_failure_is_reported_without_aborting(settings, mock_s3, mock_sync):
+    """A site that fails to sync must not abort a run whose renames already committed."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+    content = WebsiteContent.objects.get(website=website, file__contains=UUID_PREFIX)
+    mock_sync.delay.return_value.get.side_effect = OSError("github is unhappy")
+
+    stderr = StringIO()
+    call_command("remove_uuid_from_filenames", filter=website.name, stderr=stderr)
+
+    # The rename still stands, and the operator is told what still needs publishing.
+    content.refresh_from_db()
+    assert str(content.file) == f"sites/{website.name}/doc.pdf"
+    assert "did not sync" in stderr.getvalue()
+
+
+def test_sync_waits_with_a_timeout(settings, mock_s3, mock_sync):
+    """Blocking on a worker that never answers would hang the command forever."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    _, kwargs = mock_sync.delay.return_value.get.call_args
+    assert kwargs.get("timeout")
+
+
+def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock_sync):
+    """Each rename's sync state is committed with it, not deferred to the end."""
+    from content_sync.models import ContentSyncState  # noqa: PLC0415
+
+    settings.CONTENT_SYNC_BACKEND = None
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    state = ContentSyncState.objects.get(content=content)
+    state.synced_checksum = state.current_checksum
+    state.save()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    content.refresh_from_db()
+    state.refresh_from_db()
+    assert state.current_checksum == content.calculate_checksum()
