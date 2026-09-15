@@ -443,6 +443,24 @@ AWS_QUERYSTRING_AUTH = get_bool(
     default=False,
     description="Enables querystring auth for S3 urls",
 )
+AWS_S3_ENDPOINT_URL = get_string(
+    name="AWS_S3_ENDPOINT_URL",
+    default=None,
+    description=(
+        "S3 API endpoint to use instead of AWS, for local S3 emulation "
+        "(Minio, RustFS). Also read by django-storages for the default "
+        "file storage backend."
+    ),
+)
+AWS_S3_CUSTOM_DOMAIN = get_string(
+    name="AWS_S3_CUSTOM_DOMAIN",
+    default=None,
+    description=(
+        "Host (optionally with a path prefix) that django-storages builds "
+        "media URLs from. Needed when the S3 API endpoint is only reachable "
+        "from inside the cluster but the browser needs a different address."
+    ),
+)
 AWS_DEFAULT_ACL = "public-read"
 AWS_ACCOUNT_ID = get_string(name="AWS_ACCOUNT_ID", description="AWS Account ID")
 AWS_REGION = get_string(
