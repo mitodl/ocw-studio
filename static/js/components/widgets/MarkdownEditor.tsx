@@ -8,6 +8,7 @@ import {
   FullEditorConfig,
   MinimalEditorConfig,
   MinimalWithMathEditorConfig,
+  MinimalWithSubSupEditorConfig,
 } from "../../lib/ckeditor/CKEditor"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 import { checkNotSubAndSup } from "../../lib/ckeditor/attributeChecks"
@@ -25,6 +26,7 @@ import {
   RESOURCE_LINK_CONFIG_KEY,
   WEBSITE_NAME,
   MINIMAL_WITH_MATH,
+  MINIMAL_WITH_SUBSUP,
 } from "../../lib/ckeditor/plugins/constants"
 import ResourcePickerDialog from "./ResourcePickerDialog"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -39,7 +41,7 @@ export interface Props {
   name?: string
   onChange?: (event: { target: { value: string; name: string } }) => void
   children?: React.ReactNode
-  minimal?: boolean | typeof MINIMAL_WITH_MATH
+  minimal?: boolean | typeof MINIMAL_WITH_MATH | typeof MINIMAL_WITH_SUBSUP
   embed: string[]
   link: string[]
   allowedHtml: string[]
@@ -147,9 +149,11 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     const baseConfig =
       minimal === MINIMAL_WITH_MATH
         ? MinimalWithMathEditorConfig
-        : minimal
-          ? MinimalEditorConfig
-          : FullEditorConfig
+        : minimal === MINIMAL_WITH_SUBSUP
+          ? MinimalWithSubSupEditorConfig
+          : minimal
+            ? MinimalEditorConfig
+            : FullEditorConfig
 
     // Create a copy of plugins to avoid mutating the original
     const plugins = [...baseConfig.plugins]
