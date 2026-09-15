@@ -1,6 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["local>mitodl/.github:renovate-config"],
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "matchManagers": ["custom.regex"],
@@ -9,6 +12,17 @@
         "main/templates/base.html"
       ],
       "automerge": false
+    },
+    {
+      "description": "pre-commit.ci autoupdate already owns every `rev:` in .pre-commit-config.yaml, so leave the pre-commit manager off by default to avoid two bots opening the same bump.",
+      "matchManagers": ["pre-commit"],
+      "enabled": false
+    },
+    {
+      "description": "The exception: mitol-drf-lint is an additional_dependencies pin on a `repo: local` hook, which autoupdate cannot see. Without this the pin never moves.",
+      "matchManagers": ["pre-commit"],
+      "matchPackageNames": ["mitol-drf-lint"],
+      "enabled": true
     }
   ],
   "customManagers": [
