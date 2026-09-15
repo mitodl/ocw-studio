@@ -118,12 +118,6 @@ class BaseGalleryHrefRewriteRule(PyparsingRule):
             # in each resolver so one such item cannot take down the parse for
             # the whole page it sits on.
             return original_text
-        # ShortcodeParam only unwraps double quotes, so a single-quoted value
-        # still arrives with its quotes attached and would not match the UUID
-        # pattern. _HREF_VALUE_RE handles that spelling, so the resolver has to
-        # see the same value the author meant.
-        if len(href) > 1 and href[0] == href[-1] == "'":
-            href = href[1:-1]
         new_href = self.resolve_new_href(
             website_content.website_id, href, shortcode.get("uuid")
         )

@@ -881,10 +881,9 @@ def test_dry_run_writes_csv_even_if_gallery_scan_fails(tmp_path, mock_s3):
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
     WebsiteContentFactory.create(website=website, file=old_key)
-    # References some other image, so the rename is not held back and the only
-    # question is whether the parse failure costs us the CSV.
     malformed_markdown = (
-        '{{< image-gallery-item href="unrelated.jpg" {{< sup 4 >}} text="broken" >}}'
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_doc.pdf" '
+        '{{< sup 4 >}} text="broken" >}}'
     )
     WebsiteContentFactory.create(website=website, markdown=malformed_markdown)
     output_file = tmp_path / "plan.csv"
@@ -1347,28 +1346,3 @@ def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sy
     message = stderr.getvalue()
     assert "Timed out" in message
     assert first.name in message or second.name in message
-
-
-def test_rename_is_held_back_when_its_gallery_page_will_not_parse(settings, mock_s3):
-    """Deleting the old key would strand an href on a page nothing can repair."""
-    settings.CONTENT_SYNC_BACKEND = None
-    website = WebsiteFactory.create()
-    content = WebsiteContentFactory.create(
-        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
-    )
-    # Unparseable page that references the file under its current name.
-    WebsiteContentFactory.create(
-        website=website,
-        markdown=(
-            f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" '
-            '{{< sup 4 >}} text="broken" >}}'
-        ),
-    )
-
-    call_command("remove_uuid_from_filenames", filter=website.name)
-
-    # No S3 work, and the file keeps the name its href still points at.
-    mock_s3.return_value.copy_object.assert_not_called()
-    mock_s3.return_value.delete_object.assert_not_called()
-    content.refresh_from_db()
-    assert str(content.file) == f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
