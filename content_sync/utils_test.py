@@ -34,6 +34,7 @@ from content_sync.utils import (
     get_hugo_arg_string,
     get_ocw_studio_api_url,
     get_publishable_sites,
+    get_s3_endpoint_url,
     get_site_content_branch,
     is_extra_theme,
     move_s3_object,
@@ -429,3 +430,29 @@ def test_is_extra_theme(settings, theme_slug, extra_themes, expected):
     """is_extra_theme should return True only if theme_slug is in OCW_EXTRA_COURSE_THEMES"""
     settings.OCW_EXTRA_COURSE_THEMES = extra_themes
     assert is_extra_theme(theme_slug) == expected
+
+
+def test_no_compose_addresses_when_configured(settings, mocker):
+    """No accessor should emit a docker-compose address once configured.
+
+    Every hardcoded 10.1.0.x in this codebase is a docker-compose network IP
+    that exists only in that setup. They are reachable through exactly these
+    accessors, each with a settings override. This asserts the overrides
+    actually win, so a new pipeline cannot quietly reintroduce one and hang
+    against an address that never answers.
+    """
+    mocker.patch("content_sync.utils.is_dev", return_value=True)
+    settings.AWS_S3_ENDPOINT_URL = "http://objectstore.test:9000"
+    settings.OCW_STUDIO_PIPELINE_API_URL = "https://studio.test"
+    settings.STATIC_API_BASE_URL_DRAFT = "https://draft.test"
+    settings.STATIC_API_BASE_URL_LIVE = "https://live.test"
+    settings.STATIC_API_BASE_URL_TEST = "https://test.test"
+
+    emitted = [
+        get_s3_endpoint_url(),
+        get_cli_endpoint_url(),
+        get_ocw_studio_api_url(),
+        *(str(v) for v in get_common_pipeline_vars().values()),
+    ]
+    offenders = [value for value in emitted if "10.1.0." in (value or "")]
+    assert offenders == [], f"compose addresses leaked through: {offenders}"

@@ -150,18 +150,25 @@ def get_common_pipeline_vars():
     return pipeline_vars
 
 
-def get_cli_endpoint_url():
-    """Get the S3 endpoint-url flag for `aws` calls inside pipeline tasks.
+def get_s3_endpoint_url():
+    """Get the S3 endpoint pipelines should use, or None for real AWS.
 
     AWS_S3_ENDPOINT_URL wins wherever it is set, in any environment. The
     DEV_ENDPOINT_URL fallback is the docker-compose Minio container's static
     IP, which only exists in that setup -- anywhere else running a local S3
-    emulator has to say where it is, or pipeline uploads hang against an
-    address that never answers.
+    emulator has to say where it is, or pipeline steps and resource checks
+    hang against an address that never answers.
+
+    Everything that needs the endpoint goes through here. It was previously
+    spelled out separately in four places, and fixing them one at a time meant
+    each pipeline failed in turn.
     """
-    endpoint_url = settings.AWS_S3_ENDPOINT_URL or (
-        DEV_ENDPOINT_URL if is_dev() else None
-    )
+    return settings.AWS_S3_ENDPOINT_URL or (DEV_ENDPOINT_URL if is_dev() else None)
+
+
+def get_cli_endpoint_url():
+    """Get the S3 endpoint-url flag for `aws` calls inside pipeline tasks."""
+    endpoint_url = get_s3_endpoint_url()
     return f" --endpoint-url {endpoint_url}" if endpoint_url else ""
 
 
