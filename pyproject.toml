@@ -255,6 +255,8 @@ env = [
     "DRIVE_SHARED_ID=",
     "DRIVE_SERVICE_ACCOUNT_CREDS=",
     "AWS_ENDPOINT_URL=",
+    "AWS_S3_ENDPOINT_URL=",
+    "OCW_STUDIO_PIPELINE_API_URL=",
 ]
 
 [tool.bumpversion]
