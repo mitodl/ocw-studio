@@ -17,6 +17,15 @@ from content_sync.constants import (
     VERSION_DRAFT,
     VERSION_LIVE,
 )
+from content_sync.pipelines.definitions.concourse.remove_unpublished_sites import (
+    UnpublishedSiteRemovalPipelineDefinition,
+)
+from content_sync.pipelines.definitions.concourse.s3_bucket_sync_pipeline import (
+    S3BucketSyncPipelineDefinition,
+)
+from content_sync.pipelines.definitions.concourse.theme_assets_pipeline import (
+    ThemeAssetsPipelineDefinition,
+)
 from content_sync.test_constants import (
     EVEN_TAGS_TEST_FILE,
     EXPECTED_REMAINING_STRING_DEV,
@@ -34,7 +43,6 @@ from content_sync.utils import (
     get_hugo_arg_string,
     get_ocw_studio_api_url,
     get_publishable_sites,
-    get_s3_endpoint_url,
     get_site_content_branch,
     is_extra_theme,
     move_s3_object,
@@ -432,14 +440,34 @@ def test_is_extra_theme(settings, theme_slug, extra_themes, expected):
     assert is_extra_theme(theme_slug) == expected
 
 
-def test_no_compose_addresses_when_configured(settings, mocker):
-    """No accessor should emit a docker-compose address once configured.
+def _compose_address_excerpts(rendered, context=40):
+    """Return short excerpts around each compose address in a rendered pipeline.
+
+    Rendered pipelines are a single JSON line, so reporting the matching line
+    means dumping the whole definition into the failure output.
+    """
+    excerpts = []
+    start = 0
+    while (found := rendered.find("10.1.0.", start)) != -1:
+        excerpts.append(
+            rendered[max(0, found - context) : found + context].replace("\n", " ")
+        )
+        start = found + 1
+    return excerpts
+
+
+def test_no_compose_addresses_in_rendered_pipelines(settings, mocker):
+    """No pipeline definition should render a docker-compose address.
 
     Every hardcoded 10.1.0.x in this codebase is a docker-compose network IP
-    that exists only in that setup. They are reachable through exactly these
-    accessors, each with a settings override. This asserts the overrides
-    actually win, so a new pipeline cannot quietly reintroduce one and hang
-    against an address that never answers.
+    that exists only in that setup, so a pipeline that embeds one hangs against
+    an address that never answers. Asserting on the rendered definitions rather
+    than on the accessors is what makes this a guard: it fails for a pipeline
+    that bypasses the accessors, or that resolves an endpoint at import time
+    and so never sees the configured value.
+
+    SitePipelineDefinition is covered in its own test, where the config object
+    it needs is already built.
     """
     mocker.patch("content_sync.utils.is_dev", return_value=True)
     settings.AWS_S3_ENDPOINT_URL = "http://objectstore.test:9000"
@@ -448,11 +476,45 @@ def test_no_compose_addresses_when_configured(settings, mocker):
     settings.STATIC_API_BASE_URL_LIVE = "https://live.test"
     settings.STATIC_API_BASE_URL_TEST = "https://test.test"
 
-    emitted = [
-        get_s3_endpoint_url(),
-        get_cli_endpoint_url(),
-        get_ocw_studio_api_url(),
-        *(str(v) for v in get_common_pipeline_vars().values()),
-    ]
-    offenders = [value for value in emitted if "10.1.0." in (value or "")]
-    assert offenders == [], f"compose addresses leaked through: {offenders}"
+    definitions = {
+        "theme_assets": ThemeAssetsPipelineDefinition(
+            artifacts_bucket="artifacts_bucket",
+            preview_bucket="preview_bucket",
+            publish_bucket="publish_bucket",
+            test_bucket="test_bucket",
+            ocw_hugo_themes_branch="main",
+        ),
+        "s3_bucket_sync": S3BucketSyncPipelineDefinition(
+            import_bucket="import_bucket",
+            storage_bucket="storage_bucket",
+        ),
+        "remove_unpublished_sites": UnpublishedSiteRemovalPipelineDefinition(),
+    }
+
+    offenders = {
+        name: _compose_address_excerpts(definition.json())
+        for name, definition in definitions.items()
+    }
+    offenders = {name: hits for name, hits in offenders.items() if hits}
+    assert offenders == {}, f"compose addresses leaked through: {offenders}"
+
+
+def test_configured_endpoint_reaches_rendered_pipelines(settings, mocker):
+    """The configured endpoint should appear in the pipelines that use it."""
+    mocker.patch("content_sync.utils.is_dev", return_value=True)
+    settings.AWS_S3_ENDPOINT_URL = "http://objectstore.test:9000"
+
+    theme_assets = ThemeAssetsPipelineDefinition(
+        artifacts_bucket="artifacts_bucket",
+        preview_bucket="preview_bucket",
+        publish_bucket="publish_bucket",
+        test_bucket="test_bucket",
+        ocw_hugo_themes_branch="main",
+    )
+    bucket_sync = S3BucketSyncPipelineDefinition(
+        import_bucket="import_bucket",
+        storage_bucket="storage_bucket",
+    )
+
+    assert "objectstore.test:9000" in theme_assets.json()
+    assert "objectstore.test:9000" in bucket_sync.json()
