@@ -48,8 +48,6 @@ from content_sync.utils import (
 )
 from main.utils import is_dev
 
-CLI_ENDPOINT_URL = get_cli_endpoint_url()
-
 
 class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
     """
