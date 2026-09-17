@@ -251,8 +251,19 @@ export const MinimalWithSubSupEditorConfig = {
     SubscriptPlugin,
     SuperscriptPlugin,
     MarkdownListSyntax,
-    Markdown,
+    /**
+     * Must stay above `Markdown`. Syntax plugins publish their showdown
+     * extension and turndown rules from their own constructor, and `Markdown`
+     * reads that config in its constructor to build the data processor, so a
+     * syntax plugin listed later contributes nothing: `{{< sub 2 >}}` is never
+     * upcast to a shortcode widget on load and turndown escapes the delimiter
+     * on save, leaving `{{\< sub 2 >}}` for Hugo to render literally.
+     *
+     * `MinimalEditorConfig` and `MinimalWithMathEditorConfig` still have these
+     * two the wrong way round; fixing those changes what existing fields save.
+     */
     LegacyShortcodes,
+    Markdown,
   ],
   toolbar: {
     items: [

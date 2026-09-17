@@ -7,7 +7,11 @@ import {
   MinimalWithMathEditorConfig,
   MinimalWithSubSupEditorConfig,
 } from "./CKEditor"
-import { RESOURCE_LINK_CONFIG_KEY, WEBSITE_NAME } from "./plugins/constants"
+import {
+  MARKDOWN_CONFIG_KEY,
+  RESOURCE_LINK_CONFIG_KEY,
+  WEBSITE_NAME,
+} from "./plugins/constants"
 
 /**
  * Characterization tests. These boot each real editor config so that a plugin
@@ -126,4 +130,64 @@ describe.each(CONFIGS)("%s", (_name, config, expectedWarnings) => {
 
     await editor.destroy()
   })
+})
+
+/**
+ * A syntax plugin only reaches the data processor if it is constructed before
+ * `Markdown`: it publishes its showdown extension and turndown rules from its
+ * constructor, and `Markdown` reads that config in its own constructor.
+ * CKEditor constructs plugins in the order the `plugins` array lists them, so
+ * the array order silently decides whether legacy shortcodes survive a round
+ * trip. Nothing warns when they do not -- the editor boots clean and the
+ * corruption only shows up in saved Markdown -- so assert the behaviour here.
+ */
+describe("MinimalWithSubSupEditorConfig round trips its own syntax", () => {
+  /**
+   * `sub`/`sup` only survive turndown via keep(allowedHtml), so a field using
+   * this variant is expected to set `allowed_html: ["sub", "sup"]`. Spread
+   * rather than inlined, because these OCW keys are not on `EditorConfig`.
+   */
+  const SUBSUP_MARKDOWN_CONFIG = {
+    [MARKDOWN_CONFIG_KEY]: { allowedHtml: ["sub", "sup"] },
+  }
+
+  const createSubSupEditor = () =>
+    ClassicEditor.create("", {
+      ...MinimalWithSubSupEditorConfig,
+      ...REQUIRED_CONFIG,
+      ...SUBSUP_MARKDOWN_CONFIG,
+    })
+
+  it.each([
+    ["subscript markup", "Water H<sub>2</sub>O"],
+    ["superscript markup", "x<sup>2</sup>"],
+  ])("preserves %s", async (_label, markdown) => {
+    const editor = await createSubSupEditor()
+    editor.setData(markdown)
+    expect(editor.getData().trim()).toEqual(markdown)
+    await editor.destroy()
+  })
+
+  /**
+   * Hugo only recognises the `{{<` delimiter unescaped. Params come back
+   * quoted, which is how `FullEditorConfig` has always re-emitted them, so the
+   * assertion pins the delimiter rather than the exact input string.
+   */
+  it.each([
+    ["sub", "Water H{{< sub 2 >}}O", 'Water H{{< sub "2" >}}O'],
+    ["sup", "x{{< sup 2 >}}", 'x{{< sup "2" >}}'],
+    [
+      "resource_file",
+      "{{< resource_file uuid-1234 >}}",
+      '{{< resource_file "uuid-1234" >}}',
+    ],
+  ])(
+    "keeps the %s shortcode delimiter intact",
+    async (_label, markdown, expected) => {
+      const editor = await createSubSupEditor()
+      editor.setData(markdown)
+      expect(editor.getData().trim()).toEqual(expected)
+      await editor.destroy()
+    },
+  )
 })
