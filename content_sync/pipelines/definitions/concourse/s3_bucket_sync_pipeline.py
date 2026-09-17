@@ -16,8 +16,6 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 from content_sync.utils import get_cli_endpoint_url
 from main.utils import is_dev
 
-CLI_ENDPOINT_URL = get_cli_endpoint_url()
-
 s3_sync_timer_identifier = Identifier("s3-sync-timer").root
 s3_sync_task_identifier = Identifier("s3-sync-task").root
 s3_sync_job_identifier = Identifier("s3-bucket-sync-job").root
@@ -64,7 +62,8 @@ class S3BucketSyncPipelineDefinition(Pipeline):
         )
 
         # AWS S3 sync task
-        sync_commands = f"""aws s3{CLI_ENDPOINT_URL} sync s3://{import_bucket}/ s3://{storage_bucket}/"""
+        cli_endpoint_url = get_cli_endpoint_url()
+        sync_commands = f"""aws s3{cli_endpoint_url} sync s3://{import_bucket}/ s3://{storage_bucket}/"""
 
         s3_sync_task = TaskStep(
             task=s3_sync_task_identifier,
