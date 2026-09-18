@@ -443,6 +443,48 @@ AWS_QUERYSTRING_AUTH = get_bool(
     default=False,
     description="Enables querystring auth for S3 urls",
 )
+# `or None` so a blank value behaves like an unset one. django-storages reads
+# this setting directly and passes it to boto3, which rejects an empty string
+# with "Invalid endpoint:" rather than falling back to AWS.
+AWS_S3_ENDPOINT_URL = (
+    get_string(
+        name="AWS_S3_ENDPOINT_URL",
+        default=None,
+        description=(
+            "S3 API endpoint to use instead of AWS, for local S3 emulation "
+            "(Minio, RustFS). Also read by django-storages for the default "
+            "file storage backend."
+        ),
+    )
+    or None
+)
+OCW_STUDIO_PIPELINE_API_URL = get_string(
+    name="OCW_STUDIO_PIPELINE_API_URL",
+    default=None,
+    description=(
+        "Base URL for this app as a Concourse task container reaches it, for "
+        "local setups where neither SITE_BASE_URL nor the docker-compose "
+        "address resolves from inside a pipeline task."
+    ),
+)
+AWS_S3_CUSTOM_DOMAIN = get_string(
+    name="AWS_S3_CUSTOM_DOMAIN",
+    default=None,
+    description=(
+        "Host (optionally with a path prefix) that django-storages builds "
+        "media URLs from. Needed when the S3 API endpoint is only reachable "
+        "from inside the cluster but the browser needs a different address."
+    ),
+)
+AWS_S3_URL_PROTOCOL = get_string(
+    name="AWS_S3_URL_PROTOCOL",
+    default="https:",
+    description=(
+        "URL scheme django-storages prefixes media URLs with when "
+        "AWS_S3_CUSTOM_DOMAIN is set. Include the trailing colon, e.g. "
+        "'http:' for a local endpoint that does not serve TLS."
+    ),
+)
 AWS_DEFAULT_ACL = "public-read"
 AWS_ACCOUNT_ID = get_string(name="AWS_ACCOUNT_ID", description="AWS Account ID")
 AWS_REGION = get_string(

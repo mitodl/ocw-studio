@@ -1382,3 +1382,45 @@ def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
     assert not re.search(adjacent_vars_pattern, offline_command), (
         f"Adjacent vars with slashes would cause double slashes: {offline_command}"
     )
+
+
+def test_no_compose_addresses_when_endpoints_configured(
+    website, settings, mocker, root_website
+):
+    """
+    A configured endpoint should reach the rendered site pipeline, leaving no
+    docker-compose address behind. Those addresses exist only in the compose
+    network, so one embedded here hangs against an address that never answers.
+    """
+    settings.AWS_ACCESS_KEY_ID = "test_access_key_id"
+    settings.AWS_SECRET_ACCESS_KEY = "test_secret_access_key"  # noqa: S105
+    settings.AWS_S3_ENDPOINT_URL = "http://objectstore.test:9000"
+    settings.OCW_STUDIO_PIPELINE_API_URL = "https://studio.test"
+
+    for target in (
+        "content_sync.utils.is_dev",
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        "main.utils.is_dev",
+    ):
+        mocker.patch(target, return_value=True)
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name="test",
+        instance_vars="",
+        site_content_branch="main",
+        static_api_url="https://test.example.com/",
+        storage_bucket="test-storage",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline-bucket",
+        resource_base_url="https://test.example.com/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+    )
+    rendered = SitePipelineDefinition(config=config).json(by_alias=True)
+
+    offenders = [line for line in rendered.splitlines() if "10.1.0." in line]
+    assert offenders == [], f"compose addresses leaked through: {offenders}"
+    assert "objectstore.test:9000" in rendered
+    assert "studio.test" in rendered
