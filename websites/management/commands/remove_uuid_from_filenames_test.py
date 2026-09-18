@@ -702,6 +702,206 @@ def test_dry_run_does_not_patch_video_metadata(tmp_path, mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
 
+def test_patches_gallery_markdown_href(mock_s3):
+    """Renaming a file also rewrites any image-gallery-item href that referenced it."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}',
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert (
+        gallery.markdown
+        == '{{< image-gallery-item href="photo.jpg" text="a caption" >}}'
+    )
+
+
+def test_does_not_patch_gallery_for_skipped_collision(mock_s3):
+    """A collision-skipped rename must not rewrite the gallery href either."""
+    website = WebsiteFactory.create()
+    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    # Two sources collide on the same target -- both get skipped.
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        file=f"sites/{website.name}/{uuid_b}_photo.jpg",
+    )
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery = WebsiteContentFactory.create(website=website, markdown=original_markdown)
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == original_markdown
+
+
+def test_dry_run_reports_gallery_patch_count(tmp_path, mock_s3):
+    """Dry-run summary includes the number of gallery pages that would be patched."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}',
+    )
+
+    stdout = StringIO()
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=stdout,
+    )
+
+    output = stdout.getvalue()
+    assert "1 gallery pages would be patched" in output
+
+
+def test_dry_run_does_not_patch_gallery_markdown(tmp_path, mock_s3):
+    """With --dry-run, gallery markdown is not modified."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery = WebsiteContentFactory.create(website=website, markdown=original_markdown)
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == original_markdown
+
+
+def test_gallery_patch_isolated_by_website_via_command(mock_s3):
+    """A rename in one website must not touch a byte-identical href in another website.
+
+    Regression test for the command-integrated _PlannedGalleryHrefRule path,
+    not just the standalone GalleryImageRenameRule (which already has
+    equivalent coverage).
+    """
+    website_a = WebsiteFactory.create()
+    website_b = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website_a, file=f"sites/{website_a.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
+    gallery_a = WebsiteContentFactory.create(
+        website=website_a, markdown=original_markdown
+    )
+    gallery_b = WebsiteContentFactory.create(
+        website=website_b, markdown=original_markdown
+    )
+
+    call_command("remove_uuid_from_filenames")
+
+    gallery_a.refresh_from_db()
+    gallery_b.refresh_from_db()
+    assert (
+        gallery_a.markdown
+        == '{{< image-gallery-item href="photo.jpg" text="a caption" >}}'
+    )
+    assert gallery_b.markdown == original_markdown
+
+
+def test_patches_multiple_gallery_items_in_one_body(mock_s3):
+    """A single markdown body referencing two different renamed files gets both hrefs updated."""
+    website = WebsiteFactory.create()
+    uuid_b = "cb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_a.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{uuid_b}_b.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_PREFIX}_a.jpg" text="first" >}}}}\n'
+            f'{{{{< image-gallery-item href="{uuid_b}_b.jpg" text="second" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        '{{< image-gallery-item href="a.jpg" text="first" >}}\n'
+        '{{< image-gallery-item href="b.jpg" text="second" >}}'
+    )
+
+
+def test_gallery_scan_survives_malformed_shortcode_elsewhere(mock_s3):
+    """A malformed shortcode on one page must not prevent gallery patching on other pages."""
+    website = WebsiteFactory.create()
+    uuid_b = "db3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_good.jpg"
+    )
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{uuid_b}_bad.jpg"
+    )
+    good_markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_good.jpg" text="fine" >}}}}'
+    )
+    good_gallery = WebsiteContentFactory.create(website=website, markdown=good_markdown)
+    # Unquoted nested shortcode -- raises ValueError("... nesting ...") during parsing.
+    malformed_markdown = (
+        f'{{{{< image-gallery-item href="{uuid_b}_bad.jpg" '
+        '{{< sup 4 >}} text="broken" >}}'
+    )
+    bad_gallery = WebsiteContentFactory.create(
+        website=website, markdown=malformed_markdown
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    good_gallery.refresh_from_db()
+    bad_gallery.refresh_from_db()
+    assert (
+        good_gallery.markdown
+        == '{{< image-gallery-item href="good.jpg" text="fine" >}}'
+    )
+    assert bad_gallery.markdown == malformed_markdown
+
+
+def test_dry_run_writes_csv_even_if_gallery_scan_fails(tmp_path, mock_s3):
+    """A malformed shortcode must not prevent the dry-run CSV rename plan from being written."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    WebsiteContentFactory.create(website=website, file=old_key)
+    malformed_markdown = (
+        f'{{{{< image-gallery-item href="{UUID_PREFIX}_doc.pdf" '
+        '{{< sup 4 >}} text="broken" >}}'
+    )
+    WebsiteContentFactory.create(website=website, markdown=malformed_markdown)
+    output_file = tmp_path / "plan.csv"
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+
+    assert output_file.exists()
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["old_key"] == old_key
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for _collect_metadata_patches
 # ---------------------------------------------------------------------------
@@ -835,3 +1035,314 @@ def test_collect_metadata_patches_scoped_to_website_uuids():
     patches = _collect_metadata_patches({str(website_a.uuid)})
 
     assert patches == []
+
+
+def test_gallery_uuid_param_resolves_href_that_basename_matching_would_miss(mock_s3):
+    """The uuid param names the renamed resource, so a stale href is still corrected."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_actual.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="{UUID_PREFIX}_stale.jpg" text="a caption" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        'href="actual.jpg" text="a caption" >}}'
+    )
+
+
+def test_gallery_uuid_param_is_preserved_alongside_rewritten_href(mock_s3):
+    """The uuid image_gallery_item_uuid added survives the href rewrite."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="{UUID_PREFIX}_photo.jpg" data-ngdesc="A rock" text="cap" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        'href="photo.jpg" data-ngdesc="A rock" text="cap" >}}'
+    )
+
+
+def test_gallery_path_valued_href_keeps_its_path(mock_s3):
+    """A path-valued gallery href is repaired without losing its directory."""
+    website = WebsiteFactory.create()
+    image_uuid = "ab3d0299-52cd-a060-f4af-cd811189a591"  # pragma: allowlist secret
+    WebsiteContentFactory.create(
+        website=website,
+        text_id=image_uuid,
+        file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg",
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image_uuid}" '
+            f'href="/courses/{website.name}/{UUID_PREFIX}_photo.jpg" text="cap" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        f'{{{{< image-gallery-item uuid="{image_uuid}" '
+        f'href="/courses/{website.name}/photo.jpg" text="cap" >}}}}'
+    )
+
+
+def test_gallery_scan_clears_bookkeeping_for_malformed_pages(mocker, mock_s3):
+    """A page that fails to parse must not leave match bookkeeping behind."""
+    from websites.management.commands import (  # noqa: PLC0415
+        remove_uuid_from_filenames as command_module,
+    )
+    from websites.management.commands.remove_uuid_from_filenames import (  # noqa: PLC0415
+        _collect_gallery_patches,
+        _collect_renames,
+    )
+
+    cleaners = []
+    real_cleaner = command_module.WebsiteContentMarkdownCleaner
+
+    def capture(rule):
+        instance = real_cleaner(rule)
+        cleaners.append(instance)
+        return instance
+
+    mocker.patch.object(
+        command_module, "WebsiteContentMarkdownCleaner", side_effect=capture
+    )
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_good.jpg"
+    )
+    # A valid item followed by an unquoted nested shortcode on the same page.
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_PREFIX}_good.jpg" text="ok" >}}}}\n'
+            '{{< image-gallery-item {{< sup 4 >}} text="broken" >}}'
+        ),
+    )
+
+    renames, _ = _collect_renames(
+        WebsiteContent.objects.filter(website=website)
+        .filter(file__isnull=False)
+        .exclude(file="")
+    )
+    # Must not raise, and must not leave the failed page's matches behind.
+    _collect_gallery_patches(renames)
+
+    assert cleaners, "expected the scan to build a cleaner"
+    assert cleaners[0].replacement_matches == []
+
+
+def test_gallery_patch_refreshes_content_sync_state(mock_s3):
+    """bulk_update skips post_save, so the sync state must be refreshed explicitly.
+
+    Without this the row keeps current_checksum == synced_checksum, which
+    upsert_content_files_for_user treats as already synced and excludes, so the
+    markdown fix never reaches git.
+    """
+    from content_sync.models import ContentSyncState  # noqa: PLC0415
+
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    )
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="cap" >}}}}',
+    )
+    # Put the row in the "already synced" state the exclusion filter looks for.
+    state = ContentSyncState.objects.get(content=gallery)
+    state.synced_checksum = state.current_checksum
+    state.save()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    state.refresh_from_db()
+    assert 'href="photo.jpg"' in gallery.markdown
+    assert state.current_checksum == gallery.calculate_checksum()
+    assert state.current_checksum != state.synced_checksum
+
+
+@pytest.fixture
+def mock_sync(mocker):
+    """Mock the backend sync task the command kicks off after a live run."""
+    return mocker.patch(
+        "websites.management.commands.remove_uuid_from_filenames.sync_website_content"
+    )
+
+
+def _website_with_rename():
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    return website
+
+
+def test_triggers_sync_after_a_live_run(settings, mock_s3, mock_sync):
+    """A live run that changed something pushes it to the configured backend."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_called_once_with(website.name)
+
+
+def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_sync):
+    """An untouched website must not be dragged into the push."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    renamed = _website_with_rename()
+    untouched = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=untouched, file=f"sites/{untouched.name}/plain.pdf"
+    )
+
+    call_command("remove_uuid_from_filenames")
+
+    synced = {call.args[0] for call in mock_sync.delay.call_args_list}
+    assert synced == {renamed.name}
+
+
+def test_skip_sync_suppresses_the_sync_task(settings, mock_s3, mock_sync):
+    """--skip-sync leaves the push to the operator."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name, skip_sync=True)
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
+    """A dry run changes nothing, so there is nothing to push."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
+    """With no backend configured there is nowhere to sync to."""
+    settings.CONTENT_SYNC_BACKEND = None
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
+    """A run with no renames must not kick off a global sync of unrelated sites."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/plain.pdf"
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    mock_sync.delay.assert_not_called()
+
+
+def test_sync_failure_is_reported_without_aborting(settings, mock_s3, mock_sync):
+    """A site that fails to sync must not abort a run whose renames already committed."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+    content = WebsiteContent.objects.get(website=website, file__contains=UUID_PREFIX)
+    mock_sync.delay.return_value.get.side_effect = OSError("github is unhappy")
+
+    stderr = StringIO()
+    call_command("remove_uuid_from_filenames", filter=website.name, stderr=stderr)
+
+    # The rename still stands, and the operator is told what still needs publishing.
+    content.refresh_from_db()
+    assert str(content.file) == f"sites/{website.name}/doc.pdf"
+    assert "did not sync" in stderr.getvalue()
+
+
+def test_sync_waits_with_a_timeout(settings, mock_s3, mock_sync):
+    """Blocking on a worker that never answers would hang the command forever."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    website = _website_with_rename()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    _, kwargs = mock_sync.delay.return_value.get.call_args
+    assert kwargs.get("timeout")
+
+
+def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock_sync):
+    """Each rename's sync state is committed with it, not deferred to the end."""
+    from content_sync.models import ContentSyncState  # noqa: PLC0415
+
+    settings.CONTENT_SYNC_BACKEND = None
+    website = WebsiteFactory.create()
+    content = WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    state = ContentSyncState.objects.get(content=content)
+    state.synced_checksum = state.current_checksum
+    state.save()
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    content.refresh_from_db()
+    state.refresh_from_db()
+    assert state.current_checksum == content.calculate_checksum()
+
+
+def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sync):
+    """get(timeout) does not stop the worker, so dispatching on would overlap syncs."""
+    from celery.exceptions import TimeoutError as CeleryTimeoutError  # noqa: PLC0415
+
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    first = _website_with_rename()
+    second = _website_with_rename()
+    mock_sync.delay.return_value.get.side_effect = CeleryTimeoutError("no answer")
+
+    stderr = StringIO()
+    call_command("remove_uuid_from_filenames", stderr=stderr)
+
+    # Only the first site is dispatched, and both are reported as unsynced.
+    assert mock_sync.delay.call_count == 1
+    message = stderr.getvalue()
+    assert "Timed out" in message
+    assert first.name in message or second.name in message
