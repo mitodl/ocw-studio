@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Version 0.200.1
+---------------
+
+- Add a minimal editor variant with sub/superscript (#3205)
+- fix: use official concourse/s3-resource so OCW workers speak IMDSv2 (#3206)
+- fix(sentry): cap request bodies at 1KB and scrub Postgres DETAIL rows (#3198)
+- Purge the MIT Learn Fastly distribution on live builds (#3199)
+
 Version 0.200.0
 ---------------
 
