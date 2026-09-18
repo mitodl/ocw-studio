@@ -53,12 +53,14 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     SiteContentGitResource,
     SlackAlertResource,
     WebpackManifestResource,
+    fastly_resource_types,
+    fastly_resources,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
-    ClearCdnCacheStep,
     OcwStudioWebhookStep,
     OpenCatalogWebhookStep,
     add_error_handling,
+    clear_cdn_cache_steps,
 )
 from content_sync.utils import (
     get_cli_endpoint_url,
@@ -379,6 +381,8 @@ class SitePipelineResources(list[Resource]):
             )
             resources.append(ocw_studio_webhook_resource)
         self.extend(resources)
+        if not is_dev():
+            self.extend(fastly_resources(config.pipeline_name))
         if not is_dev() and config.values["pipeline_name"] == "live":
             self.extend(
                 [OpenCatalogResource(url) for url in settings.OPEN_CATALOG_URLS]
@@ -553,7 +557,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
 
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
-        fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        fastly_purpose(str): The distribution being published to, e.g. "draft" or "live"
         pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
         destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
         filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
@@ -564,7 +568,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
     def __init__(  # noqa: PLR0913
         self,
         pipeline_vars: dict,
-        fastly_var: str,
+        fastly_purpose: str,
         pipeline_name: str,
         *,
         destructive_sync: bool = True,
@@ -700,20 +704,23 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             upload_online_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
             )
-        clear_cdn_cache_online_step = add_error_handling(
-            step=ClearCdnCacheStep(
+        clear_cdn_cache_online_steps = [
+            add_error_handling(
+                step=step,
+                step_description="clear cdn cache",
+                pipeline_name=pipeline_vars["pipeline_name"],
+                short_id=pipeline_vars["short_id"],
+                instance_vars=pipeline_vars["instance_vars"],
+                build_type="online",
+                theme_slug=pipeline_vars["theme_slug"],
+                skip_webhooks=skip_webhooks,
+            )
+            for step in clear_cdn_cache_steps(
                 name=CLEAR_CDN_CACHE_IDENTIFIER,
-                fastly_var=f"fastly_{fastly_var}",
+                purpose=fastly_purpose,
                 site_name=pipeline_vars["site_name"],
-            ),
-            step_description="clear cdn cache",
-            pipeline_name=pipeline_vars["pipeline_name"],
-            short_id=pipeline_vars["short_id"],
-            instance_vars=pipeline_vars["instance_vars"],
-            build_type="online",
-            theme_slug=pipeline_vars["theme_slug"],
-            skip_webhooks=skip_webhooks,
-        )
+            )
+        ]
         clear_cdn_cache_online_on_success_steps = []
         if not skip_search_index_update and pipeline_name == "live":
             clear_cdn_cache_online_on_success_steps.extend(
@@ -738,9 +745,11 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 skip=skip_webhooks,
             )
         )
-        clear_cdn_cache_online_step.on_success = TryStep(
-            try_=DoStep(do=clear_cdn_cache_online_on_success_steps)
-        )
+        if clear_cdn_cache_online_steps:
+            # Report success once, after every distribution has been purged
+            clear_cdn_cache_online_steps[-1].on_success = TryStep(
+                try_=DoStep(do=clear_cdn_cache_online_on_success_steps)
+            )
         self.extend(
             [
                 static_resources_task_step,
@@ -749,7 +758,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             ]
         )
         if not is_dev() and not skip_cache_clear:
-            self.append(clear_cdn_cache_online_step)
+            self.extend(clear_cdn_cache_online_steps)
 
 
 class SitePipelineOfflineTasks(list[StepModifierMixin]):
@@ -758,14 +767,14 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
 
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
-        fastly_var(str): A string to append to fastly_ and form a var name where Fastly connection info is stored
+        fastly_purpose(str): The distribution being published to, e.g. "draft" or "live"
         pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
-    """  # noqa: E501
+    """
 
     def __init__(
         self,
         pipeline_vars: dict,
-        fastly_var: str,
+        fastly_purpose: str,
         pipeline_name: str,
         *,
         skip_webhooks: bool = False,
@@ -928,20 +937,23 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             upload_offline_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY
             )
-        clear_cdn_cache_offline_step = add_error_handling(
-            ClearCdnCacheStep(
+        clear_cdn_cache_offline_steps = [
+            add_error_handling(
+                step,
+                step_description="clear cdn cache",
+                pipeline_name=pipeline_vars["pipeline_name"],
+                short_id=pipeline_vars["short_id"],
+                instance_vars=pipeline_vars["instance_vars"],
+                build_type="offline",
+                theme_slug=pipeline_vars["theme_slug"],
+                skip_webhooks=skip_webhooks,
+            )
+            for step in clear_cdn_cache_steps(
                 name=CLEAR_CDN_CACHE_IDENTIFIER,
-                fastly_var=f"fastly_{fastly_var}",
+                purpose=fastly_purpose,
                 site_name=pipeline_vars["site_name"],
-            ),
-            step_description="clear cdn cache",
-            pipeline_name=pipeline_vars["pipeline_name"],
-            short_id=pipeline_vars["short_id"],
-            instance_vars=pipeline_vars["instance_vars"],
-            build_type="offline",
-            theme_slug=pipeline_vars["theme_slug"],
-            skip_webhooks=skip_webhooks,
-        )
+            )
+        ]
         clear_cdn_cache_offline_on_success_steps = []
 
         if pipeline_name == "live":
@@ -965,9 +977,11 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                 skip=skip_webhooks,
             )
         )
-        clear_cdn_cache_offline_step.on_success = TryStep(
-            try_=DoStep(do=clear_cdn_cache_offline_on_success_steps)
-        )
+        if clear_cdn_cache_offline_steps:
+            # Report success once, after every distribution has been purged
+            clear_cdn_cache_offline_steps[-1].on_success = TryStep(
+                try_=DoStep(do=clear_cdn_cache_offline_on_success_steps)
+            )
         self.extend(
             [
                 static_resources_task_step,
@@ -976,7 +990,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             ]
         )
         if not is_dev():
-            self.append(clear_cdn_cache_offline_step)
+            self.extend(clear_cdn_cache_offline_steps)
 
 
 class SitePipelineDefinition(Pipeline):
@@ -1000,6 +1014,7 @@ class SitePipelineDefinition(Pipeline):
         resource_types = SitePipelineResourceTypes()
         resource_types.append(KeyvalResourceType())
         resources = SitePipelineResources(config=config)
+        resource_types.extend(fastly_resource_types(resources))
         online_job = self.get_online_build_job(config=config)
 
         # Create the inner put step with error handlers
@@ -1198,7 +1213,7 @@ class SitePipelineDefinition(Pipeline):
         skip_cache_clear = is_test_site(config.site.name)
         online_tasks = SitePipelineOnlineTasks(
             pipeline_vars=config.vars,
-            fastly_var=config.pipeline_name,
+            fastly_purpose=config.pipeline_name,
             pipeline_name=config.pipeline_name,
             skip_cache_clear=skip_cache_clear,
             skip_webhooks=config.is_extra_theme,
@@ -1234,7 +1249,7 @@ class SitePipelineDefinition(Pipeline):
         steps.extend(
             SitePipelineOfflineTasks(
                 pipeline_vars=config.vars,
-                fastly_var=config.pipeline_name,
+                fastly_purpose=config.pipeline_name,
                 pipeline_name=config.pipeline_name,
                 skip_webhooks=config.is_extra_theme,
             )

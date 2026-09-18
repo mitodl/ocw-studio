@@ -14,7 +14,10 @@ from ol_concourse.lib.models.pipeline import (
     TaskConfig,
     TaskStep,
 )
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -31,11 +34,12 @@ from content_sync.pipelines.definitions.concourse.common.resource_types import (
 )
 from content_sync.pipelines.definitions.concourse.common.resources import (
     SlackAlertResource,
+    fastly_resources,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
-    ClearCdnCacheStep,
     OcwStudioWebhookCurlStep,
     SlackAlertStep,
+    clear_cdn_cache_steps,
 )
 from content_sync.utils import (
     get_cli_endpoint_url,
@@ -176,19 +180,26 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                     "AWS_SECRET_ACCESS_KEY": minio_root_password,
                 }
             )
-        clear_cdn_cache_step = ClearCdnCacheStep(
+        clear_cdn_cache_purge_steps = clear_cdn_cache_steps(
             name=self._clear_cdn_cache_task_identifier,
-            fastly_var=f"fastly_{VERSION_LIVE}",
+            purpose=VERSION_LIVE,
             site_name="((.:site.name))",
-            on_success=unpublish_succeeded_webhook_across_step,
             on_failure=unpublish_failed_webhook_across_step,
         )
+        if clear_cdn_cache_purge_steps:
+            # Report success once, after every distribution has been purged
+            clear_cdn_cache_purge_steps[
+                -1
+            ].on_success = unpublish_succeeded_webhook_across_step
         across_tasks = [
             empty_s3_bucket_across_task,
         ]
         if not is_dev():
             across_tasks.extend(search_index_removal_across_tasks)
-            across_tasks.append(clear_cdn_cache_step)
+            across_tasks.extend(clear_cdn_cache_purge_steps)
+            if clear_cdn_cache_purge_steps:
+                resource_types.append(fastly_resource_type())
+                resources.extend(fastly_resources(VERSION_LIVE))
         tasks = [
             TaskStep(
                 task=self._get_unpublished_sites_task_identifier,

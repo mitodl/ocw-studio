@@ -25,7 +25,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.200.0"
+VERSION = "0.200.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -963,6 +963,16 @@ CONCOURSE_HARD_PURGE = get_bool(
     name="CONCOURSE_HARD_PURGE",
     default=True,
     description="Perform a hard purge of the fastly cache",
+    required=False,
+)
+CONCOURSE_FASTLY_API_TOKEN_VAR = get_string(
+    name="CONCOURSE_FASTLY_API_TOKEN_VAR",
+    default="((fastly.api_token))",
+    description=(
+        "The Concourse var interpolated to obtain the Fastly API token used to purge "
+        "caches. Configurable so that renaming the credential, or the field within it, "
+        "does not require a code change."
+    ),
     required=False,
 )
 CONCOURSE_IS_PRIVATE_REPO = get_bool(

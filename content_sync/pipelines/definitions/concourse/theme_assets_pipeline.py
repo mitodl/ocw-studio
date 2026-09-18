@@ -12,9 +12,12 @@ from ol_concourse.lib.models.pipeline import (
     TaskConfig,
     TaskStep,
 )
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
 
-from content_sync.constants import DEV_ENDPOINT_URL
+from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
@@ -25,10 +28,11 @@ from content_sync.pipelines.definitions.concourse.common.image_resources import 
 from content_sync.pipelines.definitions.concourse.common.resources import (
     GitResource,
     SlackAlertResource,
+    fastly_resources,
 )
 from content_sync.pipelines.definitions.concourse.common.steps import (
-    ClearCdnCacheStep,
     SlackAlertStep,
+    clear_cdn_cache_steps,
 )
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
@@ -181,16 +185,23 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         if not is_dev():
             resource_types.append(slack_notification_resource())
             resources.append(self._slack_resource)
+            purge_resources = [
+                *fastly_resources(VERSION_DRAFT),
+                *fastly_resources(VERSION_LIVE),
+            ]
+            if purge_resources:
+                resource_types.append(fastly_resource_type())
+                resources.extend(purge_resources)
             tasks.extend(
                 [
-                    ClearCdnCacheStep(
+                    *clear_cdn_cache_steps(
                         name=self._clear_draft_cdn_cache_task_identifier,
-                        fastly_var="fastly_draft",
+                        purpose=VERSION_DRAFT,
                         site_name="ocw-hugo-themes",
                     ),
-                    ClearCdnCacheStep(
+                    *clear_cdn_cache_steps(
                         name=self._clear_live_cdn_cache_identifier,
-                        fastly_var="fastly_live",
+                        purpose=VERSION_LIVE,
                         site_name="ocw-hugo-themes",
                     ),
                 ]

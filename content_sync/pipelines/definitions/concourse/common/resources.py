@@ -1,12 +1,17 @@
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from django.conf import settings
-from ol_concourse.lib.models.pipeline import Identifier, Resource
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.models.pipeline import Identifier, Resource, ResourceType
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
+from ol_concourse.lib.resources import fastly_service
 
-from content_sync.constants import DEV_ENDPOINT_URL
+from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
+    FASTLY_RESOURCE_TYPE_IDENTIFIER,
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -14,6 +19,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_STUDIO_WEBHOOK_RESOURCE_TYPE_IDENTIFIER,
     S3_IAM_RESOURCE_TYPE_IDENTIFIER,
     SLACK_ALERT_RESOURCE_IDENTIFIER,
+    get_fastly_identifier,
     get_ocw_catalog_identifier,
 )
 from content_sync.utils import get_ocw_studio_api_url
@@ -180,6 +186,11 @@ class WebpackManifestResource(Resource):
             source={
                 "bucket": bucket,
                 "versioned_file": f"ocw-hugo-themes/{branch}/webpack.json",
+                # Opt into the AWS SDK default credential chain so the resource
+                # picks up the worker's EC2 instance profile over IMDSv2. Without
+                # this the official s3-resource uses anonymous credentials. The
+                # dev overrides below take precedence when they are set.
+                "enable_aws_creds_provider": True,
             },
             **kwargs,
         )
@@ -254,3 +265,101 @@ class SiteContentGitResource(GitResource):
             private_key=private_key,
             **kwargs,
         )
+
+
+# The MIT Learn distribution serves ocw-course-v3 content. Only live content reaches
+# it, so it is purged alongside the live distribution and no other.
+FASTLY_PURPOSE_LEARN = "learn"
+# The distribution the e2e test pipeline publishes to. That pipeline runs under
+# pipeline_name "live" but purges this distribution, which is why the MIT Learn purge
+# is keyed off the Fastly purpose rather than the pipeline name.
+FASTLY_PURPOSE_TEST = "test"
+
+
+def get_fastly_domain(purpose: str) -> str | None:
+    """
+    Get the domain served by the Fastly distribution for a given purpose.
+
+    The Fastly resource resolves the service ID from this domain at runtime, so no
+    service IDs need to be stored in Concourse.
+
+    Args:
+        purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
+
+    Returns:
+        str | None: The domain, or None if none is configured for this environment
+    """
+    if purpose == FASTLY_PURPOSE_LEARN:
+        return settings.COURSE_V3_CANONICAL_DOMAIN or None
+    base_url = {
+        VERSION_DRAFT: settings.OCW_STUDIO_DRAFT_URL,
+        VERSION_LIVE: settings.OCW_STUDIO_LIVE_URL,
+        FASTLY_PURPOSE_TEST: settings.STATIC_API_BASE_URL_TEST,
+    }.get(purpose)
+    if not base_url:
+        return None
+    return urlparse(base_url).netloc or None
+
+
+def get_fastly_purge_purposes(purpose: str) -> list[str]:
+    """
+    Get every distribution that a build for a given purpose must purge.
+
+    A distribution with no configured domain is omitted rather than raising, the same
+    way is_dev() omits cache clearing entirely. CI, for example, has no OCW Fastly
+    service at all.
+
+    This is the single source of truth for both the purge steps and the Fastly
+    resources a pipeline declares, so the two cannot drift apart.
+
+    Args:
+        purpose(str): The distribution being published to, e.g. "draft" or "live"
+
+    Returns:
+        list[str]: The distributions to purge, the given purpose first
+    """
+    purposes = [purpose]
+    if purpose == VERSION_LIVE:
+        purposes.append(FASTLY_PURPOSE_LEARN)
+    return [item for item in purposes if get_fastly_domain(item)]
+
+
+def fastly_resource_types(resources: list[Resource]) -> list[ResourceType]:
+    """
+    Get the ResourceType definitions required by any Fastly resources in a list.
+
+    Derived from the resources themselves so a pipeline can never declare the
+    resource type without the resources, or the resources without the type.
+
+    Args:
+        resources(list[Resource]): The resources a pipeline declares
+
+    Returns:
+        list[ResourceType]: The Fastly resource type, or empty if none is needed
+    """
+    if any(resource.type == FASTLY_RESOURCE_TYPE_IDENTIFIER for resource in resources):
+        return [fastly_resource_type()]
+    return []
+
+
+def fastly_resources(purpose: str) -> list[Resource]:
+    """
+    Build the Fastly resources a pipeline publishing to a given purpose must declare.
+
+    Args:
+        purpose(str): The distribution being published to, e.g. "draft" or "live"
+
+    Returns:
+        list[Resource]: One Fastly resource per distribution that will be purged
+    """
+    return [
+        fastly_service(
+            name=get_fastly_identifier(item),
+            api_token=settings.CONCOURSE_FASTLY_API_TOKEN_VAR,
+            domain=get_fastly_domain(item),
+            # Purge-only: never poll Fastly for VCL version changes. The library
+            # default of "1h" would have every site pipeline instance polling.
+            check_every="never",
+        )
+        for item in get_fastly_purge_purposes(purpose)
+    ]

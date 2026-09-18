@@ -7,6 +7,11 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
+    get_fastly_identifier,
+)
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_LEARN,
+    FASTLY_PURPOSE_TEST,
 )
 from content_sync.pipelines.definitions.concourse.e2e_test_site_pipeline import (
     EndToEndTestPipelineDefinition,
@@ -202,12 +207,19 @@ def test_generate_e2e_test_site_pipeline_definition(  # noqa: PLR0913, PLR0915, 
     cdn_cache_clear_steps = [
         step
         for step in across_step_build_steps
-        if step.get("task") == CLEAR_CDN_CACHE_IDENTIFIER
+        if (step.get("put") or "").startswith(CLEAR_CDN_CACHE_IDENTIFIER)
     ]
     if is_dev:
         assert len(cdn_cache_clear_steps) == 0
     else:
+        # This pipeline runs under pipeline_name "live" but publishes to the test
+        # distribution, so it must purge that one and never touch MIT Learn.
         assert len(cdn_cache_clear_steps) == 1
+        assert cdn_cache_clear_steps[0]["resource"] == get_fastly_identifier(
+            FASTLY_PURPOSE_TEST
+        )
+    learn_identifier = get_fastly_identifier(FASTLY_PURPOSE_LEARN)
+    assert learn_identifier not in json.dumps(rendered_definition)
     fetch_built_content_steps = [
         step
         for step in e2e_test_tasks

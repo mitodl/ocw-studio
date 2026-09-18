@@ -3,7 +3,10 @@ import os
 from urllib.parse import quote, urljoin
 
 import pytest
-from ol_concourse.lib.resource_types import slack_notification_resource
+from ol_concourse.lib.resource_types import (
+    fastly_resource_type,
+    slack_notification_resource,
+)
 
 from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
@@ -21,6 +24,10 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     STATIC_RESOURCES_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+    get_fastly_identifier,
+)
+from content_sync.pipelines.definitions.concourse.common.resources import (
+    FASTLY_PURPOSE_LEARN,
 )
 from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinition,
@@ -119,9 +126,43 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
         KEYVAL_RESOURCE_TYPE_IDENTIFIER,
         S3_IAM_RESOURCE_TYPE_IDENTIFIER,
         slack_notification_resource().name,
+        fastly_resource_type().name,
     ]
     for resource_type in rendered_definition["resource_types"]:
         assert resource_type["name"] in expected_resource_types
+
+    if not is_dev:
+        # A live mass build purges the live distribution and MIT Learn, which also serves
+        # this content. A draft mass build purges only the draft distribution.
+        expected_fastly_resources = (
+            [
+                get_fastly_identifier(VERSION_LIVE),
+                get_fastly_identifier(FASTLY_PURPOSE_LEARN),
+            ]
+            if version == VERSION_LIVE
+            else [get_fastly_identifier(VERSION_DRAFT)]
+        )
+        fastly_resource_names = [
+            resource["name"]
+            for resource in rendered_definition["resources"]
+            if resource["type"] == fastly_resource_type().name
+        ]
+        assert fastly_resource_names == expected_fastly_resources
+        for resource in rendered_definition["resources"]:
+            if resource["type"] == fastly_resource_type().name:
+                assert resource["check_every"] == "never"
+        purge_steps = [
+            step
+            for job in rendered_definition["jobs"]
+            for step in _iter_steps(job["plan"])
+            if step.get("resource") in expected_fastly_resources
+        ]
+        assert purge_steps
+        for purge_step in purge_steps:
+            # The surrogate key is an across var Concourse resolves at runtime, so it
+            # must survive into the put params verbatim
+            assert purge_step["params"]["surrogate_key"] == "((.:site.site_name))"
+            assert purge_step["no_get"] is True
 
     # Assert that the expected resources exist and have the expected properties
     resources = rendered_definition["resources"]
@@ -412,3 +453,15 @@ def test_mass_build_sites_definition_sync_with_delete(
     expected_trigger = not sync_with_delete
     assert webpack_trigger_step["trigger"] == expected_trigger
     assert projects_trigger_step["trigger"] == expected_trigger
+
+
+def _iter_steps(steps):
+    """Yield every step in a job plan, descending into across/do/try wrappers"""
+    for step in steps:
+        yield step
+        for key in ("do", "try"):
+            nested = step.get(key)
+            if isinstance(nested, list):
+                yield from _iter_steps(nested)
+            elif isinstance(nested, dict):
+                yield from _iter_steps([nested])
