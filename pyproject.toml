@@ -19,7 +19,7 @@ dependencies = [
     "django==5.2.17",
     "django-anymail[mailgun]==15.1",
     "django-bulk-update-or-create==0.3.0",
-    "django-guardian==3.3.3",
+    "django-guardian==3.4.1",
     "django-health-check[celery,redis]>=4.0.0",
     "django-hijack==3.7.8",
     "django-model-utils==5.0.0",
