@@ -22,7 +22,7 @@ from ol_concourse.lib.resource_types import (
     slack_notification_resource,
 )
 
-from content_sync.constants import DEV_ENDPOINT_URL, DEV_TEST_URL, VERSION_LIVE
+from content_sync.constants import DEV_TEST_URL, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
@@ -60,8 +60,6 @@ from content_sync.utils import (
 )
 from main.utils import is_dev
 from websites.models import Website
-
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 www_content_git_identifier = Identifier("www-content-git").root
 course_content_git_identifier = Identifier("course-content-git").root
