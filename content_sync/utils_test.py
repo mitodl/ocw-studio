@@ -518,3 +518,6 @@ def test_configured_endpoint_reaches_rendered_pipelines(settings, mocker):
 
     assert "objectstore.test:9000" in theme_assets.json()
     assert "objectstore.test:9000" in bucket_sync.json()
+
+    remove_unpublished = UnpublishedSiteRemovalPipelineDefinition()
+    assert "objectstore.test:9000" in remove_unpublished.json()
