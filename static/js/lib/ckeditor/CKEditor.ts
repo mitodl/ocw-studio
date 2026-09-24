@@ -176,7 +176,6 @@ export const MinimalEditorConfig = {
     ResourceLink,
     MarkdownListSyntax,
     Markdown,
-    ImageGallery,
     LegacyShortcodes,
   ],
   toolbar: {
@@ -215,7 +214,6 @@ export const MinimalWithMathEditorConfig = {
     MarkdownListSyntax,
     Mathematics,
     Markdown,
-    ImageGallery,
     LegacyShortcodes,
   ],
   toolbar: {
@@ -260,7 +258,6 @@ export const MinimalWithSubSupEditorConfig = {
     SubscriptPlugin,
     SuperscriptPlugin,
     MarkdownListSyntax,
-    ImageGallery,
     /**
      * Must stay above `Markdown`. Syntax plugins publish their showdown
      * extension and turndown rules from their own constructor, and `Markdown`
