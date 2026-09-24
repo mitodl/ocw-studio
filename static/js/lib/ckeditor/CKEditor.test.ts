@@ -191,3 +191,33 @@ describe("MinimalWithSubSupEditorConfig round trips its own syntax", () => {
     },
   )
 })
+
+/**
+ * Same plugin-order hazard as above: `ImageGallery` must be listed before
+ * `Markdown`, or a gallery is saved with escaped `{{\<` delimiters.
+ */
+describe("FullEditorConfig round trips an image gallery", () => {
+  it("reads a production-shaped gallery and writes back its canonical form", async () => {
+    const editor = await ClassicEditor.create("", {
+      ...FullEditorConfig,
+      ...REQUIRED_CONFIG,
+    })
+    editor.setData(
+      [
+        '{{< image-gallery id="3c45e491_nanogallery2" baseUrl="/courses/x/" >}}',
+        '{{< image-gallery-item uuid="aaa" >}}',
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{</ image-gallery >}}",
+      ].join("\n"),
+    )
+    expect(editor.getData().trim()).toEqual(
+      [
+        "{{< image-gallery >}}",
+        '{{< image-gallery-item uuid="aaa" >}}',
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+    )
+    await editor.destroy()
+  })
+})

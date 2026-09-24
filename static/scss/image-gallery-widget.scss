@@ -1,0 +1,57 @@
+.ck-editor {
+  .image-gallery-widget {
+    border: 1px solid $studio-gray;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .image-gallery-empty {
+    padding: 1rem 0;
+  }
+
+  .image-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .image-gallery-item {
+    border: 1px solid $form-control-gray;
+    border-radius: 0.25rem;
+    padding: 0.25rem;
+    background: white;
+    display: flex;
+    flex-direction: column;
+
+    img {
+      // CKEditor sets a min-width on images which breaks the grid.
+      min-width: initial !important;
+      max-width: 100% !important;
+      height: 100px;
+      object-fit: cover;
+    }
+  }
+
+  .image-gallery-item-controls {
+    display: flex;
+    align-items: center;
+
+    .drag-handle {
+      cursor: grab;
+    }
+  }
+
+  .image-gallery-item-missing {
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .image-gallery-item-title {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    margin-top: 0.25rem;
+  }
+}
