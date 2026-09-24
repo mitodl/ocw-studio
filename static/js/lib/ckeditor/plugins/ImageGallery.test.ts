@@ -40,6 +40,60 @@ describe("ImageGallery plugin", () => {
     )
   })
 
+  it("accepts id and baseUrl on the opening tag and drops them on save", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      [
+        '{{< image-gallery id="3c45e491-599e-24a6-2f95-5e1517238299_nanogallery2" baseUrl="/courses/21g-049-french-photography-spring-2017/" >}}',
+        '{{< image-gallery-item uuid="aaa" >}}',
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{</ image-gallery >}}",
+      ].join("\n"),
+      '<div class="image-gallery" data-uuids="aaa,bbb"></div>',
+      [
+        "{{< image-gallery >}}",
+        '{{< image-gallery-item uuid="aaa" >}}',
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+    )
+  })
+
+  it("keeps two galleries in one document separate", async () => {
+    const editor = await getEditor("")
+    markdownTest(
+      editor,
+      [
+        '{{< image-gallery id="first" >}}',
+        '{{< image-gallery-item uuid="aaa" >}}',
+        "{{< /image-gallery >}}",
+        "",
+        "Between the galleries.",
+        "",
+        '{{< image-gallery baseUrl="/courses/x/" >}}',
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+      [
+        '<div class="image-gallery" data-uuids="aaa"></div>',
+        "<p>Between the galleries.</p>",
+        '<div class="image-gallery" data-uuids="bbb"></div>',
+      ].join("\n"),
+      [
+        "{{< image-gallery >}}",
+        '{{< image-gallery-item uuid="aaa" >}}',
+        "{{< /image-gallery >}}",
+        "",
+        "Between the galleries.",
+        "",
+        "{{< image-gallery >}}",
+        '{{< image-gallery-item uuid="bbb" >}}',
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+    )
+  })
+
   it("keeps surrounding prose intact", async () => {
     const editor = await getEditor("")
     markdownTest(

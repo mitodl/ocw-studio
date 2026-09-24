@@ -33,9 +33,16 @@ const UUIDS = "uuids"
  *
  * Both `{{< /image-gallery >}}` and `{{</ image-gallery >}}` are accepted for
  * the closing tag, since both appear in the wild.
+ *
+ * The opening tag may carry params. Real OCW galleries have `id` and `baseUrl`,
+ * e.g. `{{< image-gallery id="..._nanogallery2" baseUrl="/courses/.../" >}}`.
+ * They are accepted so that the block still matches, then deliberately
+ * discarded: the editor always writes a bare opening tag back.
+ * Whitespace is required before any params so that `image-gallery-item` can
+ * never be mistaken for an opening tag.
  */
 const GALLERY_BLOCK_REGEX =
-  /\{\{<\s*image-gallery\s*>\}\}([\s\S]*?)\{\{<\s*\/\s*image-gallery\s*>\}\}/g
+  /\{\{<\s*image-gallery(?:\s[^>]*)?>\}\}([\s\S]*?)\{\{<\s*\/\s*image-gallery\s*>\}\}/g
 
 const GALLERY_ITEM_REGEX =
   /\{\{<\s*image-gallery-item\s+uuid="(?<uuid>[^"]*)"\s*\/?\s*>\}\}/g
