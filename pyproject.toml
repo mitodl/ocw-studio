@@ -12,19 +12,19 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4>=4.12.2,<5",
-    "boto3==1.43.78",
+    "boto3==1.43.89",
     "celery>=5.3.0,<6",
     "cryptography>=50,<51",
     "dj-database-url==3.1.2",
     "django==5.2.17",
-    "django-anymail[mailgun]==15.1",
+    "django-anymail[mailgun]==15.2",
     "django-bulk-update-or-create==0.3.0",
-    "django-guardian==3.3.3",
+    "django-guardian==3.4.1",
     "django-health-check[celery,redis]>=4.0.0",
     "django-hijack==3.7.8",
     "django-model-utils==5.0.0",
     "django-redis==6.0.0",
-    "django-removals~=1.4.0",
+    "django-removals~=1.5.0",
     "django-robots==7.0b0",
     "django-safedelete==1.4.1",
     "django-storages==1.14.6",
@@ -51,7 +51,7 @@ dependencies = [
     "opentelemetry-instrumentation-psycopg2>=0.52b0",
     "opentelemetry-instrumentation-redis>=0.52b0",
     "opentelemetry-instrumentation-requests>=0.52b0",
-    "ol-concourse>=0.17,<0.18",
+    "ol-concourse>=0.18,<0.19",
     "ol-concoursepy==0.0.41",
     "psycopg2>=2.9.6,<3",
     "pygithub==2.10.0",
@@ -255,6 +255,8 @@ env = [
     "DRIVE_SHARED_ID=",
     "DRIVE_SERVICE_ACCOUNT_CREDS=",
     "AWS_ENDPOINT_URL=",
+    "AWS_S3_ENDPOINT_URL=",
+    "OCW_STUDIO_PIPELINE_API_URL=",
 ]
 
 [tool.bumpversion]

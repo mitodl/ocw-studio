@@ -18,7 +18,13 @@ def get_boto3_options(extra_options=None):
         "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
         "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
     }
-    if settings.ENVIRONMENT == "dev":
+    # AWS_S3_ENDPOINT_URL wins wherever it is set. The hardcoded address below
+    # is the docker-compose Minio container's static IP, which only exists in
+    # that setup -- anywhere else (the k8s local-dev stack, say) needs to say
+    # where its own S3 endpoint is.
+    if settings.AWS_S3_ENDPOINT_URL:
+        options.update({"endpoint_url": settings.AWS_S3_ENDPOINT_URL})
+    elif settings.ENVIRONMENT == "dev":
         options.update({"endpoint_url": "http://10.1.0.100:9000"})
     if extra_options:
         options.update(extra_options)

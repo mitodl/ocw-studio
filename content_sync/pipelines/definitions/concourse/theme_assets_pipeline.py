@@ -17,7 +17,7 @@ from ol_concourse.lib.resource_types import (
     slack_notification_resource,
 )
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
@@ -34,10 +34,9 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     SlackAlertStep,
     clear_cdn_cache_steps,
 )
+from content_sync.utils import get_cli_endpoint_url
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
-
-CLI_ENDPOINT_URL = f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
 
 
 class ThemeAssetsPipelineDefinition(Pipeline):
@@ -85,6 +84,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
         **kwargs,
     ):
         base = super()
+        cli_endpoint_url = get_cli_endpoint_url()
         ocw_hugo_themes_resource = GitResource(
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
@@ -168,13 +168,13 @@ class ThemeAssetsPipelineDefinition(Pipeline):
                         args=[
                             "-exc",
                             f"""
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
-                            aws s3{CLI_ENDPOINT_URL} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/dist s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{preview_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{publish_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/static s3://{test_bucket} --recursive --metadata site-id=ocw-hugo-themes
+                            aws s3{cli_endpoint_url} cp {OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data/webpack.json s3://{artifacts_bucket}/ocw-hugo-themes/{ocw_hugo_themes_branch}/webpack.json --metadata site-id=ocw-hugo-themes
                             """,  # noqa: E501
                         ],
                     ),

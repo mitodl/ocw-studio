@@ -13,6 +13,7 @@ from content_sync.constants import (
     DEV_END,
     DEV_ENDPOINT_URL,
     DEV_LIVE_URL,
+    DEV_OCW_STUDIO_API_URL,
     DEV_START,
     DEV_TEST_URL,
     END_TAG_PREFIX,
@@ -149,14 +150,39 @@ def get_common_pipeline_vars():
     return pipeline_vars
 
 
+def get_s3_endpoint_url():
+    """Get the S3 endpoint pipelines should use, or None for real AWS.
+
+    AWS_S3_ENDPOINT_URL wins wherever it is set, in any environment. The
+    DEV_ENDPOINT_URL fallback is the docker-compose Minio container's static
+    IP, which only exists in that setup -- anywhere else running a local S3
+    emulator has to say where it is, or pipeline steps and resource checks
+    hang against an address that never answers.
+
+    Everything that needs the endpoint goes through here. It was previously
+    spelled out separately in four places, and fixing them one at a time meant
+    each pipeline failed in turn.
+    """
+    return settings.AWS_S3_ENDPOINT_URL or (DEV_ENDPOINT_URL if is_dev() else None)
+
+
 def get_cli_endpoint_url():
-    """Get the S3 endpoint-url, which points to Minio for local dev"""
-    return f" --endpoint-url {DEV_ENDPOINT_URL}" if is_dev() else ""
+    """Get the S3 endpoint-url flag for `aws` calls inside pipeline tasks."""
+    endpoint_url = get_s3_endpoint_url()
+    return f" --endpoint-url {endpoint_url}" if endpoint_url else ""
 
 
 def get_ocw_studio_api_url():
-    """Get the ocw-studio URL, which points to Docker for local dev"""
-    return "http://10.1.0.102:8043" if is_dev() else settings.SITE_BASE_URL
+    """Get the ocw-studio URL as a pipeline task container sees it.
+
+    Not SITE_BASE_URL in dev: under docker-compose that is a localhost URL,
+    which means the task container itself rather than the app. The fallback is
+    the compose nginx container's static IP; OCW_STUDIO_PIPELINE_API_URL is the
+    escape hatch for any other local setup, where neither address resolves.
+    """
+    if is_dev():
+        return settings.OCW_STUDIO_PIPELINE_API_URL or DEV_OCW_STUDIO_API_URL
+    return settings.SITE_BASE_URL
 
 
 def get_publishable_sites(version: str = "", *, is_offline: bool = False):

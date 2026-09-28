@@ -9,7 +9,7 @@ from ol_concourse.lib.resource_types import (
 )
 from ol_concourse.lib.resources import fastly_service
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     FASTLY_RESOURCE_TYPE_IDENTIFIER,
     HTTP_RESOURCE_TYPE_IDENTIFIER,
@@ -22,8 +22,7 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     get_fastly_identifier,
     get_ocw_catalog_identifier,
 )
-from content_sync.utils import get_ocw_studio_api_url
-from main.utils import is_dev
+from content_sync.utils import get_ocw_studio_api_url, get_s3_endpoint_url
 from websites.constants import OCW_HUGO_THEMES_GIT
 
 
@@ -194,10 +193,11 @@ class WebpackManifestResource(Resource):
             },
             **kwargs,
         )
-        if is_dev():
+        endpoint_url = get_s3_endpoint_url()
+        if endpoint_url:
             self.source.update(
                 {
-                    "endpoint": DEV_ENDPOINT_URL,
+                    "endpoint": endpoint_url,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
                     "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
                 }

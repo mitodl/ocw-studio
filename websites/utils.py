@@ -14,6 +14,13 @@ log = logging.getLogger(__name__)
 
 UUID_REGEX_STR = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
+# Legacy S3 filenames were prefixed with a bare 32-hex-char UUID (no dashes),
+# e.g. "ab3d029952cda060f4afcd811189a591_photo.jpg". Shared by
+# remove_uuid_from_filenames and the gallery_image_rename markdown_cleaning
+# rule, so it lives here rather than in either command module to avoid a
+# circular import between them.
+UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
+
 # Compiled regexes for parse_resource_uuid (moved to module scope for performance)
 _RESOURCE_LINK_AND_EMBED_REGEX = re.compile(
     rf"""
@@ -86,6 +93,26 @@ def query_field_is_empty(
         empty_q = Q(**{query_field: value})
         q = empty_q if q is None else q | empty_q
     return q
+
+
+def strip_uuid_prefix(path: str) -> str:
+    """
+    Strip a UUID prefix from the basename of a path value.
+
+    Handles values stored with or without a leading slash.
+    Returns the original value unchanged if no UUID prefix is found or if
+    stripping would leave an empty basename.
+    """
+    stripped = path.lstrip("/")
+    lead = path[: len(path) - len(stripped)]  # "" or "/"
+    prefix_path, _, basename = stripped.rpartition("/")
+    if not UUID_FILENAME_RE.match(basename):
+        return path
+    new_basename = basename[33:]  # 32 hex chars + 1 underscore
+    if not new_basename:
+        return path
+    new_path = f"{prefix_path}/{new_basename}" if prefix_path else new_basename
+    return f"{lead}{new_path}"
 
 
 def get_valid_base_filename(filename: str, content_type: str) -> str:
