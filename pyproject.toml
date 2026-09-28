@@ -26,7 +26,7 @@ dependencies = [
     "django-redis==6.0.0",
     "django-removals~=1.5.0",
     "django-robots==7.0b0",
-    "django-safedelete==1.4.1",
+    "django-safedelete==1.5.0",
     "django-storages==1.14.6",
     "django-webpack-loader==3.2.4",
     "djangorestframework==3.18.1",
