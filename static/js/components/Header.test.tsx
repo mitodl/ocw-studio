@@ -16,6 +16,10 @@ import { makeWebsiteDetail } from "../util/factories/websites"
 import { PublishStatus, SiteType, SITE_TYPE_LABELS } from "../constants"
 
 describe("Header without loaded website", () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   it("includes the site logo and mit logo", () => {
     const helper = new IntegrationTestHelper()
 
@@ -59,7 +63,6 @@ describe("Header without loaded website", () => {
     ) as HTMLInputElement
     expect(csrfInput).not.toBeNull()
     expect(submitSpy).toHaveBeenCalled()
-    submitSpy.mockRestore()
   })
 
   it("does not show username+logout for anonymous users", () => {

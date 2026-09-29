@@ -12,6 +12,10 @@ import App from "./App"
 const LOGIN_TEXT = "Login with MIT Keycloak"
 
 describe("Homepage", () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   it("does show Keycloak Login when the user is logged out", async () => {
     const helper = new IntegrationTestHelper()
     helper.patchInitialReduxState({ user: { user: null } })
@@ -35,7 +39,6 @@ describe("Homepage", () => {
     ) as HTMLInputElement
     expect(csrfInput).not.toBeNull()
     expect(submitSpy).toHaveBeenCalled()
-    submitSpy.mockRestore()
   })
 
   it("does NOT show Keycloak Login if user is already logged in", () => {
