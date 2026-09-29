@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event"
 import { IntegrationTestHelper, assertInstanceOf, wait } from "../testing_utils"
 import { makeWebsites, makeWebsiteListing } from "../util/factories/websites"
 import { siteApiDetailUrl, siteApiListingUrl } from "../lib/urls"
-import { redirectTo } from "../lib/navigation"
+import { postTo } from "../lib/navigation"
 
 import App from "../pages/App"
 
@@ -66,7 +66,7 @@ describe("Prompting for authentication", () => {
       const goToLogin = dom.queryByText(dialog, "Go to Login")
       assertInstanceOf(goToLogin, HTMLButtonElement)
       await act(() => user.click(goToLogin))
-      expect(redirectTo).toHaveBeenCalledWith("/auth/login/keycloak/")
+      expect(postTo).toHaveBeenCalledWith("/auth/login/keycloak/")
       result.unmount()
     },
   )
