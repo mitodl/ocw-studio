@@ -12,10 +12,6 @@ export function reloadPage(): void {
   window.location.reload()
 }
 
-export function redirectTo(url: string): void {
-  window.location.href = url
-}
-
 /**
  * Navigate to `url` with a POST form submission carrying the CSRF token, for
  * Django views that reject GET (e.g. login and logout).
