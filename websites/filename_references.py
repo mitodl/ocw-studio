@@ -1,7 +1,8 @@
 """Rewrite stored references to files renamed by remove_uuid_from_filenames."""
 
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any, Protocol
 
 # A legacy file name: 32 hex characters, an underscore, then the rest of the
 # name. "?" and "#" end it, so a query string or fragment is not read as part
@@ -83,3 +84,62 @@ def _resolve(lookup: PathLookup, directory: str, name: str) -> tuple[str, int] |
         if new_name is not None:
             return new_name, len(trimmed)
     return None
+
+
+class _RenameLike(Protocol):
+    old_key: str
+    new_key: str
+    website_id: str
+
+
+def build_path_lookup(
+    renames: Iterable[_RenameLike],
+    site_paths: Mapping[str, tuple[str | None, str | None]],
+) -> dict[tuple[str, str], str]:
+    """
+    Map (directory, old file name) to the new file name for every rename.
+
+    The directory is the old key's own, not the website's, because a few
+    duplicate site records store their files under another site's directory.
+    A reference can also use the published path, so when the directory is
+    the website's s3_path and its url_path differs, the url_path gets an
+    entry too. *site_paths* maps website id to (s3_path, url_path).
+    """
+    lookup = {}
+    for rename in renames:
+        old_directory, _, old_name = rename.old_key.strip("/").rpartition("/")
+        new_name = rename.new_key.rpartition("/")[2]
+        lookup[(old_directory, old_name)] = new_name
+        s3_path, url_path = site_paths.get(rename.website_id, (None, None))
+        s3_directory = (s3_path or "").strip("/")
+        url_directory = (url_path or "").strip("/")
+        if (
+            url_directory
+            and old_directory == s3_directory
+            and url_directory != s3_directory
+        ):
+            lookup[(url_directory, old_name)] = new_name
+    return lookup
+
+
+def rewrite_json_strings(value: Any, lookup: PathLookup) -> tuple[Any, bool]:
+    """
+    Rewrite file references in every string inside a JSON-shaped value.
+
+    Returns (value, changed). Keys are left alone. An unchanged value comes
+    back as the same object, so callers can skip it cheaply.
+    """
+    if isinstance(value, str):
+        rewritten = rewrite_file_references(value, lookup)
+        return rewritten, rewritten != value
+    if isinstance(value, dict):
+        items = {key: rewrite_json_strings(item, lookup) for key, item in value.items()}
+        if not any(changed for _, changed in items.values()):
+            return value, False
+        return {key: item for key, (item, _) in items.items()}, True
+    if isinstance(value, list):
+        items = [rewrite_json_strings(item, lookup) for item in value]
+        if not any(changed for _, changed in items):
+            return value, False
+        return [item for item, _ in items], True
+    return value, False
