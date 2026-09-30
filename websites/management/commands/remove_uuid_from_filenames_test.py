@@ -1,6 +1,7 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
 import csv
+import re
 from io import StringIO
 
 import pytest
@@ -1719,3 +1720,107 @@ def test_course_image_urls_follow_their_own_source(mock_s3):
         "course_thumbnail_image_url": f"/{directory}/th.jpg",
         "course_title": "Kept",
     }
+
+
+_COUNT_RE = re.compile(
+    r"(\d+) (files renamed with a suffix|content metadata records"
+    r"|pages with file links|site metadata records|gallery pages)"
+)
+
+
+def _counts(output):
+    """Return the per-location counts in a summary line, dry run or live."""
+    return {
+        label: int(number)
+        for number, label in _COUNT_RE.findall(output.replace("would be ", ""))
+    }
+
+
+def _reference_fixture():
+    """Build a contested trio referenced from every kind of location."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    WebsiteContent.objects.filter(pk=rows[2].pk).update(
+        metadata={"file": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    WebsiteContentFactory.create(
+        website=website, markdown=f"[doc](/{directory}/{UUID_B}_1.jpg)"
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=f'{{{{< image-gallery-item href="{UUID_A}_1.jpg" text="g" >}}}}',
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={"course_image_url": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    return website, directory, rows
+
+
+def test_dry_run_csv_marks_suffixed_rows(tmp_path, mock_s3):
+    """The plan says which rows got a suffix and why."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    output_file = tmp_path / "plan.csv"
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        by_pk = {row["pk"]: row for row in csv.DictReader(f)}
+    assert by_pk[str(rows[0].pk)]["suffixed"] == "no"
+    assert by_pk[str(rows[2].pk)]["suffixed"] == "yes"
+    assert by_pk[str(rows[2].pk)]["reason"] == "contested"
+    assert by_pk[str(rows[2].pk)]["new_key"] == f"{directory}/1-3.jpg"
+
+
+def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
+    """What the dry run promises is what the live run does."""
+    website, _, _ = _reference_fixture()
+    dry = StringIO()
+    live = StringIO()
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=dry,
+    )
+    call_command("remove_uuid_from_filenames", filter=website.name, stdout=live)
+
+    expected = {
+        "files renamed with a suffix": 2,
+        "content metadata records": 1,
+        "pages with file links": 1,
+        "site metadata records": 1,
+        "gallery pages": 1,
+    }
+    assert _counts(dry.getvalue()) == expected
+    assert _counts(live.getvalue()) == expected
+
+
+def test_dry_run_changes_no_references(tmp_path, mock_s3):
+    """No markdown, content metadata or site metadata changes in a dry run."""
+    website, _, _ = _reference_fixture()
+    before = list(
+        WebsiteContent.objects.order_by("pk").values_list("pk", "markdown", "metadata")
+    )
+    site_before = Website.objects.get(pk=website.pk).metadata
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+    )
+
+    after = list(
+        WebsiteContent.objects.order_by("pk").values_list("pk", "markdown", "metadata")
+    )
+    assert after == before
+    assert Website.objects.get(pk=website.pk).metadata == site_before
+    mock_s3.return_value.copy_object.assert_not_called()

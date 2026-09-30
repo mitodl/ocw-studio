@@ -686,7 +686,15 @@ def _commit_row(task, source_key, target, stderr):
     return True
 
 
-_CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
+_CSV_FIELDNAMES = [
+    "pk",
+    "website_id",
+    "website_name",
+    "old_key",
+    "new_key",
+    "suffixed",
+    "reason",
+]
 
 
 def _write_csv_rows(writer, renames, website_names):
@@ -700,8 +708,36 @@ def _write_csv_rows(writer, renames, website_names):
                 "website_name": website_names.get(task.website_id, ""),
                 "old_key": task.old_key,
                 "new_key": task.new_key,
+                "suffixed": "yes" if task.suffixed else "no",
+                "reason": task.reason,
             }
         )
+
+
+def _summary(renames, skipped, followups, *, dry_run, errors=0):
+    """Build one line of counts, worded for a dry run or a live run."""
+    suffixed = sum(1 for task in renames if task.suffixed)
+    shared = len(
+        {task.old_key.lstrip("/") for task in renames if _REASON_SHARED in task.reason}
+    )
+    would = "would be " if dry_run else ""
+    parts = [
+        f"{len(renames) - suffixed} files {would}renamed",
+        f"{suffixed} files {would}renamed with a suffix",
+        f"{shared} shared S3 objects",
+        f"{skipped} skipped",
+    ]
+    if not dry_run:
+        parts.append(f"{errors} errors")
+    links = sum(1 for patch in followups.markdown if patch.links)
+    galleries = sum(1 for patch in followups.markdown if patch.gallery)
+    parts += [
+        f"{len(followups.metadata)} content metadata records {would}patched",
+        f"{links} pages with file links {would}patched",
+        f"{len(followups.site_metadata)} site metadata records {would}patched",
+        f"{galleries} gallery pages {would}patched",
+    ]
+    return ", ".join(parts)
 
 
 class Command(WebsiteFilterCommand):
@@ -829,10 +865,8 @@ class Command(WebsiteFilterCommand):
                 )
             followups = _collect_followups(renames)
             self.stdout.write(
-                f"Dry run complete: {len(renames)} files would be renamed, "
-                f"{skipped_count} skipped, "
-                f"{len(followups.metadata)} content metadata records would be patched, "
-                f"{len(followups.markdown)} gallery pages would be patched. "
+                "Dry run complete: "
+                f"{_summary(renames, skipped_count, followups, dry_run=True)}. "
                 f"Plan written to {output_path}."
             )
             return
@@ -840,18 +874,19 @@ class Command(WebsiteFilterCommand):
         # --- Execution phase ---
         s3 = get_boto3_client("s3")
         result = _execute_renames(renames, s3, self.stdout, self.stderr)
-        actually_renamed_website_ids = {task.website_id for task in result.committed}
 
         followups = _apply_followups(result.committed)
 
-        self.stdout.write(
-            f"Done: {len(result.committed)} renamed, {skipped_count} skipped, "
-            f"{result.error_count} errors, "
-            f"{len(followups.metadata)} content metadata records patched, "
-            f"{len(followups.markdown)} gallery pages patched"
+        summary = _summary(
+            result.committed,
+            skipped_count,
+            followups,
+            dry_run=False,
+            errors=result.error_count,
         )
+        self.stdout.write(f"Done: {summary}")
 
         self._sync_backend(
             skip_sync=options["skip_sync"],
-            website_ids=actually_renamed_website_ids,
+            website_ids={task.website_id for task in result.committed},
         )
