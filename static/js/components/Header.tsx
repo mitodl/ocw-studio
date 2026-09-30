@@ -8,7 +8,7 @@ import { useSearchParams } from "../hooks/search"
 
 import PublishDrawer from "../components/PublishDrawer"
 
-import { getCookie } from "../lib/api/util"
+import { postTo } from "../lib/navigation"
 import { logoutUrl, sitesBaseUrl } from "../lib/urls"
 import { websiteStatusRequest } from "../query-configs/websites"
 import {
@@ -91,16 +91,7 @@ export default function Header(props: HeaderProps): JSX.Element {
               href={logoutUrl.toString()}
               onClick={(e) => {
                 e.preventDefault()
-                const form = document.createElement("form")
-                form.method = "post"
-                form.action = logoutUrl.toString()
-                const csrf = document.createElement("input")
-                csrf.type = "hidden"
-                csrf.name = "csrfmiddlewaretoken"
-                csrf.value = getCookie("csrftoken")
-                form.appendChild(csrf)
-                document.body.appendChild(form)
-                form.submit()
+                postTo(logoutUrl.toString())
               }}
             >
               Log out

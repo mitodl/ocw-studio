@@ -8,7 +8,6 @@ exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
 cryptography = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
-mitol-django-authentication = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 mitol-django-common = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 mitol-django-mail = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
 mitol-django-observability = { timestamp = "0001-01-01T00:00:00Z", span = "PT0S" }
@@ -770,35 +769,6 @@ wheels = [
 ]
 
 [[package]]
-name = "djangorestframework-simplejwt"
-version = "5.5.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "djangorestframework" },
-    { name = "pyjwt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/27/2874a325c11112066139769f7794afae238a07ce6adf96259f08fd37a9d7/djangorestframework_simplejwt-5.5.1.tar.gz", hash = "sha256:e72c5572f51d7803021288e2057afcbd03f17fe11d484096f40a460abc76e87f", size = 101265, upload-time = "2025-07-21T16:52:25.026Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/94/fdfb7b2f0b16cd3ed4d4171c55c1c07a2d1e3b106c5978c8ad0c15b4a48b/djangorestframework_simplejwt-5.5.1-py3-none-any.whl", hash = "sha256:2c30f3707053d384e9f315d11c2daccfcb548d4faa453111ca19a542b732e469", size = 107674, upload-time = "2025-07-21T16:52:07.493Z" },
-]
-
-[[package]]
-name = "djoser"
-version = "2.3.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "djangorestframework" },
-    { name = "djangorestframework-simplejwt" },
-    { name = "social-auth-app-django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/35/bc/8931752c12ddc987fc0c729e9b675e2f72e37ebd82f7ca31a10f287de045/djoser-2.3.3.tar.gz", hash = "sha256:6ceeea9898cbdd585f1daa1ee9d46270600c0401dcd2d1db6f7894782006f6a6", size = 35032, upload-time = "2025-07-13T14:36:03.38Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/b3/f51273281172ff233a8c16df916282d75502dbc6a06b9b5d01ed3039f8ed/djoser-2.3.3-py3-none-any.whl", hash = "sha256:b97d233b626c26ebccb09f5614420873ad78b8b1fb1459c76475b05319bae567", size = 71905, upload-time = "2025-07-13T14:36:02.385Z" },
-]
-
-[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1304,25 +1274,6 @@ wheels = [
 ]
 
 [[package]]
-name = "mitol-django-authentication"
-version = "2026.4.29"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "django-anymail" },
-    { name = "django-stubs" },
-    { name = "djangorestframework" },
-    { name = "djoser" },
-    { name = "mitol-django-common" },
-    { name = "mitol-django-mail" },
-    { name = "social-auth-app-django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/9d/14c5f7883a435d27bb3f629911e28babc3618db42644c1113de0f82f15b5/mitol_django_authentication-2026.4.29.tar.gz", hash = "sha256:ce2d5e4d9ca2fa524c7b748915ccfa8af19c7a2c02fdcc9a5ca1534206c53698", size = 6034, upload-time = "2026-04-29T19:56:16.736Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2d/4d/fd8c8549d2b363333d75f6259eb84ea16148901cd329abbdf5199d899d34/mitol_django_authentication-2026.4.29-py3-none-any.whl", hash = "sha256:95590074644f0772c10b2507d806afe398559ca86841a2a070736c945aeaedba", size = 10139, upload-time = "2026-04-29T19:56:15.873Z" },
-]
-
-[[package]]
 name = "mitol-django-common"
 version = "2026.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1497,7 +1448,6 @@ dependencies = [
     { name = "google-auth-oauthlib" },
     { name = "granian" },
     { name = "ipython" },
-    { name = "mitol-django-authentication" },
     { name = "mitol-django-common" },
     { name = "mitol-django-mail" },
     { name = "mitol-django-observability" },
@@ -1575,7 +1525,6 @@ requires-dist = [
     { name = "google-auth-oauthlib", specifier = ">=1.0.0,<2" },
     { name = "granian", specifier = ">=2.7.2" },
     { name = "ipython", specifier = ">=9.0.0,<10" },
-    { name = "mitol-django-authentication", specifier = "==2026.4.29,<2027" },
     { name = "mitol-django-common", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-mail", specifier = ">=2026.4.2,<2027" },
     { name = "mitol-django-observability", specifier = ">=2026.8.19,<2027" },
@@ -1598,8 +1547,8 @@ requires-dist = [
     { name = "requests", specifier = "==2.34.2" },
     { name = "sentry-sdk", specifier = "==2.69.1" },
     { name = "smart-open", extras = ["s3"], specifier = ">=7.0.0,<8" },
-    { name = "social-auth-app-django", specifier = "==5.9.0" },
-    { name = "social-auth-core", specifier = ">=4,<5" },
+    { name = "social-auth-app-django", specifier = "==6.0.1" },
+    { name = "social-auth-core", specifier = ">=5,<6" },
     { name = "tqdm", specifier = ">=4.65.0,<5" },
     { name = "yamale", specifier = "==6.1.0" },
 ]
@@ -2162,11 +2111,11 @@ wheels = [
 
 [[package]]
 name = "pyjwt"
-version = "2.12.1"
+version = "2.14.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c2/27/a3b6e5bf6ff856d2509292e95c8f57f0df7017cf5394921fc4e4ef40308a/pyjwt-2.12.1.tar.gz", hash = "sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b", size = 102564, upload-time = "2026-03-13T19:27:37.25Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/c3/8a3b59c25070cc61dc517fbdfa5dc0904670c96f605cc69759dc09166b99/pyjwt-2.14.0.tar.gz", hash = "sha256:77283c83fb56ecf566a886c757a714bc83668e38156de2cce8263302f42e0b86", size = 113177, upload-time = "2026-09-11T13:11:54.638Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/7a/8dd906bd22e79e47397a61742927f6747fe93242ef86645ee9092e610244/pyjwt-2.12.1-py3-none-any.whl", hash = "sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c", size = 29726, upload-time = "2026-03-13T19:27:35.677Z" },
+    { url = "https://files.pythonhosted.org/packages/9c/97/672cb32ce0dfea44b740cb7b4f97038463b9cf7c0ead1aacf595572851d6/pyjwt-2.14.0-py3-none-any.whl", hash = "sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc", size = 32896, upload-time = "2026-09-11T13:11:53.409Z" },
 ]
 
 [package.optional-dependencies]
@@ -2534,23 +2483,24 @@ s3 = [
 
 [[package]]
 name = "social-auth-app-django"
-version = "5.9.0"
+version = "6.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
     { name = "social-auth-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/62/f9/c761cf93cb0a102ddd59498ea560b398be6bd14b8d6a4c493cc011b4bb80/social_auth_app_django-5.9.0.tar.gz", hash = "sha256:5b79c53321f9528334d53ddb154452a3b7e598b7ff4c2c1302be9a76b1349e8d", size = 29751, upload-time = "2026-04-29T14:52:50.715Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/7a/5d3f1e4a90edaff35824864c233a3c6a291621cc9dd39c157431fbb6376d/social_auth_app_django-6.0.1.tar.gz", hash = "sha256:43002de0530e2ad13ef067f54aba7185a05fc8527310006c5328dc0b5e7a4cfd", size = 31664, upload-time = "2026-07-24T06:55:59.119Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/8c/5a06761549ea5e7e3c6e87d25ed2029ed5ba9ba39c493bc8a591548d6575/social_auth_app_django-5.9.0-py3-none-any.whl", hash = "sha256:80edf5c207d871f2225a0fc6bb414004c0342c30deb3a217eb38a63b66e749bb", size = 28568, upload-time = "2026-04-29T14:52:49.473Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/e9/c0b06b90b76d02b8e45d6989d0adb947df9b6d9b37d3c96e486f2de37bdb/social_auth_app_django-6.0.1-py3-none-any.whl", hash = "sha256:652ec21105ef58a34ffd223a02c338bc03e5f56d357ee69c33283afd08442065", size = 29481, upload-time = "2026-07-24T06:55:58.115Z" },
 ]
 
 [[package]]
 name = "social-auth-core"
-version = "4.8.5"
+version = "5.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "cryptography" },
     { name = "defusedxml" },
     { name = "oauthlib" },
     { name = "pyjwt", extra = ["crypto"] },
@@ -2558,9 +2508,9 @@ dependencies = [
     { name = "requests" },
     { name = "requests-oauthlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/bc/a3/87381698a6d671e07d17ef9b89cb30d02b2cb4a9470d530da245ec4e2bd2/social_auth_core-4.8.5.tar.gz", hash = "sha256:fd10d44bff681a128d127f665f203c496658d5bbfc993ad1b5bbaed589eab573", size = 244501, upload-time = "2026-02-10T09:06:16.902Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/ba/354ef233c637e072867e891425692c758f9599ae5f58dea734e73d635208/social_auth_core-5.1.1.tar.gz", hash = "sha256:a1763474d8bb7300effc7a934bbae74a8eb24d9c968e0d50fcddc8a38cc13a39", size = 284317, upload-time = "2026-09-18T12:27:00.487Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/7e/7c30fcf6ebcbef6163a5be0514f5cdc551d276cd03eae92b524f46c4eb2a/social_auth_core-4.8.5-py3-none-any.whl", hash = "sha256:2591c2ce71127ad410e7ca9581bd88658031fdf7b209e05be5920d0bcc1c005a", size = 447336, upload-time = "2026-02-10T09:06:18.399Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/42/35618713f6d556ac9b5aaf4da1930c0778f24bad7a9497e9afaecaf23d61/social_auth_core-5.1.1-py3-none-any.whl", hash = "sha256:fa320931bcfdb0d65f9d01c46f9fbf0c273b72184712ccb9ecdef8de71c75a24", size = 482408, upload-time = "2026-09-18T12:26:58.994Z" },
 ]
 
 [[package]]

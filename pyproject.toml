@@ -35,7 +35,6 @@ dependencies = [
     "google-auth>=2.11.0,<3",
     "google-auth-oauthlib>=1.0.0,<2",
     "ipython>=9.0.0,<10",
-    "mitol-django-authentication==2026.4.29,<2027",
     "mitol-django-common>=2026.4.2,<2027",
     "mitol-django-mail>=2026.4.2,<2027",
     "mitol-django-observability>=2026.8.19,<2027",
@@ -62,8 +61,8 @@ dependencies = [
     "requests==2.34.2",
     "sentry-sdk==2.69.1",
     "smart-open[s3]>=7.0.0,<8",
-    "social-auth-app-django==5.9.0",
-    "social-auth-core>=4,<5",
+    "social-auth-app-django==6.0.1",
+    "social-auth-core>=5,<6",
     "tqdm>=4.65.0,<5",
     "yamale==6.1.0",
     "posthog>=7.0.0,<8",
@@ -102,7 +101,6 @@ required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
 cryptography = "0d"
-mitol-django-authentication = "0d"
 mitol-django-common = "0d"
 mitol-django-mail = "0d"
 mitol-django-observability = "0d"

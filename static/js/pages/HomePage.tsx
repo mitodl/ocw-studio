@@ -1,5 +1,6 @@
 import React from "react"
 import { useAppSelector } from "../hooks/redux"
+import { postTo } from "../lib/navigation"
 import DocumentTitle, { formatTitle } from "../components/DocumentTitle"
 
 export default function HomePage(): JSX.Element | null {
@@ -11,7 +12,14 @@ export default function HomePage(): JSX.Element | null {
         <div className="home-page-background">
           {!user ? (
             <div className="text-center">
-              <a href="/auth/login/keycloak/" className="btn cyan-button login">
+              <a
+                href="/auth/login/keycloak/"
+                className="btn cyan-button login"
+                onClick={(e) => {
+                  e.preventDefault()
+                  postTo("/auth/login/keycloak/")
+                }}
+              >
                 Login with MIT Keycloak
               </a>
             </div>

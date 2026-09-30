@@ -155,7 +155,6 @@ INSTALLED_APPS = [
     "django_removals",
     # common apps, need to be after ocw-studio apps for template overridding
     "mitol.common.apps.CommonApp",
-    "mitol.authentication.apps.AuthenticationApp",
     "mitol.mail.apps.MailApp",
     "mitol.observability.apps.ObservabilityConfig",
     "health_check",

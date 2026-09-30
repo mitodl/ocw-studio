@@ -1,5 +1,6 @@
 import React from "react"
 import { screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import {
   IntegrationTestHelper,
   assertInstanceOf,
@@ -11,13 +12,33 @@ import App from "./App"
 const LOGIN_TEXT = "Login with MIT Keycloak"
 
 describe("Homepage", () => {
-  it("does show Keycloak Login when the user is logged out", () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it("does show Keycloak Login when the user is logged out", async () => {
     const helper = new IntegrationTestHelper()
     helper.patchInitialReduxState({ user: { user: null } })
     const [result] = helper.render(<App />)
     const link = result.getByText(LOGIN_TEXT)
     assertInstanceOf(link, HTMLAnchorElement)
     expect(link.href).toBe(absoluteUrl("/auth/login/keycloak/"))
+
+    const submitSpy = jest
+      .spyOn(HTMLFormElement.prototype, "submit")
+      .mockImplementation(jest.fn())
+    await userEvent.click(link)
+
+    const form = document.body.querySelector(
+      'form[action="/auth/login/keycloak/"]',
+    ) as HTMLFormElement
+    expect(form).not.toBeNull()
+    expect(form.method).toBe("post")
+    const csrfInput = form.querySelector(
+      'input[name="csrfmiddlewaretoken"]',
+    ) as HTMLInputElement
+    expect(csrfInput).not.toBeNull()
+    expect(submitSpy).toHaveBeenCalled()
   })
 
   it("does NOT show Keycloak Login if user is already logged in", () => {

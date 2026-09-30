@@ -1,3 +1,5 @@
+import { getCookie } from "./api/util"
+
 /**
  * Thin wrappers around `window.location` mutations.
  *
@@ -10,6 +12,19 @@ export function reloadPage(): void {
   window.location.reload()
 }
 
-export function redirectTo(url: string): void {
-  window.location.href = url
+/**
+ * Navigate to `url` with a POST form submission carrying the CSRF token, for
+ * Django views that reject GET (e.g. login and logout).
+ */
+export function postTo(url: string): void {
+  const form = document.createElement("form")
+  form.method = "post"
+  form.action = url
+  const csrf = document.createElement("input")
+  csrf.type = "hidden"
+  csrf.name = "csrfmiddlewaretoken"
+  csrf.value = getCookie("csrftoken")
+  form.appendChild(csrf)
+  document.body.appendChild(form)
+  form.submit()
 }

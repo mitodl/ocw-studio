@@ -124,3 +124,16 @@ def test_logout_requires_post(client):
     response = client.post(reverse("logout"))
     assert response.status_code == HTTP_302_FOUND
     assert SESSION_KEY not in client.session
+
+
+def test_keycloak_login_requires_post(settings, client):
+    """social-auth-app-django 6.x login views reject GET requests; POST is required."""
+    settings.SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = "https://kc.example.com/auth"
+    url = reverse("social:begin", args=["keycloak"])
+
+    response = client.get(url)
+    assert response.status_code == HTTP_405_METHOD_NOT_ALLOWED
+
+    response = client.post(url)
+    assert response.status_code == HTTP_302_FOUND
+    assert response.url.startswith("https://kc.example.com/auth?")
