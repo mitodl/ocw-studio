@@ -20,6 +20,43 @@ pytestmark = pytest.mark.django_db
 
 
 UUID_PREFIX = "ab3d029952cda060f4afcd811189a591"
+UUID_A = "aa3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+UUID_B = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+UUID_C = "cc3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
+
+
+def _files_in(*websites):
+    """Return the queryset handle() builds, limited to *websites*."""
+    return (
+        WebsiteContent.objects.filter(website__in=websites)
+        .filter(file__isnull=False)
+        .exclude(file="")
+    )
+
+
+def _contested_trio(website, name="1.jpg", directory=None):
+    """Three different files that all strip to *name*, created in pk order."""
+    directory = directory or f"sites/{website.name}"
+    rows = [
+        WebsiteContentFactory.create(
+            website=website, file=f"{directory}/{prefix}_{name}"
+        )
+        for prefix in (UUID_A, UUID_B, UUID_C)
+    ]
+    return directory, rows
+
+
+def _fail_copy_for(*source_keys):
+    """Build a copy_object side effect that raises only for *source_keys*."""
+    blocked = {key.lstrip("/") for key in source_keys}
+
+    def copy_object(**kwargs):
+        if kwargs["CopySource"]["Key"] in blocked:
+            msg = "copy failed"
+            raise RuntimeError(msg)
+        return {}
+
+    return copy_object
 
 
 @pytest.fixture
@@ -78,40 +115,6 @@ def test_collect_renames_skips_and_counts_empty_result_basename():
 
     assert tasks == []
     assert skipped == 1
-
-
-def test_collect_renames_skips_and_counts_conflict():
-    """A file is skipped when its target key is already held by another record."""
-    website = WebsiteFactory.create()
-    old_key = f"sites/{website.name}/{UUID_PREFIX}_notes.txt"
-    new_key = f"sites/{website.name}/notes.txt"
-    source = WebsiteContentFactory.create(website=website, file=old_key)
-    WebsiteContentFactory.create(website=website, file=new_key)  # occupies target
-    qs = WebsiteContent.objects.filter(pk=source.pk)
-
-    tasks, skipped = _collect_renames(qs)
-
-    assert tasks == []
-    assert skipped == 1
-
-
-def test_collect_renames_skips_intra_conflict():
-    """When two UUID-prefixed records want the same target, both are skipped."""
-    website = WebsiteFactory.create()
-    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
-    key_a = f"sites/{website.name}/{UUID_PREFIX}_file.pdf"
-    key_b = f"sites/{website.name}/{uuid_b}_file.pdf"
-    content_a = WebsiteContentFactory.create(website=website, file=key_a)
-    content_b = WebsiteContentFactory.create(website=website, file=key_b)
-    qs = WebsiteContent.objects.filter(pk__in=[content_a.pk, content_b.pk]).order_by(
-        "pk"
-    )
-
-    tasks, skipped = _collect_renames(qs)
-
-    # Both sources target the same key — neither should be renamed.
-    assert tasks == []
-    assert skipped == 2
 
 
 @pytest.mark.parametrize(
@@ -229,35 +232,42 @@ def test_skips_file_with_empty_name_after_uuid_strip(mock_s3):
     assert str(content.file) == empty_result_key
 
 
-def test_skips_conflicting_target_key(mock_s3):
-    """A file is skipped when the target key is already used by another WebsiteContent."""
+def test_renames_to_a_suffix_when_the_name_is_held(mock_s3):
+    """A held target no longer blocks the rename, the file gets the next free suffix."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_notes.txt"
-    new_key = f"sites/{website.name}/notes.txt"
-    WebsiteContentFactory.create(website=website, file=old_key)
-    WebsiteContentFactory.create(website=website, file=new_key)
+    source = WebsiteContentFactory.create(website=website, file=old_key)
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/notes.txt"
+    )
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_s3.return_value.copy_object.assert_not_called()
+    source.refresh_from_db()
+    assert str(source.file) == f"sites/{website.name}/notes-2.txt"
+    copy = mock_s3.return_value.copy_object
+    copy.assert_called_once()
+    assert copy.call_args.kwargs["Key"] == f"sites/{website.name}/notes-2.txt"
 
 
-def test_skips_all_when_multiple_sources_target_same_key(mock_s3):
-    """When two UUID-prefixed files resolve to the same target, neither is renamed."""
+def test_renames_every_source_that_wants_the_same_name(mock_s3):
+    """Two files that strip to one name both rename, the second with a suffix."""
     website = WebsiteFactory.create()
     uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
-    key_a = f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
-    key_b = f"sites/{website.name}/{uuid_b}_report.pdf"
-    content_a = WebsiteContentFactory.create(website=website, file=key_a)
-    content_b = WebsiteContentFactory.create(website=website, file=key_b)
+    content_a = WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_report.pdf"
+    )
+    content_b = WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{uuid_b}_report.pdf"
+    )
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_s3.return_value.copy_object.assert_not_called()
     content_a.refresh_from_db()
     content_b.refresh_from_db()
-    assert str(content_a.file) == key_a
-    assert str(content_b.file) == key_b
+    assert str(content_a.file) == f"sites/{website.name}/report.pdf"
+    assert str(content_b.file) == f"sites/{website.name}/report-2.pdf"
+    assert mock_s3.return_value.copy_object.call_count == 2
 
 
 def test_dry_run_makes_no_changes(tmp_path, mock_s3):
@@ -425,20 +435,15 @@ def test_s3_error_does_not_dirty_website_or_patch_metadata(mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
 
-def test_metadata_not_patched_for_skipped_captions_rename(mock_s3):
-    """Video metadata is not patched when the captions file rename was skipped (conflict)."""
+def test_metadata_not_patched_for_a_failed_captions_rename(mock_s3):
+    """A rename whose copy fails leaves the metadata pointing at the old file."""
     website = WebsiteFactory.create()
-    # File A renames successfully — puts website into actually_renamed_website_ids.
     other_uuid = "cc4d029952cda060f4afcd811189a591"
-    old_key_a = f"sites/{website.name}/{other_uuid}_main.mp4"
-    WebsiteContentFactory.create(website=website, file=old_key_a)
-    # Captions file B: rename skipped — target key is already occupied.
-    captions_uuid = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
-    captions_old = f"sites/{website.name}/{captions_uuid}_captions.vtt"
-    captions_new = f"sites/{website.name}/captions.vtt"
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{other_uuid}_main.mp4"
+    )
+    captions_old = f"sites/{website.name}/{UUID_A}_captions.vtt"
     WebsiteContentFactory.create(website=website, file=captions_old)
-    WebsiteContentFactory.create(website=website, file=captions_new)  # occupies target
-    # Video resource references the skipped captions file.
     video_resource = WebsiteContentFactory.create(
         website=website,
         type="resource",
@@ -450,10 +455,10 @@ def test_metadata_not_patched_for_skipped_captions_rename(mock_s3):
             },
         },
     )
+    mock_s3.return_value.copy_object.side_effect = _fail_copy_for(captions_old)
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    # Captions rename was skipped — metadata must NOT be patched to the stripped path.
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_file"] == captions_old
 
@@ -497,7 +502,7 @@ def test_delete_object_failure_still_records_rename(mock_s3):
 
 
 def test_conflict_detection_normalizes_leading_slash(mock_s3):
-    """A conflict is detected even when the existing target key and the rename target differ only by leading slash."""
+    """A held target is detected even when it differs only by a leading slash."""
     website = WebsiteFactory.create()
     # Existing record holds the target path WITHOUT a leading slash.
     existing_key = f"courses/{website.name}/doc.pdf"
@@ -506,10 +511,14 @@ def test_conflict_detection_normalizes_leading_slash(mock_s3):
     # After lstrip normalization, this is the same S3 key as existing_key.
     source_key = f"/courses/{website.name}/{UUID_PREFIX}_doc.pdf"
     WebsiteContentFactory.create(website=website, file=source_key)
+    source = WebsiteContent.objects.get(file=source_key)
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_s3.return_value.copy_object.assert_not_called()
+    source.refresh_from_db()
+    assert str(source.file) == f"/courses/{website.name}/doc-2.pdf"
+    copy = mock_s3.return_value.copy_object
+    assert copy.call_args.kwargs["Key"] == f"courses/{website.name}/doc-2.pdf"
 
 
 def test_marks_website_dirty_after_rename(mock_s3):
@@ -722,20 +731,14 @@ def test_patches_gallery_markdown_href(mock_s3):
     )
 
 
-def test_does_not_patch_gallery_for_skipped_collision(mock_s3):
-    """A collision-skipped rename must not rewrite the gallery href either."""
+def test_does_not_patch_gallery_for_a_failed_rename(mock_s3):
+    """A rename whose copy fails must not rewrite the gallery href either."""
     website = WebsiteFactory.create()
-    uuid_b = "bb3d029952cda060f4afcd811189a591"  # pragma: allowlist secret
-    # Two sources collide on the same target -- both get skipped.
-    WebsiteContentFactory.create(
-        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
-    )
-    WebsiteContentFactory.create(
-        website=website,
-        file=f"sites/{website.name}/{uuid_b}_photo.jpg",
-    )
+    old_key = f"sites/{website.name}/{UUID_PREFIX}_photo.jpg"
+    WebsiteContentFactory.create(website=website, file=old_key)
     original_markdown = f'{{{{< image-gallery-item href="{UUID_PREFIX}_photo.jpg" text="a caption" >}}}}'
     gallery = WebsiteContentFactory.create(website=website, markdown=original_markdown)
+    mock_s3.return_value.copy_object.side_effect = _fail_copy_for(old_key)
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
@@ -1361,3 +1364,187 @@ def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sy
 def test_with_suffix_goes_before_the_last_extension(key, number, expected):
     """The extension stays last, which caption pairing and downloads rely on."""
     assert _with_suffix(key, number) == expected
+
+
+def test_contested_names_get_suffixes_in_pk_order():
+    """The lowest pk keeps the plain name and the rest count up from -2."""
+    website = WebsiteFactory.create()
+    directory, (first, second, third) = _contested_trio(website)
+
+    tasks, skipped = _collect_renames(_files_in(website))
+
+    assert skipped == 0
+    by_pk = {task.pk: task for task in tasks}
+    assert by_pk[str(first.pk)].new_key == f"{directory}/1.jpg"
+    assert by_pk[str(second.pk)].new_key == f"{directory}/1-2.jpg"
+    assert by_pk[str(third.pk)].new_key == f"{directory}/1-3.jpg"
+    assert [by_pk[str(row.pk)].suffixed for row in (first, second, third)] == [
+        False,
+        True,
+        True,
+    ]
+    assert {task.reason for task in tasks} == {"contested"}
+
+
+def test_name_held_by_an_existing_file_suffixes_every_candidate():
+    """A file that is not being renamed keeps its name."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    WebsiteContentFactory.create(website=website, file=f"{directory}/notes.txt")
+    source = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_notes.txt"
+    )
+
+    tasks, skipped = _collect_renames(_files_in(website).filter(pk=source.pk))
+
+    assert skipped == 0
+    assert [(task.new_key, task.suffixed, task.reason) for task in tasks] == [
+        (f"{directory}/notes-2.txt", True, "name held by existing file")
+    ]
+
+
+def test_a_taken_suffix_is_skipped():
+    """If -2 is already a real file, the next file gets -3."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    WebsiteContentFactory.create(website=website, file=f"{directory}/1-2.jpg")
+    first = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_1.jpg"
+    )
+    second = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_B}_1.jpg"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert {task.pk: task.new_key for task in tasks} == {
+        str(first.pk): f"{directory}/1.jpg",
+        str(second.pk): f"{directory}/1-3.jpg",
+    }
+
+
+def test_a_soft_deleted_file_still_blocks_its_name():
+    """Its S3 object may still exist, so the name is never reused."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    WebsiteContentFactory.create(website=website, file=f"{directory}/1-2.jpg").delete()
+    WebsiteContentFactory.create(website=website, file=f"{directory}/{UUID_A}_1.jpg")
+    second = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_B}_1.jpg"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert {task.pk: task.new_key for task in tasks}[str(second.pk)] == (
+        f"{directory}/1-3.jpg"
+    )
+
+
+def test_plain_names_are_claimed_before_any_suffix():
+    """A file originally named 1-2.jpg keeps it although a 1.jpg group needs suffixes."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    first = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_1.jpg"
+    )
+    second = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_B}_1.jpg"
+    )
+    own = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_C}_1-2.jpg"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert {task.pk: task.new_key for task in tasks} == {
+        str(first.pk): f"{directory}/1.jpg",
+        str(second.pk): f"{directory}/1-3.jpg",
+        str(own.pk): f"{directory}/1-2.jpg",
+    }
+
+
+def test_numeric_names_never_run_together():
+    """Suffixes use a separator, so a 1.jpg group cannot produce 12.jpg."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    first = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_1.jpg"
+    )
+    second = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_B}_1.jpg"
+    )
+    twelve = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_C}_12.jpg"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert {task.pk: task.new_key for task in tasks} == {
+        str(first.pk): f"{directory}/1.jpg",
+        str(second.pk): f"{directory}/1-2.jpg",
+        str(twelve.pk): f"{directory}/12.jpg",
+    }
+
+
+def test_rows_sharing_one_object_rename_together():
+    """One S3 object used by two rows is one rename, each row keeps its slash form."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=f"/{key}")
+
+    tasks, skipped = _collect_renames(_files_in(first_site, second_site))
+
+    assert skipped == 0
+    by_pk = {task.pk: task for task in tasks}
+    assert by_pk[str(first.pk)].new_key == f"courses/{first_site.name}/doc.pdf"
+    assert by_pk[str(second.pk)].new_key == f"/courses/{first_site.name}/doc.pdf"
+    assert {task.reason for task in tasks} == {"shared object"}
+    assert not any(task.suffixed for task in tasks)
+
+
+def test_an_object_shared_with_an_unselected_website_is_skipped(capsys):
+    """Renaming it for one row would delete the object the other row still uses."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    WebsiteContentFactory.create(website=first_site, file=key)
+    WebsiteContentFactory.create(website=second_site, file=key)
+
+    tasks, skipped = _collect_renames(_files_in(first_site))
+
+    assert tasks == []
+    assert skipped == 1
+    assert second_site.name in capsys.readouterr().err
+
+
+def test_a_filtered_run_respects_names_held_elsewhere():
+    """A name held by an unselected website's row is still taken."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    directory = f"sites/{first_site.name}"
+    WebsiteContentFactory.create(website=second_site, file=f"{directory}/doc.pdf")
+    WebsiteContentFactory.create(
+        website=first_site, file=f"{directory}/{UUID_A}_doc.pdf"
+    )
+
+    tasks, _ = _collect_renames(_files_in(first_site))
+
+    assert [task.new_key for task in tasks] == [f"{directory}/doc-2.pdf"]
+
+
+def test_replanning_after_a_partial_run_keeps_the_same_names():
+    """Files that committed hold their keys, so pending files get the same names."""
+    website = WebsiteFactory.create()
+    _, rows = _contested_trio(website)
+    tasks, _ = _collect_renames(_files_in(website))
+    first_plan = {task.pk: task.new_key for task in tasks}
+    middle = rows[1]
+    WebsiteContent.objects.filter(pk=middle.pk).update(file=first_plan[str(middle.pk)])
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert {task.pk: task.new_key for task in tasks} == {
+        pk: key for pk, key in first_plan.items() if pk != str(middle.pk)
+    }

@@ -2,7 +2,7 @@
 
 import csv
 import sys
-from collections import Counter
+from collections import defaultdict
 from pathlib import PurePosixPath
 from typing import NamedTuple
 
@@ -105,94 +105,179 @@ class _PlannedGalleryHrefRule(BaseGalleryHrefRewriteRule):
         return f"{prefix}{sep}{new_basename}"
 
 
+_REASON_CONTESTED = "contested"
+_REASON_HELD = "name held by existing file"
+_REASON_SHARED = "shared object"
+
+
 def _collect_renames(queryset):
     """
-    Scan *queryset* for WebsiteContent records whose file basename has a UUID
-    prefix and return the planned renames.
+    Plan the rename of every UUID-prefixed file in *queryset*.
 
-    Returns (tasks, skipped_count) where:
-      tasks         -- list of RenameTask, one per valid rename
-      skipped_count -- number of records skipped due to empty-result or conflict
-
-    When multiple UUID-prefixed files would resolve to the same target key,
-    ALL of them are skipped — not just the second-and-later. This prevents a
-    collision where one source renames successfully but the other sources are
-    left with UUID prefixes still pointing at conflicting paths.
-
-    Pre-fetches all existing file→pk mappings once upfront so the per-record
-    conflict check is an O(1) dict lookup rather than an individual DB query.
+    Returns (tasks, skipped_count). A file whose stripped name would clash
+    gets a numbered suffix rather than being skipped, see _assign_targets.
+    Two things are still skipped: a name that would be empty after
+    stripping, and an S3 object also used by a row in a website outside this
+    run, since renaming it for one row would delete the object the other
+    still uses.
     """
     skipped = 0
-    # Restrict conflict detection to the websites present in the queryset.
-    # S3 keys are namespaced by website name, so cross-website collisions
-    # are impossible and scanning the whole table is wasteful at scale.
-    website_ids = set(queryset.values_list("website_id", flat=True).distinct())
-    existing_files = {
-        f.lstrip("/"): pk
-        for f, pk in WebsiteContent.objects.filter(website_id__in=website_ids)
-        .exclude(file="")
-        .values_list("file", "pk")
-        if f
-    }
-
-    # Pass 1: collect all candidates that have a strippable UUID prefix.
-    candidates = []
+    sources = defaultdict(list)  # normalised old key -> rows using it
     for content in queryset.iterator():
         old_key = str(content.file)
-        new_key = strip_uuid_prefix(old_key)
-
-        if new_key == old_key:
-            # Either no UUID prefix, or strip would leave empty basename.
-            # Distinguish: re-check the basename directly.
-            _, _, basename = old_key.rpartition("/")
-            if UUID_FILENAME_RE.match(basename) and not basename[33:]:
-                print(  # noqa: T201
-                    f"Skipping {old_key}: filename would be empty after removing UUID prefix",  # noqa: E501
-                    file=sys.stderr,
-                )
-                skipped += 1
+        if strip_uuid_prefix(old_key) != old_key:
+            sources[old_key.lstrip("/")].append(content)
             continue
+        basename = old_key.rpartition("/")[2]
+        if UUID_FILENAME_RE.match(basename) and not basename[33:]:
+            print(  # noqa: T201
+                f"Skipping {old_key}: filename would be empty after removing UUID prefix",  # noqa: E501
+                file=sys.stderr,
+            )
+            skipped += 1
 
-        candidates.append(
-            (content.pk, str(content.website_id), content.text_id, old_key, new_key)
-        )
+    skipped += _drop_sources_shared_outside(sources, queryset)
+    targets = _assign_targets(sources, _taken_keys())
 
-    # Pass 2: find target keys claimed by more than one source — ALL must be skipped.
-    # Normalize with lstrip to catch collisions between slash-prefixed and non-prefixed
-    # variants that resolve to the same S3 key.
-    target_counts = Counter(new_key.lstrip("/") for *_, new_key in candidates)
-
-    # Pass 3: build the final task list, dropping ambiguous and conflicting targets.
     tasks = []
-    for pk, website_id, text_id, old_key, new_key in candidates:
-        norm_new = new_key.lstrip("/")
-        if target_counts[norm_new] > 1:
-            print(  # noqa: T201
-                f"Skipping {old_key}: target key {new_key} is claimed by {target_counts[norm_new]} sources",  # noqa: E501
-                file=sys.stderr,
+    for source_key in sorted(sources, key=lambda key: _first_pk(sources[key])):
+        target, reason = targets[source_key]
+        plain = strip_uuid_prefix(source_key)
+        for content in sorted(sources[source_key], key=lambda row: row.pk):
+            old_key = str(content.file)
+            lead = "/" if old_key.startswith("/") else ""
+            tasks.append(
+                RenameTask(
+                    pk=str(content.pk),
+                    website_id=str(content.website_id),
+                    text_id=str(content.text_id),
+                    old_key=old_key,
+                    new_key=f"{lead}{target}",
+                    suffixed=target != plain,
+                    reason=reason,
+                )
             )
-            skipped += 1
-            continue
+    return tasks, skipped
 
-        conflicting_pk = existing_files.get(norm_new)
-        if conflicting_pk and conflicting_pk != pk:
-            print(  # noqa: T201
-                f"Skipping {old_key}: target key {new_key} already used by content pk={conflicting_pk}",  # noqa: E501
-                file=sys.stderr,
-            )
-            skipped += 1
-            continue
 
-        tasks.append(
-            RenameTask(
-                pk=str(pk),
-                website_id=website_id,
-                text_id=str(text_id),
-                old_key=old_key,
-                new_key=new_key,
+def _first_pk(rows):
+    """Return the lowest pk among rows sharing a source, which orders contests."""
+    return min(row.pk for row in rows)
+
+
+def _taken_keys():
+    """
+    Every key some row holds today, normalised without a leading slash.
+
+    Built from all_objects across every website, so a filtered run cannot
+    hand out a name another site already holds, and a soft-deleted row's
+    key, whose S3 object may still exist, is never reused.
+    """
+    return {
+        file_value.lstrip("/")
+        for file_value in WebsiteContent.all_objects.exclude(file="")
+        .exclude(file__isnull=True)
+        .values_list("file", flat=True)
+        .iterator(chunk_size=5000)
+        if file_value
+    }
+
+
+def _drop_sources_shared_outside(sources, queryset):
+    """
+    Remove sources that a live row outside *queryset*'s websites also uses.
+
+    Returns how many rows were dropped.
+    """
+    selected = {
+        str(website_id)
+        for website_id in queryset.values_list("website_id", flat=True).distinct()
+    }
+    outside = defaultdict(set)
+    for file_value, website_id in (
+        WebsiteContent.objects.exclude(file="")
+        .exclude(file__isnull=True)
+        .values_list("file", "website_id")
+        .iterator(chunk_size=5000)
+    ):
+        key = file_value.lstrip("/")
+        if key in sources and str(website_id) not in selected:
+            outside[key].add(website_id)
+    dropped = 0
+    for source_key, website_ids in outside.items():
+        names = ", ".join(
+            sorted(
+                Website.objects.filter(uuid__in=website_ids).values_list(
+                    "name", flat=True
+                )
             )
         )
-    return tasks, skipped
+        print(  # noqa: T201
+            f"Skipping {source_key}: the same S3 object is used by {names}, "
+            "which this run does not include. Run those websites together.",
+            file=sys.stderr,
+        )
+        dropped += len(sources.pop(source_key))
+    return dropped
+
+
+def _assign_targets(sources, taken):
+    """
+    Choose the final key for every source object.
+
+    Returns {source_key: (target_key, reason)}, keys normalised without a
+    leading slash. A target is contested when two or more sources want it,
+    or when some row already holds it. Every plain name that can be given
+    out is claimed before any suffix, so a suffix never takes a name another
+    file would get as is. Within a group, sources go in order of their
+    lowest pk: the first keeps the plain name unless it is held, and the
+    rest count up from -2, skipping anything taken or already claimed.
+    """
+    wanted_by = defaultdict(list)
+    for source_key in sources:
+        wanted_by[strip_uuid_prefix(source_key)].append(source_key)
+    for group in wanted_by.values():
+        group.sort(key=lambda key: _first_pk(sources[key]))
+
+    assigned = {}
+    claimed = set()
+    for target, group in sorted(wanted_by.items()):
+        if target not in taken:
+            assigned[group[0]] = target
+            claimed.add(target)
+    for target, group in sorted(wanted_by.items()):
+        number = 2
+        for source_key in group:
+            if source_key in assigned:
+                continue
+            candidate = _with_suffix(target, number)
+            while candidate in taken or candidate in claimed:
+                number += 1
+                candidate = _with_suffix(target, number)
+            assigned[source_key] = candidate
+            claimed.add(candidate)
+            number += 1
+
+    return {
+        source_key: (
+            assigned[source_key],
+            _reason(sources[source_key], group, target in taken),
+        )
+        for target, group in wanted_by.items()
+        for source_key in group
+    }
+
+
+def _reason(rows, group, held):
+    """Explain a rename for the CSV: why it is not a plain, solo rename."""
+    reasons = []
+    if len(group) > 1:
+        reasons.append(_REASON_CONTESTED)
+    if held:
+        reasons.append(_REASON_HELD)
+    if len(rows) > 1:
+        reasons.append(_REASON_SHARED)
+    return ", ".join(reasons)
 
 
 def _collect_metadata_patches(website_uuids, renamed_keys=None):
