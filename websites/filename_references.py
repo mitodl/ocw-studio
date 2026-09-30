@@ -92,12 +92,12 @@ class _RenameLike(Protocol):
     website_id: str
 
 
-def build_path_lookup(
+def build_path_index(
     renames: Iterable[_RenameLike],
     site_paths: Mapping[str, tuple[str | None, str | None]],
-) -> dict[tuple[str, str], str]:
+) -> dict[tuple[str, str], _RenameLike]:
     """
-    Map (directory, old file name) to the new file name for every rename.
+    Map (directory, old file name) to the rename it belongs to.
 
     The directory is the old key's own, not the website's, because a few
     duplicate site records store their files under another site's directory.
@@ -105,11 +105,10 @@ def build_path_lookup(
     the website's s3_path and its url_path differs, the url_path gets an
     entry too. *site_paths* maps website id to (s3_path, url_path).
     """
-    lookup = {}
+    index = {}
     for rename in renames:
         old_directory, _, old_name = rename.old_key.strip("/").rpartition("/")
-        new_name = rename.new_key.rpartition("/")[2]
-        lookup[(old_directory, old_name)] = new_name
+        index[(old_directory, old_name)] = rename
         s3_path, url_path = site_paths.get(rename.website_id, (None, None))
         s3_directory = (s3_path or "").strip("/")
         url_directory = (url_path or "").strip("/")
@@ -118,8 +117,54 @@ def build_path_lookup(
             and old_directory == s3_directory
             and url_directory != s3_directory
         ):
-            lookup[(url_directory, old_name)] = new_name
-    return lookup
+            index[(url_directory, old_name)] = rename
+    return index
+
+
+def build_path_lookup(
+    renames: Iterable[_RenameLike],
+    site_paths: Mapping[str, tuple[str | None, str | None]],
+) -> dict[tuple[str, str], str]:
+    """Map (directory, old file name) to the new file name for every rename."""
+    return {
+        entry: rename.new_key.rpartition("/")[2]
+        for entry, rename in build_path_index(renames, site_paths).items()
+    }
+
+
+def referenced_entries(text: str | None, entries: Mapping) -> set[tuple[str, str]]:
+    """
+    Return the (directory, old file name) keys of *entries* that *text* names.
+
+    Uses the same matching as rewrite_file_references, so a row is only
+    handed to a chunk when that chunk's rewrite would change it.
+    """
+    found = set()
+    if not text or not entries:
+        return found
+    for match in FILENAME_TOKEN_RE.finditer(text):
+        directory = _directory_before(text, match.start())
+        if directory is None:
+            continue
+        resolved = _resolve(entries, directory, match.group(0))
+        if resolved is not None:
+            found.add((directory, match.group(0)[: resolved[1]]))
+    return found
+
+
+def referenced_entries_in_json(value: Any, entries: Mapping) -> set[tuple[str, str]]:
+    """Return referenced_entries for every string inside a JSON-shaped value."""
+    if isinstance(value, str):
+        return referenced_entries(value, entries)
+    if isinstance(value, dict):
+        return set().union(
+            *(referenced_entries_in_json(item, entries) for item in value.values())
+        )
+    if isinstance(value, list):
+        return set().union(
+            *(referenced_entries_in_json(item, entries) for item in value)
+        )
+    return set()
 
 
 def rewrite_json_strings(value: Any, lookup: PathLookup) -> tuple[Any, bool]:
