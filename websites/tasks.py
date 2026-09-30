@@ -3,6 +3,7 @@
 import logging
 import time
 
+import celery
 from django.conf import settings
 from github.GithubException import RateLimitExceededException
 
@@ -10,6 +11,7 @@ from content_sync import api
 from content_sync.backends.github import GithubBackend
 from content_sync.tasks import sync_website_content
 from main.celery import app
+from websites.management.commands import remove_uuid_from_filenames as uuid_renames
 from websites.models import Website
 
 log = logging.getLogger(__name__)
@@ -83,3 +85,36 @@ def sync_renamed_websites(website_names):
             log.exception("Failed to sync %s after the UUID rename", name)
     if rest:
         sync_renamed_websites.delay(rest)
+
+
+@app.task(acks_late=True, reject_on_worker_lost=True)
+def rename_uuid_files(website_ids, chunk_size, *, skip_sync):
+    """
+    Plan the UUID rename and hand the work to a chord of chunk tasks.
+
+    Nothing is written before the hand-off, so a redelivery starts over.
+    *website_ids* is None for every website.
+    """
+    chunks, skipped = uuid_renames.plan_job(website_ids, chunk_size)
+    if not chunks:
+        return finish_uuid_rename.delay([], skipped=skipped, skip_sync=skip_sync).id
+    header = [
+        rename_uuid_files_chunk.si(index, *chunk) for index, chunk in enumerate(chunks)
+    ]
+    callback = finish_uuid_rename.s(skipped=skipped, skip_sync=skip_sync)
+    return celery.chord(header)(callback).id
+
+
+@app.task(acks_late=True, reject_on_worker_lost=True)
+def rename_uuid_files_chunk(chunk_id, assignments, content_pks, website_ids):
+    """Rename and patch one chunk. Never raises, see run_chunk."""
+    return uuid_renames.run_chunk(chunk_id, assignments, content_pks, website_ids)
+
+
+@app.task(acks_late=True, reject_on_worker_lost=True)
+def finish_uuid_rename(summaries, *, skipped, skip_sync):
+    """Log the job's final summary, then start syncing the renamed websites."""
+    websites, _ = uuid_renames.finish_job(summaries, skipped)
+    if websites and not skip_sync and settings.CONTENT_SYNC_BACKEND:
+        sync_renamed_websites.delay(websites)
+    return websites

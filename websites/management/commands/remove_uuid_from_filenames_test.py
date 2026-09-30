@@ -1,6 +1,7 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
 import csv
+import logging
 import re
 from io import StringIO
 
@@ -1091,11 +1092,11 @@ def test_gallery_patch_refreshes_content_sync_state(mock_s3):
 
 
 @pytest.fixture
-def mock_sync(mocker):
-    """Mock the backend sync task the command kicks off after a live run."""
-    return mocker.patch(
-        "websites.management.commands.remove_uuid_from_filenames.sync_website_content"
-    )
+def mock_sync(mocker, settings):
+    """Mock the per-site sync the rename job runs after its chunks."""
+    # A local .env can turn this on, which would build a real backend.
+    settings.GITHUB_RATE_LIMIT_CHECK = False
+    return mocker.patch("websites.tasks.sync_website_content")
 
 
 def _website_with_rename():
@@ -1113,7 +1114,7 @@ def test_triggers_sync_after_a_live_run(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_called_once_with(website.name)
+    mock_sync.assert_called_once_with(website.name)
 
 
 def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_sync):
@@ -1127,7 +1128,7 @@ def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_syn
 
     call_command("remove_uuid_from_filenames")
 
-    synced = {call.args[0] for call in mock_sync.delay.call_args_list}
+    synced = {call.args[0] for call in mock_sync.call_args_list}
     assert synced == {renamed.name}
 
 
@@ -1138,7 +1139,7 @@ def test_skip_sync_suppresses_the_sync_task(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name, skip_sync=True)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
@@ -1153,7 +1154,7 @@ def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
         output=str(tmp_path / "plan.csv"),
     )
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
@@ -1163,7 +1164,7 @@ def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
@@ -1176,34 +1177,23 @@ def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
-def test_sync_failure_is_reported_without_aborting(settings, mock_s3, mock_sync):
-    """A site that fails to sync must not abort a run whose renames already committed."""
+def test_sync_failure_is_logged_without_undoing_the_rename(
+    settings, mock_s3, mock_sync, caplog
+):
+    """A site that fails to sync keeps its committed rename."""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     website = _website_with_rename()
     content = WebsiteContent.objects.get(website=website, file__contains=UUID_PREFIX)
-    mock_sync.delay.return_value.get.side_effect = OSError("github is unhappy")
-
-    stderr = StringIO()
-    call_command("remove_uuid_from_filenames", filter=website.name, stderr=stderr)
-
-    # The rename still stands, and the operator is told what still needs publishing.
-    content.refresh_from_db()
-    assert str(content.file) == f"sites/{website.name}/doc.pdf"
-    assert "did not sync" in stderr.getvalue()
-
-
-def test_sync_waits_with_a_timeout(settings, mock_s3, mock_sync):
-    """Blocking on a worker that never answers would hang the command forever."""
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    website = _website_with_rename()
+    mock_sync.side_effect = OSError("github is unhappy")
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    _, kwargs = mock_sync.delay.return_value.get.call_args
-    assert kwargs.get("timeout")
+    content.refresh_from_db()
+    assert str(content.file) == f"sites/{website.name}/doc.pdf"
+    assert "Failed to sync" in caplog.text
 
 
 def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock_sync):
@@ -1224,25 +1214,6 @@ def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock
     content.refresh_from_db()
     state.refresh_from_db()
     assert state.current_checksum == content.calculate_checksum()
-
-
-def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sync):
-    """get(timeout) does not stop the worker, so dispatching on would overlap syncs."""
-    from celery.exceptions import TimeoutError as CeleryTimeoutError  # noqa: PLC0415
-
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    first = _website_with_rename()
-    second = _website_with_rename()
-    mock_sync.delay.return_value.get.side_effect = CeleryTimeoutError("no answer")
-
-    stderr = StringIO()
-    call_command("remove_uuid_from_filenames", stderr=stderr)
-
-    # Only the first site is dispatched, and both are reported as unsynced.
-    assert mock_sync.delay.call_count == 1
-    message = stderr.getvalue()
-    assert "Timed out" in message
-    assert first.name in message or second.name in message
 
 
 @pytest.mark.parametrize(
@@ -1782,11 +1753,10 @@ def test_dry_run_csv_marks_suffixed_rows(tmp_path, mock_s3):
     assert by_pk[str(rows[2].pk)]["new_key"] == f"{directory}/1-3.jpg"
 
 
-def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
+def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3, caplog):
     """What the dry run promises is what the live run does."""
     website, _, _ = _reference_fixture()
     dry = StringIO()
-    live = StringIO()
 
     call_command(
         "remove_uuid_from_filenames",
@@ -1795,7 +1765,15 @@ def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
         output=str(tmp_path / "plan.csv"),
         stdout=dry,
     )
-    call_command("remove_uuid_from_filenames", filter=website.name, stdout=live)
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name)
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
 
     expected = {
         "files renamed with a suffix": 2,
@@ -1806,7 +1784,7 @@ def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
         "video pages": 0,
     }
     assert _counts(dry.getvalue()) == expected
-    assert _counts(live.getvalue()) == expected
+    assert _counts(final) == expected
 
 
 def test_dry_run_changes_no_references(tmp_path, mock_s3):
@@ -2097,6 +2075,30 @@ def test_finish_job_adds_up_the_chunks():
         "gallery pages": 1,
     }
     assert "4 skipped, 1 errors" in line
+
+
+def test_a_live_run_queues_the_job_and_returns(mocker, mock_s3):
+    """The command only dispatches, the rename happens in the worker."""
+    website = _website_with_rename()
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+    stdout = StringIO()
+
+    call_command(
+        "remove_uuid_from_filenames", filter=website.name, chunk_size=50, stdout=stdout
+    )
+
+    delay.assert_called_once_with([str(website.uuid)], 50, skip_sync=False)
+    mock_s3.return_value.copy_object.assert_not_called()
+    assert "Queued rename job" in stdout.getvalue()
+
+
+def test_an_unfiltered_live_run_selects_every_website(mocker, mock_s3):
+    """No --filter or --exclude means no website list at all."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    call_command("remove_uuid_from_filenames")
+
+    delay.assert_called_once_with(None, 500, skip_sync=False)
 
 
 def test_contested_names_follow_pk_not_prefix_order():

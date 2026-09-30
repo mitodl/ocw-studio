@@ -45,6 +45,9 @@ app.conf.task_routes = {
     "external_resources.tasks.check_external_resources": {"queue": "batch"},
     "external_resources.tasks.submit_url_to_wayback_task": {"queue": "batch"},
     "external_resources.tasks.update_wayback_jobs_status_batch": {"queue": "batch"},
+    "websites.tasks.rename_uuid_files": {"queue": "batch"},
+    "websites.tasks.rename_uuid_files_chunk": {"queue": "batch"},
+    "websites.tasks.finish_uuid_rename": {"queue": "batch"},
     "websites.tasks.sync_renamed_websites": {"queue": "batch"},
 }
 

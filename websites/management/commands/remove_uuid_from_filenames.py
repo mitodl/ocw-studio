@@ -8,16 +8,13 @@ from collections import Counter, defaultdict
 from pathlib import PurePosixPath
 from typing import NamedTuple
 
-from celery.exceptions import TimeoutError as CeleryTimeoutError
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
 from django.db.models import Q, TextField
 from django.db.models.functions import Cast
-from mitol.common.utils import now_in_utc
 
 from content_sync.models import ContentSyncState
-from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
@@ -660,9 +657,6 @@ def _collect_followups(renames):
 
 
 _SYNC_STATE_BATCH = 2000
-# A site's git commit is slow but not unbounded. Without a cap the command
-# blocks forever if no worker ever picks the task up.
-_SYNC_TIMEOUT_SECONDS = 600
 
 
 def _refresh_sync_states(pks):
@@ -1105,6 +1099,13 @@ class Command(WebsiteFilterCommand):
             default=False,
             help="Whether to skip syncing the changed websites to the backend",
         )
+        parser.add_argument(
+            "--chunk-size",
+            dest="chunk_size",
+            type=int,
+            default=DEFAULT_CHUNK_SIZE,
+            help="How many S3 objects each background task renames",
+        )
 
     def _selected_website_ids(self):
         """Return the websites --filter/--exclude select, or None for all of them."""
@@ -1117,61 +1118,6 @@ class Command(WebsiteFilterCommand):
             )
         ]
 
-    def _sync_backend(self, *, skip_sync, website_ids):
-        """
-        Push the changed websites to the configured content-sync backend.
-
-        Scoped to the sites this run actually touched. The alternative,
-        sync_unsynced_websites, takes no filter and walks every site with
-        unsynced content, so a --filter run would push unrelated sites that
-        happened to be pending.
-        """
-        if not settings.CONTENT_SYNC_BACKEND or skip_sync or not website_ids:
-            return
-        names = list(
-            Website.objects.filter(uuid__in=website_ids).values_list("name", flat=True)
-        )
-        if not names:
-            return
-        self.stdout.write(f"Syncing {len(names)} website(s) to the backend")
-        start = now_in_utc()
-        failed = []
-        # One site at a time. sync_website_content has no rate-limit throttle of
-        # its own (unlike sync_unsynced_websites), so dispatching every site at
-        # once would put the whole batch against the git backend's API limit
-        # simultaneously. A site that fails is reported rather than aborting the
-        # command, since by this point every rename has already committed.
-        for index, name in enumerate(names):
-            try:
-                sync_website_content.delay(name).get(timeout=_SYNC_TIMEOUT_SECONDS)
-            except CeleryTimeoutError:
-                # get(timeout) bounds our wait, it does not stop the worker, so
-                # that task is still running. Dispatching the next site now
-                # would let syncs overlap, which is what serialising this loop
-                # was meant to avoid. A timeout points at an unhealthy worker
-                # pool or backend, so stop rather than piling on more work.
-                failed.extend(names[index:])
-                self.stderr.write(
-                    f"Timed out after {_SYNC_TIMEOUT_SECONDS}s waiting for {name}, "
-                    "stopping before the remaining site(s)"
-                )
-                break
-            except Exception as exc:  # noqa: BLE001
-                # The task finished and failed, so nothing is still holding the
-                # backend. Safe to carry on to the next site.
-                failed.append(name)
-                self.stderr.write(f"Failed to sync {name}: {exc!s}")
-        total_seconds = (now_in_utc() - start).total_seconds()
-        self.stdout.write(
-            f"Backend sync finished for {len(names) - len(failed)} of {len(names)} "
-            f"website(s) in {total_seconds} seconds"
-        )
-        if failed:
-            self.stderr.write(
-                f"{len(failed)} website(s) did not sync and still need publishing: "
-                f"{', '.join(sorted(failed))}"
-            )
-
     def handle(self, *args, **options):
         super().handle(*args, **options)
         if options["dry_run"]:
@@ -1181,9 +1127,7 @@ class Command(WebsiteFilterCommand):
                 raise CommandError(msg)
             # --- Discovery phase (no S3/DB writes) ---
             renames, skipped_count = _collect_renames(
-                self.filter_website_contents(
-                    WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
-                )
+                _selected_contents(self._selected_website_ids())
             )
             planned_website_ids = {task.website_id for task in renames}
             # Look up website names for the human-readable CSV column.
@@ -1218,17 +1162,15 @@ class Command(WebsiteFilterCommand):
             return
 
         # --- Execution phase ---
-        chunks, skipped = plan_job(self._selected_website_ids(), DEFAULT_CHUNK_SIZE)
-        summaries = [run_chunk(index, *chunk) for index, chunk in enumerate(chunks)]
-        websites, line = finish_job(summaries, skipped)
-        self.stdout.write(f"Done: {line}")
+        # Imported here because websites.tasks imports this module.
+        from websites.tasks import rename_uuid_files  # noqa: PLC0415
 
-        self._sync_backend(
+        task = rename_uuid_files.delay(
+            self._selected_website_ids(),
+            options["chunk_size"],
             skip_sync=options["skip_sync"],
-            website_ids={
-                str(uuid)
-                for uuid in Website.objects.filter(name__in=websites).values_list(
-                    "uuid", flat=True
-                )
-            },
+        )
+        self.stdout.write(
+            f"Queued rename job {task.id}. The per-chunk and final summaries "
+            "are in the Celery worker logs."
         )

@@ -111,3 +111,31 @@ def test_rate_limit_wait_counts_down_to_the_reset(settings, mocker):
     mocker.patch("websites.tasks.time.time", return_value=1_000_000)
 
     assert tasks._git_rate_limit_wait(WebsiteFactory.create()) == 900  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "task",
+    [
+        tasks.rename_uuid_files,
+        tasks.rename_uuid_files_chunk,
+        tasks.finish_uuid_rename,
+        tasks.sync_renamed_websites,
+    ],
+)
+def test_tasks_survive_a_lost_worker(task):
+    """Without reject_on_worker_lost a killed worker's task is acknowledged and lost."""
+    assert task.acks_late is True
+    assert task.reject_on_worker_lost is True
+
+
+def test_tasks_run_on_the_batch_queue():
+    """They share the batch queue with mass publishes, not the default one."""
+    from main.celery import app  # noqa: PLC0415
+
+    for name in (
+        "rename_uuid_files",
+        "rename_uuid_files_chunk",
+        "finish_uuid_rename",
+        "sync_renamed_websites",
+    ):
+        assert app.conf.task_routes[f"websites.tasks.{name}"] == {"queue": "batch"}
