@@ -10,7 +10,7 @@ from celery.exceptions import TimeoutError as CeleryTimeoutError
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
-from django.db.models import TextField
+from django.db.models import Q, TextField
 from django.db.models.functions import Cast
 from mitol.common.utils import now_in_utc
 
@@ -19,7 +19,11 @@ from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
-from websites.filename_references import build_path_lookup, rewrite_json_strings
+from websites.filename_references import (
+    build_path_lookup,
+    rewrite_file_references,
+    rewrite_json_strings,
+)
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
@@ -55,6 +59,8 @@ class MarkdownPatch(NamedTuple):
 
     pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
     updated_markdown: str
+    gallery: bool = False  # an image-gallery-item href changed
+    links: bool = False  # a path reference to a renamed file changed
 
 
 def _with_suffix(key: str, number: int) -> str:
@@ -283,25 +289,21 @@ def _reason(rows, group, held):
     return ", ".join(reasons)
 
 
-def _collect_gallery_patches(renames):
+def _collect_markdown_patches(renames, lookup):
     """
-    Scan gallery markdown in the same websites as *renames* for
-    image-gallery-item shortcodes whose href matches an old basename from
-    this run's rename plan, and compute the patched markdown.
+    Patch gallery hrefs and file links in markdown, one final value per row.
 
-    Returns list[MarkdownPatch]. Does not write to the database. Works
-    identically whether or not the underlying file renames have already been
-    applied to WebsiteContent.file, since matching is driven entirely by the
-    *renames* plan already computed by _collect_renames — not by querying
-    live WebsiteContent.file state. This lets the same function back both
-    the --dry-run preview and the live-run patch.
+    Gallery pages in the renamed websites get the plan-driven href rewrite
+    first, then every page naming a legacy file gets the path rewrite on
+    that output. Doing both in one pass matters: two bulk_updates of the
+    same column would let the second drop the first. A path-valued gallery
+    href is rewritten once, since the path pass no longer sees a prefix.
 
-    A single record whose markdown contains a malformed shortcode (invalid
-    Hugo syntax elsewhere on the page, unrelated to the gallery item itself)
-    is skipped with a stderr warning rather than aborting the whole scan —
-    legacy-imported markdown across tens of thousands of pages can't be
-    assumed to all parse cleanly, and one bad page must not cost every other
-    page in the batch its gallery-href fix.
+    Returns list[MarkdownPatch] and writes nothing, so it backs both the dry
+    run and the live run. A page that cannot be processed is skipped with a
+    warning rather than aborting the scan: legacy markdown across tens of
+    thousands of pages cannot be assumed to parse, and one bad page must not
+    cost every other page its fix.
     """
     if not renames:
         return []
@@ -317,36 +319,47 @@ def _collect_gallery_patches(renames):
     cleaner = WebsiteContentMarkdownCleaner(
         _PlannedGalleryHrefRule(basename_map, uuid_map)
     )
-
     contents = (
-        WebsiteContent.objects.filter(website__uuid__in=basename_map.keys())
-        .filter(markdown__contains=GALLERY_ITEM_SHORTCODE_NAME)
+        WebsiteContent.objects.filter(
+            Q(
+                website__uuid__in=basename_map.keys(),
+                markdown__contains=GALLERY_ITEM_SHORTCODE_NAME,
+            )
+            | Q(markdown__iregex=_LEGACY_NAME_PATTERN)
+        )
         .exclude(markdown="")
+        .exclude(markdown__isnull=True)
         .iterator()
     )
     patches = []
     for wc in contents:
         try:
-            changed = cleaner.update_website_content(wc)
+            gallery = str(wc.website_id) in basename_map and (
+                cleaner.update_website_content(wc)
+            )
+            linked = rewrite_file_references(wc.markdown, lookup)
         except Exception as exc:  # noqa: BLE001
             print(  # noqa: T201
-                f"Skipping gallery-href scan for content pk={wc.pk}: {exc!s}",
+                f"Skipping markdown patch for content pk={wc.pk}: {exc!s}",
                 file=sys.stderr,
             )
             continue
-        else:
-            if changed:
-                patches.append(
-                    MarkdownPatch(pk=str(wc.pk), updated_markdown=wc.markdown)
-                )
         finally:
             # Discard per-match bookkeeping the cleaner isn't asked to report
-            # here (no CSV export in this path) — otherwise it grows
-            # unboundedly across a large scan, holding a reference to every
-            # scanned WebsiteContent. A page that raised part way through has
-            # already recorded its earlier matches, so this has to run on that
-            # path too.
+            # here, or it grows across a large scan and keeps every scanned
+            # page alive. A page that raised part way through has already
+            # recorded its earlier matches, so this runs on that path too.
             cleaner.replacement_matches.clear()
+        links = linked != wc.markdown
+        if gallery or links:
+            patches.append(
+                MarkdownPatch(
+                    pk=str(wc.pk),
+                    updated_markdown=linked,
+                    gallery=bool(gallery),
+                    links=links,
+                )
+            )
     return patches
 
 
@@ -420,7 +433,7 @@ def _collect_followups(renames):
     )
     return Followups(
         metadata=_collect_content_metadata_patches(lookup),
-        markdown=_collect_gallery_patches(renames),
+        markdown=_collect_markdown_patches(renames, lookup),
     )
 
 
@@ -754,11 +767,11 @@ class Command(WebsiteFilterCommand):
                 if planned_website_ids
                 else {}
             )
-            # Write the CSV rename plan before scanning gallery markdown: the
+            # Write the CSV rename plan before scanning for references: the
             # plan is the operator's safety artifact and must not depend on
-            # markdown parsing succeeding. _collect_gallery_patches guards
-            # per-record internally, but this ordering means even an
-            # unanticipated failure there can't cost the CSV export.
+            # markdown parsing succeeding. The patchers guard per record
+            # internally, but this ordering means even an unanticipated
+            # failure there can't cost the CSV export.
             with open(output_path, "w", newline="", encoding="utf-8") as f:  # noqa: PTH123
                 _write_csv_rows(
                     csv.DictWriter(f, fieldnames=_CSV_FIELDNAMES),

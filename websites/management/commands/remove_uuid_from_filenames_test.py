@@ -1012,7 +1012,7 @@ def test_gallery_scan_clears_bookkeeping_for_malformed_pages(mocker, mock_s3):
         remove_uuid_from_filenames as command_module,
     )
     from websites.management.commands.remove_uuid_from_filenames import (  # noqa: PLC0415
-        _collect_gallery_patches,
+        _collect_markdown_patches,
         _collect_renames,
     )
 
@@ -1047,7 +1047,7 @@ def test_gallery_scan_clears_bookkeeping_for_malformed_pages(mocker, mock_s3):
         .exclude(file="")
     )
     # Must not raise, and must not leave the failed page's matches behind.
-    _collect_gallery_patches(renames)
+    _collect_markdown_patches(renames, {})
 
     assert cleaners, "expected the scan to build a cleaner"
     assert cleaners[0].replacement_matches == []
@@ -1578,3 +1578,119 @@ def test_a_row_stored_under_another_sites_directory_gets_its_metadata_patched(mo
 
     row.refresh_from_db()
     assert row.metadata["file"] == f"/courses/{home_site.name}/doc.pdf"
+
+
+def test_gallery_hrefs_follow_their_own_source(mock_s3):
+    """Both the bare href and the uuid param resolve to the file's own new name."""
+    website = WebsiteFactory.create()
+    _, rows = _contested_trio(website)
+    third = rows[2]
+    gallery = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_C}_1.jpg" text="bare" >}}}}\n'
+            f'{{{{< image-gallery-item href="stale.jpg" uuid="{third.text_id}" text="by uuid" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    gallery.refresh_from_db()
+    assert gallery.markdown == (
+        '{{< image-gallery-item href="1-3.jpg" text="bare" >}}\n'
+        f'{{{{< image-gallery-item href="1-3.jpg" uuid="{third.text_id}" text="by uuid" >}}}}'
+    )
+
+
+def test_markdown_file_links_follow_their_own_source(mock_s3):
+    """Absolute and root-relative links are rewritten, the rest of the page stays."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f"![a](https://ocw.mit.edu/{directory}/{UUID_C}_1.jpg) "
+            f"and [b](/{directory}/{UUID_C}_1.jpg)."
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    page.refresh_from_db()
+    assert page.markdown == (
+        f"![a](https://ocw.mit.edu/{directory}/1-3.jpg) and [b](/{directory}/1-3.jpg)."
+    )
+
+
+def test_a_page_with_a_gallery_item_and_a_file_link_keeps_both_patches(mock_s3):
+    """Both rewrites land in one saved value, neither overwrites the other."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_A}_1.jpg" text="g" >}}}}\n'
+            f"[doc](/{directory}/{UUID_C}_1.jpg)"
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    page.refresh_from_db()
+    assert page.markdown == (
+        '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
+        f"[doc](/{directory}/1-3.jpg)"
+    )
+
+
+def test_a_path_valued_gallery_href_is_rewritten_once(mock_s3):
+    """The gallery pass rewrites it, so the link pass no longer sees a prefix."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="/{directory}/{UUID_B}_1.jpg" text="g" >}}}}'
+        ),
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    page.refresh_from_db()
+    assert page.markdown == (
+        f'{{{{< image-gallery-item href="/{directory}/1-2.jpg" text="g" >}}}}'
+    )
+
+
+def test_a_link_from_another_site_is_patched(mock_s3):
+    """The markdown scan covers every website, not only the renamed one."""
+    home_site = WebsiteFactory.create()
+    other_site = WebsiteFactory.create()
+    old_key = f"sites/{home_site.name}/{UUID_PREFIX}_doc.pdf"
+    WebsiteContentFactory.create(website=home_site, file=old_key)
+    page = WebsiteContentFactory.create(
+        website=other_site, markdown=f"[doc](/{old_key})"
+    )
+
+    call_command("remove_uuid_from_filenames", filter=home_site.name)
+
+    page.refresh_from_db()
+    assert page.markdown == f"[doc](/sites/{home_site.name}/doc.pdf)"
+
+
+def test_a_link_through_the_published_path_is_patched(mock_s3):
+    """A site can publish under url_path while storing files under s3_path."""
+    website = WebsiteFactory.create()
+    assert website.url_path != website.s3_path
+    WebsiteContentFactory.create(
+        website=website, file=f"{website.s3_path}/{UUID_PREFIX}_doc.pdf"
+    )
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=f"[doc](/{website.url_path}/{UUID_PREFIX}_doc.pdf)",
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    page.refresh_from_db()
+    assert page.markdown == f"[doc](/{website.url_path}/doc.pdf)"
