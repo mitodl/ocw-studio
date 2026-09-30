@@ -71,7 +71,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+prek = ["prek==0.5.4"]
 dev = [
+    { include-group = "prek" },
     "bpython>=0.26,<0.27",
     "ddt>=1.6.0,<2",
     "django-debug-toolbar>=8,<9",
@@ -82,7 +84,6 @@ dev = [
     "moto>=5.0.0,<6",
     "nplusone>=1.0.0,<2",
     "pdbpp>=0.12.1,<0.13",
-    "pre-commit>=4.0.0,<5",
     "pytest>=9.0.0,<10",
     "pytest-cov>=7.0.0,<8",
     "pytest-django>=4.5.2,<5",
@@ -100,6 +101,7 @@ exclude-newer = "7d"
 required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
+prek = "0d"
 cryptography = "0d"
 mitol-django-common = "0d"
 mitol-django-mail = "0d"
