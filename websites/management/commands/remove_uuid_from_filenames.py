@@ -447,6 +447,120 @@ def _refresh_sync_states(pks):
             )
 
 
+class ExecutionResult(NamedTuple):
+    """What a rename pass actually did."""
+
+    committed: list  # RenameTask rows whose rename committed
+    error_count: int
+
+
+# How many source objects share one database recheck of their targets.
+_RECHECK_BATCH = 500
+
+
+def _current_holders(keys):
+    """Map each normalised key in *keys* to the pks of every row holding it now."""
+    variants = set(keys) | {f"/{key}" for key in keys}
+    holders = defaultdict(set)
+    for file_value, pk in WebsiteContent.all_objects.filter(
+        file__in=variants
+    ).values_list("file", "pk"):
+        holders[file_value.lstrip("/")].add(pk)
+    return holders
+
+
+def _execute_renames(renames, s3, stdout, stderr):
+    """
+    Apply the plan: one S3 copy per source object, one transaction per row.
+
+    Rows are grouped by source key, so a shared object is copied once and
+    its old key is deleted only after every row pointing at it committed.
+    Each batch of targets is checked against the database again first. A
+    full run takes hours, and Google Drive sync creates keys without a UUID
+    prefix, so a colliding key can appear after planning.
+    """
+    groups = defaultdict(list)
+    for task in renames:
+        groups[task.old_key.lstrip("/")].append(task)
+    source_keys = list(groups)
+    committed = []
+    error_count = 0
+    for start in range(0, len(source_keys), _RECHECK_BATCH):
+        batch = source_keys[start : start + _RECHECK_BATCH]
+        holders = _current_holders(
+            {groups[key][0].new_key.lstrip("/") for key in batch}
+        )
+        for source_key in batch:
+            done, errors = _rename_group(
+                source_key, groups[source_key], holders, s3, stdout, stderr
+            )
+            committed.extend(done)
+            error_count += errors
+    return ExecutionResult(committed=committed, error_count=error_count)
+
+
+def _rename_group(source_key, tasks, holders, s3, stdout, stderr):  # noqa: PLR0913, PLR0917
+    """
+    Rename one source object and every row that points at it.
+
+    Returns (committed tasks, error count). The old key is deleted only when
+    every row committed, since a row that failed still points at it.
+    """
+    bucket = settings.AWS_STORAGE_BUCKET_NAME
+    target = tasks[0].new_key.lstrip("/")
+    if holders.get(target, set()) - {int(task.pk) for task in tasks}:
+        stderr.write(
+            f"Error renaming {source_key}: target {target} was taken after "
+            "planning. Run the command again to give it a new name."
+        )
+        return [], len(tasks)
+    try:
+        s3.copy_object(
+            Bucket=bucket,
+            CopySource={"Bucket": bucket, "Key": source_key},
+            Key=target,
+            ACL="public-read",
+        )
+    except Exception as exc:  # noqa: BLE001
+        for task in tasks:
+            stderr.write(f"Error renaming {task.old_key} to {task.new_key}: {exc!s}")
+        return [], len(tasks)
+    committed = []
+    for task in tasks:
+        if _commit_row(task, source_key, target, stderr):
+            stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
+            committed.append(task)
+    if len(committed) < len(tasks):
+        stderr.write(f"Keeping {source_key}: a row still points at it")
+        return committed, len(tasks) - len(committed)
+    try:
+        s3.delete_object(Bucket=bucket, Key=source_key)
+    except Exception as exc:  # noqa: BLE001
+        # The rename is committed in the database and S3, so the old key is
+        # only an orphan now. Warn and keep the success.
+        stderr.write(f"Warning: failed to delete old key {source_key}: {exc!s}")
+    return committed, 0
+
+
+def _commit_row(task, source_key, target, stderr):
+    """Commit one row's rename in its own transaction. Return True on success."""
+    try:
+        with transaction.atomic():
+            WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
+            DriveFile.objects.filter(resource_id=task.pk, s3_key=source_key).update(
+                s3_key=target
+            )
+            # Inside the same transaction as the rename it belongs to.
+            # Deferring it would leave an interrupted run's committed renames
+            # with a stale checksum, and a re-run cannot find them, since they
+            # no longer carry a prefix.
+            _refresh_sync_states([task.pk])
+    except Exception as exc:  # noqa: BLE001
+        stderr.write(f"Error renaming {task.old_key} to {task.new_key}: {exc!s}")
+        return False
+    return True
+
+
 _CSV_FIELDNAMES = ["pk", "website_id", "website_name", "old_key", "new_key"]
 
 
@@ -663,74 +777,19 @@ class Command(WebsiteFilterCommand):
 
         # --- Execution phase ---
         s3 = get_boto3_client("s3")
-        renamed_count = 0
-        error_count = 0
-        actually_renamed_website_ids = set()
-        successfully_renamed_old_keys: set[str] = set()
-
-        for task in renames:
-            # Legacy content.file values may be stored with a leading slash
-            # (e.g. /courses/...) but S3 keys never start with /.  Normalize
-            # before S3 operations to avoid NoSuchKey on pre-sites/ content.
-            s3_old_key = task.old_key.lstrip("/")
-            s3_new_key = task.new_key.lstrip("/")
-            try:
-                s3.copy_object(
-                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    CopySource={
-                        "Bucket": settings.AWS_STORAGE_BUCKET_NAME,
-                        "Key": s3_old_key,
-                    },
-                    Key=s3_new_key,
-                    ACL="public-read",
-                )
-                with transaction.atomic():
-                    WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
-                    DriveFile.objects.filter(
-                        resource_id=task.pk, s3_key=s3_old_key
-                    ).update(s3_key=s3_new_key)
-                    # Inside the same transaction as the rename it belongs to.
-                    # Deferring this to the end of the run would mean an
-                    # interrupted job leaves committed renames stranded with a
-                    # stale checksum, and a re-run cannot repair them because
-                    # the file no longer carries a UUID prefix to match on.
-                    _refresh_sync_states([task.pk])
-            except Exception as exc:  # noqa: BLE001
-                self.stderr.write(
-                    f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
-                )
-                error_count += 1
-                continue
-
-            # copy + DB updates committed — record success for dirty-flag and
-            # metadata patching regardless of whether the old-key cleanup below
-            # succeeds.
-            self.stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
-            renamed_count += 1
-            actually_renamed_website_ids.add(task.website_id)
-            # Store normalized key so _collect_metadata_patches can match
-            # val.lstrip("/") against it regardless of slash format.
-            successfully_renamed_old_keys.add(s3_old_key)
-
-            try:
-                s3.delete_object(
-                    Bucket=settings.AWS_STORAGE_BUCKET_NAME,
-                    Key=s3_old_key,
-                )
-            except Exception as exc:  # noqa: BLE001
-                # The rename is already committed in DB and S3; the old key is
-                # now an orphan.  Log a warning but keep the success counters.
-                self.stderr.write(
-                    f"Warning: failed to delete old key {s3_old_key}: {exc!s}"
-                )
+        result = _execute_renames(renames, s3, self.stdout, self.stderr)
+        actually_renamed_website_ids = {task.website_id for task in result.committed}
 
         patches, gallery_patches = self._apply_followups(
-            renames, actually_renamed_website_ids, successfully_renamed_old_keys
+            renames,
+            actually_renamed_website_ids,
+            {task.old_key.lstrip("/") for task in result.committed},
         )
 
         self.stdout.write(
-            f"Done: {renamed_count} renamed, {skipped_count} skipped, "
-            f"{error_count} errors, {len(patches)} video metadata records patched, "
+            f"Done: {len(result.committed)} renamed, {skipped_count} skipped, "
+            f"{result.error_count} errors, "
+            f"{len(patches)} video metadata records patched, "
             f"{len(gallery_patches)} gallery pages patched"
         )
 

@@ -8,9 +8,11 @@ from django.core.management import call_command
 
 from gdrive_sync.factories import DriveFileFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.management.commands import remove_uuid_from_filenames as command_module
 from websites.management.commands.remove_uuid_from_filenames import (
     _collect_metadata_patches,
     _collect_renames,
+    _execute_renames,
     _with_suffix,
     strip_uuid_prefix,
 )
@@ -1548,3 +1550,92 @@ def test_replanning_after_a_partial_run_keeps_the_same_names():
     assert {task.pk: task.new_key for task in tasks} == {
         pk: key for pk, key in first_plan.items() if pk != str(middle.pk)
     }
+
+
+def test_contested_files_are_each_copied_to_their_own_name(mock_s3):
+    """Every source object is copied to the key the plan gave it."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    drive_file = DriveFileFactory.create(
+        resource=rows[2], website=website, s3_key=f"{directory}/{UUID_C}_1.jpg"
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    drive_file.refresh_from_db()
+    assert drive_file.s3_key == f"{directory}/1-3.jpg"
+    copies = {
+        call.kwargs["CopySource"]["Key"]: call.kwargs["Key"]
+        for call in mock_s3.return_value.copy_object.call_args_list
+    }
+    assert copies == {
+        f"{directory}/{UUID_A}_1.jpg": f"{directory}/1.jpg",
+        f"{directory}/{UUID_B}_1.jpg": f"{directory}/1-2.jpg",
+        f"{directory}/{UUID_C}_1.jpg": f"{directory}/1-3.jpg",
+    }
+
+
+def test_a_shared_object_is_copied_and_deleted_once(mock_s3):
+    """Both rows move to the new key, each in its own slash form."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=f"/{key}")
+
+    call_command(
+        "remove_uuid_from_filenames", filter=f"{first_site.name},{second_site.name}"
+    )
+
+    assert mock_s3.return_value.copy_object.call_count == 1
+    assert mock_s3.return_value.delete_object.call_count == 1
+    first.refresh_from_db()
+    second.refresh_from_db()
+    assert str(first.file) == f"courses/{first_site.name}/doc.pdf"
+    assert str(second.file) == f"/courses/{first_site.name}/doc.pdf"
+
+
+def test_a_shared_object_is_kept_while_any_row_still_points_at_it(mocker, mock_s3):
+    """If one row fails to commit, the old object must survive for it."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=key)
+    real_refresh = command_module._refresh_sync_states  # noqa: SLF001
+
+    def refresh(pks):
+        if str(second.pk) in {str(pk) for pk in pks}:
+            msg = "boom"
+            raise RuntimeError(msg)
+        return real_refresh(pks)
+
+    mocker.patch.object(command_module, "_refresh_sync_states", side_effect=refresh)
+
+    call_command(
+        "remove_uuid_from_filenames", filter=f"{first_site.name},{second_site.name}"
+    )
+
+    mock_s3.return_value.delete_object.assert_not_called()
+    first.refresh_from_db()
+    second.refresh_from_db()
+    assert str(first.file) == f"courses/{first_site.name}/doc.pdf"
+    assert str(second.file) == key
+
+
+def test_a_target_taken_after_planning_skips_its_group(mock_s3):
+    """A Drive sync can create the target name while a long run is going."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_A}_doc.pdf"
+    )
+    renames, _ = _collect_renames(_files_in(website))
+    WebsiteContentFactory.create(website=website, file=f"sites/{website.name}/doc.pdf")
+    stderr = StringIO()
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), stderr)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    assert result.committed == []
+    assert result.error_count == 1
+    assert "taken after planning" in stderr.getvalue()
