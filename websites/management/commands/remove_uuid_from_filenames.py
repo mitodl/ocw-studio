@@ -3,6 +3,7 @@
 import csv
 import sys
 from collections import Counter
+from pathlib import PurePosixPath
 from typing import NamedTuple
 
 from celery.exceptions import TimeoutError as CeleryTimeoutError
@@ -35,6 +36,8 @@ class RenameTask(NamedTuple):
     text_id: str  # WebsiteContent.text_id — what a gallery item's uuid param names
     old_key: str
     new_key: str
+    suffixed: bool = False  # new_key is not simply old_key with the prefix removed
+    reason: str = ""  # contested, name held by existing file, shared object
 
 
 class MetadataPatch(NamedTuple):
@@ -49,6 +52,13 @@ class MarkdownPatch(NamedTuple):
 
     pk: str  # str(WebsiteContent.pk) — integer AutoField stringified
     updated_markdown: str
+
+
+def _with_suffix(key: str, number: int) -> str:
+    """Insert -<number> before the last extension of *key*'s file name."""
+    directory, separator, name = key.rpartition("/")
+    path = PurePosixPath(name)
+    return f"{directory}{separator}{path.stem}-{number}{path.suffix}"
 
 
 class _PlannedGalleryHrefRule(BaseGalleryHrefRewriteRule):

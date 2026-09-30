@@ -11,6 +11,7 @@ from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.remove_uuid_from_filenames import (
     _collect_metadata_patches,
     _collect_renames,
+    _with_suffix,
     strip_uuid_prefix,
 )
 from websites.models import Website, WebsiteContent
@@ -1346,3 +1347,17 @@ def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sy
     message = stderr.getvalue()
     assert "Timed out" in message
     assert first.name in message or second.name in message
+
+
+@pytest.mark.parametrize(
+    ("key", "number", "expected"),
+    [
+        ("sites/site/1.jpg", 2, "sites/site/1-2.jpg"),
+        ("sites/site/archive.tar.gz", 2, "sites/site/archive.tar-2.gz"),
+        ("sites/site/name", 3, "sites/site/name-3"),
+        ("notes.PDF", 21, "notes-21.PDF"),
+    ],
+)
+def test_with_suffix_goes_before_the_last_extension(key, number, expected):
+    """The extension stays last, which caption pairing and downloads rely on."""
+    assert _with_suffix(key, number) == expected
