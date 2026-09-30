@@ -3,6 +3,7 @@
 import csv
 import logging
 import sys
+import time
 from collections import Counter, defaultdict
 from pathlib import PurePosixPath
 from typing import NamedTuple
@@ -22,7 +23,10 @@ from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.filename_references import (
+    build_path_index,
     build_path_lookup,
+    referenced_entries,
+    referenced_entries_in_json,
     rewrite_file_references,
     rewrite_json_strings,
 )
@@ -655,58 +659,6 @@ def _collect_followups(renames):
     )
 
 
-def _apply_followups(committed):
-    """
-    Write every reference patch for the renames that committed.
-
-    Scoped to committed renames only, so a skipped or failed file leaves the
-    references to it alone.
-    """
-    website_ids = {task.website_id for task in committed}
-    if website_ids:
-        Website.objects.filter(uuid__in=website_ids).update(
-            has_unpublished_live=True,
-            has_unpublished_draft=True,
-        )
-    followups = _collect_followups(committed)
-    WebsiteContent.objects.bulk_update(
-        [
-            WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
-            for patch in followups.metadata
-        ],
-        ["metadata"],
-        batch_size=_SYNC_STATE_BATCH,
-    )
-    WebsiteContent.objects.bulk_update(
-        [
-            WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
-            for patch in followups.markdown
-        ],
-        ["markdown"],
-        batch_size=_SYNC_STATE_BATCH,
-    )
-    Website.objects.bulk_update(
-        [
-            Website(uuid=patch.website_id, metadata=patch.updated_metadata)
-            for patch in followups.site_metadata
-        ],
-        ["metadata"],
-        batch_size=_SYNC_STATE_BATCH,
-    )
-    # These writes bypass post_save, so the sync states still carry the old
-    # checksums. Refresh them, or the git sync treats this content as
-    # already synced and the published site keeps the old file names.
-    _refresh_sync_states(
-        {patch.pk for patch in followups.metadata}
-        | {patch.pk for patch in followups.markdown}
-    )
-    # A video's own checksum does not change, so clear its synced checksum.
-    ContentSyncState.objects.filter(content_id__in=followups.videos).update(
-        synced_checksum=None
-    )
-    return followups
-
-
 _SYNC_STATE_BATCH = 2000
 # A site's git commit is slow but not unbounded. Without a cap the command
 # blocks forever if no worker ever picks the task up.
@@ -943,6 +895,189 @@ def _summary(renames, skipped, followups, *, dry_run, errors=0):
     return ", ".join(parts)
 
 
+DEFAULT_CHUNK_SIZE = 500
+
+# Integer counts every chunk summary carries, added up by finish_job.
+_CHUNK_COUNTS = (
+    "renamed",
+    "suffixed",
+    "errors",
+    "content_metadata",
+    "markdown_links",
+    "galleries",
+    "site_metadata",
+)
+
+
+def _selected_contents(website_ids):
+    """Return the rows the command considers, limited to *website_ids* if given."""
+    contents = WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
+    if website_ids is not None:
+        contents = contents.filter(website__uuid__in=website_ids)
+    return contents
+
+
+def _referencing_rows(index):
+    """
+    Find the rows that reference each source object in *index*.
+
+    Returns ({source_key: content pks}, {source_key: website ids}). One scan
+    for the whole job, so chunks do not each rescan every website.
+    """
+    content_refs = defaultdict(set)
+    site_refs = defaultdict(set)
+    if not index:
+        return content_refs, site_refs
+    rows = (
+        WebsiteContent.objects.annotate(metadata_text=Cast("metadata", TextField()))
+        .filter(
+            Q(markdown__iregex=_LEGACY_NAME_PATTERN)
+            | Q(metadata_text__iregex=_LEGACY_NAME_PATTERN)
+        )
+        .values_list("pk", "markdown", "metadata")
+        .iterator(chunk_size=2000)
+    )
+    for pk, markdown, metadata in rows:
+        entries = referenced_entries(markdown, index) | referenced_entries_in_json(
+            metadata, index
+        )
+        for entry in entries:
+            content_refs[index[entry].old_key.lstrip("/")].add(pk)
+    sites = (
+        Website.objects.annotate(metadata_text=Cast("metadata", TextField()))
+        .filter(metadata_text__iregex=_LEGACY_NAME_PATTERN)
+        .values_list("uuid", "metadata")
+        .iterator(chunk_size=2000)
+    )
+    for uuid, metadata in sites:
+        for entry in referenced_entries_in_json(metadata, index):
+            site_refs[index[entry].old_key.lstrip("/")].add(str(uuid))
+    return content_refs, site_refs
+
+
+def plan_job(website_ids, chunk_size):
+    """
+    Plan the whole run and split it into chunk arguments. Writes nothing.
+
+    Returns (chunks, skipped). Each chunk is (assignments, content_pks,
+    website_ids): its exact renames as dicts, and the rows the one reference
+    scan found naming those files. A source object and every row pointing at
+    it always share a chunk.
+    """
+    renames, skipped = _collect_renames(_selected_contents(website_ids))
+    groups = defaultdict(list)
+    for task in renames:
+        groups[task.old_key.lstrip("/")].append(task)
+    index = build_path_index(
+        renames, _site_paths({task.website_id for task in renames})
+    )
+    content_refs, site_refs = _referencing_rows(index)
+    source_keys = list(groups)
+    chunks = []
+    for start in range(0, len(source_keys), chunk_size):
+        keys = source_keys[start : start + chunk_size]
+        chunks.append(
+            (
+                [task._asdict() for key in keys for task in groups[key]],
+                sorted({pk for key in keys for pk in content_refs.get(key, ())}),
+                sorted({site for key in keys for site in site_refs.get(key, ())}),
+            )
+        )
+    log.info(
+        "Rename job planned: %d renames, %d with a suffix, in %d chunks, %d skipped",
+        len(renames),
+        sum(1 for task in renames if task.suffixed),
+        len(chunks),
+        skipped,
+    )
+    return chunks, skipped
+
+
+class _LogWriter:
+    """Let _execute_renames write to the log when it runs inside a task."""
+
+    def __init__(self, level):
+        self.level = level
+
+    def write(self, message):
+        log.log(self.level, message)
+
+
+def run_chunk(chunk_id, assignments, content_pks, website_ids):
+    """
+    Rename and patch one chunk of the plan. Never raises.
+
+    Returns its counts and the renamed websites' names, for the chord
+    callback. A task that raised would be acknowledged, never retried, and
+    would stop the callback, so failures are counted instead.
+    """
+    started = time.monotonic()
+    # Logged before any work, so a chunk that keeps killing its worker, and
+    # so never logs a finish, is still identifiable by its id.
+    log.info("Rename chunk %s starting: %d renames", chunk_id, len(assignments))
+    summary = dict.fromkeys(_CHUNK_COUNTS, 0)
+    summary.update(chunk=chunk_id, websites=[])
+    try:
+        renames = [RenameTask(**assignment) for assignment in assignments]
+        result = _execute_renames(
+            renames,
+            get_boto3_client("s3"),
+            _LogWriter(logging.DEBUG),
+            _LogWriter(logging.WARNING),
+        )
+        counts = _patch_rows(result.committed, content_pks, website_ids)
+        website_uuids = {task.website_id for task in result.committed}
+        if website_uuids:
+            Website.objects.filter(uuid__in=website_uuids).update(
+                has_unpublished_live=True,
+                has_unpublished_draft=True,
+            )
+        suffixed = sum(1 for task in result.committed if task.suffixed)
+        summary.update(
+            renamed=len(result.committed) - suffixed,
+            suffixed=suffixed,
+            errors=result.error_count + counts.errors,
+            content_metadata=counts.content_metadata,
+            markdown_links=counts.markdown_links,
+            galleries=counts.galleries,
+            site_metadata=counts.site_metadata,
+            websites=sorted(
+                Website.objects.filter(uuid__in=website_uuids).values_list(
+                    "name", flat=True
+                )
+            ),
+        )
+    except Exception:
+        log.exception("Rename chunk %s stopped early", chunk_id)
+        summary["errors"] += 1
+    summary["seconds"] = round(time.monotonic() - started, 1)
+    log.info(
+        "Rename chunk %s finished in %ss: %s", chunk_id, summary["seconds"], summary
+    )
+    return summary
+
+
+def finish_job(summaries, skipped):
+    """Add up the chunk summaries, log the job's line, return (websites, line)."""
+    totals = dict.fromkeys(_CHUNK_COUNTS, 0)
+    websites = set()
+    for summary in summaries:
+        for key in _CHUNK_COUNTS:
+            totals[key] += summary.get(key, 0)
+        websites.update(summary.get("websites", []))
+    line = (
+        f"{totals['renamed']} files renamed, "
+        f"{totals['suffixed']} files renamed with a suffix, "
+        f"{skipped} skipped, {totals['errors']} errors, "
+        f"{totals['content_metadata']} content metadata records patched, "
+        f"{totals['markdown_links']} pages with file links patched, "
+        f"{totals['site_metadata']} site metadata records patched, "
+        f"{totals['galleries']} gallery pages patched"
+    )
+    log.info("Rename job finished: %s", line)
+    return sorted(websites), line
+
+
 class Command(WebsiteFilterCommand):
     """Remove legacy UUID prefixes from resource filenames in S3 and update database records."""  # noqa: E501
 
@@ -970,6 +1105,17 @@ class Command(WebsiteFilterCommand):
             default=False,
             help="Whether to skip syncing the changed websites to the backend",
         )
+
+    def _selected_website_ids(self):
+        """Return the websites --filter/--exclude select, or None for all of them."""
+        if not (self.filter_list or self.exclude_list):
+            return None
+        return [
+            str(uuid)
+            for uuid in self.filter_websites(Website.objects.all()).values_list(
+                "uuid", flat=True
+            )
+        ]
 
     def _sync_backend(self, *, skip_sync, website_ids):
         """
@@ -1028,20 +1174,17 @@ class Command(WebsiteFilterCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
-        dry_run = options["dry_run"]
-
-        contents = self.filter_website_contents(
-            WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
-        )
-
-        # --- Discovery phase (no S3/DB writes) ---
-        renames, skipped_count = _collect_renames(contents)
-
-        if dry_run:
+        if options["dry_run"]:
             output_path = options.get("output")
             if not output_path:
                 msg = "--output is required when using --dry-run"
                 raise CommandError(msg)
+            # --- Discovery phase (no S3/DB writes) ---
+            renames, skipped_count = _collect_renames(
+                self.filter_website_contents(
+                    WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
+                )
+            )
             planned_website_ids = {task.website_id for task in renames}
             # Look up website names for the human-readable CSV column.
             # Use str(uuid) as key to match task.website_id (already stringified).
@@ -1075,21 +1218,17 @@ class Command(WebsiteFilterCommand):
             return
 
         # --- Execution phase ---
-        s3 = get_boto3_client("s3")
-        result = _execute_renames(renames, s3, self.stdout, self.stderr)
-
-        followups = _apply_followups(result.committed)
-
-        summary = _summary(
-            result.committed,
-            skipped_count,
-            followups,
-            dry_run=False,
-            errors=result.error_count,
-        )
-        self.stdout.write(f"Done: {summary}")
+        chunks, skipped = plan_job(self._selected_website_ids(), DEFAULT_CHUNK_SIZE)
+        summaries = [run_chunk(index, *chunk) for index, chunk in enumerate(chunks)]
+        websites, line = finish_job(summaries, skipped)
+        self.stdout.write(f"Done: {line}")
 
         self._sync_backend(
             skip_sync=options["skip_sync"],
-            website_ids={task.website_id for task in result.committed},
+            website_ids={
+                str(uuid)
+                for uuid in Website.objects.filter(name__in=websites).values_list(
+                    "uuid", flat=True
+                )
+            },
         )

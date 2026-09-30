@@ -16,6 +16,9 @@ from websites.management.commands.remove_uuid_from_filenames import (
     _execute_renames,
     _patch_rows,
     _with_suffix,
+    finish_job,
+    plan_job,
+    run_chunk,
     strip_uuid_prefix,
 )
 from websites.models import Website, WebsiteContent
@@ -1943,6 +1946,157 @@ def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
     assert counts.errors == 1
     good.refresh_from_db()
     assert good.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_plan_job_keeps_each_source_object_in_one_chunk():
+    """Chunks are capped by source objects, and a shared object's rows stay together."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    shared = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    WebsiteContentFactory.create(website=first_site, file=shared)
+    WebsiteContentFactory.create(website=second_site, file=f"/{shared}")
+    _contested_trio(first_site)
+
+    chunks, skipped = plan_job(
+        [str(first_site.uuid), str(second_site.uuid)], chunk_size=1
+    )
+
+    assert skipped == 0
+    assert len(chunks) == 4
+    shared_chunk = next(
+        chunk for chunk in chunks if chunk[0][0]["old_key"].lstrip("/") == shared
+    )
+    assert len(shared_chunk[0]) == 2
+
+
+def test_plan_job_matches_the_dry_run_plan(tmp_path):
+    """With an unchanged database the job renames exactly what the CSV lists."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    output_file = tmp_path / "plan.csv"
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        planned = {row["pk"]: row["new_key"] for row in csv.DictReader(f)}
+
+    chunks, _ = plan_job([str(website.uuid)], chunk_size=500)
+
+    assert {
+        assignment["pk"]: assignment["new_key"]
+        for assignments, _, _ in chunks
+        for assignment in assignments
+    } == planned
+
+
+def test_plan_job_hands_referencing_rows_to_the_owning_chunk():
+    """A page and a website that name a file go to the chunk that renames it."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={"course_image_url": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+
+    chunks, _ = plan_job([str(website.uuid)], chunk_size=1)
+
+    owning = next(
+        chunk for chunk in chunks if chunk[0][0]["old_key"].endswith(f"{UUID_C}_1.jpg")
+    )
+    others = [chunk for chunk in chunks if chunk is not owning]
+    assert owning[1] == [page.pk]
+    assert owning[2] == [str(website.uuid)]
+    assert all(chunk[1] == [] and chunk[2] == [] for chunk in others)
+
+
+def test_running_a_chunk_twice_gives_the_same_end_state(mock_s3):
+    """A redelivered chunk copies nothing again and changes nothing further."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+
+    first = run_chunk(0, *chunk)
+    copies = mock_s3.return_value.copy_object.call_count
+    page.refresh_from_db()
+    patched = page.markdown
+    second = run_chunk(0, *chunk)
+
+    assert mock_s3.return_value.copy_object.call_count == copies
+    page.refresh_from_db()
+    assert page.markdown == patched == f"[c](/{directory}/1-3.jpg)"
+    assert first["markdown_links"] == 1
+    assert second["markdown_links"] == 0
+    assert second["renamed"] + second["suffixed"] == 3
+
+
+def test_a_chunk_redelivered_after_its_renames_still_patches_them(mock_s3):
+    """Renames committed, then the worker died before the patches ran."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    for assignment in chunk[0]:
+        WebsiteContent.objects.filter(pk=assignment["pk"]).update(
+            file=assignment["new_key"]
+        )
+
+    run_chunk(0, *chunk)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    page.refresh_from_db()
+    assert page.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_a_failing_chunk_reports_instead_of_raising(mocker, mock_s3):
+    """A raised task is acknowledged and never retried, and would stop the callback."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    mocker.patch.object(
+        command_module, "_execute_renames", side_effect=RuntimeError("boom")
+    )
+
+    summary = run_chunk(7, *chunk)
+
+    assert summary["chunk"] == 7
+    assert summary["errors"] == 1
+
+
+def test_finish_job_adds_up_the_chunks():
+    """One line for the whole job, and the websites to sync."""
+    websites, line = finish_job(
+        [
+            {
+                "renamed": 1,
+                "suffixed": 2,
+                "errors": 0,
+                "galleries": 1,
+                "websites": ["b"],
+            },
+            {"renamed": 3, "suffixed": 0, "errors": 1, "websites": ["a", "b"]},
+        ],
+        skipped=4,
+    )
+
+    assert websites == ["a", "b"]
+    assert _counts(line) == {
+        "files renamed with a suffix": 2,
+        "content metadata records": 0,
+        "pages with file links": 0,
+        "site metadata records": 0,
+        "gallery pages": 1,
+    }
+    assert "4 skipped, 1 errors" in line
 
 
 def test_contested_names_follow_pk_not_prefix_order():
