@@ -667,6 +667,23 @@ def _current_holders(keys):
     return holders
 
 
+def _current_files(pks):
+    """Map each pk in *pks* to the file value its row holds right now."""
+    return dict(
+        WebsiteContent.objects.filter(pk__in=list(pks)).values_list("pk", "file")
+    )
+
+
+def _delete_old_key(s3, bucket, source_key, stderr):
+    """Delete a renamed object's old key. A failure only leaves an orphan."""
+    try:
+        s3.delete_object(Bucket=bucket, Key=source_key)
+    except Exception as exc:  # noqa: BLE001
+        # The rename is committed in the database and S3, so the old key is
+        # only an orphan now. Warn and keep the success.
+        stderr.write(f"Warning: failed to delete old key {source_key}: {exc!s}")
+
+
 def _execute_renames(renames, s3, stdout, stderr):
     """
     Apply the plan: one S3 copy per source object, one transaction per row.
@@ -688,30 +705,39 @@ def _execute_renames(renames, s3, stdout, stderr):
         holders = _current_holders(
             {groups[key][0].new_key.lstrip("/") for key in batch}
         )
+        current = _current_files(int(task.pk) for key in batch for task in groups[key])
         for source_key in batch:
             done, errors = _rename_group(
-                source_key, groups[source_key], holders, s3, stdout, stderr
+                source_key, groups[source_key], holders, current, s3, stdout, stderr
             )
             committed.extend(done)
             error_count += errors
     return ExecutionResult(committed=committed, error_count=error_count)
 
 
-def _rename_group(source_key, tasks, holders, s3, stdout, stderr):  # noqa: PLR0913, PLR0917
+def _rename_group(source_key, tasks, holders, current, s3, stdout, stderr):  # noqa: PLR0913, PLR0917
     """
     Rename one source object and every row that points at it.
 
-    Returns (committed tasks, error count). The old key is deleted only when
-    every row committed, since a row that failed still points at it.
+    Returns (committed tasks, error count). A row already on its new key
+    committed in an earlier delivery of this chunk, so its copy is skipped
+    and it still counts as committed, which lets its patches run. The old
+    key is deleted only when every row committed, since a row that failed
+    still points at it.
     """
     bucket = settings.AWS_STORAGE_BUCKET_NAME
     target = tasks[0].new_key.lstrip("/")
+    done = [task for task in tasks if current.get(int(task.pk)) == task.new_key]
+    pending = [task for task in tasks if task not in done]
+    if not pending:
+        _delete_old_key(s3, bucket, source_key, stderr)
+        return done, 0
     if holders.get(target, set()) - {int(task.pk) for task in tasks}:
         stderr.write(
             f"Error renaming {source_key}: target {target} was taken after "
             "planning. Run the command again to give it a new name."
         )
-        return [], len(tasks)
+        return done, len(pending)
     try:
         s3.copy_object(
             Bucket=bucket,
@@ -720,23 +746,18 @@ def _rename_group(source_key, tasks, holders, s3, stdout, stderr):  # noqa: PLR0
             ACL="public-read",
         )
     except Exception as exc:  # noqa: BLE001
-        for task in tasks:
+        for task in pending:
             stderr.write(f"Error renaming {task.old_key} to {task.new_key}: {exc!s}")
-        return [], len(tasks)
-    committed = []
-    for task in tasks:
+        return done, len(pending)
+    committed = list(done)
+    for task in pending:
         if _commit_row(task, source_key, target, stderr):
             stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
             committed.append(task)
     if len(committed) < len(tasks):
         stderr.write(f"Keeping {source_key}: a row still points at it")
         return committed, len(tasks) - len(committed)
-    try:
-        s3.delete_object(Bucket=bucket, Key=source_key)
-    except Exception as exc:  # noqa: BLE001
-        # The rename is committed in the database and S3, so the old key is
-        # only an orphan now. Warn and keep the success.
-        stderr.write(f"Warning: failed to delete old key {source_key}: {exc!s}")
+    _delete_old_key(s3, bucket, source_key, stderr)
     return committed, 0
 
 

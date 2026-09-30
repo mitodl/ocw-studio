@@ -1828,6 +1828,43 @@ def test_dry_run_changes_no_references(tmp_path, mock_s3):
     mock_s3.return_value.copy_object.assert_not_called()
 
 
+def test_a_row_already_on_its_new_key_is_not_copied_again(mock_s3):
+    """A redelivered chunk treats a committed row as done and finishes the cleanup."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    WebsiteContent.objects.filter(pk=content.pk).update(file=renames[0].new_key)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    mock_s3.return_value.delete_object.assert_called_once()
+    assert mock_s3.return_value.delete_object.call_args.kwargs["Key"] == old_key
+    assert [task.pk for task in result.committed] == [str(content.pk)]
+    assert result.error_count == 0
+
+
+def test_a_partly_committed_shared_object_finishes_the_pending_row(mock_s3):
+    """One row committed before the stop, the other is copied and committed now."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=key)
+    renames, _ = _collect_renames(_files_in(first_site, second_site))
+    new_key = renames[0].new_key
+    WebsiteContent.objects.filter(pk=first.pk).update(file=new_key)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    assert mock_s3.return_value.copy_object.call_count == 1
+    assert mock_s3.return_value.delete_object.call_count == 1
+    second.refresh_from_db()
+    assert str(second.file) == new_key
+    assert {task.pk for task in result.committed} == {str(first.pk), str(second.pk)}
+
+
 def test_contested_names_follow_pk_not_prefix_order():
     """The lowest pk keeps the plain name even when its prefix sorts last."""
     website = WebsiteFactory.create()
