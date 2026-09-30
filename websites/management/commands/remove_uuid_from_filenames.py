@@ -63,6 +63,13 @@ class MarkdownPatch(NamedTuple):
     links: bool = False  # a path reference to a renamed file changed
 
 
+class SiteMetadataPatch(NamedTuple):
+    """A planned metadata update for one Website record."""
+
+    website_id: str  # str(Website.uuid)
+    updated_metadata: dict
+
+
 def _with_suffix(key: str, number: int) -> str:
     """Insert -<number> before the last extension of *key*'s file name."""
     directory, separator, name = key.rpartition("/")
@@ -372,6 +379,7 @@ class Followups(NamedTuple):
 
     metadata: list  # MetadataPatch
     markdown: list  # MarkdownPatch
+    site_metadata: list  # SiteMetadataPatch
 
 
 def _site_paths(website_ids):
@@ -419,6 +427,38 @@ def _collect_content_metadata_patches(lookup):
     return patches
 
 
+def _collect_site_metadata_patches(lookup):
+    """
+    Rewrite path references to renamed files in every website's metadata.
+
+    Covers the legacy course_image_url and course_thumbnail_image_url
+    values, and any other string there that names a renamed file.
+    """
+    if not lookup:
+        return []
+    patches = []
+    rows = (
+        Website.objects.annotate(metadata_text=Cast("metadata", TextField()))
+        .filter(metadata_text__iregex=_LEGACY_NAME_PATTERN)
+        .values_list("uuid", "metadata")
+        .iterator(chunk_size=2000)
+    )
+    for uuid, metadata in rows:
+        try:
+            updated, changed = rewrite_json_strings(metadata, lookup)
+        except Exception as exc:  # noqa: BLE001
+            print(  # noqa: T201
+                f"Skipping metadata patch for website {uuid}: {exc!s}",
+                file=sys.stderr,
+            )
+            continue
+        if changed:
+            patches.append(
+                SiteMetadataPatch(website_id=str(uuid), updated_metadata=updated)
+            )
+    return patches
+
+
 def _collect_followups(renames):
     """
     Compute every reference patch for *renames* without writing anything.
@@ -427,13 +467,14 @@ def _collect_followups(renames):
     renames that committed.
     """
     if not renames:
-        return Followups(metadata=[], markdown=[])
+        return Followups(metadata=[], markdown=[], site_metadata=[])
     lookup = build_path_lookup(
         renames, _site_paths({task.website_id for task in renames})
     )
     return Followups(
         metadata=_collect_content_metadata_patches(lookup),
         markdown=_collect_markdown_patches(renames, lookup),
+        site_metadata=_collect_site_metadata_patches(lookup),
     )
 
 
@@ -465,6 +506,14 @@ def _apply_followups(committed):
             for patch in followups.markdown
         ],
         ["markdown"],
+        batch_size=_SYNC_STATE_BATCH,
+    )
+    Website.objects.bulk_update(
+        [
+            Website(uuid=patch.website_id, metadata=patch.updated_metadata)
+            for patch in followups.site_metadata
+        ],
+        ["metadata"],
         batch_size=_SYNC_STATE_BATCH,
     )
     # These writes bypass post_save, so the sync states still carry the old

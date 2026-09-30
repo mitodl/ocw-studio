@@ -1694,3 +1694,28 @@ def test_a_link_through_the_published_path_is_patched(mock_s3):
 
     page.refresh_from_db()
     assert page.markdown == f"[doc](/{website.url_path}/doc.pdf)"
+
+
+def test_course_image_urls_follow_their_own_source(mock_s3):
+    """The legacy course image values follow their own files, other keys stay."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_PREFIX}_th.jpg"
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={
+            "course_image_url": f"/{directory}/{UUID_C}_1.jpg",
+            "course_thumbnail_image_url": f"/{directory}/{UUID_PREFIX}_th.jpg",
+            "course_title": "Kept",
+        }
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    website.refresh_from_db()
+    assert website.metadata == {
+        "course_image_url": f"/{directory}/1-3.jpg",
+        "course_thumbnail_image_url": f"/{directory}/th.jpg",
+        "course_title": "Kept",
+    }
