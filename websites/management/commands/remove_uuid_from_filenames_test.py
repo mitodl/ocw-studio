@@ -1868,12 +1868,9 @@ def test_patch_rows_patches_every_location(mock_s3):
     )
     renames, _ = _collect_renames(_files_in(website))
 
-    counts, patched_sites = _patch_rows(
-        renames, [rows[2].pk, page.pk], [str(website.uuid)]
-    )
+    counts = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
 
     assert counts == (1, 1, 1, 1, 0)
-    assert patched_sites == {str(website.uuid)}
     page.refresh_from_db()
     assert page.markdown == (
         '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
@@ -1926,7 +1923,7 @@ def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
         command_module, "_patch_content_row", side_effect=patch_content_row
     )
 
-    counts, _ = _patch_rows(renames, [bad.pk, good.pk], [])
+    counts = _patch_rows(renames, [bad.pk, good.pk], [])
 
     assert counts.errors == 1
     good.refresh_from_db()
@@ -2167,27 +2164,6 @@ def test_finish_job_names_chunks_that_stayed_incomplete(caplog):
     finish_job([{"chunk": 0, "incomplete": True}], skipped=0, chunk_count=1)
 
     assert "Rename chunks [0] still had errors" in caplog.text
-
-
-def test_a_page_in_another_site_marks_that_site_changed(mock_s3):
-    """A site linking to a renamed file is flagged and synced, not only the owner."""
-    owner = WebsiteFactory.create()
-    directory, _ = _contested_trio(owner)
-    other = WebsiteFactory.create()
-    WebsiteContentFactory.create(
-        website=other, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
-    )
-    Website.objects.filter(pk=other.pk).update(
-        has_unpublished_live=False, has_unpublished_draft=False
-    )
-    (chunk,), _ = plan_job([str(owner.uuid)], chunk_size=500)
-
-    summary = run_chunk(0, *chunk)
-
-    other.refresh_from_db()
-    assert other.has_unpublished_live is True
-    assert other.has_unpublished_draft is True
-    assert summary["websites"] == sorted([owner.name, other.name])
 
 
 def test_a_chunk_size_below_one_is_rejected(mocker, mock_s3):

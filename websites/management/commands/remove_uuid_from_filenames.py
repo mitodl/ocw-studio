@@ -523,12 +523,9 @@ def _patch_rows(committed, content_pks, website_ids):
     *website_ids* are the rows the job's plan found referencing these files.
     Gallery pages are found here by website, because an item can name its
     image through the uuid param alone.
-
-    Returns (PatchCounts, ids of the websites whose content changed). A page
-    can link to another site's file, so these are not only the renamed ones.
     """
     if not committed:
-        return PatchCounts(0, 0, 0, 0, 0), set()
+        return PatchCounts(0, 0, 0, 0, 0)
     renamed_sites = {task.website_id for task in committed}
     lookup = build_path_lookup(committed, _site_paths(renamed_sites))
     cleaner = WebsiteContentMarkdownCleaner(
@@ -539,13 +536,9 @@ def _patch_rows(committed, content_pks, website_ids):
         markdown__contains=GALLERY_ITEM_SHORTCODE_NAME,
     ).values_list("pk", flat=True)
     counts = Counter()
-    patched_sites = set()
     for pk in sorted(set(content_pks) | set(gallery_pks)):
         try:
-            changes, website_id = _patch_content_row(pk, lookup, cleaner, renamed_sites)
-            counts.update(changes)
-            if website_id:
-                patched_sites.add(website_id)
+            counts.update(_patch_content_row(pk, lookup, cleaner, renamed_sites))
         except Exception as exc:  # noqa: BLE001
             log.warning("Skipping reference patch for content pk=%s: %s", pk, exc)
             counts["errors"] += 1
@@ -557,22 +550,21 @@ def _patch_rows(committed, content_pks, website_ids):
         except Exception as exc:  # noqa: BLE001
             log.warning("Skipping reference patch for website %s: %s", website_id, exc)
             counts["errors"] += 1
-    patch_counts = PatchCounts(
+    return PatchCounts(
         content_metadata=counts["content_metadata"],
         markdown_links=counts["markdown_links"],
         galleries=counts["galleries"],
         site_metadata=counts["site_metadata"],
         errors=counts["errors"],
     )
-    return patch_counts, patched_sites
 
 
 def _patch_content_row(pk, lookup, cleaner, renamed_sites):
-    """Lock, re-read and patch one content row. Return (parts changed, website id)."""
+    """Lock, re-read and patch one content row. Return which parts changed."""
     with transaction.atomic():
         wc = WebsiteContent.objects.select_for_update().filter(pk=pk).first()
         if wc is None:
-            return {}, None
+            return {}
         gallery = bool(
             str(wc.website_id) in renamed_sites
             and wc.markdown
@@ -587,15 +579,14 @@ def _patch_content_row(pk, lookup, cleaner, renamed_sites):
         if metadata_changed:
             updates["metadata"] = metadata
         if not updates:
-            return {}, None
+            return {}
         WebsiteContent.objects.filter(pk=pk).update(**updates)
         _refresh_sync_states([pk])
-    changes = {
+    return {
         "galleries": int(gallery),
         "markdown_links": int(links),
         "content_metadata": int(metadata_changed),
     }
-    return changes, str(wc.website_id)
 
 
 def _patch_site_row(website_id, lookup):
@@ -1035,8 +1026,8 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
     """
     Rename and patch one chunk of the plan. Never raises.
 
-    Returns its counts and the names of the websites it changed, for the
-    chord callback. A task that raised would be acknowledged, never retried,
+    Returns its counts and the renamed websites' names, for the chord
+    callback. A task that raised would be acknowledged, never retried,
     and would stop the callback, so failures are counted instead.
     "incomplete" is set when a reference may be left unpatched, which only
     running the chunk again can fix: a renamed file no longer carries a
@@ -1056,8 +1047,8 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
             _LogWriter(logging.DEBUG),
             _LogWriter(logging.WARNING),
         )
-        counts, patched_sites = _patch_rows(result.committed, content_pks, website_ids)
-        website_uuids = {task.website_id for task in result.committed} | patched_sites
+        counts = _patch_rows(result.committed, content_pks, website_ids)
+        website_uuids = {task.website_id for task in result.committed}
         if website_uuids:
             Website.objects.filter(uuid__in=website_uuids).update(
                 has_unpublished_live=True,
