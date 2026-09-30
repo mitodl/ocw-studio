@@ -1,8 +1,9 @@
 """Remove legacy UUID prefixes from resource filenames in S3."""  # noqa: INP001
 
 import csv
+import logging
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import PurePosixPath
 from typing import NamedTuple
 
@@ -39,6 +40,8 @@ from websites.utils import (
     get_dict_query_field,
     strip_uuid_prefix,
 )
+
+log = logging.getLogger(__name__)
 
 
 class RenameTask(NamedTuple):
@@ -326,14 +329,7 @@ def _collect_markdown_patches(renames, lookup):
     if not renames:
         return []
 
-    basename_map: dict[str, dict[str, str]] = {}
-    uuid_map: dict[str, dict[str, str]] = {}
-    for task in renames:
-        old_basename = task.old_key.rpartition("/")[2]
-        new_basename = task.new_key.rpartition("/")[2]
-        basename_map.setdefault(task.website_id, {})[old_basename] = new_basename
-        uuid_map.setdefault(task.website_id, {})[task.text_id] = new_basename
-
+    basename_map, uuid_map = _gallery_maps(renames)
     cleaner = WebsiteContentMarkdownCleaner(
         _PlannedGalleryHrefRule(basename_map, uuid_map)
     )
@@ -490,6 +486,118 @@ def _collect_site_metadata_patches(lookup):
                 SiteMetadataPatch(website_id=str(uuid), updated_metadata=updated)
             )
     return patches
+
+
+def _gallery_maps(renames):
+    """Build the per-website maps that _PlannedGalleryHrefRule reads."""
+    basename_map: dict[str, dict[str, str]] = {}
+    uuid_map: dict[str, dict[str, str]] = {}
+    for task in renames:
+        old_basename = task.old_key.rpartition("/")[2]
+        new_basename = task.new_key.rpartition("/")[2]
+        basename_map.setdefault(task.website_id, {})[old_basename] = new_basename
+        uuid_map.setdefault(task.website_id, {})[task.text_id] = new_basename
+    return basename_map, uuid_map
+
+
+class PatchCounts(NamedTuple):
+    """How many rows one patch pass changed, by location."""
+
+    content_metadata: int
+    markdown_links: int
+    galleries: int
+    site_metadata: int
+    errors: int
+
+
+def _patch_rows(committed, content_pks, website_ids):
+    """
+    Apply the follow-up patches for *committed*, one locked row at a time.
+
+    Chunks run concurrently, and two can reach the same row, e.g. a page
+    linking to another site's file, or a gallery page whose images sit in
+    two chunks. Each row is locked with select_for_update, re-read and
+    rewritten from its current value, so a second chunk builds on the first
+    chunk's change instead of overwriting it. *content_pks* and
+    *website_ids* are the rows the job's plan found referencing these files.
+    Gallery pages are found here by website, because an item can name its
+    image through the uuid param alone.
+    """
+    if not committed:
+        return PatchCounts(0, 0, 0, 0, 0)
+    renamed_sites = {task.website_id for task in committed}
+    lookup = build_path_lookup(committed, _site_paths(renamed_sites))
+    cleaner = WebsiteContentMarkdownCleaner(
+        _PlannedGalleryHrefRule(*_gallery_maps(committed))
+    )
+    gallery_pks = WebsiteContent.objects.filter(
+        website__uuid__in=renamed_sites,
+        markdown__contains=GALLERY_ITEM_SHORTCODE_NAME,
+    ).values_list("pk", flat=True)
+    counts = Counter()
+    for pk in sorted(set(content_pks) | set(gallery_pks)):
+        try:
+            counts.update(_patch_content_row(pk, lookup, cleaner, renamed_sites))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Skipping reference patch for content pk=%s: %s", pk, exc)
+            counts["errors"] += 1
+        finally:
+            cleaner.replacement_matches.clear()
+    for website_id in sorted(set(website_ids)):
+        try:
+            counts["site_metadata"] += int(_patch_site_row(website_id, lookup))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Skipping reference patch for website %s: %s", website_id, exc)
+            counts["errors"] += 1
+    return PatchCounts(
+        content_metadata=counts["content_metadata"],
+        markdown_links=counts["markdown_links"],
+        galleries=counts["galleries"],
+        site_metadata=counts["site_metadata"],
+        errors=counts["errors"],
+    )
+
+
+def _patch_content_row(pk, lookup, cleaner, renamed_sites):
+    """Lock, re-read and patch one content row. Return which parts changed."""
+    with transaction.atomic():
+        wc = WebsiteContent.objects.select_for_update().filter(pk=pk).first()
+        if wc is None:
+            return {}
+        gallery = bool(
+            str(wc.website_id) in renamed_sites
+            and wc.markdown
+            and cleaner.update_website_content(wc)
+        )
+        markdown = rewrite_file_references(wc.markdown, lookup)
+        links = markdown != wc.markdown
+        metadata, metadata_changed = rewrite_json_strings(wc.metadata, lookup)
+        updates = {}
+        if gallery or links:
+            updates["markdown"] = markdown
+        if metadata_changed:
+            updates["metadata"] = metadata
+        if not updates:
+            return {}
+        WebsiteContent.objects.filter(pk=pk).update(**updates)
+        _refresh_sync_states([pk])
+    return {
+        "galleries": int(gallery),
+        "markdown_links": int(links),
+        "content_metadata": int(metadata_changed),
+    }
+
+
+def _patch_site_row(website_id, lookup):
+    """Lock, re-read and patch one website's metadata. Return True if it changed."""
+    with transaction.atomic():
+        site = Website.objects.select_for_update().filter(uuid=website_id).first()
+        if site is None:
+            return False
+        metadata, changed = rewrite_json_strings(site.metadata, lookup)
+        if changed:
+            Website.objects.filter(uuid=website_id).update(metadata=metadata)
+    return changed
 
 
 def _linked_videos(renames):

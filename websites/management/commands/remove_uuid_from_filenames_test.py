@@ -14,6 +14,7 @@ from websites.management.commands import remove_uuid_from_filenames as command_m
 from websites.management.commands.remove_uuid_from_filenames import (
     _collect_renames,
     _execute_renames,
+    _patch_rows,
     _with_suffix,
     strip_uuid_prefix,
 )
@@ -1863,6 +1864,85 @@ def test_a_partly_committed_shared_object_finishes_the_pending_row(mock_s3):
     second.refresh_from_db()
     assert str(second.file) == new_key
     assert {task.pk for task in result.committed} == {str(first.pk), str(second.pk)}
+
+
+def test_patch_rows_patches_every_location(mock_s3):
+    """Content metadata, markdown links, gallery hrefs and site metadata, with counts."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    WebsiteContent.objects.filter(pk=rows[2].pk).update(
+        metadata={"file": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_A}_1.jpg" text="g" >}}}}\n'
+            f"[doc](/{directory}/{UUID_B}_1.jpg)"
+        ),
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={"course_image_url": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    renames, _ = _collect_renames(_files_in(website))
+
+    counts = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
+
+    assert counts == (1, 1, 1, 1, 0)
+    page.refresh_from_db()
+    assert page.markdown == (
+        '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
+        f"[doc](/{directory}/1-2.jpg)"
+    )
+    website.refresh_from_db()
+    assert website.metadata == {"course_image_url": f"/{directory}/1-3.jpg"}
+
+
+def test_two_chunks_patching_the_same_page_both_land(mock_s3):
+    """Each chunk re-reads the row, so the second builds on the first."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=f"[a](/{directory}/{UUID_A}_1.jpg) [c](/{directory}/{UUID_C}_1.jpg)",
+    )
+    renames, _ = _collect_renames(_files_in(website))
+    by_old = {task.old_key: task for task in renames}
+
+    _patch_rows([by_old[f"{directory}/{UUID_A}_1.jpg"]], [page.pk], [])
+    _patch_rows([by_old[f"{directory}/{UUID_C}_1.jpg"]], [page.pk], [])
+
+    page.refresh_from_db()
+    assert page.markdown == f"[a](/{directory}/1.jpg) [c](/{directory}/1-3.jpg)"
+
+
+def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
+    """One row that cannot be patched is counted, the rest still are."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    bad = WebsiteContentFactory.create(
+        website=website, markdown=f"[a](/{directory}/{UUID_A}_1.jpg)"
+    )
+    good = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    renames, _ = _collect_renames(_files_in(website))
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == bad.pk:
+            msg = "boom"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
+    mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=patch_content_row
+    )
+
+    counts = _patch_rows(renames, [bad.pk, good.pk], [])
+
+    assert counts.errors == 1
+    good.refresh_from_db()
+    assert good.markdown == f"[c](/{directory}/1-3.jpg)"
 
 
 def test_contested_names_follow_pk_not_prefix_order():
