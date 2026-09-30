@@ -10,6 +10,8 @@ from celery.exceptions import TimeoutError as CeleryTimeoutError
 from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import transaction
+from django.db.models import TextField
+from django.db.models.functions import Cast
 from mitol.common.utils import now_in_utc
 
 from content_sync.models import ContentSyncState
@@ -17,6 +19,7 @@ from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
+from websites.filename_references import build_path_lookup, rewrite_json_strings
 from websites.management.commands.markdown_cleaning.cleaner import (
     WebsiteContentMarkdownCleaner,
 )
@@ -280,60 +283,6 @@ def _reason(rows, group, held):
     return ", ".join(reasons)
 
 
-def _collect_metadata_patches(website_uuids, renamed_keys=None):
-    """
-    Scan Video-type resource records in *website_uuids* for stale UUID-prefixed
-    paths in metadata["video_files"]["video_captions_file"] and
-    ["video_transcript_file"].
-
-    Returns list[MetadataPatch] — one entry per record that needs updating.
-    Does not write to the database.
-
-    *renamed_keys* — if provided, only patch metadata values whose path
-    (after stripping a leading slash) appears in this set. This prevents
-    patching video metadata for a captions/transcript file whose rename was
-    skipped (e.g. due to a conflict), which would otherwise leave the metadata
-    pointing at the wrong S3 path. Omit for dry-run paths where all planned
-    renames are assumed to succeed.
-    """
-    if not website_uuids:
-        return []
-
-    patches = []
-    video_resources = (
-        WebsiteContent.objects.filter(
-            website__uuid__in=website_uuids,
-            type="resource",
-            metadata__resourcetype="Video",
-            metadata__video_files__isnull=False,
-        )
-        .values("pk", "metadata")
-        .iterator()
-    )
-    for resource in video_resources:
-        metadata = resource["metadata"] or {}
-        vf = metadata.get("video_files") or {}
-        changed = False
-        for field in ("video_captions_file", "video_transcript_file"):
-            val = vf.get(field) or ""
-            if val:
-                # If a renamed_keys filter is provided, skip values whose
-                # underlying file was not actually renamed (e.g. skipped due
-                # to a conflict). lstrip handles leading-slash variants.
-                if renamed_keys is not None and val.lstrip("/") not in renamed_keys:
-                    continue
-                new_val = strip_uuid_prefix(val)
-                if new_val != val:
-                    vf[field] = new_val
-                    changed = True
-        if changed:
-            metadata["video_files"] = vf
-            patches.append(
-                MetadataPatch(pk=str(resource["pk"]), updated_metadata=metadata)
-            )
-    return patches
-
-
 def _collect_gallery_patches(renames):
     """
     Scan gallery markdown in the same websites as *renames* for
@@ -399,6 +348,120 @@ def _collect_gallery_patches(renames):
             # path too.
             cleaner.replacement_matches.clear()
     return patches
+
+
+# Matches a legacy UUID file name anywhere in a text column, for pre-filtering.
+_LEGACY_NAME_PATTERN = r"[0-9a-f]{32}_"
+
+
+class Followups(NamedTuple):
+    """Every reference patch computed for one set of renames."""
+
+    metadata: list  # MetadataPatch
+    markdown: list  # MarkdownPatch
+
+
+def _site_paths(website_ids):
+    """Map website id to (s3_path, url_path), for resolving path references."""
+    return {
+        str(website.uuid): (
+            website.s3_path if website.starter_id else None,
+            website.url_path,
+        )
+        for website in Website.objects.filter(uuid__in=website_ids).select_related(
+            "starter"
+        )
+    }
+
+
+def _collect_content_metadata_patches(lookup):
+    """
+    Rewrite path references to renamed files in every content metadata value.
+
+    Every website is scanned, not only the renamed ones, because a page can
+    point at another site's file. This replaces a video-only patch that
+    worked out new names by stripping the prefix, which cannot follow a file
+    that got a suffix.
+    """
+    if not lookup:
+        return []
+    patches = []
+    rows = (
+        WebsiteContent.objects.annotate(metadata_text=Cast("metadata", TextField()))
+        .filter(metadata_text__iregex=_LEGACY_NAME_PATTERN)
+        .values_list("pk", "metadata")
+        .iterator(chunk_size=2000)
+    )
+    for pk, metadata in rows:
+        try:
+            updated, changed = rewrite_json_strings(metadata, lookup)
+        except Exception as exc:  # noqa: BLE001
+            print(  # noqa: T201
+                f"Skipping metadata patch for content pk={pk}: {exc!s}",
+                file=sys.stderr,
+            )
+            continue
+        if changed:
+            patches.append(MetadataPatch(pk=str(pk), updated_metadata=updated))
+    return patches
+
+
+def _collect_followups(renames):
+    """
+    Compute every reference patch for *renames* without writing anything.
+
+    Backs both the dry run, from the whole plan, and the live run, from the
+    renames that committed.
+    """
+    if not renames:
+        return Followups(metadata=[], markdown=[])
+    lookup = build_path_lookup(
+        renames, _site_paths({task.website_id for task in renames})
+    )
+    return Followups(
+        metadata=_collect_content_metadata_patches(lookup),
+        markdown=_collect_gallery_patches(renames),
+    )
+
+
+def _apply_followups(committed):
+    """
+    Write every reference patch for the renames that committed.
+
+    Scoped to committed renames only, so a skipped or failed file leaves the
+    references to it alone.
+    """
+    website_ids = {task.website_id for task in committed}
+    if website_ids:
+        Website.objects.filter(uuid__in=website_ids).update(
+            has_unpublished_live=True,
+            has_unpublished_draft=True,
+        )
+    followups = _collect_followups(committed)
+    WebsiteContent.objects.bulk_update(
+        [
+            WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
+            for patch in followups.metadata
+        ],
+        ["metadata"],
+        batch_size=_SYNC_STATE_BATCH,
+    )
+    WebsiteContent.objects.bulk_update(
+        [
+            WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
+            for patch in followups.markdown
+        ],
+        ["markdown"],
+        batch_size=_SYNC_STATE_BATCH,
+    )
+    # These writes bypass post_save, so the sync states still carry the old
+    # checksums. Refresh them, or the git sync treats this content as
+    # already synced and the published site keeps the old file names.
+    _refresh_sync_states(
+        {patch.pk for patch in followups.metadata}
+        | {patch.pk for patch in followups.markdown}
+    )
+    return followups
 
 
 _SYNC_STATE_BATCH = 2000
@@ -607,67 +670,6 @@ class Command(WebsiteFilterCommand):
             help="Whether to skip syncing the changed websites to the backend",
         )
 
-    def _apply_followups(
-        self, renames, actually_renamed_website_ids, successfully_renamed_old_keys
-    ):
-        """
-        Apply everything that follows a successful rename batch.
-
-        Dirty flags, video metadata and gallery hrefs are all scoped to renames
-        that actually committed, never the full planned set, so a skipped or
-        failed file leaves its dependants alone. Returns the metadata and
-        gallery patches for the run summary.
-        """
-        if actually_renamed_website_ids:
-            Website.objects.filter(uuid__in=actually_renamed_website_ids).update(
-                has_unpublished_live=True,
-                has_unpublished_draft=True,
-            )
-
-        # renamed_keys keeps metadata patches off captions/transcripts whose
-        # own rename was skipped, which would otherwise be pointed at a path
-        # that does not exist.
-        patches = _collect_metadata_patches(
-            actually_renamed_website_ids,
-            renamed_keys=successfully_renamed_old_keys,
-        )
-        if patches:
-            WebsiteContent.objects.bulk_update(
-                [
-                    WebsiteContent(pk=patch.pk, metadata=patch.updated_metadata)
-                    for patch in patches
-                ],
-                ["metadata"],
-            )
-
-        successful_renames = [
-            task
-            for task in renames
-            if task.old_key.lstrip("/") in successfully_renamed_old_keys
-        ]
-        gallery_patches = _collect_gallery_patches(successful_renames)
-        if gallery_patches:
-            WebsiteContent.objects.bulk_update(
-                [
-                    WebsiteContent(pk=patch.pk, markdown=patch.updated_markdown)
-                    for patch in gallery_patches
-                ],
-                ["markdown"],
-            )
-
-        # Every write above bypassed post_save, so the sync states still carry
-        # the pre-change checksums. Refresh them or the git sync treats this
-        # content as already synced and the published site keeps the old
-        # filenames.
-        # Only the follow-up writes. Each rename already refreshed its own sync
-        # state inside its transaction, and a record that was both renamed and
-        # patched here is in one of these sets anyway, so re-scanning every
-        # renamed pk would recompute tens of thousands of checksums for nothing.
-        _refresh_sync_states(
-            {patch.pk for patch in patches} | {patch.pk for patch in gallery_patches}
-        )
-        return patches, gallery_patches
-
     def _sync_backend(self, *, skip_sync, website_ids):
         """
         Push the changed websites to the configured content-sync backend.
@@ -740,8 +742,6 @@ class Command(WebsiteFilterCommand):
                 msg = "--output is required when using --dry-run"
                 raise CommandError(msg)
             planned_website_ids = {task.website_id for task in renames}
-            # Compute planned patches only for the dry-run summary count.
-            planned_patches = _collect_metadata_patches(planned_website_ids)
             # Look up website names for the human-readable CSV column.
             # Use str(uuid) as key to match task.website_id (already stringified).
             website_names = (
@@ -765,12 +765,12 @@ class Command(WebsiteFilterCommand):
                     renames,
                     website_names,
                 )
-            planned_gallery_patches = _collect_gallery_patches(renames)
+            followups = _collect_followups(renames)
             self.stdout.write(
                 f"Dry run complete: {len(renames)} files would be renamed, "
                 f"{skipped_count} skipped, "
-                f"{len(planned_patches)} video metadata records would be patched, "
-                f"{len(planned_gallery_patches)} gallery pages would be patched. "
+                f"{len(followups.metadata)} content metadata records would be patched, "
+                f"{len(followups.markdown)} gallery pages would be patched. "
                 f"Plan written to {output_path}."
             )
             return
@@ -780,17 +780,13 @@ class Command(WebsiteFilterCommand):
         result = _execute_renames(renames, s3, self.stdout, self.stderr)
         actually_renamed_website_ids = {task.website_id for task in result.committed}
 
-        patches, gallery_patches = self._apply_followups(
-            renames,
-            actually_renamed_website_ids,
-            {task.old_key.lstrip("/") for task in result.committed},
-        )
+        followups = _apply_followups(result.committed)
 
         self.stdout.write(
             f"Done: {len(result.committed)} renamed, {skipped_count} skipped, "
             f"{result.error_count} errors, "
-            f"{len(patches)} video metadata records patched, "
-            f"{len(gallery_patches)} gallery pages patched"
+            f"{len(followups.metadata)} content metadata records patched, "
+            f"{len(followups.markdown)} gallery pages patched"
         )
 
         self._sync_backend(

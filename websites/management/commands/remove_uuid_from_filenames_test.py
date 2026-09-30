@@ -10,7 +10,6 @@ from gdrive_sync.factories import DriveFileFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands import remove_uuid_from_filenames as command_module
 from websites.management.commands.remove_uuid_from_filenames import (
-    _collect_metadata_patches,
     _collect_renames,
     _execute_renames,
     _with_suffix,
@@ -319,7 +318,7 @@ def test_dry_run_reports_metadata_patch_count(tmp_path, mock_s3):
     )
 
     output = stdout.getvalue()
-    assert "1 video metadata records would be patched" in output
+    assert "1 content metadata records would be patched" in output
 
 
 def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
@@ -669,21 +668,42 @@ def test_patches_video_metadata_with_leading_slash(mock_s3):
     assert video_resource.metadata["video_files"]["video_captions_file"] == expected
 
 
-def test_does_not_patch_non_video_resource_metadata(mock_s3):
-    """Metadata patching only touches records with resourcetype=Video."""
+def test_patches_file_references_in_any_resource_metadata(mock_s3):
+    """Not only video resources: any metadata value naming a renamed file."""
     website = WebsiteFactory.create()
     old_key = f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
-    doc_resource = WebsiteContentFactory.create(
+    doc = WebsiteContentFactory.create(
         website=website,
         type="resource",
         file=old_key,
+        metadata={"resourcetype": "Document", "file": f"/{old_key}"},
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    doc.refresh_from_db()
+    assert doc.metadata == {
+        "resourcetype": "Document",
+        "file": f"/sites/{website.name}/doc.pdf",
+    }
+
+
+def test_leaves_metadata_without_references_alone(mock_s3):
+    """Metadata that names no renamed file is not touched."""
+    website = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=website, file=f"sites/{website.name}/{UUID_PREFIX}_doc.pdf"
+    )
+    other = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
         metadata={"resourcetype": "Document", "video_files": None},
     )
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    doc_resource.refresh_from_db()
-    assert doc_resource.metadata.get("video_files") is None
+    other.refresh_from_db()
+    assert other.metadata == {"resourcetype": "Document", "video_files": None}
 
 
 def test_dry_run_does_not_patch_video_metadata(tmp_path, mock_s3):
@@ -906,141 +926,6 @@ def test_dry_run_writes_csv_even_if_gallery_scan_fails(tmp_path, mock_s3):
         rows = list(csv.DictReader(f))
     assert len(rows) == 1
     assert rows[0]["old_key"] == old_key
-
-
-# ---------------------------------------------------------------------------
-# Unit tests for _collect_metadata_patches
-# ---------------------------------------------------------------------------
-
-
-def test_collect_metadata_patches_captions():
-    """Returns a MetadataPatch when video_captions_file has a UUID prefix."""
-    website = WebsiteFactory.create()
-    old_captions = f"sites/{website.name}/{UUID_PREFIX}_captions.vtt"
-    video = WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={
-            "resourcetype": "Video",
-            "video_files": {
-                "video_captions_file": old_captions,
-                "video_transcript_file": None,
-            },
-        },
-    )
-
-    patches = _collect_metadata_patches({str(website.uuid)})
-
-    assert len(patches) == 1
-    assert patches[0].pk == str(video.pk)
-    vf = patches[0].updated_metadata["video_files"]
-    assert vf["video_captions_file"] == f"sites/{website.name}/captions.vtt"
-    assert vf["video_transcript_file"] is None
-
-
-def test_collect_metadata_patches_transcript():
-    """Returns a MetadataPatch when video_transcript_file has a UUID prefix."""
-    website = WebsiteFactory.create()
-    old_transcript = f"sites/{website.name}/{UUID_PREFIX}_transcript.pdf"
-    WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={
-            "resourcetype": "Video",
-            "video_files": {
-                "video_captions_file": None,
-                "video_transcript_file": old_transcript,
-            },
-        },
-    )
-
-    patches = _collect_metadata_patches({str(website.uuid)})
-
-    assert len(patches) == 1
-    vf = patches[0].updated_metadata["video_files"]
-    assert vf["video_transcript_file"] == f"sites/{website.name}/transcript.pdf"
-
-
-def test_collect_metadata_patches_no_uuid_prefix_returns_empty():
-    """Returns nothing when metadata paths have no UUID prefix."""
-    website = WebsiteFactory.create()
-    WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={
-            "resourcetype": "Video",
-            "video_files": {
-                "video_captions_file": f"sites/{website.name}/captions.vtt",
-                "video_transcript_file": None,
-            },
-        },
-    )
-
-    patches = _collect_metadata_patches({str(website.uuid)})
-
-    assert patches == []
-
-
-def test_collect_metadata_patches_ignores_non_video_resource():
-    """Records with resourcetype != Video are not patched."""
-    website = WebsiteFactory.create()
-    WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={
-            "resourcetype": "Document",
-            "video_files": {
-                "video_captions_file": f"sites/{website.name}/{UUID_PREFIX}_cap.vtt",
-            },
-        },
-    )
-
-    patches = _collect_metadata_patches({str(website.uuid)})
-
-    assert patches == []
-
-
-def test_collect_metadata_patches_handles_null_values():
-    """None values in captions/transcript fields do not raise errors."""
-    website = WebsiteFactory.create()
-    WebsiteContentFactory.create(
-        website=website,
-        type="resource",
-        metadata={
-            "resourcetype": "Video",
-            "video_files": {
-                "video_captions_file": None,
-                "video_transcript_file": None,
-            },
-        },
-    )
-
-    patches = _collect_metadata_patches({str(website.uuid)})
-
-    assert patches == []
-
-
-def test_collect_metadata_patches_scoped_to_website_uuids():
-    """Only patches records in the supplied website UUID set."""
-    website_a = WebsiteFactory.create()
-    website_b = WebsiteFactory.create()
-    old_captions = f"sites/{website_b.name}/{UUID_PREFIX}_cap.vtt"
-    WebsiteContentFactory.create(
-        website=website_b,
-        type="resource",
-        metadata={
-            "resourcetype": "Video",
-            "video_files": {
-                "video_captions_file": old_captions,
-                "video_transcript_file": None,
-            },
-        },
-    )
-
-    # Only pass website_a's UUID — website_b's record must not appear
-    patches = _collect_metadata_patches({str(website_a.uuid)})
-
-    assert patches == []
 
 
 def test_gallery_uuid_param_resolves_href_that_basename_matching_would_miss(mock_s3):
@@ -1639,3 +1524,57 @@ def test_a_target_taken_after_planning_skips_its_group(mock_s3):
     assert result.committed == []
     assert result.error_count == 1
     assert "taken after planning" in stderr.getvalue()
+
+
+def test_metadata_file_follows_its_own_source(mock_s3):
+    """Each row's metadata file follows its own file, not the plain-named sibling."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    third = rows[2]
+    WebsiteContent.objects.filter(pk=third.pk).update(
+        metadata={"file": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    third.refresh_from_db()
+    assert third.metadata["file"] == f"/{directory}/1-3.jpg"
+
+
+def test_video_metadata_follows_its_own_source(mock_s3):
+    """A captions path follows its own file through a suffix."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website, name="captions.vtt")
+    video = WebsiteContentFactory.create(
+        website=website,
+        type="resource",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_file": f"{directory}/{UUID_C}_captions.vtt",
+                "video_transcript_file": None,
+            },
+        },
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_file"] == (
+        f"{directory}/captions-3.vtt"
+    )
+
+
+def test_a_row_stored_under_another_sites_directory_gets_its_metadata_patched(mock_s3):
+    """Some duplicate site records keep their files under another site's directory."""
+    home_site = WebsiteFactory.create()
+    duplicate_site = WebsiteFactory.create()
+    key = f"courses/{home_site.name}/{UUID_A}_doc.pdf"
+    row = WebsiteContentFactory.create(
+        website=duplicate_site, file=key, metadata={"file": f"/{key}"}
+    )
+
+    call_command("remove_uuid_from_filenames", filter=duplicate_site.name)
+
+    row.refresh_from_db()
+    assert row.metadata["file"] == f"/courses/{home_site.name}/doc.pdf"
