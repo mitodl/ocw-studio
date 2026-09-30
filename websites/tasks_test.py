@@ -113,6 +113,53 @@ def test_rate_limit_wait_counts_down_to_the_reset(settings, mocker):
     assert tasks._git_rate_limit_wait(WebsiteFactory.create()) == 900  # noqa: SLF001
 
 
+def test_rate_limit_wait_has_a_floor(settings, mocker):
+    """A reset time already past must not requeue the task every second."""
+    settings.GITHUB_RATE_LIMIT_CHECK = True
+    backend = mocker.Mock(spec=tasks.GithubBackend)
+    backend.api = mocker.Mock()
+    backend.api.git.rate_limiting = (10, 5000)
+    backend.api.git.rate_limiting_resettime = 999_000
+    mocker.patch("websites.tasks.api.get_sync_backend", return_value=backend)
+    mocker.patch("websites.tasks.time.time", return_value=1_000_000)
+
+    assert tasks._git_rate_limit_wait(WebsiteFactory.create()) == 60  # noqa: SLF001
+
+
+@pytest.fixture
+def eager_retries(monkeypatch):
+    """Let eager tasks retry. With propagation on, Celery raises Retry instead."""
+    # The namespaced name, since it takes precedence over task_eager_propagates.
+    monkeypatch.setattr(tasks.app.conf, "CELERY_TASK_EAGER_PROPAGATES", False)
+
+
+@pytest.mark.usefixtures("eager_retries")
+def test_an_incomplete_chunk_is_run_again(mocker):
+    """A reference left unpatched is only fixed by running the chunk again."""
+    run_chunk = mocker.patch(
+        "websites.tasks.uuid_renames.run_chunk",
+        side_effect=[{"incomplete": True}, {"incomplete": False}],
+    )
+
+    result = tasks.rename_uuid_files_chunk.delay(0, [], [], [])
+
+    assert run_chunk.call_count == 2
+    assert result.get() == {"incomplete": False}
+
+
+@pytest.mark.usefixtures("eager_retries")
+def test_a_chunk_stops_retrying_and_reports(mocker):
+    """After the last retry the summary is returned, so the callback still runs."""
+    run_chunk = mocker.patch(
+        "websites.tasks.uuid_renames.run_chunk", return_value={"incomplete": True}
+    )
+
+    result = tasks.rename_uuid_files_chunk.delay(0, [], [], [])
+
+    assert run_chunk.call_count == tasks.CHUNK_MAX_RETRIES + 1
+    assert result.get() == {"incomplete": True}
+
+
 @pytest.mark.parametrize(
     "task",
     [

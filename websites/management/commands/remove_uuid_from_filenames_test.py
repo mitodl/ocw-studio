@@ -6,7 +6,9 @@ import re
 from io import StringIO
 
 import pytest
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from content_sync.models import ContentSyncState
 from gdrive_sync.factories import DriveFileFactory
@@ -1866,9 +1868,12 @@ def test_patch_rows_patches_every_location(mock_s3):
     )
     renames, _ = _collect_renames(_files_in(website))
 
-    counts = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
+    counts, patched_sites = _patch_rows(
+        renames, [rows[2].pk, page.pk], [str(website.uuid)]
+    )
 
     assert counts == (1, 1, 1, 1, 0)
+    assert patched_sites == {str(website.uuid)}
     page.refresh_from_db()
     assert page.markdown == (
         '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
@@ -1889,9 +1894,11 @@ def test_two_chunks_patching_the_same_page_both_land(mock_s3):
     renames, _ = _collect_renames(_files_in(website))
     by_old = {task.old_key: task for task in renames}
 
-    _patch_rows([by_old[f"{directory}/{UUID_A}_1.jpg"]], [page.pk], [])
+    with CaptureQueriesContext(connection) as queries:
+        _patch_rows([by_old[f"{directory}/{UUID_A}_1.jpg"]], [page.pk], [])
     _patch_rows([by_old[f"{directory}/{UUID_C}_1.jpg"]], [page.pk], [])
 
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
     page.refresh_from_db()
     assert page.markdown == f"[a](/{directory}/1.jpg) [c](/{directory}/1-3.jpg)"
 
@@ -1919,7 +1926,7 @@ def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
         command_module, "_patch_content_row", side_effect=patch_content_row
     )
 
-    counts = _patch_rows(renames, [bad.pk, good.pk], [])
+    counts, _ = _patch_rows(renames, [bad.pk, good.pk], [])
 
     assert counts.errors == 1
     good.refresh_from_db()
@@ -2048,6 +2055,7 @@ def test_a_failing_chunk_reports_instead_of_raising(mocker, mock_s3):
 
     assert summary["chunk"] == 7
     assert summary["errors"] == 1
+    assert summary["incomplete"] is True
 
 
 def test_finish_job_adds_up_the_chunks():
@@ -2055,15 +2063,16 @@ def test_finish_job_adds_up_the_chunks():
     websites, line = finish_job(
         [
             {
+                "chunk": 0,
                 "renamed": 1,
                 "suffixed": 2,
-                "errors": 0,
                 "galleries": 1,
                 "websites": ["b"],
             },
-            {"renamed": 3, "suffixed": 0, "errors": 1, "websites": ["a", "b"]},
+            {"chunk": 1, "renamed": 3, "errors": 1, "websites": ["a", "b"]},
         ],
         skipped=4,
+        chunk_count=2,
     )
 
     assert websites == ["a", "b"]
@@ -2141,6 +2150,64 @@ def test_a_row_replaced_during_the_copy_keeps_its_new_file(mock_s3):
     mock_s3.return_value.delete_object.assert_not_called()
     assert result.error_count == 1
     assert "no longer holds that file" in stderr.getvalue()
+
+
+def test_finish_job_counts_a_redelivered_chunk_once(caplog):
+    """A duplicate report is dropped, and a chunk that never reported is named."""
+    chunk = {"chunk": 0, "renamed": 0, "suffixed": 2, "websites": ["a"]}
+
+    _, line = finish_job([chunk, dict(chunk)], skipped=0, chunk_count=2)
+
+    assert _counts(line)["files renamed with a suffix"] == 2
+    assert "Rename chunks [1] had not reported" in caplog.text
+
+
+def test_finish_job_names_chunks_that_stayed_incomplete(caplog):
+    """A chunk out of retries is called out, since its references may be stale."""
+    finish_job([{"chunk": 0, "incomplete": True}], skipped=0, chunk_count=1)
+
+    assert "Rename chunks [0] still had errors" in caplog.text
+
+
+def test_a_page_in_another_site_marks_that_site_changed(mock_s3):
+    """A site linking to a renamed file is flagged and synced, not only the owner."""
+    owner = WebsiteFactory.create()
+    directory, _ = _contested_trio(owner)
+    other = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=other, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    Website.objects.filter(pk=other.pk).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    (chunk,), _ = plan_job([str(owner.uuid)], chunk_size=500)
+
+    summary = run_chunk(0, *chunk)
+
+    other.refresh_from_db()
+    assert other.has_unpublished_live is True
+    assert other.has_unpublished_draft is True
+    assert summary["websites"] == sorted([owner.name, other.name])
+
+
+def test_a_chunk_size_below_one_is_rejected(mocker, mock_s3):
+    """range() would fail in the worker after the command said it queued."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    with pytest.raises(CommandError, match="--chunk-size"):
+        call_command("remove_uuid_from_filenames", chunk_size=0)
+
+    delay.assert_not_called()
+
+
+def test_a_filter_matching_no_website_is_rejected(mocker, mock_s3):
+    """An empty selection would otherwise queue a job that does nothing."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    with pytest.raises(CommandError, match="selected no websites"):
+        call_command("remove_uuid_from_filenames", filter="no-such-site")
+
+    delay.assert_not_called()
 
 
 def test_contested_names_follow_pk_not_prefix_order():

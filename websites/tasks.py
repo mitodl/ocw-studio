@@ -21,6 +21,11 @@ log = logging.getLogger(__name__)
 # inside it.
 SYNC_WAIT_CAP_SECONDS = 1800
 SYNC_LOCK_RETRY_SECONDS = 60
+# GitHub can report a low count after its reset time. Waiting at least this
+# long keeps the task from requeueing itself every second.
+SYNC_MIN_WAIT_SECONDS = 60
+CHUNK_RETRY_SECONDS = 60
+CHUNK_MAX_RETRIES = 3
 
 
 def _git_rate_limit_wait(website):
@@ -38,7 +43,8 @@ def _git_rate_limit_wait(website):
     remaining, _ = backend.api.git.rate_limiting
     if remaining > settings.GITHUB_RATE_LIMIT_CUTOFF:
         return 0
-    return max(1, int(backend.api.git.rate_limiting_resettime - time.time()))
+    reset_in = int(backend.api.git.rate_limiting_resettime - time.time())
+    return max(SYNC_MIN_WAIT_SECONDS, reset_in)
 
 
 def _requeue(website_names, seconds):
@@ -96,25 +102,40 @@ def rename_uuid_files(website_ids, chunk_size, *, skip_sync):
     *website_ids* is None for every website.
     """
     chunks, skipped = uuid_renames.plan_job(website_ids, chunk_size)
+    finish = {"skipped": skipped, "chunk_count": len(chunks), "skip_sync": skip_sync}
     if not chunks:
-        return finish_uuid_rename.delay([], skipped=skipped, skip_sync=skip_sync).id
+        return finish_uuid_rename.delay([], **finish).id
     header = [
         rename_uuid_files_chunk.si(index, *chunk) for index, chunk in enumerate(chunks)
     ]
-    callback = finish_uuid_rename.s(skipped=skipped, skip_sync=skip_sync)
+    callback = finish_uuid_rename.s(**finish)
     return celery.chord(header)(callback).id
 
 
-@app.task(acks_late=True, reject_on_worker_lost=True)
-def rename_uuid_files_chunk(chunk_id, assignments, content_pks, website_ids):
-    """Rename and patch one chunk. Never raises, see run_chunk."""
-    return uuid_renames.run_chunk(chunk_id, assignments, content_pks, website_ids)
+@app.task(
+    bind=True,
+    acks_late=True,
+    reject_on_worker_lost=True,
+    max_retries=CHUNK_MAX_RETRIES,
+)
+def rename_uuid_files_chunk(self, chunk_id, assignments, content_pks, website_ids):
+    """
+    Rename and patch one chunk. Never fails, see run_chunk.
+
+    A chunk that may have left a reference unpatched is retried. Rows it
+    already renamed are not copied again, and their patches run again. A
+    retry does not count toward the chord, so the callback still waits.
+    """
+    summary = uuid_renames.run_chunk(chunk_id, assignments, content_pks, website_ids)
+    if summary["incomplete"] and self.request.retries < self.max_retries:
+        raise self.retry(countdown=CHUNK_RETRY_SECONDS)
+    return summary
 
 
 @app.task(acks_late=True, reject_on_worker_lost=True)
-def finish_uuid_rename(summaries, *, skipped, skip_sync):
-    """Log the job's final summary, then start syncing the renamed websites."""
-    websites, _ = uuid_renames.finish_job(summaries, skipped)
+def finish_uuid_rename(summaries, *, skipped, chunk_count, skip_sync):
+    """Log the job's final summary, then start syncing the changed websites."""
+    websites, _ = uuid_renames.finish_job(summaries, skipped, chunk_count)
     if websites and not skip_sync and settings.CONTENT_SYNC_BACKEND:
         sync_renamed_websites.delay(websites)
     return websites
