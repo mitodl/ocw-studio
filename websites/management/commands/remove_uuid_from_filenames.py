@@ -775,61 +775,82 @@ def _rename_group(source_key, tasks, holders, current, s3, stdout, stderr):  # n
 
     Returns (committed tasks, error count). A row already on its new key
     committed in an earlier delivery of this chunk, so its copy is skipped
-    and it still counts as committed, which lets its patches run. The old
-    key is deleted only when every row committed, since a row that failed
-    still points at it.
+    and it still counts as committed, which lets its patches run. A row that
+    holds neither key was changed after planning, e.g. by a new upload, and
+    is left alone. The old key is deleted only when every row committed.
     """
     bucket = settings.AWS_STORAGE_BUCKET_NAME
     target = tasks[0].new_key.lstrip("/")
-    done = [task for task in tasks if current.get(int(task.pk)) == task.new_key]
-    pending = [task for task in tasks if task not in done]
-    if not pending:
-        _delete_old_key(s3, bucket, source_key, stderr)
-        return done, 0
-    if holders.get(target, set()) - {int(task.pk) for task in tasks}:
+    committed = [task for task in tasks if current.get(int(task.pk)) == task.new_key]
+    pending = [task for task in tasks if current.get(int(task.pk)) == task.old_key]
+    for task in tasks:
+        if task not in committed and task not in pending:
+            stderr.write(_changed_after_planning(task))
+    if pending and holders.get(target, set()) - {int(task.pk) for task in tasks}:
         stderr.write(
             f"Error renaming {source_key}: target {target} was taken after "
             "planning. Run the command again to give it a new name."
         )
-        return done, len(pending)
-    try:
-        s3.copy_object(
-            Bucket=bucket,
-            CopySource={"Bucket": bucket, "Key": source_key},
-            Key=target,
-            ACL="public-read",
-        )
-    except Exception as exc:  # noqa: BLE001
-        for task in pending:
-            stderr.write(f"Error renaming {task.old_key} to {task.new_key}: {exc!s}")
-        return done, len(pending)
-    committed = list(done)
+        pending = []
+    if pending:
+        try:
+            s3.copy_object(
+                Bucket=bucket,
+                CopySource={"Bucket": bucket, "Key": source_key},
+                Key=target,
+                ACL="public-read",
+            )
+        except Exception as exc:  # noqa: BLE001
+            for task in pending:
+                stderr.write(
+                    f"Error renaming {task.old_key} to {task.new_key}: {exc!s}"
+                )
+            pending = []
     for task in pending:
         if _commit_row(task, source_key, target, stderr):
             stdout.write(f"Renamed: {task.old_key} -> {task.new_key}")
             committed.append(task)
     if len(committed) < len(tasks):
-        stderr.write(f"Keeping {source_key}: a row still points at it")
+        stderr.write(f"Keeping {source_key}: not every row was renamed")
         return committed, len(tasks) - len(committed)
     _delete_old_key(s3, bucket, source_key, stderr)
     return committed, 0
 
 
+def _changed_after_planning(task):
+    """Return the error for a row that no longer holds its planned old key."""
+    return (
+        f"Error renaming {task.old_key}: its row no longer holds that file. "
+        "Run the command again to plan it afresh."
+    )
+
+
 def _commit_row(task, source_key, target, stderr):
-    """Commit one row's rename in its own transaction. Return True on success."""
+    """
+    Commit one row's rename in its own transaction. Return True on success.
+
+    The update only matches while the row still holds its old key, so a file
+    replaced after planning keeps its new value.
+    """
     try:
         with transaction.atomic():
-            WebsiteContent.objects.filter(pk=task.pk).update(file=task.new_key)
-            DriveFile.objects.filter(resource_id=task.pk, s3_key=source_key).update(
-                s3_key=target
-            )
-            # Inside the same transaction as the rename it belongs to.
-            # Deferring it would leave an interrupted run's committed renames
-            # with a stale checksum, and a re-run cannot find them, since they
-            # no longer carry a prefix.
-            _refresh_sync_states([task.pk])
+            updated = WebsiteContent.objects.filter(
+                pk=task.pk, file=task.old_key
+            ).update(file=task.new_key)
+            if updated:
+                DriveFile.objects.filter(resource_id=task.pk, s3_key=source_key).update(
+                    s3_key=target
+                )
+                # Inside the same transaction as the rename it belongs to.
+                # Deferring it would leave an interrupted run's committed
+                # renames with a stale checksum, and a re-run cannot find
+                # them, since they no longer carry a prefix.
+                _refresh_sync_states([task.pk])
     except Exception as exc:  # noqa: BLE001
         stderr.write(f"Error renaming {task.old_key} to {task.new_key}: {exc!s}")
+        return False
+    if not updated:
+        stderr.write(_changed_after_planning(task))
         return False
     return True
 
@@ -905,7 +926,11 @@ _CHUNK_COUNTS = (
 
 def _selected_contents(website_ids):
     """Return the rows the command considers, limited to *website_ids* if given."""
-    contents = WebsiteContent.objects.filter(file__isnull=False).exclude(file="")
+    contents = (
+        WebsiteContent.objects.filter(file__isnull=False)
+        .exclude(file="")
+        .only("id", "file", "text_id", "website")
+    )
     if website_ids is not None:
         contents = contents.filter(website__uuid__in=website_ids)
     return contents

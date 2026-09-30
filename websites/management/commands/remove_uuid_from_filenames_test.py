@@ -2101,6 +2101,48 @@ def test_an_unfiltered_live_run_selects_every_website(mocker, mock_s3):
     delay.assert_called_once_with(None, 500, skip_sync=False)
 
 
+def test_a_row_replaced_after_planning_is_left_alone(mock_s3):
+    """A new upload since the plan keeps its file, and the old object stays."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    replaced = f"sites/{website.name}/{UUID_B}_new.pdf"
+    WebsiteContent.objects.filter(pk=content.pk).update(file=replaced)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    mock_s3.return_value.delete_object.assert_not_called()
+    content.refresh_from_db()
+    assert str(content.file) == replaced
+    assert result.committed == []
+    assert result.error_count == 1
+
+
+def test_a_row_replaced_during_the_copy_keeps_its_new_file(mock_s3):
+    """The commit only matches the old key, so a racing upload is not reverted."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    replaced = f"sites/{website.name}/{UUID_B}_new.pdf"
+
+    def copy_object(**kwargs):
+        WebsiteContent.objects.filter(pk=content.pk).update(file=replaced)
+
+    mock_s3.return_value.copy_object.side_effect = copy_object
+    stderr = StringIO()
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), stderr)
+
+    content.refresh_from_db()
+    assert str(content.file) == replaced
+    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.error_count == 1
+    assert "no longer holds that file" in stderr.getvalue()
+
+
 def test_contested_names_follow_pk_not_prefix_order():
     """The lowest pk keeps the plain name even when its prefix sorts last."""
     website = WebsiteFactory.create()
