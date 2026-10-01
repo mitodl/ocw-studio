@@ -19,6 +19,7 @@ from content_sync.tasks import sync_website_content
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
+from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.filename_references import (
     build_path_lookup,
     rewrite_file_references,
@@ -32,7 +33,12 @@ from websites.management.commands.markdown_cleaning.rules.gallery_image_rename i
     BaseGalleryHrefRewriteRule,
 )
 from websites.models import Website, WebsiteContent
-from websites.utils import UUID_FILENAME_RE, strip_uuid_prefix
+from websites.utils import (
+    UUID_FILENAME_RE,
+    get_dict_field,
+    get_dict_query_field,
+    strip_uuid_prefix,
+)
 
 
 class RenameTask(NamedTuple):
@@ -243,43 +249,48 @@ def _assign_targets(sources, taken):
 
     Returns {source_key: (target_key, reason)}, keys normalised without a
     leading slash. A target is contested when two or more sources want it,
-    or when some row already holds it. Every plain name that can be given
-    out is claimed before any suffix, so a suffix never takes a name another
-    file would get as is. Within a group, sources go in order of their
-    lowest pk: the first keeps the plain name unless it is held, and the
-    rest count up from -2, skipping anything taken or already claimed.
+    or when some row already holds it. Names are compared ignoring case,
+    because offline downloads unzip onto case-insensitive disks, where
+    Lecture1.pdf and lecture1.pdf are one file. Every plain name that can be
+    given out is claimed before any suffix, so a suffix never takes a name
+    another file would get as is. Within a group, sources go in order of
+    their lowest pk: the first keeps its plain name unless it is held, and
+    the rest count up from -2 on their own name, skipping anything taken or
+    already claimed.
     """
+    taken = {key.lower() for key in taken}
     wanted_by = defaultdict(list)
     for source_key in sources:
-        wanted_by[strip_uuid_prefix(source_key)].append(source_key)
+        wanted_by[strip_uuid_prefix(source_key).lower()].append(source_key)
     for group in wanted_by.values():
         group.sort(key=lambda key: _first_pk(sources[key]))
 
     assigned = {}
     claimed = set()
-    for target, group in sorted(wanted_by.items()):
-        if target not in taken:
-            assigned[group[0]] = target
-            claimed.add(target)
-    for target, group in sorted(wanted_by.items()):
+    for folded, group in sorted(wanted_by.items()):
+        if folded not in taken:
+            assigned[group[0]] = strip_uuid_prefix(group[0])
+            claimed.add(folded)
+    for group in (group for _, group in sorted(wanted_by.items())):
         number = 2
         for source_key in group:
             if source_key in assigned:
                 continue
-            candidate = _with_suffix(target, number)
-            while candidate in taken or candidate in claimed:
+            plain = strip_uuid_prefix(source_key)
+            candidate = _with_suffix(plain, number)
+            while candidate.lower() in taken or candidate.lower() in claimed:
                 number += 1
-                candidate = _with_suffix(target, number)
+                candidate = _with_suffix(plain, number)
             assigned[source_key] = candidate
-            claimed.add(candidate)
+            claimed.add(candidate.lower())
             number += 1
 
     return {
         source_key: (
             assigned[source_key],
-            _reason(sources[source_key], group, target in taken),
+            _reason(sources[source_key], group, folded in taken),
         )
-        for target, group in wanted_by.items()
+        for folded, group in wanted_by.items()
         for source_key in group
     }
 
@@ -380,6 +391,7 @@ class Followups(NamedTuple):
     metadata: list  # MetadataPatch
     markdown: list  # MarkdownPatch
     site_metadata: list  # SiteMetadataPatch
+    videos: set  # pks of videos to write to git again
 
 
 def _site_paths(website_ids):
@@ -459,6 +471,40 @@ def _collect_site_metadata_patches(lookup):
     return patches
 
 
+def _linked_videos(renames):
+    """
+    Return the pks of videos whose captions or transcripts are in *renames*.
+
+    A video links these by the resource's text_id, and full_metadata()
+    resolves that to a file path only when the video is written to git.
+    Renaming the file changes the resource's checksum but not the video's,
+    so without a fresh sync the video's git copy keeps the old path, and the
+    next publish removes the file it points at.
+    """
+    text_ids = defaultdict(set)
+    for task in renames:
+        text_ids[task.website_id].add(task.text_id)
+    if not text_ids:
+        return set()
+    resource_type = get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
+    videos = WebsiteContent.objects.filter(
+        website__uuid__in=text_ids.keys(), **{resource_type: RESOURCE_TYPE_VIDEO}
+    ).values_list("pk", "website_id", "metadata")
+    pks = set()
+    for pk, website_id, metadata in videos.iterator(chunk_size=2000):
+        for field in (
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        ):
+            linked = get_dict_field(metadata or {}, f"{field}.content") or []
+            if isinstance(linked, str):
+                linked = [linked]
+            if text_ids[str(website_id)].intersection(map(str, linked)):
+                pks.add(pk)
+                break
+    return pks
+
+
 def _collect_followups(renames):
     """
     Compute every reference patch for *renames* without writing anything.
@@ -467,7 +513,7 @@ def _collect_followups(renames):
     renames that committed.
     """
     if not renames:
-        return Followups(metadata=[], markdown=[], site_metadata=[])
+        return Followups(metadata=[], markdown=[], site_metadata=[], videos=set())
     lookup = build_path_lookup(
         renames, _site_paths({task.website_id for task in renames})
     )
@@ -475,6 +521,7 @@ def _collect_followups(renames):
         metadata=_collect_content_metadata_patches(lookup),
         markdown=_collect_markdown_patches(renames, lookup),
         site_metadata=_collect_site_metadata_patches(lookup),
+        videos=_linked_videos(renames),
     )
 
 
@@ -522,6 +569,10 @@ def _apply_followups(committed):
     _refresh_sync_states(
         {patch.pk for patch in followups.metadata}
         | {patch.pk for patch in followups.markdown}
+    )
+    # A video's own checksum does not change, so clear its synced checksum.
+    ContentSyncState.objects.filter(content_id__in=followups.videos).update(
+        synced_checksum=None
     )
     return followups
 
@@ -736,6 +787,7 @@ def _summary(renames, skipped, followups, *, dry_run, errors=0):
         f"{links} pages with file links {would}patched",
         f"{len(followups.site_metadata)} site metadata records {would}patched",
         f"{galleries} gallery pages {would}patched",
+        f"{len(followups.videos)} video pages {would}synced again",
     ]
     return ", ".join(parts)
 

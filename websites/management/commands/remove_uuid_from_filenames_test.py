@@ -7,6 +7,7 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 
+from content_sync.models import ContentSyncState
 from gdrive_sync.factories import DriveFileFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands import remove_uuid_from_filenames as command_module
@@ -319,7 +320,7 @@ def test_dry_run_reports_metadata_patch_count(tmp_path, mock_s3):
     )
 
     output = stdout.getvalue()
-    assert "1 content metadata records would be patched" in output
+    assert _counts(output)["content metadata records"] == 1
 
 
 def test_dry_run_writes_csv_plan(tmp_path, mock_s3):
@@ -1724,7 +1725,7 @@ def test_course_image_urls_follow_their_own_source(mock_s3):
 
 _COUNT_RE = re.compile(
     r"(\d+) (files renamed with a suffix|content metadata records"
-    r"|pages with file links|site metadata records|gallery pages)"
+    r"|pages with file links|site metadata records|gallery pages|video pages)"
 )
 
 
@@ -1798,6 +1799,7 @@ def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
         "pages with file links": 1,
         "site metadata records": 1,
         "gallery pages": 1,
+        "video pages": 0,
     }
     assert _counts(dry.getvalue()) == expected
     assert _counts(live.getvalue()) == expected
@@ -1824,3 +1826,116 @@ def test_dry_run_changes_no_references(tmp_path, mock_s3):
     assert after == before
     assert Website.objects.get(pk=website.pk).metadata == site_before
     mock_s3.return_value.copy_object.assert_not_called()
+
+
+def test_contested_names_follow_pk_not_prefix_order():
+    """The lowest pk keeps the plain name even when its prefix sorts last."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    rows = [
+        WebsiteContentFactory.create(
+            website=website, file=f"{directory}/{prefix}_1.jpg"
+        )
+        for prefix in (UUID_C, UUID_B, UUID_A)
+    ]
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    by_pk = {task.pk: task.new_key for task in tasks}
+    assert [by_pk[str(row.pk)] for row in rows] == [
+        f"{directory}/1.jpg",
+        f"{directory}/1-2.jpg",
+        f"{directory}/1-3.jpg",
+    ]
+
+
+def test_names_that_differ_only_by_case_are_contested():
+    """Offline downloads unzip onto case-insensitive disks, where these clash."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    upper = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_Lecture1.pdf"
+    )
+    lower = WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_B}_lecture1.pdf"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    by_pk = {task.pk: task for task in tasks}
+    assert by_pk[str(upper.pk)].new_key == f"{directory}/Lecture1.pdf"
+    assert by_pk[str(lower.pk)].new_key == f"{directory}/lecture1-2.pdf"
+    assert by_pk[str(lower.pk)].reason == "contested"
+
+
+def test_a_name_held_in_another_case_gets_a_suffix():
+    """An existing Lecture1.pdf blocks lecture1.pdf too."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    WebsiteContentFactory.create(website=website, file=f"{directory}/Lecture1.pdf")
+    WebsiteContentFactory.create(
+        website=website, file=f"{directory}/{UUID_A}_lecture1.pdf"
+    )
+
+    tasks, _ = _collect_renames(_files_in(website))
+
+    assert [task.new_key for task in tasks] == [f"{directory}/lecture1-2.pdf"]
+    assert tasks[0].reason == "name held by existing file"
+
+
+def _synced_video(website, field, content):
+    """Create a video linking *content* through *field*, marked as synced."""
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {field: {"content": content, "website": website.name}},
+        },
+    )
+    state = ContentSyncState.objects.get(content=video)
+    state.synced_checksum = state.current_checksum
+    state.save()
+    return video
+
+
+def test_a_video_whose_captions_were_renamed_is_synced_again(mock_s3):
+    """Its git copy holds the caption path resolved at its last sync."""
+    website = WebsiteFactory.create()
+    _, rows = _contested_trio(website, name="captions.vtt")
+    captions = _synced_video(
+        website, "video_captions_resources", [str(rows[2].text_id)]
+    )
+    transcript = _synced_video(
+        website, "video_transcript_resources", str(rows[1].text_id)
+    )
+    untouched = _synced_video(website, "video_captions_resources", [])
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    synced = dict(
+        ContentSyncState.objects.filter(
+            content__in=[captions, transcript, untouched]
+        ).values_list("content_id", "synced_checksum")
+    )
+    assert synced[captions.pk] is None
+    assert synced[transcript.pk] is None
+    assert synced[untouched.pk] is not None
+
+
+def test_dry_run_counts_videos_to_sync_again(tmp_path, mock_s3):
+    """The dry run reports the videos and changes no sync state."""
+    website = WebsiteFactory.create()
+    _, rows = _contested_trio(website, name="captions.vtt")
+    video = _synced_video(website, "video_captions_resources", [str(rows[2].text_id)])
+    stdout = StringIO()
+
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=stdout,
+    )
+
+    assert _counts(stdout.getvalue())["video pages"] == 1
+    assert ContentSyncState.objects.get(content=video).synced_checksum is not None
