@@ -2300,6 +2300,108 @@ def test_dry_run_counts_videos_to_sync_again(tmp_path, mock_s3):
     assert ContentSyncState.objects.get(content=video).synced_checksum is not None
 
 
+def test_a_multi_chunk_run_matches_the_dry_run(tmp_path, mock_s3, caplog):
+    """Each file in its own chunk still patches every location once."""
+    website, directory, rows = _reference_fixture()
+    dry = StringIO()
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=dry,
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name, chunk_size=1)
+
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
+    assert _counts(final) == _counts(dry.getvalue())
+    assert sorted(
+        str(f)
+        for f in WebsiteContent.objects.filter(
+            pk__in=[row.pk for row in rows]
+        ).values_list("file", flat=True)
+    ) == [f"{directory}/1-2.jpg", f"{directory}/1-3.jpg", f"{directory}/1.jpg"]
+
+
+def test_a_chunk_that_fails_while_patching_still_flags_its_site(mocker, mock_s3):
+    """The renames stand, so the site must stay flagged and in the sync list."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    Website.objects.filter(pk=website.pk).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    mocker.patch.object(command_module, "_patch_rows", side_effect=RuntimeError("db"))
+
+    summary = run_chunk(0, *chunk)
+
+    assert summary["incomplete"] is True
+    assert summary["renamed"] + summary["suffixed"] == 3
+    assert summary["websites"] == [website.name]
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+
+
+def test_a_failed_reference_patch_makes_the_chunk_incomplete(mocker, mock_s3):
+    """A row that could not be patched is only fixed by running the chunk again."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=RuntimeError("locked")
+    )
+
+    summary = run_chunk(0, *chunk)
+
+    assert summary["incomplete"] is True
+    assert summary["errors"] == 1
+    page.refresh_from_db()
+    assert UUID_C in page.markdown
+
+
+def test_a_shared_object_partly_committed_and_partly_changed_is_kept(mock_s3):
+    """One row moved on, one was replaced, so nothing is copied or deleted."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=key)
+    renames, _ = _collect_renames(_files_in(first_site, second_site))
+    WebsiteContent.objects.filter(pk=first.pk).update(file=renames[0].new_key)
+    WebsiteContent.objects.filter(pk=second.pk).update(
+        file=f"courses/{second_site.name}/{UUID_B}_new.pdf"
+    )
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    mock_s3.return_value.delete_object.assert_not_called()
+    assert [task.pk for task in result.committed] == [str(first.pk)]
+    assert result.error_count == 1
+
+
+def test_a_dry_run_filter_matching_no_website_is_rejected(tmp_path, mock_s3):
+    """A typo in --filter would otherwise write an empty plan."""
+    with pytest.raises(CommandError, match="selected no websites"):
+        call_command(
+            "remove_uuid_from_filenames",
+            filter="no-such-site",
+            dry_run=True,
+            output=str(tmp_path / "plan.csv"),
+        )
+
+
 def test_a_rows_own_metadata_file_follows_it_when_the_path_rewrite_cannot(
     tmp_path, mock_s3
 ):

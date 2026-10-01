@@ -1,6 +1,7 @@
 """Tests for websites Celery tasks."""
 
 import pytest
+from celery.exceptions import Retry
 from github.GithubException import RateLimitExceededException
 
 from websites import tasks
@@ -186,3 +187,21 @@ def test_tasks_run_on_the_batch_queue():
         "sync_renamed_websites",
     ):
         assert app.conf.task_routes[f"websites.tasks.{name}"] == {"queue": "batch"}
+
+
+def test_chunk_retries_wait_longer_each_time(mocker):
+    """1, 2, then 4 minutes, so a short database outage can pass."""
+    mocker.patch(
+        "websites.tasks.uuid_renames.run_chunk", return_value={"incomplete": True}
+    )
+    task = tasks.rename_uuid_files_chunk
+    retry = mocker.patch.object(task, "retry", side_effect=Retry())
+
+    for retries, countdown in ((0, 60), (1, 120), (2, 240)):
+        task.push_request(retries=retries)
+        try:
+            with pytest.raises(Retry):
+                task.run(0, [], [], [])
+        finally:
+            task.pop_request()
+        assert retry.call_args.kwargs["countdown"] == countdown

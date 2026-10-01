@@ -122,19 +122,21 @@ def rename_uuid_files_chunk(self, chunk_id, assignments, content_pks, website_id
     """
     Rename and patch one chunk. Never fails, see run_chunk.
 
-    A chunk that may have left a reference unpatched is retried. Rows it
-    already renamed are not copied again, and their patches run again. A
-    retry does not count toward the chord, so the callback still waits.
+    A chunk that may have left a reference unpatched is retried, waiting
+    longer each time (1, 2, then 4 minutes) so a short database outage can
+    pass. Rows it already renamed are not copied again, and their patches
+    run again. A retry does not count toward the chord, so the callback
+    still waits.
     """
     summary = uuid_renames.run_chunk(chunk_id, assignments, content_pks, website_ids)
     if summary["incomplete"] and self.request.retries < self.max_retries:
-        raise self.retry(countdown=CHUNK_RETRY_SECONDS)
+        raise self.retry(countdown=CHUNK_RETRY_SECONDS * 2**self.request.retries)
     return summary
 
 
 @app.task(acks_late=True, reject_on_worker_lost=True)
 def finish_uuid_rename(summaries, *, skipped, chunk_count, skip_sync):
-    """Log the job's final summary, then start syncing the changed websites."""
+    """Log the job's final summary, then start syncing the renamed websites."""
     websites, _ = uuid_renames.finish_job(summaries, skipped, chunk_count)
     if websites and not skip_sync and settings.CONTENT_SYNC_BACKEND:
         sync_renamed_websites.delay(websites)

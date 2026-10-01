@@ -317,12 +317,11 @@ def _collect_markdown_patches(renames, lookup):
 
     Gallery pages in the renamed websites get the plan-driven href rewrite
     first, then every page naming a legacy file gets the path rewrite on
-    that output. Doing both in one pass matters: two bulk_updates of the
-    same column would let the second drop the first. A path-valued gallery
-    href is rewritten once, since the path pass no longer sees a prefix.
+    that output, as the job does per row. A path-valued gallery href is
+    rewritten once, since the path pass no longer sees a prefix.
 
-    Returns list[MarkdownPatch] and writes nothing, so it backs both the dry
-    run and the live run. A page that cannot be processed is skipped with a
+    Returns list[MarkdownPatch] and writes nothing, for the dry run's
+    report. A page that cannot be processed is skipped with a
     warning rather than aborting the scan: legacy markdown across tens of
     thousands of pages cannot be assumed to parse, and one bad page must not
     cost every other page its fix.
@@ -639,8 +638,8 @@ def _collect_followups(renames):
     """
     Compute every reference patch for *renames* without writing anything.
 
-    Backs both the dry run, from the whole plan, and the live run, from the
-    renames that committed.
+    Backs the dry run's report. The job patches each row itself, see
+    _patch_rows.
     """
     if not renames:
         return Followups(metadata=[], markdown=[], site_metadata=[], videos=set())
@@ -674,10 +673,9 @@ def _refresh_sync_states(pks):
     pks = list(pks)
     if not pks:
         return
-    # Chunked because a full run hands this tens of thousands of pks. Postgres
-    # does not cap bulk_batch_size, so an unbatched bulk_update would build one
-    # UPDATE with a CASE branch per record, and the IN clause would pull every
-    # sync state into memory at once.
+    # Chunked so a large set of pks never builds one UPDATE with a CASE branch
+    # per record, or pulls every sync state into memory at once. Postgres does
+    # not cap bulk_batch_size.
     for start in range(0, len(pks), _SYNC_STATE_BATCH):
         chunk = pks[start : start + _SYNC_STATE_BATCH]
         states = {
@@ -883,31 +881,27 @@ def _write_csv_rows(writer, renames, website_names):
         )
 
 
-def _summary(renames, skipped, followups, *, dry_run, errors=0):
-    """Build one line of counts, worded for a dry run or a live run."""
+def _summary(renames, skipped, followups):
+    """Build the dry run's line of counts."""
     suffixed = sum(1 for task in renames if task.suffixed)
     shared = len(
         {task.old_key.lstrip("/") for task in renames if _REASON_SHARED in task.reason}
     )
-    would = "would be " if dry_run else ""
-    parts = [
-        f"{len(renames) - suffixed} files {would}renamed",
-        f"{suffixed} files {would}renamed with a suffix",
-        f"{shared} shared S3 objects",
-        f"{skipped} skipped",
-    ]
-    if not dry_run:
-        parts.append(f"{errors} errors")
     links = sum(1 for patch in followups.markdown if patch.links)
     galleries = sum(1 for patch in followups.markdown if patch.gallery)
-    parts += [
-        f"{len(followups.metadata)} content metadata records {would}patched",
-        f"{links} pages with file links {would}patched",
-        f"{len(followups.site_metadata)} site metadata records {would}patched",
-        f"{galleries} gallery pages {would}patched",
-        f"{len(followups.videos)} video pages {would}synced again",
-    ]
-    return ", ".join(parts)
+    return ", ".join(
+        [
+            f"{len(renames) - suffixed} files would be renamed",
+            f"{suffixed} files would be renamed with a suffix",
+            f"{shared} shared S3 objects",
+            f"{skipped} skipped",
+            f"{len(followups.metadata)} content metadata records would be patched",
+            f"{links} pages with file links would be patched",
+            f"{len(followups.site_metadata)} site metadata records would be patched",
+            f"{galleries} gallery pages would be patched",
+            f"{len(followups.videos)} video pages would be synced again",
+        ]
+    )
 
 
 DEFAULT_CHUNK_SIZE = 500
@@ -1048,34 +1042,40 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
             _LogWriter(logging.DEBUG),
             _LogWriter(logging.WARNING),
         )
-        videos = _linked_videos(result.committed)
-        # A video's own checksum does not change, so clear its synced checksum.
-        ContentSyncState.objects.filter(content_id__in=videos).update(
-            synced_checksum=None
-        )
-        counts = _patch_rows(result.committed, content_pks, website_ids)
+        # Everything that only needs the renames happens before the patches,
+        # so a chunk that fails while patching still leaves its renamed sites
+        # flagged and on the list to sync.
         website_uuids = {task.website_id for task in result.committed}
         if website_uuids:
             Website.objects.filter(uuid__in=website_uuids).update(
                 has_unpublished_live=True,
                 has_unpublished_draft=True,
             )
+        videos = _linked_videos(result.committed)
+        # A video's own checksum does not change, so clear its synced checksum.
+        ContentSyncState.objects.filter(content_id__in=videos).update(
+            synced_checksum=None
+        )
         suffixed = sum(1 for task in result.committed if task.suffixed)
         summary.update(
             renamed=len(result.committed) - suffixed,
             suffixed=suffixed,
-            errors=result.error_count + counts.errors,
-            incomplete=counts.errors > 0,
-            content_metadata=counts.content_metadata,
-            markdown_links=counts.markdown_links,
-            galleries=counts.galleries,
-            site_metadata=counts.site_metadata,
+            errors=result.error_count,
             videos=len(videos),
             websites=sorted(
                 Website.objects.filter(uuid__in=website_uuids).values_list(
                     "name", flat=True
                 )
             ),
+        )
+        counts = _patch_rows(result.committed, content_pks, website_ids)
+        summary.update(
+            errors=result.error_count + counts.errors,
+            incomplete=counts.errors > 0,
+            content_metadata=counts.content_metadata,
+            markdown_links=counts.markdown_links,
+            galleries=counts.galleries,
+            site_metadata=counts.site_metadata,
         )
     except Exception:
         log.exception("Rename chunk %s stopped early", chunk_id)
@@ -1117,8 +1117,9 @@ def finish_job(summaries, skipped, chunk_count):
     )
     if incomplete:
         log.warning(
-            "Rename chunks %s still had errors after their retries. Their "
-            "warnings name the rows whose references may be stale.",
+            "Rename chunks %s still had errors after their retries. References "
+            "to their files may be stale. Their errors are in the log, and the "
+            "dry-run CSV maps each file to its new name.",
             incomplete,
         )
     line = (
@@ -1183,15 +1184,17 @@ class Command(WebsiteFilterCommand):
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
+        website_ids = self._selected_website_ids()
+        if website_ids == []:
+            msg = "--filter and --exclude selected no websites"
+            raise CommandError(msg)
         if options["dry_run"]:
             output_path = options.get("output")
             if not output_path:
                 msg = "--output is required when using --dry-run"
                 raise CommandError(msg)
             # --- Discovery phase (no S3/DB writes) ---
-            renames, skipped_count = _collect_renames(
-                _selected_contents(self._selected_website_ids())
-            )
+            renames, skipped_count = _collect_renames(_selected_contents(website_ids))
             planned_website_ids = {task.website_id for task in renames}
             # Look up website names for the human-readable CSV column.
             # Use str(uuid) as key to match task.website_id (already stringified).
@@ -1219,7 +1222,7 @@ class Command(WebsiteFilterCommand):
             followups = _collect_followups(renames)
             self.stdout.write(
                 "Dry run complete: "
-                f"{_summary(renames, skipped_count, followups, dry_run=True)}. "
+                f"{_summary(renames, skipped_count, followups)}. "
                 f"Plan written to {output_path}."
             )
             return
@@ -1230,10 +1233,6 @@ class Command(WebsiteFilterCommand):
 
         if options["chunk_size"] < 1:
             msg = "--chunk-size must be at least 1"
-            raise CommandError(msg)
-        website_ids = self._selected_website_ids()
-        if website_ids == []:
-            msg = "--filter and --exclude selected no websites"
             raise CommandError(msg)
         task = rename_uuid_files.delay(
             website_ids, options["chunk_size"], skip_sync=options["skip_sync"]
