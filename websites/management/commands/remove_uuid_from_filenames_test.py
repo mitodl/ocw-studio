@@ -2079,6 +2079,7 @@ def test_finish_job_adds_up_the_chunks():
         "pages with file links": 0,
         "site metadata records": 0,
         "gallery pages": 1,
+        "video pages": 0,
     }
     assert "4 skipped, 1 errors" in line
 

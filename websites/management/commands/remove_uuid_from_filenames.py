@@ -921,6 +921,7 @@ _CHUNK_COUNTS = (
     "markdown_links",
     "galleries",
     "site_metadata",
+    "videos",
 )
 
 
@@ -1047,6 +1048,11 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
             _LogWriter(logging.DEBUG),
             _LogWriter(logging.WARNING),
         )
+        videos = _linked_videos(result.committed)
+        # A video's own checksum does not change, so clear its synced checksum.
+        ContentSyncState.objects.filter(content_id__in=videos).update(
+            synced_checksum=None
+        )
         counts = _patch_rows(result.committed, content_pks, website_ids)
         website_uuids = {task.website_id for task in result.committed}
         if website_uuids:
@@ -1064,6 +1070,7 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
             markdown_links=counts.markdown_links,
             galleries=counts.galleries,
             site_metadata=counts.site_metadata,
+            videos=len(videos),
             websites=sorted(
                 Website.objects.filter(uuid__in=website_uuids).values_list(
                     "name", flat=True
@@ -1121,7 +1128,8 @@ def finish_job(summaries, skipped, chunk_count):
         f"{totals['content_metadata']} content metadata records patched, "
         f"{totals['markdown_links']} pages with file links patched, "
         f"{totals['site_metadata']} site metadata records patched, "
-        f"{totals['galleries']} gallery pages patched"
+        f"{totals['galleries']} gallery pages patched, "
+        f"{totals['videos']} video pages synced again"
     )
     log.info("Rename job finished: %s", line)
     return sorted(websites), line
