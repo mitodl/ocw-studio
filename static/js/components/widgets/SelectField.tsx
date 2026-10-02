@@ -101,7 +101,10 @@ export default function SelectField(props: Props): JSX.Element {
     if (Array.isArray(value)) {
       throw new Error("Array values should specify multiple=true")
     }
-    selected = isNil(value) || value === "" ? null : getSelectOption(value)
+    const isEmpty =
+      isNil(value) ||
+      (value === "" && !selectOptions.some((option) => option.value === ""))
+    selected = isEmpty ? null : getSelectOption(value)
   }
 
   const handleInputChanged = useCallback(

@@ -281,6 +281,16 @@ describe("SelectField", () => {
       })
     })
 
+    it("shows the label of an option whose value is an empty string", async () => {
+      renderSelect({
+        value: "",
+        options: [{ label: "-----", value: "" }, ...options],
+        placeholder: "Pick one",
+      })
+      expect(screen.getByText("-----")).toBeInTheDocument()
+      expect(screen.queryByText("Pick one")).not.toBeInTheDocument()
+    })
+
     it.each([null, ""])(
       "shows the placeholder and no clear indicator for empty value %p",
       async (value) => {
