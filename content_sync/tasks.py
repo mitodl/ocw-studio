@@ -22,6 +22,7 @@ from content_sync.models import ContentSyncState
 from content_sync.utils import get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
+from users.models import User
 from websites.api import (
     get_website_in_root_website_metadata,
     reset_publishing_fields,
@@ -50,6 +51,41 @@ def sync_content(content_sync_id: str):
         )
     else:
         api.sync_content(sync_state)
+
+
+@app.task(acks_late=True)
+def delete_orphaned_content_file(
+    website_pk: str, filepath: str, updated_by_pk: int | None
+):
+    """
+    Delete a single file from a website's git backend, for content that was
+    hard-deleted outside the normal sync flow. See
+    websites.signals.delete_content_from_backend_on_hard_delete, which
+    defers to this task rather than calling the backend inline so a bulk
+    hard-delete doesn't turn into a blocking network call per row.
+    """
+    try:
+        website = Website.objects.get(pk=website_pk)
+    except Website.DoesNotExist:
+        log.debug(
+            "Attempted to clean up backend file for Website that no longer "
+            "exists: pk=%s",
+            website_pk,
+        )
+        return
+    updated_by = (
+        User.objects.filter(pk=updated_by_pk).first() if updated_by_pk else None
+    )
+    content_stub = WebsiteContent(updated_by=updated_by)
+    try:
+        backend = api.get_sync_backend(website)
+        backend.api.delete_content_file(content_stub, filepath=filepath)
+    except Exception:  # pylint:disable=broad-except
+        log.exception(
+            "Failed to delete orphaned backend file %s for website %s",
+            filepath,
+            website.name,
+        )
 
 
 @app.task(acks_late=True)
