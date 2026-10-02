@@ -1939,3 +1939,48 @@ def test_dry_run_counts_videos_to_sync_again(tmp_path, mock_s3):
 
     assert _counts(stdout.getvalue())["video pages"] == 1
     assert ContentSyncState.objects.get(content=video).synced_checksum is not None
+
+
+def test_a_rows_own_metadata_file_follows_it_when_the_path_rewrite_cannot(
+    tmp_path, mock_s3
+):
+    """A space, parentheses or a missing site directory still gets the new key."""
+    website = WebsiteFactory.create()
+    directory = f"sites/{website.name}"
+    mirrors = {
+        "spaced": (
+            f"{UUID_A}_Central Square.jpg",
+            f"/{directory}/{UUID_A}_Central Square.jpg",
+        ),
+        "parens": (f"{UUID_B}_notes(2).pdf", f"/{directory}/{UUID_B}_notes(2).pdf"),
+        "no_dir": (f"{UUID_C}_flrpnOS1.pdf", f"/courses/{UUID_C}_flrpnOS1.pdf"),
+        "no_slash": (f"{UUID_PREFIX}_doc.pdf", f"{directory}/{UUID_PREFIX}_doc.pdf"),
+    }
+    rows = {
+        label: WebsiteContentFactory.create(
+            website=website, file=f"{directory}/{name}", metadata={"file": mirror}
+        )
+        for label, (name, mirror) in mirrors.items()
+    }
+    dry = StringIO()
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=dry,
+    )
+
+    call_command("remove_uuid_from_filenames", filter=website.name)
+
+    assert _counts(dry.getvalue())["content metadata records"] == 4
+    files = {
+        label: WebsiteContent.objects.get(pk=row.pk).metadata["file"]
+        for label, row in rows.items()
+    }
+    assert files == {
+        "spaced": f"/{directory}/Central Square.jpg",
+        "parens": f"/{directory}/notes(2).pdf",
+        "no_dir": f"/{directory}/flrpnOS1.pdf",
+        "no_slash": f"{directory}/doc.pdf",
+    }

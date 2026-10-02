@@ -407,14 +407,32 @@ def _site_paths(website_ids):
     }
 
 
-def _collect_content_metadata_patches(lookup):
+def _with_own_file(metadata, old_key, new_key):
+    """
+    Point a renamed row's own metadata["file"] at its new key.
+
+    The value mirrors the row's file, but some mirrors cannot be parsed as a
+    path reference: names with a space or parentheses, or a path missing the
+    site directory. It is matched by file name and keeps its leading slash.
+    """
+    value = metadata.get("file") if isinstance(metadata, dict) else None
+    if not isinstance(value, str):
+        return metadata, False
+    if value.rpartition("/")[2] != old_key.rpartition("/")[2]:
+        return metadata, False
+    lead = "/" if value.startswith("/") else ""
+    return {**metadata, "file": f"{lead}{new_key.lstrip('/')}"}, True
+
+
+def _collect_content_metadata_patches(lookup, own_files):
     """
     Rewrite path references to renamed files in every content metadata value.
 
     Every website is scanned, not only the renamed ones, because a page can
     point at another site's file. This replaces a video-only patch that
     worked out new names by stripping the prefix, which cannot follow a file
-    that got a suffix.
+    that got a suffix. *own_files* maps a renamed row's pk to its (old key,
+    new key), for its own metadata["file"].
     """
     if not lookup:
         return []
@@ -428,6 +446,9 @@ def _collect_content_metadata_patches(lookup):
     for pk, metadata in rows:
         try:
             updated, changed = rewrite_json_strings(metadata, lookup)
+            if pk in own_files:
+                updated, own_changed = _with_own_file(updated, *own_files[pk])
+                changed = changed or own_changed
         except Exception as exc:  # noqa: BLE001
             print(  # noqa: T201
                 f"Skipping metadata patch for content pk={pk}: {exc!s}",
@@ -517,8 +538,9 @@ def _collect_followups(renames):
     lookup = build_path_lookup(
         renames, _site_paths({task.website_id for task in renames})
     )
+    own_files = {int(task.pk): (task.old_key, task.new_key) for task in renames}
     return Followups(
-        metadata=_collect_content_metadata_patches(lookup),
+        metadata=_collect_content_metadata_patches(lookup, own_files),
         markdown=_collect_markdown_patches(renames, lookup),
         site_metadata=_collect_site_metadata_patches(lookup),
         videos=_linked_videos(renames),
