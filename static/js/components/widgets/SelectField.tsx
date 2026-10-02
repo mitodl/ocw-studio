@@ -70,7 +70,7 @@ export default function SelectField(props: Props): JSX.Element {
         ? (Array.isArray(newValue) ? newValue : []).map(
             (option: Option) => option.value,
           )
-        : (newValue?.value ?? null)
+        : (newValue?.value ?? "")
       onChange({
         target: { value: eventValue, name },
       } as ChangeEvent<HTMLSelectElement>)
@@ -101,7 +101,10 @@ export default function SelectField(props: Props): JSX.Element {
     if (Array.isArray(value)) {
       throw new Error("Array values should specify multiple=true")
     }
-    selected = isNil(value) ? null : getSelectOption(value)
+    const isEmpty =
+      isNil(value) ||
+      (value === "" && !selectOptions.some((option) => option.value === ""))
+    selected = isEmpty ? null : getSelectOption(value)
   }
 
   const handleInputChanged = useCallback(
