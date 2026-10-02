@@ -532,6 +532,21 @@ describe("site_content", () => {
       })
     })
 
+    it.each([true, false])(
+      "should pass clearable=%p to a select widget as isClearable",
+      (clearable) => {
+        const field = makeWebsiteConfigField({
+          widget: WidgetVariant.Select,
+          options: [],
+          clearable,
+        })
+        expect(widgetExtraProps(field)).toStrictEqual({
+          options: [],
+          isClearable: clearable,
+        })
+      },
+    )
+
     it("should grab relation props for the relation widget", () => {
       const field = makeWebsiteConfigField({
         widget: WidgetVariant.Relation,

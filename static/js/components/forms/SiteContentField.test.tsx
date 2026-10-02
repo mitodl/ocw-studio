@@ -8,7 +8,11 @@ import SiteContentField from "./SiteContentField"
 import { exampleSiteConfigFields } from "../../constants"
 import WebsiteContext from "../../context/Website"
 
-import { WebsiteContent, WidgetVariant } from "../../types/websites"
+import {
+  ConfigField,
+  WebsiteContent,
+  WidgetVariant,
+} from "../../types/websites"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
@@ -110,6 +114,53 @@ describe("SiteContentField", () => {
       }
     }
   })
+
+  it.each([
+    { clearable: true, hasClearIndicator: true },
+    { clearable: false, hasClearIndicator: false },
+    { clearable: undefined, hasClearIndicator: false },
+  ])(
+    "renders a clear indicator on a single Select only when clearable=$clearable",
+    async ({ clearable, hasClearIndicator }) => {
+      const website = makeWebsiteDetail()
+      const user = userEvent.setup()
+      const field: ConfigField = {
+        label: "Locale",
+        name: "locale",
+        widget: WidgetVariant.Select,
+        options: ["Argentina"],
+        clearable,
+      }
+
+      const { container } = render(
+        <WebsiteContext.Provider value={website}>
+          <Formik initialValues={{ locale: "Argentina" }} onSubmit={jest.fn()}>
+            <Form>
+              <SiteContentField
+                field={field}
+                contentContext={contentContext}
+                onChange={onChangeStub}
+              />
+            </Form>
+          </Formik>
+        </WebsiteContext.Provider>,
+      )
+
+      expect(screen.getByText("Argentina")).toBeInTheDocument()
+      // react-select renders the clear indicator before the dropdown indicator
+      const indicators = container.querySelectorAll(
+        "[class*='indicatorContainer']",
+      )
+      expect(indicators).toHaveLength(hasClearIndicator ? 2 : 1)
+      if (!hasClearIndicator) {
+        return
+      }
+      await user.click(indicators[0])
+      sinon.assert.calledWith(onChangeStub, {
+        target: { value: "", name: "locale" },
+      })
+    },
+  )
 
   it("renders a Boolean widget with radio buttons", () => {
     const website = makeWebsiteDetail()

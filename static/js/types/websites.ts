@@ -93,6 +93,7 @@ export interface SelectConfigField extends ConfigFieldBaseProps {
   multiple?: boolean
   min?: number
   max?: number
+  clearable?: boolean
 }
 
 export interface ObjectConfigField extends ConfigFieldBaseProps {
