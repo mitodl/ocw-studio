@@ -535,9 +535,14 @@ def _patch_rows(committed, content_pks, website_ids):
         markdown__contains=GALLERY_ITEM_SHORTCODE_NAME,
     ).values_list("pk", flat=True)
     counts = Counter()
-    for pk in sorted(set(content_pks) | set(gallery_pks)):
+    own_files = {int(task.pk): (task.old_key, task.new_key) for task in committed}
+    for pk in sorted(set(content_pks) | set(gallery_pks) | set(own_files)):
         try:
-            counts.update(_patch_content_row(pk, lookup, cleaner, renamed_sites))
+            counts.update(
+                _patch_content_row(
+                    pk, lookup, cleaner, renamed_sites, own_files.get(pk)
+                )
+            )
         except Exception as exc:  # noqa: BLE001
             log.warning("Skipping reference patch for content pk=%s: %s", pk, exc)
             counts["errors"] += 1
@@ -558,8 +563,12 @@ def _patch_rows(committed, content_pks, website_ids):
     )
 
 
-def _patch_content_row(pk, lookup, cleaner, renamed_sites):
-    """Lock, re-read and patch one content row. Return which parts changed."""
+def _patch_content_row(pk, lookup, cleaner, renamed_sites, own_file):
+    """
+    Lock, re-read and patch one content row. Return which parts changed.
+
+    *own_file* is the row's own (old key, new key) when it was renamed.
+    """
     with transaction.atomic():
         wc = WebsiteContent.objects.select_for_update().filter(pk=pk).first()
         if wc is None:
@@ -572,6 +581,9 @@ def _patch_content_row(pk, lookup, cleaner, renamed_sites):
         markdown = rewrite_file_references(wc.markdown, lookup)
         links = markdown != wc.markdown
         metadata, metadata_changed = rewrite_json_strings(wc.metadata, lookup)
+        if own_file:
+            metadata, own_changed = _with_own_file(metadata, *own_file)
+            metadata_changed = metadata_changed or own_changed
         updates = {}
         if gallery or links:
             updates["markdown"] = markdown

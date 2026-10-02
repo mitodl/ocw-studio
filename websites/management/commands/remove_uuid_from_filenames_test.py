@@ -2358,8 +2358,16 @@ def test_a_failed_reference_patch_makes_the_chunk_incomplete(mocker, mock_s3):
         website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
     )
     (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == page.pk:
+            msg = "locked"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
     mocker.patch.object(
-        command_module, "_patch_content_row", side_effect=RuntimeError("locked")
+        command_module, "_patch_content_row", side_effect=patch_content_row
     )
 
     summary = run_chunk(0, *chunk)
