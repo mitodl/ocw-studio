@@ -4,7 +4,7 @@ import csv
 import logging
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import PurePosixPath
 from typing import NamedTuple
 
@@ -500,13 +500,13 @@ def _gallery_maps(renames):
     return basename_map, uuid_map
 
 
-class PatchCounts(NamedTuple):
-    """How many rows one patch pass changed, by location."""
+class Patched(NamedTuple):
+    """The rows one patch pass changed, by location, and how many failed."""
 
-    content_metadata: int
-    markdown_links: int
-    galleries: int
-    site_metadata: int
+    content_metadata: set  # WebsiteContent pks
+    markdown_links: set  # WebsiteContent pks
+    galleries: set  # WebsiteContent pks
+    site_metadata: set  # Website uuids
     errors: int
 
 
@@ -524,7 +524,7 @@ def _patch_rows(committed, content_pks, website_ids):
     image through the uuid param alone.
     """
     if not committed:
-        return PatchCounts(0, 0, 0, 0, 0)
+        return Patched(set(), set(), set(), set(), 0)
     renamed_sites = {task.website_id for task in committed}
     lookup = build_path_lookup(committed, _site_paths(renamed_sites))
     cleaner = WebsiteContentMarkdownCleaner(
@@ -534,32 +534,35 @@ def _patch_rows(committed, content_pks, website_ids):
         website__uuid__in=renamed_sites,
         markdown__contains=GALLERY_ITEM_SHORTCODE_NAME,
     ).values_list("pk", flat=True)
-    counts = Counter()
+    patched = defaultdict(set)
+    errors = 0
     own_files = {int(task.pk): (task.old_key, task.new_key) for task in committed}
     for pk in sorted(set(content_pks) | set(gallery_pks) | set(own_files)):
         try:
-            counts.update(
-                _patch_content_row(
-                    pk, lookup, cleaner, renamed_sites, own_files.get(pk)
-                )
+            changes = _patch_content_row(
+                pk, lookup, cleaner, renamed_sites, own_files.get(pk)
             )
+            for part, changed in changes.items():
+                if changed:
+                    patched[part].add(pk)
         except Exception as exc:  # noqa: BLE001
             log.warning("Skipping reference patch for content pk=%s: %s", pk, exc)
-            counts["errors"] += 1
+            errors += 1
         finally:
             cleaner.replacement_matches.clear()
     for website_id in sorted(set(website_ids)):
         try:
-            counts["site_metadata"] += int(_patch_site_row(website_id, lookup))
+            if _patch_site_row(website_id, lookup):
+                patched["site_metadata"].add(website_id)
         except Exception as exc:  # noqa: BLE001
             log.warning("Skipping reference patch for website %s: %s", website_id, exc)
-            counts["errors"] += 1
-    return PatchCounts(
-        content_metadata=counts["content_metadata"],
-        markdown_links=counts["markdown_links"],
-        galleries=counts["galleries"],
-        site_metadata=counts["site_metadata"],
-        errors=counts["errors"],
+            errors += 1
+    return Patched(
+        content_metadata=patched["content_metadata"],
+        markdown_links=patched["markdown_links"],
+        galleries=patched["galleries"],
+        site_metadata=patched["site_metadata"],
+        errors=errors,
     )
 
 
@@ -714,6 +717,7 @@ class ExecutionResult(NamedTuple):
 
     committed: list  # RenameTask rows whose rename committed
     error_count: int
+    deletable: list  # old keys every row moved off, safe to delete once patched
 
 
 # How many source objects share one database recheck of their targets.
@@ -752,8 +756,9 @@ def _execute_renames(renames, s3, stdout, stderr):
     """
     Apply the plan: one S3 copy per source object, one transaction per row.
 
-    Rows are grouped by source key, so a shared object is copied once and
-    its old key is deleted only after every row pointing at it committed.
+    Rows are grouped by source key, so a shared object is copied once. Old
+    keys are not deleted here: the ones every row moved off are returned, for
+    the caller to delete once the references to them are patched.
     Each batch of targets is checked against the database again first. A
     full run takes hours, and Google Drive sync creates keys without a UUID
     prefix, so a colliding key can appear after planning.
@@ -764,6 +769,7 @@ def _execute_renames(renames, s3, stdout, stderr):
     source_keys = list(groups)
     committed = []
     error_count = 0
+    deletable = []
     for start in range(0, len(source_keys), _RECHECK_BATCH):
         batch = source_keys[start : start + _RECHECK_BATCH]
         holders = _current_holders(
@@ -776,7 +782,11 @@ def _execute_renames(renames, s3, stdout, stderr):
             )
             committed.extend(done)
             error_count += errors
-    return ExecutionResult(committed=committed, error_count=error_count)
+            if len(done) == len(groups[source_key]):
+                deletable.append(source_key)
+    return ExecutionResult(
+        committed=committed, error_count=error_count, deletable=deletable
+    )
 
 
 def _rename_group(source_key, tasks, holders, current, s3, stdout, stderr):  # noqa: PLR0913, PLR0917
@@ -787,7 +797,7 @@ def _rename_group(source_key, tasks, holders, current, s3, stdout, stderr):  # n
     committed in an earlier delivery of this chunk, so its copy is skipped
     and it still counts as committed, which lets its patches run. A row that
     holds neither key was changed after planning, e.g. by a new upload, and
-    is left alone. The old key is deleted only when every row committed.
+    is left alone.
     """
     bucket = settings.AWS_STORAGE_BUCKET_NAME
     target = tasks[0].new_key.lstrip("/")
@@ -823,7 +833,6 @@ def _rename_group(source_key, tasks, holders, current, s3, stdout, stderr):  # n
     if len(committed) < len(tasks):
         stderr.write(f"Keeping {source_key}: not every row was renamed")
         return committed, len(tasks) - len(committed)
-    _delete_old_key(s3, bucket, source_key, stderr)
     return committed, 0
 
 
@@ -918,11 +927,11 @@ def _summary(renames, skipped, followups):
 
 DEFAULT_CHUNK_SIZE = 500
 
-# Integer counts every chunk summary carries, added up by finish_job.
-_CHUNK_COUNTS = (
-    "renamed",
-    "suffixed",
-    "errors",
+# Counts every chunk summary carries, added up by finish_job.
+_CHUNK_COUNTS = ("renamed", "suffixed", "errors")
+# Ids of the rows each chunk patched, by location. A row can be patched by
+# several chunks, so finish_job counts their union.
+_CHUNK_ROWS = (
     "content_metadata",
     "markdown_links",
     "galleries",
@@ -1033,27 +1042,27 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
     """
     Rename and patch one chunk of the plan. Never raises.
 
-    Returns its counts and the renamed websites' names, for the chord
-    callback. A task that raised would be acknowledged, never retried,
-    and would stop the callback, so failures are counted instead.
-    "incomplete" is set when a reference may be left unpatched, which only
-    running the chunk again can fix: a renamed file no longer carries a
-    UUID, so a later run of the command would not find it.
+    Returns its counts, the ids of the rows it patched and the renamed
+    websites' names, for the chord callback. A task that raised would be
+    acknowledged, never retried, and would stop the callback, so failures
+    are counted instead. "incomplete" is set when a reference may be left
+    unpatched, which only running the chunk again can fix: a renamed file no
+    longer carries a UUID, so a later run of the command would not find it.
+    Old keys are deleted only after every patch succeeded, so an incomplete
+    chunk leaves them in place and its unpatched references still work.
     """
     started = time.monotonic()
     # Logged before any work, so a chunk that keeps killing its worker, and
     # so never logs a finish, is still identifiable by its id.
     log.info("Rename chunk %s starting: %d renames", chunk_id, len(assignments))
     summary = dict.fromkeys(_CHUNK_COUNTS, 0)
+    summary.update({key: [] for key in _CHUNK_ROWS})
     summary.update(chunk=chunk_id, websites=[], incomplete=False)
     try:
         renames = [RenameTask(**assignment) for assignment in assignments]
-        result = _execute_renames(
-            renames,
-            get_boto3_client("s3"),
-            _LogWriter(logging.DEBUG),
-            _LogWriter(logging.WARNING),
-        )
+        s3 = get_boto3_client("s3")
+        warnings = _LogWriter(logging.WARNING)
+        result = _execute_renames(renames, s3, _LogWriter(logging.DEBUG), warnings)
         # Everything that only needs the renames happens before the patches,
         # so a chunk that fails while patching still leaves its renamed sites
         # flagged and on the list to sync.
@@ -1073,29 +1082,37 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
             renamed=len(result.committed) - suffixed,
             suffixed=suffixed,
             errors=result.error_count,
-            videos=len(videos),
+            videos=sorted(videos),
             websites=sorted(
                 Website.objects.filter(uuid__in=website_uuids).values_list(
                     "name", flat=True
                 )
             ),
         )
-        counts = _patch_rows(result.committed, content_pks, website_ids)
+        patched = _patch_rows(result.committed, content_pks, website_ids)
         summary.update(
-            errors=result.error_count + counts.errors,
-            incomplete=counts.errors > 0,
-            content_metadata=counts.content_metadata,
-            markdown_links=counts.markdown_links,
-            galleries=counts.galleries,
-            site_metadata=counts.site_metadata,
+            errors=result.error_count + patched.errors,
+            incomplete=patched.errors > 0,
+            content_metadata=sorted(patched.content_metadata),
+            markdown_links=sorted(patched.markdown_links),
+            galleries=sorted(patched.galleries),
+            site_metadata=sorted(patched.site_metadata),
         )
+        if not patched.errors:
+            for source_key in result.deletable:
+                _delete_old_key(
+                    s3, settings.AWS_STORAGE_BUCKET_NAME, source_key, warnings
+                )
     except Exception:
         log.exception("Rename chunk %s stopped early", chunk_id)
         summary["errors"] += 1
         summary["incomplete"] = True
     summary["seconds"] = round(time.monotonic() - started, 1)
     log.info(
-        "Rename chunk %s finished in %ss: %s", chunk_id, summary["seconds"], summary
+        "Rename chunk %s finished in %ss: %s",
+        chunk_id,
+        summary["seconds"],
+        {key: len(v) if key in _CHUNK_ROWS else v for key, v in summary.items()},
     )
     return summary
 
@@ -1112,11 +1129,15 @@ def finish_job(summaries, skipped, chunk_count):
     for summary in summaries:
         by_chunk.setdefault(summary.get("chunk"), summary)
     totals = dict.fromkeys(_CHUNK_COUNTS, 0)
+    rows = {key: set() for key in _CHUNK_ROWS}
     websites = set()
     for summary in by_chunk.values():
         for key in _CHUNK_COUNTS:
             totals[key] += summary.get(key, 0)
+        for key in _CHUNK_ROWS:
+            rows[key].update(summary.get(key, []))
         websites.update(summary.get("websites", []))
+    totals.update({key: len(ids) for key, ids in rows.items()})
     missing = sorted(set(range(chunk_count)) - set(by_chunk))
     if missing:
         log.warning(
@@ -1129,9 +1150,9 @@ def finish_job(summaries, skipped, chunk_count):
     )
     if incomplete:
         log.warning(
-            "Rename chunks %s still had errors after their retries. References "
-            "to their files may be stale. Their errors are in the log, and the "
-            "dry-run CSV maps each file to its new name.",
+            "Rename chunks %s still had errors after their retries. Their old "
+            "S3 objects were kept, so references not yet patched still work. "
+            "Their errors are in the log.",
             incomplete,
         )
     line = (

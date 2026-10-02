@@ -1823,8 +1823,8 @@ def test_a_row_already_on_its_new_key_is_not_copied_again(mock_s3):
     result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
 
     mock_s3.return_value.copy_object.assert_not_called()
-    mock_s3.return_value.delete_object.assert_called_once()
-    assert mock_s3.return_value.delete_object.call_args.kwargs["Key"] == old_key
+    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.deletable == [old_key]
     assert [task.pk for task in result.committed] == [str(content.pk)]
     assert result.error_count == 0
 
@@ -1843,7 +1843,7 @@ def test_a_partly_committed_shared_object_finishes_the_pending_row(mock_s3):
     result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
 
     assert mock_s3.return_value.copy_object.call_count == 1
-    assert mock_s3.return_value.delete_object.call_count == 1
+    assert result.deletable == [key]
     second.refresh_from_db()
     assert str(second.file) == new_key
     assert {task.pk for task in result.committed} == {str(first.pk), str(second.pk)}
@@ -1868,9 +1868,9 @@ def test_patch_rows_patches_every_location(mock_s3):
     )
     renames, _ = _collect_renames(_files_in(website))
 
-    counts = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
+    patched = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
 
-    assert counts == (1, 1, 1, 1, 0)
+    assert patched == ({rows[2].pk}, {page.pk}, {page.pk}, {str(website.uuid)}, 0)
     page.refresh_from_db()
     assert page.markdown == (
         '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
@@ -1923,9 +1923,9 @@ def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
         command_module, "_patch_content_row", side_effect=patch_content_row
     )
 
-    counts = _patch_rows(renames, [bad.pk, good.pk], [])
+    patched = _patch_rows(renames, [bad.pk, good.pk], [])
 
-    assert counts.errors == 1
+    assert patched.errors == 1
     good.refresh_from_db()
     assert good.markdown == f"[c](/{directory}/1-3.jpg)"
 
@@ -2014,8 +2014,8 @@ def test_running_a_chunk_twice_gives_the_same_end_state(mock_s3):
     assert mock_s3.return_value.copy_object.call_count == copies
     page.refresh_from_db()
     assert page.markdown == patched == f"[c](/{directory}/1-3.jpg)"
-    assert first["markdown_links"] == 1
-    assert second["markdown_links"] == 0
+    assert first["markdown_links"] == [page.pk]
+    assert second["markdown_links"] == []
     assert second["renamed"] + second["suffixed"] == 3
 
 
@@ -2063,7 +2063,7 @@ def test_finish_job_adds_up_the_chunks():
                 "chunk": 0,
                 "renamed": 1,
                 "suffixed": 2,
-                "galleries": 1,
+                "galleries": [5],
                 "websites": ["b"],
             },
             {"chunk": 1, "renamed": 3, "errors": 1, "websites": ["a", "b"]},
@@ -2120,7 +2120,7 @@ def test_a_row_replaced_after_planning_is_left_alone(mock_s3):
     result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
 
     mock_s3.return_value.copy_object.assert_not_called()
-    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.deletable == []
     content.refresh_from_db()
     assert str(content.file) == replaced
     assert result.committed == []
@@ -2145,7 +2145,7 @@ def test_a_row_replaced_during_the_copy_keeps_its_new_file(mock_s3):
 
     content.refresh_from_db()
     assert str(content.file) == replaced
-    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.deletable == []
     assert result.error_count == 1
     assert "no longer holds that file" in stderr.getvalue()
 
@@ -2394,7 +2394,7 @@ def test_a_shared_object_partly_committed_and_partly_changed_is_kept(mock_s3):
     result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
 
     mock_s3.return_value.copy_object.assert_not_called()
-    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.deletable == []
     assert [task.pk for task in result.committed] == [str(first.pk)]
     assert result.error_count == 1
 
@@ -2453,3 +2453,62 @@ def test_a_rows_own_metadata_file_follows_it_when_the_path_rewrite_cannot(
         "no_dir": f"/{directory}/flrpnOS1.pdf",
         "no_slash": f"{directory}/doc.pdf",
     }
+
+
+def test_old_keys_wait_until_the_chunk_patched_its_references(mocker, mock_s3):
+    """An incomplete chunk keeps its old objects, so unpatched links still work."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == page.pk:
+            msg = "database unavailable"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
+    patcher = mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=patch_content_row
+    )
+
+    first = run_chunk(0, *chunk)
+
+    assert first["incomplete"] is True
+    mock_s3.return_value.delete_object.assert_not_called()
+
+    patcher.side_effect = real_patch
+    second = run_chunk(0, *chunk)
+
+    assert second["incomplete"] is False
+    assert mock_s3.return_value.delete_object.call_count == 3
+    page.refresh_from_db()
+    assert page.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_a_page_patched_by_several_chunks_counts_once(mock_s3, caplog):
+    """Three links on one page are one page, as in the dry run."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=" ".join(
+            f"[{prefix}](/{directory}/{prefix}_1.jpg)"
+            for prefix in (UUID_A, UUID_B, UUID_C)
+        ),
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name, chunk_size=1)
+
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
+    assert _counts(final)["pages with file links"] == 1
