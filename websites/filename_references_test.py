@@ -5,7 +5,10 @@ from types import SimpleNamespace
 import pytest
 
 from websites.filename_references import (
+    build_path_index,
     build_path_lookup,
+    referenced_entries,
+    referenced_entries_in_json,
     rewrite_file_references,
     rewrite_json_strings,
 )
@@ -128,3 +131,43 @@ def test_unchanged_json_is_returned_as_the_same_object():
 def test_none_json_is_left_alone():
     """Content can have null metadata."""
     assert rewrite_json_strings(None, LOOKUP) == (None, False)
+
+
+def test_index_maps_entries_to_their_rename():
+    """Both the storage path and the published alias point at the same rename."""
+    rename = _rename(f"sites/store/{UUID}_1.jpg", "sites/store/1-3.jpg")
+
+    index = build_path_index([rename], {"site-1": ("sites/store", "courses/published")})
+
+    assert index == {
+        ("sites/store", f"{UUID}_1.jpg"): rename,
+        ("courses/published", f"{UUID}_1.jpg"): rename,
+    }
+
+
+def test_referenced_entries_finds_path_references_only():
+    """Uses the same matching as the rewrite, so bare names are not reported."""
+    text = f"[a](/courses/site/{UUID}_1.jpg). {UUID}_1.jpg /courses/other/{UUID}_1.jpg"
+
+    assert referenced_entries(text, LOOKUP) == {("courses/site", f"{UUID}_1.jpg")}
+
+
+def test_referenced_entries_drops_trailing_punctuation():
+    """A full stop after a link is not part of the entry."""
+    text = f"see /courses/site/{UUID}_1.jpg."
+
+    assert referenced_entries(text, LOOKUP) == {("courses/site", f"{UUID}_1.jpg")}
+
+
+def test_referenced_entries_in_json_walks_nested_values():
+    """Every string value is searched, keys are not."""
+    value = {
+        "file": f"/courses/site/{UUID}_1.jpg",
+        f"/courses/site/{UUID}_1.jpg": "key only",
+        "items": [None, {"deep": "nothing here"}],
+    }
+
+    assert referenced_entries_in_json(value, LOOKUP) == {
+        ("courses/site", f"{UUID}_1.jpg")
+    }
+    assert referenced_entries_in_json({"a": "b"}, LOOKUP) == set()

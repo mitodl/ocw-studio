@@ -1,11 +1,14 @@
 """Tests for the remove_uuid_from_filenames management command."""  # noqa: INP001
 
 import csv
+import logging
 import re
 from io import StringIO
 
 import pytest
-from django.core.management import call_command
+from django.core.management import CommandError, call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from content_sync.models import ContentSyncState
 from gdrive_sync.factories import DriveFileFactory
@@ -14,7 +17,11 @@ from websites.management.commands import remove_uuid_from_filenames as command_m
 from websites.management.commands.remove_uuid_from_filenames import (
     _collect_renames,
     _execute_renames,
+    _patch_rows,
     _with_suffix,
+    finish_job,
+    plan_job,
+    run_chunk,
     strip_uuid_prefix,
 )
 from websites.models import Website, WebsiteContent
@@ -1087,11 +1094,11 @@ def test_gallery_patch_refreshes_content_sync_state(mock_s3):
 
 
 @pytest.fixture
-def mock_sync(mocker):
-    """Mock the backend sync task the command kicks off after a live run."""
-    return mocker.patch(
-        "websites.management.commands.remove_uuid_from_filenames.sync_website_content"
-    )
+def mock_sync(mocker, settings):
+    """Mock the per-site sync the rename job runs after its chunks."""
+    # A local .env can turn this on, which would build a real backend.
+    settings.GITHUB_RATE_LIMIT_CHECK = False
+    return mocker.patch("websites.tasks.sync_website_content")
 
 
 def _website_with_rename():
@@ -1109,7 +1116,7 @@ def test_triggers_sync_after_a_live_run(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_called_once_with(website.name)
+    mock_sync.assert_called_once_with(website.name)
 
 
 def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_sync):
@@ -1123,7 +1130,7 @@ def test_sync_is_scoped_to_the_websites_that_changed(settings, mock_s3, mock_syn
 
     call_command("remove_uuid_from_filenames")
 
-    synced = {call.args[0] for call in mock_sync.delay.call_args_list}
+    synced = {call.args[0] for call in mock_sync.call_args_list}
     assert synced == {renamed.name}
 
 
@@ -1134,7 +1141,7 @@ def test_skip_sync_suppresses_the_sync_task(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name, skip_sync=True)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
@@ -1149,7 +1156,7 @@ def test_dry_run_never_triggers_sync(settings, tmp_path, mock_s3, mock_sync):
         output=str(tmp_path / "plan.csv"),
     )
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
@@ -1159,7 +1166,7 @@ def test_no_sync_without_a_content_sync_backend(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
 def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
@@ -1172,34 +1179,23 @@ def test_no_sync_when_the_run_changed_nothing(settings, mock_s3, mock_sync):
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    mock_sync.delay.assert_not_called()
+    mock_sync.assert_not_called()
 
 
-def test_sync_failure_is_reported_without_aborting(settings, mock_s3, mock_sync):
-    """A site that fails to sync must not abort a run whose renames already committed."""
+def test_sync_failure_is_logged_without_undoing_the_rename(
+    settings, mock_s3, mock_sync, caplog
+):
+    """A site that fails to sync keeps its committed rename."""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     website = _website_with_rename()
     content = WebsiteContent.objects.get(website=website, file__contains=UUID_PREFIX)
-    mock_sync.delay.return_value.get.side_effect = OSError("github is unhappy")
-
-    stderr = StringIO()
-    call_command("remove_uuid_from_filenames", filter=website.name, stderr=stderr)
-
-    # The rename still stands, and the operator is told what still needs publishing.
-    content.refresh_from_db()
-    assert str(content.file) == f"sites/{website.name}/doc.pdf"
-    assert "did not sync" in stderr.getvalue()
-
-
-def test_sync_waits_with_a_timeout(settings, mock_s3, mock_sync):
-    """Blocking on a worker that never answers would hang the command forever."""
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    website = _website_with_rename()
+    mock_sync.side_effect = OSError("github is unhappy")
 
     call_command("remove_uuid_from_filenames", filter=website.name)
 
-    _, kwargs = mock_sync.delay.return_value.get.call_args
-    assert kwargs.get("timeout")
+    content.refresh_from_db()
+    assert str(content.file) == f"sites/{website.name}/doc.pdf"
+    assert "Failed to sync" in caplog.text
 
 
 def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock_sync):
@@ -1220,25 +1216,6 @@ def test_rename_refreshes_sync_state_before_the_run_ends(settings, mock_s3, mock
     content.refresh_from_db()
     state.refresh_from_db()
     assert state.current_checksum == content.calculate_checksum()
-
-
-def test_sync_timeout_stops_dispatching_further_sites(settings, mock_s3, mock_sync):
-    """get(timeout) does not stop the worker, so dispatching on would overlap syncs."""
-    from celery.exceptions import TimeoutError as CeleryTimeoutError  # noqa: PLC0415
-
-    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
-    first = _website_with_rename()
-    second = _website_with_rename()
-    mock_sync.delay.return_value.get.side_effect = CeleryTimeoutError("no answer")
-
-    stderr = StringIO()
-    call_command("remove_uuid_from_filenames", stderr=stderr)
-
-    # Only the first site is dispatched, and both are reported as unsynced.
-    assert mock_sync.delay.call_count == 1
-    message = stderr.getvalue()
-    assert "Timed out" in message
-    assert first.name in message or second.name in message
 
 
 @pytest.mark.parametrize(
@@ -1778,11 +1755,10 @@ def test_dry_run_csv_marks_suffixed_rows(tmp_path, mock_s3):
     assert by_pk[str(rows[2].pk)]["new_key"] == f"{directory}/1-3.jpg"
 
 
-def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
+def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3, caplog):
     """What the dry run promises is what the live run does."""
     website, _, _ = _reference_fixture()
     dry = StringIO()
-    live = StringIO()
 
     call_command(
         "remove_uuid_from_filenames",
@@ -1791,7 +1767,15 @@ def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
         output=str(tmp_path / "plan.csv"),
         stdout=dry,
     )
-    call_command("remove_uuid_from_filenames", filter=website.name, stdout=live)
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name)
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
 
     expected = {
         "files renamed with a suffix": 2,
@@ -1802,7 +1786,7 @@ def test_dry_run_counts_match_the_live_run(tmp_path, mock_s3):
         "video pages": 0,
     }
     assert _counts(dry.getvalue()) == expected
-    assert _counts(live.getvalue()) == expected
+    assert _counts(final) == expected
 
 
 def test_dry_run_changes_no_references(tmp_path, mock_s3):
@@ -1826,6 +1810,381 @@ def test_dry_run_changes_no_references(tmp_path, mock_s3):
     assert after == before
     assert Website.objects.get(pk=website.pk).metadata == site_before
     mock_s3.return_value.copy_object.assert_not_called()
+
+
+def test_a_row_already_on_its_new_key_is_not_copied_again(mock_s3):
+    """A redelivered chunk treats a committed row as done and finishes the cleanup."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    WebsiteContent.objects.filter(pk=content.pk).update(file=renames[0].new_key)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    mock_s3.return_value.delete_object.assert_not_called()
+    assert result.deletable == [old_key]
+    assert [task.pk for task in result.committed] == [str(content.pk)]
+    assert result.error_count == 0
+
+
+def test_a_partly_committed_shared_object_finishes_the_pending_row(mock_s3):
+    """One row committed before the stop, the other is copied and committed now."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=key)
+    renames, _ = _collect_renames(_files_in(first_site, second_site))
+    new_key = renames[0].new_key
+    WebsiteContent.objects.filter(pk=first.pk).update(file=new_key)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    assert mock_s3.return_value.copy_object.call_count == 1
+    assert result.deletable == [key]
+    second.refresh_from_db()
+    assert str(second.file) == new_key
+    assert {task.pk for task in result.committed} == {str(first.pk), str(second.pk)}
+
+
+def test_patch_rows_patches_every_location(mock_s3):
+    """Content metadata, markdown links, gallery hrefs and site metadata, with counts."""
+    website = WebsiteFactory.create()
+    directory, rows = _contested_trio(website)
+    WebsiteContent.objects.filter(pk=rows[2].pk).update(
+        metadata={"file": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=(
+            f'{{{{< image-gallery-item href="{UUID_A}_1.jpg" text="g" >}}}}\n'
+            f"[doc](/{directory}/{UUID_B}_1.jpg)"
+        ),
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={"course_image_url": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+    renames, _ = _collect_renames(_files_in(website))
+
+    patched = _patch_rows(renames, [rows[2].pk, page.pk], [str(website.uuid)])
+
+    assert patched == ({rows[2].pk}, {page.pk}, {page.pk}, {str(website.uuid)}, 0)
+    page.refresh_from_db()
+    assert page.markdown == (
+        '{{< image-gallery-item href="1.jpg" text="g" >}}\n'
+        f"[doc](/{directory}/1-2.jpg)"
+    )
+    website.refresh_from_db()
+    assert website.metadata == {"course_image_url": f"/{directory}/1-3.jpg"}
+
+
+def test_two_chunks_patching_the_same_page_both_land(mock_s3):
+    """Each chunk re-reads the row, so the second builds on the first."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website,
+        markdown=f"[a](/{directory}/{UUID_A}_1.jpg) [c](/{directory}/{UUID_C}_1.jpg)",
+    )
+    renames, _ = _collect_renames(_files_in(website))
+    by_old = {task.old_key: task for task in renames}
+
+    with CaptureQueriesContext(connection) as queries:
+        _patch_rows([by_old[f"{directory}/{UUID_A}_1.jpg"]], [page.pk], [])
+    _patch_rows([by_old[f"{directory}/{UUID_C}_1.jpg"]], [page.pk], [])
+
+    assert any("FOR UPDATE" in query["sql"] for query in queries.captured_queries)
+    page.refresh_from_db()
+    assert page.markdown == f"[a](/{directory}/1.jpg) [c](/{directory}/1-3.jpg)"
+
+
+def test_patch_rows_skips_a_failing_row(mocker, mock_s3):
+    """One row that cannot be patched is counted, the rest still are."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    bad = WebsiteContentFactory.create(
+        website=website, markdown=f"[a](/{directory}/{UUID_A}_1.jpg)"
+    )
+    good = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    renames, _ = _collect_renames(_files_in(website))
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == bad.pk:
+            msg = "boom"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
+    mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=patch_content_row
+    )
+
+    patched = _patch_rows(renames, [bad.pk, good.pk], [])
+
+    assert patched.errors == 1
+    good.refresh_from_db()
+    assert good.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_plan_job_keeps_each_source_object_in_one_chunk():
+    """Chunks are capped by source objects, and a shared object's rows stay together."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    shared = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    WebsiteContentFactory.create(website=first_site, file=shared)
+    WebsiteContentFactory.create(website=second_site, file=f"/{shared}")
+    _contested_trio(first_site)
+
+    chunks, skipped = plan_job(
+        [str(first_site.uuid), str(second_site.uuid)], chunk_size=1
+    )
+
+    assert skipped == 0
+    assert len(chunks) == 4
+    shared_chunk = next(
+        chunk for chunk in chunks if chunk[0][0]["old_key"].lstrip("/") == shared
+    )
+    assert len(shared_chunk[0]) == 2
+
+
+def test_plan_job_matches_the_dry_run_plan(tmp_path):
+    """With an unchanged database the job renames exactly what the CSV lists."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    output_file = tmp_path / "plan.csv"
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(output_file),
+    )
+    with output_file.open("r", newline="", encoding="utf-8") as f:
+        planned = {row["pk"]: row["new_key"] for row in csv.DictReader(f)}
+
+    chunks, _ = plan_job([str(website.uuid)], chunk_size=500)
+
+    assert {
+        assignment["pk"]: assignment["new_key"]
+        for assignments, _, _ in chunks
+        for assignment in assignments
+    } == planned
+
+
+def test_plan_job_hands_referencing_rows_to_the_owning_chunk():
+    """A page and a website that name a file go to the chunk that renames it."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    Website.objects.filter(pk=website.pk).update(
+        metadata={"course_image_url": f"/{directory}/{UUID_C}_1.jpg"}
+    )
+
+    chunks, _ = plan_job([str(website.uuid)], chunk_size=1)
+
+    owning = next(
+        chunk for chunk in chunks if chunk[0][0]["old_key"].endswith(f"{UUID_C}_1.jpg")
+    )
+    others = [chunk for chunk in chunks if chunk is not owning]
+    assert owning[1] == [page.pk]
+    assert owning[2] == [str(website.uuid)]
+    assert all(chunk[1] == [] and chunk[2] == [] for chunk in others)
+
+
+def test_running_a_chunk_twice_gives_the_same_end_state(mock_s3):
+    """A redelivered chunk copies nothing again and changes nothing further."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+
+    first = run_chunk(0, *chunk)
+    copies = mock_s3.return_value.copy_object.call_count
+    page.refresh_from_db()
+    patched = page.markdown
+    second = run_chunk(0, *chunk)
+
+    assert mock_s3.return_value.copy_object.call_count == copies
+    page.refresh_from_db()
+    assert page.markdown == patched == f"[c](/{directory}/1-3.jpg)"
+    assert first["markdown_links"] == [page.pk]
+    assert second["markdown_links"] == []
+    assert second["renamed"] + second["suffixed"] == 3
+
+
+def test_a_chunk_redelivered_after_its_renames_still_patches_them(mock_s3):
+    """Renames committed, then the worker died before the patches ran."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    for assignment in chunk[0]:
+        WebsiteContent.objects.filter(pk=assignment["pk"]).update(
+            file=assignment["new_key"]
+        )
+
+    run_chunk(0, *chunk)
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    page.refresh_from_db()
+    assert page.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_a_failing_chunk_reports_instead_of_raising(mocker, mock_s3):
+    """A raised task is acknowledged and never retried, and would stop the callback."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    mocker.patch.object(
+        command_module, "_execute_renames", side_effect=RuntimeError("boom")
+    )
+
+    summary = run_chunk(7, *chunk)
+
+    assert summary["chunk"] == 7
+    assert summary["errors"] == 1
+    assert summary["incomplete"] is True
+
+
+def test_finish_job_adds_up_the_chunks():
+    """One line for the whole job, and the websites to sync."""
+    websites, line = finish_job(
+        [
+            {
+                "chunk": 0,
+                "renamed": 1,
+                "suffixed": 2,
+                "galleries": [5],
+                "websites": ["b"],
+            },
+            {"chunk": 1, "renamed": 3, "errors": 1, "websites": ["a", "b"]},
+        ],
+        skipped=4,
+        chunk_count=2,
+    )
+
+    assert websites == ["a", "b"]
+    assert _counts(line) == {
+        "files renamed with a suffix": 2,
+        "content metadata records": 0,
+        "pages with file links": 0,
+        "site metadata records": 0,
+        "gallery pages": 1,
+        "video pages": 0,
+    }
+    assert "4 skipped, 1 errors" in line
+
+
+def test_a_live_run_queues_the_job_and_returns(mocker, mock_s3):
+    """The command only dispatches, the rename happens in the worker."""
+    website = _website_with_rename()
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+    stdout = StringIO()
+
+    call_command(
+        "remove_uuid_from_filenames", filter=website.name, chunk_size=50, stdout=stdout
+    )
+
+    delay.assert_called_once_with([str(website.uuid)], 50, skip_sync=False)
+    mock_s3.return_value.copy_object.assert_not_called()
+    assert "Queued rename job" in stdout.getvalue()
+
+
+def test_an_unfiltered_live_run_selects_every_website(mocker, mock_s3):
+    """No --filter or --exclude means no website list at all."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    call_command("remove_uuid_from_filenames")
+
+    delay.assert_called_once_with(None, 500, skip_sync=False)
+
+
+def test_a_row_replaced_after_planning_is_left_alone(mock_s3):
+    """A new upload since the plan keeps its file, and the old object stays."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    replaced = f"sites/{website.name}/{UUID_B}_new.pdf"
+    WebsiteContent.objects.filter(pk=content.pk).update(file=replaced)
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    assert result.deletable == []
+    content.refresh_from_db()
+    assert str(content.file) == replaced
+    assert result.committed == []
+    assert result.error_count == 1
+
+
+def test_a_row_replaced_during_the_copy_keeps_its_new_file(mock_s3):
+    """The commit only matches the old key, so a racing upload is not reverted."""
+    website = WebsiteFactory.create()
+    old_key = f"sites/{website.name}/{UUID_A}_doc.pdf"
+    content = WebsiteContentFactory.create(website=website, file=old_key)
+    renames, _ = _collect_renames(_files_in(website))
+    replaced = f"sites/{website.name}/{UUID_B}_new.pdf"
+
+    def copy_object(**kwargs):
+        WebsiteContent.objects.filter(pk=content.pk).update(file=replaced)
+
+    mock_s3.return_value.copy_object.side_effect = copy_object
+    stderr = StringIO()
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), stderr)
+
+    content.refresh_from_db()
+    assert str(content.file) == replaced
+    assert result.deletable == []
+    assert result.error_count == 1
+    assert "no longer holds that file" in stderr.getvalue()
+
+
+def test_finish_job_counts_a_redelivered_chunk_once(caplog):
+    """A duplicate report is dropped, and a chunk that never reported is named."""
+    chunk = {"chunk": 0, "renamed": 0, "suffixed": 2, "websites": ["a"]}
+
+    _, line = finish_job([chunk, dict(chunk)], skipped=0, chunk_count=2)
+
+    assert _counts(line)["files renamed with a suffix"] == 2
+    assert "Rename chunks [1] had not reported" in caplog.text
+
+
+def test_finish_job_names_chunks_that_stayed_incomplete(caplog):
+    """A chunk out of retries is called out, since its references may be stale."""
+    finish_job([{"chunk": 0, "incomplete": True}], skipped=0, chunk_count=1)
+
+    assert "Rename chunks [0] still had errors" in caplog.text
+
+
+def test_a_chunk_size_below_one_is_rejected(mocker, mock_s3):
+    """range() would fail in the worker after the command said it queued."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    with pytest.raises(CommandError, match="--chunk-size"):
+        call_command("remove_uuid_from_filenames", chunk_size=0)
+
+    delay.assert_not_called()
+
+
+def test_a_filter_matching_no_website_is_rejected(mocker, mock_s3):
+    """An empty selection would otherwise queue a job that does nothing."""
+    delay = mocker.patch("websites.tasks.rename_uuid_files.delay")
+
+    with pytest.raises(CommandError, match="selected no websites"):
+        call_command("remove_uuid_from_filenames", filter="no-such-site")
+
+    delay.assert_not_called()
 
 
 def test_contested_names_follow_pk_not_prefix_order():
@@ -1941,6 +2300,116 @@ def test_dry_run_counts_videos_to_sync_again(tmp_path, mock_s3):
     assert ContentSyncState.objects.get(content=video).synced_checksum is not None
 
 
+def test_a_multi_chunk_run_matches_the_dry_run(tmp_path, mock_s3, caplog):
+    """Each file in its own chunk still patches every location once."""
+    website, directory, rows = _reference_fixture()
+    dry = StringIO()
+    call_command(
+        "remove_uuid_from_filenames",
+        filter=website.name,
+        dry_run=True,
+        output=str(tmp_path / "plan.csv"),
+        stdout=dry,
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name, chunk_size=1)
+
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
+    assert _counts(final) == _counts(dry.getvalue())
+    assert sorted(
+        str(f)
+        for f in WebsiteContent.objects.filter(
+            pk__in=[row.pk for row in rows]
+        ).values_list("file", flat=True)
+    ) == [f"{directory}/1-2.jpg", f"{directory}/1-3.jpg", f"{directory}/1.jpg"]
+
+
+def test_a_chunk_that_fails_while_patching_still_flags_its_site(mocker, mock_s3):
+    """The renames stand, so the site must stay flagged and in the sync list."""
+    website = WebsiteFactory.create()
+    _contested_trio(website)
+    Website.objects.filter(pk=website.pk).update(
+        has_unpublished_live=False, has_unpublished_draft=False
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    mocker.patch.object(command_module, "_patch_rows", side_effect=RuntimeError("db"))
+
+    summary = run_chunk(0, *chunk)
+
+    assert summary["incomplete"] is True
+    assert summary["renamed"] + summary["suffixed"] == 3
+    assert summary["websites"] == [website.name]
+    website.refresh_from_db()
+    assert website.has_unpublished_live is True
+
+
+def test_a_failed_reference_patch_makes_the_chunk_incomplete(mocker, mock_s3):
+    """A row that could not be patched is only fixed by running the chunk again."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == page.pk:
+            msg = "locked"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
+    mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=patch_content_row
+    )
+
+    summary = run_chunk(0, *chunk)
+
+    assert summary["incomplete"] is True
+    assert summary["errors"] == 1
+    page.refresh_from_db()
+    assert UUID_C in page.markdown
+
+
+def test_a_shared_object_partly_committed_and_partly_changed_is_kept(mock_s3):
+    """One row moved on, one was replaced, so nothing is copied or deleted."""
+    first_site = WebsiteFactory.create()
+    second_site = WebsiteFactory.create()
+    key = f"courses/{first_site.name}/{UUID_A}_doc.pdf"
+    first = WebsiteContentFactory.create(website=first_site, file=key)
+    second = WebsiteContentFactory.create(website=second_site, file=key)
+    renames, _ = _collect_renames(_files_in(first_site, second_site))
+    WebsiteContent.objects.filter(pk=first.pk).update(file=renames[0].new_key)
+    WebsiteContent.objects.filter(pk=second.pk).update(
+        file=f"courses/{second_site.name}/{UUID_B}_new.pdf"
+    )
+
+    result = _execute_renames(renames, mock_s3.return_value, StringIO(), StringIO())
+
+    mock_s3.return_value.copy_object.assert_not_called()
+    assert result.deletable == []
+    assert [task.pk for task in result.committed] == [str(first.pk)]
+    assert result.error_count == 1
+
+
+def test_a_dry_run_filter_matching_no_website_is_rejected(tmp_path, mock_s3):
+    """A typo in --filter would otherwise write an empty plan."""
+    with pytest.raises(CommandError, match="selected no websites"):
+        call_command(
+            "remove_uuid_from_filenames",
+            filter="no-such-site",
+            dry_run=True,
+            output=str(tmp_path / "plan.csv"),
+        )
+
+
 def test_a_rows_own_metadata_file_follows_it_when_the_path_rewrite_cannot(
     tmp_path, mock_s3
 ):
@@ -1984,3 +2453,62 @@ def test_a_rows_own_metadata_file_follows_it_when_the_path_rewrite_cannot(
         "no_dir": f"/{directory}/flrpnOS1.pdf",
         "no_slash": f"{directory}/doc.pdf",
     }
+
+
+def test_old_keys_wait_until_the_chunk_patched_its_references(mocker, mock_s3):
+    """An incomplete chunk keeps its old objects, so unpatched links still work."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    page = WebsiteContentFactory.create(
+        website=website, markdown=f"[c](/{directory}/{UUID_C}_1.jpg)"
+    )
+    (chunk,), _ = plan_job([str(website.uuid)], chunk_size=500)
+    real_patch = command_module._patch_content_row  # noqa: SLF001
+
+    def patch_content_row(pk, *args):
+        if pk == page.pk:
+            msg = "database unavailable"
+            raise RuntimeError(msg)
+        return real_patch(pk, *args)
+
+    patcher = mocker.patch.object(
+        command_module, "_patch_content_row", side_effect=patch_content_row
+    )
+
+    first = run_chunk(0, *chunk)
+
+    assert first["incomplete"] is True
+    mock_s3.return_value.delete_object.assert_not_called()
+
+    patcher.side_effect = real_patch
+    second = run_chunk(0, *chunk)
+
+    assert second["incomplete"] is False
+    assert mock_s3.return_value.delete_object.call_count == 3
+    page.refresh_from_db()
+    assert page.markdown == f"[c](/{directory}/1-3.jpg)"
+
+
+def test_a_page_patched_by_several_chunks_counts_once(mock_s3, caplog):
+    """Three links on one page are one page, as in the dry run."""
+    website = WebsiteFactory.create()
+    directory, _ = _contested_trio(website)
+    WebsiteContentFactory.create(
+        website=website,
+        markdown=" ".join(
+            f"[{prefix}](/{directory}/{prefix}_1.jpg)"
+            for prefix in (UUID_A, UUID_B, UUID_C)
+        ),
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="websites.management.commands.remove_uuid_from_filenames"
+    ):
+        call_command("remove_uuid_from_filenames", filter=website.name, chunk_size=1)
+
+    final = next(
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("Rename job finished")
+    )
+    assert _counts(final)["pages with file links"] == 1
