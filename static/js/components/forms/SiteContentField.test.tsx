@@ -116,12 +116,13 @@ describe("SiteContentField", () => {
   })
 
   it.each([
-    { clearable: true, hasClearIndicator: true },
-    { clearable: false, hasClearIndicator: false },
-    { clearable: undefined, hasClearIndicator: false },
+    { clearable: true, key: "{Backspace}", clears: true },
+    { clearable: true, key: "{Delete}", clears: true },
+    { clearable: false, key: "{Backspace}", clears: false },
+    { clearable: undefined, key: "{Backspace}", clears: false },
   ])(
-    "renders a clear indicator on a single Select only when clearable=$clearable",
-    async ({ clearable, hasClearIndicator }) => {
+    "clears a single Select with $key only when clearable=$clearable",
+    async ({ clearable, key, clears }) => {
       const website = makeWebsiteDetail()
       const user = userEvent.setup()
       const field: ConfigField = {
@@ -132,7 +133,7 @@ describe("SiteContentField", () => {
         clearable,
       }
 
-      const { container } = render(
+      render(
         <WebsiteContext.Provider value={website}>
           <Formik initialValues={{ locale: "Argentina" }} onSubmit={jest.fn()}>
             <Form>
@@ -147,18 +148,15 @@ describe("SiteContentField", () => {
       )
 
       expect(screen.getByText("Argentina")).toBeInTheDocument()
-      // react-select renders the clear indicator before the dropdown indicator
-      const indicators = container.querySelectorAll(
-        "[class*='indicatorContainer']",
-      )
-      expect(indicators).toHaveLength(hasClearIndicator ? 2 : 1)
-      if (!hasClearIndicator) {
-        return
+      await user.click(screen.getByRole("textbox"))
+      await user.keyboard(key)
+      if (clears) {
+        sinon.assert.calledWith(onChangeStub, {
+          target: { value: "", name: "locale" },
+        })
+      } else {
+        sinon.assert.notCalled(onChangeStub)
       }
-      await user.click(indicators[0])
-      sinon.assert.calledWith(onChangeStub, {
-        target: { value: "", name: "locale" },
-      })
     },
   )
 
