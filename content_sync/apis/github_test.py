@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management import call_command
 from github import Auth, GithubException, GithubIntegration
 from requests import HTTPError
 
@@ -22,6 +23,8 @@ from content_sync.apis.github import (
     get_token,
     sync_starter_configs,
 )
+from content_sync.backends.github import GithubBackend
+from content_sync.models import ContentSyncState
 from main import features
 from users.factories import UserFactory
 from websites.constants import STARTER_SOURCE_GITHUB
@@ -337,8 +340,142 @@ def test_upsert_content_files(mocker, mock_api_wrapper, db_data):
     mock_api_wrapper.upsert_content_files()
     assert patched_upsert_for_user.call_count == (expected_num_users + 1)
     for user in db_data.users:
-        patched_upsert_for_user.assert_any_call(user.id, None)
-    patched_upsert_for_user.assert_any_call(None, None)
+        patched_upsert_for_user.assert_any_call(user.id, None, commit_user=None)
+    patched_upsert_for_user.assert_any_call(None, None, commit_user=None)
+
+
+@pytest.mark.parametrize("override_user", [True, False])
+@pytest.mark.parametrize("is_anonymous", [True, False])
+def test_bulk_sync_commit_attribution(  # noqa: PLR0913, PLR0917
+    settings,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
+    override_user,
+    is_anonymous,
+):
+    """A maintenance actor overrides commit identity without changing content editors."""
+    settings.FEATURES[features.GIT_ANONYMOUS_COMMITS] = is_anonymous
+    patched_file_serialize.return_value = "serialized content"
+    operator = UserFactory.create() if override_user else None
+    editors = {
+        content.id: (content.owner_id, content.updated_by_id)
+        for content in db_data.website_contents
+    }
+
+    mock_api_wrapper.upsert_content_files(commit_user=operator)
+
+    commits = mock_api_wrapper.get_repo().create_git_commit.call_args_list
+    assert len(commits) == len(db_data.users)
+    expected_users = [operator] * len(db_data.users) if operator else db_data.users
+    expected_identities = sorted(
+        (
+            f"user_{user.id}" if is_anonymous else user.name,
+            settings.GIT_DEFAULT_USER_EMAIL if is_anonymous else user.email,
+        )
+        for user in expected_users
+    )
+    for field in ("author", "committer"):
+        assert (
+            sorted(
+                (
+                    call.kwargs[field]._identity["name"],  # noqa: SLF001
+                    call.kwargs[field]._identity["email"],  # noqa: SLF001
+                )
+                for call in commits
+            )
+            == expected_identities
+        )
+    for content in db_data.website_contents:
+        content.refresh_from_db()
+        assert (content.owner_id, content.updated_by_id) == editors[content.id]
+        assert content.content_sync_state.is_synced
+
+
+@pytest.mark.parametrize("per_user", [True, False])
+def test_bulk_sync_empty_selection(mock_api_wrapper, db_data, per_user):
+    """An empty explicit selection never syncs other dirty content."""
+    query_set = WebsiteContent.objects.none()
+    if per_user:
+        mock_api_wrapper.upsert_content_files_for_user(
+            db_data.users[0].id, query_set, commit_user=db_data.users[1]
+        )
+    else:
+        mock_api_wrapper.upsert_content_files(query_set, commit_user=db_data.users[1])
+    mock_api_wrapper.org.get_repo.assert_not_called()
+
+
+def test_reset_and_sync_attribution(  # noqa: PLR0913, PLR0917
+    settings,
+    mocker,
+    mock_api_wrapper,
+    db_data,
+    patched_file_serialize,
+    patched_destination_filepath,
+):
+    """Reset, rename, resync and orphan cleanup all retain the maintenance actor."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
+    settings.FEATURES[features.GIT_ANONYMOUS_COMMITS] = False
+    patched_file_serialize.return_value = "serialized content"
+    operator = UserFactory.create()
+    content = db_data.website_contents[0]
+    old_path = fake_destination_filepath(content)
+    ContentSyncState.objects.filter(content__website=db_data.website).update(
+        synced_checksum="previously-synced"
+    )
+    content.filename = "corrected-filename"
+    content.updated_by = operator
+    content.save()
+    backend = GithubBackend(db_data.website)
+    backend.api = mock_api_wrapper
+    mocker.patch(
+        "content_sync.management.commands.sync_website_to_backend.get_sync_backend",
+        return_value=backend,
+    )
+    mocker.patch(
+        "content_sync.backends.github.get_destination_filepath",
+        side_effect=fake_destination_filepath,
+    )
+    mocker.patch.object(mock_api_wrapper, "get_all_file_paths", return_value=[old_path])
+    editors = dict(
+        db_data.website.websitecontent_set.values_list("pk", "updated_by_id")
+    )
+
+    call_command(
+        "reset_sync_states",
+        filter=db_data.website.name,
+        skip_sync=True,
+        user=operator.email,
+    )
+    call_command(
+        "sync_website_to_backend",
+        filter=db_data.website.name,
+        git_delete=True,
+        user=operator.email,
+    )
+
+    commits = mock_api_wrapper.get_repo().create_git_commit.call_args_list
+    # Three editor groups (including the admin edit) plus orphan removal.
+    assert len(commits) == 4
+    for call in commits:
+        for field in ("author", "committer"):
+            assert call.kwargs[field]._identity == {  # noqa: SLF001
+                "name": operator.name,
+                "email": operator.email,
+            }
+    removed_files = mock_api_wrapper.get_repo().create_git_tree.call_args.args[0]
+    assert [element._identity for element in removed_files] == [  # noqa: SLF001
+        {"path": old_path, "mode": "100644", "type": "blob", "sha": None}
+    ]
+    assert (
+        dict(db_data.website.websitecontent_set.values_list("pk", "updated_by_id"))
+        == editors
+    )
+    assert all(
+        state.is_synced
+        for state in ContentSyncState.objects.filter(content__website=db_data.website)
+    )
 
 
 def test_upsert_content_files_for_user(

@@ -22,6 +22,8 @@ from content_sync.pipelines.base import (
     BaseUnpublishedSiteRemovalPipeline,
 )
 from main.s3_utils import get_boto3_resource
+from users.factories import UserFactory
+from users.models import User
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -34,7 +36,7 @@ from websites.factories import (
     WebsiteFactory,
     WebsiteStarterFactory,
 )
-from websites.models import WebsiteContent
+from websites.models import Website, WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
@@ -205,6 +207,82 @@ def test_sync_unsynced_websites(api_mock, backend_exists, create_backend, delete
         api_mock.get_sync_backend.return_value.delete_orphaned_content_in_backend.call_count
         == (2 if delete and (create_backend or backend_exists) else 0)
     )
+    backend = api_mock.get_sync_backend.return_value
+    for call in backend.sync_all_content_to_backend.call_args_list:
+        assert call.args == ()
+        assert call.kwargs == {}
+    for call in backend.delete_orphaned_content_in_backend.call_args_list:
+        assert call.args == ()
+        assert call.kwargs == {}
+
+
+def test_sync_unsynced_websites_commit_user(api_mock):
+    """An explicit actor is passed to both content sync and orphan cleanup."""
+    user = UserFactory.create()
+    sync_state = ContentSyncStateFactory.create()
+
+    tasks.sync_unsynced_websites.delay(commit_user_id=user.pk, delete=True)
+
+    api_mock.get_sync_backend.assert_called_once_with(sync_state.content.website)
+    backend = api_mock.get_sync_backend.return_value
+    backend.sync_all_content_to_backend.assert_called_once_with(commit_user=user)
+    backend.delete_orphaned_content_in_backend.assert_called_once_with(commit_user=user)
+
+
+@pytest.mark.parametrize("has_actor", [True, False])
+def test_sync_unsynced_websites_selected_content(api_mock, has_actor):
+    """A scoped sync includes selected deleted content and ignores other dirty content."""
+    user = UserFactory.create() if has_actor else None
+    website = WebsiteFactory.create()
+    selected = WebsiteContentFactory.create(website=website)
+    deleted = WebsiteContentFactory.create(website=website)
+    deleted.delete()
+    WebsiteContentFactory.create(website=website)
+    other_website = WebsiteFactory.create()
+    WebsiteContentFactory.create(website=other_website)
+    Website.objects.filter(pk=other_website.pk).update(has_unpublished_live=False)
+    content_ids = [selected.pk, deleted.pk]
+
+    tasks.sync_unsynced_websites.delay(
+        commit_user_id=user.pk if user else None, content_ids=content_ids
+    )
+
+    api_mock.get_sync_backend.assert_called_once_with(website)
+    backend = api_mock.get_sync_backend.return_value
+    backend.sync_all_content_to_backend.assert_called_once()
+    kwargs = backend.sync_all_content_to_backend.call_args.kwargs
+    assert set(kwargs["query_set"].values_list("pk", flat=True)) == set(content_ids)
+    if user:
+        assert kwargs["commit_user"] == user
+    else:
+        assert "commit_user" not in kwargs
+    other_website.refresh_from_db()
+    assert other_website.has_unpublished_live is False
+
+
+def test_sync_unsynced_websites_empty_selection(api_mock):
+    """An empty selected-content list does not fall back to syncing dirty websites."""
+    user = UserFactory.create()
+    ContentSyncStateFactory.create()
+
+    tasks.sync_unsynced_websites.delay(commit_user_id=user.pk, content_ids=[])
+
+    api_mock.get_sync_backend.assert_not_called()
+
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_sync_unsynced_websites_invalid_commit_user(api_mock, missing):
+    """A removed or inactive actor fails before any website is synchronized."""
+    user = UserFactory.create(is_active=False)
+    user_id = user.pk
+    if missing:
+        user.delete()
+    ContentSyncStateFactory.create()
+
+    with pytest.raises(User.DoesNotExist):
+        tasks.sync_unsynced_websites(commit_user_id=user_id)
+
+    api_mock.get_sync_backend.assert_not_called()
 
 
 @pytest.mark.parametrize("check_limit", [True, False])

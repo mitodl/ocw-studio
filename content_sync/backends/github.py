@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from github.Repository import Repository
 
     from content_sync.models import ContentSyncState
+    from users.models import User
     from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 
 log = logging.getLogger(__name__)
@@ -86,7 +87,7 @@ class GithubBackend(BaseSyncBackend):
         content = sync_state.content
         return self.api.upsert_content_file(content)
 
-    def delete_orphaned_content_in_backend(self):
+    def delete_orphaned_content_in_backend(self, *, commit_user: User | None = None):
         """Delete any git repo files without corresponding WebsiteContent objects"""
         sitepaths = []
         for content in self.website.websitecontent_set.iterator():
@@ -97,16 +98,26 @@ class GithubBackend(BaseSyncBackend):
             ):
                 sitepaths.append(content.content_sync_state.data[GIT_DATA_FILEPATH])
         self.api.batch_delete_files(
-            [path for path in self.api.get_all_file_paths("/") if path not in sitepaths]
+            [
+                path
+                for path in self.api.get_all_file_paths("/")
+                if path not in sitepaths
+            ],
+            user=commit_user,
         )
 
     def sync_all_content_to_backend(
-        self, query_set: WebsiteContentQuerySet | None = None
+        self,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        commit_user: User | None = None,
     ) -> Commit:
         """
-        Sync all the website's files to Github in one commit
+        Sync website content, passing commit_user as the identity for new commits.
         """
-        return self.api.upsert_content_files(query_set=query_set)
+        return self.api.upsert_content_files(
+            query_set=query_set, commit_user=commit_user
+        )
 
     def delete_content_in_backend(self, sync_state: ContentSyncState) -> Commit:
         """

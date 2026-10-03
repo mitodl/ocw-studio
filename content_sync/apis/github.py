@@ -337,9 +337,14 @@ class GithubApiWrapper:
             **kwargs,
         )
 
-    def upsert_content_files(self, query_set: WebsiteContentQuerySet | None = None):
-        """Commit all website content, with 1 commit per user, optionally filtering with a QuerySet"""  # noqa: E501
-        if query_set:
+    def upsert_content_files(
+        self,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        commit_user: User | None = None,
+    ):
+        """Sync batches grouped by updated_by, passing commit_user to new commits."""
+        if query_set is not None:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
             content_files = (
@@ -349,22 +354,31 @@ class GithubApiWrapper:
                 .distinct()
             )
         for user_id in content_files:
-            self.upsert_content_files_for_user(user_id, query_set)
+            self.upsert_content_files_for_user(
+                user_id, query_set, commit_user=commit_user
+            )
 
     @retry_on_failure
     def upsert_content_files_for_user(
-        self, user_id=None, query_set: WebsiteContentQuerySet | None = None
+        self,
+        user_id=None,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        commit_user: User | None = None,
     ) -> Commit | None:
         """
-        Upsert multiple WebsiteContent objects to github in one commit, optionally filtering with a QuerySet
-        """  # noqa: E501
+        Upsert multiple WebsiteContent objects to GitHub in one commit,
+        optionally filtering with a QuerySet.
+
+        Use commit_user as the author and committer when provided.
+        """
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
         ).exclude(
             Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
             & Q(synced_checksum__isnull=False)
         )
-        if query_set:
+        if query_set is not None:
             unsynced_states = unsynced_states.filter(content__in=query_set)
         modified_element_list = []
         synced_results = []
@@ -404,7 +418,10 @@ class GithubApiWrapper:
             return None
 
         commit = self.commit_tree(
-            modified_element_list, User.objects.filter(id=user_id).first()
+            modified_element_list,
+            commit_user
+            if commit_user is not None
+            else User.objects.filter(id=user_id).first(),
         )
 
         # Save last git filepath and checksum to sync state

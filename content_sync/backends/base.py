@@ -7,6 +7,7 @@ from content_sync.models import ContentSyncState
 from websites.site_config_api import SiteConfig
 
 if TYPE_CHECKING:
+    from users.models import User
     from websites.models import Website, WebsiteContentQuerySet
 
 
@@ -100,16 +101,22 @@ class BaseSyncBackend(abc.ABC):
             self.update_content_in_backend(sync_state)
 
     @abc.abstractmethod
-    def delete_orphaned_content_in_backend(self):
+    def delete_orphaned_content_in_backend(self, *, commit_user: User | None = None):
         """Delete any git repo files without corresponding WebsiteContent objects"""
         ...
 
     def sync_all_content_to_backend(
-        self, query_set: WebsiteContentQuerySet | None = None
+        self,
+        query_set: WebsiteContentQuerySet | None = None,
+        *,
+        commit_user: User | None = None,
     ):
         """Sync all content for the website, optionally filtering based on a WebsiteContentQuerySet"""  # noqa: E501
+        if commit_user is not None:
+            msg = "This backend does not support overriding the commit user."
+            raise NotImplementedError(msg)
         sync_states = ContentSyncState.objects.filter(content__website=self.website)
-        if query_set:
+        if query_set is not None:
             sync_states = sync_states.filter(content__in=query_set)
         for sync_state in sync_states:
             self.sync_content_to_backend(sync_state)

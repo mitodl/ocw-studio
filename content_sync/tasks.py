@@ -22,6 +22,7 @@ from content_sync.models import ContentSyncState
 from content_sync.utils import get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
+from users.models import User
 from websites.api import (
     get_website_in_root_website_metadata,
     reset_publishing_fields,
@@ -57,37 +58,53 @@ def sync_unsynced_websites(
     *,
     create_backends: bool = False,
     delete: bool | None = False,
+    commit_user_id: int | None = None,
+    content_ids: list[int] | None = None,
 ):
     """
     Sync all websites with unsynced content if they have existing repos.
     This should be rarely called, and only in a management command.
     """
+    commit_kwargs = {}
+    if commit_user_id is not None:
+        commit_kwargs["commit_user"] = User.objects.get(
+            pk=commit_user_id, is_active=True
+        )
     if not settings.CONTENT_SYNC_BACKEND:
         return
-    for website_name in (  # pylint:disable=too-many-nested-blocks
-        ContentSyncState.objects.exclude(
-            Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
-            & Q(synced_checksum__isnull=False)
+    unsynced_states = ContentSyncState.objects.exclude(
+        Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
+        & Q(synced_checksum__isnull=False)
+    )
+    if content_ids is not None:
+        unsynced_states = unsynced_states.filter(content_id__in=content_ids)
+    for website_name in (
+        unsynced_states.exclude(
+            Q(content__website__name__isnull=True) | Q(content__website__name="")
         )
         .values_list("content__website__name", flat=True)
         .distinct()
     ):
-        if website_name:
-            log.debug("Syncing website %s to backend", website_name)
-            try:
-                reset_publishing_fields(website_name)
-                backend = api.get_sync_backend(Website.objects.get(name=website_name))
-                api.throttle_git_backend_calls(backend)
-                if create_backends or backend.backend_exists():
-                    backend.create_website_in_backend()
-                    backend.sync_all_content_to_backend()
-                    if delete:
-                        backend.delete_orphaned_content_in_backend()
-            except RateLimitExceededException:
-                # Too late, can't even check rate limit reset time now so bail
-                raise
-            except:  # pylint:disable=bare-except  # noqa: E722
-                log.exception("Error syncing website %s", website_name)
+        log.debug("Syncing website %s to backend", website_name)
+        try:
+            reset_publishing_fields(website_name)
+            backend = api.get_sync_backend(Website.objects.get(name=website_name))
+            api.throttle_git_backend_calls(backend)
+            if create_backends or backend.backend_exists():
+                backend.create_website_in_backend()
+                sync_kwargs = dict(commit_kwargs)
+                if content_ids is not None:
+                    sync_kwargs["query_set"] = WebsiteContent.all_objects.filter(
+                        website__name=website_name, pk__in=content_ids
+                    )
+                backend.sync_all_content_to_backend(**sync_kwargs)
+                if delete:
+                    backend.delete_orphaned_content_in_backend(**commit_kwargs)
+        except RateLimitExceededException:
+            # Too late, can't even check rate limit reset time now so bail
+            raise
+        except:  # pylint:disable=bare-except  # noqa: E722
+            log.exception("Error syncing website %s", website_name)
 
 
 @app.task(acks_late=True)

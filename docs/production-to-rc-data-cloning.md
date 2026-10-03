@@ -134,10 +134,10 @@ The RC environment needs to synchronize all content with GitHub repositories. Th
 
 ### 3.1 Reset Sync States
 
-Reset all sync states to ensure complete synchronization:
+Reset all sync states to ensure complete synchronization. The required `--user` value is the email address of your active Studio account in RC:
 
 ```bash
-./manage.py reset_sync_states --skip_sync
+./manage.py reset_sync_states --skip_sync --user <studio-user-email>
 ```
 
 ### 3.2 Mass Publish (Excluding ocw-www)
