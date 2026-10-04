@@ -207,6 +207,8 @@ export interface ConfigItem {
 
 export interface WebsiteStarterConfig {
   collections: TopLevelConfigItem[]
+  /** The URL prefix every site of this starter lives under, e.g. "courses". */
+  "root-url-path"?: string
 }
 
 export interface WebsiteStarter {

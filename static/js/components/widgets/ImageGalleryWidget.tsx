@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import {
   DndContext,
@@ -22,10 +22,36 @@ import { useWebsite } from "../../context/Website"
 import { useWebsiteContent } from "../../hooks/websites"
 import { siteContentRerouteUrl } from "../../lib/urls"
 import { ImageGalleryHandle } from "../../lib/ckeditor/plugins/constants"
+import { parseGalleryItem } from "../../lib/ckeditor/plugins/galleryItems"
 
 interface Props {
   el: HTMLElement
   handle: ImageGalleryHandle
+}
+
+interface GalleryEntry {
+  /** Stable while items move, and unique even when an image appears twice. */
+  key: string
+  /** The item's raw params, written back untouched. */
+  raw: string
+  uuid?: string
+  href?: string
+}
+
+/**
+ * dnd-kit needs an id for each item that stays the same while items move. An
+ * image can appear twice in one gallery, so its uuid (or href) alone is not
+ * unique; counting the earlier items that share it makes it so.
+ */
+const toEntries = (items: string[]): GalleryEntry[] => {
+  const seen = new Map<string, number>()
+  return items.map((raw) => {
+    const { uuid, href } = parseGalleryItem(raw)
+    const base = uuid || href || "item"
+    const count = seen.get(base) ?? 0
+    seen.set(base, count + 1)
+    return { key: `${base}#${count}`, raw, uuid, href }
+  })
 }
 
 /**
@@ -35,7 +61,8 @@ interface Props {
  * Like EmbeddedResource this renders into a raw element owned by CKEditor via a
  * portal, but unlike EmbeddedResource it also *writes* — reordering and
  * removing images go back into the CKEditor model through `handle`, so they
- * participate in undo/redo and mark the form dirty.
+ * participate in undo/redo and mark the form dirty. Items move as their raw
+ * param text, so params the editor knows nothing about are kept.
  *
  * Per-image metadata (alt text, caption, credit) is deliberately not editable
  * here. It lives on the image resource itself, which is the single source of
@@ -44,7 +71,8 @@ interface Props {
 export default function ImageGalleryWidget(props: Props): JSX.Element {
   const { el, handle } = props
 
-  const [uuids, setUuids] = useState<string[]>(() => handle.getUuids())
+  const [items, setItems] = useState<string[]>(() => handle.getItems())
+  const entries = useMemo(() => toEntries(items), [items])
 
   /**
    * The editingDowncast converter does not opt into reconversion, so this view
@@ -53,7 +81,7 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
    * React tree mid-drag.
    */
   useEffect(
-    () => handle.onModelChange(() => setUuids(handle.getUuids())),
+    () => handle.onModelChange(() => setItems(handle.getItems())),
     [handle],
   )
 
@@ -70,21 +98,23 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
       if (!over || active.id === over.id) {
         return
       }
-      const oldIndex = uuids.indexOf(String(active.id))
-      const newIndex = uuids.indexOf(String(over.id))
+      const oldIndex = entries.findIndex((entry) => entry.key === active.id)
+      const newIndex = entries.findIndex((entry) => entry.key === over.id)
       if (oldIndex === -1 || newIndex === -1) {
         return
       }
-      handle.setUuids(arrayMove(uuids, oldIndex, newIndex))
+      handle.setItems(arrayMove(items, oldIndex, newIndex))
     },
-    [uuids, handle],
+    [entries, items, handle],
   )
 
-  const removeImage = useCallback(
-    (uuid: string) => {
-      handle.setUuids(uuids.filter((item) => item !== uuid))
+  const removeItem = useCallback(
+    (key: string) => {
+      handle.setItems(
+        entries.filter((entry) => entry.key !== key).map((entry) => entry.raw),
+      )
     },
-    [uuids, handle],
+    [entries, handle],
   )
 
   return createPortal(
@@ -107,7 +137,7 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
           Add images
         </button>
       </div>
-      {uuids.length === 0 ? (
+      {entries.length === 0 ? (
         <div className="image-gallery-empty text-gray font-italic">
           No images yet — use “Add images” to choose some.
         </div>
@@ -117,13 +147,16 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <SortableContext items={uuids} strategy={rectSortingStrategy}>
+          <SortableContext
+            items={entries.map((entry) => entry.key)}
+            strategy={rectSortingStrategy}
+          >
             <div className="image-gallery-grid">
-              {uuids.map((uuid) => (
+              {entries.map((entry) => (
                 <GalleryThumbnail
-                  key={uuid}
-                  uuid={uuid}
-                  removeImage={removeImage}
+                  key={entry.key}
+                  entry={entry}
+                  removeItem={removeItem}
                 />
               ))}
             </div>
@@ -136,24 +169,25 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
 }
 
 interface ThumbnailProps {
-  uuid: string
-  removeImage: (uuid: string) => void
+  entry: GalleryEntry
+  removeItem: (key: string) => void
 }
 
 function GalleryThumbnail(props: ThumbnailProps): JSX.Element {
-  const { uuid, removeImage } = props
-  const website = useWebsite()
-  const [resource] = useWebsiteContent(uuid)
+  const { entry, removeItem } = props
 
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: uuid })
+    useSortable({ id: entry.key })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   }
 
-  const onRemove = useCallback(() => removeImage(uuid), [removeImage, uuid])
+  const onRemove = useCallback(
+    () => removeItem(entry.key),
+    [removeItem, entry.key],
+  )
 
   return (
     <div
@@ -179,6 +213,22 @@ function GalleryThumbnail(props: ThumbnailProps): JSX.Element {
           remove_circle_outline
         </span>
       </div>
+      {entry.uuid ? (
+        <LinkedImage uuid={entry.uuid} />
+      ) : (
+        <UnlinkedImage href={entry.href} />
+      )}
+    </div>
+  )
+}
+
+function LinkedImage(props: { uuid: string }): JSX.Element {
+  const { uuid } = props
+  const website = useWebsite()
+  const [resource] = useWebsiteContent(uuid)
+
+  return (
+    <>
       {resource?.file ? (
         <img className="img-fluid" src={resource.file} alt="" />
       ) : (
@@ -197,6 +247,23 @@ function GalleryThumbnail(props: ThumbnailProps): JSX.Element {
       >
         {resource?.title ?? uuid}
       </a>
-    </div>
+    </>
+  )
+}
+
+/**
+ * An item with no uuid predates uuids being recorded on gallery items, and
+ * the image_gallery_item_uuid cleanup could not match it to a resource. It
+ * still renders on the site from its href, and stays exactly as authored.
+ */
+function UnlinkedImage(props: { href?: string }): JSX.Element {
+  const { href } = props
+  return (
+    <>
+      <div className="image-gallery-item-missing text-gray">
+        Not linked to a resource
+      </div>
+      <span className="image-gallery-item-title">{href ?? "No file"}</span>
+    </>
   )
 }

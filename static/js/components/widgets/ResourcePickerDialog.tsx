@@ -32,8 +32,11 @@ interface Props {
    * unset and keep the original single-selection behavior.
    */
   multiple?: boolean
-  /** Required when `multiple` is set. Receives the uuids in selection order. */
-  insertMultiple?: (uuids: string[]) => void
+  /**
+   * Required when `multiple` is set. Receives the picked resources, in the
+   * order they were picked, as the listing returned them.
+   */
+  insertMultiple?: (resources: WebsiteContent[]) => void
   /** Restrict the visible tabs, e.g. to images only. */
   restrictToTabIds?: string[]
   /** Overrides the dialog heading and accept button label. */
@@ -185,30 +188,36 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     null,
   )
 
-  const [selectedUuids, setSelectedUuids] = useState<string[]>([])
+  const [selectedResources, setSelectedResources] = useState<WebsiteContent[]>(
+    [],
+  )
+  const selectedUuids = useMemo(
+    () => selectedResources.map((item) => item.text_id),
+    [selectedResources],
+  )
 
   // Start from a clean selection every time the dialog is opened.
   useEffect(() => {
     if (isOpen) {
-      setSelectedUuids([])
+      setSelectedResources([])
       setFocusedResource(null)
     }
   }, [isOpen])
 
   const toggleResource = useCallback((item: WebsiteContent) => {
-    setSelectedUuids((current) =>
-      current.includes(item.text_id)
-        ? current.filter((uuid) => uuid !== item.text_id)
-        : [...current, item.text_id],
+    setSelectedResources((current) =>
+      current.some((selected) => selected.text_id === item.text_id)
+        ? current.filter((selected) => selected.text_id !== item.text_id)
+        : [...current, item],
     )
   }, [])
 
   const addSelectedResources = useCallback(() => {
-    if (selectedUuids.length > 0 && isOpen) {
-      insertMultiple?.(selectedUuids)
+    if (selectedResources.length > 0 && isOpen) {
+      insertMultiple?.(selectedResources)
       closeDialog()
     }
-  }, [insertMultiple, selectedUuids, closeDialog, isOpen])
+  }, [insertMultiple, selectedResources, closeDialog, isOpen])
 
   const addResource = useCallback(() => {
     if (focusedResource && isOpen) {

@@ -15,6 +15,8 @@ import {
   ADD_RESOURCE_EMBED,
   ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
+  IMAGE_GALLERY_COMMAND,
+  ImageGalleryHandle,
   MARKDOWN_CONFIG_KEY,
   MINIMAL_WITH_MATH,
   MINIMAL_WITH_SUBSUP,
@@ -25,7 +27,11 @@ import {
 } from "../../lib/ckeditor/plugins/constants"
 import { getMockEditor } from "../../test_util"
 import { useWebsite } from "../../context/Website"
-import { makeWebsiteDetail } from "../../util/factories/websites"
+import {
+  makeWebsiteContentDetail,
+  makeWebsiteDetail,
+} from "../../util/factories/websites"
+import { WebsiteContent } from "../../types/websites"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
 
 jest.mock("../../lib/ckeditor/CKEditor", () => {
@@ -278,6 +284,100 @@ describe("MarkdownEditor", () => {
         )
       })
       expect(lastResourcePickerProps.mode).toBe(resourceNodeType)
+    })
+  })
+
+  describe("adding images to a gallery", () => {
+    const image = (
+      textId: string,
+      file: string,
+      caption: string,
+    ): WebsiteContent => ({
+      ...makeWebsiteContentDetail(),
+      text_id: textId,
+      file,
+      metadata: {
+        resourcetype: "Image",
+        image_metadata: { "image-alt": "", caption, credit: "" },
+      },
+    })
+
+    const openGalleryPicker = async (handle: ImageGalleryHandle | null) => {
+      const editor = { ...getMockEditor(), execute: jest.fn() }
+      renderMarkdownEditor()
+      lastCKEditorProps.onReady(editor)
+      await act(async () => {
+        lastCKEditorProps.config[
+          CKEDITOR_RESOURCE_UTILS
+        ].openImageGalleryPicker(handle)
+      })
+      return editor
+    }
+
+    it.each([
+      {
+        urlPath: "courses/18-05-intro-spring-2014",
+        urlSuggestion: "",
+        params: ' baseUrl="/courses/18-05-intro-spring-2014/" ',
+      },
+      {
+        urlPath: null,
+        urlSuggestion: "18-05-[sitemetadata:term]",
+        params: " ",
+      },
+    ])(
+      "creates a new gallery with params '$params' when url_path is $urlPath",
+      async ({ urlPath, urlSuggestion, params }) => {
+        mocUseWebsite.mockReturnValue(
+          makeWebsiteDetail({
+            url_path: urlPath, // eslint-disable-line camelcase
+            url_suggestion: urlSuggestion, // eslint-disable-line camelcase
+          }),
+        )
+        const editor = await openGalleryPicker(null)
+        await act(async () => {
+          lastResourcePickerProps.insertMultiple([
+            image(
+              "u1",
+              "https://bucket.s3.amazonaws.com/courses/x/pyrite.jpg",
+              "Pyrite: FeS{{< sub 2 >}}",
+            ),
+          ])
+        })
+        expect(editor.execute).toHaveBeenCalledWith(IMAGE_GALLERY_COMMAND, {
+          params,
+          items: [
+            ' uuid="u1" href="pyrite.jpg" text="Pyrite: FeS{{< sub 2 >}}" ',
+          ],
+        })
+      },
+    )
+
+    it("appends to an existing gallery, skipping images it already has", async () => {
+      const setItems = jest.fn()
+      const handle: ImageGalleryHandle = {
+        getItems: () => [
+          ' uuid="u1" href="pyrite.jpg" text="Pyrite" ',
+          ' href="legacy.jpg" data-ngdesc="" text="Old" ',
+        ],
+        setItems,
+        onModelChange: () => () => undefined,
+        openPicker: jest.fn(),
+      }
+      const editor = await openGalleryPicker(handle)
+      await act(async () => {
+        lastResourcePickerProps.insertMultiple([
+          image("u1", "https://bucket/courses/x/pyrite.jpg", "Pyrite"),
+          image("u2", "https://bucket/courses/x/legacy.jpg", "Old"),
+          image("u3", "https://bucket/courses/x/quartz.jpg", "Quartz"),
+        ])
+      })
+      expect(setItems).toHaveBeenCalledWith([
+        ' uuid="u1" href="pyrite.jpg" text="Pyrite" ',
+        ' href="legacy.jpg" data-ngdesc="" text="Old" ',
+        ' uuid="u3" href="quartz.jpg" text="Quartz" ',
+      ])
+      expect(editor.execute).not.toHaveBeenCalled()
     })
   })
 

@@ -32,6 +32,13 @@ import {
   ImageGalleryHandle,
   RenderGalleryFunc,
 } from "../../lib/ckeditor/plugins/constants"
+import {
+  buildGalleryItem,
+  galleryBaseUrl,
+  parseGalleryItem,
+} from "../../lib/ckeditor/plugins/galleryItems"
+import { ShortcodeParam } from "../../lib/ckeditor/plugins/util"
+import { WebsiteContent } from "../../types/websites"
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import ImageGalleryWidget from "./ImageGalleryWidget"
 import useThrowSynchronously from "../../hooks/useAsyncError"
@@ -157,21 +164,34 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   )
 
   const addGalleryImages = useCallback(
-    (uuids: string[]) => {
+    (resources: WebsiteContent[]) => {
+      const existing = galleryHandle?.getItems() ?? []
+      // Skip anything already present so a re-pick cannot duplicate an image:
+      // by uuid, or by href for a legacy item that has no uuid yet.
+      const present = existing.map(parseGalleryItem)
+      const additions = resources.map(buildGalleryItem).filter((item) => {
+        const { uuid, href } = parseGalleryItem(item)
+        return !present.some(
+          (other) =>
+            other.uuid === uuid || (href !== undefined && other.href === href),
+        )
+      })
       if (galleryHandle) {
-        // Appending to an existing gallery. Skip anything already present so a
-        // re-pick cannot duplicate an image.
-        const existing = galleryHandle.getUuids()
-        galleryHandle.setUuids([
-          ...existing,
-          ...uuids.filter((uuid) => !existing.includes(uuid)),
-        ])
+        galleryHandle.setItems([...existing, ...additions])
       } else {
-        editor.current?.execute(IMAGE_GALLERY_COMMAND, uuids)
+        // course-v2 joins each item's href onto the gallery's baseUrl, so a
+        // new gallery needs one. Every existing gallery already has it.
+        const baseUrl = galleryBaseUrl(website)
+        editor.current?.execute(IMAGE_GALLERY_COMMAND, {
+          params: baseUrl
+            ? ` ${new ShortcodeParam(baseUrl, "baseUrl").toHugo()} `
+            : " ",
+          items: additions,
+        })
       }
       editor.current?.editing.view.focus()
     },
-    [galleryHandle],
+    [galleryHandle, website],
   )
 
   const editorConfig = useMemo(() => {

@@ -57,8 +57,13 @@ export interface RenderResourceFunc {
  * gallery is in scope, so React never has to know about CKEditor internals.
  */
 export interface ImageGalleryHandle {
-  getUuids(): string[]
-  setUuids(uuids: string[]): void
+  /**
+   * Each item's raw param text, i.e. everything between `image-gallery-item`
+   * and `>}}`, in gallery order. Whatever is set here is saved exactly as
+   * given, so params the editor knows nothing about survive.
+   */
+  getItems(): string[]
+  setItems(items: string[]): void
   /** Subscribe to model changes. Returns an unsubscribe function. */
   onModelChange(cb: () => void): () => void
   /** Open the resource picker to append more images to this gallery. */

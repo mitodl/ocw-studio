@@ -94,6 +94,14 @@ export const FullEditorConfig = {
     TablePlugin,
     TableToolbarPlugin,
     CodeBlockPlugin,
+    /**
+     * Must stay above every other plugin that adds Markdown syntax (and so
+     * above `Markdown`). Showdown runs extensions in the order their plugins
+     * are constructed, and galleries keep their params exactly as authored:
+     * an extension that ran first could rewrite text inside a caption before
+     * the gallery captured it, as MathSyntax would turn `\\(…\\)` into HTML.
+     */
+    ImageGallery,
     ResourceEmbed,
     ResourcePicker,
     ResourceLink,
@@ -102,7 +110,6 @@ export const FullEditorConfig = {
     TableMarkdownSyntax,
     MathSyntax, // Needs to go before MarkdownListSyntax
     MarkdownListSyntax,
-    ImageGallery,
     LegacyShortcodes,
     Mathematics,
     Markdown,

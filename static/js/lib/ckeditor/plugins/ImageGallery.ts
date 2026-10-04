@@ -18,12 +18,21 @@ import {
 } from "./constants"
 
 const GALLERY_CLASS = "image-gallery"
-const DATA_UUIDS = "data-uuids"
-const UUIDS = "uuids"
+const DATA_PARAMS = "data-params"
+const DATA_ITEMS = "data-items"
+const PARAMS = "params"
+const ITEMS = "items"
 
 /**
- * Matches a whole `image-gallery` block, capturing everything between the
- * opening and closing shortcodes.
+ * A shortcode's raw param text: everything up to the closing `>}}`, with each
+ * double-quoted value consumed whole, so a `>}}` inside one cannot end the tag.
+ * Real captions nest shortcodes, e.g. `text="Pyrite: FeS{{< sub 2 >}}"`.
+ */
+const RAW_PARAMS = String.raw`((?:[^"]|"(?:[^"\\]|\\.)*")*?)`
+
+/**
+ * Matches a whole `image-gallery` block. Group 1 is the opening tag's raw
+ * params, group 2 everything up to the closing tag.
  *
  * Unlike most of our shortcode handling this cannot use `Shortcode.regex`,
  * which matches a single tag at a time. A gallery is inherently a paired
@@ -31,43 +40,90 @@ const UUIDS = "uuids"
  * opening tag, the items and the closing tag would be converted independently
  * and there would be nothing tying them together in the editor.
  *
- * Both `{{< /image-gallery >}}` and `{{</ image-gallery >}}` are accepted for
- * the closing tag, since both appear in the wild.
- *
- * The opening tag may carry params. Real OCW galleries have `id` and `baseUrl`,
- * e.g. `{{< image-gallery id="..._nanogallery2" baseUrl="/courses/.../" >}}`.
- * They are accepted so that the block still matches, then deliberately
- * discarded: the editor always writes a bare opening tag back.
- * Whitespace is required before any params so that `image-gallery-item` can
- * never be mistaken for an opening tag.
+ * The lookahead after the name keeps `image-gallery-item` from being taken for
+ * an opening tag. Both `{{< /image-gallery >}}` and `{{</ image-gallery >}}`
+ * close a gallery, since both appear in the wild.
  */
-const GALLERY_BLOCK_REGEX =
-  /\{\{<\s*image-gallery(?:\s[^>]*)?>\}\}([\s\S]*?)\{\{<\s*\/\s*image-gallery\s*>\}\}/g
+const GALLERY_BLOCK_REGEX = new RegExp(
+  String.raw`\{\{<\s*image-gallery(?=[\s>])${RAW_PARAMS}>\}\}([\s\S]*?)\{\{<\s*\/\s*image-gallery\s*>\}\}`,
+  "g",
+)
 
-const GALLERY_ITEM_REGEX =
-  /\{\{<\s*image-gallery-item\s+uuid="(?<uuid>[^"]*)"\s*\/?\s*>\}\}/g
+const GALLERY_ITEM_REGEX = new RegExp(
+  String.raw`\{\{<\s*image-gallery-item(?=[\s/>])${RAW_PARAMS}>\}\}`,
+  "g",
+)
 
-const parseUuids = (blockInterior: string): string[] =>
-  [...blockInterior.matchAll(GALLERY_ITEM_REGEX)]
-    .map((match) => match.groups?.uuid ?? "")
-    .filter(Boolean)
+/**
+ * Showdown rewrites a few characters before any extension sees the Markdown,
+ * and only swaps them back in its final HTML: "$" as "¨D", "¨" as "¨T", and a
+ * non-breaking space as "&nbsp;". Params captured here end up in an encoded
+ * attribute, out of that final pass's reach, so swap them back first, in the
+ * same order showdown does.
+ */
+const undoShowdownEscapes = (text: string): string =>
+  text
+    .replace(/¨D/g, () => "$")
+    .replace(/¨T/g, "¨")
+    .replace(/&nbsp;/g, "\u00a0")
 
-const serializeUuids = (uuids: string[]): string =>
+/**
+ * URL-encode text for an HTML attribute, including the few characters that
+ * encodeURIComponent leaves alone, so that nothing Markdown or a later syntax
+ * extension acts on (`*`, `(`, `{{<` and the like) is left in the HTML.
+ * LegacyShortcodes, for one, would otherwise convert the `{{< sub 2 >}}`
+ * inside a caption.
+ */
+const encodeAttribute = (text: string): string =>
+  encodeURIComponent(text).replace(
+    /[!'()*~]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
+
+const decodeAttribute = (value: string | null | undefined): string => {
+  try {
+    return decodeURIComponent(value ?? "")
+  } catch {
+    return ""
+  }
+}
+
+/** Read the JSON list of raw item params kept on the model element. */
+const parseItems = (json: string | null | undefined): string[] => {
+  try {
+    const items = JSON.parse(json || "[]")
+    return Array.isArray(items)
+      ? items.filter((item): item is string => typeof item === "string")
+      : []
+  } catch {
+    return []
+  }
+}
+
+/** A blank run of params is written as one space: `{{< image-gallery >}}`. */
+const shortcodeTag = (name: string, rawParams: string): string =>
+  `{{< ${name}${rawParams.trim() ? rawParams : " "}>}}`
+
+const serializeGallery = (params: string, items: string[]): string =>
   [
-    "{{< image-gallery >}}",
-    ...uuids.map((uuid) => `{{< image-gallery-item uuid="${uuid}" >}}`),
+    shortcodeTag("image-gallery", params),
+    ...items.map((item) => shortcodeTag("image-gallery-item", item)),
     "{{< /image-gallery >}}",
   ].join("\n")
 
 /**
  * Markdown conversion rules for image galleries.
  *
- * A whole gallery becomes a single `div.image-gallery` carrying its ordered
- * uuids in one attribute. Keeping the items out of the HTML (and out of the
- * CKEditor schema) is deliberate: an item has no authored content of its own
- * any more — description, caption and credit all live on the image resource —
- * so there is nothing for the user to edit per item, and a flat node avoids a
- * nested schema entirely.
+ * A whole gallery becomes a single `div.image-gallery` carrying, URL-encoded,
+ * the opening tag's raw params and a JSON list of each item's raw params.
+ * Both are written back exactly as they came in, which matters because two
+ * themes read different params: course-v2 uses `baseUrl`, `href` and `text`,
+ * course-v3 uses `uuid`, and the editor needs to understand neither. Items stay
+ * out of the CKEditor schema: the editor only adds, removes and reorders whole
+ * items, so a flat node is enough.
+ *
+ * Only the closing tag (always `{{< /image-gallery >}}`) and the whitespace
+ * between items (one item per line) are normalised.
  */
 class ImageGalleryMarkdownSyntax extends MarkdownSyntaxPlugin {
   static get pluginName(): string {
@@ -80,10 +136,14 @@ class ImageGalleryMarkdownSyntax extends MarkdownSyntaxPlugin {
         {
           type: "lang",
           regex: GALLERY_BLOCK_REGEX,
-          replace: (_match: string, interior: string) =>
-            `<div class="${GALLERY_CLASS}" ${DATA_UUIDS}="${parseUuids(
-              interior,
-            ).join(",")}"></div>`,
+          replace: (_match: string, params: string, interior: string) => {
+            const items = [...interior.matchAll(GALLERY_ITEM_REGEX)].map(
+              (match) => undoShowdownEscapes(match[1]),
+            )
+            return `<div class="${GALLERY_CLASS}" ${DATA_PARAMS}="${encodeAttribute(
+              undoShowdownEscapes(params),
+            )}" ${DATA_ITEMS}="${encodeAttribute(JSON.stringify(items))}"></div>`
+          },
         },
       ]
     }
@@ -103,15 +163,16 @@ class ImageGalleryMarkdownSyntax extends MarkdownSyntaxPlugin {
             if (!(node instanceof HTMLElement)) {
               throw new Error("Node should be HTMLElement")
             }
-            const uuids = (node.getAttribute(DATA_UUIDS) ?? "")
-              .split(",")
-              .filter(Boolean)
+            const items = parseItems(
+              decodeAttribute(node.getAttribute(DATA_ITEMS)),
+            )
             // An empty gallery is not worth writing to the repo, and a bare
             // pair of shortcodes would render as an empty div on the site.
-            if (uuids.length === 0) {
+            if (items.length === 0) {
               return ""
             }
-            return `${serializeUuids(uuids)}\n`
+            const params = decodeAttribute(node.getAttribute(DATA_PARAMS))
+            return `${serializeGallery(params, items)}\n`
           },
         },
       },
@@ -120,17 +181,19 @@ class ImageGalleryMarkdownSyntax extends MarkdownSyntaxPlugin {
 }
 
 /**
- * Inserts a new gallery, or replaces the uuids of the selected one.
+ * Inserts a new gallery at the selection, given its opening tag's raw params
+ * and each item's raw params.
  */
 class InsertImageGalleryCommand extends Command {
   constructor(editor: Editor) {
     super(editor)
   }
 
-  execute(uuids: string[]) {
+  execute({ params, items }: { params: string; items: string[] }) {
     this.editor.model.change((writer: any) => {
       const gallery = writer.createElement(IMAGE_GALLERY, {
-        [UUIDS]: uuids.join(","),
+        [PARAMS]: params,
+        [ITEMS]: JSON.stringify(items),
       })
       this.editor.model.insertContent(gallery)
     })
@@ -172,10 +235,11 @@ class ImageGalleryEditing extends CKEPlugin {
     this.editor.model.schema.register(IMAGE_GALLERY, {
       isObject: true,
       allowWhere: "$block",
-      // Stored as a comma-joined string rather than an array. CKEditor treats
-      // attribute values as opaque and compares them by identity in places, so
-      // a primitive keeps change detection and undo/redo predictable.
-      allowAttributes: [UUIDS],
+      // `items` is stored as a JSON string rather than an array. CKEditor
+      // treats attribute values as opaque and compares them by identity in
+      // places, so a primitive keeps change detection and undo/redo
+      // predictable.
+      allowAttributes: [PARAMS, ITEMS],
     })
   }
 
@@ -190,17 +254,34 @@ class ImageGalleryEditing extends CKEPlugin {
       },
       model: (viewElement: any, { writer: modelWriter }: any) =>
         modelWriter.createElement(IMAGE_GALLERY, {
-          [UUIDS]: viewElement.getAttribute(DATA_UUIDS) ?? "",
+          [PARAMS]: decodeAttribute(viewElement.getAttribute(DATA_PARAMS)),
+          [ITEMS]: JSON.stringify(
+            parseItems(decodeAttribute(viewElement.getAttribute(DATA_ITEMS))),
+          ),
         }),
     })
 
     conversion.for("dataDowncast").elementToElement({
       model: IMAGE_GALLERY,
       view: (modelElement: any, { writer: viewWriter }: any) =>
-        viewWriter.createEmptyElement("div", {
-          class: GALLERY_CLASS,
-          [DATA_UUIDS]: modelElement.getAttribute(UUIDS) ?? "",
-        }),
+        viewWriter.createRawElement(
+          "div",
+          {
+            class: GALLERY_CLASS,
+            [DATA_PARAMS]: encodeAttribute(
+              modelElement.getAttribute(PARAMS) ?? "",
+            ),
+            [DATA_ITEMS]: encodeAttribute(
+              JSON.stringify(parseItems(modelElement.getAttribute(ITEMS))),
+            ),
+          },
+          function (el: HTMLElement) {
+            // Some text inside keeps Turndown from classing the div as blank,
+            // which would skip every rule and drop the gallery. The rule above
+            // ignores it. LegacyShortcodes does the same.
+            el.textContent = GALLERY_CLASS
+          },
+        ),
     })
 
     const { renderImageGallery, openImageGalleryPicker } = (editor.config.get(
@@ -223,17 +304,16 @@ class ImageGalleryEditing extends CKEPlugin {
          * therefore participates in undo/redo and marks the form dirty.
          *
          * Note there is deliberately no reconversion configured for the
-         * `uuids` attribute. Reconversion would rebuild this view element on
+         * `items` attribute. Reconversion would rebuild this view element on
          * every change, destroying the raw element's DOM node and remounting
          * the React tree mid-drag. Instead React subscribes to model changes
          * and re-renders in place.
          */
         const handle: ImageGalleryHandle = {
-          getUuids: () =>
-            (modelElement.getAttribute(UUIDS) ?? "").split(",").filter(Boolean),
-          setUuids: (uuids: string[]) =>
+          getItems: () => parseItems(modelElement.getAttribute(ITEMS)),
+          setItems: (items: string[]) =>
             editor.model.change((writer: any) =>
-              writer.setAttribute(UUIDS, uuids.join(","), modelElement),
+              writer.setAttribute(ITEMS, JSON.stringify(items), modelElement),
             ),
           onModelChange: (cb: () => void) => {
             const listener = () => cb()
@@ -300,11 +380,12 @@ class ImageGalleryToolbar extends CKEPlugin {
 /**
  * CKEditor plugin providing viewable, reorderable image galleries.
  *
- * Galleries are stored in Markdown as a paired Hugo shortcode whose items
- * reference image resources by uuid:
+ * Galleries are stored in Markdown as a paired Hugo shortcode. Every param on
+ * either tag is kept as authored; items Studio adds carry `uuid` for course-v3
+ * and `href` and `text` for course-v2 (see galleryItems.ts):
  *
- *   {{< image-gallery >}}
- *   {{< image-gallery-item uuid="..." >}}
+ *   {{< image-gallery baseUrl="/courses/..." >}}
+ *   {{< image-gallery-item uuid="..." href="..." text="..." >}}
  *   {{< /image-gallery >}}
  */
 export default class ImageGallery extends CKEPlugin {
