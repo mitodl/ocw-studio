@@ -90,7 +90,7 @@ describe("ImageGallery plugin", () => {
     })
     const saved = [
       '{{< image-gallery baseUrl="/courses/12-108-structure-of-earth-materials-fall-2004/" >}}',
-      String.raw`{{< image-gallery-item uuid="0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21" href="328fb82d2a9b2a07c3f9dab9bb5a7367_lab4-4.jpg" text="Niépce's \"View from the Window.\"  Gypsum: CaSO{{< sub \"4\" >}}\-2H{{< sub \"2\" >}}O, $5 ¨ 5${NBSP}km" >}}`,
+      String.raw`{{< image-gallery-item uuid="0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21" href="328fb82d2a9b2a07c3f9dab9bb5a7367_lab4-4.jpg" text="Niépce's \"View from the Window.\"  Gypsum: CaSO{{< sub 4 >}}\-2H{{< sub 2 >}}O, $5 ¨ 5${NBSP}km" >}}`,
       "{{< /image-gallery >}}",
     ].join("\n")
 

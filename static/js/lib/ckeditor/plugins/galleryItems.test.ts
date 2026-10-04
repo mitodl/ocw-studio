@@ -151,16 +151,37 @@ describe("buildGalleryItem with captions like the ones in production", () => {
         'Niépce\'s "View from the Window at Le Gras." Image is in the public domain. Source: {{% resource_link "6c5b1c0c-e574-4034-b729-c413c0f398f5" "Wikimedia Commons" %}}.',
     },
     {
-      label: "a formula with quoted sub params and an escaped hyphen",
+      // Hugo drops every backslash from a param that contains \" so, written
+      // quoted, the escaped hyphen would reach course-v2 as a bare "-".
+      // Production items write simple sub values unquoted, which needs no \".
+      label:
+        "a formula, with simple sub values unquoted as production writes them",
       caption: String.raw`Gypsum twins: CaSO{{< sub "4" >}}\-2H{{< sub "2" >}}O.`,
-      text: String.raw`Gypsum twins: CaSO{{< sub \"4\" >}}\-2H{{< sub \"2\" >}}O.`,
-      readBack: String.raw`Gypsum twins: CaSO{{< sub "4" >}}\-2H{{< sub "2" >}}O.`,
+      text: String.raw`Gypsum twins: CaSO{{< sub 4 >}}\-2H{{< sub 2 >}}O.`,
+      readBack: String.raw`Gypsum twins: CaSO{{< sub 4 >}}\-2H{{< sub 2 >}}O.`,
     },
     {
-      label: "typography and Markdown escapes, which pass through as they are",
-      caption: String.raw`Dar al-\`Adl — 5 µm at 20 °C, ® “quoted” \[signed:\] CaF₂…`,
-      text: String.raw`Dar al-\`Adl — 5 µm at 20 °C, ® “quoted” \[signed:\] CaF₂…`,
-      readBack: String.raw`Dar al-\`Adl — 5 µm at 20 °C, ® “quoted” \[signed:\] CaF₂…`,
+      label: "a sup value with spaces, which stays quoted",
+      caption: 'Term x{{< sup "n + 1" >}}',
+      text: String.raw`Term x{{< sup \"n + 1\" >}}`,
+      readBack: 'Term x{{< sup "n + 1" >}}',
+    },
+    {
+      label:
+        "typography and other Markdown escapes, which pass through as they are",
+      caption: String.raw`Rocks 5 µm across at 20 °C — ® “quoted” \[signed:\] CaF₂, \<1 b.y. \*not\* bold…`,
+      text: String.raw`Rocks 5 µm across at 20 °C — ® “quoted” \[signed:\] CaF₂, \<1 b.y. \*not\* bold…`,
+      readBack: String.raw`Rocks 5 µm across at 20 °C — ® “quoted” \[signed:\] CaF₂, \<1 b.y. \*not\* bold…`,
+    },
+    {
+      // Hugo fails the whole page build on "\`" inside a quoted shortcode
+      // param ("unrecognized escape character"). Production items write the
+      // backtick as &grave; instead, which renders the same.
+      label: "an escaped backtick, written as &grave; as production items do",
+      caption: String.raw`Dar al-\`Adl as represented by Robert Hay in his Illustrations of Cairo (1840).`,
+      text: "Dar al-&grave;Adl as represented by Robert Hay in his Illustrations of Cairo (1840).",
+      readBack:
+        "Dar al-&grave;Adl as represented by Robert Hay in his Illustrations of Cairo (1840).",
     },
   ])("$label", ({ caption, text, readBack }) => {
     const item = buildGalleryItem(captioned(caption))

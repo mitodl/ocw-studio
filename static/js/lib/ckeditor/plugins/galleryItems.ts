@@ -58,8 +58,24 @@ const fileBasename = (file: string): string => {
 }
 
 /**
- * The image's caption, with Windows line endings made plain newlines. Some
- * captions are stored with "\r\n", and ShortcodeParam only flattens "\n".
+ * A `sub` or `sup` shortcode whose single value is quoted but needs no
+ * quotes, as the caption editor writes them: `{{< sub "2" >}}`.
+ */
+const QUOTED_SIMPLE_SUBSUP = /\{\{<\s*(sub|sup)\s+"([^"\s\\{}<>]+)"\s*>\}\}/g
+
+/**
+ * The image's caption, ready to become an item's `text`. Each change keeps
+ * Hugo reading the param as written, and matches how production items
+ * already write the same captions:
+ * - Windows line endings become plain newlines. Some captions are stored
+ *   with "\r\n", and ShortcodeParam only flattens "\n".
+ * - "\`" (a Markdown-escaped backtick) becomes "&grave;". Hugo fails the
+ *   whole page build on "\`" inside a quoted shortcode param ("unrecognized
+ *   escape character"); &grave; renders the same.
+ * - A simple quoted sub or sup value is unquoted: `{{< sub 2 >}}`. Quoting
+ *   it would put \" in the param, and Hugo drops every backslash from a
+ *   param containing \", so an escape such as "\-" in a formula would reach
+ *   course-v2 as a bare "-".
  */
 const imageCaption = (resource: WebsiteContent): string => {
   const imageMetadata = resource.metadata?.image_metadata
@@ -67,7 +83,12 @@ const imageCaption = (resource: WebsiteContent): string => {
     imageMetadata && typeof imageMetadata === "object"
       ? (imageMetadata as Record<string, unknown>).caption
       : undefined
-  return typeof caption === "string" ? caption.replace(/\r\n?/g, "\n") : ""
+  return typeof caption === "string"
+    ? caption
+        .replace(/\r\n?/g, "\n")
+        .replace(/\\`/g, "&grave;")
+        .replace(QUOTED_SIMPLE_SUBSUP, "{{< $1 $2 >}}")
+    : ""
 }
 
 /**
