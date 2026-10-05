@@ -8,7 +8,11 @@ import SiteContentField from "./SiteContentField"
 import { exampleSiteConfigFields } from "../../constants"
 import WebsiteContext from "../../context/Website"
 
-import { WebsiteContent, WidgetVariant } from "../../types/websites"
+import {
+  ConfigField,
+  WebsiteContent,
+  WidgetVariant,
+} from "../../types/websites"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
@@ -110,6 +114,51 @@ describe("SiteContentField", () => {
       }
     }
   })
+
+  it.each([
+    { clearable: true, key: "{Backspace}", clears: true },
+    { clearable: true, key: "{Delete}", clears: true },
+    { clearable: false, key: "{Backspace}", clears: false },
+    { clearable: undefined, key: "{Backspace}", clears: false },
+  ])(
+    "clears a single Select with $key only when clearable=$clearable",
+    async ({ clearable, key, clears }) => {
+      const website = makeWebsiteDetail()
+      const user = userEvent.setup()
+      const field: ConfigField = {
+        label: "Locale",
+        name: "locale",
+        widget: WidgetVariant.Select,
+        options: ["Argentina"],
+        clearable,
+      }
+
+      render(
+        <WebsiteContext.Provider value={website}>
+          <Formik initialValues={{ locale: "Argentina" }} onSubmit={jest.fn()}>
+            <Form>
+              <SiteContentField
+                field={field}
+                contentContext={contentContext}
+                onChange={onChangeStub}
+              />
+            </Form>
+          </Formik>
+        </WebsiteContext.Provider>,
+      )
+
+      expect(screen.getByText("Argentina")).toBeInTheDocument()
+      await user.click(screen.getByRole("textbox"))
+      await user.keyboard(key)
+      if (clears) {
+        sinon.assert.calledWith(onChangeStub, {
+          target: { value: "", name: "locale" },
+        })
+      } else {
+        sinon.assert.notCalled(onChangeStub)
+      }
+    },
+  )
 
   it("renders a Boolean widget with radio buttons", () => {
     const website = makeWebsiteDetail()
