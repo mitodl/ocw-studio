@@ -17,6 +17,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { equals } from "ramda"
 
 import { useWebsite } from "../../context/Website"
 import { useWebsiteContent } from "../../hooks/websites"
@@ -68,7 +69,7 @@ const toEntries = (items: string[]): GalleryEntry[] => {
  * here. It lives on the image resource itself, which is the single source of
  * truth; each thumbnail links out to that resource's form.
  */
-export default function ImageGalleryWidget(props: Props): JSX.Element {
+function ImageGalleryWidget(props: Props): JSX.Element {
   const { el, handle } = props
 
   const [items, setItems] = useState<string[]>(() => handle.getItems())
@@ -78,10 +79,16 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
    * The editingDowncast converter does not opt into reconversion, so this view
    * is never rebuilt when the gallery changes. Subscribing to the model instead
    * keeps the grid current — including after an undo — without remounting the
-   * React tree mid-drag.
+   * React tree mid-drag. Every change to the editor's data arrives here,
+   * keystrokes elsewhere included, so state only changes when this gallery's
+   * items have.
    */
   useEffect(
-    () => handle.onModelChange(() => setItems(handle.getItems())),
+    () =>
+      handle.onModelChange(() => {
+        const next = handle.getItems()
+        setItems((current) => (equals(current, next) ? current : next))
+      }),
     [handle],
   )
 
@@ -189,6 +196,14 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
     el,
   )
 }
+
+/**
+ * MarkdownEditor re-renders on every change to the editor, keystrokes
+ * included. A gallery's element and handle stay the same for its lifetime, so
+ * those re-renders stop here; the gallery's own changes arrive through
+ * `onModelChange`.
+ */
+export default React.memo(ImageGalleryWidget)
 
 interface ThumbnailProps {
   entry: GalleryEntry

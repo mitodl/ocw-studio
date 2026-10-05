@@ -1,5 +1,5 @@
 import React from "react"
-import { screen, waitFor } from "@testing-library/react"
+import { act, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
 import ImageGalleryWidget from "./ImageGalleryWidget"
@@ -20,9 +20,12 @@ const useWebsite = jest.mocked(contextWebsite.useWebsite)
  * The real DndContext portals its screen-reader nodes into document.body,
  * which test_setup.ts empties before Testing Library unmounts, so React then
  * fails to remove them. Stand-ins as in SortableSelect.test.tsx, which also
- * expose what a drag would report: the sortable ids and the onDragEnd handler.
+ * expose what a drag would report: the sortable ids and the onDragEnd handler,
+ * and count thumbnail renders, since each thumbnail calls useSortable once.
  */
-let dragEnd: (event: any) => void, sortableIds: string[]
+let dragEnd: (event: any) => void,
+  sortableIds: string[],
+  thumbnailRenders = 0
 jest.mock("@dnd-kit/core", () => ({
   ...jest.requireActual("@dnd-kit/core"),
   DndContext: ({
@@ -48,13 +51,16 @@ jest.mock("@dnd-kit/sortable", () => ({
     sortableIds = items
     return <>{children}</>
   },
-  useSortable: () => ({
-    attributes: {},
-    listeners: {},
-    setNodeRef: jest.fn(),
-    transform: null,
-    transition: null,
-  }),
+  useSortable: () => {
+    thumbnailRenders++
+    return {
+      attributes: {},
+      listeners: {},
+      setNodeRef: jest.fn(),
+      transform: null,
+      transition: null,
+    }
+  },
 }))
 
 describe("ImageGalleryWidget", () => {
@@ -164,6 +170,44 @@ describe("ImageGalleryWidget", () => {
 
     await user.keyboard("{Enter}")
     expect(screen.getByRole("button", { name: "Add images" })).toHaveFocus()
+  })
+
+  it("skips re-rendering for a model change that leaves its items as they were", () => {
+    const items = [' href="a.jpg" ', ' href="b.jpg" ']
+    let notify: () => void = () => undefined
+    renderWidget({
+      // A fresh array each time, as the plugin parses it from the model.
+      getItems: () => [...items],
+      setItems: jest.fn(),
+      onModelChange: (listener) => {
+        notify = listener
+        return () => undefined
+      },
+      openPicker: jest.fn(),
+    })
+    thumbnailRenders = 0
+
+    // E.g. a keystroke elsewhere in the editor.
+    act(() => notify())
+
+    expect(thumbnailRenders).toBe(0)
+  })
+
+  it("skips re-rendering when its parent re-renders with the same gallery", () => {
+    const handle = makeHandle([' href="a.jpg" ', ' href="b.jpg" '])
+    let rerenderParent: () => void = () => undefined
+    // As MarkdownEditor does on every change to the editor.
+    const Parent = () => {
+      const [, setCount] = React.useState(0)
+      rerenderParent = () => setCount((count) => count + 1)
+      return <ImageGalleryWidget el={el} handle={handle} />
+    }
+    helper.render(<Parent />)
+    thumbnailRenders = 0
+
+    act(() => rerenderParent())
+
+    expect(thumbnailRenders).toBe(0)
   })
 
   it("moves a dragged item's raw params to where it was dropped", () => {
