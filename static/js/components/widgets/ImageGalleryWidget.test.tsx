@@ -131,6 +131,41 @@ describe("ImageGalleryWidget", () => {
     expect(handle.setItems).toHaveBeenCalledWith([legacy])
   })
 
+  it("keeps a keyboard user's place in the gallery as they remove items", async () => {
+    const user = userEvent.setup()
+    // Items change when set, and subscribers hear of it, as with the plugin.
+    let items = [' href="a.jpg" ', ' href="b.jpg" ', ' href="c.jpg" ']
+    const listeners = new Set<() => void>()
+    renderWidget({
+      getItems: () => items,
+      setItems: (next) => {
+        items = next
+        listeners.forEach((listener) => listener())
+      },
+      onModelChange: (listener) => {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+      openPicker: jest.fn(),
+    })
+    const removeButtons = () =>
+      screen.getAllByRole("button", { name: "Remove from gallery" })
+
+    removeButtons()[1].focus()
+    await user.keyboard("{Enter}")
+    // c.jpg has taken b.jpg's place, and so has focus.
+    expect(screen.queryByText("b.jpg")).not.toBeInTheDocument()
+    expect(removeButtons()[1]).toHaveFocus()
+
+    await user.keyboard("{Enter}")
+    // With nothing after it, the item before it.
+    expect(screen.getByText("a.jpg")).toBeInTheDocument()
+    expect(removeButtons()[0]).toHaveFocus()
+
+    await user.keyboard("{Enter}")
+    expect(screen.getByRole("button", { name: "Add images" })).toHaveFocus()
+  })
+
   it("moves a dragged item's raw params to where it was dropped", () => {
     const first = ` uuid="${image.text_id}" href="pyrite.jpg" text="Pyrite" `
     const second = ' href="legacy.jpg" data-ngdesc="" text="Old" '

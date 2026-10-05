@@ -1,3 +1,4 @@
+import EssentialsPlugin from "@ckeditor/ckeditor5-essentials/src/essentials"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 
 import ImageGallery from "./ImageGallery"
@@ -15,13 +16,21 @@ import { makeWebsiteContentDetail } from "../../../util/factories/websites"
 const NBSP = "\u00a0"
 
 let handles: ImageGalleryHandle[] = []
-const getEditor = createTestEditor([Paragraph, ImageGallery, Markdown], {
+const resourceUtils = {
   [CKEDITOR_RESOURCE_UTILS]: {
     renderImageGallery: (_el: HTMLElement, handle: ImageGalleryHandle) => {
       handles.push(handle)
     },
   },
-})
+}
+const getEditor = createTestEditor(
+  [Paragraph, ImageGallery, Markdown],
+  resourceUtils,
+)
+const getEditorWithUndo = createTestEditor(
+  [EssentialsPlugin, Paragraph, ImageGallery, Markdown],
+  resourceUtils,
+)
 
 const PRODUCTION_GALLERY = [
   '{{< image-gallery id="788b6153-ce75-e1be-31f0-a394ce761f32_nanogallery2" baseUrl="/courses/18-05-introduction-to-probability-and-statistics-spring-2014/" >}}',
@@ -181,6 +190,33 @@ describe("ImageGallery plugin", () => {
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
     )
     expect(keydown).toHaveBeenCalledTimes(1)
+  })
+
+  it("still undoes and redoes from the keyboard inside the gallery's controls", async () => {
+    const editor = await getEditorWithUndo(PRODUCTION_GALLERY)
+    const original = handles[0].getItems()
+    const reversed = [...original].reverse()
+    handles[0].setItems(reversed)
+    const button = editor.editing.view
+      .getDomRoot()!
+      .querySelector(".image-gallery-react-wrapper")!
+      .appendChild(document.createElement("button"))
+    const press = (init: KeyboardEventInit) =>
+      button.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          ...init,
+        }),
+      )
+
+    press({ key: "z", keyCode: 90, ctrlKey: true })
+    expect(handles[0].getItems()).toEqual(original)
+    press({ key: "y", keyCode: 89, ctrlKey: true })
+    expect(handles[0].getItems()).toEqual(reversed)
+    press({ key: "z", keyCode: 90, ctrlKey: true })
+    press({ key: "Z", keyCode: 90, ctrlKey: true, shiftKey: true })
+    expect(handles[0].getItems()).toEqual(reversed)
   })
 
   it("drops a gallery once its last item is removed", async () => {

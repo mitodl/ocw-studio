@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import {
   DndContext,
@@ -108,8 +108,14 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
     [entries, items, handle],
   )
 
+  const galleryRef = useRef<HTMLDivElement>(null)
+  const addButtonRef = useRef<HTMLButtonElement>(null)
+  /** The position of the item just removed, until focus has moved on. */
+  const removedIndex = useRef<number | null>(null)
+
   const removeItem = useCallback(
     (key: string) => {
+      removedIndex.current = entries.findIndex((entry) => entry.key === key)
       handle.setItems(
         entries.filter((entry) => entry.key !== key).map((entry) => entry.raw),
       )
@@ -117,16 +123,38 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
     [entries, handle],
   )
 
+  /**
+   * Removing an item unmounts its remove button, which usually has focus.
+   * Focus goes to the button that takes its place, else the one before it,
+   * else "Add images", so a keyboard user keeps their place, and an undo
+   * shortcut still comes from inside the gallery, where the plugin handles it.
+   */
+  useEffect(() => {
+    const index = removedIndex.current
+    if (index === null) {
+      return
+    }
+    removedIndex.current = null
+    const removeButtons = galleryRef.current?.querySelectorAll<HTMLElement>(
+      ".image-gallery-item-remove",
+    )
+    const next = removeButtons?.length
+      ? removeButtons[Math.min(index, removeButtons.length - 1)]
+      : addButtonRef.current
+    next?.focus()
+  }, [entries])
+
   return createPortal(
     // CKEditor ignores DOM events from in here (the plugin marks the wrapper
     // data-cke-ignore-events), so mouse and keyboard reach these controls.
-    <div className="image-gallery-editor">
+    <div className="image-gallery-editor" ref={galleryRef}>
       <div className="d-flex align-items-center justify-content-between mb-2">
         <h3 className="m-0">Image Gallery</h3>
         <button
           type="button"
           className="btn cyan-button"
           onClick={handle.openPicker}
+          ref={addButtonRef}
         >
           Add images
         </button>

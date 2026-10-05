@@ -5,6 +5,7 @@ import Turndown from "turndown"
 import { Editor } from "@ckeditor/ckeditor5-core"
 import { toWidget } from "@ckeditor/ckeditor5-widget/src/utils"
 import ButtonView from "@ckeditor/ckeditor5-ui/src/button/buttonview"
+import { getCode, parseKeystroke } from "@ckeditor/ckeditor5-utils"
 
 import MarkdownSyntaxPlugin from "./MarkdownSyntaxPlugin"
 import { TurndownRule } from "../../../types/ckeditor_markdown"
@@ -22,6 +23,13 @@ const DATA_PARAMS = "data-params"
 const DATA_ITEMS = "data-items"
 const PARAMS = "params"
 const ITEMS = "items"
+
+/** The keystrokes CKEditor's Undo plugin binds, and their commands. */
+const HISTORY_KEYSTROKES = new Map([
+  [parseKeystroke("Ctrl+Z"), "undo"],
+  [parseKeystroke("Ctrl+Y"), "redo"],
+  [parseKeystroke("Ctrl+Shift+Z"), "redo"],
+])
 
 /**
  * A shortcode's raw param text: everything up to the closing `>}}`, with each
@@ -336,7 +344,8 @@ class ImageGalleryEditing extends CKEPlugin {
          * mouse and keyboard, and without this CKEditor would also act on
          * those events, e.g. selecting the widget on mousedown, or moving its
          * caret beside the widget and cancelling the key's default action on
-         * an arrow key.
+         * an arrow key. That includes its undo and redo shortcuts, so the
+         * wrapper handles those itself.
          */
         const reactWrapper = viewWriter.createRawElement(
           "div",
@@ -345,6 +354,13 @@ class ImageGalleryEditing extends CKEPlugin {
             "data-cke-ignore-events": "true",
           },
           function (el: HTMLElement) {
+            el.addEventListener("keydown", (event) => {
+              const command = HISTORY_KEYSTROKES.get(getCode(event))
+              if (command && editor.commands.get(command)) {
+                editor.execute(command)
+                event.preventDefault()
+              }
+            })
             renderImageGallery?.(el, handle)
           },
         )
