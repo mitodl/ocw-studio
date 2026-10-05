@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+Version 0.201.0
+---------------
+
+- feat: make the local S3 and pipeline API addresses configurable (#3207)
+- Update dependency ol-concourse to >=0.18,<0.19 (#3216)
+- Update dependency django-removals to ~=1.5.0 (#3215)
+- Update dependency posthog-js to v1.434.0 (#3217)
+- Update jest monorepo to v30.5.1 (#3212)
+- Update dependency django-guardian to v3.4.1 (#3214)
+- Update dependency django-anymail to v15.2 (#3213)
+- Update dependency prettier to v3.9.8 (#3211)
+- Update dependency boto3 to v1.43.89 (#3210)
+- fix: update image gallery hrefs when stripping uuid filenames (#3203)
+
 Version 0.200.1
 ---------------
 
