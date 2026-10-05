@@ -162,6 +162,27 @@ describe("ImageGallery plugin", () => {
     )
   })
 
+  it("keeps key presses inside the gallery's controls away from CKEditor", async () => {
+    const editor = await getEditor(PRODUCTION_GALLERY)
+    const root = editor.editing.view.getDomRoot()!
+    const wrapper = root.querySelector(".image-gallery-react-wrapper")!
+    // Stand-in for one of the widget's buttons, which React renders here.
+    const button = wrapper.appendChild(document.createElement("button"))
+    const keydown = jest.fn()
+    editor.editing.view.document.on("keydown", keydown)
+
+    button.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    )
+    expect(keydown).not.toHaveBeenCalled()
+
+    // The same key press from ordinary content does reach CKEditor.
+    root.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+    )
+    expect(keydown).toHaveBeenCalledTimes(1)
+  })
+
   it("drops a gallery once its last item is removed", async () => {
     const editor = await getEditor(
       [

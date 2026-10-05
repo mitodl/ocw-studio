@@ -118,6 +118,19 @@ describe("ImageGalleryWidget", () => {
     expect(handle.setItems).toHaveBeenCalledWith([linked, legacy])
   })
 
+  it("lets a keyboard user remove an item", async () => {
+    const user = userEvent.setup()
+    const linked = ` uuid="${image.text_id}" href="pyrite.jpg" text="Pyrite" `
+    const legacy = ' href="legacy.jpg" data-ngdesc="" text="Old" '
+    const handle = makeHandle([linked, legacy])
+    renderWidget(handle)
+
+    screen.getAllByRole("button", { name: "Remove from gallery" })[0].focus()
+    await user.keyboard("{Enter}")
+
+    expect(handle.setItems).toHaveBeenCalledWith([legacy])
+  })
+
   it("moves a dragged item's raw params to where it was dropped", () => {
     const first = ` uuid="${image.text_id}" href="pyrite.jpg" text="Pyrite" `
     const second = ' href="legacy.jpg" data-ngdesc="" text="Old" '

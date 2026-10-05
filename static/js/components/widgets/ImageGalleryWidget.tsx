@@ -118,15 +118,9 @@ export default function ImageGalleryWidget(props: Props): JSX.Element {
   )
 
   return createPortal(
-    <div
-      className="image-gallery-editor"
-      /**
-       * CKEditor's widget layer binds mousedown on the widget in order to
-       * select it, which would otherwise swallow the drag handles and buttons
-       * below. The gallery's interior is ours, so keep those events local.
-       */
-      onMouseDown={(event) => event.stopPropagation()}
-    >
+    // CKEditor ignores DOM events from in here (the plugin marks the wrapper
+    // data-cke-ignore-events), so mouse and keyboard reach these controls.
+    <div className="image-gallery-editor">
       <div className="d-flex align-items-center justify-content-between mb-2">
         <h3 className="m-0">Image Gallery</h3>
         <button
@@ -205,13 +199,15 @@ function GalleryThumbnail(props: ThumbnailProps): JSX.Element {
         >
           drag_indicator
         </span>
-        <span
-          className="material-icons gray-button hover ml-auto"
+        <button
+          type="button"
+          className="material-icons gray-button hover ml-auto image-gallery-item-remove"
           title="Remove from gallery"
+          aria-label="Remove from gallery"
           onClick={onRemove}
         >
           remove_circle_outline
-        </span>
+        </button>
       </div>
       {entry.uuid ? (
         <LinkedImage uuid={entry.uuid} />

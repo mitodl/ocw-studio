@@ -323,9 +323,20 @@ class ImageGalleryEditing extends CKEPlugin {
           openPicker: () => openImageGalleryPicker?.(handle),
         }
 
+        /**
+         * data-cke-ignore-events makes CKEditor ignore DOM events from inside
+         * the widget's interior. Its buttons and drag handles are operated by
+         * mouse and keyboard, and without this CKEditor would also act on
+         * those events, e.g. selecting the widget on mousedown, or moving its
+         * caret beside the widget and cancelling the key's default action on
+         * an arrow key.
+         */
         const reactWrapper = viewWriter.createRawElement(
           "div",
-          { class: "image-gallery-react-wrapper" },
+          {
+            class: "image-gallery-react-wrapper",
+            "data-cke-ignore-events": "true",
+          },
           function (el: HTMLElement) {
             renderImageGallery?.(el, handle)
           },

@@ -39,6 +39,14 @@
     .drag-handle {
       cursor: grab;
     }
+
+    // A real button, for keyboard users, that looks like the icon alone.
+    .image-gallery-item-remove {
+      background: none;
+      border: 0;
+      padding: 0;
+      line-height: 1;
+    }
   }
 
   .image-gallery-item-missing {
