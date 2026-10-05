@@ -60,6 +60,13 @@ const GALLERY_ITEM_REGEX = new RegExp(
  * non-breaking space as "&nbsp;". Params captured here end up in an encoded
  * attribute, out of that final pass's reach, so swap them back first, in the
  * same order showdown does.
+ *
+ * "$" and "¨" come back exactly. A literal "&nbsp;" typed into a param cannot
+ * be told apart from one showdown wrote, so it is saved as the non-breaking
+ * space character it stands for. Hugo renders an item's text identically
+ * either way, and no gallery in production contains the entity; keeping it
+ * would need a hook before showdown's normalisation, in the shared Markdown
+ * plugin.
  */
 const undoShowdownEscapes = (text: string): string =>
   text
