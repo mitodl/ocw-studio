@@ -174,6 +174,23 @@ describe("buildGalleryItem with captions like the ones in production", () => {
       readBack: String.raw`Rocks 5 µm across at 20 °C — ® “quoted” \[signed:\] CaF₂, \<1 b.y. \*not\* bold…`,
     },
     {
+      // The quotes are written as \" and Hugo then drops every backslash from
+      // the param, so each escape is written as the character it stands for.
+      label:
+        "straight quotes with Markdown escapes, written as character references",
+      caption: String.raw`He said "x": \*literal\* \[y\] \_z\_ \<1`,
+      text: String.raw`He said \"x\": &#42;literal&#42; &#91;y&#93; &#95;z&#95; &#60;1`,
+      readBack: 'He said "x": &#42;literal&#42; &#91;y&#93; &#95;z&#95; &#60;1',
+    },
+    {
+      label:
+        "a link with an escape in its title next to an escape in the prose",
+      caption: String.raw`See {{% resource_link "c2956690-7ead-4f56-8282-fe998b987b00" "Fig. \[1\]" %}}: \*not\* bold`,
+      text: String.raw`See {{% resource_link \"c2956690-7ead-4f56-8282-fe998b987b00\" \"Fig. &#91;1&#93;\" %}}: &#42;not&#42; bold`,
+      readBack:
+        'See {{% resource_link "c2956690-7ead-4f56-8282-fe998b987b00" "Fig. &#91;1&#93;" %}}: &#42;not&#42; bold',
+    },
+    {
       // Hugo fails the whole page build on "\`" inside a quoted shortcode
       // param ("unrecognized escape character"). Production items write the
       // backtick as &grave; instead, which renders the same.

@@ -63,6 +63,18 @@ const fileBasename = (file: string): string => {
  */
 const QUOTED_SIMPLE_SUBSUP = /\{\{<\s*(sub|sup)\s+"([^"\s\\{}<>]+)"\s*>\}\}/g
 
+/** A Markdown backslash escape, capturing the character escaped. */
+const MARKDOWN_ESCAPE = /\\([\s\S])/g
+const ASCII_PUNCTUATION = /[!-/:-@[-`{-~]/
+
+/**
+ * A backslash escape as a character reference, which renders the same: the
+ * punctuation it escapes, or a literal backslash before anything else, as
+ * CommonMark reads it.
+ */
+const escapeAsReference = (_escape: string, char: string): string =>
+  ASCII_PUNCTUATION.test(char) ? `&#${char.charCodeAt(0)};` : `&#92;${char}`
+
 /**
  * The image's caption, ready to become an item's `text`. Each change keeps
  * Hugo reading the param as written, and matches how production items
@@ -76,6 +88,10 @@ const QUOTED_SIMPLE_SUBSUP = /\{\{<\s*(sub|sup)\s+"([^"\s\\{}<>]+)"\s*>\}\}/g
  *   it would put \" in the param, and Hugo drops every backslash from a
  *   param containing \", so an escape such as "\-" in a formula would reach
  *   course-v2 as a bare "-".
+ * - When quotes remain, which ShortcodeParam writes as \", every other
+ *   backslash escape becomes a character reference, "\*" becoming "&#42;",
+ *   since Hugo would drop its backslash and "*literal*" would render as
+ *   emphasis.
  */
 const imageCaption = (resource: WebsiteContent): string => {
   const imageMetadata = resource.metadata?.image_metadata
@@ -83,12 +99,16 @@ const imageCaption = (resource: WebsiteContent): string => {
     imageMetadata && typeof imageMetadata === "object"
       ? (imageMetadata as Record<string, unknown>).caption
       : undefined
-  return typeof caption === "string"
-    ? caption
-        .replace(/\r\n?/g, "\n")
-        .replace(/\\`/g, "&grave;")
-        .replace(QUOTED_SIMPLE_SUBSUP, "{{< $1 $2 >}}")
-    : ""
+  if (typeof caption !== "string") {
+    return ""
+  }
+  const text = caption
+    .replace(/\r\n?/g, "\n")
+    .replace(/\\`/g, "&grave;")
+    .replace(QUOTED_SIMPLE_SUBSUP, "{{< $1 $2 >}}")
+  return text.includes('"')
+    ? text.replace(MARKDOWN_ESCAPE, escapeAsReference)
+    : text
 }
 
 /**
