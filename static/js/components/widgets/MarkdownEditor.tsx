@@ -62,7 +62,16 @@ export interface Props {
 
 type RenderQueueEntry = [string, HTMLElement]
 
-type GalleryQueueEntry = [HTMLElement, ImageGalleryHandle]
+interface GalleryQueueEntry {
+  /**
+   * The React key. Assigned once per gallery, so a widget keeps its own state
+   * when an earlier gallery is deleted; keying by position would hand the
+   * deleted gallery's widget, and its items, to the next one.
+   */
+  id: number
+  el: HTMLElement
+  handle: ImageGalleryHandle
+}
 
 /**
  * A component for editing Markdown using CKEditor.
@@ -136,10 +145,12 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   )
 
   const [galleryQueue, setGalleryQueue] = useState<GalleryQueueEntry[]>([])
+  const nextGalleryId = useRef(0)
 
   const renderImageGallery: RenderGalleryFunc = useCallback(
     (el: HTMLElement, handle: ImageGalleryHandle) => {
-      setGalleryQueue((xs) => [...xs, [el, handle]])
+      const id = nextGalleryId.current++
+      setGalleryQueue((xs) => [...xs, { id, el, handle }])
     },
     [setGalleryQueue],
   )
@@ -288,7 +299,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         xs.filter((entry) => document.body.contains(entry[1])),
       )
       setGalleryQueue((xs) =>
-        xs.filter((entry) => document.body.contains(entry[0])),
+        xs.filter((entry) => document.body.contains(entry.el)),
       )
     },
     [onChange, setRenderQueue, setGalleryQueue, name],
@@ -333,8 +344,8 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       {renderQueue.map(([uuid, el], idx) => (
         <EmbeddedResource key={`${uuid}_${idx}`} uuid={uuid} el={el} />
       ))}
-      {galleryQueue.map(([el, handle], idx) => (
-        <ImageGalleryWidget key={`gallery_${idx}`} el={el} handle={handle} />
+      {galleryQueue.map(({ id, el, handle }) => (
+        <ImageGalleryWidget key={id} el={el} handle={handle} />
       ))}
     </>
   )

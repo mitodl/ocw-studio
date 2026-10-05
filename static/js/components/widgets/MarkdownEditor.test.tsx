@@ -353,6 +353,41 @@ describe("MarkdownEditor", () => {
       },
     )
 
+    it("keeps each widget with its own gallery when an earlier gallery is deleted", async () => {
+      const { unmount } = renderMarkdownEditor()
+      const makeGallery = (items: string[]) => {
+        const el = document.createElement("div")
+        document.body.appendChild(el)
+        const handle: ImageGalleryHandle = {
+          getItems: () => items,
+          setItems: jest.fn(),
+          onModelChange: () => () => undefined,
+          openPicker: jest.fn(),
+        }
+        return { el, handle }
+      }
+      const first = makeGallery([' href="first.jpg" '])
+      const second = makeGallery([' href="second.jpg" '])
+      const { renderImageGallery } =
+        lastCKEditorProps.config[CKEDITOR_RESOURCE_UTILS]
+      await act(async () => {
+        renderImageGallery(first.el, first.handle)
+        renderImageGallery(second.el, second.handle)
+      })
+      expect(second.el.textContent).toContain("second.jpg")
+
+      // CKEditor discards the deleted gallery's element; the next change
+      // drops its widget.
+      first.el.remove()
+      await act(async () => {
+        lastCKEditorProps.onChange(null, { getData: () => "" })
+      })
+
+      expect(second.el.textContent).toContain("second.jpg")
+      expect(second.el.textContent).not.toContain("first.jpg")
+      unmount()
+    })
+
     it("appends to an existing gallery, skipping images it already has", async () => {
       const setItems = jest.fn()
       const handle: ImageGalleryHandle = {
