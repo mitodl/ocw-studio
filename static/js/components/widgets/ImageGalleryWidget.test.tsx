@@ -112,6 +112,26 @@ describe("ImageGalleryWidget", () => {
     expect(screen.getByText("legacy.jpg")).toBeInTheDocument()
   })
 
+  it("says an image is not found once its resource fails to load", async () => {
+    // E.g. an image deleted after it was added to the gallery.
+    const missing = makeWebsiteContentDetail()
+    helper.mockGetRequest(
+      siteApiContentDetailUrl
+        .param({ name: website.name, textId: missing.text_id })
+        .toString(),
+      { detail: "Not found." },
+      404,
+    )
+    renderWidget(
+      makeHandle([` uuid="${missing.text_id}" href="gone.jpg" text="" `]),
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText("Image not found")).toBeInTheDocument()
+    })
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument()
+  })
+
   it("removes only the item clicked, leaving every other item's params as they were", async () => {
     const user = userEvent.setup()
     const linked = ` uuid="${image.text_id}" href="pyrite.jpg" text="Pyrite" `

@@ -264,7 +264,15 @@ function GalleryThumbnail(props: ThumbnailProps): JSX.Element {
 function LinkedImage(props: { uuid: string }): JSX.Element {
   const { uuid } = props
   const website = useWebsite()
-  const [resource] = useWebsiteContent(uuid)
+  const [resource, request] = useWebsiteContent(uuid)
+
+  let placeholder = "Loading…"
+  if (resource) {
+    placeholder = "Not an image"
+  } else if (request.isFinished) {
+    // The request is done and returned nothing, e.g. the image was deleted.
+    placeholder = "Image not found"
+  }
 
   return (
     <>
@@ -272,7 +280,7 @@ function LinkedImage(props: { uuid: string }): JSX.Element {
         <img className="img-fluid" src={resource.file} alt="" />
       ) : (
         <div className="image-gallery-item-missing text-gray">
-          {resource ? "Not an image" : "Loading…"}
+          {placeholder}
         </div>
       )}
       <a
