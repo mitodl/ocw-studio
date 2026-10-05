@@ -68,7 +68,7 @@ repos:
     - --exclude-files
     - "config/keycloak/realms/ocw-studio-realm.json"
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: "v0.16.1"
+  rev: "v0.16.8"
   hooks:
   - id: ruff-format
     exclude: ".*/migrations/.*"
