@@ -15,8 +15,8 @@ import {
   IMAGE_GALLERY,
   IMAGE_GALLERY_COMMAND,
   ImageGalleryHandle,
-  RenderGalleryFunc,
 } from "./constants"
+import { getOcwConfig } from "./util"
 
 const GALLERY_CLASS = "image-gallery"
 const DATA_PARAMS = "data-params"
@@ -299,12 +299,9 @@ class ImageGalleryEditing extends CKEPlugin {
         ),
     })
 
-    const { renderImageGallery, openImageGalleryPicker } = (editor.config.get(
-      CKEDITOR_RESOURCE_UTILS,
-    ) ?? {}) as {
-      renderImageGallery?: RenderGalleryFunc
-      openImageGalleryPicker?: (handle: ImageGalleryHandle) => void
-    }
+    const resourceUtils = getOcwConfig(editor, CKEDITOR_RESOURCE_UTILS)
+    const renderImageGallery = resourceUtils?.renderImageGallery
+    const openImageGalleryPicker = resourceUtils?.openImageGalleryPicker
 
     conversion.for("editingDowncast").elementToElement({
       model: IMAGE_GALLERY,
@@ -387,11 +384,10 @@ class ImageGalleryToolbar extends CKEPlugin {
 
   init(): void {
     const editor = this.editor
-    const { openImageGalleryPicker } = (editor.config.get(
+    const openImageGalleryPicker = getOcwConfig(
+      editor,
       CKEDITOR_RESOURCE_UTILS,
-    ) ?? {}) as {
-      openImageGalleryPicker?: (handle: ImageGalleryHandle | null) => void
-    }
+    )?.openImageGalleryPicker
 
     editor.ui.componentFactory.add(ADD_IMAGE_GALLERY, (locale: any) => {
       const view = new ButtonView(locale)

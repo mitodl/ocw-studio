@@ -7,7 +7,12 @@ import {
   TABLE_ALLOWED_ATTRS,
   WEBSITE_NAME,
 } from "./constants"
-import type { RenderResourceFunc, ResourceDialogMode } from "./constants"
+import type {
+  ImageGalleryHandle,
+  RenderGalleryFunc,
+  RenderResourceFunc,
+  ResourceDialogMode,
+} from "./constants"
 import { hasTruthyProp, isNotNil } from "../../../util"
 import type { MarkdownConfig } from "../../../types/ckeditor_markdown"
 import { ReplacementFunction } from "turndown"
@@ -27,6 +32,9 @@ export interface OcwEditorConfig {
   [CKEDITOR_RESOURCE_UTILS]: {
     renderResource: RenderResourceFunc
     openResourcePicker: (mode: ResourceDialogMode) => void
+    renderImageGallery: RenderGalleryFunc
+    /** With no handle, the images picked become a new gallery. */
+    openImageGalleryPicker: (handle: ImageGalleryHandle | null) => void
   }
 }
 

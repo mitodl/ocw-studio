@@ -4,7 +4,11 @@ import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
 import ImageGallery from "./ImageGallery"
 import Markdown from "./Markdown"
 import { createTestEditor } from "./test_util"
-import { CKEDITOR_RESOURCE_UTILS, ImageGalleryHandle } from "./constants"
+import {
+  ADD_IMAGE_GALLERY,
+  CKEDITOR_RESOURCE_UTILS,
+  ImageGalleryHandle,
+} from "./constants"
 import { buildGalleryItem } from "./galleryItems"
 import { makeWebsiteContentDetail } from "../../../util/factories/websites"
 
@@ -217,6 +221,23 @@ describe("ImageGallery plugin", () => {
     press({ key: "z", keyCode: 90, ctrlKey: true })
     press({ key: "Z", keyCode: 90, ctrlKey: true, shiftKey: true })
     expect(handles[0].getItems()).toEqual(reversed)
+  })
+
+  it("asks the host to pick images, for a gallery or for a new one", async () => {
+    const openImageGalleryPicker = jest.fn()
+    const editor = await getEditor(PRODUCTION_GALLERY, {
+      [CKEDITOR_RESOURCE_UTILS]: {
+        ...resourceUtils[CKEDITOR_RESOURCE_UTILS],
+        openImageGalleryPicker,
+      },
+    })
+
+    handles[0].openPicker()
+    expect(openImageGalleryPicker).toHaveBeenLastCalledWith(handles[0])
+
+    // The toolbar button: the picker's choice becomes a new gallery.
+    editor.ui.componentFactory.create(ADD_IMAGE_GALLERY).fire("execute")
+    expect(openImageGalleryPicker).toHaveBeenLastCalledWith(null)
   })
 
   it("drops a gallery once its last item is removed", async () => {
