@@ -1,6 +1,38 @@
 Release Notes
 =============
 
+Version 0.202.0
+---------------
+
+- Update dependency posthog-js to v1.435.7 (#3245)
+- Update dependency css-loader to v7.1.5 (#3241)
+- Update dependency sass to v1.105.1 (#3246)
+- Update dependency sentry-sdk to v2.69.2 (#3242)
+- Update pre-commit hook astral-sh/ruff-pre-commit to v0.16.8 (#3243)
+- Update dependency webpack-dev-middleware to v8.3.0 [SECURITY] (#3232)
+- Update dependency autoprefixer to v10.6.1 (#3244)
+- Update dependency pypdf to v6.19.0 [SECURITY] (#3237)
+- Update dependency boto3 to v1.43.98 (#3240)
+- fix: add opt-in clearable key for single select fields (#3239)
+- chore: remove the interim pre-commit.ci ci: block (#3238)
+- chore: run the UUID rename as a Celery job (#3234)
+- chore: suffix colliding UUID renames (#3233)
+- ci: pin prek 0.5.3 (#3236)
+- ci: run hooks with prek and autofix.ci (#3235)
+- Update dependency social-auth-core to v5 [SECURITY] (#3218)
+- Update dependency django-safedelete to v1.5.0 (#3228)
+- Update Yarn to v4.18.1 (#3225)
+- Update dependency prettier to v3.9.9 (#3223)
+- Update dependency sentry-sdk to v2.69.1 (#3229)
+- Update dependency sentry-testkit to v7.6.0 (#3230)
+- Update dependency django-guardian to v3.5.0 (#3227)
+- Update dependency django-debug-toolbar to v8 (#3231)
+- Update dependency pytest-env to v1.7.1 (#3224)
+- Update astral-sh/setup-uv action to v10.1.0 (#3226)
+- Update dependency posthog-js to v1.434.13 (#3222)
+- Update dependency djangorestframework to v3.18.1 (#3221)
+- Update dependency boto3 to v1.43.93 (#3220)
+
 Version 0.201.0
 ---------------
 
