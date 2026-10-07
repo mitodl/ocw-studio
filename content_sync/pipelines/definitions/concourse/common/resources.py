@@ -301,13 +301,29 @@ def get_fastly_domain(purpose: str) -> str | None:
     return urlparse(base_url).netloc or None
 
 
+def get_fastly_service_id(purpose: str) -> str | None:
+    """
+    Get the Fastly service ID for a given purpose.
+
+    Args:
+        purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
+
+    Returns:
+        str | None: The Concourse service ID variable, or None for an unknown purpose
+    """
+    return {
+        VERSION_DRAFT: "((fastly_draft.service_id))",
+        VERSION_LIVE: "((fastly_live.service_id))",
+        FASTLY_PURPOSE_LEARN: "((fastly_learn.service_id))",
+        FASTLY_PURPOSE_TEST: "((fastly_test.service_id))",
+    }.get(purpose)
+
+
 def get_fastly_purge_purposes(purpose: str) -> list[str]:
     """
     Get every distribution that a build for a given purpose must purge.
 
-    A distribution with no configured domain is omitted rather than raising, the same
-    way is_dev() omits cache clearing entirely. CI, for example, has no OCW Fastly
-    service at all.
+    A distribution with no configured service ID is omitted rather than raising.
 
     This is the single source of truth for both the purge steps and the Fastly
     resources a pipeline declares, so the two cannot drift apart.
@@ -321,7 +337,7 @@ def get_fastly_purge_purposes(purpose: str) -> list[str]:
     purposes = [purpose]
     if purpose == VERSION_LIVE:
         purposes.append(FASTLY_PURPOSE_LEARN)
-    return [item for item in purposes if get_fastly_domain(item)]
+    return [item for item in purposes if get_fastly_service_id(item)]
 
 
 def fastly_resource_types(resources: list[Resource]) -> list[ResourceType]:
@@ -356,7 +372,7 @@ def fastly_resources(purpose: str) -> list[Resource]:
         fastly_service(
             name=get_fastly_identifier(item),
             api_token=settings.CONCOURSE_FASTLY_API_TOKEN_VAR,
-            domain=get_fastly_domain(item),
+            service_id=get_fastly_service_id(item),
             # Purge-only: never poll Fastly for VCL version changes. The library
             # default of "1h" would have every site pipeline instance polling.
             check_every="never",
