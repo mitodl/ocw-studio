@@ -232,13 +232,15 @@ def test_clear_cdn_cache_step_not_live(
     assert get_fastly_identifier(FASTLY_PURPOSE_LEARN) not in json.dumps(steps)
 
 
-def test_clear_cdn_cache_step_does_not_require_domain(settings):
+def test_clear_cdn_cache_step_omitted_without_domain(settings):
     """
-    Assert that configured service IDs allow purges when domains are unavailable.
+    Assert that a distribution with no configured domain is omitted rather than
+    rendering a purge that cannot resolve a Fastly service. CI has no OCW Fastly
+    service at all.
     """
     settings.OCW_STUDIO_LIVE_URL = None
     settings.COURSE_V3_CANONICAL_DOMAIN = None
-    assert len(_rendered_steps(VERSION_LIVE, "test_site")) == 2
+    assert _rendered_steps(VERSION_LIVE, "test_site") == []
 
 
 def test_no_get_property_on_put_steps():

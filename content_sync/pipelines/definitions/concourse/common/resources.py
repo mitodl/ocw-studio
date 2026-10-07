@@ -320,7 +320,9 @@ def get_fastly_purge_purposes(purpose: str) -> list[str]:
     """
     Get every distribution that a build for a given purpose must purge.
 
-    A distribution with no configured service ID is omitted rather than raising.
+    A distribution with no configured domain is omitted rather than raising, the same
+    way is_dev() omits cache clearing entirely. CI, for example, has no OCW Fastly
+    service at all.
 
     This is the single source of truth for both the purge steps and the Fastly
     resources a pipeline declares, so the two cannot drift apart.
@@ -334,7 +336,7 @@ def get_fastly_purge_purposes(purpose: str) -> list[str]:
     purposes = [purpose]
     if purpose == VERSION_LIVE:
         purposes.append(FASTLY_PURPOSE_LEARN)
-    return [item for item in purposes if get_fastly_service_id(item)]
+    return [item for item in purposes if get_fastly_domain(item)]
 
 
 def fastly_resource_types(resources: list[Resource]) -> list[ResourceType]:
@@ -370,6 +372,7 @@ def fastly_resources(purpose: str) -> list[Resource]:
             name=get_fastly_identifier(item),
             api_token=settings.CONCOURSE_FASTLY_API_TOKEN_VAR,
             service_id=get_fastly_service_id(item),
+            domain=get_fastly_domain(item),
             # Purge-only: never poll Fastly for VCL version changes. The library
             # default of "1h" would have every site pipeline instance polling.
             check_every="never",
