@@ -18,7 +18,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
         (VERSION_LIVE, "((fastly_live.service_id))"),
         (FASTLY_PURPOSE_LEARN, "((fastly_learn.service_id))"),
         (FASTLY_PURPOSE_TEST, "((fastly_test.service_id))"),
-        ("unknown", None),
+        ("unknown", ""),
     ],
 )
 def test_get_fastly_service_id(purpose, service_id):

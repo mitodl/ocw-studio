@@ -298,7 +298,7 @@ def get_fastly_domain(purpose: str) -> str | None:
     return urlparse(base_url).netloc or None
 
 
-def get_fastly_service_id(purpose: str) -> str | None:
+def get_fastly_service_id(purpose: str) -> str:
     """
     Get the Fastly service ID for a given purpose.
 
@@ -306,14 +306,15 @@ def get_fastly_service_id(purpose: str) -> str | None:
         purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
 
     Returns:
-        str | None: The Concourse service ID variable, or None for an unknown purpose
+        str: The Concourse service ID variable, or an empty string for an unknown
+            purpose
     """
     return {
         VERSION_DRAFT: "((fastly_draft.service_id))",
         VERSION_LIVE: "((fastly_live.service_id))",
         FASTLY_PURPOSE_LEARN: "((fastly_learn.service_id))",
         FASTLY_PURPOSE_TEST: "((fastly_test.service_id))",
-    }.get(purpose)
+    }.get(purpose, "")
 
 
 def get_fastly_purge_purposes(purpose: str) -> list[str]:
