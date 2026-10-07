@@ -280,9 +280,6 @@ def get_fastly_domain(purpose: str) -> str | None:
     """
     Get the domain served by the Fastly distribution for a given purpose.
 
-    The Fastly resource resolves the service ID from this domain at runtime, so no
-    service IDs need to be stored in Concourse.
-
     Args:
         purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
 
