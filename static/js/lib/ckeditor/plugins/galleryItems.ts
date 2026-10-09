@@ -59,9 +59,12 @@ const fileBasename = (file: string): string => {
 
 /**
  * A `sub` or `sup` shortcode whose single value is quoted but needs no
- * quotes, as the caption editor writes them: `{{< sub "2" >}}`.
+ * quotes, as the caption editor writes them: `{{< sub "2" >}}`. Hugo reads a
+ * bare value only if it is letters, decimal digits, "_", "-" and "."; any
+ * other value, such as "®" or "N+1", fails the page build unquoted.
  */
-const QUOTED_SIMPLE_SUBSUP = /\{\{<\s*(sub|sup)\s+"([^"\s\\{}<>]+)"\s*>\}\}/g
+const QUOTED_SIMPLE_SUBSUP =
+  /\{\{<\s*(sub|sup)\s+"([\p{L}\p{Nd}_.-]+)"\s*>\}\}/gu
 
 /** A Markdown backslash escape, capturing the character escaped. */
 const MARKDOWN_ESCAPE = /\\([\s\S])/g

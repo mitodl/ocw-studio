@@ -161,6 +161,15 @@ describe("buildGalleryItem with captions like the ones in production", () => {
       readBack: String.raw`Gypsum twins: CaSO{{< sub 4 >}}\-2H{{< sub 2 >}}O.`,
     },
     {
+      // Hugo reads only letters, digits, "_", "-" and "." in a bare value;
+      // anything else fails the page build, so these stay quoted.
+      label: "sub and sup values Hugo cannot read bare, which stay quoted",
+      caption: String.raw`Brand{{< sup "®" >}}, x{{< sub "N+1" >}} and y{{< sup "²" >}}, \-1`,
+      text: String.raw`Brand{{< sup \"®\" >}}, x{{< sub \"N+1\" >}} and y{{< sup \"²\" >}}, &#45;1`,
+      readBack:
+        'Brand{{< sup "®" >}}, x{{< sub "N+1" >}} and y{{< sup "²" >}}, &#45;1',
+    },
+    {
       label: "a sup value with spaces, which stays quoted",
       caption: 'Term x{{< sup "n + 1" >}}',
       text: String.raw`Term x{{< sup \"n + 1\" >}}`,
