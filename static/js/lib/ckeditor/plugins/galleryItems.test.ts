@@ -120,10 +120,11 @@ describe("galleryHasImage", () => {
   it.each([
     { label: "by uuid", file: "/a/other.jpg", textId: undefined, has: true },
     {
-      label: "by href, for an item without a uuid",
+      // Every item that could name an image in the site carries its uuid.
+      label: "not by href alone",
       file: "/a/legacy.jpg",
       textId: "0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21",
-      has: true,
+      has: false,
     },
     {
       label: "not at all",

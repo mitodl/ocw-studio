@@ -446,7 +446,7 @@ describe("MarkdownEditor", () => {
       await openGalleryPicker(handle)
       const { isExcluded } = lastResourcePickerProps
       expect(isExcluded(image("u1", "https://b/x/pyrite.jpg", ""))).toBe(true)
-      expect(isExcluded(image("u2", "https://b/x/legacy.jpg", ""))).toBe(true)
+      expect(isExcluded(image("u2", "https://b/x/legacy.jpg", ""))).toBe(false)
       expect(isExcluded(image("u3", "https://b/x/quartz.jpg", ""))).toBe(false)
 
       // A new gallery has nothing to leave out.
@@ -469,7 +469,6 @@ describe("MarkdownEditor", () => {
       await act(async () => {
         lastResourcePickerProps.insertMultiple([
           image("u1", "https://bucket/courses/x/pyrite.jpg", "Pyrite"),
-          image("u2", "https://bucket/courses/x/legacy.jpg", "Old"),
           image("u3", "https://bucket/courses/x/quartz.jpg", "Quartz"),
         ])
       })

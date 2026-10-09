@@ -138,21 +138,15 @@ export const buildGalleryItem = (resource: WebsiteContent): string => {
 }
 
 /**
- * Whether a gallery's items already include this image: by uuid, or by href
- * for an item written before items carried uuids.
+ * Whether a gallery's items already include this image, by uuid. An item the
+ * uuid cleanup could not give one names no live image in the site, so it
+ * cannot match anything the picker offers.
  */
 export const galleryHasImage = (
   items: string[],
   resource: WebsiteContent,
-): boolean => {
-  const { uuid, href } = parseGalleryItem(buildGalleryItem(resource))
-  return items
-    .map(parseGalleryItem)
-    .some(
-      (item) =>
-        item.uuid === uuid || (href !== undefined && item.href === href),
-    )
-}
+): boolean =>
+  items.some((item) => parseGalleryItem(item).uuid === resource.text_id)
 
 /**
  * The `baseUrl` a new gallery needs for course-v2, which joins each item's
