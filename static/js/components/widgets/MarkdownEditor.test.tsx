@@ -12,6 +12,7 @@ import {
   MinimalWithSubSupEditorConfig,
 } from "../../lib/ckeditor/CKEditor"
 import {
+  ADD_IMAGE_GALLERY,
   ADD_RESOURCE_EMBED,
   ADD_RESOURCE_LINK,
   CKEDITOR_RESOURCE_UTILS,
@@ -30,6 +31,7 @@ import { useWebsite } from "../../context/Website"
 import {
   makeWebsiteContentDetail,
   makeWebsiteDetail,
+  makeWebsiteStarter,
 } from "../../util/factories/websites"
 import { WebsiteContent } from "../../types/websites"
 import ResourceLink from "../../lib/ckeditor/plugins/ResourceLink"
@@ -256,6 +258,49 @@ describe("MarkdownEditor", () => {
     },
   )
 
+  it.each([
+    { slug: "course", hasTool: true },
+    { slug: "ocw-www", hasTool: false },
+  ])(
+    "shows the image gallery button only on course sites (starter $slug)",
+    ({ slug, hasTool }) => {
+      SETTINGS.ocwCourseStarterSlug = "course"
+      mocUseWebsite.mockReturnValue(
+        makeWebsiteDetail({ starter: makeWebsiteStarter(slug) }),
+      )
+      renderMarkdownEditor({ minimal: false })
+      expect(
+        lastCKEditorProps.config.toolbar.items.includes(ADD_IMAGE_GALLERY),
+      ).toBe(hasTool)
+    },
+  )
+
+  it.each([
+    { urlPath: "courses/18-05-intro", urlSuggestion: "", disabled: false },
+    {
+      urlPath: null,
+      urlSuggestion: "18-05-[sitemetadata:term]",
+      disabled: true,
+    },
+  ])(
+    "disables new galleries while a course has no URL (url_path $urlPath)",
+    ({ urlPath, urlSuggestion, disabled }) => {
+      mocUseWebsite.mockReturnValue(
+        makeWebsiteDetail({
+          url_path: urlPath, // eslint-disable-line camelcase
+          url_suggestion: urlSuggestion, // eslint-disable-line camelcase
+        }),
+      )
+      renderMarkdownEditor({ minimal: false })
+      expect(
+        Boolean(
+          lastCKEditorProps.config[CKEDITOR_RESOURCE_UTILS]
+            .imageGalleryDisabledReason,
+        ),
+      ).toBe(disabled)
+    },
+  )
+
   it("recreates CKEditor when editorConfig changes", () => {
     const { rerender } = render(
       <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
@@ -386,6 +431,27 @@ describe("MarkdownEditor", () => {
       expect(second.el.textContent).toContain("second.jpg")
       expect(second.el.textContent).not.toContain("first.jpg")
       unmount()
+    })
+
+    it("leaves images already in the gallery out of the picker", async () => {
+      const handle: ImageGalleryHandle = {
+        getItems: () => [
+          ' uuid="u1" href="pyrite.jpg" text="Pyrite" ',
+          ' href="legacy.jpg" data-ngdesc="" text="Old" ',
+        ],
+        setItems: jest.fn(),
+        onModelChange: () => () => undefined,
+        openPicker: jest.fn(),
+      }
+      await openGalleryPicker(handle)
+      const { isExcluded } = lastResourcePickerProps
+      expect(isExcluded(image("u1", "https://b/x/pyrite.jpg", ""))).toBe(true)
+      expect(isExcluded(image("u2", "https://b/x/legacy.jpg", ""))).toBe(true)
+      expect(isExcluded(image("u3", "https://b/x/quartz.jpg", ""))).toBe(false)
+
+      // A new gallery has nothing to leave out.
+      await openGalleryPicker(null)
+      expect(lastResourcePickerProps.isExcluded).toBeUndefined()
     })
 
     it("appends to an existing gallery, skipping images it already has", async () => {

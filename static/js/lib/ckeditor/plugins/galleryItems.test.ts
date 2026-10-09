@@ -1,6 +1,7 @@
 import {
   buildGalleryItem,
   galleryBaseUrl,
+  galleryHasImage,
   parseGalleryItem,
 } from "./galleryItems"
 import {
@@ -107,6 +108,37 @@ describe("buildGalleryItem", () => {
     expect(buildGalleryItem(imageResource(undefined, "Cap"))).toBe(
       ' uuid="c2956690-7ead-4f56-8282-fe998b987b00" text="Cap" ',
     )
+  })
+})
+
+describe("galleryHasImage", () => {
+  const items = [
+    ' uuid="c2956690-7ead-4f56-8282-fe998b987b00" href="b.jpg" text="" ',
+    ' href="legacy.jpg" data-ngdesc="" text="Old" ',
+  ]
+
+  it.each([
+    { label: "by uuid", file: "/a/other.jpg", textId: undefined, has: true },
+    {
+      label: "by href, for an item without a uuid",
+      file: "/a/legacy.jpg",
+      textId: "0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21",
+      has: true,
+    },
+    {
+      label: "not at all",
+      file: "/a/new.jpg",
+      textId: "0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21",
+      has: false,
+    },
+  ])("matches an image $label", ({ file, textId, has }) => {
+    const resource = imageResource(file)
+    expect(
+      galleryHasImage(
+        items,
+        textId ? { ...resource, text_id: textId } : resource,
+      ), // eslint-disable-line camelcase
+    ).toBe(has)
   })
 })
 

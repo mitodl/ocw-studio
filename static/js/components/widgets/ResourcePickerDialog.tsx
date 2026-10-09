@@ -37,6 +37,8 @@ interface Props {
    * order they were picked, as the listing returned them.
    */
   insertMultiple?: (resources: WebsiteContent[]) => void
+  /** Resources to leave out of the listing, e.g. images already in a gallery. */
+  isExcluded?: (resource: WebsiteContent) => boolean
   /** Restrict the visible tabs, e.g. to images only. */
   restrictToTabIds?: string[]
   /** Overrides the dialog heading and accept button label. */
@@ -130,6 +132,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
     contentNames,
     multiple = false,
     insertMultiple,
+    isExcluded,
     restrictToTabIds,
     dialogTitle,
     acceptLabel,
@@ -284,6 +287,7 @@ export default function ResourcePickerDialog(props: Props): JSX.Element {
                     }
                     focusedResource={focusedResource}
                     selectedUuids={multiple ? selectedUuids : undefined}
+                    isExcluded={isExcluded}
                     singleColumn={tab.singleColumn}
                   />
                 ) : null}

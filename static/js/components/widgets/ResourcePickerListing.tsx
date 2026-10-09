@@ -28,6 +28,8 @@ interface Props {
    * this list are highlighted the same way a focused item is.
    */
   selectedUuids?: string[]
+  /** Resources to leave out of the listing, e.g. images already in a gallery. */
+  isExcluded?: (item: WebsiteContent) => boolean
 }
 
 export default function ResourcePickerListing(
@@ -42,6 +44,7 @@ export default function ResourcePickerListing(
     sourceWebsiteName,
     singleColumn,
     selectedUuids,
+    isExcluded,
   } = props
   const website = useWebsite()
 
@@ -75,26 +78,30 @@ export default function ResourcePickerListing(
         "column-view": singleColumn,
       })}
     >
-      {listing.results.map((item, idx) => {
-        const focusItem: React.MouseEventHandler<HTMLDivElement> = (event) => {
-          event.preventDefault()
-          focusResource(item)
-        }
+      {listing.results
+        .filter((item) => !isExcluded?.(item))
+        .map((item, idx) => {
+          const focusItem: React.MouseEventHandler<HTMLDivElement> = (
+            event,
+          ) => {
+            event.preventDefault()
+            focusResource(item)
+          }
 
-        return (
-          <PickerListItem
-            //  text_id itself *should* be unique, since it's a uuid except for sitemetadata.
-            key={`${item.text_id}_${idx}`}
-            isWholeRow={singleColumn}
-            websiteContent={item}
-            onClick={focusItem}
-            isFocused={
-              item.text_id === focusedResource?.text_id ||
-              (selectedUuids?.includes(item.text_id) ?? false)
-            }
-          />
-        )
-      })}
+          return (
+            <PickerListItem
+              //  text_id itself *should* be unique, since it's a uuid except for sitemetadata.
+              key={`${item.text_id}_${idx}`}
+              isWholeRow={singleColumn}
+              websiteContent={item}
+              onClick={focusItem}
+              isFocused={
+                item.text_id === focusedResource?.text_id ||
+                (selectedUuids?.includes(item.text_id) ?? false)
+              }
+            />
+          )
+        })}
     </div>
   )
 }

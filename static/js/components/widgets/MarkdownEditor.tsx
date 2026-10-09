@@ -31,11 +31,12 @@ import {
   IMAGE_GALLERY_COMMAND,
   ImageGalleryHandle,
   RenderGalleryFunc,
+  ADD_IMAGE_GALLERY,
 } from "../../lib/ckeditor/plugins/constants"
 import {
   buildGalleryItem,
   galleryBaseUrl,
-  parseGalleryItem,
+  galleryHasImage,
 } from "../../lib/ckeditor/plugins/galleryItems"
 import { ShortcodeParam } from "../../lib/ckeditor/plugins/util"
 import { WebsiteContent } from "../../types/websites"
@@ -177,16 +178,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const addGalleryImages = useCallback(
     (resources: WebsiteContent[]) => {
       const existing = galleryHandle?.getItems() ?? []
-      // Skip anything already present so a re-pick cannot duplicate an image:
-      // by uuid, or by href for a legacy item that has no uuid yet.
-      const present = existing.map(parseGalleryItem)
-      const additions = resources.map(buildGalleryItem).filter((item) => {
-        const { uuid, href } = parseGalleryItem(item)
-        return !present.some(
-          (other) =>
-            other.uuid === uuid || (href !== undefined && other.href === href),
-        )
-      })
+      // The picker leaves these out already; this guards the gallery anyway.
+      const additions = resources
+        .filter((resource) => !galleryHasImage(existing, resource))
+        .map(buildGalleryItem)
       if (galleryHandle) {
         galleryHandle.setItems([...existing, ...additions])
       } else {
@@ -205,6 +200,24 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     [galleryHandle, website],
   )
 
+  /** Images the gallery already has, which the picker leaves out. */
+  const isAlreadyInGallery = useMemo(
+    () =>
+      galleryHandle
+        ? (resource: WebsiteContent) =>
+            galleryHasImage(galleryHandle.getItems(), resource)
+        : undefined,
+    [galleryHandle],
+  )
+
+  /**
+   * course-v2 needs a new gallery's baseUrl, which comes from the course URL.
+   * Until the course has one, the button is disabled with this explanation.
+   */
+  const imageGalleryDisabledReason = galleryBaseUrl(website)
+    ? undefined
+    : "Fill in the course metadata first: a gallery needs the course URL."
+
   const editorConfig = useMemo(() => {
     const toolbarItemsFilter = (item: string): boolean => {
       if (item === ADD_RESOURCE_LINK) {
@@ -212,6 +225,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       }
       if (item === ADD_RESOURCE_EMBED) {
         return embed.length > 0
+      }
+      if (item === ADD_IMAGE_GALLERY) {
+        // Only course sites load the gallery script.
+        return website.starter?.slug === SETTINGS.ocwCourseStarterSlug
       }
       if (item === "superscript") {
         return allowedHtml.includes("sup")
@@ -255,6 +272,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
         openResourcePicker,
         renderImageGallery,
         openImageGalleryPicker,
+        imageGalleryDisabledReason,
       },
       toolbar: {
         ...baseConfig.toolbar,
@@ -271,10 +289,12 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     openResourcePicker,
     renderImageGallery,
     openImageGalleryPicker,
+    imageGalleryDisabledReason,
     link,
     embed,
     allowedHtml,
     website.name,
+    website.starter?.slug,
     isCustomLinkUIEnabled,
   ])
 
@@ -336,6 +356,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           insertEmbed={addResourceEmbed}
           multiple={isGalleryPicker}
           insertMultiple={addGalleryImages}
+          isExcluded={isGalleryPicker ? isAlreadyInGallery : undefined}
           restrictToTabIds={isGalleryPicker ? [TabIds.Images] : undefined}
           dialogTitle={isGalleryPicker ? "Add Images to Gallery" : undefined}
           acceptLabel={isGalleryPicker ? "Add images" : undefined}

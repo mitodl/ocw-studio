@@ -138,6 +138,23 @@ export const buildGalleryItem = (resource: WebsiteContent): string => {
 }
 
 /**
+ * Whether a gallery's items already include this image: by uuid, or by href
+ * for an item written before items carried uuids.
+ */
+export const galleryHasImage = (
+  items: string[],
+  resource: WebsiteContent,
+): boolean => {
+  const { uuid, href } = parseGalleryItem(buildGalleryItem(resource))
+  return items
+    .map(parseGalleryItem)
+    .some(
+      (item) =>
+        item.uuid === uuid || (href !== undefined && item.href === href),
+    )
+}
+
+/**
  * The `baseUrl` a new gallery needs for course-v2, which joins each item's
  * bare-filename `href` onto it: the site's URL path, as on every existing
  * gallery, e.g. "/courses/18-05-introduction-to-probability-spring-2014/".

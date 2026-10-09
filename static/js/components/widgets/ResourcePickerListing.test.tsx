@@ -136,6 +136,29 @@ describe("ResourcePickerListing", () => {
     })
   })
 
+  it("leaves out resources the caller excludes", async () => {
+    const [kept, excluded] = contentListingItems.videos
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+        isExcluded={(item) => item.text_id === excluded.text_id}
+      />,
+    )
+    await waitFor(() => {
+      const items = container.querySelectorAll(
+        ".resource-picker-listing .resource-item h4",
+      )
+      expect(Array.from(items).map((el) => el.textContent)).toEqual([
+        kept.title,
+      ])
+    })
+  })
+
   it("should call focusResource prop with resources", async () => {
     const [{ container }] = helper.render(
       <ResourcePickerListing
