@@ -433,7 +433,7 @@ describe("MarkdownEditor", () => {
       unmount()
     })
 
-    it("leaves images already in the gallery out of the picker", async () => {
+    it("marks images already in the gallery in the picker", async () => {
       const handle: ImageGalleryHandle = {
         getItems: () => [
           ' uuid="u1" href="pyrite.jpg" text="Pyrite" ',
@@ -444,14 +444,14 @@ describe("MarkdownEditor", () => {
         openPicker: jest.fn(),
       }
       await openGalleryPicker(handle)
-      const { isExcluded } = lastResourcePickerProps
-      expect(isExcluded(image("u1", "https://b/x/pyrite.jpg", ""))).toBe(true)
-      expect(isExcluded(image("u2", "https://b/x/legacy.jpg", ""))).toBe(false)
-      expect(isExcluded(image("u3", "https://b/x/quartz.jpg", ""))).toBe(false)
+      const { isInGallery } = lastResourcePickerProps
+      expect(isInGallery(image("u1", "https://b/x/pyrite.jpg", ""))).toBe(true)
+      expect(isInGallery(image("u2", "https://b/x/legacy.jpg", ""))).toBe(false)
+      expect(isInGallery(image("u3", "https://b/x/quartz.jpg", ""))).toBe(false)
 
-      // A new gallery has nothing to leave out.
+      // A new gallery has nothing in it yet.
       await openGalleryPicker(null)
-      expect(lastResourcePickerProps.isExcluded).toBeUndefined()
+      expect(lastResourcePickerProps.isInGallery).toBeUndefined()
     })
 
     it("appends to an existing gallery, skipping images it already has", async () => {

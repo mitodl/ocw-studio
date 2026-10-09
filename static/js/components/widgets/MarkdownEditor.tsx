@@ -178,7 +178,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
   const addGalleryImages = useCallback(
     (resources: WebsiteContent[]) => {
       const existing = galleryHandle?.getItems() ?? []
-      // The picker leaves these out already; this guards the gallery anyway.
+      // The picker won't pick these; this guards the gallery anyway.
       const additions = resources
         .filter((resource) => !galleryHasImage(existing, resource))
         .map(buildGalleryItem)
@@ -200,7 +200,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
     [galleryHandle, website],
   )
 
-  /** Images the gallery already has, which the picker leaves out. */
+  /** Images the gallery already has, which the picker greys out. */
   const isAlreadyInGallery = useMemo(
     () =>
       galleryHandle
@@ -356,7 +356,7 @@ export default function MarkdownEditor(props: Props): JSX.Element {
           insertEmbed={addResourceEmbed}
           multiple={isGalleryPicker}
           insertMultiple={addGalleryImages}
-          isExcluded={isGalleryPicker ? isAlreadyInGallery : undefined}
+          isInGallery={isGalleryPicker ? isAlreadyInGallery : undefined}
           restrictToTabIds={isGalleryPicker ? [TabIds.Images] : undefined}
           dialogTitle={isGalleryPicker ? "Add Images to Gallery" : undefined}
           acceptLabel={isGalleryPicker ? "Add images" : undefined}
