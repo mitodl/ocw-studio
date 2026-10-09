@@ -205,12 +205,20 @@ class InsertImageGalleryCommand extends Command {
   }
 
   execute({ params, items }: { params: string; items: string[] }) {
-    this.editor.model.change((writer: any) => {
+    const model = this.editor.model
+    model.change((writer: any) => {
       const gallery = writer.createElement(IMAGE_GALLERY, {
         [PARAMS]: params,
         [ITEMS]: JSON.stringify(items),
       })
-      this.editor.model.insertContent(gallery)
+      // A gallery stays selected after it is inserted or its border clicked.
+      // Inserting on a selection replaces it, so go after a selected object.
+      const selected = model.document.selection.getSelectedElement()
+      const after =
+        selected && model.schema.isObject(selected)
+          ? model.createPositionAfter(selected)
+          : null
+      model.insertObject(gallery, after, null, { setSelection: "on" })
     })
   }
 
@@ -384,10 +392,9 @@ class ImageGalleryToolbar extends CKEPlugin {
 
   init(): void {
     const editor = this.editor
-    const openImageGalleryPicker = getOcwConfig(
-      editor,
-      CKEDITOR_RESOURCE_UTILS,
-    )?.openImageGalleryPicker
+    const resourceUtils = getOcwConfig(editor, CKEDITOR_RESOURCE_UTILS)
+    const openImageGalleryPicker = resourceUtils?.openImageGalleryPicker
+    const disabledReason = resourceUtils?.imageGalleryDisabledReason
 
     editor.ui.componentFactory.add(ADD_IMAGE_GALLERY, (locale: any) => {
       const view = new ButtonView(locale)
@@ -395,6 +402,8 @@ class ImageGalleryToolbar extends CKEPlugin {
       view.set({
         label: "Image gallery",
         withText: true,
+        isEnabled: !disabledReason,
+        tooltip: disabledReason ?? false,
       })
 
       view.on("execute", () => {

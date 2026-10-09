@@ -35,6 +35,8 @@ export interface OcwEditorConfig {
     renderImageGallery: RenderGalleryFunc
     /** With no handle, the images picked become a new gallery. */
     openImageGalleryPicker: (handle: ImageGalleryHandle | null) => void
+    /** Why a new gallery cannot be added yet, which disables the button. */
+    imageGalleryDisabledReason?: string
   }
 }
 

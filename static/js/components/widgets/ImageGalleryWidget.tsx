@@ -1,24 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  arrayMove,
-  rectSortingStrategy,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from "@dnd-kit/sortable"
+import { DragEndEvent } from "@dnd-kit/core"
+import { arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { equals } from "ramda"
 
+import SortWrapper from "../SortWrapper"
 import { useWebsite } from "../../context/Website"
 import { useWebsiteContent } from "../../hooks/websites"
 import { siteContentRerouteUrl } from "../../lib/urls"
@@ -90,13 +77,6 @@ function ImageGalleryWidget(props: Props): JSX.Element {
         setItems((current) => (equals(current, next) ? current : next))
       }),
     [handle],
-  )
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
   )
 
   const handleDragEnd = useCallback(
@@ -171,26 +151,22 @@ function ImageGalleryWidget(props: Props): JSX.Element {
           No images yet — use “Add images” to choose some.
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+        <SortWrapper
+          items={entries}
+          generateItemUUID={(entry) => entry.key}
+          handleDragEnd={handleDragEnd}
+          strategy={rectSortingStrategy}
         >
-          <SortableContext
-            items={entries.map((entry) => entry.key)}
-            strategy={rectSortingStrategy}
-          >
-            <div className="image-gallery-grid">
-              {entries.map((entry) => (
-                <GalleryThumbnail
-                  key={entry.key}
-                  entry={entry}
-                  removeItem={removeItem}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+          <div className="image-gallery-grid">
+            {entries.map((entry) => (
+              <GalleryThumbnail
+                key={entry.key}
+                entry={entry}
+                removeItem={removeItem}
+              />
+            ))}
+          </div>
+        </SortWrapper>
       )}
     </div>,
     el,
@@ -277,7 +253,12 @@ function LinkedImage(props: { uuid: string }): JSX.Element {
   return (
     <>
       {resource?.file ? (
-        <img className="img-fluid" src={resource.file} alt="" />
+        <img
+          className="img-fluid"
+          src={resource.file}
+          alt=""
+          draggable={false}
+        />
       ) : (
         <div className="image-gallery-item-missing text-gray">
           {placeholder}
@@ -285,6 +266,9 @@ function LinkedImage(props: { uuid: string }): JSX.Element {
       )}
       <a
         className="image-gallery-item-title"
+        // Only the drag handle moves an image. A native drag of the picture
+        // or link would let CKEditor drop it into the page body.
+        draggable={false}
         href={siteContentRerouteUrl
           .param({ name: website.name, uuid })
           .toString()}

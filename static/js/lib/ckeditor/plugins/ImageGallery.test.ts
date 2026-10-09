@@ -242,6 +242,51 @@ describe("ImageGallery plugin", () => {
     expect(openImageGalleryPicker).toHaveBeenLastCalledWith(null)
   })
 
+  it("disables the toolbar button, saying why, when no gallery can be added", async () => {
+    const editor = await getEditor("", {
+      [CKEDITOR_RESOURCE_UTILS]: {
+        ...resourceUtils[CKEDITOR_RESOURCE_UTILS],
+        imageGalleryDisabledReason: "Fill in the course metadata first.",
+      },
+    })
+    const button: any = editor.ui.componentFactory.create(ADD_IMAGE_GALLERY)
+    expect(button.isEnabled).toBe(false)
+    expect(button.tooltip).toBe("Fill in the course metadata first.")
+
+    const enabled: any = (await getEditor("")).ui.componentFactory.create(
+      ADD_IMAGE_GALLERY,
+    )
+    expect(enabled.isEnabled).toBe(true)
+  })
+
+  it("adds a new gallery after a selected one, rather than replacing it", async () => {
+    const editor = await getEditor(PRODUCTION_GALLERY)
+    const root = editor.model.document.getRoot()!
+    // Selected, as after inserting it or clicking its border.
+    editor.model.change((writer: any) =>
+      writer.setSelection(root.getChild(0), "on"),
+    )
+
+    editor.execute("insertImageGallery", {
+      params: ' baseUrl="/courses/new/" ',
+      items: [
+        ' uuid="0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21" href="new.jpg" text="" ',
+      ],
+    })
+
+    expect(editor.getData()).toBe(
+      [
+        PRODUCTION_GALLERY.replace(
+          "{{</ image-gallery >}}",
+          "{{< /image-gallery >}}",
+        ),
+        '{{< image-gallery baseUrl="/courses/new/" >}}',
+        '{{< image-gallery-item uuid="0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21" href="new.jpg" text="" >}}',
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+    )
+  })
+
   it("drops a gallery once its last item is removed", async () => {
     const editor = await getEditor(
       [

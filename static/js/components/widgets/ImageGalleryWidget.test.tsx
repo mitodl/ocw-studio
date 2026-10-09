@@ -112,6 +112,18 @@ describe("ImageGalleryWidget", () => {
     expect(screen.getByText("legacy.jpg")).toBeInTheDocument()
   })
 
+  it("keeps thumbnails from being dragged into the text", async () => {
+    renderWidget(makeHandle([` uuid="${image.text_id}" href="pyrite.jpg" `]))
+    const title = await screen.findByText(image.title!)
+    // Only the drag handle moves an image; a native drag would let CKEditor
+    // drop the picture or link into the page body.
+    expect(title).toHaveAttribute("draggable", "false")
+    expect(el.querySelector(".image-gallery-item img")).toHaveAttribute(
+      "draggable",
+      "false",
+    )
+  })
+
   it("says an image is not found once its resource fails to load", async () => {
     // E.g. an image deleted after it was added to the gallery.
     const missing = makeWebsiteContentDetail()
