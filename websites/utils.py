@@ -27,6 +27,8 @@ _RESOURCE_LINK_AND_EMBED_REGEX = re.compile(
     \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
     |
     \{{\{{<\s+resource\s+([^>]*)>\}}\}}
+    |
+    \{{\{{<\s+image-gallery-item\s+((?:[^"]|"(?:[^"\\]|\\.)*")*?)>\}}\}}
     """,
     re.VERBOSE,
 )
@@ -226,7 +228,8 @@ def get_metadata_content_key(content) -> list:
 
 def parse_resource_uuid(text: str) -> list[str]:
     """
-    Parse the input text to extract UUIDs from resource links.
+    Parse the input text to extract UUIDs from resource links, resource embeds
+    and image gallery items.
 
     Args:
         text (str): The input text containing resource links.
@@ -234,10 +237,11 @@ def parse_resource_uuid(text: str) -> list[str]:
     Returns:
         list[str]: A list of extracted UUIDs.
     """
-    # This regex pattern matches two types of Hugo resource patterns:
+    # This regex pattern matches three types of Hugo resource patterns:
     # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}} or
     #    {{% resource_link uuid "title" %}}
     # 2. Hugo resource/embed syntax: {{< resource ... >}}
+    # 3. Hugo image gallery item syntax: {{< image-gallery-item uuid="uuid" ... >}}
     #
     # Pattern breakdown:
     # - Pattern 1: \{\{%\s+resource_link\s+"?([uuid])"?\s+"(.+?)"\s+%\}\}
@@ -260,6 +264,16 @@ def parse_resource_uuid(text: str) -> list[str]:
     #   - ([^>]*)   : Captures all shortcode attributes in group 3
     #   - >\}\}     : Matches literal ">}}"
     #
+    # - Pattern 3: \{\{<\s+image-gallery-item\s+((?:[^"]|"(?:[^"\\]|\\.)*")*?)>\}\}
+    #   - \{\{<     : Matches literal "{{<"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - image-gallery-item : Matches literal "image-gallery-item"
+    #   - \s+       : Matches one or more whitespace characters
+    #   - ((?:[^"]|"(?:[^"\\]|\\.)*")*?) : Captures all shortcode attributes in
+    #                    group 4, taking quoted values whole so that shortcodes
+    #                    nested in a caption do not end the match early
+    #   - >\}\}     : Matches literal ">}}"
+    #
     # UUID format: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
     # Example: b02b216b-1e9e-4b5c-8b1b-9c275a834679
     matches = _RESOURCE_LINK_AND_EMBED_REGEX.findall(text)
@@ -268,6 +282,10 @@ def parse_resource_uuid(text: str) -> list[str]:
     for match in matches:
         if match[0]:
             references.append(match[0])
+            continue
+
+        if match[3]:
+            references.extend(_ATTRIBUTE_UUID_REGEX.findall(match[3]))
             continue
 
         if not match[2]:

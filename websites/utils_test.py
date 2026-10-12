@@ -349,6 +349,24 @@ def test_set_dict_field():
             '{{% resource_link "550e8400-e29b-41d4-a716-446655440003" "APA Style{{< sup "{{< sub \\"R\\" >}}" >}}" %}}',
             ["550e8400-e29b-41d4-a716-446655440003"],
         ),
+        # Image gallery items should parse their uuid params
+        (
+            (
+                '{{< image-gallery id="g1" baseUrl="/courses/site/" >}}\n'
+                '{{< image-gallery-item uuid="550e8400-e29b-41d4-a716-446655440009" href="550e8400e29b41d4a716446655440009_a.jpg" text="Fig 1." >}}\n'
+                '{{< image-gallery-item uuid="550e8400-e29b-41d4-a716-446655440010" href="550e8400e29b41d4a716446655440010_b.jpg" text="Fig 2." >}}\n'
+                "{{</ image-gallery >}}"
+            ),
+            [
+                "550e8400-e29b-41d4-a716-446655440009",
+                "550e8400-e29b-41d4-a716-446655440010",
+            ],
+        ),
+        # Shortcodes inside an image gallery item's caption should not hide its uuid
+        (
+            '{{< image-gallery-item text="Fe{{< sub 2 >}}O{{< sub 3 >}}" uuid="550e8400-e29b-41d4-a716-446655440011" >}}',
+            ["550e8400-e29b-41d4-a716-446655440011"],
+        ),
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
