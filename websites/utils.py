@@ -24,7 +24,7 @@ UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
 # Compiled regexes for parse_resource_uuid (moved to module scope for performance)
 _RESOURCE_LINK_AND_EMBED_REGEX = re.compile(
     rf"""
-    \{{\{{%\s+resource_link\s+"?({UUID_REGEX_STR})"?\s+"(.+?)"\s+%\}}\}}
+    \{{\{{%\s+resource_link\s+(?:\\?")?({UUID_REGEX_STR})(?:\\?")?\s+\\?"(.+?)\\?"\s+%\}}\}}
     |
     \{{\{{<\s+resource\s+([^>]*)>\}}\}}
     |
@@ -239,20 +239,23 @@ def parse_resource_uuid(text: str) -> list[str]:
     """
     # This regex pattern matches three types of Hugo resource patterns:
     # 1. Hugo shortcode syntax: {{% resource_link "uuid" "title" %}} or
-    #    {{% resource_link uuid "title" %}}
+    #    {{% resource_link uuid "title" %}}, or with escaped quotes,
+    #    {{% resource_link \"uuid\" \"title\" %}}, inside another shortcode's
+    #    quoted param such as an image gallery caption
     # 2. Hugo resource/embed syntax: {{< resource ... >}}
     # 3. Hugo image gallery item syntax: {{< image-gallery-item uuid="uuid" ... >}}
     #
     # Pattern breakdown:
-    # - Pattern 1: \{\{%\s+resource_link\s+"?([uuid])"?\s+"(.+?)"\s+%\}\}
+    # - Pattern 1:
+    #   \{\{%\s+resource_link\s+(?:\\?")?([uuid])(?:\\?")?\s+\\?"(.+?)\\?"\s+%\}\}
     #   - \{\{%     : Matches literal "{{%"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource_link : Matches literal "resource_link"
     #   - \s+       : Matches one or more whitespace characters
-    #   - "?([uuid])"? : Captures UUID in group 1 with optional quotes
-    #                    (full pattern below)
+    #   - (?:\\?")?([uuid])(?:\\?")? : Captures UUID in group 1 with optional,
+    #                    possibly escaped, quotes (full pattern below)
     #   - \s+       : Matches one or more whitespace characters
-    #   - "(.+?)"   : Captures title text in group 2
+    #   - \\?"(.+?)\\?" : Captures title text in group 2
     #   - \s+       : Matches one or more whitespace characters
     #   - %\}\}     : Matches literal "%}}"
     #
@@ -286,6 +289,8 @@ def parse_resource_uuid(text: str) -> list[str]:
 
         if match[3]:
             references.extend(_ATTRIBUTE_UUID_REGEX.findall(match[3]))
+            # Links nested in the item's params, e.g. in its caption
+            references.extend(parse_resource_uuid(match[3]))
             continue
 
         if not match[2]:

@@ -367,6 +367,27 @@ def test_set_dict_field():
             '{{< image-gallery-item text="Fe{{< sub 2 >}}O{{< sub 3 >}}" uuid="550e8400-e29b-41d4-a716-446655440011" >}}',
             ["550e8400-e29b-41d4-a716-446655440011"],
         ),
+        # An image gallery item should end at its own >}}, not swallow what follows
+        (
+            (
+                '{{< image-gallery-item uuid="550e8400-e29b-41d4-a716-446655440012" text="Fig 1." >}}\n'
+                '{{% resource_link "550e8400-e29b-41d4-a716-446655440013" "Next" %}}\n'
+                '{{< resource "550e8400-e29b-41d4-a716-446655440014" >}}'
+            ),
+            [
+                "550e8400-e29b-41d4-a716-446655440012",
+                "550e8400-e29b-41d4-a716-446655440013",
+                "550e8400-e29b-41d4-a716-446655440014",
+            ],
+        ),
+        # Links in an image gallery item's caption, with escaped quotes, should parse
+        (
+            '{{< image-gallery-item uuid="550e8400-e29b-41d4-a716-446655440015" text="{{% resource_link \\"550e8400-e29b-41d4-a716-446655440016\\" \\"Spindle\\" %}} - The screw." >}}',
+            [
+                "550e8400-e29b-41d4-a716-446655440015",
+                "550e8400-e29b-41d4-a716-446655440016",
+            ],
+        ),
     ],
 )
 def test_parse_resource_uuid(input_text, expected_uuids):
