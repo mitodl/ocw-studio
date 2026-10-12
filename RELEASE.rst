@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Version 0.202.1
+---------------
+
+- Purge Fastly caches using service IDs (#3250)
+
 Version 0.202.0
 ---------------
 
