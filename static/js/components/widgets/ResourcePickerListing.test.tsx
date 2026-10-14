@@ -136,6 +136,37 @@ describe("ResourcePickerListing", () => {
     })
   })
 
+  it("shows images already in the gallery greyed out, and not selectable", async () => {
+    const [available, inGallery] = contentListingItems.videos
+    const user = userEvent.setup()
+    const [{ container }] = helper.render(
+      <ResourcePickerListing
+        focusResource={focusResourceMock}
+        contentType="resource"
+        filter={null}
+        resourcetype={ResourceType.Video}
+        focusedResource={null}
+        singleColumn={false}
+        isInGallery={(item) => item.text_id === inGallery.text_id}
+      />,
+    )
+    await waitFor(() => {
+      expect(
+        container.querySelectorAll(".resource-picker-listing .resource-item"),
+      ).toHaveLength(2)
+    })
+    const items = container.querySelectorAll<HTMLElement>(".resource-item")
+    expect(items[1]).toHaveClass("in-gallery")
+    expect(items[1]).toHaveAttribute("aria-disabled", "true")
+    expect(items[1]).toHaveTextContent("In gallery")
+    expect(items[0]).not.toHaveClass("in-gallery")
+
+    await user.click(items[1])
+    expect(focusResourceMock).not.toHaveBeenCalled()
+    await user.click(items[0])
+    expect(focusResourceMock).toHaveBeenCalledWith(available)
+  })
+
   it("should call focusResource prop with resources", async () => {
     const [{ container }] = helper.render(
       <ResourcePickerListing

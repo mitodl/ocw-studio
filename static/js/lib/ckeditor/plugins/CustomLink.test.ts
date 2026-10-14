@@ -35,6 +35,7 @@ global.SETTINGS = {
   posthog_api_host: null,
   posthog_project_api_key: null,
   deletableContentTypes: [],
+  ocwCourseStarterSlug: "course",
 }
 
 // Mock URL constructor
@@ -145,6 +146,7 @@ describe("CustomLink Plugin", () => {
       posthog_api_host: null,
       posthog_project_api_key: null,
       deletableContentTypes: [],
+      ocwCourseStarterSlug: "course",
     }
 
     // Ensure our MockURL class is being used

@@ -17,6 +17,8 @@ interface SETTINGS {
   sitemapDomain: string;
   maxTitle: number;
   deletableContentTypes: string[];
+  /** The starter slug of OCW course sites (OCW_COURSE_STARTER_SLUG). */
+  ocwCourseStarterSlug: string;
   /**
    * Settings.user does exist, but leaving it untyped to help encourage using
    * `store.user` instead.

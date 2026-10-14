@@ -23,6 +23,16 @@ interface Props {
   focusedResource: WebsiteContent | null
   sourceWebsiteName?: string
   singleColumn: boolean
+  /**
+   * When the picker is in multi-select mode, the uuids chosen so far. Items in
+   * this list are highlighted the same way a focused item is.
+   */
+  selectedUuids?: string[]
+  /**
+   * For a gallery's picker: images it already has, which stay listed, so the
+   * page keeps its size, but are greyed out and cannot be picked.
+   */
+  isInGallery?: (item: WebsiteContent) => boolean
 }
 
 export default function ResourcePickerListing(
@@ -36,6 +46,8 @@ export default function ResourcePickerListing(
     contentType,
     sourceWebsiteName,
     singleColumn,
+    selectedUuids,
+    isInGallery,
   } = props
   const website = useWebsite()
 
@@ -70,9 +82,12 @@ export default function ResourcePickerListing(
       })}
     >
       {listing.results.map((item, idx) => {
+        const inGallery = isInGallery?.(item) ?? false
         const focusItem: React.MouseEventHandler<HTMLDivElement> = (event) => {
           event.preventDefault()
-          focusResource(item)
+          if (!inGallery) {
+            focusResource(item)
+          }
         }
 
         return (
@@ -82,7 +97,11 @@ export default function ResourcePickerListing(
             isWholeRow={singleColumn}
             websiteContent={item}
             onClick={focusItem}
-            isFocused={item.text_id === focusedResource?.text_id}
+            inGallery={inGallery}
+            isFocused={
+              item.text_id === focusedResource?.text_id ||
+              (selectedUuids?.includes(item.text_id) ?? false)
+            }
           />
         )
       })}
@@ -93,14 +112,16 @@ export default function ResourcePickerListing(
 type ItemProps = {
   isWholeRow: boolean
   isFocused: boolean
+  inGallery: boolean
   websiteContent: WebsiteContent
   onClick: React.MouseEventHandler<HTMLDivElement>
 }
 const PickerListItem = (props: ItemProps) => {
-  const { websiteContent, isFocused, isWholeRow } = props
+  const { websiteContent, isFocused, isWholeRow, inGallery } = props
   const className = classNames({
     "resource-item": true,
     focused: isFocused,
+    "in-gallery": inGallery,
   })
 
   let imageSrc: string | undefined, extension: string | undefined
@@ -117,7 +138,12 @@ const PickerListItem = (props: ItemProps) => {
     }
   }
   return (
-    <div className={className} onClick={props.onClick}>
+    <div
+      className={className}
+      onClick={props.onClick}
+      aria-disabled={inGallery || undefined}
+    >
+      {inGallery ? <span className="in-gallery-label">In gallery</span> : null}
       {imageSrc ? (
         <div>
           <img className="img-fluid w-100" src={imageSrc} />

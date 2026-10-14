@@ -16,6 +16,23 @@
       margin: 0;
     }
 
+    // Already in the gallery this picker adds to: shown, but not pickable.
+    &.in-gallery {
+      position: relative;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .in-gallery-label {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      padding: 0 4px;
+      border-radius: 3px;
+      background-color: white;
+      font-size: 0.75rem;
+    }
+
     h4 {
       margin-bottom: 0;
       padding: 2px;
