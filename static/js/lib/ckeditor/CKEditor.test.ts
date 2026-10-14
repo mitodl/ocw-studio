@@ -191,3 +191,64 @@ describe("MinimalWithSubSupEditorConfig round trips its own syntax", () => {
     },
   )
 })
+
+/**
+ * Same plugin-order hazard as above, twice over. `ImageGallery` must be listed
+ * before `Markdown`, or a gallery is saved with escaped `{{\<` delimiters. And
+ * it must come before every other syntax plugin: showdown runs extensions in
+ * the order the plugins are constructed, and one that ran first could rewrite
+ * text inside a gallery's params before the gallery captures them, as
+ * MathSyntax would with the caption below.
+ */
+describe("FullEditorConfig round trips an image gallery", () => {
+  it("keeps every param, whatever other syntax plugins would make of it", async () => {
+    const editor = await ClassicEditor.create("", {
+      ...FullEditorConfig,
+      ...REQUIRED_CONFIG,
+    })
+    const items = [
+      String.raw`{{< image-gallery-item href="6525d0e9d7a6a5d4ae6eb7b45d2f4bc4_gallery2-2.jpg" data-ngdesc="" text="The walls of our {{% resource_link \"c2956690-7ead-4f56-8282-fe998b987b00\" \"TEAL classroom\" %}} are lined with whiteboards." >}}`,
+      '{{< image-gallery-item uuid="0b3a1d6e-9f0c-4b8e-8d5e-2f1c7a9e4b21" href="pyrite.jpg" data-ngdesc="Pyrite" text="Pyrite: FeS{{< sub 2 >}}" >}}',
+      String.raw`{{< image-gallery-item href="circle.jpg" text="Area \\(\\pi r^2\\)" >}}`,
+    ]
+    editor.setData(
+      [
+        '{{< image-gallery id="788b6153-ce75-e1be-31f0-a394ce761f32_nanogallery2" baseUrl="/courses/18-05-introduction-to-probability-and-statistics-spring-2014/" >}}',
+        ...items,
+        "{{</ image-gallery >}}",
+      ].join("\n"),
+    )
+    expect(editor.getData().trim()).toEqual(
+      [
+        '{{< image-gallery id="788b6153-ce75-e1be-31f0-a394ce761f32_nanogallery2" baseUrl="/courses/18-05-introduction-to-probability-and-statistics-spring-2014/" >}}',
+        ...items,
+        "{{< /image-gallery >}}",
+      ].join("\n"),
+    )
+    await editor.destroy()
+  })
+
+  /**
+   * Showdown's GitHub flavor treats `\<` as the start of an escaped HTML tag
+   * and swallows everything up to the next `>`, which can be the end of a link
+   * converted later in the document, taking its title with it. A real 12.114
+   * caption carries `\<1`; inside a gallery it is encoded before showdown sees
+   * it, so a link after the gallery must come through intact.
+   */
+  it("keeps an escaped less-than inside a gallery from breaking a link after it", async () => {
+    const editor = await ClassicEditor.create("", {
+      ...FullEditorConfig,
+      ...REQUIRED_CONFIG,
+    })
+    const markdown = [
+      '{{< image-gallery baseUrl="/courses/12-114-field-geology-i-fall-2005/" >}}',
+      String.raw`{{< image-gallery-item href="b86a4dd13c56f6fc8e263fb2fa123363_lec2photo5.jpg" data-ngdesc="" text="They are 1.5 by to \<1 b.y. old." >}}`,
+      "{{< /image-gallery >}}",
+      "",
+      'See {{% resource_link "43712d3a-92cf-48c1-8a22-54b9d59d6dd7" "Inspiration" %}} here.',
+    ].join("\n")
+    editor.setData(markdown)
+    expect(editor.getData().trim()).toEqual(markdown)
+    await editor.destroy()
+  })
+})
