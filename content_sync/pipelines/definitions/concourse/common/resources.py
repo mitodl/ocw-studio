@@ -206,6 +206,12 @@ class WebpackManifestResource(Resource):
                     "endpoint": endpoint_url,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
                     "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
+                    # concourse/s3-resource defaults to virtual-host addressing,
+                    # so it resolves <bucket>.<endpoint host> -- a name that does
+                    # not exist for a local S3 emulator reached by service name.
+                    # The check fails with "no such host" and the job waits
+                    # forever on an input it can never get.
+                    "use_path_style": True,
                 }
             )
 
