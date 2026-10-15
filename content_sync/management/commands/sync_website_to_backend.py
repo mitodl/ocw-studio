@@ -31,6 +31,25 @@ class Command(WebsiteFilterCommand):
                 "match any WebsiteContent filepaths"
             ),
         )
+        parser.add_argument(
+            "--batch-commits",
+            dest="batch_commits",
+            action="store_true",
+            help=(
+                "If this flag is added, split sync commits into smaller batches "
+                "(intended for one-off large initial sync operations)."
+            ),
+        )
+        parser.add_argument(
+            "--batch-size",
+            dest="batch_size",
+            type=int,
+            default=None,
+            help=(
+                "Optional commit batch size when --batch-commits is set "
+                "(uses backend default when omitted)."
+            ),
+        )
 
     def handle(self, *args, **options):
         super().handle(*args, **options)
@@ -55,7 +74,12 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(
                 f"Updating website content in backend for '{website.title}'..."
             )
-            backend.sync_all_content_to_backend()
+            sync_kwargs = {}
+            if options["batch_commits"]:
+                sync_kwargs["use_batch_commits"] = True
+                if options["batch_size"] is not None:
+                    sync_kwargs["batch_size"] = options["batch_size"]
+            backend.sync_all_content_to_backend(**sync_kwargs)
             if should_delete:
                 backend.delete_orphaned_content_in_backend()
             reset_publishing_fields(website.name)

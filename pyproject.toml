@@ -55,6 +55,7 @@ dependencies = [
     "psycopg2>=2.9.6,<3",
     "pygithub==2.10.0",
     "pypdf>=6.0.0,<7",
+    "python-gitlab>=6.0.0,<7",
     "python-magic>=0.4.27,<0.5",
     "pyyaml>=6.0.1,<7",
     "redis>=5.0.1,<6",
@@ -255,6 +256,7 @@ env = [
     "DRIVE_SERVICE_ACCOUNT_CREDS=",
     "AWS_ENDPOINT_URL=",
     "AWS_S3_ENDPOINT_URL=",
+    "AWS_S3_CUSTOM_DOMAIN=",
     "OCW_STUDIO_PIPELINE_API_URL=",
 ]
 
