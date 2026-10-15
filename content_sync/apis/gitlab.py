@@ -2,9 +2,10 @@
 
 import logging
 from base64 import b64decode
-from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from time import sleep
+from typing import TYPE_CHECKING
 
 import gitlab
 from django.conf import settings
@@ -28,6 +29,9 @@ from main import features
 from users.models import User
 from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 from websites.site_config_api import SiteConfig
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
 
@@ -55,36 +59,71 @@ def get_token() -> str:
     raise ImproperlyConfigured(msg)
 
 
+# Last-seen rate limit headers, per process.
+_RATE_LIMIT_STATE: dict[str, int] = {}
+
+
+def _record_rate_limit(response, *_args, **_kwargs):
+    """Stash GitLab's RateLimit-* headers on the session for later reads.
+
+    python-gitlab exposes no rate-limit state of its own (checked against
+    6.5.0: the client has no such attributes), so the only way to honour
+    GITLAB_RATE_LIMIT_* is to read the headers GitLab returns on every
+    response. Self-managed instances often omit them, hence the None guard in
+    get_rate_limit_status.
+    """
+    headers = response.headers
+    remaining = headers.get("RateLimit-Remaining")
+    limit = headers.get("RateLimit-Limit")
+    reset = headers.get("RateLimit-Reset")
+    if remaining is None or limit is None or reset is None:
+        return response
+    _RATE_LIMIT_STATE["remaining"] = int(remaining)
+    _RATE_LIMIT_STATE["limit"] = int(limit)
+    _RATE_LIMIT_STATE["reset"] = int(reset)
+    return response
+
+
+def _gitlab_client() -> gitlab.Gitlab:
+    """Build a GitLab client that trusts our configured URL.
+
+    keep_base_url stops python-gitlab rewriting requests to whatever base URL
+    the server advertises. A GitLab behind a TLS-terminating proxy commonly
+    advertises something unusable (we have seen `https://host:80`, which fails
+    the handshake), and without this every paginated call breaks on page 2.
+    """
+    client = gitlab.Gitlab(
+        url=settings.GIT_API_URL,
+        private_token=get_token(),
+        timeout=settings.GITLAB_TIMEOUT,
+        keep_base_url=True,
+    )
+    client.session.hooks["response"].append(_record_rate_limit)
+    return client
+
+
 def update_all_repos_visibility(visibility: str = "public") -> int:
     """Update visibility for all repos in the configured GitLab group.
 
     Returns the number of repos updated.
     """
-    gl = gitlab.Gitlab(
-        url=settings.GIT_API_URL,
-        private_token=get_token(),
-        timeout=settings.GITLAB_TIMEOUT,
-    )
+    gl = _gitlab_client()
     group = gl.groups.get(settings.GIT_ORGANIZATION)
     count = 0
-    page = 1
-    per_page = 100
 
-    while True:
-        # Use explicit page params rather than get_all=True so we don't
-        # depend on potentially incorrect next-link URLs returned by GitLab.
-        projects = group.projects.list(page=page, per_page=per_page)
-        if not projects:
-            break
-
-        for stub in projects:
-            project = gl.projects.get(stub.id)
-            if project.visibility != visibility:
-                project.visibility = visibility
-                project.save()
-                count += 1
-
-        page += 1
+    # The listing already carries `visibility`, so only repos actually being
+    # changed need to be fetched in full. get_all=True is safe here because
+    # _gitlab_client pins the base URL; without that pin python-gitlab follows
+    # whatever next-link the server advertises, which is wrong on any GitLab
+    # whose external_url is misconfigured.
+    for stub in group.projects.list(get_all=True, per_page=100):
+        if getattr(stub, "visibility", None) == visibility:
+            continue
+        project = gl.projects.get(stub.id)
+        if project.visibility != visibility:
+            project.visibility = visibility
+            project.save()
+            count += 1
 
     return count
 
@@ -103,12 +142,21 @@ class GitlabApiWrapper:
         self.website = website
         self.site_config = site_config or SiteConfig(self.website.starter.config)
         self.repo = None
-        self.gl = gitlab.Gitlab(
-            url=settings.GIT_API_URL,
-            private_token=get_token(),
-            timeout=settings.GITLAB_TIMEOUT,
-        )
-        self.group = self.gl.groups.get(settings.GIT_ORGANIZATION)
+        self.gl = _gitlab_client()
+        self._group = None
+        self._existing_path_cache = None
+
+    @property
+    def group(self):
+        """The configured GitLab group, resolved on first use.
+
+        Deliberately lazy: this is a network round trip, and a wrapper is
+        constructed per website and per content operation, most of which never
+        need the group at all.
+        """
+        if self._group is None:
+            self._group = self.gl.groups.get(settings.GIT_ORGANIZATION)
+        return self._group
 
     @property
     def repo_path(self) -> str:
@@ -368,14 +416,25 @@ class GitlabApiWrapper:
         if not synced_results:
             return None
 
+        # One query for the batch rather than one per result.
+        states = ContentSyncState.objects.filter(
+            id__in=[result.sync_id for result in synced_results]
+        ).select_related("content")
+        by_id = {state.id: state for state in states}
+
+        to_update = []
         for sync_result in synced_results:
-            sync_state = ContentSyncState.objects.get(id=sync_result.sync_id)
+            sync_state = by_id.get(sync_result.sync_id)
+            if sync_state is None:
+                continue
             if sync_result.deleted:
                 sync_state.content.delete(force_policy=HARD_DELETE)
             else:
                 sync_state.data = {GIT_DATA_FILEPATH: sync_result.filepath}
                 sync_state.synced_checksum = sync_result.checksum
-                sync_state.save()
+                to_update.append(sync_state)
+        if to_update:
+            ContentSyncState.objects.bulk_update(to_update, ["data", "synced_checksum"])
         return True
 
     @retry_on_failure
@@ -436,7 +495,10 @@ class GitlabApiWrapper:
             if len(compare_result.get("commits", [])) == 0:
                 return merge_request
 
-            # GitLab can briefly report non-mergeable states right after MR creation.
+            # GitLab can briefly report non-mergeable states right after MR
+            # creation, so give it a moment before asking again; retrying with
+            # no delay just burns the attempts inside the same window.
+            sleep(settings.GITLAB_MERGE_RETRY_SLEEP)
             merge_request = repo.mergerequests.get(merge_request.iid)
             if getattr(merge_request, "state", "") != "opened":
                 break
@@ -459,23 +521,28 @@ class GitlabApiWrapper:
                 email = user.email
         return {"name": name, "email": email}
 
+    def _existing_paths(self) -> set[str]:
+        """Paths currently on the main branch, fetched once per wrapper.
+
+        Replaces a files.get() per item when deciding create-vs-update: that
+        put one API round trip in front of every file in a batch, so a
+        200-file commit cost 200 extra requests before it could be made.
+        """
+        if self._existing_path_cache is None:
+            self._existing_path_cache = set(self.get_all_file_paths(""))
+        return self._existing_path_cache
+
     def get_commit_actions(
         self, sync_state: ContentSyncState, data: str, filepath: str
     ) -> list[dict[str, str]]:
         """Return commit actions for a modified ContentSyncState."""
-        repo = self.get_repo()
         actions: list[dict[str, str]] = []
 
         if sync_state.content.deleted is None:
-            try:
-                repo.files.get(file_path=filepath, ref=settings.GIT_BRANCH_MAIN)
-                action = "update"
-            except GitlabGetError as ge:
-                if ge.response_code == 404:  # noqa: PLR2004
-                    action = "create"
-                else:
-                    raise
+            action = "update" if filepath in self._existing_paths() else "create"
             actions.append({"action": action, "file_path": filepath, "content": data})
+            # Keep the cache honest for later items in the same batch.
+            self._existing_path_cache.add(filepath)
 
         if sync_state.data is None:
             return actions
@@ -523,12 +590,19 @@ class GitlabApiWrapper:
         return self.commit_actions(actions, user)
 
     def get_rate_limit_status(self) -> tuple[int, int, datetime] | None:
-        """Return GitLab API rate limit state if available."""
-        self.get_repo()
-        remaining = getattr(self.gl, "rate_limit_remaining", None)
-        limit = getattr(self.gl, "rate_limit", None)
-        reset = getattr(self.gl, "rate_limit_reset", None)
+        """Return GitLab API rate limit state if available.
+
+        Reads what the last response reported. Returns None when the instance
+        sends no RateLimit-* headers, which is the common case for
+        self-managed GitLab; the caller then falls back to a fixed delay.
+
+        Deliberately does not touch the repo: this used to call get_repo(),
+        which creates the project when it 404s, so asking for rate-limit
+        status could create a repository.
+        """
+        remaining = _RATE_LIMIT_STATE.get("remaining")
+        limit = _RATE_LIMIT_STATE.get("limit")
+        reset = _RATE_LIMIT_STATE.get("reset")
         if remaining is None or limit is None or reset is None:
             return None
-        reset_time = datetime.fromtimestamp(reset, tz=UTC)
-        return remaining, limit, reset_time
+        return remaining, limit, datetime.fromtimestamp(reset, tz=UTC)
