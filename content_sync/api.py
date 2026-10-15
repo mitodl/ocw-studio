@@ -285,6 +285,9 @@ def throttle_git_backend_calls(backend: object, min_delay: int | None = None):
         reset_time.isoformat(),
     )
     if requests_remaining <= getattr(settings, cutoff_setting):
-        sleep((reset_time - now_in_utc()).seconds)
+        # total_seconds(), not .seconds: the latter is the normalised remainder
+        # of a timedelta, so a reset time in the past yields up to 86399
+        # instead of 0. Clamped for the same reason.
+        sleep(max(0.0, (reset_time - now_in_utc()).total_seconds()))
     else:
         sleep(min_delay)

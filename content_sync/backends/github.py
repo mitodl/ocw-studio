@@ -59,13 +59,12 @@ class GithubBackend(BaseSyncBackend):
         reset_time = getattr(self.api.git, "rate_limiting_resettime", None)
         if isinstance(reset_time, (int, float, datetime)):
             return requests_remaining, limit, reset_time
-        if isinstance(limit, (int, float, datetime)):
-            if isinstance(limit, datetime):
-                return requests_remaining, 0, limit
-            return requests_remaining, limit, limit
+        # No usable reset time. Fall back to a short wait rather than
+        # substituting another field: `limit` is a call count, and feeding it
+        # in here as a timestamp resolves to 1970 and sleeps for hours.
         return (
             requests_remaining,
-            0,
+            limit,
             now_in_utc().timestamp() + settings.GITHUB_RATE_LIMIT_MIN_SLEEP + 2,
         )
 
