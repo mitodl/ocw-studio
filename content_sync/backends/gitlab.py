@@ -1,6 +1,7 @@
 """GitLab backend"""
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from safedelete.models import HARD_DELETE
@@ -9,10 +10,12 @@ from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, decode_file_contents
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.decorators import check_sync_state
-from content_sync.models import ContentSyncState
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
-from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
+
+if TYPE_CHECKING:
+    from content_sync.models import ContentSyncState
+    from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +24,8 @@ class GitlabBackend(BaseSyncBackend):
     """GitLab backend."""
 
     IGNORED_PATHS = {"README.md"}
+    # Refuse to prune at or above this share of a site's content in one pass.
+    MAX_ORPHAN_DELETE_FRACTION = 0.5
     rate_limit_name = "gitlab"
     rate_limit_check_setting = "GITLAB_RATE_LIMIT_CHECK"
     rate_limit_cutoff_setting = "GITLAB_RATE_LIMIT_CUTOFF"
@@ -134,7 +139,15 @@ class GitlabBackend(BaseSyncBackend):
             self.website.websitecontent_set.all().values_list("id", flat=True)
         )
         ref_to_use = ref or settings.GIT_BRANCH_MAIN
-        tree = repo.repository_tree(path=path or "", ref=ref_to_use, recursive=True)
+        # get_all=True is load-bearing, not tidiness: without it python-gitlab
+        # returns only the first page (20 entries) and the prune below would
+        # hard-delete every record whose file happened to fall on a later page.
+        tree = repo.repository_tree(
+            path=path or "",
+            ref=ref_to_use,
+            recursive=True,
+            get_all=True,
+        )
 
         for item in tree:
             if item.get("type") != "blob":
@@ -157,6 +170,19 @@ class GitlabBackend(BaseSyncBackend):
                 website_content_ids.remove(content.id)
 
         if ref is None and not path:
+            # A truncated or empty listing must never be read as "the repo is
+            # empty, delete everything". Anything approaching a full wipe is a
+            # symptom of a failed read, not a legitimate prune.
+            total = self.website.websitecontent_set.count()
+            orphaned = len(website_content_ids)
+            if total and orphaned >= total * self.MAX_ORPHAN_DELETE_FRACTION:
+                msg = (
+                    f"Refusing to prune {orphaned} of {total} content records for "
+                    f"{self.website.name} from a single repository listing. This "
+                    f"usually means the listing was incomplete rather than that "
+                    f"the content was removed."
+                )
+                raise RuntimeError(msg)
             self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
                 force_policy=HARD_DELETE
             )
