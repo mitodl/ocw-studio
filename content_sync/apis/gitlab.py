@@ -453,13 +453,24 @@ class GitlabApiWrapper:
             }
         )
 
-    @retry_on_failure
-    def merge_branches(self, from_branch: str, to_branch: str):
-        """Merge one branch to another via merge request."""
-        repo = self.get_repo()
-        target_tip_before = repo.branches.get(to_branch).commit["id"]
+    def _branch_tip(self, repo, branch: str) -> str | None:
+        """Return a branch's tip commit id, or None if the branch is absent."""
         try:
-            merge_request = repo.mergerequests.create(
+            return repo.branches.get(branch).commit["id"]
+        except GitlabGetError as ge:
+            if ge.response_code == 404:  # noqa: PLR2004
+                return None
+            raise
+
+    def _open_merge_request(self, repo, from_branch: str, to_branch: str):
+        """Open a merge request, reusing the existing one if GitLab has it.
+
+        A 409 here means an open merge request for this exact branch pair
+        already exists, which is the normal case for a site published more
+        than once.
+        """
+        try:
+            return repo.mergerequests.create(
                 {
                     "source_branch": from_branch,
                     "target_branch": to_branch,
@@ -478,7 +489,27 @@ class GitlabApiWrapper:
             )
             if not existing_mrs:
                 raise
-            merge_request = repo.mergerequests.get(existing_mrs[0].iid)
+            return repo.mergerequests.get(existing_mrs[0].iid)
+
+    @retry_on_failure
+    def merge_branches(self, from_branch: str, to_branch: str):
+        """Merge one branch to another via merge request."""
+        repo = self.get_repo()
+        target_tip_before = self._branch_tip(repo, to_branch)
+        if target_tip_before is None:
+            # The target branch does not exist yet. create_repo makes all
+            # three, but a repo created before this layout -- or one where the
+            # branch was deleted -- would otherwise fail every live publish
+            # with an opaque "404 Branch Not Found". Branching from the source
+            # produces exactly the state a merge would have left behind.
+            log.info(
+                "Creating missing branch %s from %s for %s",
+                to_branch,
+                from_branch,
+                self.website.name,
+            )
+            return self.create_branch(to_branch, from_branch)
+        merge_request = self._open_merge_request(repo, from_branch, to_branch)
 
         for _ in range(3):
             try:
@@ -487,7 +518,7 @@ class GitlabApiWrapper:
                 if ge.response_code != 405:  # noqa: PLR2004
                     raise
 
-            target_tip_after = repo.branches.get(to_branch).commit["id"]
+            target_tip_after = self._branch_tip(repo, to_branch)
             if target_tip_after != target_tip_before:
                 return merge_request
 
