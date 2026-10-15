@@ -1149,6 +1149,15 @@ GITHUB_RATE_LIMIT_MIN_SLEEP = get_int(
     description="Minimum time to sleep between when throttling github calls",
     required=False,
 )
+GITLAB_MERGE_RETRY_SLEEP = get_int(
+    name="GITLAB_MERGE_RETRY_SLEEP",
+    default=2,
+    description=(
+        "Seconds to wait between attempts to merge a GitLab merge request, "
+        "which can briefly report a non-mergeable state just after creation"
+    ),
+    required=False,
+)
 GITLAB_RATE_LIMIT_CHECK = get_bool(
     name="GITLAB_RATE_LIMIT_CHECK",
     default=False,
