@@ -34,14 +34,18 @@ class SlackAlertResource(Resource):
     """  # noqa: E501
 
     def __init__(self, **kwargs):
-        slack_url = getattr(settings, "CONCOURSE_SLACK_URL", None)
         super().__init__(
             name=SLACK_ALERT_RESOURCE_IDENTIFIER,
             icon="slack",
             type=slack_notification_resource().name,
             check_every="never",
-            # Avoid runtime failures when no Concourse var source defines slack-url.
-            source={"url": slack_url or "https://example.invalid", "disabled": "false"},
+            # Resolved by Concourse's Vault credential manager at runtime
+            # (concourse/ocw/slack-url). On dev there is no var source, so the
+            # put fails -- harmlessly, because every alert is raised through
+            # ErrorHandlingStep/SlackAlertStep, which wrap it in a TryStep.
+            # Do not substitute a literal here: that silently replaces the
+            # Vault lookup in QA and production too.
+            source={"url": "((slack-url))", "disabled": "false"},
             **kwargs,
         )
 
