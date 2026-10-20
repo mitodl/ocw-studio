@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+Version 0.203.0
+---------------
+
+- fix: record images used in image galleries as referenced content (#3252)
+- Update zizmorcore/zizmor-action action to v0.6.4 (#3261)
+- Update dependency astral-sh/uv to v0.12.21 (#3257)
+- Add viewable, editable image galleries to the Markdown editor (#3165)
+- Update pre-commit hook zizmorcore/zizmor-pre-commit to v1.30.1 (#3247)
+- Update pre-commit hook astral-sh/ruff-pre-commit to v0.16.9 (#3260)
+- Update dependency posthog-js to v1.438.7 (#3263)
+- Update dependency prek to v0.5.4 (#3259)
+- Update dependency boto3 to v1.43.105 (#3258)
+
 Version 0.202.1
 ---------------
 
