@@ -355,3 +355,60 @@ def test_update_all_repos_visibility(settings, mocker):
     assert private_project.visibility == "public"
     private_project.save.assert_called_once()
     public_project.save.assert_not_called()
+
+
+def test_rename_branch_switches_the_default_before_deleting(mocker, gitlab_api_wrapper):
+    """GitLab refuses to delete whichever branch a project points at."""
+    events = []
+    repo = mocker.Mock()
+    repo.default_branch = "master"
+    repo.branches.create.side_effect = lambda payload: events.append(
+        f"create:{payload['branch']}"
+    )
+    repo.save.side_effect = lambda: events.append(f"save:{repo.default_branch}")
+    repo.branches.delete.side_effect = lambda branch: events.append(f"delete:{branch}")
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    gitlab_api_wrapper.rename_branch("master", "main")
+
+    assert events == ["create:main", "save:main", "delete:master"]
+
+
+def test_rename_branch_leaves_an_unrelated_default_alone(mocker, gitlab_api_wrapper):
+    """Renaming a branch that is not the default must not move the default."""
+    repo = mocker.Mock()
+    repo.default_branch = "main"
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    gitlab_api_wrapper.rename_branch("topic", "feature")
+
+    repo.save.assert_not_called()
+    assert repo.default_branch == "main"
+    repo.branches.delete.assert_called_once_with("topic")
+
+
+def test_create_repo_renames_a_non_main_default_branch(settings, mocker):
+    """An instance defaulting to master must still end up on GIT_BRANCH_MAIN."""
+    settings.GIT_TOKEN = "faketoken"  # noqa: S105
+    settings.GIT_API_URL = "https://gitlab.example.com"
+    settings.GIT_ORGANIZATION = "fake_group"
+    settings.GITLAB_TIMEOUT = None
+
+    mock_gitlab_cls = mocker.patch("content_sync.apis.gitlab.gitlab.Gitlab")
+    mock_gl = mock_gitlab_cls.return_value
+    mock_gl.groups.get.return_value = SimpleNamespace(id=1, full_path="fake_group")
+
+    fake_repo = mocker.Mock()
+    fake_repo.default_branch = "master"
+    fake_repo.branches.list.return_value = []
+    mock_gl.projects.create.return_value = fake_repo
+
+    website = WebsiteFactory.create()
+    wrapper = GitlabApiWrapper(
+        website=website, site_config=SiteConfig(website.starter.config)
+    )
+    wrapper.create_repo()
+
+    assert fake_repo.default_branch == settings.GIT_BRANCH_MAIN
+    fake_repo.save.assert_called_once()
+    fake_repo.branches.delete.assert_called_once_with("master")

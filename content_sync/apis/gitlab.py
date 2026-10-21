@@ -216,8 +216,6 @@ class GitlabApiWrapper:
         default_branch = self.repo.default_branch
         if default_branch != settings.GIT_BRANCH_MAIN:
             self.rename_branch(default_branch, settings.GIT_BRANCH_MAIN)
-            self.repo.default_branch = settings.GIT_BRANCH_MAIN
-            self.repo.save()
 
         existing_branches = [
             branch.name for branch in self.repo.branches.list(get_all=True)
@@ -247,16 +245,34 @@ class GitlabApiWrapper:
                 raise
 
         if delete_source:
-            try:
-                repo.branches.delete(source)
-            except GitlabDeleteError as ge:
-                if ge.response_code != 404:  # noqa: PLR2004
-                    raise
+            self.delete_branch(source)
         return new_branch
 
+    def delete_branch(self, branch: str):
+        """Delete a branch, tolerating one that is already gone."""
+        try:
+            self.get_repo().branches.delete(branch)
+        except GitlabDeleteError as ge:
+            if ge.response_code != 404:  # noqa: PLR2004
+                raise
+
     def rename_branch(self, from_name: str, to_name: str):
-        """Rename a git branch by creating destination then deleting source."""
-        return self.create_branch(to_name, from_name, delete_source=True)
+        """Rename a git branch by creating destination then deleting source.
+
+        GitLab refuses to delete whichever branch a project currently points
+        at: the API answers 400 "The default branch of a project cannot be
+        deleted". Renaming the default therefore has to move that pointer
+        across before the old branch goes, or repo creation fails on every
+        instance whose default_branch_name is not GIT_BRANCH_MAIN -- and
+        fails identically on each retry.
+        """
+        repo = self.get_repo()
+        new_branch = self.create_branch(to_name, from_name)
+        if repo.default_branch == from_name:
+            repo.default_branch = to_name
+            repo.save()
+        self.delete_branch(from_name)
+        return new_branch
 
     @retry_on_failure
     def upsert_content_file(self, website_content: WebsiteContent, **kwargs):
