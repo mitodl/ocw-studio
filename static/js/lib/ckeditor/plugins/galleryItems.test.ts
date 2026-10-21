@@ -1,5 +1,6 @@
 import {
   buildGalleryItem,
+  buildGalleryParams,
   galleryBaseUrl,
   galleryHasImage,
   parseGalleryItem,
@@ -285,5 +286,33 @@ describe("galleryBaseUrl", () => {
         }),
       ),
     ).toBeNull()
+  })
+})
+
+describe("buildGalleryParams", () => {
+  beforeEach(() => {
+    jest
+      .spyOn(crypto, "randomUUID")
+      .mockReturnValue("6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43")
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it("writes a new id, in the form existing galleries use, then the baseUrl", () => {
+    expect(
+      buildGalleryParams(
+        "/courses/18-05-introduction-to-probability-spring-2014/",
+      ),
+    ).toBe(
+      ' id="6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43_nanogallery2" baseUrl="/courses/18-05-introduction-to-probability-spring-2014/" ',
+    )
+  })
+
+  it("still writes an id when there is no baseUrl", () => {
+    expect(buildGalleryParams(null)).toBe(
+      ' id="6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43_nanogallery2" ',
+    )
   })
 })

@@ -363,16 +363,20 @@ describe("MarkdownEditor", () => {
       {
         urlPath: "courses/18-05-intro-spring-2014",
         urlSuggestion: "",
-        params: ' baseUrl="/courses/18-05-intro-spring-2014/" ',
+        params:
+          ' id="6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43_nanogallery2" baseUrl="/courses/18-05-intro-spring-2014/" ',
       },
       {
         urlPath: null,
         urlSuggestion: "18-05-[sitemetadata:term]",
-        params: " ",
+        params: ' id="6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43_nanogallery2" ',
       },
     ])(
       "creates a new gallery with params '$params' when url_path is $urlPath",
       async ({ urlPath, urlSuggestion, params }) => {
+        sandbox
+          .stub(crypto, "randomUUID")
+          .returns("6f1d3a52-8c4e-4b7a-9e2f-0d5c8b1a7e43")
         mocUseWebsite.mockReturnValue(
           makeWebsiteDetail({
             url_path: urlPath, // eslint-disable-line camelcase
@@ -397,6 +401,31 @@ describe("MarkdownEditor", () => {
         })
       },
     )
+
+    it("gives each new gallery its own id", async () => {
+      // course-v2 can only open one of two galleries that share an id.
+      const editor = await openGalleryPicker(null)
+      const { openImageGalleryPicker } =
+        lastCKEditorProps.config[CKEDITOR_RESOURCE_UTILS]
+      for (const resource of [
+        image("u1", "https://bucket/courses/x/pyrite.jpg", "Pyrite"),
+        image("u2", "https://bucket/courses/x/quartz.jpg", "Quartz"),
+      ]) {
+        await act(async () => {
+          openImageGalleryPicker(null)
+        })
+        await act(async () => {
+          lastResourcePickerProps.insertMultiple([resource])
+        })
+      }
+      const ids = editor.execute.mock.calls.map(
+        ([, { params }]) => /\bid="([^"]+)"/.exec(params)?.[1],
+      )
+      expect(ids).toHaveLength(2)
+      expect(ids[0]).toEqual(expect.any(String))
+      expect(ids[1]).toEqual(expect.any(String))
+      expect(ids[1]).not.toBe(ids[0])
+    })
 
     it("keeps each widget with its own gallery when an earlier gallery is deleted", async () => {
       const { unmount } = renderMarkdownEditor()
