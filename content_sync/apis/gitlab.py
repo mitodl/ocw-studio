@@ -248,8 +248,16 @@ class GitlabApiWrapper:
             self.delete_branch(source)
         return new_branch
 
+    @retry_on_failure
     def delete_branch(self, branch: str):
-        """Delete a branch, tolerating one that is already gone."""
+        """Delete a branch, tolerating one that is already gone.
+
+        Retried in its own right rather than leaning on create_repo's retry.
+        Once rename_branch has moved the default pointer, a re-run of
+        create_repo sees default_branch already equal to GIT_BRANCH_MAIN and
+        skips the rename entirely, so a delete that failed transiently would
+        never be reattempted and the old branch would stay for good.
+        """
         try:
             self.get_repo().branches.delete(branch)
         except GitlabDeleteError as ge:

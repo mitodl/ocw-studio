@@ -3,7 +3,11 @@
 from types import SimpleNamespace
 
 import pytest
-from gitlab.exceptions import GitlabCreateError, GitlabMRClosedError
+from gitlab.exceptions import (
+    GitlabCreateError,
+    GitlabDeleteError,
+    GitlabMRClosedError,
+)
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, update_all_repos_visibility
@@ -412,3 +416,18 @@ def test_create_repo_renames_a_non_main_default_branch(settings, mocker):
     assert fake_repo.default_branch == settings.GIT_BRANCH_MAIN
     fake_repo.save.assert_called_once()
     fake_repo.branches.delete.assert_called_once_with("master")
+
+
+def test_delete_branch_retries_a_transient_failure(mocker, gitlab_api_wrapper):
+    """A transient delete failure must not strand the old default branch."""
+    repo = mocker.Mock()
+    repo.branches.delete.side_effect = [
+        GitlabDeleteError("boom", response_code=500),
+        None,
+    ]
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+    mocker.patch("content_sync.decorators.sleep")
+
+    gitlab_api_wrapper.delete_branch("master")
+
+    assert repo.branches.delete.call_count == 2
