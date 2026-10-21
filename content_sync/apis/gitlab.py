@@ -87,10 +87,14 @@ def _record_rate_limit(response, *_args, **_kwargs):
 def _gitlab_client() -> gitlab.Gitlab:
     """Build a GitLab client that trusts our configured URL.
 
-    keep_base_url stops python-gitlab rewriting requests to whatever base URL
-    the server advertises. A GitLab behind a TLS-terminating proxy commonly
-    advertises something unusable (we have seen `https://host:80`, which fails
-    the handshake), and without this every paginated call breaks on page 2.
+    keep_base_url stops python-gitlab following next-page links that point
+    somewhere other than the URL we configured, which a GitLab behind a
+    TLS-terminating proxy will happily advertise.
+
+    It is not a cure for every bad external_url. python-gitlab only rewrites a
+    next-page URL that does not already start with the configured one, so an
+    instance advertising `https://host:80` still hands back links we follow
+    into a failed handshake. That instance needs its external_url corrected.
     """
     client = gitlab.Gitlab(
         url=settings.GIT_API_URL,
@@ -145,6 +149,7 @@ class GitlabApiWrapper:
         self.gl = _gitlab_client()
         self._group = None
         self._existing_path_cache = None
+        self._pending_created: set[str] = set()
 
     @property
     def group(self):
@@ -346,6 +351,9 @@ class GitlabApiWrapper:
             else getattr(settings, "GITLAB_COMMIT_BATCH_SIZE", 200),
         )
         user = User.objects.filter(id=user_id).first()
+        # retry_on_failure re-enters this method, so start from what the repo
+        # is actually known to hold rather than what a failed attempt staged.
+        self._pending_created.clear()
         pending_actions: list[dict[str, str]] = []
         pending_results: list[SyncResult] = []
         latest_commit = None
@@ -385,6 +393,7 @@ class GitlabApiWrapper:
 
             if use_batch_commits and len(pending_results) >= commit_batch_size:
                 latest_commit = self.commit_actions(pending_actions, user)
+                self._confirm_pending_paths()
                 self.update_sync_states(pending_results)
                 log.info(
                     "Committed GitLab sync batch for website=%s user_id=%s items=%d actions=%d",  # noqa: E501
@@ -400,6 +409,7 @@ class GitlabApiWrapper:
             return latest_commit
 
         latest_commit = self.commit_actions(pending_actions, user)
+        self._confirm_pending_paths()
         self.update_sync_states(pending_results)
         if use_batch_commits:
             log.info(
@@ -410,6 +420,12 @@ class GitlabApiWrapper:
                 len(pending_actions),
             )
         return latest_commit
+
+    def _confirm_pending_paths(self):
+        """Fold a committed batch's new paths into the existing-path cache."""
+        if self._existing_path_cache is not None:
+            self._existing_path_cache |= self._pending_created
+        self._pending_created.clear()
 
     def update_sync_states(self, synced_results: list[SyncResult]):
         """Persist sync-state updates for a committed batch."""
@@ -570,10 +586,21 @@ class GitlabApiWrapper:
         actions: list[dict[str, str]] = []
 
         if sync_state.content.deleted is None:
-            action = "update" if filepath in self._existing_paths() else "create"
-            actions.append({"action": action, "file_path": filepath, "content": data})
-            # Keep the cache honest for later items in the same batch.
-            self._existing_path_cache.add(filepath)
+            known = (
+                filepath in self._existing_paths() or filepath in self._pending_created
+            )
+            actions.append(
+                {
+                    "action": "update" if known else "create",
+                    "file_path": filepath,
+                    "content": data,
+                }
+            )
+            # Held aside rather than folded into the cache: the commit carrying
+            # this path can still fail, and a retry that believed the path
+            # existed would send "update" for a file GitLab has never seen,
+            # which it rejects -- so the retry could never succeed.
+            self._pending_created.add(filepath)
 
         if sync_state.data is None:
             return actions
@@ -603,11 +630,16 @@ class GitlabApiWrapper:
     def get_all_file_paths(self, path: str) -> Iterable[str]:
         """Yield all file paths in the repo."""
         repo = self.get_repo()
+        # per_page raises the page size from python-gitlab's default of 20 to
+        # GitLab's maximum. Every publish syncs ocw-www first, so this listing
+        # runs against the largest site we have: at RC size it was the
+        # difference between 281 requests and 57.
         tree = repo.repository_tree(
             path=path,
             ref=settings.GIT_BRANCH_MAIN,
             recursive=True,
             get_all=True,
+            per_page=100,
         )
         for item in tree:
             if item.get("type") == "blob" and item.get("path") != "README.md":

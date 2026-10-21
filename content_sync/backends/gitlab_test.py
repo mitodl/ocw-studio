@@ -4,6 +4,7 @@ from base64 import b64encode
 from types import SimpleNamespace
 
 import pytest
+from gitlab.exceptions import GitlabGetError
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.gitlab import GitlabBackend
@@ -170,3 +171,147 @@ def test_delete_orphaned_content_in_backend(gitlab):
     gitlab.backend.delete_orphaned_content_in_backend()
     gitlab.api.get_all_file_paths.assert_called_once_with("")
     gitlab.api.batch_delete_files.assert_called_once_with([*paths_to_delete])
+
+
+def _blob_tree(paths):
+    """Build a repository_tree() payload listing each path as a blob."""
+    return [{"type": "blob", "path": path} for path in paths]
+
+
+@pytest.fixture
+def repo_sync(gitlab, mocker):
+    """Wire a mock repo whose files map onto the website's own content.
+
+    sync_all_content_to_db deserializes each file back into a WebsiteContent,
+    so the deserializer is pointed at the records the fixture already made:
+    a path in the tree means "this record is still in the repo", and a record
+    left out of the tree is an orphan the prune should consider.
+    """
+    contents = list(gitlab.backend.website.websitecontent_set.all())
+    by_path = {f"content/{content.filename}.md": content for content in contents}
+
+    repo = mocker.Mock()
+    repo.files.get.side_effect = lambda file_path, ref: mocker.Mock(  # noqa: ARG005
+        file_path=file_path, content=b64encode(b"body")
+    )
+    gitlab.api.get_repo.return_value = repo
+
+    mocker.patch(
+        "content_sync.backends.gitlab.deserialize_file_to_website_content",
+        side_effect=lambda filepath, **_kwargs: by_path[filepath],
+    )
+    return SimpleNamespace(repo=repo, contents=contents, by_path=by_path)
+
+
+def test_sync_all_content_to_db_lists_the_whole_tree(gitlab, repo_sync):
+    """The listing must ask for every page, not just python-gitlab's first 20."""
+    repo_sync.repo.repository_tree.return_value = _blob_tree(repo_sync.by_path)
+
+    gitlab.backend.sync_all_content_to_db()
+
+    _, kwargs = repo_sync.repo.repository_tree.call_args
+    assert kwargs["get_all"] is True
+    assert kwargs["per_page"] == 100
+    assert kwargs["recursive"] is True
+
+
+def test_sync_all_content_to_db_prunes_records_missing_from_the_repo(gitlab, repo_sync):
+    """Content absent from the repo is deleted, and synced_checksum is set."""
+    kept = repo_sync.contents[:3]
+    orphans = repo_sync.contents[3:]
+    repo_sync.repo.repository_tree.return_value = _blob_tree(
+        path for path, content in repo_sync.by_path.items() if content in kept
+    )
+
+    gitlab.backend.sync_all_content_to_db()
+
+    assert (
+        WebsiteContent.objects.filter(
+            id__in=[content.id for content in orphans]
+        ).exists()
+        is False
+    )
+    for content in kept:
+        state = ContentSyncState.objects.get(content=content)
+        assert state.synced_checksum == state.current_checksum
+
+
+def test_sync_all_content_to_db_refuses_a_mass_prune(gitlab, repo_sync):
+    """A listing that would wipe most of a site is treated as a failed read."""
+    survivor = repo_sync.contents[0]
+    repo_sync.repo.repository_tree.return_value = _blob_tree(
+        path for path, content in repo_sync.by_path.items() if content == survivor
+    )
+
+    with pytest.raises(RuntimeError, match="Refusing to prune"):
+        gitlab.backend.sync_all_content_to_db()
+
+    assert WebsiteContent.objects.filter(
+        id__in=[content.id for content in repo_sync.contents]
+    ).count() == len(repo_sync.contents)
+
+
+def test_sync_all_content_to_db_ignores_readme(gitlab, repo_sync):
+    """README.md is ours, not content, so it is never deserialized."""
+    repo_sync.repo.repository_tree.return_value = _blob_tree(
+        ["README.md", *repo_sync.by_path]
+    )
+
+    gitlab.backend.sync_all_content_to_db()
+
+    assert "README.md" not in [
+        call.kwargs["file_path"] for call in repo_sync.repo.files.get.call_args_list
+    ]
+
+
+def test_sync_all_content_to_db_with_a_file_path_skips_the_tree(gitlab, repo_sync):
+    """A --path naming one file goes through files.get: the tree 404s on a blob."""
+    path = next(iter(repo_sync.by_path))
+
+    gitlab.backend.sync_all_content_to_db(path=path)
+
+    repo_sync.repo.repository_tree.assert_not_called()
+    assert WebsiteContent.objects.filter(
+        id__in=[content.id for content in repo_sync.contents]
+    ).count() == len(repo_sync.contents)
+
+
+def test_sync_all_content_to_db_with_a_directory_path_falls_back_to_the_tree(
+    gitlab, repo_sync
+):
+    """A --path naming a directory is not fetchable as a file, so list it."""
+    repo_sync.repo.files.get.side_effect = [
+        GitlabGetError("404 path not treeish Not Found", response_code=404),
+        *[
+            SimpleNamespace(file_path=path, content=b64encode(b"body"))
+            for path in repo_sync.by_path
+        ],
+    ]
+    repo_sync.repo.repository_tree.return_value = _blob_tree(repo_sync.by_path)
+
+    gitlab.backend.sync_all_content_to_db(path="content")
+
+    repo_sync.repo.repository_tree.assert_called_once()
+    _, kwargs = repo_sync.repo.repository_tree.call_args
+    assert kwargs["path"] == "content"
+
+
+def test_sync_all_content_to_db_with_a_ref_does_not_mark_content_synced(
+    gitlab, repo_sync
+):
+    """Syncing an older ref must not claim that ref is what the repo holds."""
+    ContentSyncState.objects.filter(content__in=repo_sync.contents).update(
+        synced_checksum=None
+    )
+    repo_sync.repo.repository_tree.return_value = _blob_tree(repo_sync.by_path)
+
+    gitlab.backend.sync_all_content_to_db(ref="abc123")
+
+    _, kwargs = repo_sync.repo.repository_tree.call_args
+    assert kwargs["ref"] == "abc123"
+    assert (
+        ContentSyncState.objects.filter(
+            content__in=repo_sync.contents, synced_checksum__isnull=False
+        ).exists()
+        is False
+    )

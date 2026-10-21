@@ -76,9 +76,15 @@ class Command(WebsiteFilterCommand):
             )
             sync_kwargs = {}
             if options["batch_commits"]:
-                sync_kwargs["use_batch_commits"] = True
-                if options["batch_size"] is not None:
-                    sync_kwargs["batch_size"] = options["batch_size"]
+                if not backend.supports_batch_commits:
+                    self.stderr.write(
+                        f"--batch-commits is not supported by "
+                        f"{type(backend).__name__}; syncing in one commit."
+                    )
+                else:
+                    sync_kwargs["use_batch_commits"] = True
+                    if options["batch_size"] is not None:
+                        sync_kwargs["batch_size"] = options["batch_size"]
             backend.sync_all_content_to_backend(**sync_kwargs)
             if should_delete:
                 backend.delete_orphaned_content_in_backend()

@@ -13,6 +13,11 @@ if TYPE_CHECKING:
 class BaseSyncBackend(abc.ABC):
     """Base class for syncing backends"""
 
+    # Whether sync_all_content_to_backend() accepts use_batch_commits/batch_size.
+    # Only GitLab can group a sync into several commits; asking any other
+    # backend for it is a TypeError, so callers check this first.
+    supports_batch_commits = False
+
     # NOTE: concrete implementations of this will probably want to
     #       initialize a client object for the backing service (e.g. ghapi)
     def __init__(self, website: Website):

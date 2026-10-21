@@ -14,6 +14,12 @@ from websites.site_config_api import SiteConfig
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def _no_retry_sleep(mocker):
+    """Keep merge_branches' retry backoff out of the suite's wall-clock time."""
+    return mocker.patch("content_sync.apis.gitlab.sleep")
+
+
 def fake_destination_filepath(website_content, *args) -> str:
     """Return a deterministic filepath for a WebsiteContent record."""
     return f"path/to/{website_content.filename}.md"

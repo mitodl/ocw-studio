@@ -1,9 +1,11 @@
 """GitLab backend"""
 
 import logging
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from gitlab.exceptions import GitlabGetError
 from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
@@ -24,6 +26,7 @@ class GitlabBackend(BaseSyncBackend):
     """GitLab backend."""
 
     IGNORED_PATHS = {"README.md"}
+    supports_batch_commits = True
     # Refuse to prune at or above this share of a site's content in one pass.
     MAX_ORPHAN_DELETE_FRACTION = 0.5
     rate_limit_name = "gitlab"
@@ -131,6 +134,36 @@ class GitlabBackend(BaseSyncBackend):
         content.delete(force_policy=HARD_DELETE)
         return True
 
+    def _blob_paths(self, repo, path: str | None, ref: str) -> list[str]:
+        """Paths of every blob under `path`, or of the whole repo without one.
+
+        GitLab's tree endpoint only describes directories. Handed a file it
+        answers 404 "path not treeish", so a --path naming a single file has
+        to go through files.get instead; a directory falls through to the
+        listing below.
+        """
+        if path:
+            try:
+                return [repo.files.get(file_path=path, ref=ref).file_path]
+            except GitlabGetError as exc:
+                if exc.response_code != HTTPStatus.NOT_FOUND:
+                    raise
+
+        # get_all=True is load-bearing, not tidiness: without it python-gitlab
+        # returns only the first page and the prune below would hard-delete
+        # every record whose file happened to fall on a later page. per_page
+        # raises that page from python-gitlab's default of 20 to GitLab's
+        # maximum, which is the difference between 281 and 57 requests when
+        # listing a site the size of ocw-www.
+        tree = repo.repository_tree(
+            path=path or "",
+            ref=ref,
+            recursive=True,
+            get_all=True,
+            per_page=100,
+        )
+        return [item["path"] for item in tree if item.get("type") == "blob"]
+
     def sync_all_content_to_db(self, ref: str | None = None, path: str | None = None):
         """Sync all WebsiteContent records from GitLab into the database."""
         repo = self.api.get_repo()
@@ -139,23 +172,9 @@ class GitlabBackend(BaseSyncBackend):
             self.website.websitecontent_set.all().values_list("id", flat=True)
         )
         ref_to_use = ref or settings.GIT_BRANCH_MAIN
-        # get_all=True is load-bearing, not tidiness: without it python-gitlab
-        # returns only the first page (20 entries) and the prune below would
-        # hard-delete every record whose file happened to fall on a later page.
-        tree = repo.repository_tree(
-            path=path or "",
-            ref=ref_to_use,
-            recursive=True,
-            get_all=True,
-        )
 
-        for item in tree:
-            if item.get("type") != "blob":
-                continue
-            file_path = item.get("path")
-            if file_path in self.IGNORED_PATHS or (
-                path is not None and file_path != path
-            ):
+        for file_path in self._blob_paths(repo, path, ref_to_use):
+            if file_path in self.IGNORED_PATHS:
                 continue
 
             file_content = repo.files.get(file_path=file_path, ref=ref_to_use)

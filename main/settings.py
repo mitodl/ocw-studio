@@ -1061,8 +1061,8 @@ GITHUB_TIMEOUT = get_int(
 )
 GITLAB_TIMEOUT = get_int(
     name="GITLAB_TIMEOUT",
-    default=None,
-    description="Timeout in seconds for GitLab API requests, or None for no timeout",
+    default=15,
+    description="Timeout in seconds for GitLab API requests",
     required=False,
 )
 GITLAB_COMMIT_BATCH_SIZE = get_int(
