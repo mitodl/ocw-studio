@@ -50,7 +50,7 @@ dependencies = [
     "opentelemetry-instrumentation-psycopg2>=0.52b0",
     "opentelemetry-instrumentation-redis>=0.52b0",
     "opentelemetry-instrumentation-requests>=0.52b0",
-    "ol-concourse>=0.18,<0.19",
+    "ol-concourse>=0.20,<0.21",
     "ol-concoursepy==0.0.41",
     "psycopg2>=2.9.6,<3",
     "pygithub==2.10.0",

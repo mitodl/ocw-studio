@@ -1489,7 +1489,7 @@ requires-dist = [
     { name = "mitol-django-observability", specifier = ">=2026.8.19,<2027" },
     { name = "mitol-django-transcoding", specifier = ">=2026.4.2,<2027" },
     { name = "more-itertools", specifier = ">=11.0.2,<12" },
-    { name = "ol-concourse", specifier = ">=0.18,<0.19" },
+    { name = "ol-concourse", specifier = ">=0.20,<0.21" },
     { name = "ol-concoursepy", specifier = "==0.0.41" },
     { name = "opentelemetry-instrumentation-celery", specifier = ">=0.52b0" },
     { name = "opentelemetry-instrumentation-django", specifier = ">=0.52b0" },
@@ -1537,14 +1537,14 @@ prek = [{ name = "prek", specifier = "==0.5.4" }]
 
 [[package]]
 name = "ol-concourse"
-version = "0.18.1"
+version = "0.20.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/01/5664d6456dcda2525f44cd735880fce96ee5f6825701ca4b364c363fd53f/ol_concourse-0.18.1.tar.gz", hash = "sha256:5ef37da0ddb7fd878f5cdcb816c3fe85140c50724345184204c65a86aa4ea663", size = 70508, upload-time = "2026-09-03T20:29:58.594Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/42/20d4be6c56578a31b0a1b494791b831a213c6b06cf5e85c038b48acabf1a/ol_concourse-0.20.0.tar.gz", hash = "sha256:2dd89f2ae22bd1b4ec75e7b980bc8a6d89767f81021c557dc17d8a54c1f9a66f", size = 73005, upload-time = "2026-10-06T18:41:23.213Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/c4/08476d87be7d463c2478de6c6d4e2886946b873c0d724178b51c70340538/ol_concourse-0.18.1-py3-none-any.whl", hash = "sha256:9e5fa8c8762e61ef140e1e79053fdb3cc2ca83abc93cd6076a1a4024498ea9a4", size = 60793, upload-time = "2026-09-03T20:29:57.656Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/94/fba9645acb8a8a343acee6044d6642bfdbf8fd966945bd7fa8eb75bbfd4f/ol_concourse-0.20.0-py3-none-any.whl", hash = "sha256:a65a12dd96d0d1bc4393a9a694b6a5db9d0f2b40da09a2e7e6f3425ccde37776", size = 62219, upload-time = "2026-10-06T18:41:22.311Z" },
 ]
 
 [[package]]
