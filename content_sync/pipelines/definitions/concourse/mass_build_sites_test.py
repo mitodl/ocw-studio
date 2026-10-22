@@ -176,6 +176,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
     )
     if is_dev:
         assert webpack_manifest_s3_resource["source"]["endpoint"] == DEV_ENDPOINT_URL
+        assert webpack_manifest_s3_resource["source"]["use_path_style"] is True
         assert (
             webpack_manifest_s3_resource["source"]["access_key_id"]
             == settings.AWS_ACCESS_KEY_ID

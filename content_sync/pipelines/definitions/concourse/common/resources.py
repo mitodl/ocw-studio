@@ -198,6 +198,11 @@ class WebpackManifestResource(Resource):
             self.source.update(
                 {
                     "endpoint": endpoint_url,
+                    # The official s3-resource defaults to virtual-hosted
+                    # addressing, which puts the bucket in the endpoint's
+                    # hostname; a local S3 emulator's DNS name has no such
+                    # subdomains, so the check fails with "no such host".
+                    "use_path_style": True,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
                     "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
                 }
