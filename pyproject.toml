@@ -101,6 +101,7 @@ exclude-newer = "7d"
 required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
+certifi = "0d"
 cryptography = "0d"
 mitol-django-common = "0d"
 mitol-django-mail = "0d"
