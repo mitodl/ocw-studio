@@ -20,8 +20,15 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture(autouse=True)
 def _no_retry_sleep(mocker):
-    """Keep merge_branches' retry backoff out of the suite's wall-clock time."""
-    return mocker.patch("content_sync.apis.gitlab.sleep")
+    """Keep retry backoff out of the suite's wall-clock time.
+
+    Two sleeps matter here and they are different imports: merge_branches
+    waits on content_sync.apis.gitlab.sleep, while retry_on_failure waits on
+    its own content_sync.decorators.sleep. Patching only the first left the
+    tests that trigger a retry sleeping CONTENT_SYNC_RETRIES - 1 seconds each.
+    """
+    mocker.patch("content_sync.apis.gitlab.sleep")
+    mocker.patch("content_sync.decorators.sleep")
 
 
 def fake_destination_filepath(website_content, *args) -> str:
@@ -426,8 +433,48 @@ def test_delete_branch_retries_a_transient_failure(mocker, gitlab_api_wrapper):
         None,
     ]
     mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
-    mocker.patch("content_sync.decorators.sleep")
 
     gitlab_api_wrapper.delete_branch("master")
 
     assert repo.branches.delete.call_count == 2
+
+
+def test_upsert_re_reads_the_tree_after_a_failed_commit(mocker, gitlab_api_wrapper):
+    """A commit GitLab applied before failing must not retry as a create."""
+    user = UserFactory.create()
+    content = WebsiteContentFactory.create(
+        website=gitlab_api_wrapper.website, updated_by=user
+    )
+    filepath = fake_destination_filepath(content)
+
+    mocker.patch(
+        "content_sync.apis.gitlab.get_destination_filepath",
+        side_effect=fake_destination_filepath,
+    )
+    mocker.patch(
+        "content_sync.apis.gitlab.serialize_content_to_file",
+        return_value="serialized-content",
+    )
+    # Empty on the first read; the failed commit landed anyway, so the second
+    # read -- which only happens if the cache was dropped -- finds the file.
+    paths = mocker.patch.object(
+        gitlab_api_wrapper,
+        "get_all_file_paths",
+        side_effect=[iter([]), iter([filepath])],
+    )
+    commit_actions = mocker.patch.object(
+        gitlab_api_wrapper,
+        "commit_actions",
+        side_effect=[GitlabCreateError("timed out", response_code=504), "commit-1"],
+    )
+
+    gitlab_api_wrapper.upsert_content_files_for_user(user.id)
+
+    assert paths.call_count == 2
+    assert commit_actions.call_count == 2
+    first = commit_actions.call_args_list[0].args[0]
+    second = commit_actions.call_args_list[1].args[0]
+    assert [action["action"] for action in first] == ["create"]
+    assert [action["action"] for action in second] == ["update"]
+    content.refresh_from_db()
+    assert content.content_sync_state.is_synced is True

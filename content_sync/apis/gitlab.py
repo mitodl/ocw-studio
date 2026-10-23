@@ -416,8 +416,7 @@ class GitlabApiWrapper:
             pending_actions.extend(actions)
 
             if use_batch_commits and len(pending_results) >= commit_batch_size:
-                latest_commit = self.commit_actions(pending_actions, user)
-                self._confirm_pending_paths()
+                latest_commit = self._commit_batch(pending_actions, user)
                 self.update_sync_states(pending_results)
                 log.info(
                     "Committed GitLab sync batch for website=%s user_id=%s items=%d actions=%d",  # noqa: E501
@@ -432,8 +431,7 @@ class GitlabApiWrapper:
         if not pending_actions:
             return latest_commit
 
-        latest_commit = self.commit_actions(pending_actions, user)
-        self._confirm_pending_paths()
+        latest_commit = self._commit_batch(pending_actions, user)
         self.update_sync_states(pending_results)
         if use_batch_commits:
             log.info(
@@ -450,6 +448,26 @@ class GitlabApiWrapper:
         if self._existing_path_cache is not None:
             self._existing_path_cache |= self._pending_created
         self._pending_created.clear()
+
+    def _commit_batch(self, actions: list[dict[str, str]], user: User | None):
+        """Commit a batch, leaving the path cache truthful either way.
+
+        A commit can fail after GitLab has applied it -- GITLAB_TIMEOUT firing
+        on the response is the obvious way. Our picture of the tree is then
+        wrong in the one direction that cannot recover: retry_on_failure
+        re-enters the sync, still believes those files are absent, sends
+        "create" for files GitLab now has, and gets "A file with this name
+        already exists" on that attempt and every one after it. Dropping the
+        cache makes the retry re-read the tree and send "update" instead.
+        """
+        try:
+            commit = self.commit_actions(actions, user)
+        except Exception:
+            self._existing_path_cache = None
+            self._pending_created.clear()
+            raise
+        self._confirm_pending_paths()
+        return commit
 
     def update_sync_states(self, synced_results: list[SyncResult]):
         """Persist sync-state updates for a committed batch."""
