@@ -1,10 +1,14 @@
 """Github backend"""
 
 import logging
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from django.conf import settings
 from github.GithubObject import NotSet
+from github.PullRequest import PullRequest
+from github.Repository import Repository
+from mitol.common.utils import now_in_utc
 from safedelete.models import HARD_DELETE
 
 from content_sync.apis.github import (
@@ -35,6 +39,10 @@ class GithubBackend(BaseSyncBackend):
     """
 
     IGNORED_PATHS = {"README.md"}
+    rate_limit_name = "github"
+    rate_limit_check_setting = "GITHUB_RATE_LIMIT_CHECK"
+    rate_limit_cutoff_setting = "GITHUB_RATE_LIMIT_CUTOFF"
+    rate_limit_min_sleep_setting = "GITHUB_RATE_LIMIT_MIN_SLEEP"
 
     def __init__(self, website: Website):
         """Initialize the Github API backend for a specific website"""
@@ -44,6 +52,21 @@ class GithubBackend(BaseSyncBackend):
     def backend_exists(self):
         """Determine if the website repo exists"""
         return self.api.repo_exists()
+
+    def get_rate_limit_status(self):
+        """Return github rate limit state."""
+        requests_remaining, limit = self.api.git.rate_limiting
+        reset_time = getattr(self.api.git, "rate_limiting_resettime", None)
+        if isinstance(reset_time, (int, float, datetime)):
+            return requests_remaining, limit, reset_time
+        # No usable reset time. Fall back to a short wait rather than
+        # substituting another field: `limit` is a call count, and feeding it
+        # in here as a timestamp resolves to 1970 and sleeps for hours.
+        return (
+            requests_remaining,
+            limit,
+            now_in_utc().timestamp() + settings.GITHUB_RATE_LIMIT_MIN_SLEEP + 2,
+        )
 
     def create_website_in_backend(self) -> Repository:
         """
@@ -147,11 +170,16 @@ class GithubBackend(BaseSyncBackend):
         content.delete(force_policy=HARD_DELETE)
         return True
 
-    def sync_all_content_to_db(self, ref: str | None = NotSet, path: str | None = None):
+    def sync_all_content_to_db(self, ref: str | None = None, path: str | None = None):
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.
         Then recursively iterate through the repo, upserting any ContentFiles to WebsiteContent objects.
         """  # noqa: E501
+        # The backends share the base signature, which spells "no ref" as None.
+        # PyGithub wants its own sentinel, and NotSet is truthy, so it has to be
+        # translated here rather than passed around: handed NotSet, GitLab asks
+        # for a ref literally named "NotSet" and 404s.
+        github_ref = NotSet if ref is None else ref
         repo = self.api.get_repo()
 
         # Get list of existing WebsiteContent ids for the website
@@ -160,13 +188,13 @@ class GithubBackend(BaseSyncBackend):
         )
 
         # Iterate over repo files
-        contents = repo.get_contents(path or "", ref=ref)
+        contents = repo.get_contents(path or "", ref=github_ref)
         if not isinstance(contents, list):
             contents = [contents]
         while contents:
             file_content = contents.pop(0)
             if file_content.type == "dir":
-                contents.extend(repo.get_contents(file_content.path, ref=ref))
+                contents.extend(repo.get_contents(file_content.path, ref=github_ref))
             elif (
                 file_content.type == "file"
                 and file_content.path not in self.IGNORED_PATHS
@@ -175,12 +203,12 @@ class GithubBackend(BaseSyncBackend):
                 content = self.update_content_in_db(file_content)
                 sync_state = content.content_sync_state
                 sync_state.current_checksum = content.calculate_checksum()
-                if ref is NotSet:
+                if ref is None:
                     sync_state.synced_checksum = sync_state.current_checksum
                 sync_state.save()
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
-        if ref is NotSet and not path:
+        if ref is None and not path:
             # This should only be done if ref and path kwargs are not specified
             # Delete any WebsiteContent ids still remaining
             # we use a hard delete because there's no need to sync a deletion to
