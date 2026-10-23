@@ -22,6 +22,7 @@ from content_sync.pipelines.base import (
     BaseUnpublishedSiteRemovalPipeline,
 )
 from main.s3_utils import get_boto3_resource
+from users.factories import UserFactory
 from websites.constants import (
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
@@ -72,6 +73,62 @@ def test_sync_content_not_exists(api_mock, log_mock):
         12354,
     )
     api_mock.sync_content.assert_not_called()
+
+
+def test_delete_orphaned_content_file(mocker, api_mock, log_mock):
+    """The task fetches the website and user then calls delete_content_file with the given filepath"""
+    website = WebsiteFactory.create()
+    user = UserFactory.create()
+
+    tasks.delete_orphaned_content_file.delay(
+        str(website.pk), "path/to/file.md", user.id
+    )
+
+    log_mock.debug.assert_not_called()
+    api_mock.get_sync_backend.assert_called_once_with(website)
+    backend = api_mock.get_sync_backend.return_value
+    backend.api.delete_content_file.assert_called_once_with(
+        mocker.ANY, filepath="path/to/file.md"
+    )
+    stub = backend.api.delete_content_file.call_args.args[0]
+    assert stub.updated_by == user
+
+
+def test_delete_orphaned_content_file_no_updated_by(api_mock, log_mock):
+    """The task works when there's no updated_by user to attribute the deletion to"""
+    website = WebsiteFactory.create()
+
+    tasks.delete_orphaned_content_file.delay(str(website.pk), "path/to/file.md", None)
+
+    backend = api_mock.get_sync_backend.return_value
+    backend.api.delete_content_file.assert_called_once()
+    stub = backend.api.delete_content_file.call_args.args[0]
+    assert stub.updated_by is None
+
+
+def test_delete_orphaned_content_file_website_missing(api_mock, log_mock):
+    """The task no-ops without error if the website no longer exists"""
+    missing_pk = "11111111-1111-1111-1111-111111111111"
+
+    tasks.delete_orphaned_content_file.delay(missing_pk, "path/to/file.md", None)
+
+    log_mock.debug.assert_called_once_with(
+        "Attempted to clean up backend file for Website that no longer exists: pk=%s",
+        missing_pk,
+    )
+    api_mock.get_sync_backend.assert_not_called()
+
+
+def test_delete_orphaned_content_file_backend_error_logged(api_mock, log_mock):
+    """A backend failure is logged, not raised"""
+    website = WebsiteFactory.create()
+    api_mock.get_sync_backend.return_value.api.delete_content_file.side_effect = (
+        Exception("backend unavailable")
+    )
+
+    tasks.delete_orphaned_content_file.delay(str(website.pk), "path/to/file.md", None)
+
+    log_mock.exception.assert_called_once()
 
 
 def test_create_website_backend(api_mock, log_mock):
