@@ -58,6 +58,20 @@ COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webp
 ARG GIT_REF
 RUN echo "$GIT_REF" >> /src/static/hash.txt
 
+# ─── Local-dev target (ol-infrastructure local-dev k8s/Tilt stack) ────────────
+# production (for the bundles node_builder bakes in) plus dev deps, which
+# include granian[reload]. Reload is switched on here rather than in the k8s
+# manifest because the prebuilt production image has no watchfiles, and
+# granian exits if asked to reload without it.
+FROM production AS local-dev
+
+RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
+    uv sync --frozen --no-install-project
+
+# A short kill timeout stops a worker that won't exit from stalling a reload.
+ENV GRANIAN_RELOAD=true \
+    GRANIAN_WORKERS_KILL_TIMEOUT=1
+
 # ─── Development target ───────────────────────────────────────────────────────
 FROM runtime AS development
 
