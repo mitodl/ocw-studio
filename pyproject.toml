@@ -94,6 +94,7 @@ dev = [
 ]
 
 [tool.uv]
+constraint-dependencies = ["certifi>=2026.10.19"]  # eMudhra CA compromise: never resolve a certifi that trusts the compromised CAs
 package = false
 default-groups = "all"
 no-binary-package = ["lxml"]
@@ -101,6 +102,7 @@ exclude-newer = "7d"
 required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
+certifi = "0d"  # eMudhra CA compromise fix (2026.10.19), remove after 2026-10-27
 cryptography = "0d"
 mitol-django-common = "0d"
 mitol-django-mail = "0d"
