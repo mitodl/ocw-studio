@@ -1,7 +1,7 @@
 FROM node:24-trixie-slim
 LABEL maintainer="MIT Open Learning (odl-devops@mit.edu)"
 LABEL description="Node and Hugo, used for building OCW website"
-LABEL version="0.8"
+LABEL version="0.9"
 WORKDIR /tmp
 
 # renovate: datasource=github-releases depName=hugo packageName=gohugoio/hugo
@@ -14,6 +14,8 @@ ENV GO_FILE_NAME="go${GO_VERSION}.linux-amd64.tar.gz"
 ENV GO_URL="https://golang.org/dl/${GO_FILE_NAME}"
 ENV HUGO_URL="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/${HUGO_NAME}.deb"
 ENV PATH="/usr/local/go/bin:${PATH}"
+# Debian's awscli vendors its own CA bundle, so point it at the system one apt keeps current
+ENV AWS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y ca-certificates curl awscli jq git wget zip unzip && \
