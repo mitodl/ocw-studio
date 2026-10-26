@@ -25,7 +25,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.203.0"
+VERSION = "0.204.0"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
