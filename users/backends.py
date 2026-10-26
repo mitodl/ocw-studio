@@ -12,8 +12,15 @@ KEYCLOAK_CERTS_PATH = "/protocol/openid-connect/certs"
 
 @cache
 def _jwks_client(jwks_url):
-    """Return a per-process JWKS client, which caches the key set for 5 minutes"""
-    return jwt.PyJWKClient(jwks_url)
+    """
+    Return a per-process JWKS client, which caches the key set for 5 minutes.
+
+    PyJWT's default 30s cooldown would reject a rotated-in kid seen within 30s
+    of any fetch instead of refetching. The access token comes from our own
+    server-side code exchange, so the kid isn't attacker-chosen and refetching
+    on every miss can't be used to hammer Keycloak.
+    """
+    return jwt.PyJWKClient(jwks_url, cooldown_duration=0)
 
 
 class KeycloakJWKSOAuth2(KeycloakOAuth2):
