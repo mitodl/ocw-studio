@@ -35,10 +35,10 @@ import {
 } from "../../lib/ckeditor/plugins/constants"
 import {
   buildGalleryItem,
+  buildGalleryParams,
   galleryBaseUrl,
   galleryHasImage,
 } from "../../lib/ckeditor/plugins/galleryItems"
-import { ShortcodeParam } from "../../lib/ckeditor/plugins/util"
 import { WebsiteContent } from "../../types/websites"
 import ResourcePickerDialog, { TabIds } from "./ResourcePickerDialog"
 import ImageGalleryWidget from "./ImageGalleryWidget"
@@ -185,13 +185,10 @@ export default function MarkdownEditor(props: Props): JSX.Element {
       if (galleryHandle) {
         galleryHandle.setItems([...existing, ...additions])
       } else {
-        // course-v2 joins each item's href onto the gallery's baseUrl, so a
-        // new gallery needs one. Every existing gallery already has it.
-        const baseUrl = galleryBaseUrl(website)
+        // course-v2 needs a new gallery's id and baseUrl; see
+        // buildGalleryParams.
         editor.current?.execute(IMAGE_GALLERY_COMMAND, {
-          params: baseUrl
-            ? ` ${new ShortcodeParam(baseUrl, "baseUrl").toHugo()} `
-            : " ",
+          params: buildGalleryParams(galleryBaseUrl(website)),
           items: additions,
         })
       }

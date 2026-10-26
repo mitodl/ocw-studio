@@ -132,10 +132,11 @@ const serializeGallery = (params: string, items: string[]): string =>
  * A whole gallery becomes a single `div.image-gallery` carrying, URL-encoded,
  * the opening tag's raw params and a JSON list of each item's raw params.
  * Both are written back exactly as they came in, which matters because two
- * themes read different params: course-v2 uses `baseUrl`, `href` and `text`,
- * course-v3 uses `uuid`, and the editor needs to understand neither. Items stay
- * out of the CKEditor schema: the editor only adds, removes and reorders whole
- * items, so a flat node is enough.
+ * themes read different params: course-v2 uses `id`, `href` and `text`,
+ * course-v3 uses `uuid`, both use `baseUrl`, and the editor needs to
+ * understand none of them.
+ * Items stay out of the CKEditor schema: the editor only adds, removes and
+ * reorders whole items, so a flat node is enough.
  *
  * Only the closing tag (always `{{< /image-gallery >}}`) and the whitespace
  * between items (one item per line) are normalised.
@@ -420,10 +421,11 @@ class ImageGalleryToolbar extends CKEPlugin {
  * CKEditor plugin providing viewable, reorderable image galleries.
  *
  * Galleries are stored in Markdown as a paired Hugo shortcode. Every param on
- * either tag is kept as authored; items Studio adds carry `uuid` for course-v3
+ * either tag is kept as authored. Galleries Studio adds carry `id`, for
+ * course-v2, and `baseUrl`, for both themes; items carry `uuid` for course-v3
  * and `href` and `text` for course-v2 (see galleryItems.ts):
  *
- *   {{< image-gallery baseUrl="/courses/..." >}}
+ *   {{< image-gallery id="..._nanogallery2" baseUrl="/courses/..." >}}
  *   {{< image-gallery-item uuid="..." href="..." text="..." >}}
  *   {{< /image-gallery >}}
  */

@@ -9,10 +9,12 @@ import { Website, WebsiteContent } from "../../../types/websites"
  *
  * The same Markdown is built by two themes, which read different params:
  * course-v2 shows the file named by an item's `href`, joined onto the gallery's
- * `baseUrl`, captioned with the item's `text`; course-v3 finds the image
- * resource by the item's `uuid`. Existing galleries carry other params too
- * (`id`, `data-ngdesc`). The editor keeps each tag's raw param text exactly as
- * authored, so these helpers only read from it, or build it for new items.
+ * `baseUrl`, captioned with the item's `text`, and tells galleries apart by
+ * their `id`; course-v3 finds the image resource by the item's `uuid`, falling
+ * back to that same `href` under `baseUrl` when no resource matches.
+ * Existing items carry `data-ngdesc` too. The editor keeps each tag's raw param
+ * text exactly as authored, so these helpers only read from it, or build it for
+ * new galleries and items.
  */
 
 export interface GalleryItemParams {
@@ -171,4 +173,26 @@ export const galleryBaseUrl = (website: Website): string | null => {
       .join("/")
   }
   return `/${trim(urlPath, "/")}/`
+}
+
+/**
+ * The raw param text for a new gallery's opening tag.
+ *
+ * `id`, which only course-v2 reads, has to be unique on the page.
+ * nanogallery2 keys each gallery's location hash (`#nanogallery/<id>/...`) on
+ * its element's id, so galleries that share one, as every gallery without an
+ * id does, each act on the hash the other sets, and clicking any gallery but
+ * the first closes its viewer as it opens. A random UUID keeps the id unique,
+ * with the `_nanogallery2` suffix every existing id has.
+ *
+ * `baseUrl` is the one galleryBaseUrl gives. Both themes read it: course-v2
+ * joins every item's `href` onto it, course-v3 only for an item whose `uuid`
+ * and `href` match no image resource.
+ */
+export const buildGalleryParams = (baseUrl: string | null): string => {
+  const params = [
+    new ShortcodeParam(`${crypto.randomUUID()}_nanogallery2`, "id"),
+    ...(baseUrl ? [new ShortcodeParam(baseUrl, "baseUrl")] : []),
+  ]
+  return ` ${params.map((param) => param.toHugo()).join(" ")} `
 }
