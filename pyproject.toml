@@ -72,7 +72,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-prek = ["prek==0.5.4"]
+prek = ["prek==0.5.5"]
 dev = [
     { include-group = "prek" },
     "bpython>=0.26,<0.27",
