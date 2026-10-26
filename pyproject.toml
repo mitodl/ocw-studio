@@ -80,6 +80,7 @@ dev = [
     "django-debug-toolbar>=8,<9",
     "factory-boy>=3.3.0,<4",
     "faker>=40.0.0,<41",
+    "granian[reload]>=2.7.2",
     "ipdb>=0.13.13,<0.14",
     "mitol-drf-lint==2026.8.28",
     "moto>=5.0.0,<6",
