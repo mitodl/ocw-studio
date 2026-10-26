@@ -885,7 +885,7 @@ if DEBUG:
 
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.keycloak.KeycloakOAuth2",
+    "users.backends.KeycloakJWKSOAuth2",
     "django.contrib.auth.backends.ModelBackend",  # this is default
     "guardian.backends.ObjectPermissionBackend",
 )
@@ -929,11 +929,6 @@ SOCIAL_AUTH_KEYCLOAK_KEY = get_string(
 SOCIAL_AUTH_KEYCLOAK_SECRET = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_SECRET",
     description="Keycloak client secret for social auth",
-    required=True,
-)
-SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = get_string(
-    name="SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY",
-    description="Keycloak realm public key for social auth",
     required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = get_string(
