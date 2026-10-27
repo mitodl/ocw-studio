@@ -67,11 +67,10 @@ Keycloak runs automatically as part of the local Docker Compose stack. A pre-con
   ```sh
   SOCIAL_AUTH_KEYCLOAK_KEY=<client ID registered in the realm>
   SOCIAL_AUTH_KEYCLOAK_SECRET=<client secret from Keycloak admin console>
-  SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY=<realm RS256 public key, no header/footer>
   SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/auth
   SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/token
   ```
-- For local development, values in `.env.example` can be used as defaults for all of the variables above except `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY`. Retrieve `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY` from `http://kc.odl.local:7080/realms/ocw-studio`.
+- For local development, values in `.env.example` can be used as defaults for all of the variables above. The app verifies tokens against the realm's signing keys, which it fetches from the `/protocol/openid-connect/certs` endpoint next to `SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL`.
 - Navigate to the app and click **Login with MIT Keycloak**. You will be redirected to the Keycloak login page.
 - After a successful login you will be redirected back to the app and authenticated.
 - The development realm includes a default test user: **`admin@odl.local`** / **`admin`**.
