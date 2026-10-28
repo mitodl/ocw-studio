@@ -1,6 +1,6 @@
 [project]
 name = "ocw-studio"
-version = "0.188.0"
+version = "2026.10.28.1"
 description = "OCW Studio manages deployments for OCW courses"
 authors = [{ name = "MITODL" }]
 requires-python = ">=3.14,<3.15"
@@ -263,6 +263,7 @@ env = [
 ]
 
 [tool.bumpversion]
+current_version = "2026.10.28.1"
 commit = false
 tag = false
 parse = "(?P<release>(?:[1-9][0-9]{3})\\.(?:1[0-2]|[1-9])\\.(?:3[0-1]|[12][0-9]|[1-9]))\\.(?P<build>\\d+)"
