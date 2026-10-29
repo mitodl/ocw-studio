@@ -9,12 +9,12 @@ Built from docker/ocw-course-publisher/ in this repository.
 """
 OCW_COURSE_PUBLISHER_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
-    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.8"),
+    source=RegistryImage(repository="mitodl/ocw-course-publisher", tag="0.9"),
 )
 
 AWS_CLI_REGISTRY_IMAGE = AnonymousResource(
     type=REGISTRY_IMAGE,
-    source=RegistryImage(repository="amazon/aws-cli", tag="2.27.50"),
+    source=RegistryImage(repository="amazon/aws-cli", tag="2.38.5"),
 )
 
 BASH_REGISTRY_IMAGE = AnonymousResource(
