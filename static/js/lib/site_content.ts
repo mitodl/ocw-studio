@@ -105,7 +105,9 @@ export const DEFAULT_TITLE_FIELD: StringConfigField = {
 export function widgetExtraProps(field: ConfigField): Record<string, any> {
   switch (field.widget) {
     case WidgetVariant.Select:
-      return pick(SELECT_EXTRA_PROPS, field)
+      return field.clearable === undefined
+        ? pick(SELECT_EXTRA_PROPS, field)
+        : { ...pick(SELECT_EXTRA_PROPS, field), isClearable: field.clearable }
     case WidgetVariant.Markdown:
       return {
         minimal: field.minimal ?? true,

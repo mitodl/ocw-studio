@@ -111,6 +111,7 @@ In a Django shell on the RC environment:
 
 ```python
 from websites.models import Website
+
 Website.objects.all().update(gdrive_folder=None)
 ```
 
@@ -164,8 +165,10 @@ from django.db.models import F
 from content_sync.models import ContentSyncState
 from websites.models import Website
 
-ocw_www = Website.objects.get(name='ocw-www')
-ContentSyncState.objects.filter(website=ocw_www).update(synced_checksum=F('current_checksum'))
+ocw_www = Website.objects.get(name="ocw-www")
+ContentSyncState.objects.filter(website=ocw_www).update(
+    synced_checksum=F("current_checksum")
+)
 ```
 
 2. Process in batches of ~500 objects:

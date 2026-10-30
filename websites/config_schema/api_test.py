@@ -122,3 +122,32 @@ def test_menu_rule(parsed_site_config):
     # Two "menu"-widget fields
     config["collections"][0]["fields"] = [menu_field, {**menu_field, "name": "menu2"}]
     validate_parsed_site_config(config)
+
+
+@pytest.mark.parametrize(
+    ("clearable", "is_valid"),
+    [
+        (True, True),
+        (False, True),
+        ("yes", False),
+    ],
+)
+def test_select_clearable(parsed_site_config, clearable, is_valid):
+    """A select field may set "clearable" to a boolean"""
+    config = parsed_site_config.copy()
+    select_field = {
+        "name": "locale",
+        "label": "Locale",
+        "widget": "select",
+        "options": ["AR"],
+        "clearable": clearable,
+    }
+    config["collections"][0] = {
+        **config["collections"][0],
+        "fields": config["collections"][0]["fields"] + [select_field],
+    }
+    if is_valid:
+        validate_parsed_site_config(config)
+    else:
+        with pytest.raises(ValueError):  # noqa: PT011
+            validate_parsed_site_config(config)

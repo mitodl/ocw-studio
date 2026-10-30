@@ -12,16 +12,16 @@ classifiers = [
 ]
 dependencies = [
     "beautifulsoup4>=4.12.2,<5",
-    "boto3==1.43.93",
+    "boto3==1.43.111",
     "celery>=5.3.0,<6",
     "cryptography>=50,<51",
     "dj-database-url==3.1.2",
-    "django==5.2.17",
+    "django==5.2.18",
     "django-anymail[mailgun]==15.2",
     "django-bulk-update-or-create==0.3.0",
     "django-guardian==3.5.0",
     "django-health-check[celery,redis]>=4.0.0",
-    "django-hijack==3.7.8",
+    "django-hijack==3.8.0",
     "django-model-utils==5.0.0",
     "django-redis==6.0.0",
     "django-removals~=1.5.0",
@@ -29,7 +29,7 @@ dependencies = [
     "django-safedelete==1.5.0",
     "django-storages==1.14.6",
     "django-webpack-loader==3.2.4",
-    "djangorestframework==3.18.1",
+    "djangorestframework==3.18.3",
     "drf-extensions>=0.8.0,<0.9",
     "google-api-python-client>=2.58.0,<3",
     "google-auth>=2.11.0,<3",
@@ -50,16 +50,17 @@ dependencies = [
     "opentelemetry-instrumentation-psycopg2>=0.52b0",
     "opentelemetry-instrumentation-redis>=0.52b0",
     "opentelemetry-instrumentation-requests>=0.52b0",
-    "ol-concourse>=0.18,<0.19",
+    "ol-concourse>=0.20,<0.21",
     "ol-concoursepy==0.0.41",
     "psycopg2>=2.9.6,<3",
     "pygithub==2.10.0",
     "pypdf>=6.0.0,<7",
+    "python-gitlab>=6.0.0,<7",
     "python-magic>=0.4.27,<0.5",
     "pyyaml>=6.0.1,<7",
     "redis>=5.0.1,<6",
     "requests==2.34.2",
-    "sentry-sdk==2.69.1",
+    "sentry-sdk==2.69.2",
     "smart-open[s3]>=7.0.0,<8",
     "social-auth-app-django==6.0.1",
     "social-auth-core>=5,<6",
@@ -71,28 +72,31 @@ dependencies = [
 ]
 
 [dependency-groups]
+prek = ["prek==0.5.5"]
 dev = [
+    { include-group = "prek" },
     "bpython>=0.26,<0.27",
     "ddt>=1.6.0,<2",
     "django-debug-toolbar>=8,<9",
     "factory-boy>=3.3.0,<4",
     "faker>=40.0.0,<41",
+    "granian[reload]>=2.7.2",
     "ipdb>=0.13.13,<0.14",
     "mitol-drf-lint==2026.8.28",
     "moto>=5.0.0,<6",
     "nplusone>=1.0.0,<2",
     "pdbpp>=0.12.1,<0.13",
-    "pre-commit>=4.0.0,<5",
     "pytest>=9.0.0,<10",
     "pytest-cov>=7.0.0,<8",
     "pytest-django>=4.5.2,<5",
-    "pytest-env==1.7.1",
+    "pytest-env==1.8.0",
     "pytest-mock>=3.11.1,<4",
     "ruff>=0.16,<0.17",
     "semantic-version>=2.10.0,<3",
 ]
 
 [tool.uv]
+constraint-dependencies = ["certifi>=2026.10.19"]  # eMudhra CA compromise: never resolve a certifi that trusts the compromised CAs
 package = false
 default-groups = "all"
 no-binary-package = ["lxml"]
@@ -100,6 +104,7 @@ exclude-newer = "7d"
 required-version = ">=0.9.17"
 
 [tool.uv.exclude-newer-package]
+certifi = "0d"  # eMudhra CA compromise fix (2026.10.19), remove after 2026-10-27
 cryptography = "0d"
 mitol-django-common = "0d"
 mitol-django-mail = "0d"
@@ -109,7 +114,7 @@ mitol-drf-lint = "0d"
 ol-concourse = "0d"
 
 [build-system]
-requires = ["uv_build>=0.12.1,<0.13.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
@@ -254,6 +259,7 @@ env = [
     "DRIVE_SERVICE_ACCOUNT_CREDS=",
     "AWS_ENDPOINT_URL=",
     "AWS_S3_ENDPOINT_URL=",
+    "AWS_S3_CUSTOM_DOMAIN=",
     "OCW_STUDIO_PIPELINE_API_URL=",
 ]
 

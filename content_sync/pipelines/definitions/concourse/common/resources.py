@@ -39,6 +39,12 @@ class SlackAlertResource(Resource):
             icon="slack",
             type=slack_notification_resource().name,
             check_every="never",
+            # Resolved by Concourse's Vault credential manager at runtime
+            # (concourse/ocw/slack-url). On dev there is no var source, so the
+            # put fails -- harmlessly, because every alert is raised through
+            # ErrorHandlingStep/SlackAlertStep, which wrap it in a TryStep.
+            # Do not substitute a literal here: that silently replaces the
+            # Vault lookup in QA and production too.
             source={"url": "((slack-url))", "disabled": "false"},
             **kwargs,
         )
@@ -200,6 +206,12 @@ class WebpackManifestResource(Resource):
                     "endpoint": endpoint_url,
                     "access_key_id": (settings.AWS_ACCESS_KEY_ID or ""),
                     "secret_access_key": (settings.AWS_SECRET_ACCESS_KEY or ""),
+                    # concourse/s3-resource defaults to virtual-host addressing,
+                    # so it resolves <bucket>.<endpoint host> -- a name that does
+                    # not exist for a local S3 emulator reached by service name.
+                    # The check fails with "no such host" and the job waits
+                    # forever on an input it can never get.
+                    "use_path_style": True,
                 }
             )
 
@@ -280,9 +292,6 @@ def get_fastly_domain(purpose: str) -> str | None:
     """
     Get the domain served by the Fastly distribution for a given purpose.
 
-    The Fastly resource resolves the service ID from this domain at runtime, so no
-    service IDs need to be stored in Concourse.
-
     Args:
         purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
 
@@ -299,6 +308,25 @@ def get_fastly_domain(purpose: str) -> str | None:
     if not base_url:
         return None
     return urlparse(base_url).netloc or None
+
+
+def get_fastly_service_id(purpose: str) -> str:
+    """
+    Get the Fastly service ID for a given purpose.
+
+    Args:
+        purpose(str): The distribution, e.g. "draft", "live", "test" or "learn"
+
+    Returns:
+        str: The Concourse service ID variable, or an empty string for an unknown
+            purpose
+    """
+    return {
+        VERSION_DRAFT: "((fastly_draft.service_id))",
+        VERSION_LIVE: "((fastly_live.service_id))",
+        FASTLY_PURPOSE_LEARN: "((fastly_learn.service_id))",
+        FASTLY_PURPOSE_TEST: "((fastly_test.service_id))",
+    }.get(purpose, "")
 
 
 def get_fastly_purge_purposes(purpose: str) -> list[str]:
@@ -356,6 +384,7 @@ def fastly_resources(purpose: str) -> list[Resource]:
         fastly_service(
             name=get_fastly_identifier(item),
             api_token=settings.CONCOURSE_FASTLY_API_TOKEN_VAR,
+            service_id=get_fastly_service_id(item),
             domain=get_fastly_domain(item),
             # Purge-only: never poll Fastly for VCL version changes. The library
             # default of "1h" would have every site pipeline instance polling.

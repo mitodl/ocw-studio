@@ -1754,6 +1754,53 @@ def test_referencing_content_clears_when_references_removed(
     assert page.referenced_by.count() == 0
 
 
+def test_websites_content_update_gallery_sets_references(
+    mocker, drf_client, global_admin_user
+):
+    """Saving a page records its gallery images and the resources their captions link to."""
+    mocker.patch("websites.serializers.is_feature_enabled", return_value=True)
+    drf_client.force_login(global_admin_user)
+    website = WebsiteFactory.create()
+    image, linked, unused = WebsiteContentFactory.create_batch(
+        3, website=website, type=CONTENT_TYPE_RESOURCE
+    )
+    page = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_PAGE,
+        markdown=(
+            f'{{{{< image-gallery-item uuid="{image.text_id}" href="a.jpg" '
+            f'text="{{{{% resource_link \\"{linked.text_id}\\" \\"Spindle\\" %}}}} - The screw." >}}}}'
+        ),
+    )
+
+    resp = drf_client.patch(
+        reverse(
+            "websites_content_api-detail",
+            kwargs={
+                "parent_lookup_website": website.name,
+                "text_id": str(page.text_id),
+            },
+        ),
+        data={"markdown": page.markdown},
+    )
+    assert resp.status_code == 200
+
+    resp = drf_client.get(
+        reverse(
+            "websites_content_api-list",
+            kwargs={"parent_lookup_website": website.name},
+        ),
+        {"type": CONTENT_TYPE_RESOURCE},
+    )
+    assert {
+        result["text_id"]: result["is_deletable"] for result in resp.data["results"]
+    } == {
+        str(image.text_id): False,
+        str(linked.text_id): False,
+        str(unused.text_id): True,
+    }
+
+
 def test_websites_content_update_video_resource_sets_3play_references(
     drf_client, global_admin_user
 ):

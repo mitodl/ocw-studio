@@ -2,8 +2,6 @@
 
 import sys
 
-from github.GithubObject import NotSet
-
 from content_sync.api import get_sync_backend
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.api import fetch_website, reset_publishing_fields
@@ -37,11 +35,11 @@ class Command(WebsiteFilterCommand):
                 "You must specify a website or list of websites to process, --filter or --filter-json"  # noqa: E501
             )
 
-        commit = options["commit"] or NotSet
+        commit = options["commit"]
         path = options["path"]
         confirm = (
             "Y"
-            if (path is not None or commit is NotSet)
+            if (path is not None or commit is None)
             else input(
                 "Are you sure you want to revert all files for specified sites to this commit? Y/N"  # noqa: E501
             ).upper()
@@ -55,7 +53,7 @@ class Command(WebsiteFilterCommand):
                 f"Syncing content from backend to database for '{website.title}'..."
             )
             backend.sync_all_content_to_db(ref=commit, path=path)
-            if commit is not NotSet:
+            if commit is not None:
                 # Sync back to git
                 backend.sync_all_content_to_backend()
             reset_publishing_fields(website.name)

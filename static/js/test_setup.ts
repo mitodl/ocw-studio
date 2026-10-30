@@ -22,6 +22,8 @@ const _createSettings = (): typeof SETTINGS => ({
   },
   features: {},
   features_default: false,
+  // Matches the starter slug makeWebsiteStarter gives by default.
+  ocwCourseStarterSlug: "course",
 })
 
 global.SETTINGS = _createSettings()

@@ -169,6 +169,42 @@ describe("ResourcePickerDialog", () => {
     },
   )
 
+  it("hands back the full resources picked in multi-select, in the order they were picked", async () => {
+    const user = userEvent.setup()
+    const insertMultipleStub = jest.fn()
+    const [first, second, third] = [
+      makeWebsiteContentDetail(),
+      makeWebsiteContentDetail(),
+      makeWebsiteContentDetail(),
+    ]
+    const [{ unmount }] = renderDialog({
+      multiple: true,
+      insertMultiple: insertMultipleStub,
+      restrictToTabIds: [TabIds.Images],
+      acceptLabel: "Add images",
+    })
+    const lastListingProps = () =>
+      ResourcePickerListing.mock.calls[
+        ResourcePickerListing.mock.calls.length - 1
+      ][0]
+
+    for (const picked of [first, second, third, second]) {
+      await act(async () => {
+        lastListingProps().focusResource(picked)
+      })
+    }
+
+    expect(lastListingProps().selectedUuids).toEqual([
+      first.text_id,
+      third.text_id,
+    ])
+    await user.click(screen.getByRole("button", { name: "Add images (2)" }))
+    expect(insertMultipleStub).toHaveBeenCalledWith([first, third])
+    expect(closeDialogStub).toHaveBeenCalledTimes(1)
+
+    unmount()
+  })
+
   it.each([
     {
       index: 0,

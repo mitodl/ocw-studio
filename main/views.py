@@ -39,6 +39,7 @@ def _index(request):
         "sitemapDomain": settings.SITEMAP_DOMAIN,
         "maxTitle": constants.CONTENT_FILENAME_MAX_LEN,
         "deletableContentTypes": settings.OCW_STUDIO_DELETABLE_CONTENT_TYPES,
+        "ocwCourseStarterSlug": settings.OCW_COURSE_STARTER_SLUG,
     }
 
     user = request.user

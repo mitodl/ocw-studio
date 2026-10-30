@@ -455,6 +455,46 @@ def test_mass_build_sites_definition_sync_with_delete(
     assert projects_trigger_step["trigger"] == expected_trigger
 
 
+@pytest.mark.parametrize("offline", [True, False])
+@pytest.mark.parametrize("theme_slug", ["", "ocw-course-v3"])
+def test_mass_build_sites_definition_extra_theme_sites(
+    mass_build_websites,
+    settings,
+    offline,
+    theme_slug,
+):
+    """An extra theme mass build should only build sites using the default course theme"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    settings.OCW_DEFAULT_COURSE_THEME = "mass-build-test-starter-999"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+        version=VERSION_LIVE,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(VERSION_LIVE),
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        offline=offline,
+        instance_vars="",
+        theme_slug=theme_slug,
+    )
+    pipeline_definition = MassBuildSitesPipelineDefinition(config=pipeline_config)
+    rendered_definition = json.loads(pipeline_definition.json(indent=2, by_alias=True))
+    built_site_names = {
+        site["site_name"]
+        for job in rendered_definition["jobs"]
+        for step in job["plan"]
+        if "across" in step
+        for site in step["across"][0]["values"]
+    }
+    expected_site_names = {
+        site.name
+        for site in mass_build_websites
+        if not theme_slug or site.starter.slug == settings.OCW_DEFAULT_COURSE_THEME
+    }
+    assert built_site_names == expected_site_names
+    assert ("root-website" in built_site_names) is not bool(theme_slug)
+
+
 def _iter_steps(steps):
     """Yield every step in a job plan, descending into across/do/try wrappers"""
     for step in steps:

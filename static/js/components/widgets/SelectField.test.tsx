@@ -263,6 +263,48 @@ describe("SelectField", () => {
       expect(screen.queryByText("one")).not.toBeInTheDocument()
       expect(screen.queryByText("two")).not.toBeInTheDocument()
     })
+
+    it("calls onChange with an empty string when a clearable value is cleared", async () => {
+      const user = userEvent.setup()
+      const { container } = renderSelect({ value: "one", isClearable: true })
+
+      const clearIndicator = container.querySelector(
+        `.${classNamePrefix}__clear-indicator`,
+      )
+      if (!clearIndicator) {
+        throw new Error("Expected a clear indicator")
+      }
+      await user.click(clearIndicator)
+
+      sinon.assert.calledWith(onChangeStub, {
+        target: { value: "", name: name },
+      })
+    })
+
+    it("shows the label of an option whose value is an empty string", async () => {
+      renderSelect({
+        value: "",
+        options: [{ label: "-----", value: "" }, ...options],
+        placeholder: "Pick one",
+      })
+      expect(screen.getByText("-----")).toBeInTheDocument()
+      expect(screen.queryByText("Pick one")).not.toBeInTheDocument()
+    })
+
+    it.each([null, ""])(
+      "shows the placeholder and no clear indicator for empty value %p",
+      async (value) => {
+        const { container } = renderSelect({
+          value,
+          isClearable: true,
+          placeholder: "Pick one",
+        })
+        expect(screen.getByText("Pick one")).toBeInTheDocument()
+        expect(
+          container.querySelector(`.${classNamePrefix}__clear-indicator`),
+        ).not.toBeInTheDocument()
+      },
+    )
   })
 
   describe("multiple choice", () => {

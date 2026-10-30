@@ -31,6 +31,7 @@ field:
   help: str(required=False)
   fields: list(include('field'), required=False)
   multiple: bool(required=False)
+  clearable: bool(required=False)
   min: int(required=False)
   max: int(required=False)
   options: list(any(str(), include('option_item')), required=False)

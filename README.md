@@ -81,18 +81,23 @@ Keycloak runs automatically as part of the local Docker Compose stack. A pre-con
 
 ### Commits
 
-To ensure commits to github are safe, you should install the following first:
+Code checks run with [prek](https://prek.j178.dev/), which reads `.pre-commit-config.yaml`.
+The `prek` check runs every hook on pull requests, and [autofix.ci](https://autofix.ci/) pushes any fixes.
+Install the Python and JavaScript dependencies, then replace any existing pre-commit git hook:
 
-```
-pip install pre_commit
-pre-commit install
+```sh
+uv sync
+corepack enable
+yarn install --immutable
+uv run prek install -f
+uv run prek run --all-files
 ```
 
-To automatically install precommit hooks when cloning a repo, you can run this:
+To automatically install prek hooks when cloning a repo, you can run this:
 
 ```
 git config --global init.templateDir ~/.git-template
-pre-commit init-templatedir ~/.git-template
+uv run prek init-templatedir ~/.git-template
 ```
 
 # Testing and Formatting

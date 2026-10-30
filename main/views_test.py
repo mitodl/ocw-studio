@@ -105,6 +105,7 @@ def test_react_page(  # pylint: disable=too-many-arguments  # noqa: PLR0913, PLR
             "sitemapDomain": settings.SITEMAP_DOMAIN,
             "maxTitle": CONTENT_FILENAME_MAX_LEN,
             "deletableContentTypes": settings.OCW_STUDIO_DELETABLE_CONTENT_TYPES,
+            "ocwCourseStarterSlug": settings.OCW_COURSE_STARTER_SLUG,
         }
     else:
         assert response.status_code == HTTP_302_FOUND

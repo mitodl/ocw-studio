@@ -97,7 +97,11 @@ class MassBuildSitesPipelineDefinitionConfig:
         sync_with_delete: bool = False,
     ):
         vars = get_common_pipeline_vars()  # noqa: A001
-        sites = list(get_publishable_sites(version, is_offline=offline))
+        sites = get_publishable_sites(version, is_offline=offline)
+        if is_extra_theme(theme_slug):
+            # Extra themes only apply to course sites, same as the site pipelines
+            sites = sites.filter(starter__slug=settings.OCW_DEFAULT_COURSE_THEME)
+        sites = list(sites)
         shuffle(sites)
         self.sites = sites
         self.version = version
