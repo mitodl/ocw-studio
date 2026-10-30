@@ -1,5 +1,9 @@
 """Tests for the markdown_cleanup management command."""  # noqa: INP001
 
+import pytest
+from django.core.management import call_command
+
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.management.commands.markdown_cleanup import Command
 
 
@@ -14,3 +18,29 @@ def test_gallery_image_rename_is_a_registered_alias():
     """gallery_image_rename must be selectable via --alias for RC/backfill repair runs."""
     aliases = [rule.alias for rule in Command.Rules]
     assert "gallery_image_rename" in aliases
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("published_only", [True, False])
+def test_published_only_skips_unpublished_websites(mocker, published_only):
+    """--published-only should skip websites that were never published or have been unpublished"""
+    mock_do_handle = mocker.patch.object(Command, "do_handle")
+    published = WebsiteContentFactory.create(
+        website=WebsiteFactory.create(published=True)
+    )
+    never_published = WebsiteContentFactory.create(
+        website=WebsiteFactory.create(not_published=True)
+    )
+    unpublished = WebsiteContentFactory.create(
+        website=WebsiteFactory.create(unpublished=True)
+    )
+    call_command(
+        "markdown_cleanup",
+        Command.Rules[0].alias,
+        commit=True,
+        skip_sync=True,
+        published_only=published_only,
+    )
+    created = {published, never_published, unpublished}
+    processed = set(mock_do_handle.call_args.kwargs["website_contents"]) & created
+    assert processed == ({published} if published_only else created)
