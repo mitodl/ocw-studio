@@ -40,6 +40,7 @@ from content_sync.utils import (
     get_common_pipeline_vars,
     get_destination_filepath,
     get_destination_url,
+    get_extra_course_themes,
     get_hugo_arg_string,
     get_ocw_studio_api_url,
     get_publishable_sites,
@@ -51,7 +52,11 @@ from content_sync.utils import (
 from main.s3_utils import get_boto3_client
 from videos.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.constants import CONTENT_TYPE_METADATA
-from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.site_config_api import ConfigItem, SiteConfig
 
 pytestmark = pytest.mark.django_db
@@ -438,6 +443,26 @@ def test_is_extra_theme(settings, theme_slug, extra_themes, expected):
     """is_extra_theme should return True only if theme_slug is in OCW_EXTRA_COURSE_THEMES"""
     settings.OCW_EXTRA_COURSE_THEMES = extra_themes
     assert is_extra_theme(theme_slug) == expected
+
+
+@pytest.mark.parametrize(
+    ("starter_slug", "expected"),
+    [
+        ("ocw-course-v2", ["ocw-course-v3", "ocw-course-v4"]),
+        ("ocw-www", []),
+        (None, []),
+    ],
+)
+def test_get_extra_course_themes(settings, starter_slug, expected):
+    """Only sites on the default course theme should also be built with the extra themes"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug=starter_slug)
+        if starter_slug
+        else None
+    )
+    assert get_extra_course_themes(website) == expected
 
 
 def _compose_address_excerpts(rendered, context=40):

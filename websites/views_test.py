@@ -438,8 +438,13 @@ def test_websites_endpoint_publish_with_url_blank_error(drf_client, action):
     assert response.json() == {"url_path": ["The URL path cannot be blank"]}
 
 
-def test_websites_endpoint_unpublish(drf_client, mocker):
+@pytest.mark.parametrize("is_default_theme_site", [True, False])
+def test_websites_endpoint_unpublish(
+    settings, drf_client, mocker, is_default_theme_site
+):
     """A user with admin permissions should be able to request a website unpublish"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
     mock_unpublished_removal = mocker.patch(
         "websites.views.trigger_unpublished_removal"
     )
@@ -449,8 +454,11 @@ def test_websites_endpoint_unpublish(drf_client, mocker):
 
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create()
-    mocker.patch("content_sync.tasks.Website.objects.get", return_value=website)
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+        if is_default_theme_site
+        else WebsiteStarterFactory.create()
+    )
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
@@ -464,7 +472,10 @@ def test_websites_endpoint_unpublish(drf_client, mocker):
     assert website.unpublished is True
     assert website.unpublish_status == constants.PUBLISH_STATUS_NOT_STARTED
     assert website.last_unpublished_by == admin
-    assert mock_update_mass_build_pipelines.return_value.upsert_pipeline.call_count == 2
+    # Online and offline mass builds of both versions, for each theme the site is built with
+    assert mock_update_mass_build_pipelines.return_value.upsert_pipeline.call_count == (
+        8 if is_default_theme_site else 4
+    )
 
 
 def test_websites_endpoint_unpublish_denied(drf_client, mocker):
