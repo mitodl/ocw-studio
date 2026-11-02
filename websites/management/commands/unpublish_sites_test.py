@@ -49,6 +49,6 @@ def test_unpublish_sites_pauses_live_pipelines(mocker, settings, is_default_them
         else [VERSION_LIVE]
     )
     mock_update_mass_builds.delay.assert_called_once_with(
-        version=VERSION_LIVE, website_pk=website.pk
+        version=VERSION_LIVE, website_pk=website.pk, both_versions=True
     )
     mock_get_removal_pipeline.return_value.trigger.assert_called_once_with()

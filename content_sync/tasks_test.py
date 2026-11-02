@@ -152,31 +152,42 @@ def test_update_mass_build_pipelines(api_mock, mocker):
         tasks.update_mass_build_pipelines_on_publish.delay(
             version=version, website_pk=website.pk
         )
-        # An unpublished site is removed from the mass builds of both versions
+        # Publishing an unpublished site, e.g. a preview, refreshes only that version
         assert api_mock.get_mass_build_sites_pipeline.call_args_list == [
-            mocker.call(VERSION_DRAFT),
-            mocker.call(VERSION_DRAFT, offline=True),
+            mocker.call(version),
+            mocker.call(version, offline=True),
+        ]
+    for unpublish_status in [PUBLISH_STATUS_NOT_STARTED, None]:
+        website.unpublish_status = unpublish_status
+        api_mock.get_mass_build_sites_pipeline.reset_mock()
+        tasks.update_mass_build_pipelines_on_publish.delay(
+            version=VERSION_LIVE, website_pk=website.pk, both_versions=True
+        )
+        # Unpublishing or republishing a site refreshes both versions, live first
+        assert api_mock.get_mass_build_sites_pipeline.call_args_list == [
             mocker.call(VERSION_LIVE),
             mocker.call(VERSION_LIVE, offline=True),
+            mocker.call(VERSION_DRAFT),
+            mocker.call(VERSION_DRAFT, offline=True),
         ]
 
 
-@pytest.mark.parametrize("unpublished", [True, False])
+@pytest.mark.parametrize("both_versions", [True, False])
 def test_update_mass_build_pipelines_extra_themes(
-    api_mock, mocker, settings, unpublished
+    api_mock, mocker, settings, both_versions
 ):
     """The mass builds of the extra themes should be upserted too for default theme course sites"""
     settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
     settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(slug="ocw-course-v2"),
-        live_build_date=now_in_utc() if unpublished else None,
-        unpublish_status=PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+        live_build_date=now_in_utc() if both_versions else None,
+        unpublish_status=PUBLISH_STATUS_NOT_STARTED if both_versions else None,
     )
     tasks.update_mass_build_pipelines_on_publish.delay(
-        version=VERSION_LIVE, website_pk=website.pk
+        version=VERSION_LIVE, website_pk=website.pk, both_versions=both_versions
     )
-    versions = [VERSION_DRAFT, VERSION_LIVE] if unpublished else [VERSION_LIVE]
+    versions = [VERSION_LIVE, VERSION_DRAFT] if both_versions else [VERSION_LIVE]
     theme_kwargs = {"prefix": "ocw-course-v3", "theme_slug": "ocw-course-v3"}
     expected_calls = []
     for version in versions:
@@ -212,7 +223,7 @@ def test_update_mass_build_pipelines_matches_upsert_command(mocker, settings):
         unpublish_status=PUBLISH_STATUS_NOT_STARTED,
     )
     tasks.update_mass_build_pipelines_on_publish.delay(
-        version=VERSION_LIVE, website_pk=website.pk
+        version=VERSION_LIVE, website_pk=website.pk, both_versions=True
     )
     refreshed = sorted(upserted)
     upserted.clear()

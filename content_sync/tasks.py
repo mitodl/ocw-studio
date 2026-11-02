@@ -288,17 +288,20 @@ def sync_website_content(website_name: str):
 
 
 @app.task(acks_late=True)
-def update_mass_build_pipelines_on_publish(version: str, website_pk: int):
+def update_mass_build_pipelines_on_publish(
+    version: str, website_pk: int, *, both_versions: bool = False
+):
     """
     Update the mass-build-sites pipeline definitions upon publishing of a new website,
     but only do so if the site has never been built before or has been unpublished.
     This includes the mass builds of any extra themes the site is also built with.
-    An unpublished site is removed from the mass builds of both versions.
 
     Args:
         version(str): The version (draft / live) to update
         website_pk(int): The primary key of the website being published to check build
                          date against
+        both_versions(bool): Update the live and draft mass builds whatever the build
+                             dates, for a site that was just unpublished or republished
     """
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         build_date_field = (
@@ -306,10 +309,9 @@ def update_mass_build_pipelines_on_publish(version: str, website_pk: int):
         )
         website = Website.objects.get(pk=website_pk)
         build_date = getattr(website, build_date_field)
-        if not build_date or website.unpublish_status:
-            versions = (
-                [VERSION_DRAFT, VERSION_LIVE] if website.unpublish_status else [version]
-            )
+        if not build_date or website.unpublish_status or both_versions:
+            # Live first, so a failed draft upsert cannot leave the public builds stale
+            versions = [VERSION_LIVE, VERSION_DRAFT] if both_versions else [version]
             # Same prefix and theme slug as the extra theme site pipelines
             theme_kwargs = [
                 {},

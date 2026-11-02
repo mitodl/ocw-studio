@@ -213,6 +213,7 @@ class WebsiteViewSet(
         """Process a publish request for the specified version"""
         try:
             website = self.get_object()
+            republished = version == VERSION_LIVE and website.unpublish_status
             if website.publish_date is None:
                 if not request.data.get("url_path"):
                     request.data["url_path"] = None
@@ -238,6 +239,12 @@ class WebsiteViewSet(
                     last_unpublished_by=None,
                 )
             trigger_publish(website.name, version)
+            if republished:
+                # Add the site back to the mass builds unpublishing removed it from,
+                # which the build dates alone would skip
+                update_mass_build_pipelines_on_publish.delay(
+                    version=version, website_pk=website.pk, both_versions=True
+                )
             return Response(status=200)
         except ValidationError as ve:
             return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
@@ -311,7 +318,7 @@ class WebsiteViewSet(
                 website.save()
                 trigger_unpublished_removal(website)
                 update_mass_build_pipelines_on_publish.delay(
-                    version=VERSION_LIVE, website_pk=website.pk
+                    version=VERSION_LIVE, website_pk=website.pk, both_versions=True
                 )
                 return Response(
                     status=200,

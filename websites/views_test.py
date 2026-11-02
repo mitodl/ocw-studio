@@ -321,9 +321,16 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublish_status):
     any previous unpublish request
     """
     mock_publish_website = mocker.patch("websites.views.trigger_publish")
+    mock_get_mass_build_pipeline = mocker.patch(
+        "content_sync.tasks.api.get_mass_build_sites_pipeline"
+    )
     now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
-    website = WebsiteFactory.create(unpublish_status=unpublish_status)
+    website = WebsiteFactory.create(
+        unpublish_status=unpublish_status,
+        draft_build_date=now,
+        live_build_date=now,
+    )
     admin = UserFactory.create()
     admin.groups.add(website.admin_group)
     drf_client.force_login(admin)
@@ -340,6 +347,49 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublish_status):
     assert website.live_publish_status_updated_on == now
     assert website.latest_build_id_live is None
     assert website.unpublished is False
+    assert website.unpublish_status is None
+    # Republishing puts the site back in the online and offline mass builds of both versions
+    assert mock_get_mass_build_pipeline.return_value.upsert_pipeline.call_count == (
+        4 if unpublish_status else 0
+    )
+
+
+@pytest.mark.parametrize("is_default_theme_site", [True, False])
+def test_websites_endpoint_unpublish_then_publish(
+    settings, drf_client, mocker, is_default_theme_site
+):
+    """Unpublishing and then republishing a site should refresh its mass builds both times"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    mocker.patch("websites.views.trigger_unpublished_removal")
+    mocker.patch("websites.views.trigger_publish")
+    mock_get_mass_build_pipeline = mocker.patch(
+        "content_sync.tasks.api.get_mass_build_sites_pipeline"
+    )
+    now = now_in_utc()
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+        if is_default_theme_site
+        else WebsiteStarterFactory.create(),
+        draft_build_date=now,
+        live_build_date=now,
+    )
+    admin = UserFactory.create()
+    admin.groups.add(website.admin_group)
+    drf_client.force_login(admin)
+    # Online and offline mass builds of both versions, for each theme the site is built with
+    expected_upserts = 8 if is_default_theme_site else 4
+    for action in ("unpublish", "publish"):
+        mock_get_mass_build_pipeline.reset_mock()
+        resp = drf_client.post(
+            reverse(f"websites_api-{action}", kwargs={"name": website.name})
+        )
+        assert resp.status_code == 200
+        assert (
+            mock_get_mass_build_pipeline.return_value.upsert_pipeline.call_count
+            == expected_upserts
+        )
+    website.refresh_from_db()
     assert website.unpublish_status is None
 
 
