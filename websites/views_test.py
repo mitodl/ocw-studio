@@ -1569,6 +1569,24 @@ def test_websites_endpoint_pipeline_status_denied(
     assert resp.status_code == 403
 
 
+@pytest.mark.parametrize(("removed", "expected_status"), [(True, 200), (False, 404)])
+def test_websites_endpoint_remove_from_root_website(
+    settings, mocker, drf_client, removed, expected_status
+):
+    """The remove_from_root_website endpoint should return 404 if there was no listing to remove"""
+    mock_remove = mocker.patch(
+        "websites.views.remove_website_in_root_website", return_value=removed
+    )
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    website = WebsiteFactory.create()
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        f"{reverse('websites_api-remove-from-root-website', kwargs={'name': website.name})}?version={VERSION_LIVE}"
+    )
+    mock_remove.assert_called_once_with(website, VERSION_LIVE)
+    assert resp.status_code == expected_status
+
+
 @pytest.mark.parametrize("unpublished", [True, False])
 @pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_mass_build_endpoint_list(settings, drf_client, version, unpublished):

@@ -15,7 +15,7 @@ from pytest import fixture  # noqa: PT013
 from requests import HTTPError
 
 from content_sync import tasks
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
@@ -787,6 +787,46 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
         mock_pipeline_unpause.assert_not_called()
 
 
+def test_trigger_unpublished_removal_listing_already_removed(api_mock):
+    """trigger_unpublished_removal should still take the site down if its root website listing is already gone"""
+    WebsiteFactory.create(name="ocw-www")
+    site = WebsiteFactory.create()
+    assert tasks.trigger_unpublished_removal(site.name) is True
+    api_mock.get_sync_backend.assert_not_called()
+    api_mock.get_site_pipeline.assert_called_once_with(site)
+    api_mock.get_site_pipeline.return_value.pause_pipeline.assert_called_once_with(
+        VERSION_LIVE
+    )
+    removal_pipeline = api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.unpause.assert_called_once_with()
+    removal_pipeline.trigger.assert_called_once_with()
+
+
+def test_trigger_unpublished_removal_root_rebuild_fails(api_mock):
+    """trigger_unpublished_removal should take the site down even if rebuilding the root website fails"""
+    root_website = WebsiteFactory.create(name="ocw-www")
+    site = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=root_website,
+        type="website",
+        title=site.title,
+        dirpath=WEBSITE_LISTING_DIRPATH,
+        filename=site.short_id,
+        is_page_content=True,
+    )
+    mock_site_pipeline = api_mock.get_site_pipeline.return_value
+    mock_site_pipeline.trigger_pipeline_build.side_effect = HTTPError("no pipeline")
+    with pytest.raises(HTTPError):
+        tasks.trigger_unpublished_removal(site.name)
+    mock_site_pipeline.pause_pipeline.assert_called_once_with(VERSION_LIVE)
+    removal_pipeline = api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.unpause.assert_called_once_with()
+    removal_pipeline.trigger.assert_called_once_with()
+    api_mock.get_site_pipeline.assert_called_with(root_website)
+    mock_site_pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_DRAFT)
+    assert not WebsiteContent.objects.filter(website=root_website).exists()
+
+
 def test_update_websites_in_root_website(api_mock):
     """
     The update_websites_in_root_website task should update or create WebsiteContent objects of type website, tied to the root website
@@ -888,10 +928,19 @@ def test_remove_website_in_root_website(api_mock):
         website=root_website, type="website"
     )
     assert website_content.count() == 1
-    tasks.remove_website_in_root_website(published_site)
+    assert tasks.remove_website_in_root_website(published_site) is True
     assert website_content.count() == 0
     api_mock.get_sync_backend.assert_any_call(website=root_website)
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_any_call()
+
+
+def test_remove_website_in_root_website_already_removed(api_mock):
+    """remove_website_in_root_website should do nothing if the listing is already gone"""
+    WebsiteFactory.create(name="ocw-www")
+    website = WebsiteFactory.create()
+    assert tasks.remove_website_in_root_website(website) is False
+    api_mock.get_sync_backend.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
 
 
 @mock_aws
