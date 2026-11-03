@@ -2,6 +2,7 @@
 
 import os
 from datetime import timedelta
+from types import SimpleNamespace
 
 import factory
 import pytest
@@ -787,22 +788,38 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
         mock_pipeline_unpause.assert_not_called()
 
 
-def test_trigger_unpublished_removal_listing_already_removed(api_mock):
+@fixture
+def unpublish_api_mock(mocker, settings):
+    """
+    Mock the content_sync.api calls made when unpublishing. The functions are patched
+    one by one rather than the whole module, so calls between them are mocked too.
+    """
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    return SimpleNamespace(
+        get_site_pipeline=mocker.patch("content_sync.api.get_site_pipeline"),
+        get_sync_backend=mocker.patch("content_sync.api.get_sync_backend"),
+        get_unpublished_removal_pipeline=mocker.patch(
+            "content_sync.api.get_unpublished_removal_pipeline"
+        ),
+    )
+
+
+def test_trigger_unpublished_removal_listing_already_removed(unpublish_api_mock):
     """trigger_unpublished_removal should still take the site down if its root website listing is already gone"""
     WebsiteFactory.create(name="ocw-www")
     site = WebsiteFactory.create()
     assert tasks.trigger_unpublished_removal(site.name) is True
-    api_mock.get_sync_backend.assert_not_called()
-    api_mock.get_site_pipeline.assert_called_once_with(site)
-    api_mock.get_site_pipeline.return_value.pause_pipeline.assert_called_once_with(
-        VERSION_LIVE
-    )
-    removal_pipeline = api_mock.get_unpublished_removal_pipeline.return_value
+    unpublish_api_mock.get_sync_backend.assert_not_called()
+    unpublish_api_mock.get_site_pipeline.assert_called_once_with(site)
+    mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
+    mock_site_pipeline.pause_pipeline.assert_any_call(VERSION_LIVE)
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.unpause.assert_called_once_with()
     removal_pipeline.trigger.assert_called_once_with()
 
 
-def test_trigger_unpublished_removal_root_rebuild_fails(api_mock):
+def test_trigger_unpublished_removal_root_rebuild_fails(mocker, unpublish_api_mock):
     """trigger_unpublished_removal should take the site down even if rebuilding the root website fails"""
     root_website = WebsiteFactory.create(name="ocw-www")
     site = WebsiteFactory.create()
@@ -814,15 +831,18 @@ def test_trigger_unpublished_removal_root_rebuild_fails(api_mock):
         filename=site.short_id,
         is_page_content=True,
     )
-    mock_site_pipeline = api_mock.get_site_pipeline.return_value
+    mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
     mock_site_pipeline.trigger_pipeline_build.side_effect = HTTPError("no pipeline")
     with pytest.raises(HTTPError):
         tasks.trigger_unpublished_removal(site.name)
-    mock_site_pipeline.pause_pipeline.assert_called_once_with(VERSION_LIVE)
-    removal_pipeline = api_mock.get_unpublished_removal_pipeline.return_value
+    mock_site_pipeline.pause_pipeline.assert_any_call(VERSION_LIVE)
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.unpause.assert_called_once_with()
     removal_pipeline.trigger.assert_called_once_with()
-    api_mock.get_site_pipeline.assert_called_with(root_website)
+    assert unpublish_api_mock.get_site_pipeline.call_args_list == [
+        mocker.call(site),
+        mocker.call(root_website),
+    ]
     mock_site_pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_DRAFT)
     assert not WebsiteContent.objects.filter(website=root_website).exists()
 
