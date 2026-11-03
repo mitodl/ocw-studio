@@ -54,7 +54,9 @@ def test_generate_s3_path(use_content, file_extension, expected_postfix):
 @pytest.mark.parametrize(
     ("filename", "expected_result"),
     [
-        (f"{uuid4()}_file.ext", "file.ext"),
+        # A fixed UUID: a random one changes the test id on every collection,
+        # which pytest-xdist rejects because its workers must agree on ids.
+        ("ab3d47d3-8be9-46c4-aec6-58c10ecad29e_file.ext", "file.ext"),
         ("file.ext", "file.ext"),
     ],
 )

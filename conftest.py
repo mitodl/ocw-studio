@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 import yaml
 from django.db.models.signals import pre_save
+from django.test import override_settings
 
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import  # noqa: F403
 from websites.constants import OMNIBUS_STARTER_SLUG
@@ -31,6 +32,27 @@ def mock_gdrive_build(mocker):
     """
     mocker.patch("gdrive_sync.api.build")
     mocker.patch("videos.youtube.build")
+
+
+@pytest.fixture(autouse=True)
+def no_retry_sleep(mocker):
+    """
+    Skip the one-second pause between @retry_on_failure attempts. Retries still
+    happen, so call counts are unchanged; a test that cares about the pause can
+    patch content_sync.decorators.sleep itself.
+    """
+    mocker.patch("content_sync.decorators.sleep")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isolated_media_root(tmp_path_factory):
+    """
+    Give each test session its own MEDIA_ROOT. Under pytest-xdist every worker
+    restarts the factory sequences, so two workers can build the same upload
+    path and race on it in a shared directory.
+    """
+    with override_settings(MEDIA_ROOT=str(tmp_path_factory.mktemp("media"))):
+        yield
 
 
 @pytest.fixture
