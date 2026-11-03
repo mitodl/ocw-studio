@@ -1395,7 +1395,7 @@ wheels = [
 
 [[package]]
 name = "ocw-studio"
-version = "0.188.0"
+version = "2026.10.28.1"
 source = { virtual = "." }
 default-groups = "all"
 dependencies = [
