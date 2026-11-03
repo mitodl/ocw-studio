@@ -1064,3 +1064,73 @@ def test_find_files_recursive(mocker, mock_github):
     repo.get_contents.side_effect = get_content_side_effect
     files = find_files_recursive(repo=repo, path="", file_name="ocw-studio.yaml")
     assert files == ["site-1/ocw-studio.yaml", "site-2/ocw-studio.yaml"]
+
+
+@pytest.fixture
+def tag_release_repo(mocker, settings, mock_github):
+    """Mock a repo that is released as tags, with two starter configs in the tagged commit"""
+    settings.OCW_HUGO_TAG_RELEASES = True
+    settings.GITHUB_WEBHOOK_BRANCH = "release-candidate"
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+    repo = mock_github.return_value.get_organization.return_value.get_repo.return_value
+    repo.get_git_tree.return_value.tree = [
+        mocker.Mock(path="site-1/ocw-studio.yaml", type="blob"),
+        mocker.Mock(path="site-1/README.md", type="blob"),
+        mocker.Mock(path="site-2/ocw-studio.yaml", type="blob"),
+        mocker.Mock(path="site-2", type="tree"),
+        mocker.Mock(path="ocw-studio.yaml", type="tree"),
+    ]
+    config_content = b"---\nroot-url-path: sites\ncollections: []"
+    repo.get_contents.side_effect = lambda path, *_args, **_kwargs: mocker.Mock(
+        path=path, decoded_content=config_content
+    )
+    return repo
+
+
+def test_sync_starter_configs_tag_release_syncs_every_config_in_the_tagged_commit(
+    tag_release_repo,
+):
+    """A matching tag push syncs each config file in the tagged commit, whatever the push lists"""
+    git_url = "https://github.com/testorg/ocws-configs"
+    sync_starter_configs(git_url, [], commit="abc123", tag="2026.11.3.1")
+    tag_release_repo.get_git_tree.assert_called_once_with("abc123", recursive=True)
+    tag_release_repo.get_branch.assert_not_called()
+    assert [call.args for call in tag_release_repo.get_contents.call_args_list] == [
+        ("site-1/ocw-studio.yaml", "abc123"),
+        ("site-2/ocw-studio.yaml", "abc123"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("webhook_branch", "tag", "commit"),
+    [
+        ("release-candidate", "production/2026.11.3.1", "abc123"),
+        ("release-candidate", "v1.164.0", "abc123"),
+        ("release-candidate", None, "abc123"),
+        ("release-candidate", "2026.11.3.1", None),
+        ("release", "2026.11.3.1", "abc123"),
+    ],
+)
+def test_sync_starter_configs_tag_release_ignores_other_pushes(
+    tag_release_repo, settings, webhook_branch, tag, commit
+):
+    """Branch pushes and tags that do not match the environment's pattern sync nothing"""
+    settings.GITHUB_WEBHOOK_BRANCH = webhook_branch
+    sync_starter_configs(
+        "https://github.com/testorg/ocws-configs", [], commit=commit, tag=tag
+    )
+    tag_release_repo.get_contents.assert_not_called()
+
+
+def test_sync_starter_configs_tag_release_production_pointer(
+    tag_release_repo, settings
+):
+    """The production pointer syncs on the production/ tag"""
+    settings.GITHUB_WEBHOOK_BRANCH = "release"
+    sync_starter_configs(
+        "https://github.com/testorg/ocws-configs",
+        [],
+        commit="abc123",
+        tag="production/2026.11.3.1",
+    )
+    assert tag_release_repo.get_contents.call_count == 2

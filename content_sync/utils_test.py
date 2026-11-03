@@ -1,6 +1,7 @@
 """Content sync utility functionality tests"""
 
 import os
+import re
 
 import pytest
 from botocore.exceptions import ClientError
@@ -12,6 +13,8 @@ from content_sync.constants import (
     DEV_START,
     NON_DEV_END,
     NON_DEV_START,
+    OCW_HUGO_PRODUCTION_TAG_REGEX,
+    OCW_HUGO_RC_TAG_REGEX,
     TARGET_OFFLINE,
     TARGET_ONLINE,
     VERSION_DRAFT,
@@ -41,6 +44,7 @@ from content_sync.utils import (
     get_destination_filepath,
     get_destination_url,
     get_hugo_arg_string,
+    get_hugo_tag_regex,
     get_ocw_studio_api_url,
     get_publishable_sites,
     get_site_content_branch,
@@ -521,3 +525,44 @@ def test_configured_endpoint_reaches_rendered_pipelines(settings, mocker):
 
     remove_unpublished = UnpublishedSiteRemovalPipelineDefinition()
     assert "objectstore.test:9000" in remove_unpublished.json()
+
+
+@pytest.mark.parametrize(
+    ("tag_releases", "dev", "pointer", "expected"),
+    [
+        (True, False, "release-candidate", OCW_HUGO_RC_TAG_REGEX),
+        (True, False, "release", OCW_HUGO_PRODUCTION_TAG_REGEX),
+        (False, False, "release-candidate", None),
+        (False, False, "release", None),
+        (True, True, "release-candidate", None),
+        (True, False, "main", None),
+        (True, False, "", None),
+        (True, False, None, None),
+    ],
+)
+def test_get_hugo_tag_regex(  # noqa: PLR0913, PLR0917
+    mocker, settings, tag_releases, dev, pointer, expected
+):
+    """Only a release pointer outside dev follows tags, and only when tag releases are on"""
+    settings.OCW_HUGO_TAG_RELEASES = tag_releases
+    mocker.patch("content_sync.utils.is_dev", return_value=dev)
+    assert get_hugo_tag_regex(pointer) == expected
+
+
+@pytest.mark.parametrize(
+    ("regex", "tag", "matches"),
+    [
+        (OCW_HUGO_RC_TAG_REGEX, "2026.11.3.1", True),
+        (OCW_HUGO_RC_TAG_REGEX, "2026.11.3", False),
+        (OCW_HUGO_RC_TAG_REGEX, "v1.164.0", False),
+        (OCW_HUGO_RC_TAG_REGEX, "production/2026.11.3.1", False),
+        (OCW_HUGO_RC_TAG_REGEX, "abandoned/2026.11.3.1", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "production/2026.11.3.1", True),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "2026.11.3.1", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "production/v1.164.0", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "xproduction/2026.11.3.1", False),
+    ],
+)
+def test_hugo_tag_regexes(regex, tag, matches):
+    """Release tags match the RC pattern and only production/ tags match the production one"""
+    assert bool(re.search(regex, tag)) is matches

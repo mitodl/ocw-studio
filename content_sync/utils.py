@@ -19,6 +19,7 @@ from content_sync.constants import (
     END_TAG_PREFIX,
     NON_DEV_END,
     NON_DEV_START,
+    OCW_HUGO_TAG_REGEXES,
     OFFLINE_END,
     OFFLINE_START,
     ONLINE_END,
@@ -256,6 +257,20 @@ def get_projects_branch():
         if is_dev()
         else github_webhook_branch
     )
+
+
+def get_hugo_tag_regex(pointer: str | None) -> str | None:
+    """
+    Get the tag pattern that ocw-hugo-themes and ocw-hugo-projects are checked out at
+    for a release pointer, or None when pipelines should clone the branch of that name.
+
+    Only when settings.OCW_HUGO_TAG_RELEASES is on, outside dev, and the pointer is
+    one of the release pointers. Anything else, such as a development branch, is a
+    branch.
+    """
+    if not settings.OCW_HUGO_TAG_RELEASES or is_dev():
+        return None
+    return OCW_HUGO_TAG_REGEXES.get(pointer)
 
 
 def get_hugo_arg_string(build_target, pipeline_name, default_args, override_args=None):

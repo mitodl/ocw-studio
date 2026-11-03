@@ -1,6 +1,7 @@
 """Github API wrapper"""
 
 import logging
+import re
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -28,7 +29,7 @@ from yamale import YamaleError
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
-from content_sync.utils import get_destination_filepath
+from content_sync.utils import get_destination_filepath, get_hugo_tag_regex
 from main import features
 from users.models import User
 from websites.api import get_valid_new_slug
@@ -72,12 +73,20 @@ def decode_file_contents(content_file: ContentFile) -> str:
 
 
 def sync_starter_configs(  # pylint:disable=too-many-locals
-    repo_url: str, config_files: list[str], commit: str | None = None
+    repo_url: str,
+    config_files: list[str],
+    commit: str | None = None,
+    tag: str | None = None,
 ):
     """
     Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
     If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
     is ignored if it does not match the branch in settings.
+
+    When settings.OCW_HUGO_TAG_RELEASES is on, the repo has no release branch and
+    GITHUB_WEBHOOK_BRANCH names a release pointer instead. Only the push of a tag that
+    matches the pointer's pattern syncs, and it syncs every config file in the tagged
+    commit, because a tag push does not list the files it changed.
     """  # noqa: E501
     repo_path = urlparse(repo_url).path.lstrip("/")
     org_name, repo_name = repo_path.split("/", 1)
@@ -85,22 +94,36 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
     org = git.get_organization(org_name)
     repo = org.get_repo(repo_name)
 
-    settings_branch = settings.GITHUB_WEBHOOK_BRANCH
-    branch = (
-        repo.get_branch(settings_branch)
-        if settings_branch
-        else repo.get_branch(repo.default_branch)
-    )
-    if commit is not None and commit != branch.commit.sha:
-        log.warning("Commit does not match GITHUB_WEBHOOK_BRANCH, ignoring sync")
-        return
+    tag_regex = get_hugo_tag_regex(settings.GITHUB_WEBHOOK_BRANCH)
+    if tag_regex:
+        if not (tag and commit and re.search(tag_regex, tag)):
+            log.warning("Push does not match the release tag pattern, ignoring sync")
+            return
+        config_files = [
+            node.path
+            for node in repo.get_git_tree(commit, recursive=True).tree
+            if node.type == "blob"
+            and node.path.rsplit("/", 1)[-1] == settings.OCW_STUDIO_SITE_CONFIG_FILE
+        ]
+        ref_name = commit
+    else:
+        settings_branch = settings.GITHUB_WEBHOOK_BRANCH
+        branch = (
+            repo.get_branch(settings_branch)
+            if settings_branch
+            else repo.get_branch(repo.default_branch)
+        )
+        if commit is not None and commit != branch.commit.sha:
+            log.warning("Commit does not match GITHUB_WEBHOOK_BRANCH, ignoring sync")
+            return
+        ref_name = branch.name
 
     for config_file in config_files:
         try:
             if commit:
                 git_file = repo.get_contents(config_file, commit)
             else:
-                git_file = repo.get_contents(config_file, ref=branch.name)
+                git_file = repo.get_contents(config_file, ref=ref_name)
             slug = (
                 git_file.path.split("/")[0]
                 if git_file.path != settings.OCW_STUDIO_SITE_CONFIG_FILE
