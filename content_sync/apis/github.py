@@ -3,6 +3,7 @@
 import logging
 import re
 from base64 import b64decode
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
@@ -12,6 +13,7 @@ import yaml
 from cryptography.hazmat.primitives import serialization
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db import connection
 from django.db.models import F, Q
 from github import (
     Auth,
@@ -72,52 +74,43 @@ def decode_file_contents(content_file: ContentFile) -> str:
     return str(b64decode(content_file.content), encoding="utf-8")
 
 
-def sync_starter_configs(  # pylint:disable=too-many-locals
+# Held while the starters of a release tag are synced, so a task for an older tag
+# cannot write after a task for a newer one. Any constant works, it only has to be
+# the same in every process.
+TAG_SYNC_LOCK_ID = 7_195_100_233
+
+
+@contextmanager
+def tag_sync_lock() -> Iterator[None]:
+    """Serialize starter syncs for release tags across processes (Postgres advisory lock)"""  # noqa: E501
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_lock(%s)", [TAG_SYNC_LOCK_ID])
+        try:
+            yield
+        finally:
+            cursor.execute("SELECT pg_advisory_unlock(%s)", [TAG_SYNC_LOCK_ID])
+
+
+def release_tag_sort_key(tag: str) -> tuple[int, ...]:
+    """Order release tags (``2026.11.3.1`` or ``production/2026.11.3.1``) by version"""
+    return tuple(int(part) for part in tag.removeprefix("production/").split("."))
+
+
+def get_newest_release_tag(repo: Repository, tag_regex: str) -> str | None:
+    """Return the newest of the repo's tags that match the release tag pattern"""
+    names = [tag.name for tag in repo.get_tags() if re.fullmatch(tag_regex, tag.name)]
+    return max(names, key=release_tag_sort_key, default=None)
+
+
+def _sync_config_files(  # noqa: PLR0913, PLR0917
+    repo: Repository,
     repo_url: str,
+    repo_name: str,
     config_files: list[str],
-    commit: str | None = None,
-    tag: str | None = None,
+    commit: str | None,
+    ref_name: str | None,
 ):
-    """
-    Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
-    If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
-    is ignored if it does not match the branch in settings.
-
-    When settings.OCW_HUGO_TAG_RELEASES is on, the repo has no release branch and
-    GITHUB_WEBHOOK_BRANCH names a release pointer instead. Only the push of a tag that
-    matches the pointer's pattern syncs, and it syncs every config file in the tagged
-    commit, because a tag push does not list the files it changed.
-    """  # noqa: E501
-    repo_path = urlparse(repo_url).path.lstrip("/")
-    org_name, repo_name = repo_path.split("/", 1)
-    git = Github(timeout=settings.GITHUB_TIMEOUT)
-    org = git.get_organization(org_name)
-    repo = org.get_repo(repo_name)
-
-    tag_regex = get_hugo_tag_regex(settings.GITHUB_WEBHOOK_BRANCH)
-    if tag_regex:
-        if not (tag and commit and re.fullmatch(tag_regex, tag)):
-            log.warning("Push does not match the release tag pattern, ignoring sync")
-            return
-        config_files = [
-            node.path
-            for node in repo.get_git_tree(commit, recursive=True).tree
-            if node.type == "blob"
-            and node.path.rsplit("/", 1)[-1] == settings.OCW_STUDIO_SITE_CONFIG_FILE
-        ]
-        ref_name = commit
-    else:
-        settings_branch = settings.GITHUB_WEBHOOK_BRANCH
-        branch = (
-            repo.get_branch(settings_branch)
-            if settings_branch
-            else repo.get_branch(repo.default_branch)
-        )
-        if commit is not None and commit != branch.commit.sha:
-            log.warning("Commit does not match GITHUB_WEBHOOK_BRANCH, ignoring sync")
-            return
-        ref_name = branch.name
-
+    """Create/update a WebsiteStarter for each config file, read at a commit or a ref"""
     for config_file in config_files:
         try:
             if commit:
@@ -149,6 +142,66 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
         except:  # pylint: disable=bare-except  # noqa: E722
             log.exception("Error processing config file %s", config_file)
             continue
+
+
+def sync_starter_configs(
+    repo_url: str,
+    config_files: list[str],
+    commit: str | None = None,
+    tag: str | None = None,
+):
+    """
+    Create/update WebsiteStarter objects given a repo URL and a list of config files in the repo.
+    If a commit was passed in and GITHUB_WEBHOOK_BRANCH is set, these are compared and the change
+    is ignored if it does not match the branch in settings.
+
+    When settings.OCW_HUGO_TAG_RELEASES is on, the repo has no release branch and
+    GITHUB_WEBHOOK_BRANCH names a release pointer instead. Only a tag that matches the
+    pointer's pattern and is the newest such tag syncs, so a redelivered webhook for an
+    older release cannot overwrite the starters of a newer one. The tag's commit, which
+    must be the commit passed in if there is one, supplies every config file in the
+    tagged commit, because a tag push does not list the files it changed.
+    """  # noqa: E501
+    repo_path = urlparse(repo_url).path.lstrip("/")
+    org_name, repo_name = repo_path.split("/", 1)
+    git = Github(timeout=settings.GITHUB_TIMEOUT)
+    org = git.get_organization(org_name)
+    repo = org.get_repo(repo_name)
+
+    tag_regex = get_hugo_tag_regex(settings.GITHUB_WEBHOOK_BRANCH)
+    if tag_regex:
+        if not (tag and re.fullmatch(tag_regex, tag)):
+            log.warning("Push does not match the release tag pattern, ignoring sync")
+            return
+        with tag_sync_lock():
+            if tag != get_newest_release_tag(repo, tag_regex):
+                log.warning("Tag %s is not the newest release tag, ignoring sync", tag)
+                return
+            tagged_commit = repo.get_commit(tag).sha
+            if commit is not None and commit != tagged_commit:
+                log.warning("Commit does not match tag %s, ignoring sync", tag)
+                return
+            tag_config_files = [
+                node.path
+                for node in repo.get_git_tree(tagged_commit, recursive=True).tree
+                if node.type == "blob"
+                and node.path.rsplit("/", 1)[-1] == settings.OCW_STUDIO_SITE_CONFIG_FILE
+            ]
+            _sync_config_files(
+                repo, repo_url, repo_name, tag_config_files, tagged_commit, None
+            )
+        return
+
+    settings_branch = settings.GITHUB_WEBHOOK_BRANCH
+    branch = (
+        repo.get_branch(settings_branch)
+        if settings_branch
+        else repo.get_branch(repo.default_branch)
+    )
+    if commit is not None and commit != branch.commit.sha:
+        log.warning("Commit does not match GITHUB_WEBHOOK_BRANCH, ignoring sync")
+        return
+    _sync_config_files(repo, repo_url, repo_name, config_files, commit, branch.name)
 
 
 def get_app_installation_id(app: GithubIntegration) -> int | None:

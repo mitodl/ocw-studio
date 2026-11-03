@@ -19,9 +19,12 @@ from content_sync.apis.github import (
     GithubApiWrapper,
     find_files_recursive,
     get_app_installation_id,
+    get_newest_release_tag,
     get_token,
     sync_starter_configs,
+    tag_sync_lock,
 )
+from content_sync.constants import OCW_HUGO_RC_TAG_REGEX
 from main import features
 from users.factories import UserFactory
 from websites.constants import STARTER_SOURCE_GITHUB
@@ -1080,6 +1083,19 @@ def tag_release_repo(mocker, settings, mock_github):
         mocker.Mock(path="site-2", type="tree"),
         mocker.Mock(path="ocw-studio.yaml", type="tree"),
     ]
+    repo.get_tags.return_value = [
+        SimpleNamespace(name=name)
+        for name in (
+            "2026.11.3.1",
+            "2026.11.2.1",
+            "2026.10.9.2",
+            "production/2026.11.2.1",
+            "production/2026.10.9.2",
+            "v1.164.0",
+            "abandoned/2026.11.3.2",
+        )
+    ]
+    repo.get_commit.return_value.sha = "abc123"
     config_content = b"---\nroot-url-path: sites\ncollections: []"
     repo.get_contents.side_effect = lambda path, *_args, **_kwargs: mocker.Mock(
         path=path, decoded_content=config_content
@@ -1108,7 +1124,6 @@ def test_sync_starter_configs_tag_release_syncs_every_config_in_the_tagged_commi
         ("release-candidate", "v1.164.0", "abc123"),
         ("release-candidate", "2026.11.3.1\n", "abc123"),
         ("release-candidate", None, "abc123"),
-        ("release-candidate", "2026.11.3.1", None),
         ("release", "2026.11.3.1", "abc123"),
     ],
 )
@@ -1126,12 +1141,75 @@ def test_sync_starter_configs_tag_release_ignores_other_pushes(
 def test_sync_starter_configs_tag_release_production_pointer(
     tag_release_repo, settings
 ):
-    """The production pointer syncs on the production/ tag"""
+    """The production pointer syncs on the newest production/ tag"""
     settings.GITHUB_WEBHOOK_BRANCH = "release"
     sync_starter_configs(
         "https://github.com/testorg/ocws-configs",
         [],
         commit="abc123",
-        tag="production/2026.11.3.1",
+        tag="production/2026.11.2.1",
     )
     assert tag_release_repo.get_contents.call_count == 2
+
+
+def test_sync_starter_configs_tag_release_reads_the_tag_when_no_commit_is_given(
+    tag_release_repo,
+):
+    """A manual import names only the tag, and reads the commit the tag points at"""
+    sync_starter_configs(
+        "https://github.com/testorg/ocws-configs", [], tag="2026.11.3.1"
+    )
+    tag_release_repo.get_commit.assert_called_once_with("2026.11.3.1")
+    tag_release_repo.get_git_tree.assert_called_once_with("abc123", recursive=True)
+    assert tag_release_repo.get_contents.call_count == 2
+
+
+@pytest.mark.parametrize("stale_tag", ["2026.11.2.1", "2026.10.9.2"])
+def test_sync_starter_configs_tag_release_ignores_an_older_tag(
+    tag_release_repo, stale_tag
+):
+    """A redelivered webhook for an older release must not overwrite the newest release's starters"""
+    sync_starter_configs(
+        "https://github.com/testorg/ocws-configs", [], commit="abc123", tag=stale_tag
+    )
+    tag_release_repo.get_git_tree.assert_not_called()
+    tag_release_repo.get_contents.assert_not_called()
+
+
+def test_sync_starter_configs_tag_release_ignores_a_commit_the_tag_does_not_point_at(
+    tag_release_repo,
+):
+    """The commit in the payload has to be the one the tag points at now"""
+    sync_starter_configs(
+        "https://github.com/testorg/ocws-configs",
+        [],
+        commit="def456",
+        tag="2026.11.3.1",
+    )
+    tag_release_repo.get_contents.assert_not_called()
+
+
+def test_get_newest_release_tag_orders_by_version(mocker):
+    """Tags sort by number, so 2026.11.10.1 is newer than 2026.11.9.2"""
+    repo = mocker.Mock()
+    repo.get_tags.return_value = [
+        SimpleNamespace(name=name)
+        for name in ("2026.11.9.2", "2026.11.10.1", "2026.2.28.4", "v9.9.9")
+    ]
+    assert get_newest_release_tag(repo, OCW_HUGO_RC_TAG_REGEX) == "2026.11.10.1"
+    repo.get_tags.return_value = []
+    assert get_newest_release_tag(repo, OCW_HUGO_RC_TAG_REGEX) is None
+
+
+def test_tag_sync_lock_is_released(mocker):
+    """The advisory lock is taken and released, also when the sync raises"""
+    mock_cursor = mocker.patch("content_sync.apis.github.connection.cursor")
+    cursor = mock_cursor.return_value.__enter__.return_value
+    with pytest.raises(RuntimeError), tag_sync_lock():  # noqa: PT012
+        msg = "boom"
+        raise RuntimeError(msg)
+    queries = [call.args[0] for call in cursor.execute.call_args_list]
+    assert queries == [
+        "SELECT pg_advisory_lock(%s)",
+        "SELECT pg_advisory_unlock(%s)",
+    ]
