@@ -498,6 +498,9 @@ class WebsiteStarterViewSet(
                     == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
                 ref = data.get("ref") or ""
+                if ref.startswith("refs/tags/") and data.get("deleted"):
+                    # Nothing to sync from a tag that was just deleted.
+                    return Response(status=status.HTTP_202_ACCEPTED)
                 if ref.startswith("refs/tags/"):
                     # A tag push lists no files. The tagged commit is "head_commit";
                     # "after" is the tag object when the tag is annotated.

@@ -1106,6 +1106,7 @@ def test_sync_starter_configs_tag_release_syncs_every_config_in_the_tagged_commi
     [
         ("release-candidate", "production/2026.11.3.1", "abc123"),
         ("release-candidate", "v1.164.0", "abc123"),
+        ("release-candidate", "2026.11.3.1\n", "abc123"),
         ("release-candidate", None, "abc123"),
         ("release-candidate", "2026.11.3.1", None),
         ("release", "2026.11.3.1", "abc123"),

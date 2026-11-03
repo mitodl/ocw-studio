@@ -65,6 +65,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
 from content_sync.utils import (
     get_cli_endpoint_url,
     get_hugo_arg_string,
+    get_hugo_tag_regex,
     get_ocw_studio_api_url,
     is_extra_theme,
 )
@@ -350,12 +351,16 @@ class SitePipelineResources(list[Resource]):
             bucket=config.vars["artifacts_bucket"],
             branch=config.vars["ocw_hugo_themes_branch"],
         )
+        # config.vars hold Concourse placeholders, so the pointer that decides between
+        # a branch and a tag has to come from config.values.
         ocw_hugo_themes_resource = OcwHugoThemesGitResource(
-            branch=config.vars["ocw_hugo_themes_branch"]
+            branch=config.vars["ocw_hugo_themes_branch"],
+            tag_regex=get_hugo_tag_regex(config.values["ocw_hugo_themes_branch"]),
         )
         ocw_hugo_projects_resource = OcwHugoProjectsGitResource(
             uri=config.vars["ocw_hugo_projects_url"],
             branch=config.vars["ocw_hugo_projects_branch"],
+            tag_regex=get_hugo_tag_regex(config.values["ocw_hugo_projects_branch"]),
         )
         site_content_resource = SiteContentGitResource(
             name=SITE_CONTENT_GIT_IDENTIFIER,

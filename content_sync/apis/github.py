@@ -96,7 +96,7 @@ def sync_starter_configs(  # pylint:disable=too-many-locals
 
     tag_regex = get_hugo_tag_regex(settings.GITHUB_WEBHOOK_BRANCH)
     if tag_regex:
-        if not (tag and commit and re.search(tag_regex, tag)):
+        if not (tag and commit and re.fullmatch(tag_regex, tag)):
             log.warning("Push does not match the release tag pattern, ignoring sync")
             return
         config_files = [
