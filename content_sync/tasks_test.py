@@ -393,6 +393,15 @@ def test_sync_github_site_configs(mocker):
     mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
 
 
+def test_sync_github_site_configs_with_tag(mocker):
+    """sync_github_site_configs should pass a tag on to apis.github.sync_starter_configs"""
+    mock_git = mocker.patch("content_sync.tasks.github")
+    args = "https://github.com/testorg/testconfigs", []
+    kwargs = {"commit": "abc123", "tag": "2026.11.3.1"}
+    tasks.sync_github_site_configs.delay(*args, **kwargs)
+    mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
+
+
 def test_upsert_web_publishing_pipeline(api_mock):
     """upsert_web_publishing_pipeline should call api.get_site_pipeline"""
     website = WebsiteFactory.create()

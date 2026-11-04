@@ -498,15 +498,30 @@ class WebsiteStarterViewSet(
                     file
                     for sublist in [
                         commit["modified"] + commit["added"]
-                        for commit in data["commits"]
+                        for commit in data.get("commits") or []
                     ]
                     for file in sublist
                     if os.path.basename(file)  # noqa: PTH119
                     == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
-                sync_github_website_starters(
-                    data["repository"]["html_url"], files, commit=data.get("after")
-                )
+                ref = data.get("ref") or ""
+                if ref.startswith("refs/tags/") and data.get("deleted"):
+                    # Nothing to sync from a tag that was just deleted.
+                    return Response(status=status.HTTP_202_ACCEPTED)
+                if ref.startswith("refs/tags/"):
+                    # A tag push lists no files. The tagged commit is "head_commit";
+                    # "after" is the tag object when the tag is annotated.
+                    sync_github_website_starters(
+                        data["repository"]["html_url"],
+                        files,
+                        commit=(data.get("head_commit") or {}).get("id")
+                        or data.get("after"),
+                        tag=ref.removeprefix("refs/tags/"),
+                    )
+                else:
+                    sync_github_website_starters(
+                        data["repository"]["html_url"], files, commit=data.get("after")
+                    )
             except Exception as exc:  # pylint: disable=broad-except
                 log.exception("Error syncing config files")
                 return Response(status=500, data={"details": str(exc)})

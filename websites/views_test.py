@@ -770,6 +770,55 @@ def test_website_starters_site_configs(settings, mocker, drf_client):
     assert resp.status_code == 202
 
 
+def test_website_starters_site_configs_tag_push(settings, mocker, drf_client):
+    """A tag push passes the tag and the tagged commit, and no changed files"""
+    mocker.patch("websites.views.valid_key", return_value=True)
+    mock_sync = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    data = {
+        "ref": "refs/tags/2026.11.3.1",
+        "after": "tagobject123",
+        "head_commit": {"id": "commit456"},
+        "commits": [],
+        "repository": MOCK_GITHUB_DATA["repository"],
+    }
+    resp = drf_client.post(reverse("website_starters_api-site-configs"), data=data)
+    mock_sync.assert_called_once_with(
+        data["repository"]["html_url"],
+        [],
+        commit="commit456",
+        tag="2026.11.3.1",
+    )
+    assert resp.status_code == 202
+
+
+def test_website_starters_site_configs_deleted_tag_push(mocker, drf_client):
+    """Deleting a tag syncs nothing"""
+    mocker.patch("websites.views.valid_key", return_value=True)
+    mock_sync = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    data = {
+        "ref": "refs/tags/2026.11.3.1",
+        "after": "0" * 40,
+        "deleted": True,
+        "head_commit": None,
+        "commits": [],
+        "repository": MOCK_GITHUB_DATA["repository"],
+    }
+    resp = drf_client.post(reverse("website_starters_api-site-configs"), data=data)
+    mock_sync.assert_not_called()
+    assert resp.status_code == 202
+
+
+def test_website_starters_site_configs_branch_push_has_no_tag(
+    settings, mocker, drf_client
+):
+    """A branch push does not pass a tag"""
+    mocker.patch("websites.views.valid_key", return_value=True)
+    mock_sync = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    data = {**MOCK_GITHUB_DATA, "ref": "refs/heads/release"}
+    drf_client.post(reverse("website_starters_api-site-configs"), data=data)
+    assert "tag" not in mock_sync.call_args.kwargs
+
+
 def test_website_starters_site_configs_exception(mocker, drf_client):
     """A 500 response should be returned if an unhandled exception is raised"""
     mocker.patch("websites.views.valid_key", side_effect=[KeyError("Key not found")])

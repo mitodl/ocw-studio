@@ -247,6 +247,15 @@ def test_sync_github_website_starters(mocker):
     mock_task.assert_called_once_with(*args, **kwargs)
 
 
+def test_sync_github_website_starters_with_tag(mocker):
+    """Sync website starters from github, passing the pushed tag on"""
+    mock_task = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    args = "https://github.com/testorg/testconfigs", []
+    kwargs = {"commit": "abc123", "tag": "2026.11.3.1"}
+    api.sync_github_website_starters(*args, **kwargs)
+    mock_task.assert_called_once_with(*args, **kwargs)
+
+
 def test_get_pipeline_api(settings, mocker):
     """Verify that get_pipeline_api() imports the pipeline api class based on settings.py"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"

@@ -432,11 +432,19 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 
 @app.task(acks_late=True)
-def sync_github_site_configs(url: str, files: list[str], commit: str | None = None):
+def sync_github_site_configs(
+    url: str,
+    files: list[str],
+    commit: str | None = None,
+    tag: str | None = None,
+):
     """
     Sync WebsiteStarter objects from github
     """
-    github.sync_starter_configs(url, files, commit=commit)
+    kwargs = {"commit": commit}
+    if tag is not None:
+        kwargs["tag"] = tag
+    github.sync_starter_configs(url, files, **kwargs)
 
 
 @app.task(acks_late=True)

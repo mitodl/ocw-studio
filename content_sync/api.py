@@ -191,9 +191,17 @@ def trigger_unpublished_removal(website: Website):
     tasks.trigger_unpublished_removal.delay(website.name)
 
 
-def sync_github_website_starters(url: str, files: list[str], commit: str | None = None):
+def sync_github_website_starters(
+    url: str,
+    files: list[str],
+    commit: str | None = None,
+    tag: str | None = None,
+):
     """Sync website starters from github"""
-    tasks.sync_github_site_configs.delay(url, files, commit=commit)
+    kwargs = {"commit": commit}
+    if tag is not None:
+        kwargs["tag"] = tag
+    tasks.sync_github_site_configs.delay(url, files, **kwargs)
 
 
 def publish_website(  # pylint: disable=too-many-arguments

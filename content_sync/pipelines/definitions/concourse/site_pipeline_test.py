@@ -9,7 +9,13 @@ from ol_concourse.lib.resource_types import (
     slack_notification_resource,
 )
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    DEV_ENDPOINT_URL,
+    OCW_HUGO_PRODUCTION_TAG_REGEX,
+    OCW_HUGO_RC_TAG_REGEX,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -1424,3 +1430,55 @@ def test_no_compose_addresses_when_endpoints_configured(
     assert offenders == [], f"compose addresses leaked through: {offenders}"
     assert "objectstore.test:9000" in rendered
     assert "studio.test" in rendered
+
+
+@pytest.mark.parametrize(
+    ("pointer", "expected_regex"),
+    [
+        ("release-candidate", OCW_HUGO_RC_TAG_REGEX),
+        ("release", OCW_HUGO_PRODUCTION_TAG_REGEX),
+    ],
+)
+def test_site_pipeline_resources_follow_release_tags(
+    settings, mocker, pointer, expected_regex
+):
+    """
+    With tag releases on, the themes and projects resources follow tags even though
+    the pipeline reads its branch from a Concourse variable
+    """
+    settings.OCW_HUGO_TAG_RELEASES = True
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path="https://github.com/org/repo/site",
+        slug="release-tags-test",
+    )
+    config = SitePipelineDefinitionConfig(
+        site=WebsiteFactory.create(starter=starter),
+        pipeline_name=VERSION_LIVE,
+        instance_vars="?vars={}",
+        site_content_branch="release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch=pointer,
+        ocw_hugo_projects_branch=pointer,
+    )
+    resources = {r.name: r for r in SitePipelineResources(config=config)}
+    for name in (OCW_HUGO_THEMES_GIT_IDENTIFIER, OCW_HUGO_PROJECTS_GIT_IDENTIFIER):
+        source = resources[name].source
+        assert source["version_type"] == "tags"
+        assert source["tag_regex"] == expected_regex
+        assert "branch" not in source
+    # The artifact key still reads the pointer variable, so it does not change per release
+    webpack_manifest = resources[WEBPACK_MANIFEST_S3_IDENTIFIER]
+    assert (
+        "((site:ocw_hugo_themes_branch))" in webpack_manifest.source["versioned_file"]
+    )

@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 
-from content_sync.constants import DEV_ENDPOINT_URL
+from content_sync.constants import DEV_ENDPOINT_URL, OCW_HUGO_PRODUCTION_TAG_REGEX
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
 )
@@ -82,3 +82,34 @@ def test_generate_theme_assets_pipeline_definition(mock_environments):
         assert f" --endpoint-url {DEV_ENDPOINT_URL}" in upload_theme_assets_command
         assert "AWS_ACCESS_KEY_ID" in upload_theme_assets_task["config"]["params"]
         assert "AWS_SECRET_ACCESS_KEY" in upload_theme_assets_task["config"]["params"]
+
+
+def test_theme_assets_pipeline_follows_the_release_tag(
+    mocker, mock_environments, settings
+):
+    """With tag releases on, the themes resource follows the release pointer's tags"""
+    settings.OCW_HUGO_TAG_RELEASES = True
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+    pipeline_definition = ThemeAssetsPipelineDefinition(
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        preview_bucket=settings.AWS_PREVIEW_BUCKET_NAME,
+        publish_bucket=settings.AWS_PUBLISH_BUCKET_NAME,
+        test_bucket=settings.AWS_TEST_BUCKET_NAME,
+        ocw_hugo_themes_branch="release",
+    )
+    rendered_definition = json.loads(pipeline_definition.json(indent=2))
+    (git_resource,) = [
+        resource
+        for resource in rendered_definition["resources"]
+        if resource["name"] == OCW_HUGO_THEMES_GIT_IDENTIFIER
+    ]
+    assert git_resource["source"]["version_type"] == "tags"
+    assert git_resource["source"]["tag_regex"] == OCW_HUGO_PRODUCTION_TAG_REGEX
+    assert "branch" not in git_resource["source"]
+    # The artifact key stays the pointer, so it does not change with each release
+    assert (
+        "s3://"
+        + settings.AWS_ARTIFACTS_BUCKET_NAME
+        + "/ocw-hugo-themes/release/webpack.json"
+        in json.dumps(rendered_definition)
+    )
