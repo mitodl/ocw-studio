@@ -191,10 +191,48 @@ After all content has been published, refresh the pipeline definitions:
 ```bash
 ./manage.py upsert_mass_build_pipeline
 ./manage.py upsert_mass_build_pipeline --offline
+./manage.py upsert_mass_build_pipeline --prefix ocw-course-v3 --theme-slug ocw-course-v3
+./manage.py upsert_mass_build_pipeline --prefix ocw-course-v3 --theme-slug ocw-course-v3 --offline
 ./manage.py backpopulate_pipelines
 ```
 
-### 4.2 Trigger Mass Build
+Repeat the `--prefix`/`--theme-slug` pair for every theme in `OCW_EXTRA_COURSE_THEMES`. Without it, the extra-theme mass builds keep the site list from before the clone.
+
+### 4.2 Take down courses that production has unpublished
+
+RC's live buckets still hold the copies RC built before the clone. Courses that production unpublished since then arrive with `unpublish_status=succeeded`, so nothing removes those copies, and they stay public on RC.
+
+Refresh the removal pipeline, then pause their live pipelines and queue them for removal:
+
+```bash
+./manage.py upsert_site_removal_pipeline
+```
+
+```python
+# In Django shell
+from django.conf import settings
+from content_sync.api import get_site_pipeline, get_unpublished_removal_pipeline
+from content_sync.constants import VERSION_LIVE
+from websites.constants import PUBLISH_STATUS_NOT_STARTED
+from websites.models import Website
+
+sites = Website.objects.filter(unpublish_status__isnull=False)
+for site in sites:
+    pipeline = get_site_pipeline(site)
+    pipeline.pause_pipeline(VERSION_LIVE)
+    # Only default-theme courses also have extra-theme pipelines
+    if site.starter and site.starter.slug == settings.OCW_DEFAULT_COURSE_THEME:
+        for theme_slug in settings.OCW_EXTRA_COURSE_THEMES:
+            pipeline.pause_pipeline(f"{VERSION_LIVE}-{theme_slug}")
+sites.update(unpublish_status=PUBLISH_STATUS_NOT_STARTED)
+removal_pipeline = get_unpublished_removal_pipeline()
+removal_pipeline.unpause()
+removal_pipeline.trigger()
+```
+
+The `remove-unpublished-sites` pipeline deletes each course from the live web and offline buckets, purges the CDN and sets `unpublish_status` back to `succeeded`. This overwrites `unpublish_status_updated_on` with the time of the removal. Check that `https://<live domain>/courses/<name>/` returns 404 for a few of them.
+
+### 4.3 Trigger Mass Build
 
 Now is the time to trigger a mass build through the concourse UI and verify that it completes without errors.
 
