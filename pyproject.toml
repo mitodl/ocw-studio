@@ -91,6 +91,7 @@ dev = [
     "pytest-django>=4.5.2,<5",
     "pytest-env==1.8.0",
     "pytest-mock>=3.11.1,<4",
+    "pytest-xdist>=3.8.0,<4",
     "ruff>=0.16,<0.17",
     "semantic-version>=2.10.0,<3",
 ]
@@ -99,7 +100,6 @@ dev = [
 constraint-dependencies = ["certifi>=2026.10.19"]  # eMudhra CA compromise: never resolve a certifi that trusts the compromised CAs
 package = false
 default-groups = "all"
-no-binary-package = ["lxml"]
 exclude-newer = "7d"
 required-version = ">=0.9.17"
 

@@ -20,15 +20,12 @@ pytestmark = pytest.mark.django_db
 
 @pytest.fixture(autouse=True)
 def _no_retry_sleep(mocker):
-    """Keep retry backoff out of the suite's wall-clock time.
+    """Keep merge_branches' backoff out of the suite's wall-clock time.
 
-    Two sleeps matter here and they are different imports: merge_branches
-    waits on content_sync.apis.gitlab.sleep, while retry_on_failure waits on
-    its own content_sync.decorators.sleep. Patching only the first left the
-    tests that trigger a retry sleeping CONTENT_SYNC_RETRIES - 1 seconds each.
+    merge_branches waits on content_sync.apis.gitlab.sleep. The
+    retry_on_failure sleep is patched for every test in conftest.py.
     """
     mocker.patch("content_sync.apis.gitlab.sleep")
-    mocker.patch("content_sync.decorators.sleep")
 
 
 def fake_destination_filepath(website_content, *args) -> str:

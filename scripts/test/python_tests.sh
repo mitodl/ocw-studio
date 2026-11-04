@@ -17,7 +17,7 @@ function run_test {
 	return $status
 }
 
-run_test pytest
+run_test pytest -n auto
 run_test ./scripts/test/detect_missing_migrations.sh
 run_test ./scripts/test/no_auto_migrations.sh
 

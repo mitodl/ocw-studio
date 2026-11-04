@@ -480,8 +480,10 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
     mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
     mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_site_pipeline")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
-    websites = WebsiteFactory.create_batch(2)
-    website_names = sorted([website.name for website in websites])
+    # Sort the websites, not just their names: only the first one processed gets
+    # api=None, and "site-name-100" sorts before "site-name-99".
+    websites = sorted(WebsiteFactory.create_batch(2), key=lambda site: site.name)
+    website_names = [website.name for website in websites]
     tasks.upsert_website_pipeline_batch(
         website_names,
         create_backend=create_backend,
