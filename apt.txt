@@ -4,4 +4,3 @@
 # libxml2-dev, libxslt1-dev) are in mitodl/ol-python-base:3.13.
 # App extras installed inline in the Dockerfile:
 #   libmagic1          - python-magic file-type detection
-#   libxmlsec1-openssl - OpenSSL engine for xmlsec signatures
