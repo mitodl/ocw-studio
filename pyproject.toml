@@ -111,6 +111,7 @@ mitol-django-observability = "0d"
 mitol-django-transcoding = "0d"
 mitol-drf-lint = "0d"
 ol-concourse = "0d"
+pypdf = "0d"  # xref parsing security fixes (6.21.2), remove after 2026-10-29
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
