@@ -10,7 +10,7 @@ Update the Website object's **url_path** field to the new value (e.g. `courses/r
 
 ## Step 2 — Reset Sync States and Sync to Backend
 
-Reset all `ContentSyncState` checksums for the site and re-sync to GitHub. Supply the email address of your active Studio account with `--user` so the sync commits are attributed to you.
+Reset all `ContentSyncState` checksums for the site and re-sync to GitHub. Pass your Studio account's email address with `--user` so the sync commits are attributed to you.
 
 ```bash
 ./manage.py reset_sync_states --filter <site-name> --skip_sync --user <studio-user-email>
