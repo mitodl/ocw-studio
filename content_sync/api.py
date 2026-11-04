@@ -9,12 +9,14 @@ import pytz
 from django.conf import settings
 from django.utils.module_loading import import_string
 from mitol.common.utils import now_in_utc
+from requests import HTTPError
 
 from content_sync import tasks
 from content_sync.backends.base import BaseSyncBackend
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.decorators import is_publish_pipeline_enabled, is_sync_enabled
 from content_sync.models import ContentSyncState
+from content_sync.utils import get_extra_course_themes
 from websites.constants import PUBLISH_STATUS_ERRORED, PUBLISH_STATUS_NOT_STARTED
 from websites.models import Website, WebsiteContent
 
@@ -65,6 +67,25 @@ def get_site_pipeline(  # noqa: PLR0913, PLR0917
         prefix=prefix,
         noindex=noindex,
     )
+
+
+@is_publish_pipeline_enabled
+def pause_live_site_pipelines(website: Website):
+    """Pause the live site pipeline of a website, plus those of its extra themes"""
+    pipeline = get_site_pipeline(website)
+    pipeline.pause_pipeline(VERSION_LIVE)
+    for theme_slug in get_extra_course_themes(website):
+        theme_pipeline_name = f"{VERSION_LIVE}-{theme_slug}"
+        try:
+            # Extra theme pipelines share the site's instance vars, only names differ
+            pipeline.pause_pipeline(theme_pipeline_name)
+        except HTTPError:
+            # A missing extra theme pipeline should not stop the unpublish
+            log.exception(
+                "Could not pause the %s pipeline for %s",
+                theme_pipeline_name,
+                website.name,
+            )
 
 
 @is_publish_pipeline_enabled

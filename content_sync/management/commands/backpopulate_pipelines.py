@@ -58,7 +58,7 @@ class Command(WebsiteFilterCommand):
             "--unpause",
             dest="unpause",
             action="store_true",
-            help="Unpause the pipelines after creating/updating them",
+            help="Unpause the pipelines after creating/updating them, except the live pipelines of unpublished sites",  # noqa: E501
         )
         parser.add_argument(
             "-d",

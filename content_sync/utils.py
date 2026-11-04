@@ -433,3 +433,10 @@ def strip_online_lines(pipeline_config):
 def is_extra_theme(theme_slug: str | None) -> bool:
     """Check whether theme_slug is in OCW_EXTRA_COURSE_THEMES."""
     return bool(theme_slug and theme_slug in settings.OCW_EXTRA_COURSE_THEMES)
+
+
+def get_extra_course_themes(website: Website) -> list[str]:
+    """Get the extra themes a website is also built with, besides its own starter"""
+    if website.starter and website.starter.slug == settings.OCW_DEFAULT_COURSE_THEME:
+        return settings.OCW_EXTRA_COURSE_THEMES
+    return []
