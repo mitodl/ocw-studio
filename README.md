@@ -222,13 +222,13 @@ Other tags, such as the old `v1.x` tags and `abandoned/...`, never match. The po
 3. Re-upsert the pipelines. They only change when they are set again. Run these in the environment's `web` container, against its Concourse:
    - `./manage.py upsert_theme_assets_pipeline`
    - `./manage.py upsert_e2e_test_pipeline`
-   - `./manage.py upsert_mass_build_pipeline`, once for each existing instance, with the same `--prefix`, `--offline`, `--starter`, `--hugo_args` and `--theme-slug` that instance was set with
-   - `./manage.py backpopulate_pipelines` for the site pipelines. There are thousands in Production, so try one site first with `--filter`, and use `--chunks` to pace the rest.
+   - `./manage.py upsert_mass_build_pipeline`, once for each existing instance, with the same `--prefix`, `--offline`, `--starter`, `--hugo_args`, `--theme-slug` and `--sync-with-delete` that instance was set with. The destructive instance (the one set with `--sync-with-delete`) is separate from the ordinary one, so leaving that flag out re-upserts the ordinary instance and the destructive one stays on the frozen branches.
+   - `./manage.py backpopulate_pipelines` for the site pipelines. There are thousands in Production, so try one site first with `--filter`. `--chunks` only sets how many sites each task handles, and every chunk is queued at once, so it does not pace the load on Concourse. For a controlled rollout, run several filtered invocations one after another and wait for each to finish.
 
    Leave out `--themes-branch` and `--projects-branch` so each pipeline follows `GITHUB_WEBHOOK_BRANCH`, and leave out `--delete-all`.
 
 4. Check the result. In Concourse, the theme-assets pipeline's `ocw-hugo-themes-git` resource lists tags instead of branch commits, and a run of it publishes. `static/hash.txt` of the environment's site (`live-qa.ocw.mit.edu` for QA, `ocw.mit.edu` for Production) equals `git rev-parse <tag>^{commit}` for the tag it follows. A site pipeline's `ocw-hugo-themes-git` resource clones that same tag.
-5. Push a test tag, or the next release, and check that the starter webhook delivery in the `ocw-hugo-projects` repo's webhook settings shows a 2xx response from the environment.
+5. Make sure the newest tags have been synced. A 2xx webhook delivery (repo settings, Webhooks, Recent Deliveries) only says the request was received: the task it queues ignores a tag that is not the newest match and can fail without updating a starter. Tags pushed before the setting was turned on were never processed in tag mode, so redeliver the newest matching tag from that page, or run `./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects`, which reads the newest matching tag. Then check that a starter's configuration matches the file at that tag's commit. The next release exercises the webhook for real.
 
 #### Rolling back
 
