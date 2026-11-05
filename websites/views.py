@@ -389,8 +389,7 @@ class WebsiteViewSet(
         website = get_object_or_404(Website, name=name)
         version = request.query_params.get("version", "draft")
 
-        try:
-            remove_website_in_root_website(website, version)
+        if remove_website_in_root_website(website, version):
             return Response(
                 {
                     "status": "success",
@@ -398,11 +397,10 @@ class WebsiteViewSet(
                 },
                 status=200,
             )
-        except WebsiteContent.DoesNotExist:
-            return Response(
-                {"status": "not_found", "message": "No content to remove"},
-                status=404,
-            )
+        return Response(
+            {"status": "not_found", "message": "No content to remove"},
+            status=404,
+        )
 
 
 class WebsiteMassBuildViewSet(viewsets.ViewSet):

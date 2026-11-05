@@ -250,12 +250,13 @@ def trigger_mass_build(version: str, *, sync_with_delete: bool = False) -> bool:
 def trigger_unpublished_removal(website_name: str) -> bool:
     """Trigger the unpublished site removal pipeline and pause the specified site's live pipelines"""  # noqa: E501
     website = Website.objects.get(name=website_name)
-    remove_website_in_root_website(website)
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         api.pause_live_site_pipelines(website)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
+    # Last, so that a failure while updating the root website cannot keep the site up
+    remove_website_in_root_website(website)
     return True
 
 
@@ -647,17 +648,23 @@ def remove_website_in_root_website(website, version="draft"):
         website (Website): The Website to remove from the root website
         version (str): The pipeline version to rebuild (draft or live),
             defaults to draft
+
+    Returns:
+        bool: True if a listing was removed, False if there was none to remove
     """
     if website.name != settings.ROOT_WEBSITE_NAME:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
-        website_content = WebsiteContent.objects.get(
+        website_content = WebsiteContent.objects.filter(
             website=root_website,
             type="website",
             title=website.title,
             dirpath=WEBSITE_LISTING_DIRPATH,
             filename=website.short_id,
             is_page_content=True,
-        )
+        ).first()
+        if website_content is None:
+            log.info("No root website listing to remove for %s", website.name)
+            return False
         website_content.delete()
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend()
@@ -666,6 +673,8 @@ def remove_website_in_root_website(website, version="draft"):
         if settings.CONTENT_SYNC_PIPELINE_BACKEND:
             pipeline = api.get_site_pipeline(root_website)
             pipeline.trigger_pipeline_build(version)
+        return True
+    return False
 
 
 @app.task(acks_late=True)
