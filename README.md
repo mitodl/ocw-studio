@@ -415,8 +415,10 @@ Once the test sites are in your database, you will need to get them up to your G
 
 ```
 docker-compose exec web ./manage.py reset_sync_states --filter "ocw-ci-test-www, ocw-ci-test-course" --skip_sync
-docker-compose exec web ./manage.py sync_website_to_backend --filter "ocw-ci-test-www, ocw-ci-test-course"
+docker-compose exec web ./manage.py sync_website_to_backend --filter "ocw-ci-test-www, ocw-ci-test-course" --user <studio-user-email>
 ```
+
+Use the email address of your active Studio account for `--user` when syncing. Manual sync commits are attributed to that account.
 
 At this point, you should be able to see the test sites in your Github org and the content should be on the `main` branch. In order to get the content up into the `release` branch, you will need to click the publish button on both sites:
 

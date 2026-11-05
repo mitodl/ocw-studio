@@ -327,11 +327,15 @@ class GitlabApiWrapper:
         self,
         query_set: WebsiteContentQuerySet | None = None,
         *,
+        commit_user: User | None = None,
         use_batch_commits: bool = False,
         batch_size: int | None = None,
     ):
-        """Commit all website content, with 1 commit per user by default."""
-        if query_set:
+        """Commit all website content, with 1 commit per user by default.
+
+        Use commit_user as the author when provided.
+        """
+        if query_set is not None:
             content_files = query_set.values_list("updated_by", flat=True).distinct()
         else:
             content_files = (
@@ -345,6 +349,7 @@ class GitlabApiWrapper:
             self.upsert_content_files_for_user(
                 user_id,
                 query_set,
+                commit_user=commit_user,
                 use_batch_commits=use_batch_commits,
                 batch_size=batch_size,
             )
@@ -355,17 +360,21 @@ class GitlabApiWrapper:
         user_id=None,
         query_set: WebsiteContentQuerySet | None = None,
         *,
+        commit_user: User | None = None,
         use_batch_commits: bool = False,
         batch_size: int | None = None,
     ):
-        """Upsert WebsiteContent objects to GitLab in one or more commits."""
+        """Upsert WebsiteContent objects to GitLab in one or more commits.
+
+        Use commit_user as the author when provided.
+        """
         unsynced_states = ContentSyncState.objects.filter(
             Q(content__website=self.website) & Q(content__updated_by=user_id)
         ).exclude(
             Q(current_checksum=F("synced_checksum"), content__deleted__isnull=True)
             & Q(synced_checksum__isnull=False)
         )
-        if query_set:
+        if query_set is not None:
             unsynced_states = unsynced_states.filter(content__in=query_set)
 
         commit_batch_size = max(
@@ -374,7 +383,11 @@ class GitlabApiWrapper:
             if batch_size is not None
             else getattr(settings, "GITLAB_COMMIT_BATCH_SIZE", 200),
         )
-        user = User.objects.filter(id=user_id).first()
+        user = (
+            commit_user
+            if commit_user is not None
+            else User.objects.filter(id=user_id).first()
+        )
         # retry_on_failure re-enters this method, so start from what the repo
         # is actually known to hold rather than what a failed attempt staged.
         self._pending_created.clear()

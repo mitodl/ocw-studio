@@ -10,6 +10,7 @@ from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.gitlab import GitlabBackend
 from content_sync.models import ContentSyncState
 from content_sync.utils import get_destination_filepath
+from users.factories import UserFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -95,10 +96,21 @@ def test_delete_content_in_backend(gitlab):
     assert WebsiteContent.objects.filter(id=content.id).first() is None
 
 
-def test_sync_all_content_to_backend(gitlab):
-    """sync_all_content_to_backend should call API upsert_content_files."""
-    gitlab.backend.sync_all_content_to_backend()
-    gitlab.api.upsert_content_files.assert_called_once()
+@pytest.mark.parametrize("override_user", [True, False])
+@pytest.mark.parametrize("use_batch_commits", [True, False])
+def test_sync_all_content_to_backend(gitlab, override_user, use_batch_commits):
+    """Sync forwards commit_user alongside the batching options."""
+    user = UserFactory.create() if override_user else None
+    batch_size = 2 if use_batch_commits else None
+    gitlab.backend.sync_all_content_to_backend(
+        commit_user=user, use_batch_commits=use_batch_commits, batch_size=batch_size
+    )
+    gitlab.api.upsert_content_files.assert_called_once_with(
+        query_set=None,
+        commit_user=user,
+        use_batch_commits=use_batch_commits,
+        batch_size=batch_size,
+    )
 
 
 def test_create_backend_draft(settings, gitlab):
@@ -151,7 +163,8 @@ def test_delete_content_in_db(gitlab):
     assert WebsiteContent.objects.filter(id=sync_state.content.id).first() is None
 
 
-def test_delete_orphaned_content_in_backend(gitlab):
+@pytest.mark.parametrize("override_user", [True, False])
+def test_delete_orphaned_content_in_backend(gitlab, override_user):
     """delete_orphaned_content_in_backend should call batch_delete_files correctly."""
     prior_path = "content/old/pages/1.md"
     content = gitlab.backend.website.websitecontent_set.all()
@@ -168,9 +181,10 @@ def test_delete_orphaned_content_in_backend(gitlab):
             *paths_to_delete,
         ]
     )
-    gitlab.backend.delete_orphaned_content_in_backend()
+    user = UserFactory.create() if override_user else None
+    gitlab.backend.delete_orphaned_content_in_backend(commit_user=user)
     gitlab.api.get_all_file_paths.assert_called_once_with("")
-    gitlab.api.batch_delete_files.assert_called_once_with([*paths_to_delete])
+    gitlab.api.batch_delete_files.assert_called_once_with([*paths_to_delete], user=user)
 
 
 def _blob_tree(paths):

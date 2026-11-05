@@ -7,9 +7,11 @@ import pytest
 from content_sync.backends.base import BaseSyncBackend
 from content_sync.factories import ContentSyncStateFactory
 from websites.factories import WebsiteFactory
+from websites.models import WebsiteContent
 
 if TYPE_CHECKING:
     from content_sync.models import ContentSyncState
+    from users.models import User
 
 
 class _ImplementedBackend(BaseSyncBackend):
@@ -39,7 +41,9 @@ class _ImplementedBackend(BaseSyncBackend):
         self, ref: str | None = None, path: str | None = None
     ): ...
 
-    def delete_orphaned_content_in_backend(self): ...
+    def delete_orphaned_content_in_backend(
+        self, *, commit_user: User | None = None
+    ): ...
 
 
 class _NotImplementedBackend(BaseSyncBackend):
@@ -112,3 +116,27 @@ def test_sync_all_content_to_backend(mocker):
     assert mock_sync_content_to_backend.call_count == len(states)
     for state in states:
         mock_sync_content_to_backend.assert_any_call(state)
+
+
+def test_sync_all_content_rejects_unsupported_commit_user(mocker):
+    """The default implementation must not silently ignore an explicit actor."""
+    backend = _ImplementedBackend(mocker.Mock())
+    sync_content = mocker.patch.object(backend, "sync_content_to_backend")
+
+    with pytest.raises(NotImplementedError, match="overriding the commit user"):
+        backend.sync_all_content_to_backend(commit_user=mocker.Mock())
+
+    sync_content.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_sync_all_content_preserves_empty_scope(mocker):
+    """An empty explicit queryset must not sync other content in the website."""
+    website = WebsiteFactory.create()
+    ContentSyncStateFactory.create(content__website=website)
+    backend = _ImplementedBackend(website)
+    sync_content = mocker.patch.object(backend, "sync_content_to_backend")
+
+    backend.sync_all_content_to_backend(query_set=WebsiteContent.objects.none())
+
+    sync_content.assert_not_called()

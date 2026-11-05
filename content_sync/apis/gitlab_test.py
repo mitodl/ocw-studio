@@ -11,8 +11,10 @@ from gitlab.exceptions import (
 
 from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, update_all_repos_visibility
+from main import features
 from users.factories import UserFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
 
 pytestmark = pytest.mark.django_db
@@ -150,6 +152,108 @@ def test_upsert_content_files_for_user_defaults_to_single_commit(
     assert commit == "commit-1"
     assert commit_actions.call_count == 1
     assert len(commit_actions.call_args_list[0].args[0]) == 3
+
+
+@pytest.mark.parametrize("override_user", [True, False])
+@pytest.mark.parametrize("use_batch_commits", [True, False])
+def test_bulk_sync_commit_author(
+    settings, mocker, gitlab_api_wrapper, override_user, use_batch_commits
+):
+    """Every batch uses the supplied author or its editor without changing provenance."""
+    settings.FEATURES[features.GIT_ANONYMOUS_COMMITS] = False
+    operator = UserFactory.create() if override_user else None
+    editors = UserFactory.create_batch(2)
+    contents = [
+        content
+        for editor in editors
+        for content in WebsiteContentFactory.create_batch(
+            3, website=gitlab_api_wrapper.website, updated_by=editor, owner=editor
+        )
+    ]
+    provenance = {
+        content.pk: (content.owner_id, content.updated_by_id) for content in contents
+    }
+    expected_authors = {
+        fake_destination_filepath(content): operator or content.updated_by
+        for content in contents
+    }
+    mocker.patch(
+        "content_sync.apis.gitlab.get_destination_filepath",
+        side_effect=fake_destination_filepath,
+    )
+    mocker.patch(
+        "content_sync.apis.gitlab.serialize_content_to_file",
+        return_value="serialized-content",
+    )
+    mocker.patch.object(gitlab_api_wrapper, "get_all_file_paths", return_value=iter([]))
+    repo = mocker.Mock()
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    gitlab_api_wrapper.upsert_content_files(
+        commit_user=operator, use_batch_commits=use_batch_commits, batch_size=2
+    )
+
+    commits = repo.commits.create.call_args_list
+    assert len(commits) == (4 if use_batch_commits else 2)
+    committed_paths = []
+    for commit in commits:
+        payload = commit.args[0]
+        for action in payload["actions"]:
+            filepath = action["file_path"]
+            committed_paths.append(filepath)
+            assert payload["author_name"] == expected_authors[filepath].name
+            assert payload["author_email"] == expected_authors[filepath].email
+    assert sorted(committed_paths) == sorted(expected_authors)
+    for content in contents:
+        content.refresh_from_db()
+        assert (content.owner_id, content.updated_by_id) == provenance[content.pk]
+        assert content.content_sync_state.is_synced
+
+
+@pytest.mark.parametrize("per_user", [True, False])
+def test_bulk_sync_preserves_empty_selection(mocker, gitlab_api_wrapper, per_user):
+    """An empty explicit queryset never syncs other dirty content."""
+    editor = UserFactory.create()
+    content = WebsiteContentFactory.create(
+        website=gitlab_api_wrapper.website, updated_by=editor
+    )
+    operator = UserFactory.create()
+    repo = mocker.patch.object(gitlab_api_wrapper, "get_repo")
+    query_set = WebsiteContent.objects.none()
+
+    if per_user:
+        gitlab_api_wrapper.upsert_content_files_for_user(
+            editor.id, query_set, commit_user=operator
+        )
+    else:
+        gitlab_api_wrapper.upsert_content_files(query_set, commit_user=operator)
+
+    repo.assert_not_called()
+    content.content_sync_state.refresh_from_db()
+    assert content.content_sync_state.synced_checksum is None
+
+
+@pytest.mark.parametrize("override_user", [True, False])
+def test_batch_delete_files_commit_author(
+    settings, mocker, gitlab_api_wrapper, override_user
+):
+    """Orphan deletion uses the supplied author or the existing default identity."""
+    settings.FEATURES[features.GIT_ANONYMOUS_COMMITS] = False
+    user = UserFactory.create() if override_user else None
+    repo = mocker.Mock()
+    mocker.patch.object(gitlab_api_wrapper, "get_repo", return_value=repo)
+
+    gitlab_api_wrapper.batch_delete_files(["old-path.md"], user=user)
+
+    repo.commits.create.assert_called_once_with(
+        {
+            "branch": settings.GIT_BRANCH_MAIN,
+            "commit_message": "Sync all content",
+            "author_name": user.name if user else settings.GIT_DEFAULT_USER_NAME,
+            "author_email": user.email if user else settings.GIT_DEFAULT_USER_EMAIL,
+            "actions": [{"action": "delete", "file_path": "old-path.md"}],
+        }
+    )
 
 
 def test_merge_branches_reuses_existing_open_mr_on_409(mocker, gitlab_api_wrapper):

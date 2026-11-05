@@ -17,6 +17,7 @@ from content_sync.utils import get_destination_filepath
 
 if TYPE_CHECKING:
     from content_sync.models import ContentSyncState
+    from users.models import User
     from websites.models import Website, WebsiteContent, WebsiteContentQuerySet
 
 log = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ class GitlabBackend(BaseSyncBackend):
         """Update content in GitLab."""
         return self.api.upsert_content_file(sync_state.content)
 
-    def delete_orphaned_content_in_backend(self):
+    def delete_orphaned_content_in_backend(self, *, commit_user: User | None = None):
         """Delete any git repo files without corresponding WebsiteContent objects."""
         sitepaths = []
         for content in self.website.websitecontent_set.iterator():
@@ -86,19 +87,22 @@ class GitlabBackend(BaseSyncBackend):
             ):
                 sitepaths.append(content.content_sync_state.data[GIT_DATA_FILEPATH])
         self.api.batch_delete_files(
-            [path for path in self.api.get_all_file_paths("") if path not in sitepaths]
+            [path for path in self.api.get_all_file_paths("") if path not in sitepaths],
+            user=commit_user,
         )
 
     def sync_all_content_to_backend(
         self,
         query_set: WebsiteContentQuerySet | None = None,
         *,
+        commit_user: User | None = None,
         use_batch_commits: bool = False,
         batch_size: int | None = None,
     ):
-        """Sync all the website's files to GitLab in one commit."""
+        """Sync website files to GitLab, using commit_user as author when supplied."""
         return self.api.upsert_content_files(
             query_set=query_set,
+            commit_user=commit_user,
             use_batch_commits=use_batch_commits,
             batch_size=batch_size,
         )

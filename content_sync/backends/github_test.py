@@ -10,6 +10,7 @@ from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.github import GithubBackend
 from content_sync.models import ContentSyncState
 from content_sync.utils import get_destination_filepath
+from users.factories import UserFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
@@ -101,10 +102,14 @@ def test_delete_content_in_backend(github):
     assert WebsiteContent.objects.filter(id=content.id).first() is None
 
 
-def test_sync_all_content_to_backend(github):
+@pytest.mark.parametrize("override_user", [True, False])
+def test_sync_all_content_to_backend(github, override_user):
     """Test that sync_all_content_to_backend makes the appropriate api call"""
-    github.backend.sync_all_content_to_backend()
-    github.api.upsert_content_files.assert_called_once()
+    user = UserFactory.create() if override_user else None
+    github.backend.sync_all_content_to_backend(commit_user=user)
+    github.api.upsert_content_files.assert_called_once_with(
+        query_set=None, commit_user=user
+    )
 
 
 def test_create_backend_draft(settings, github):
@@ -210,7 +215,8 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
     )
 
 
-def test_delete_orphaned_content_in_backend(github):
+@pytest.mark.parametrize("override_user", [True, False])
+def test_delete_orphaned_content_in_backend(github, override_user):
     """delete_orphaned_content_in_backend should call batch_delete_files with correct paths"""
     prior_path = "content/old/pages/1.md"
     content = github.backend.website.websitecontent_set.all()
@@ -227,6 +233,7 @@ def test_delete_orphaned_content_in_backend(github):
             *paths_to_delete,
         ]
     )
-    github.backend.delete_orphaned_content_in_backend()
+    user = UserFactory.create() if override_user else None
+    github.backend.delete_orphaned_content_in_backend(commit_user=user)
     github.api.get_all_file_paths.assert_called_once()
-    github.api.batch_delete_files.assert_called_once_with([*paths_to_delete])
+    github.api.batch_delete_files.assert_called_once_with([*paths_to_delete], user=user)
