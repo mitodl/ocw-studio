@@ -6,7 +6,9 @@ from types import SimpleNamespace
 import pytest
 import yaml
 from django.db.models.signals import pre_save
+from django.test import override_settings
 
+from content_sync import decorators
 from fixtures.common import *  # pylint:disable=wildcard-import,unused-wildcard-import  # noqa: F403
 from websites.constants import OMNIBUS_STARTER_SLUG
 from websites.models import WebsiteContent, WebsiteStarter
@@ -31,6 +33,64 @@ def mock_gdrive_build(mocker):
     """
     mocker.patch("gdrive_sync.api.build")
     mocker.patch("videos.youtube.build")
+
+
+@pytest.fixture(autouse=True)
+def no_retry_sleep(mocker):
+    """
+    Skip the one-second pause between @retry_on_failure attempts. Retries still
+    happen, so call counts are unchanged; a test that cares about the pause can
+    patch content_sync.decorators.sleep itself.
+    """
+    mocker.patch("content_sync.decorators.sleep")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isolated_media_root(tmp_path_factory):
+    """
+    Give each test session its own MEDIA_ROOT. Under pytest-xdist every worker
+    restarts the factory sequences, so two workers can build the same upload
+    path and race on it in a shared directory.
+    """
+    with override_settings(MEDIA_ROOT=str(tmp_path_factory.mktemp("media"))):
+        yield
+
+
+class _WorkerScopedRedis:
+    """Redis client proxy that namespaces lock names with the xdist worker id"""
+
+    def __init__(self, client, worker_id):
+        self._client = client
+        self._worker_id = worker_id
+
+    def lock(self, name, *args, **kwargs):
+        """Take the lock under a name only this worker uses"""
+        return self._client.lock(f"{self._worker_id}:{name}", *args, **kwargs)
+
+    def __getattr__(self, attr):
+        return getattr(self._client, attr)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def isolated_task_locks():
+    """
+    Keep pytest-xdist workers from contending for @single_task locks. Lock
+    names come from the task name and first argument, such as "single", a pk
+    or a website name, and those repeat across workers that share one Redis.
+    A worker that loses the race skips the task or raises BlockingIOError.
+    """
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER")
+    if not worker_id:
+        yield
+        return
+    get_connection = decorators.get_redis_connection
+    with pytest.MonkeyPatch.context() as monkeypatch:
+        monkeypatch.setattr(
+            decorators,
+            "get_redis_connection",
+            lambda alias: _WorkerScopedRedis(get_connection(alias), worker_id),
+        )
+        yield
 
 
 @pytest.fixture

@@ -7,6 +7,7 @@ import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from mitol.common.utils import now_in_utc
+from requests import HTTPError
 
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -183,11 +184,74 @@ def test_trigger_unpublished_removal(settings, mocker):
     mock_task.delay.assert_called_once()
 
 
+@pytest.mark.parametrize("is_default_theme_site", [True, False])
+def test_pause_live_site_pipelines(settings, mocker, is_default_theme_site):
+    """pause_live_site_pipelines should pause the live pipeline and those of any extra themes"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    mock_get_pipeline = mocker.patch("content_sync.api.get_site_pipeline")
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+        if is_default_theme_site
+        else WebsiteStarterFactory.create()
+    )
+    api.pause_live_site_pipelines(website)
+    mock_get_pipeline.assert_called_once_with(website)
+    paused = [
+        call.args[0]
+        for call in mock_get_pipeline.return_value.pause_pipeline.call_args_list
+    ]
+    assert paused == (
+        [VERSION_LIVE, f"{VERSION_LIVE}-ocw-course-v3", f"{VERSION_LIVE}-ocw-course-v4"]
+        if is_default_theme_site
+        else [VERSION_LIVE]
+    )
+
+
+def test_pause_live_site_pipelines_extra_theme_error(settings, mocker):
+    """A failure to pause an extra theme pipeline should be logged without stopping the others"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    mock_log = mocker.patch("content_sync.api.log")
+    mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
+    mock_pipeline.pause_pipeline.side_effect = [None, HTTPError("404"), None]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+    )
+    api.pause_live_site_pipelines(website)
+    assert mock_pipeline.pause_pipeline.call_count == 3
+    mock_log.exception.assert_called_once_with(
+        "Could not pause the %s pipeline for %s",
+        f"{VERSION_LIVE}-ocw-course-v3",
+        website.name,
+    )
+
+
+def test_pause_live_site_pipelines_live_error(settings, mocker):
+    """A failure to pause the main live pipeline should still be raised"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
+    mock_pipeline.pause_pipeline.side_effect = HTTPError("404")
+    with pytest.raises(HTTPError):
+        api.pause_live_site_pipelines(WebsiteFactory.create())
+
+
 def test_sync_github_website_starters(mocker):
     """Sync website starters from github"""
     mock_task = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
     args = "https://github.com/testorg/testconfigs", ["site1/studio.yaml"]
     kwargs = {"commit": "abc123"}
+    api.sync_github_website_starters(*args, **kwargs)
+    mock_task.assert_called_once_with(*args, **kwargs)
+
+
+def test_sync_github_website_starters_with_tag(mocker):
+    """Sync website starters from github, passing the pushed tag on"""
+    mock_task = mocker.patch("content_sync.api.tasks.sync_github_site_configs.delay")
+    args = "https://github.com/testorg/testconfigs", []
+    kwargs = {"commit": "abc123", "tag": "2026.11.3.1"}
     api.sync_github_website_starters(*args, **kwargs)
     mock_task.assert_called_once_with(*args, **kwargs)
 

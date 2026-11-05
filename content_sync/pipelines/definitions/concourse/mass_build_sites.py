@@ -56,7 +56,11 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
     get_site_pipeline_definition_vars,
     is_extra_theme,
 )
-from content_sync.utils import get_common_pipeline_vars, get_publishable_sites
+from content_sync.utils import (
+    get_common_pipeline_vars,
+    get_hugo_tag_regex,
+    get_publishable_sites,
+)
 from main.utils import is_dev
 from websites.models import Website, WebsiteStarter
 
@@ -172,6 +176,7 @@ class MassBuildSitesResources(list[Resource]):
             name=OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
             uri=root_starter.ocw_hugo_projects_url,
             branch=config.ocw_hugo_projects_branch,
+            tag_regex=get_hugo_tag_regex(config.ocw_hugo_projects_branch),
         )
         ocw_hugo_projects_trigger_resource.check_every = Duration("1m")
         self.append(webpack_manifest_resource)

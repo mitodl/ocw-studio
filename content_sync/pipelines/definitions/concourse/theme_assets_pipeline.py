@@ -34,7 +34,7 @@ from content_sync.pipelines.definitions.concourse.common.steps import (
     SlackAlertStep,
     clear_cdn_cache_steps,
 )
-from content_sync.utils import get_cli_endpoint_url
+from content_sync.utils import get_cli_endpoint_url, get_hugo_tag_regex
 from main.utils import is_dev
 from websites.constants import OCW_HUGO_THEMES_GIT
 
@@ -89,6 +89,7 @@ class ThemeAssetsPipelineDefinition(Pipeline):
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
             branch=ocw_hugo_themes_branch,
+            tag_regex=get_hugo_tag_regex(ocw_hugo_themes_branch),
         )
         resource_types = []
         resources = [ocw_hugo_themes_resource]

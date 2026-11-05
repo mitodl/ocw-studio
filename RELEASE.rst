@@ -1,6 +1,32 @@
 Release Notes
 =============
 
+Version 0.204.0
+---------------
+
+- Update dependency uv_build to >=0.13.0,<0.14.0 (#3265)
+- Update dependency pypdf to v6.21.2 [SECURITY] (#3272)
+- Update dependency django-hijack to v3.8.0 (#3282)
+- Update dependency core-js to v3.51.0 (#3281)
+- Update dependency astral-sh/uv to v0.13.0 (#3280)
+- Update dependency prettier to v3.9.10 (#3278)
+- Bump certifi to 2026.10.19 and add certifi floor (eMudhra CA compromise) (#3273)
+- Update astral-sh/setup-uv action to v10.3.0 (#3279)
+- Update dependency prek to v0.5.5 (#3277)
+- Update dependency posthog-js to v1.438.20 (#3276)
+- Update dependency boto3 to v1.43.111 (#3275)
+- Update dependency pytest-env to v1.8.0 (#3264)
+- fix: give each new image gallery its own id (#3269)
+- chore: add a local-dev image target with granian reload (#3271)
+- Add GitLab as a supported git backend (#3201)
+- Update dependency django-hijack to v3.7.9 (#3256)
+- Update dependency ol-concourse to >=0.20,<0.21 (#3262)
+- Update dependency pypdf to v6.20.1 [SECURITY] (#3270)
+- Update dependency django to v5.2.18 (#3253)
+- Update dependency djangorestframework to v3.18.3 (#3254)
+- Update actions/setup-node action to v7.1.0 (#3255)
+- fix: build only default course theme sites in extra theme mass builds (#3267)
+
 Version 0.203.0
 ---------------
 

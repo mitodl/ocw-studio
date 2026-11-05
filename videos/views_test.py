@@ -42,8 +42,12 @@ def video_group(settings):
     return SimpleNamespace(video=video, video_job=video_job, drive_file=drive_file)
 
 
-def test_transcode_jobs_success(settings, drf_client, video_group):
+def test_transcode_jobs_success(settings, mocker, drf_client, video_group):
     """TranscodeJobView should process MediaConvert success notification appropriately"""
+    # prepare_video_download_file moves the download file in S3 (tested in
+    # videos/api_test.py). Unmocked, boto retries the unreachable dev Minio
+    # address for minutes before update_video_job swallows the error.
+    mock_prepare_download = mocker.patch("videos.api.prepare_video_download_file")
     video = video_group.video
     video_job = video_group.video_job
     with open(  # noqa: PTH123
@@ -67,6 +71,7 @@ def test_transcode_jobs_success(settings, drf_client, video_group):
     assert video.videofiles.count() == 3
     assert video.videofiles.filter(destination=DESTINATION_YOUTUBE).count() == 1
     assert video_job.status == VideoJobStatus.COMPLETE
+    mock_prepare_download.assert_called_once_with(video)
 
 
 def test_transcode_jobs_failure(settings, drf_client, video_group):

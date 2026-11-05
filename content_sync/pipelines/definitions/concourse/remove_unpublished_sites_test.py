@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from content_sync.constants import VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     get_fastly_identifier,
@@ -14,8 +16,9 @@ from content_sync.utils import get_cli_endpoint_url, get_common_pipeline_vars
 from main.utils import is_dev
 
 
+@pytest.mark.parametrize("extra_themes", [[], ["ocw-course-v3", "ocw-course-v4"]])
 def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
-    mock_environments, settings
+    mock_environments, settings, extra_themes
 ):
     """
     The unpublished site removal pipeline definition should contain the expected properties
@@ -31,6 +34,7 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     offline_bucket = common_pipeline_vars["offline_publish_bucket_name"]
     settings.OPEN_CATALOG_URLS = open_catalog_urls
     settings.OPEN_CATALOG_WEBHOOK_KEY = open_webhook_key
+    settings.OCW_EXTRA_COURSE_THEMES = extra_themes
 
     pipeline_definition = UnpublishedSiteRemovalPipelineDefinition()
     rendered_definition = json.loads(pipeline_definition.json(indent=2))
@@ -126,14 +130,16 @@ def test_generate_unpublished_site_removal_pipeline_definition(  # noqa: PLR0915
     ]
     assert len(empty_s3_buckets_tasks) == 1
     empty_s3_buckets_task = empty_s3_buckets_tasks[0]
-    empty_s3_buckets_command = " ".join(empty_s3_buckets_task["config"]["run"]["args"])
-    assert (
-        f"aws s3{cli_endpoint_url} rm s3://{web_bucket}/((.:site.site_url))/ --recursive"
-        in empty_s3_buckets_command
-    )
-    assert (
-        f"aws s3{cli_endpoint_url} rm s3://{offline_bucket}/((.:site.site_url))/ --recursive"
-        in empty_s3_buckets_command
+    empty_s3_buckets_command = empty_s3_buckets_task["config"]["run"]["args"][-1]
+    # The site itself, plus its copy under each extra theme prefix
+    site_paths = [
+        "((.:site.site_url))",
+        *[f"{theme_slug}/((.:site.site_url))" for theme_slug in extra_themes],
+    ]
+    assert sorted(empty_s3_buckets_command.splitlines()) == sorted(
+        f"aws s3{cli_endpoint_url} rm s3://{bucket}/{site_path}/ --recursive"
+        for site_path in site_paths
+        for bucket in (web_bucket, offline_bucket)
     )
     if is_dev():
         assert (

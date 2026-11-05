@@ -29,7 +29,7 @@ class Command(WebsiteFilterCommand):
     Performs replacements on markdown.
 
     By default, processes all websites (published and unpublished).
-    Use --published-only to process only published websites.
+    Use --published-only to process only published websites (not unpublished ones).
     Use --commit to save changes to the database.
 
     In general, these commands can be run in any order and are independent from
@@ -113,7 +113,7 @@ class Command(WebsiteFilterCommand):
             dest="published_only",
             action="store_true",
             default=False,
-            help="If provided, only process published websites. Otherwise, process all websites.",  # noqa: E501
+            help="If provided, only process published websites, skipping never-published and unpublished ones. Otherwise, process all websites.",  # noqa: E501
         )
 
         # Mutually exclusive group for external license warning control
@@ -154,11 +154,12 @@ class Command(WebsiteFilterCommand):
             WebsiteContent.all_objects.all().order_by("id").prefetch_related("website")
         )
 
-        # Only exclude unpublished websites if --published-only is specified
+        # Only exclude never-published and unpublished websites if --published-only
+        # is specified
         if options["published_only"]:
             website_contents = website_contents.exclude(
                 website__publish_date__isnull=True
-            )
+            ).exclude(website__unpublish_status__isnull=False)
 
         website_contents = self.filter_website_contents(
             website_contents=website_contents

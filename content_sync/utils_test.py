@@ -1,6 +1,7 @@
 """Content sync utility functionality tests"""
 
 import os
+import re
 
 import pytest
 from botocore.exceptions import ClientError
@@ -12,6 +13,8 @@ from content_sync.constants import (
     DEV_START,
     NON_DEV_END,
     NON_DEV_START,
+    OCW_HUGO_PRODUCTION_TAG_REGEX,
+    OCW_HUGO_RC_TAG_REGEX,
     TARGET_OFFLINE,
     TARGET_ONLINE,
     VERSION_DRAFT,
@@ -40,7 +43,9 @@ from content_sync.utils import (
     get_common_pipeline_vars,
     get_destination_filepath,
     get_destination_url,
+    get_extra_course_themes,
     get_hugo_arg_string,
+    get_hugo_tag_regex,
     get_ocw_studio_api_url,
     get_publishable_sites,
     get_site_content_branch,
@@ -51,7 +56,11 @@ from content_sync.utils import (
 from main.s3_utils import get_boto3_client
 from videos.conftest import MOCK_BUCKET_NAME, setup_s3
 from websites.constants import CONTENT_TYPE_METADATA
-from websites.factories import WebsiteContentFactory, WebsiteStarterFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    WebsiteStarterFactory,
+)
 from websites.site_config_api import ConfigItem, SiteConfig
 
 pytestmark = pytest.mark.django_db
@@ -440,6 +449,26 @@ def test_is_extra_theme(settings, theme_slug, extra_themes, expected):
     assert is_extra_theme(theme_slug) == expected
 
 
+@pytest.mark.parametrize(
+    ("starter_slug", "expected"),
+    [
+        ("ocw-course-v2", ["ocw-course-v3", "ocw-course-v4"]),
+        ("ocw-www", []),
+        (None, []),
+    ],
+)
+def test_get_extra_course_themes(settings, starter_slug, expected):
+    """Only sites on the default course theme should also be built with the extra themes"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug=starter_slug)
+        if starter_slug
+        else None
+    )
+    assert get_extra_course_themes(website) == expected
+
+
 def _compose_address_excerpts(rendered, context=40):
     """Return short excerpts around each compose address in a rendered pipeline.
 
@@ -521,3 +550,44 @@ def test_configured_endpoint_reaches_rendered_pipelines(settings, mocker):
 
     remove_unpublished = UnpublishedSiteRemovalPipelineDefinition()
     assert "objectstore.test:9000" in remove_unpublished.json()
+
+
+@pytest.mark.parametrize(
+    ("tag_releases", "dev", "pointer", "expected"),
+    [
+        (True, False, "release-candidate", OCW_HUGO_RC_TAG_REGEX),
+        (True, False, "release", OCW_HUGO_PRODUCTION_TAG_REGEX),
+        (False, False, "release-candidate", None),
+        (False, False, "release", None),
+        (True, True, "release-candidate", None),
+        (True, False, "main", None),
+        (True, False, "", None),
+        (True, False, None, None),
+    ],
+)
+def test_get_hugo_tag_regex(  # noqa: PLR0913, PLR0917
+    mocker, settings, tag_releases, dev, pointer, expected
+):
+    """Only a release pointer outside dev follows tags, and only when tag releases are on"""
+    settings.OCW_HUGO_TAG_RELEASES = tag_releases
+    mocker.patch("content_sync.utils.is_dev", return_value=dev)
+    assert get_hugo_tag_regex(pointer) == expected
+
+
+@pytest.mark.parametrize(
+    ("regex", "tag", "matches"),
+    [
+        (OCW_HUGO_RC_TAG_REGEX, "2026.11.3.1", True),
+        (OCW_HUGO_RC_TAG_REGEX, "2026.11.3", False),
+        (OCW_HUGO_RC_TAG_REGEX, "v1.164.0", False),
+        (OCW_HUGO_RC_TAG_REGEX, "production/2026.11.3.1", False),
+        (OCW_HUGO_RC_TAG_REGEX, "abandoned/2026.11.3.1", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "production/2026.11.3.1", True),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "2026.11.3.1", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "production/v1.164.0", False),
+        (OCW_HUGO_PRODUCTION_TAG_REGEX, "xproduction/2026.11.3.1", False),
+    ],
+)
+def test_hugo_tag_regexes(regex, tag, matches):
+    """Release tags match the RC pattern and only production/ tags match the production one"""
+    assert bool(re.search(regex, tag)) is matches

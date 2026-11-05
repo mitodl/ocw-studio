@@ -2,10 +2,12 @@
 
 import os
 from datetime import timedelta
+from types import SimpleNamespace
 
 import factory
 import pytest
 import pytz
+from django.core.management import call_command
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from github.GithubException import RateLimitExceededException
@@ -15,7 +17,7 @@ from pytest import fixture  # noqa: PT013
 from requests import HTTPError
 
 from content_sync import tasks
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.factories import ContentSyncStateFactory
 from content_sync.pipelines.base import (
     BaseThemeAssetsPipeline,
@@ -148,13 +150,96 @@ def test_update_mass_build_pipelines(api_mock, mocker):
     )
     assert api_mock.get_mass_build_sites_pipeline.call_count == 4
     website.unpublish_status = PUBLISH_STATUS_NOT_STARTED
-    tasks.update_mass_build_pipelines_on_publish.delay(
-        version=VERSION_DRAFT, website_pk=website.pk
+    for version in [VERSION_DRAFT, VERSION_LIVE]:
+        api_mock.get_mass_build_sites_pipeline.reset_mock()
+        tasks.update_mass_build_pipelines_on_publish.delay(
+            version=version, website_pk=website.pk
+        )
+        # Publishing an unpublished site, e.g. a preview, refreshes only that version
+        assert api_mock.get_mass_build_sites_pipeline.call_args_list == [
+            mocker.call(version),
+            mocker.call(version, offline=True),
+        ]
+    for unpublish_status in [PUBLISH_STATUS_NOT_STARTED, None]:
+        website.unpublish_status = unpublish_status
+        api_mock.get_mass_build_sites_pipeline.reset_mock()
+        tasks.update_mass_build_pipelines_on_publish.delay(
+            version=VERSION_LIVE, website_pk=website.pk, both_versions=True
+        )
+        # Unpublishing or republishing a site refreshes both versions, live first
+        assert api_mock.get_mass_build_sites_pipeline.call_args_list == [
+            mocker.call(VERSION_LIVE),
+            mocker.call(VERSION_LIVE, offline=True),
+            mocker.call(VERSION_DRAFT),
+            mocker.call(VERSION_DRAFT, offline=True),
+        ]
+
+
+@pytest.mark.parametrize("both_versions", [True, False])
+def test_update_mass_build_pipelines_extra_themes(
+    api_mock, mocker, settings, both_versions
+):
+    """The mass builds of the extra themes should be upserted too for default theme course sites"""
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2"),
+        live_build_date=now_in_utc() if both_versions else None,
+        unpublish_status=PUBLISH_STATUS_NOT_STARTED if both_versions else None,
     )
     tasks.update_mass_build_pipelines_on_publish.delay(
-        version=VERSION_LIVE, website_pk=website.pk
+        version=VERSION_LIVE, website_pk=website.pk, both_versions=both_versions
     )
-    assert api_mock.get_mass_build_sites_pipeline.call_count == 8
+    versions = [VERSION_LIVE, VERSION_DRAFT] if both_versions else [VERSION_LIVE]
+    theme_kwargs = {"prefix": "ocw-course-v3", "theme_slug": "ocw-course-v3"}
+    expected_calls = []
+    for version in versions:
+        expected_calls.extend(
+            [
+                mocker.call(version),
+                mocker.call(version, offline=True),
+                mocker.call(version, **theme_kwargs),
+                mocker.call(version, offline=True, **theme_kwargs),
+            ]
+        )
+    assert api_mock.get_mass_build_sites_pipeline.call_args_list == expected_calls
+    assert (
+        api_mock.get_mass_build_sites_pipeline.return_value.upsert_pipeline.call_count
+        == len(expected_calls)
+    )
+
+
+def test_update_mass_build_pipelines_matches_upsert_command(mocker, settings):
+    """Unpublishing should refresh the same mass build instances that upsert_mass_build_pipeline creates"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
+    upserted = []
+    mocker.patch(
+        "content_sync.pipelines.concourse.MassBuildSitesPipeline.upsert_pipeline",
+        autospec=True,
+        side_effect=lambda pipeline: upserted.append(pipeline.instance_vars),
+    )
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2"),
+        unpublish_status=PUBLISH_STATUS_NOT_STARTED,
+    )
+    tasks.update_mass_build_pipelines_on_publish.delay(
+        version=VERSION_LIVE, website_pk=website.pk, both_versions=True
+    )
+    refreshed = sorted(upserted)
+    upserted.clear()
+    for offline in [False, True]:
+        call_command("upsert_mass_build_pipeline", offline=offline)
+        call_command(
+            "upsert_mass_build_pipeline",
+            offline=offline,
+            prefix="ocw-course-v3",
+            theme_slug="ocw-course-v3",
+        )
+    assert len(refreshed) == 8
+    assert refreshed == sorted(upserted)
 
 
 @pytest.mark.parametrize("backend_exists", [True, False])
@@ -387,6 +472,15 @@ def test_sync_github_site_configs(mocker):
     mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
 
 
+def test_sync_github_site_configs_with_tag(mocker):
+    """sync_github_site_configs should pass a tag on to apis.github.sync_starter_configs"""
+    mock_git = mocker.patch("content_sync.tasks.github")
+    args = "https://github.com/testorg/testconfigs", []
+    kwargs = {"commit": "abc123", "tag": "2026.11.3.1"}
+    tasks.sync_github_site_configs.delay(*args, **kwargs)
+    mock_git.sync_starter_configs.assert_called_once_with(*args, **kwargs)
+
+
 def test_upsert_web_publishing_pipeline(api_mock):
     """upsert_web_publishing_pipeline should call api.get_site_pipeline"""
     website = WebsiteFactory.create()
@@ -474,8 +568,10 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
     mock_get_backend = mocker.patch("content_sync.tasks.api.get_sync_backend")
     mock_get_pipeline = mocker.patch("content_sync.tasks.api.get_site_pipeline")
     mock_throttle = mocker.patch("content_sync.tasks.api.throttle_git_backend_calls")
-    websites = WebsiteFactory.create_batch(2)
-    website_names = sorted([website.name for website in websites])
+    # Sort the websites, not just their names: only the first one processed gets
+    # api=None, and "site-name-100" sorts before "site-name-99".
+    websites = sorted(WebsiteFactory.create_batch(2), key=lambda site: site.name)
+    website_names = [website.name for website in websites]
     tasks.upsert_website_pipeline_batch(
         website_names,
         create_backend=create_backend,
@@ -503,7 +599,10 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
 
 
 @pytest.mark.parametrize("unpause", [True, False])
-def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpause):
+@pytest.mark.parametrize("unpublished", [True, False])
+def test_upsert_website_pipeline_batch_with_extra_themes(
+    mocker, settings, unpause, unpublished
+):
     """upsert_website_pipeline_batch should create extra theme pipelines for OCW sites"""
     settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
     settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
@@ -515,7 +614,10 @@ def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpau
     ocw_starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
     other_starter = WebsiteStarterFactory.create(slug="other-site-type")
 
-    ocw_website = WebsiteFactory.create(starter=ocw_starter)
+    ocw_website = WebsiteFactory.create(
+        starter=ocw_starter,
+        unpublish_status=PUBLISH_STATUS_NOT_STARTED if unpublished else None,
+    )
     other_website = WebsiteFactory.create(starter=other_starter)
 
     website_names = [ocw_website.name, other_website.name]
@@ -542,6 +644,33 @@ def test_upsert_website_pipeline_batch_with_extra_themes(mocker, settings, unpau
         prefix="ocw-course-v4",
         noindex=True,
     )
+
+    unpaused = [
+        call.args[0]
+        for call in mock_get_pipeline.return_value.unpause_pipeline.call_args_list
+    ]
+    if not unpause:
+        assert unpaused == []
+    elif unpublished:
+        # The unpublished site's live pipelines stay paused, the other site's don't
+        assert unpaused == [
+            VERSION_DRAFT,
+            f"{VERSION_DRAFT}-ocw-course-v3",
+            f"{VERSION_DRAFT}-ocw-course-v4",
+            VERSION_LIVE,
+            VERSION_DRAFT,
+        ]
+    else:
+        assert unpaused == [
+            VERSION_LIVE,
+            VERSION_DRAFT,
+            f"{VERSION_LIVE}-ocw-course-v3",
+            f"{VERSION_DRAFT}-ocw-course-v3",
+            f"{VERSION_LIVE}-ocw-course-v4",
+            f"{VERSION_DRAFT}-ocw-course-v4",
+            VERSION_LIVE,
+            VERSION_DRAFT,
+        ]
 
 
 @pytest.mark.parametrize("prepublish", [True, False])
@@ -835,10 +964,13 @@ def test_trigger_mass_build(settings, mocker, backend, version, sync_with_delete
 
 
 @pytest.mark.parametrize("backend", ["concourse", None])
-def test_trigger_unpublished_removal(settings, mocker, backend):
+@pytest.mark.parametrize("is_default_theme_site", [True, False])
+def test_trigger_unpublished_removal(settings, mocker, backend, is_default_theme_site):
     """trigger_unpublished_removal should call trigger_pipeline_build if enabled"""
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
     settings.CONTENT_SYNC_PIPELINE_BACKEND = backend
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
     mocker.patch("content_sync.pipelines.concourse.PipelineApi.auth")
     mock_remove_website_in_root_website = mocker.patch(
         "content_sync.tasks.remove_website_in_root_website"
@@ -853,16 +985,83 @@ def test_trigger_unpublished_removal(settings, mocker, backend):
         "content_sync.pipelines.concourse.BaseUnpublishedSiteRemovalPipeline.trigger_pipeline_build"
     )
     pipeline_name = BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME
-    site = WebsiteFactory.create()
+    site = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+        if is_default_theme_site
+        else WebsiteStarterFactory.create()
+    )
     tasks.trigger_unpublished_removal.delay(site.name)
     mock_remove_website_in_root_website.assert_called_once_with(site)
     if backend == "concourse":
-        mock_pipeline_pause.assert_called_once_with(VERSION_LIVE)
+        assert [call.args[0] for call in mock_pipeline_pause.call_args_list] == (
+            [VERSION_LIVE, f"{VERSION_LIVE}-ocw-course-v3"]
+            if is_default_theme_site
+            else [VERSION_LIVE]
+        )
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
         mock_pipeline_trigger.assert_called_once_with(pipeline_name)
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
+
+
+@fixture
+def unpublish_api_mock(mocker, settings):
+    """
+    Mock the content_sync.api calls made when unpublishing. The functions are patched
+    one by one rather than the whole module, so calls between them are mocked too.
+    """
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.TestBackend"
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    return SimpleNamespace(
+        get_site_pipeline=mocker.patch("content_sync.api.get_site_pipeline"),
+        get_sync_backend=mocker.patch("content_sync.api.get_sync_backend"),
+        get_unpublished_removal_pipeline=mocker.patch(
+            "content_sync.api.get_unpublished_removal_pipeline"
+        ),
+    )
+
+
+def test_trigger_unpublished_removal_listing_already_removed(unpublish_api_mock):
+    """trigger_unpublished_removal should still take the site down if its root website listing is already gone"""
+    WebsiteFactory.create(name="ocw-www")
+    site = WebsiteFactory.create()
+    assert tasks.trigger_unpublished_removal(site.name) is True
+    unpublish_api_mock.get_sync_backend.assert_not_called()
+    unpublish_api_mock.get_site_pipeline.assert_called_once_with(site)
+    mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
+    mock_site_pipeline.pause_pipeline.assert_any_call(VERSION_LIVE)
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.unpause.assert_called_once_with()
+    removal_pipeline.trigger.assert_called_once_with()
+
+
+def test_trigger_unpublished_removal_root_rebuild_fails(mocker, unpublish_api_mock):
+    """trigger_unpublished_removal should take the site down even if rebuilding the root website fails"""
+    root_website = WebsiteFactory.create(name="ocw-www")
+    site = WebsiteFactory.create()
+    WebsiteContentFactory.create(
+        website=root_website,
+        type="website",
+        title=site.title,
+        dirpath=WEBSITE_LISTING_DIRPATH,
+        filename=site.short_id,
+        is_page_content=True,
+    )
+    mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
+    mock_site_pipeline.trigger_pipeline_build.side_effect = HTTPError("no pipeline")
+    with pytest.raises(HTTPError):
+        tasks.trigger_unpublished_removal(site.name)
+    mock_site_pipeline.pause_pipeline.assert_any_call(VERSION_LIVE)
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.unpause.assert_called_once_with()
+    removal_pipeline.trigger.assert_called_once_with()
+    assert unpublish_api_mock.get_site_pipeline.call_args_list == [
+        mocker.call(site),
+        mocker.call(root_website),
+    ]
+    mock_site_pipeline.trigger_pipeline_build.assert_called_once_with(VERSION_DRAFT)
+    assert not WebsiteContent.objects.filter(website=root_website).exists()
 
 
 def test_update_websites_in_root_website(api_mock):
@@ -966,10 +1165,19 @@ def test_remove_website_in_root_website(api_mock):
         website=root_website, type="website"
     )
     assert website_content.count() == 1
-    tasks.remove_website_in_root_website(published_site)
+    assert tasks.remove_website_in_root_website(published_site) is True
     assert website_content.count() == 0
     api_mock.get_sync_backend.assert_any_call(website=root_website)
     api_mock.get_sync_backend.return_value.sync_all_content_to_backend.assert_any_call()
+
+
+def test_remove_website_in_root_website_already_removed(api_mock):
+    """remove_website_in_root_website should do nothing if the listing is already gone"""
+    WebsiteFactory.create(name="ocw-www")
+    website = WebsiteFactory.create()
+    assert tasks.remove_website_in_root_website(website) is False
+    api_mock.get_sync_backend.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
 
 
 @mock_aws

@@ -8,7 +8,12 @@ from ol_concourse.lib.resource_types import (
     slack_notification_resource,
 )
 
-from content_sync.constants import DEV_ENDPOINT_URL, VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    DEV_ENDPOINT_URL,
+    OCW_HUGO_PRODUCTION_TAG_REGEX,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     HTTP_RESOURCE_TYPE_IDENTIFIER,
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
@@ -505,3 +510,44 @@ def _iter_steps(steps):
                 yield from _iter_steps(nested)
             elif isinstance(nested, dict):
                 yield from _iter_steps([nested])
+
+
+def test_mass_build_sites_follow_release_tags(mass_build_websites, settings, mocker):
+    """With tag releases on, the themes and projects resources follow release tags, and the S3 key is still the pointer"""
+    settings.OCW_HUGO_TAG_RELEASES = True
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    mocker.patch("content_sync.utils.is_dev", return_value=False)
+    pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+        version=VERSION_LIVE,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(VERSION_LIVE),
+        ocw_hugo_themes_branch="release",
+        ocw_hugo_projects_branch="release",
+        offline=False,
+        instance_vars="",
+        prefix="",
+    )
+    rendered_definition = json.loads(
+        MassBuildSitesPipelineDefinition(config=pipeline_config).json(
+            indent=2, by_alias=True
+        )
+    )
+    resources = rendered_definition["resources"]
+    for name in (
+        OCW_HUGO_THEMES_GIT_IDENTIFIER,
+        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
+        OCW_HUGO_PROJECTS_GIT_TRIGGER_IDENTIFIER,
+    ):
+        source = get_dict_list_item_by_field(items=resources, field="name", value=name)[
+            "source"
+        ]
+        assert source["version_type"] == "tags", name
+        assert source["tag_regex"] == OCW_HUGO_PRODUCTION_TAG_REGEX, name
+        assert "branch" not in source, name
+    webpack_manifest = get_dict_list_item_by_field(
+        items=resources, field="name", value=WEBPACK_MANIFEST_S3_IDENTIFIER
+    )
+    assert (
+        webpack_manifest["source"]["versioned_file"]
+        == "ocw-hugo-themes/release/webpack.json"
+    )

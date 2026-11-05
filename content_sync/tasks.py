@@ -19,7 +19,7 @@ from content_sync.apis import github
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
 from content_sync.decorators import single_task
 from content_sync.models import ContentSyncState
-from content_sync.utils import get_publishable_sites
+from content_sync.utils import get_extra_course_themes, get_publishable_sites
 from main.celery import app
 from main.s3_utils import get_boto3_resource
 from users.models import User
@@ -158,12 +158,16 @@ def upsert_website_pipeline_batch(
             # Keep using the same api instance to minimize multiple authentication calls
             api_instance = pipeline.api
         pipeline.upsert_pipeline()
+        unpause_versions = []
         if unpause:
-            for version in [
-                VERSION_LIVE,
-                VERSION_DRAFT,
-            ]:
-                pipeline.unpause_pipeline(version)
+            # Unpublished sites keep their live pipelines paused
+            unpause_versions = (
+                [VERSION_DRAFT]
+                if website.unpublish_status
+                else [VERSION_LIVE, VERSION_DRAFT]
+            )
+        for version in unpause_versions:
+            pipeline.unpause_pipeline(version)
 
         is_default_theme_site = (
             website.starter
@@ -180,13 +184,9 @@ def upsert_website_pipeline_batch(
                     noindex=True,
                 )
                 theme_pipeline.upsert_pipeline()
-                if unpause:
-                    for version in [
-                        VERSION_LIVE,
-                        VERSION_DRAFT,
-                    ]:
-                        theme_pipeline_name = f"{version}-{theme_slug}"
-                        theme_pipeline.unpause_pipeline(theme_pipeline_name)
+                for version in unpause_versions:
+                    theme_pipeline_name = f"{version}-{theme_slug}"
+                    theme_pipeline.unpause_pipeline(theme_pipeline_name)
     return True
 
 
@@ -265,15 +265,15 @@ def trigger_mass_build(version: str, *, sync_with_delete: bool = False) -> bool:
 
 @app.task(acks_late=True)
 def trigger_unpublished_removal(website_name: str) -> bool:
-    """Trigger the unpublished site removal pipeline and pause the specified site pipeline"""  # noqa: E501
+    """Trigger the unpublished site removal pipeline and pause the specified site's live pipelines"""  # noqa: E501
     website = Website.objects.get(name=website_name)
-    remove_website_in_root_website(website)
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
-        site_pipeline = api.get_site_pipeline(website)
-        site_pipeline.pause_pipeline(VERSION_LIVE)
+        api.pause_live_site_pipelines(website)
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
+    # Last, so that a failure while updating the root website cannot keep the site up
+    remove_website_in_root_website(website)
     return True
 
 
@@ -306,15 +306,20 @@ def sync_website_content(website_name: str):
 
 
 @app.task(acks_late=True)
-def update_mass_build_pipelines_on_publish(version: str, website_pk: int):
+def update_mass_build_pipelines_on_publish(
+    version: str, website_pk: int, *, both_versions: bool = False
+):
     """
     Update the mass-build-sites pipeline definitions upon publishing of a new website,
-    but only do so if the site has never been built before or has been unpublished
+    but only do so if the site has never been built before or has been unpublished.
+    This includes the mass builds of any extra themes the site is also built with.
 
     Args:
         version(str): The version (draft / live) to update
         website_pk(int): The primary key of the website being published to check build
                          date against
+        both_versions(bool): Update the live and draft mass builds whatever the build
+                             dates, for a site that was just unpublished or republished
     """
     if settings.CONTENT_SYNC_PIPELINE_BACKEND:
         build_date_field = (
@@ -322,11 +327,27 @@ def update_mass_build_pipelines_on_publish(version: str, website_pk: int):
         )
         website = Website.objects.get(pk=website_pk)
         build_date = getattr(website, build_date_field)
-        if not build_date or website.unpublish_status:
-            pipeline = api.get_mass_build_sites_pipeline(version)
-            pipeline.upsert_pipeline()
-            offline_pipeline = api.get_mass_build_sites_pipeline(version, offline=True)
-            offline_pipeline.upsert_pipeline()
+        if not build_date or website.unpublish_status or both_versions:
+            # Live first, so a failed draft upsert cannot leave the public builds stale
+            versions = [VERSION_LIVE, VERSION_DRAFT] if both_versions else [version]
+            # Same prefix and theme slug as the extra theme site pipelines
+            theme_kwargs = [
+                {},
+                *[
+                    {"prefix": theme_slug, "theme_slug": theme_slug}
+                    for theme_slug in get_extra_course_themes(website)
+                ],
+            ]
+            for mass_build_version in versions:
+                for kwargs in theme_kwargs:
+                    pipeline = api.get_mass_build_sites_pipeline(
+                        mass_build_version, **kwargs
+                    )
+                    pipeline.upsert_pipeline()
+                    offline_pipeline = api.get_mass_build_sites_pipeline(
+                        mass_build_version, offline=True, **kwargs
+                    )
+                    offline_pipeline.upsert_pipeline()
 
 
 @app.task(acks_late=True, autoretry_for=(BlockingIOError,), retry_backoff=True)
@@ -429,11 +450,19 @@ def publish_websites(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 
 @app.task(acks_late=True)
-def sync_github_site_configs(url: str, files: list[str], commit: str | None = None):
+def sync_github_site_configs(
+    url: str,
+    files: list[str],
+    commit: str | None = None,
+    tag: str | None = None,
+):
     """
     Sync WebsiteStarter objects from github
     """
-    github.sync_starter_configs(url, files, commit=commit)
+    kwargs = {"commit": commit}
+    if tag is not None:
+        kwargs["tag"] = tag
+    github.sync_starter_configs(url, files, **kwargs)
 
 
 @app.task(acks_late=True)
@@ -636,17 +665,23 @@ def remove_website_in_root_website(website, version="draft"):
         website (Website): The Website to remove from the root website
         version (str): The pipeline version to rebuild (draft or live),
             defaults to draft
+
+    Returns:
+        bool: True if a listing was removed, False if there was none to remove
     """
     if website.name != settings.ROOT_WEBSITE_NAME:
         root_website = Website.objects.get(name=settings.ROOT_WEBSITE_NAME)
-        website_content = WebsiteContent.objects.get(
+        website_content = WebsiteContent.objects.filter(
             website=root_website,
             type="website",
             title=website.title,
             dirpath=WEBSITE_LISTING_DIRPATH,
             filename=website.short_id,
             is_page_content=True,
-        )
+        ).first()
+        if website_content is None:
+            log.info("No root website listing to remove for %s", website.name)
+            return False
         website_content.delete()
         backend = api.get_sync_backend(website=root_website)
         backend.sync_all_content_to_backend()
@@ -655,6 +690,8 @@ def remove_website_in_root_website(website, version="draft"):
         if settings.CONTENT_SYNC_PIPELINE_BACKEND:
             pipeline = api.get_site_pipeline(root_website)
             pipeline.trigger_pipeline_build(version)
+        return True
+    return False
 
 
 @app.task(acks_late=True)

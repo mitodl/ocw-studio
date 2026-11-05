@@ -22,7 +22,11 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     get_fastly_identifier,
     get_ocw_catalog_identifier,
 )
-from content_sync.utils import get_ocw_studio_api_url, get_s3_endpoint_url
+from content_sync.utils import (
+    get_hugo_tag_regex,
+    get_ocw_studio_api_url,
+    get_s3_endpoint_url,
+)
 from websites.constants import OCW_HUGO_THEMES_GIT
 
 
@@ -84,13 +88,26 @@ class GitResource(Resource):
         uri: str,
         branch: str,
         private_key: str | None = None,
+        tag_regex: str | None = None,
         **kwagrs,
     ):
+        # With a tag_regex the resource follows the newest matching tag, and a get
+        # clones that tag, instead of following the branch.
+        source = (
+            {
+                "uri": uri,
+                "version_type": "tags",
+                "tag_regex": tag_regex,
+                "tag_sort": "version",
+            }
+            if tag_regex
+            else {"uri": uri, "branch": branch}
+        )
         super().__init__(
             name=name,
             icon="git",
             type="git",
-            source={"uri": uri, "branch": branch},
+            source=source,
             **kwagrs,
         )
         if private_key:
@@ -221,14 +238,18 @@ class OcwHugoThemesGitResource(GitResource):
     A GitResource for fetching the ocw-hugo-themes git repository
 
     Args:
-        branch(str): The branch of ocw-hugo-themes to fetch
+        branch(str): The branch of ocw-hugo-themes to fetch, or the release pointer
+            whose tag to fetch when settings.OCW_HUGO_TAG_RELEASES is on
+        tag_regex(str): The tag pattern to follow, for a caller whose branch is a
+            Concourse variable placeholder rather than the pointer itself
     """
 
-    def __init__(self, branch: str, **kwargs):
+    def __init__(self, branch: str, tag_regex: str | None = None, **kwargs):
         super().__init__(
             name=OCW_HUGO_THEMES_GIT_IDENTIFIER,
             uri=OCW_HUGO_THEMES_GIT,
             branch=branch,
+            tag_regex=tag_regex or get_hugo_tag_regex(branch),
             check_every="never",
             **kwargs,
         )
@@ -239,14 +260,18 @@ class OcwHugoProjectsGitResource(GitResource):
     A GitResource for fetching the ocw-hugo-projcets git repository
 
     Args:
-        branch(str): The branch of ocw-hugo-projects to fetch
+        branch(str): The branch of ocw-hugo-projects to fetch, or the release pointer
+            whose tag to fetch when settings.OCW_HUGO_TAG_RELEASES is on
+        tag_regex(str): The tag pattern to follow, for a caller whose branch is a
+            Concourse variable placeholder rather than the pointer itself
     """
 
-    def __init__(self, uri: str, branch: str, **kwargs):
+    def __init__(self, uri: str, branch: str, tag_regex: str | None = None, **kwargs):
         super().__init__(
             name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
             uri=uri,
             branch=branch,
+            tag_regex=tag_regex or get_hugo_tag_regex(branch),
             check_every="never",
             **kwargs,
         )

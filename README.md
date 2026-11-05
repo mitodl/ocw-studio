@@ -67,11 +67,10 @@ Keycloak runs automatically as part of the local Docker Compose stack. A pre-con
   ```sh
   SOCIAL_AUTH_KEYCLOAK_KEY=<client ID registered in the realm>
   SOCIAL_AUTH_KEYCLOAK_SECRET=<client secret from Keycloak admin console>
-  SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY=<realm RS256 public key, no header/footer>
   SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/auth
   SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL=http://localhost:<KEYCLOAK_PORT>/realms/<realm>/protocol/openid-connect/token
   ```
-- For local development, values in `.env.example` can be used as defaults for all of the variables above except `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY`. Retrieve `SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY` from `http://kc.odl.local:7080/realms/ocw-studio`.
+- For local development, values in `.env.example` can be used as defaults for all of the variables above. The app verifies tokens against the realm's signing keys, which it fetches from the `/protocol/openid-connect/certs` endpoint next to `SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL`.
 - Navigate to the app and click **Login with MIT Keycloak**. You will be redirected to the Keycloak login page.
 - After a successful login you will be redirected back to the app and authenticated.
 - The development realm includes a default test user: **`admin@odl.local`** / **`admin`**.
@@ -196,6 +195,44 @@ If you wish to use your own Github repo containing starters use that URL instead
 ### Automatically updating starters from Github
 
 If you are hosting `ocw-studio` on the internet and wish to have your starter updated automatically when you make changes to the starter configurations in your Github repo, this is possible by configuring a webhook. In order to accomplish this, you will need to first set `GITHUB_WEBHOOK_BRANCH` in your environment to the branch that you wish to watch for changes on (i.e. `release`). Then, you will need to configure a webhook in the settings of your Github repo targeting `/api/starters/site_configs` on your instance of `ocw-studio`. After this is set up, on pushes to the configured branch, a webhook will be fired to your `ocw-studio` instance which will trigger automatic updating of your starter configurations.
+
+### Following release tags of ocw-hugo-themes and ocw-hugo-projects
+
+`ocw-hugo-themes` and `ocw-hugo-projects` are released as tags only, by the Concourse release workflow, with no `release` or `release-candidate` branch advancing. How to cut a release is in the `Releasing` section of the [`ocw-hugo-themes`](https://github.com/mitodl/ocw-hugo-themes#releasing) and [`ocw-hugo-projects`](https://github.com/mitodl/ocw-hugo-projects#releasing) READMEs. This section is how `ocw-studio` follows those tags, and how to turn that on for an environment.
+
+With `OCW_HUGO_TAG_RELEASES=True` (outside dev), `GITHUB_WEBHOOK_BRANCH` keeps the value `release-candidate` or `release`, but it now names a pointer instead of a branch that exists:
+
+| `GITHUB_WEBHOOK_BRANCH` | Follows                                         | Example                  | Used by    |
+| ----------------------- | ----------------------------------------------- | ------------------------ | ---------- |
+| `release-candidate`     | the newest release tag, a bare calendar version | `2026.11.3.1`            | CI and QA  |
+| `release`               | the newest `production/` tag                    | `production/2026.11.3.1` | Production |
+
+Other tags, such as the old `v1.x` tags and `abandoned/...`, never match. The pointer decides:
+
+- the tag the theme-assets, end to end test, mass build and site pipelines clone `ocw-hugo-themes` and `ocw-hugo-projects` at. They use `version_type: tags` with an anchored regular expression, and a new tag triggers the theme-assets pipeline.
+- the `webpack.json` key in S3, which stays `ocw-hugo-themes/<pointer>/webpack.json` so it does not change per release.
+- which pushes the starter webhook acts on. It syncs every `ocw-studio.yaml` in the tagged commit when a matching tag is pushed, and ignores branch pushes, non-matching tags and tag deletions. It only syncs when the pushed tag is the newest match, so a redelivered older tag is ignored.
+
+`import_website_starters <url>` reads the newest matching tag, or the one named with `--tag`. In dev the setting has no effect and `OCW_HUGO_THEMES_BRANCH` and `OCW_HUGO_PROJECTS_BRANCH` still apply.
+
+#### Turning it on for an environment
+
+1. Make sure the tags the environment follows exist in both repos. CI and QA need at least one release tag in each. Production needs at least one `production/` tag in each, which only promoting a release creates. A pointer with no matching tag leaves pipelines with nothing to clone, so do not enable Production before the first promotion.
+2. In `ol-infrastructure`, add `OCW_HUGO_TAG_RELEASES: "True"` under `ocw_studio:vars` in `src/ol_infrastructure/applications/ocw_studio/Pulumi.<stack>.yaml`, next to `GITHUB_WEBHOOK_BRANCH`, and leave that one as it is. Deploy it. Do CI and QA first, and Production after its first `production/` tag exists.
+3. Re-upsert the pipelines. They only change when they are set again. Run these in the environment's `web` container, against its Concourse:
+   - `./manage.py upsert_theme_assets_pipeline`
+   - `./manage.py upsert_e2e_test_pipeline`
+   - `./manage.py upsert_mass_build_pipeline`, once for each existing instance, with the same `--prefix`, `--offline`, `--starter`, `--hugo_args`, `--theme-slug` and `--sync-with-delete` that instance was set with. The destructive instance (the one set with `--sync-with-delete`) is separate from the ordinary one, so leaving that flag out re-upserts the ordinary instance and the destructive one stays on the frozen branches.
+   - `./manage.py backpopulate_pipelines` for the site pipelines. There are thousands in Production, so try one site first with `--filter`. `--chunks` only sets how many sites each task handles, and every chunk is queued at once, so it does not pace the load on Concourse. For a controlled rollout, run several filtered invocations one after another and wait for each to finish.
+
+   Leave out `--themes-branch` and `--projects-branch` so each pipeline follows `GITHUB_WEBHOOK_BRANCH`, and leave out `--delete-all`.
+
+4. Check the result. In Concourse, the theme-assets pipeline's `ocw-hugo-themes-git` resource lists tags instead of branch commits, and a run of it publishes. `static/hash.txt` of the environment's site (`live-qa.ocw.mit.edu` for QA, `ocw.mit.edu` for Production) equals `git rev-parse <tag>^{commit}` for the tag it follows. A site pipeline's `ocw-hugo-themes-git` resource clones that same tag.
+5. Make sure the newest tags have been synced. A 2xx webhook delivery (repo settings, Webhooks, Recent Deliveries) only says the request was received: the task it queues ignores a tag that is not the newest match and can fail without updating a starter. Tags pushed before the setting was turned on were never processed in tag mode, so redeliver the newest matching tag from that page, or run `./manage.py import_website_starters https://github.com/mitodl/ocw-hugo-projects`, which reads the newest matching tag. Then check that a starter's configuration matches the file at that tag's commit. The next release exercises the webhook for real.
+
+#### Rolling back
+
+Setting `OCW_HUGO_TAG_RELEASES` back to `False` and re-upserting returns the pipelines to the `release-candidate` and `release` branches. Those branches no longer advance once the repos are released as tags, so they hold the last release made before the switch, and rolling back means running that older code. Fix forward with a new tag where you can.
 
 # Enabling GitHub integration
 

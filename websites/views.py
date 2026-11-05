@@ -213,6 +213,7 @@ class WebsiteViewSet(
         """Process a publish request for the specified version"""
         try:
             website = self.get_object()
+            republished = version == VERSION_LIVE and website.unpublish_status
             if website.publish_date is None:
                 if not request.data.get("url_path"):
                     request.data["url_path"] = None
@@ -238,6 +239,12 @@ class WebsiteViewSet(
                     last_unpublished_by=None,
                 )
             trigger_publish(website.name, version)
+            if republished:
+                # Add the site back to the mass builds unpublishing removed it from,
+                # which the build dates alone would skip
+                update_mass_build_pipelines_on_publish.delay(
+                    version=version, website_pk=website.pk, both_versions=True
+                )
             return Response(status=200)
         except ValidationError as ve:
             return Response(data=ve.detail, status=status.HTTP_400_BAD_REQUEST)
@@ -311,7 +318,7 @@ class WebsiteViewSet(
                 website.save()
                 trigger_unpublished_removal(website)
                 update_mass_build_pipelines_on_publish.delay(
-                    version=VERSION_LIVE, website_pk=website.pk
+                    version=VERSION_LIVE, website_pk=website.pk, both_versions=True
                 )
                 return Response(
                     status=200,
@@ -382,8 +389,7 @@ class WebsiteViewSet(
         website = get_object_or_404(Website, name=name)
         version = request.query_params.get("version", "draft")
 
-        try:
-            remove_website_in_root_website(website, version)
+        if remove_website_in_root_website(website, version):
             return Response(
                 {
                     "status": "success",
@@ -391,11 +397,10 @@ class WebsiteViewSet(
                 },
                 status=200,
             )
-        except WebsiteContent.DoesNotExist:
-            return Response(
-                {"status": "not_found", "message": "No content to remove"},
-                status=404,
-            )
+        return Response(
+            {"status": "not_found", "message": "No content to remove"},
+            status=404,
+        )
 
 
 class WebsiteMassBuildViewSet(viewsets.ViewSet):
@@ -491,15 +496,30 @@ class WebsiteStarterViewSet(
                     file
                     for sublist in [
                         commit["modified"] + commit["added"]
-                        for commit in data["commits"]
+                        for commit in data.get("commits") or []
                     ]
                     for file in sublist
                     if os.path.basename(file)  # noqa: PTH119
                     == settings.OCW_STUDIO_SITE_CONFIG_FILE
                 ]
-                sync_github_website_starters(
-                    data["repository"]["html_url"], files, commit=data.get("after")
-                )
+                ref = data.get("ref") or ""
+                if ref.startswith("refs/tags/") and data.get("deleted"):
+                    # Nothing to sync from a tag that was just deleted.
+                    return Response(status=status.HTTP_202_ACCEPTED)
+                if ref.startswith("refs/tags/"):
+                    # A tag push lists no files. The tagged commit is "head_commit";
+                    # "after" is the tag object when the tag is annotated.
+                    sync_github_website_starters(
+                        data["repository"]["html_url"],
+                        files,
+                        commit=(data.get("head_commit") or {}).get("id")
+                        or data.get("after"),
+                        tag=ref.removeprefix("refs/tags/"),
+                    )
+                else:
+                    sync_github_website_starters(
+                        data["repository"]["html_url"], files, commit=data.get("after")
+                    )
             except Exception as exc:  # pylint: disable=broad-except
                 log.exception("Error syncing config files")
                 return Response(status=500, data={"details": str(exc)})

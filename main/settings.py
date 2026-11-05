@@ -25,7 +25,7 @@ from main.sentry import init_sentry
 
 # pylint: disable=too-many-lines
 
-VERSION = "0.203.0"
+VERSION = "2026.10.28.1"
 
 SITE_ID = get_int(
     name="OCW_STUDIO_SITE_ID",
@@ -885,7 +885,7 @@ if DEBUG:
 
 
 AUTHENTICATION_BACKENDS = (
-    "social_core.backends.keycloak.KeycloakOAuth2",
+    "users.backends.KeycloakJWKSOAuth2",
     "django.contrib.auth.backends.ModelBackend",  # this is default
     "guardian.backends.ObjectPermissionBackend",
 )
@@ -929,11 +929,6 @@ SOCIAL_AUTH_KEYCLOAK_KEY = get_string(
 SOCIAL_AUTH_KEYCLOAK_SECRET = get_string(
     name="SOCIAL_AUTH_KEYCLOAK_SECRET",
     description="Keycloak client secret for social auth",
-    required=True,
-)
-SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY = get_string(
-    name="SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY",
-    description="Keycloak realm public key for social auth",
     required=True,
 )
 SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL = get_string(
@@ -1129,6 +1124,17 @@ GITHUB_WEBHOOK_BRANCH = get_string(
     name="GITHUB_WEBHOOK_BRANCH",
     default="",
     description="Github branch to filter webhook requests against",
+    required=False,
+)
+OCW_HUGO_TAG_RELEASES = get_bool(
+    name="OCW_HUGO_TAG_RELEASES",
+    default=False,
+    description=(
+        "True if ocw-hugo-themes and ocw-hugo-projects are released as tags only. "
+        "GITHUB_WEBHOOK_BRANCH then names the release pointer ('release-candidate' "
+        "follows the newest release tag, 'release' follows the newest production/ "
+        "tag) rather than a branch that exists. Ignored in dev."
+    ),
     required=False,
 )
 GITHUB_RATE_LIMIT_CHECK = get_bool(

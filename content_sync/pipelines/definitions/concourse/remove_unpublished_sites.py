@@ -56,7 +56,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
      - Fetch a list of unpublished sites from the ocw-studio API
      - For each site:
        - Remove from Open search index
-       - Remove the site from S3
+       - Remove the site, and its copies in any extra course themes, from S3
        - Clear CDN cache
     """
 
@@ -150,6 +150,20 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
             for catalog_url in open_catalog_urls
             if catalog_url
         ]
+        # Extra-theme copies of a course are deployed under <theme>/<url_path>/,
+        # same as the prefix their site and mass build pipelines are upserted with
+        site_paths = [
+            "((.:site.site_url))",
+            *[
+                f"{theme_slug}/((.:site.site_url))"
+                for theme_slug in settings.OCW_EXTRA_COURSE_THEMES
+            ],
+        ]
+        empty_s3_bucket_commands = "\n".join(
+            f"aws s3{cli_endpoint_url} rm s3://{bucket}/{site_path}/ --recursive"
+            for site_path in site_paths
+            for bucket in (web_bucket, offline_bucket)
+        )
         empty_s3_bucket_across_task = TaskStep(
             task=self._empty_s3_bucket_task_identifier,
             timeout="10m",
@@ -162,10 +176,7 @@ class UnpublishedSiteRemovalPipelineDefinition(Pipeline):
                     path="sh",
                     args=[
                         "-exc",
-                        f"""
-                        aws s3{cli_endpoint_url} rm s3://{web_bucket}/((.:site.site_url))/ --recursive
-                        aws s3{cli_endpoint_url} rm s3://{offline_bucket}/((.:site.site_url))/ --recursive
-                        """,  # noqa: E501
+                        empty_s3_bucket_commands,
                     ],
                 ),
             ),

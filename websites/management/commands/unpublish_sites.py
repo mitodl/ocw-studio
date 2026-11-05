@@ -118,11 +118,10 @@ class Command(WebsiteFilterCommand):
                     unpublish_status=PUBLISH_STATUS_NOT_STARTED,
                     last_unpublished_by=user_id,
                 )
-                site_pipeline = api.get_site_pipeline(website)
-                site_pipeline.pause_pipeline(VERSION_LIVE)
+                api.pause_live_site_pipelines(website)
                 remove_website_in_root_website(website)
                 update_mass_build_pipelines_on_publish.delay(
-                    version=VERSION_LIVE, website_pk=website.pk
+                    version=VERSION_LIVE, website_pk=website.pk, both_versions=True
                 )
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
