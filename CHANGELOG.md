@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2026.11.4.1] - 2026-11-04
+
+### Changes
+
+- **fix: take down and stop rebuilding v3 copies when a course is unpublished** (#3292) by umar.hassan8@gmail.com
+- **Update dependency pypdf to v6.21.2 [SECURITY]** (#3289) by 29139614+renovate[bot]@users.noreply.github.com
+- **fix: rebuild ocw-course-publisher and bump aws-cli for the eMudhra CA compromise** (#3284) by umar.hassan8@gmail.com
+
 ## [2026.10.28.1] - 2026-10-28
 
 ### Changes
