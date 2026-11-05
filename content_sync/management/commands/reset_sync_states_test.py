@@ -24,14 +24,13 @@ def sync_mocks(mocker, settings):
 
 
 @pytest.mark.parametrize("actor", ["missing", "unknown", "inactive"])
-@pytest.mark.parametrize("skip_sync", [True, False])
-def test_invalid_user_prevents_reset(sync_mocks, actor, skip_sync):
-    """A missing or invalid actor must fail before resetting any sync state."""
+def test_invalid_user_prevents_reset(sync_mocks, actor):
+    """When syncing, a missing or invalid actor must fail before resetting any state."""
     content = WebsiteContentFactory.create()
     ContentSyncState.objects.filter(content=content).update(
         synced_checksum="previous", data={"filepath": "previous.md"}
     )
-    options = {"filter": content.website.name, "skip_sync": skip_sync}
+    options = {"filter": content.website.name}
     if actor != "missing":
         options["user"] = "unknown@example.com"
     if actor == "inactive":
@@ -131,18 +130,23 @@ def test_empty_scope_does_not_sync(sync_mocks, queued):
     sync_mocks.task.assert_not_called()
 
 
-def test_skip_sync_does_not_materialize_content_ids(sync_mocks, mocker):
-    """The documented full-database reset stays a database update when sync is skipped."""
-    actor = UserFactory.create()
+@pytest.mark.parametrize("skip_sync", [True, False])
+def test_reset_without_sync_needs_no_user(sync_mocks, mocker, settings, skip_sync):
+    """Without syncing, reset needs no user and does not load content IDs into memory."""
+    if not skip_sync:
+        settings.CONTENT_SYNC_BACKEND = None
     content = WebsiteContentFactory.create()
-    ContentSyncState.objects.filter(content=content).update(synced_checksum="previous")
+    ContentSyncState.objects.filter(content=content).update(
+        synced_checksum="previous", data={"filepath": "previous.md"}
+    )
     values_list = mocker.patch("django.db.models.query.QuerySet.values_list")
 
-    call_command("reset_sync_states", user=actor.email, skip_sync=True)
+    call_command("reset_sync_states", skip_sync=skip_sync)
 
     values_list.assert_not_called()
     content.content_sync_state.refresh_from_db()
     assert content.content_sync_state.synced_checksum is None
+    assert content.content_sync_state.data is None
     sync_mocks.backend.assert_not_called()
     sync_mocks.task.assert_not_called()
 

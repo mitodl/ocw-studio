@@ -13,7 +13,7 @@ Update the Website object's **url_path** field to the new value (e.g. `courses/r
 Reset all `ContentSyncState` checksums for the site and re-sync to GitHub. Pass your Studio account's email address with `--user` so the sync commits are attributed to you.
 
 ```bash
-./manage.py reset_sync_states --filter <site-name> --skip_sync --user <studio-user-email>
+./manage.py reset_sync_states --filter <site-name> --skip_sync
 ./manage.py sync_website_to_backend --filter <site-name> --user <studio-user-email>
 ```
 

@@ -23,8 +23,10 @@ class Command(WebsiteFilterCommand):
         super().add_arguments(parser)
         parser.add_argument(
             "--user",
-            required=True,
-            help="Email address of the active Studio user performing this sync",
+            help=(
+                "Email address of the active Studio user performing this sync "
+                "(required when syncing)"
+            ),
         )
         parser.add_argument(
             "-t",
@@ -65,7 +67,8 @@ class Command(WebsiteFilterCommand):
     def handle(self, *args, **options):
         """Reset the selected sync states and optionally sync as the given user."""
         super().handle(*args, **options)
-        commit_user = get_commit_user(options["user"])
+        should_sync = settings.CONTENT_SYNC_BACKEND and not options["skip_sync"]
+        commit_user = get_commit_user(options["user"]) if should_sync else None
         self.stdout.write("Resetting synced checksums to null")
         start = now_in_utc()
 
@@ -73,7 +76,6 @@ class Command(WebsiteFilterCommand):
         create_backends = options["create_backends"]
         starter_str = options["starter"].lower()
         source_str = options["source"].lower()
-        skip_sync = options["skip_sync"]
 
         filtered_websites = [
             fetch_website(site_identifier) for site_identifier in self.filter_list
@@ -96,7 +98,6 @@ class Command(WebsiteFilterCommand):
                 content__website__source=source_str
             )
 
-        should_sync = settings.CONTENT_SYNC_BACKEND and not skip_sync
         content_ids = None
         has_scope = any(
             [self.filter_list, self.exclude_list, type_str, starter_str, source_str]

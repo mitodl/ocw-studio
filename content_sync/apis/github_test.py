@@ -449,7 +449,6 @@ def test_reset_and_sync_attribution(  # noqa: PLR0913, PLR0917
         "reset_sync_states",
         filter=db_data.website.name,
         skip_sync=True,
-        user=operator.email,
     )
     call_command(
         "sync_website_to_backend",
