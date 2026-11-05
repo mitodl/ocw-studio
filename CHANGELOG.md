@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2026.11.5.1] - 2026-11-05
+
+### Changes
+
+- **Add user attribution to management commands** (#3299) by 1553279+pt2302@users.noreply.github.com
+- **fix: stop a missing or failing root website listing from blocking unpublish** (#3293) by umar.hassan8@gmail.com
+- **docs: refresh extra-theme mass builds and take down unpublished courses after an RC clone** (#3297) by umar.hassan8@gmail.com
+- **docs: explain how to follow ocw-hugo release tags and turn it on** (#3300) by feoh@feoh.org
+- **feat(content_sync): follow ocw-hugo release tags instead of release branches** (#3295) by feoh@feoh.org
+- **test: run the Python suite in parallel** (#3296) by feoh@feoh.org
+
 ## [2026.11.4.1] - 2026-11-04
 
 ### Changes
