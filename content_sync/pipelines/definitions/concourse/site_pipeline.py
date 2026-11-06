@@ -78,7 +78,6 @@ BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site").root
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build").root
 FILTER_WEBPACK_ARTIFACTS_IDENTIFIER = Identifier("filter-webpack-artifacts").root
 BUILD_OFFLINE_SITE_IDENTIFIER = Identifier("build-offline-site").root
-UPLOAD_OFFLINE_BUILD_IDENTIFIER = Identifier("upload-offline-build").root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
 
 
@@ -565,7 +564,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         fastly_purpose(str): The distribution being published to, e.g. "draft" or "live"
         pipeline_name(str): The name of the pipeline (e.g., "draft" or "live")
         destructive_sync(bool): (Optional) A boolean override for the delete flag used in AWS syncs
-        filter_videos(bool): (Optional) A boolean override for filtering videos out of AWS syncs
+        filter_videos(bool): (Optional) Skip copying videos from the storage bucket to the web bucket
         skip_cache_clear(bool): (Optional) A boolean override for skipping the CDN cache clear step
         skip_search_index_update(bool): (Optional) A boolean override for skipping the search index update
     """  # noqa: E501
@@ -583,13 +582,14 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         skip_webhooks: bool = False,
     ):
         delete_flag = pipeline_vars["delete_flag"] if destructive_sync else ""
-        # When videos are filtered out of the static resources download, mp4 files
-        # (e.g. archive videos) exist in S3 but not in the local build output, so
-        # they must be excluded from the sync or a --delete run would remove them
-        mp4_exclude = " --exclude='*.mp4'" if filter_videos else ""
+        # Videos are too large to pass between steps, so they are left out of the
+        # static resources download. They exist in S3 but not in the local build
+        # output, so they must be excluded from the sync or a --delete run would
+        # remove them
+        mp4_exclude = " --exclude='*.mp4'"
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
-            filter_videos=filter_videos,
+            filter_videos=True,
             build_type="online",
             skip_webhooks=skip_webhooks,
         )
@@ -657,6 +657,13 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
                 settings.AWS_SECRET_ACCESS_KEY
             )
 
+        video_sync_command = ""
+        if not filter_videos:
+            video_delete_flag = " --delete" if destructive_sync else ""
+            # Copy the videos bucket to bucket instead. The sync skips videos the web
+            # bucket already has, and metadata-directive keeps their Content-Type
+            # without copying tags
+            video_sync_command = f"""aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars["storage_bucket"]}/{pipeline_vars["s3_path"]} "s3://$S3_PATH{pipeline_vars["static_resources_subdirectory"]}" --exclude='*' --include='*.mp4' --copy-props metadata-directive --metadata site-id={pipeline_vars["site_name"]}{video_delete_flag}"""  # noqa: E501
         online_sync_command = rf"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         S3_PATH="{pipeline_vars["web_bucket"]}"
@@ -669,13 +676,14 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         if [ $IS_ROOT_WEBSITE = 1 ] ; then
             # Sync directories with --delete, excluding the static_shared directory
             for dir in $(find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type d -not -name "static_shared"); do
-                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --delete --metadata site-id={pipeline_vars["site_name"]}
+                aws s3{get_cli_endpoint_url()} sync "$dir" "s3://$S3_PATH/$(basename "$dir")"{mp4_exclude} --delete --metadata site-id={pipeline_vars["site_name"]}
             done
             # Copy only files at the root (exclude directories)
             find {SITE_CONTENT_GIT_IDENTIFIER}/output-online -mindepth 1 -maxdepth 1 -type f -exec aws s3{get_cli_endpoint_url()} cp {{}} "s3://$S3_PATH/" --metadata site-id={pipeline_vars["site_name"]} \;
         else
             aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH" --exclude='{pipeline_vars["short_id"]}.zip' --exclude='{pipeline_vars["short_id"]}-video.zip'{mp4_exclude} --metadata site-id={pipeline_vars["site_name"]}{delete_flag}
         fi
+        {video_sync_command}
         """  # noqa: E501
         upload_online_build_step = add_error_handling(
             step=TaskStep(
@@ -784,18 +792,17 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         *,
         skip_webhooks: bool = False,
     ):
-        static_resources_task_step = StaticResourcesTaskStep(
-            pipeline_vars=pipeline_vars,
-            build_type="offline",
-            skip_webhooks=skip_webhooks,
-        )
+        # One task downloads, builds and uploads, so the videos and the video zip
+        # never pass between steps
         build_offline_site_command = f"""
+        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         cp ../{WEBPACK_MANIFEST_S3_IDENTIFIER}/webpack.json ../{OCW_HUGO_THEMES_GIT_IDENTIFIER}/base-theme/data
         mkdir -p ./content/static_resources
         mkdir -p ./static/static_resources
         mkdir -p ./static/static_shared
         mkdir -p ../videos
-        cp -r ../{STATIC_RESOURCES_S3_IDENTIFIER}/. ./content/static_resources
+        mkdir -p ../{BUILD_OFFLINE_SITE_IDENTIFIER}
+        aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars["storage_bucket"]}/{pipeline_vars["s3_path"]} ./content/static_resources
         HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
         if [ $HTML_COUNT != 0 ];
         then
@@ -821,14 +828,35 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             hugo {pipeline_vars["hugo_args_offline"]}
             cd output-offline
             zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}-video.zip ./
+            cd ..
+        fi
+        SUB_PATH=""
+        if [ -n "{pipeline_vars["prefix"]}" ]; then
+            SUB_PATH="$SUB_PATH/{pipeline_vars["prefix"]}"
+        fi
+        if [ -n "{pipeline_vars["base_url"]}" ]; then
+            SUB_PATH="$SUB_PATH/{pipeline_vars["base_url"]}"
+        fi
+        OFFLINE_S3_PATH="{pipeline_vars["offline_bucket"]}$SUB_PATH"
+        WEB_S3_PATH="{pipeline_vars["web_bucket"]}$SUB_PATH"
+        if [ $IS_ROOT_WEBSITE = 1 ] ; then
+            aws s3{get_cli_endpoint_url()} cp output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
+        else
+            aws s3{get_cli_endpoint_url()} sync output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
+        fi
+        if [ $IS_ROOT_WEBSITE = 0 ] ; then
+            aws s3{get_cli_endpoint_url()} sync ../{BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
         fi
         """  # noqa: E501
         build_offline_site_step = add_error_handling(
             step=TaskStep(
                 task=BUILD_OFFLINE_SITE_IDENTIFIER,
-                timeout="120m",
+                timeout="180m",
                 attempts=3,
                 params={
+                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
+                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
+                    ),
                     "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
                     "GTM_ACCOUNT_ID": pipeline_vars["gtm_account_id"],
                     "OCW_STUDIO_BASE_URL": pipeline_vars["ocw_studio_url"],
@@ -851,14 +879,8 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                         Input(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
                         Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
                         Input(name=SITE_CONTENT_GIT_IDENTIFIER),
-                        Input(name=STATIC_RESOURCES_S3_IDENTIFIER),
                         Input(name=WEBPACK_MANIFEST_S3_IDENTIFIER),
                         Input(name=WEBPACK_ARTIFACTS_IDENTIFIER),
-                    ],
-                    outputs=[
-                        Output(name=SITE_CONTENT_GIT_IDENTIFIER),
-                        Output(name=OCW_HUGO_THEMES_GIT_IDENTIFIER),
-                        Output(name=BUILD_OFFLINE_SITE_IDENTIFIER),
                     ],
                     run=Command(
                         dir=SITE_CONTENT_GIT_IDENTIFIER,
@@ -884,63 +906,6 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             )
             build_offline_site_step.params["AWS_SECRET_ACCESS_KEY"] = (
                 settings.AWS_SECRET_ACCESS_KEY or ""
-            )
-
-        offline_sync_command = f"""
-        aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
-        SUB_PATH=""
-        if [ -n "{pipeline_vars["prefix"]}" ]; then
-            SUB_PATH="$SUB_PATH/{pipeline_vars["prefix"]}"
-        fi
-        if [ -n "{pipeline_vars["base_url"]}" ]; then
-            SUB_PATH="$SUB_PATH/{pipeline_vars["base_url"]}"
-        fi
-        OFFLINE_S3_PATH="{pipeline_vars["offline_bucket"]}$SUB_PATH"
-        WEB_S3_PATH="{pipeline_vars["web_bucket"]}$SUB_PATH"
-        if [ $IS_ROOT_WEBSITE = 1 ] ; then
-            aws s3{get_cli_endpoint_url()} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
-        else
-            aws s3{get_cli_endpoint_url()} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
-        fi
-        if [ $IS_ROOT_WEBSITE = 0 ] ; then
-            aws s3{get_cli_endpoint_url()} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
-        fi
-        """  # noqa: E501
-        upload_offline_build_step = add_error_handling(
-            step=TaskStep(
-                task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
-                timeout="120m",
-                params={
-                    "AWS_MAX_CONCURRENT_CONNECTIONS": str(
-                        settings.AWS_MAX_CONCURRENT_CONNECTIONS
-                    ),
-                    "IS_ROOT_WEBSITE": pipeline_vars["is_root_website"],
-                },
-                config=TaskConfig(
-                    platform="linux",
-                    image_resource=AWS_CLI_REGISTRY_IMAGE,
-                    inputs=[
-                        Input(name=SITE_CONTENT_GIT_IDENTIFIER),
-                        Input(name=BUILD_OFFLINE_SITE_IDENTIFIER),
-                        Input(name=OCW_HUGO_PROJECTS_GIT_IDENTIFIER),
-                    ],
-                    run=Command(path="sh", args=["-exc", offline_sync_command]),
-                ),
-            ),
-            step_description=f"{UPLOAD_OFFLINE_BUILD_IDENTIFIER} task step",
-            pipeline_name=pipeline_vars["pipeline_name"],
-            short_id=pipeline_vars["short_id"],
-            instance_vars=pipeline_vars["instance_vars"],
-            build_type="offline",
-            theme_slug=pipeline_vars["theme_slug"],
-            skip_webhooks=skip_webhooks,
-        )
-        if is_dev():
-            upload_offline_build_step.params["AWS_ACCESS_KEY_ID"] = (
-                settings.AWS_ACCESS_KEY_ID
-            )
-            upload_offline_build_step.params["AWS_SECRET_ACCESS_KEY"] = (
-                settings.AWS_SECRET_ACCESS_KEY
             )
         clear_cdn_cache_offline_steps = [
             add_error_handling(
@@ -987,13 +952,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             clear_cdn_cache_offline_steps[-1].on_success = TryStep(
                 try_=DoStep(do=clear_cdn_cache_offline_on_success_steps)
             )
-        self.extend(
-            [
-                static_resources_task_step,
-                build_offline_site_step,
-                upload_offline_build_step,
-            ]
-        )
+        self.append(build_offline_site_step)
         if not is_dev():
             self.extend(clear_cdn_cache_offline_steps)
 

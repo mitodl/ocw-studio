@@ -39,6 +39,7 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinitionConfig,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
+    BUILD_OFFLINE_SITE_IDENTIFIER,
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinitionConfig,
@@ -363,12 +364,25 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                     field="task",
                     value=STATIC_RESOURCES_S3_IDENTIFIER,
                 )
-                static_resources_s3_command = "\n".join(
-                    static_resources_s3_step["config"]["run"]["args"]
-                )
                 if offline:
-                    assert "--exclude *.mp4" not in static_resources_s3_command
+                    # The offline build downloads the videos itself for the zip
+                    assert static_resources_s3_step is None
+                    build_offline_site_task = get_dict_list_item_by_field(
+                        items=build_steps,
+                        field="task",
+                        value=BUILD_OFFLINE_SITE_IDENTIFIER,
+                    )
+                    build_offline_site_command = "\n".join(
+                        build_offline_site_task["config"]["run"]["args"]
+                    )
+                    assert (
+                        f"sync s3://{site_pipeline_vars['storage_bucket']}/{site_pipeline_vars['s3_path']} ./content/static_resources\n"
+                        in build_offline_site_command
+                    )
                 else:
+                    static_resources_s3_command = "\n".join(
+                        static_resources_s3_step["config"]["run"]["args"]
+                    )
                     assert "--exclude *.mp4" in static_resources_s3_command
                 if not offline:
                     upload_online_build_task = get_dict_list_item_by_field(
@@ -387,6 +401,8 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                         not in upload_online_build_command
                     )
                     assert "--exclude='*.mp4'" in upload_online_build_command
+                    # Mass builds leave the videos already in the web bucket alone
+                    assert "--include='*.mp4'" not in upload_online_build_command
         if batch_number < batch_count:
             batch_gate = get_dict_list_item_by_field(
                 items=steps,
