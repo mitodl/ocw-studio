@@ -8,15 +8,45 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
-from social_core.exceptions import AuthTokenError
-from social_core.tests.models import TestStorage
-from social_core.tests.strategy import TestStrategy
+from social_core.exceptions import AuthResponseError
+from social_core.strategy import BaseStrategy
 
 from users import backends
 from users.backends import KeycloakJWKSOAuth2
 
 REALM_PATH = "/realms/ocw-studio"
 CLIENT_ID = "ocw-studio"
+
+
+class SettingsStrategy(BaseStrategy):
+    """
+    A strategy that only answers settings lookups.
+
+    social-auth-core 6 dropped ``social_core.tests`` from its wheel, so its
+    TestStrategy is no longer importable. The backend under test reads
+    settings and nothing else; the rest is what BaseAuth.__init__ touches.
+    """
+
+    def __init__(self, settings):
+        """Hold the SOCIAL_AUTH_* settings the backend will look up"""
+        self._settings = dict(settings)
+        super().__init__()
+
+    def get_setting(self, name):
+        """Return a setting, raising KeyError so BaseStrategy falls through"""
+        return self._settings[name]
+
+    def set_settings(self, values):
+        """Add to or overwrite the settings, as TestStrategy did"""
+        self._settings.update(values)
+
+    def get_request_data(self, merge=True):  # noqa: ARG002, FBT002
+        """Return no request data; the backend reads none"""
+        return {}
+
+    def build_absolute_uri(self, path=None):
+        """Resolve a path against a fixed host, for the redirect URI"""
+        return f"https://studio.example.com{path or ''}"
 
 
 def _signing_key(kid):
@@ -78,8 +108,7 @@ def backend(realm):
     """KeycloakJWKSOAuth2 configured against the local realm"""
     url, _, _ = realm
     backends._jwks_client.cache_clear()  # noqa: SLF001
-    strategy = TestStrategy(TestStorage)
-    strategy.set_settings(
+    strategy = SettingsStrategy(
         {
             "SOCIAL_AUTH_KEYCLOAK_KEY": CLIENT_ID,
             "SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL": (
@@ -137,16 +166,16 @@ def test_user_data_survives_key_rotation(backend, realm):
     ],
 )
 def test_user_data_rejects_bad_tokens(backend, realm, kid, signed_by_realm, audience):
-    """Invalid tokens raise AuthTokenError rather than a bare PyJWT error"""
+    """Invalid tokens raise AuthResponseError rather than a bare PyJWT error"""
     _, keys, _ = realm
     realm_private, realm_jwk = _signing_key("realm")
     keys.append(realm_jwk)
     private_key = realm_private if signed_by_realm else _signing_key("x")[0]
-    with pytest.raises(AuthTokenError):
+    with pytest.raises(AuthResponseError):
         backend.user_data(_access_token(private_key, kid, audience=audience))
 
 
 def test_user_data_rejects_malformed_token(backend):
-    """A malformed token raises AuthTokenError"""
-    with pytest.raises(AuthTokenError):
+    """A malformed token raises AuthResponseError"""
+    with pytest.raises(AuthResponseError):
         backend.user_data("not-a-jwt")

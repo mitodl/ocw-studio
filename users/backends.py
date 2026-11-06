@@ -4,7 +4,7 @@ from functools import cache
 
 import jwt
 from social_core.backends.keycloak import KeycloakOAuth2
-from social_core.exceptions import AuthTokenError
+from social_core.backends.utils import jwt_error
 
 KEYCLOAK_TOKEN_PATH = "/protocol/openid-connect/token"  # noqa: S105
 KEYCLOAK_CERTS_PATH = "/protocol/openid-connect/certs"
@@ -54,4 +54,4 @@ class KeycloakJWKSOAuth2(KeycloakOAuth2):
                 leeway=self.setting("JWT_LEEWAY", default=0),
             )
         except jwt.PyJWTError as error:
-            raise AuthTokenError(self, error) from error
+            raise jwt_error(self, error) from error
