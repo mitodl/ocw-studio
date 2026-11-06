@@ -40,6 +40,7 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
+    UPLOAD_OFFLINE_BUILD_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinitionConfig,
     get_site_pipeline_definition_vars,
@@ -370,6 +371,14 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                     assert "--exclude *.mp4" not in static_resources_s3_command
                 else:
                     assert "--exclude *.mp4" in static_resources_s3_command
+                upload_build_task = get_dict_list_item_by_field(
+                    items=build_steps,
+                    field="task",
+                    value=UPLOAD_OFFLINE_BUILD_IDENTIFIER
+                    if offline
+                    else UPLOAD_ONLINE_BUILD_IDENTIFIER,
+                )
+                assert upload_build_task["attempts"] == 3
                 if not offline:
                     upload_online_build_task = get_dict_list_item_by_field(
                         items=build_steps,
