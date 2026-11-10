@@ -8,7 +8,8 @@ import os
 import time
 
 from celery import Celery
-from celery.signals import before_task_publish, task_postrun
+from celery.signals import before_task_publish, setup_logging, task_postrun
+from mitol.observability.celery import setup_celery_logging
 
 from main.constants import DEFAULT_PRIORITY, PRIORITY_STEPS
 
@@ -50,6 +51,16 @@ app.conf.task_routes = {
     "websites.tasks.finish_uuid_rename": {"queue": "batch"},
     "websites.tasks.sync_renamed_websites": {"queue": "batch"},
 }
+
+
+# Keep the worker and beat on the structlog setup from ObservabilityConfig.
+# With no receiver for this signal, Celery puts a plain-text handler on the
+# root logger, so our task logs aren't JSON, and strips the handler from the
+# `celery` logger, which mitol's config doesn't let propagate. That silently
+# drops task succeeded/failed lines, beat's "Sending due task" lines and
+# print() output. With the receiver the worker's `-l` flag is ignored: LOG_LEVEL
+# sets the level, and settings.py defaults it to OCW_STUDIO_LOG_LEVEL.
+setup_logging.connect(setup_celery_logging)
 
 
 @before_task_publish.connect
