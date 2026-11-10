@@ -634,7 +634,6 @@ def test_upsert_website_pipeline_batch_with_extra_themes(
         api=mocker.ANY,
         theme_slug="ocw-course-v3",
         prefix="ocw-course-v3",
-        noindex=True,
     )
     mock_get_pipeline.assert_any_call(
         ocw_website,
@@ -642,7 +641,6 @@ def test_upsert_website_pipeline_batch_with_extra_themes(
         api=mocker.ANY,
         theme_slug="ocw-course-v4",
         prefix="ocw-course-v4",
-        noindex=True,
     )
 
     unpaused = [

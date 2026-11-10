@@ -181,7 +181,6 @@ def upsert_website_pipeline_batch(
                     api=api_instance,
                     theme_slug=theme_slug,
                     prefix=theme_slug,
-                    noindex=True,
                 )
                 theme_pipeline.upsert_pipeline()
                 for version in unpause_versions:
