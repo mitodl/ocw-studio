@@ -39,7 +39,7 @@ from content_sync.pipelines.definitions.concourse.mass_build_sites import (
     MassBuildSitesPipelineDefinitionConfig,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
-    BUILD_OFFLINE_SITE_IDENTIFIER,
+    BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinitionConfig,
@@ -370,7 +370,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                     build_offline_site_task = get_dict_list_item_by_field(
                         items=build_steps,
                         field="task",
-                        value=BUILD_OFFLINE_SITE_IDENTIFIER,
+                        value=BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
                     )
                     build_offline_site_command = "\n".join(
                         build_offline_site_task["config"]["run"]["args"]
@@ -387,7 +387,7 @@ def test_generate_mass_build_sites_definition(  # noqa: C901, PLR0913, PLR0912, 
                 upload_build_task = get_dict_list_item_by_field(
                     items=build_steps,
                     field="task",
-                    value=BUILD_OFFLINE_SITE_IDENTIFIER
+                    value=BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER
                     if offline
                     else UPLOAD_ONLINE_BUILD_IDENTIFIER,
                 )

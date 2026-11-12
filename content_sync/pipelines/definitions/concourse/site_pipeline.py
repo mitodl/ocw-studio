@@ -77,7 +77,9 @@ from websites.utils import is_test_site
 BUILD_ONLINE_SITE_IDENTIFIER = Identifier("build-online-site").root
 UPLOAD_ONLINE_BUILD_IDENTIFIER = Identifier("upload-online-build").root
 FILTER_WEBPACK_ARTIFACTS_IDENTIFIER = Identifier("filter-webpack-artifacts").root
-BUILD_OFFLINE_SITE_IDENTIFIER = Identifier("build-offline-site").root
+BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER = Identifier(
+    "build-and-upload-offline-site"
+).root
 CLEAR_CDN_CACHE_IDENTIFIER = Identifier("clear-cdn-cache").root
 
 
@@ -800,7 +802,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         mkdir -p ./static/static_resources
         mkdir -p ./static/static_shared
         mkdir -p ../videos
-        mkdir -p ../{BUILD_OFFLINE_SITE_IDENTIFIER}
+        mkdir -p ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}
         aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars["storage_bucket"]}/{pipeline_vars["s3_path"]} ./content/static_resources
         HTML_COUNT="$(ls -1 ./content/static_resources/*.html 2>/dev/null | wc -l)"
         if [ $HTML_COUNT != 0 ];
@@ -817,7 +819,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
         hugo {pipeline_vars["hugo_args_offline"]}
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}.zip ./
+            zip -r ../../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}.zip ./
             rm -rf ./*
             cd ..
             if [ $MP4_COUNT != 0 ];
@@ -826,7 +828,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             fi
             hugo {pipeline_vars["hugo_args_offline"]}
             cd output-offline
-            zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}-video.zip ./
+            zip -r ../../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/{pipeline_vars["short_id"]}-video.zip ./
             cd ..
         fi
         SUB_PATH=""
@@ -844,12 +846,12 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             aws s3{get_cli_endpoint_url()} sync output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={pipeline_vars["site_name"]}{pipeline_vars["delete_flag"]}
         fi
         if [ $IS_ROOT_WEBSITE = 0 ] ; then
-            aws s3{get_cli_endpoint_url()} sync ../{BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
+            aws s3{get_cli_endpoint_url()} sync ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{pipeline_vars["short_id"]}.zip' --include='{pipeline_vars["short_id"]}-video.zip' --metadata site-id={pipeline_vars["site_name"]}
         fi
         """  # noqa: E501
         build_offline_site_step = add_error_handling(
             step=TaskStep(
-                task=BUILD_OFFLINE_SITE_IDENTIFIER,
+                task=BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
                 timeout="180m",
                 attempts=3,
                 params={
@@ -891,7 +893,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
                     ),
                 ),
             ),
-            step_description=f"{BUILD_OFFLINE_SITE_IDENTIFIER} task step",
+            step_description=f"{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER} task step",
             pipeline_name=pipeline_vars["pipeline_name"],
             short_id=pipeline_vars["short_id"],
             instance_vars=pipeline_vars["instance_vars"],

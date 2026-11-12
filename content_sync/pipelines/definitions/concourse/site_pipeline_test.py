@@ -39,7 +39,7 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     FASTLY_PURPOSE_LEARN,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
-    BUILD_OFFLINE_SITE_IDENTIFIER,
+    BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
     BUILD_ONLINE_SITE_IDENTIFIER,
     CLEAR_CDN_CACHE_IDENTIFIER,
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
@@ -615,7 +615,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     build_offline_site_task = get_dict_list_item_by_field(
         offline_site_tasks,
         "task",
-        BUILD_OFFLINE_SITE_IDENTIFIER,
+        BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
     )
     assert (
         build_offline_site_task["config"]["image_resource"]["source"]["repository"]
@@ -647,7 +647,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         in build_offline_site_command
     )
     assert STATIC_RESOURCES_S3_IDENTIFIER not in build_offline_site_command
-    assert f"mkdir -p ../{BUILD_OFFLINE_SITE_IDENTIFIER}" in build_offline_site_command
+    assert (
+        f"mkdir -p ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}"
+        in build_offline_site_command
+    )
     assert (
         "if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            cd output-offline"
         in build_offline_site_command
@@ -656,7 +659,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
         == 2
     )
-    assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
+    assert f"zip -r ../../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
     build_offline_site_expected_params = {
         "AWS_MAX_CONCURRENT_CONNECTIONS": str(settings.AWS_MAX_CONCURRENT_CONNECTIONS),
         "IS_ROOT_WEBSITE": config.vars["is_root_website"],
@@ -715,7 +718,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         in build_offline_site_command
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync ../{BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
         in build_offline_site_command
     )
     # The uploads run from the site directory, after the zips are written
@@ -1423,7 +1426,9 @@ def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
         t for t in online_job["plan"] if t.get("task") == UPLOAD_ONLINE_BUILD_IDENTIFIER
     )
     offline_upload_task = next(
-        t for t in offline_job["plan"] if t.get("task") == BUILD_OFFLINE_SITE_IDENTIFIER
+        t
+        for t in offline_job["plan"]
+        if t.get("task") == BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER
     )
 
     # The storage bucket and s3_path are never empty, so the storage source
