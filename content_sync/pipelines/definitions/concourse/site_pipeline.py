@@ -681,6 +681,7 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
             step=TaskStep(
                 task=UPLOAD_ONLINE_BUILD_IDENTIFIER,
                 timeout="40m",
+                attempts=3,
                 params={
                     "AWS_MAX_CONCURRENT_CONNECTIONS": str(
                         settings.AWS_MAX_CONCURRENT_CONNECTIONS
@@ -910,6 +911,7 @@ class SitePipelineOfflineTasks(list[StepModifierMixin]):
             step=TaskStep(
                 task=UPLOAD_OFFLINE_BUILD_IDENTIFIER,
                 timeout="120m",
+                attempts=3,
                 params={
                     "AWS_MAX_CONCURRENT_CONNECTIONS": str(
                         settings.AWS_MAX_CONCURRENT_CONNECTIONS

@@ -430,6 +430,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_online_build_task["config"]["image_resource"]["source"]["repository"]
         == AWS_CLI_REGISTRY_IMAGE.source.repository
     )
+    assert upload_online_build_task["attempts"] == 3
     upload_online_build_command = "\n".join(
         upload_online_build_task["config"]["run"]["args"]
     )
@@ -676,6 +677,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         upload_offline_build_task["config"]["image_resource"]["source"]["repository"]
         == AWS_CLI_REGISTRY_IMAGE.source.repository
     )
+    assert upload_offline_build_task["attempts"] == 3
     upload_offline_build_command = "\n".join(
         upload_offline_build_task["config"]["run"]["args"]
     )
