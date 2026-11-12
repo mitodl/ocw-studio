@@ -506,7 +506,7 @@ class FilterWebpackArtifactsStep(TaskStep):
 
 class StaticResourcesTaskStep(TaskStep):
     """
-    A TaskStep to fetch the static resources for a site from S3
+    A TaskStep to fetch the static resources for a site from S3, without videos
 
     Args:
         pipeline_vars(dict): A dictionary of site pipeline variables
@@ -516,11 +516,9 @@ class StaticResourcesTaskStep(TaskStep):
         self,
         pipeline_vars: dict,
         *,
-        filter_videos: bool = False,
         build_type: str | None = None,
         skip_webhooks: bool = False,
     ):
-        video_filter = " --exclude *.mp4" if filter_videos else ""
         super().__init__(
             task=STATIC_RESOURCES_S3_IDENTIFIER,
             timeout="120m",
@@ -534,7 +532,7 @@ class StaticResourcesTaskStep(TaskStep):
                     path="sh",
                     args=[
                         "-exc",
-                        f"aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER}{video_filter}",  # noqa: E501
+                        f"aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER} --exclude *.mp4",  # noqa: E501
                     ],
                 ),
             ),
@@ -589,7 +587,6 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         mp4_exclude = " --exclude='*.mp4'"
         static_resources_task_step = StaticResourcesTaskStep(
             pipeline_vars=pipeline_vars,
-            filter_videos=True,
             build_type="online",
             skip_webhooks=skip_webhooks,
         )
