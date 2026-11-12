@@ -661,9 +661,10 @@ class SitePipelineOnlineTasks(list[StepModifierMixin]):
         if not filter_videos:
             video_delete_flag = " --delete" if destructive_sync else ""
             # Copy the videos bucket to bucket instead. The sync skips videos the web
-            # bucket already has, and metadata-directive keeps their Content-Type
-            # without copying tags
-            video_sync_command = f"""aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars["storage_bucket"]}/{pipeline_vars["s3_path"]} "s3://$S3_PATH{pipeline_vars["static_resources_subdirectory"]}" --exclude='*' --include='*.mp4' --copy-props metadata-directive --metadata site-id={pipeline_vars["site_name"]}{video_delete_flag}"""  # noqa: E501
+            # bucket already has, and metadata-directive avoids copying tags. A copy
+            # keeps the stored Content-Type instead of guessing it from the file name
+            # like an upload does, so set it explicitly
+            video_sync_command = f"""aws s3{get_cli_endpoint_url()} sync s3://{pipeline_vars["storage_bucket"]}/{pipeline_vars["s3_path"]} "s3://$S3_PATH{pipeline_vars["static_resources_subdirectory"]}" --exclude='*' --include='*.mp4' --copy-props metadata-directive --content-type video/mp4 --metadata site-id={pipeline_vars["site_name"]}{video_delete_flag}"""  # noqa: E501
         online_sync_command = rf"""
         aws configure set default.s3.max_concurrent_requests $AWS_MAX_CONCURRENT_CONNECTIONS
         S3_PATH="{pipeline_vars["web_bucket"]}"

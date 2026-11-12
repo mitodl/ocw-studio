@@ -470,7 +470,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     # videos are copied bucket to bucket instead of through the build output
     assert (
-        f"aws s3{cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} \"s3://$S3_PATH{config.vars['static_resources_subdirectory']}\" --exclude='*' --include='*.mp4' --copy-props metadata-directive --metadata site-id={config.vars['site_name']} --delete"
+        f"aws s3{cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} \"s3://$S3_PATH{config.vars['static_resources_subdirectory']}\" --exclude='*' --include='*.mp4' --copy-props metadata-directive --content-type video/mp4 --metadata site-id={config.vars['site_name']} --delete"
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
@@ -1478,6 +1478,7 @@ def test_online_tasks_copy_videos_between_buckets(filter_videos, destructive_syn
         f" s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']}"
         f' "s3://$S3_PATH{pipeline_vars["static_resources_subdirectory"]}"'
         " --exclude='*' --include='*.mp4' --copy-props metadata-directive"
+        " --content-type video/mp4"
         f" --metadata site-id={pipeline_vars['site_name']}"
     )
     if filter_videos:
