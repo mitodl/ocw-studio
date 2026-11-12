@@ -1039,3 +1039,51 @@ def test_upsert_pipeline_with_noindex(  # noqa: PLR0913, PLR0917
         assert '\\"noindex\\": \\"true\\"' in config_str
     else:
         assert '\\"noindex\\": \\"false\\"' in config_str
+
+
+@pytest.mark.parametrize("is_test_site", [True, False])
+@pytest.mark.parametrize("env_name", ["prod", "rc"])
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
+def test_upsert_extra_theme_pipeline_noindex(  # noqa: PLR0913, PLR0917
+    settings, pipeline_settings, mocker, mock_auth, is_test_site, env_name, version
+):
+    """Extra theme pipelines should only drop noindex for live builds in production"""
+    settings.ENV_NAME = env_name
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-course"] if is_test_site else []
+    hugo_projects_path = "https://github.com/org/repo"
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path=f"{hugo_projects_path}/site",
+        slug="ocw-course-v2",
+    )
+    starter.config["root-url-path"] = "courses"
+    starter.save()
+    website = WebsiteFactory.create(
+        starter=starter, name="ocw-ci-test-course", url_path="courses/noindex-v3"
+    )
+    mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get_with_headers",
+        side_effect=HTTPError(),
+    )
+    mock_put_headers = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.put_with_headers"
+    )
+
+    pipeline = SitePipeline(website, theme_slug="ocw-course-v3", prefix="ocw-course-v3")
+    pipeline.upsert_pipeline()
+
+    instance_vars = f"%7B%22site%22%3A%20%22{website.name}%22%7D"
+    url_path = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{version}-ocw-course-v3/config?vars={instance_vars}"
+    [config_str] = [
+        json.dumps(kwargs)
+        for args, kwargs in mock_put_headers.call_args_list
+        if args[0] == url_path
+    ]
+    expected_noindex = (
+        "false"
+        if version == VERSION_LIVE and env_name == "prod" and not is_test_site
+        else "true"
+    )
+    assert f'\\"noindex\\": \\"{expected_noindex}\\"' in config_str

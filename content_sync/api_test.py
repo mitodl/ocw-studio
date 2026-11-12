@@ -462,12 +462,13 @@ def test_publish_website_with_extra_themes(settings, mocker, version, publish_da
     assert call_args_list[1][0][0] == website
     assert call_args_list[1][1]["theme_slug"] == "ocw-course-v3"
     assert call_args_list[1][1]["prefix"] == "ocw-course-v3"
-    assert call_args_list[1][1]["noindex"] is True
+    # noindex is left to the pipeline config, which sets it per branch and env
+    assert "noindex" not in call_args_list[1][1]
 
     assert call_args_list[2][0][0] == website
     assert call_args_list[2][1]["theme_slug"] == "ocw-course-v4"
     assert call_args_list[2][1]["prefix"] == "ocw-course-v4"
-    assert call_args_list[2][1]["noindex"] is True
+    assert "noindex" not in call_args_list[2][1]
 
     expected_upsert_calls = 0 if publish_date else 3
     assert mock_pipeline.upsert_pipeline.call_count == expected_upsert_calls

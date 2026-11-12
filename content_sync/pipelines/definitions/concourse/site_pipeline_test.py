@@ -1072,6 +1072,52 @@ def test_site_pipeline_definition_config_noindex(
         assert config.noindex == "false"
 
 
+@pytest.mark.parametrize("is_test_site", [True, False])
+@pytest.mark.parametrize("env_name", ["rc", "prod"])
+@pytest.mark.parametrize("pipeline_name", [VERSION_DRAFT, VERSION_LIVE])
+def test_site_pipeline_definition_config_noindex_extra_theme(
+    settings, mocker, is_test_site, env_name, pipeline_name
+):
+    """Extra theme builds should follow the same noindex rule as the default theme"""
+    settings.ENV_NAME = env_name
+    settings.GIT_BRANCH_PREVIEW = "preview"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-course"] if is_test_site else []
+    mocker.patch(
+        "content_sync.pipelines.definitions.concourse.site_pipeline.is_dev",
+        return_value=False,
+    )
+    starter = WebsiteStarterFactory.create(
+        source=STARTER_SOURCE_GITHUB,
+        path="https://github.com/org/repo/site",
+        slug="ocw-course-v2",
+    )
+    website = WebsiteFactory.create(starter=starter, name="ocw-ci-test-course")
+
+    config = SitePipelineDefinitionConfig(
+        site=website,
+        pipeline_name=pipeline_name,
+        instance_vars="?vars={}",
+        site_content_branch="preview" if pipeline_name == VERSION_DRAFT else "release",
+        static_api_url="https://ocw.mit.edu/",
+        storage_bucket="test-bucket",
+        artifacts_bucket="test-artifacts",
+        web_bucket="test-web",
+        offline_bucket="test-offline",
+        resource_base_url="https://ocw.mit.edu/",
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        prefix="ocw-course-v3",
+        theme_slug="ocw-course-v3",
+    )
+
+    assert config.is_extra_theme
+    if pipeline_name == VERSION_LIVE and env_name == "prod" and not is_test_site:
+        assert config.noindex == "false"
+    else:
+        assert config.noindex == "true"
+
+
 @pytest.mark.parametrize("theme_slug", [None, "ocw-course-v3"])
 def test_site_pipeline_definition_config_theme_slug(settings, mocker, theme_slug):
     mocker.patch(

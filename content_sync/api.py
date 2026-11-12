@@ -250,7 +250,6 @@ def publish_website(  # pylint: disable=too-many-arguments
                         api=pipeline.api,
                         theme_slug=theme_slug,
                         prefix=theme_slug,
-                        noindex=True,
                     )
                     theme_pipeline_name = f"{version}-{theme_slug}"
                     if not website.publish_date:
