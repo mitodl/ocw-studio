@@ -39,16 +39,18 @@ from content_sync.pipelines.definitions.concourse.common.resources import (
     FASTLY_PURPOSE_LEARN,
 )
 from content_sync.pipelines.definitions.concourse.site_pipeline import (
-    BUILD_OFFLINE_SITE_IDENTIFIER,
+    BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
     BUILD_ONLINE_SITE_IDENTIFIER,
     CLEAR_CDN_CACHE_IDENTIFIER,
     FILTER_WEBPACK_ARTIFACTS_IDENTIFIER,
-    UPLOAD_OFFLINE_BUILD_IDENTIFIER,
     UPLOAD_ONLINE_BUILD_IDENTIFIER,
     SitePipelineDefinition,
     SitePipelineDefinitionConfig,
+    SitePipelineOnlineTasks,
     SitePipelineResources,
+    get_site_pipeline_definition_vars,
 )
+from content_sync.utils import get_cli_endpoint_url
 from main.utils import get_dict_list_item_by_field
 from websites.constants import OCW_HUGO_THEMES_GIT, STARTER_SOURCE_GITHUB
 from websites.factories import WebsiteFactory, WebsiteStarterFactory
@@ -325,6 +327,11 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         static_resources_s3_task = get_dict_list_item_by_field(
             items=tasks, field="task", value=STATIC_RESOURCES_S3_IDENTIFIER
         )
+        if offline:
+            # The offline build downloads the static resources itself, so the
+            # videos never travel between steps
+            assert static_resources_s3_task is None
+            return
         static_resources_command = "\n".join(
             static_resources_s3_task["config"]["run"]["args"]
         )
@@ -336,7 +343,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
             )
             is not None
         )
-        assert f"aws s3{cli_endpoint_url} sync s3://{storage_bucket}/{website.s3_path} ./{STATIC_RESOURCES_S3_IDENTIFIER}"  # noqa: PLW0129
+        assert (
+            f"aws s3{cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./{STATIC_RESOURCES_S3_IDENTIFIER} --exclude *.mp4"
+            in static_resources_command
+        )
         if is_dev:
             assert cli_endpoint_url in static_resources_command
             assert set(
@@ -445,7 +455,7 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         in upload_online_build_command
     )
     assert (
-        f'aws s3{cli_endpoint_url} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --delete --metadata site-id={config.vars["site_name"]}'
+        f'aws s3{cli_endpoint_url} sync "$dir" "s3://$S3_PATH/$(basename "$dir")" --exclude=\'*.mp4\' --delete --metadata site-id={config.vars["site_name"]}'
         in upload_online_build_command
     )
     # root-website: copy only root-level files
@@ -455,7 +465,12 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     )
     # non-root: fallback to a single sync
     assert (
-        f'aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online "s3://$S3_PATH"'
+        f"aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-online \"s3://$S3_PATH\" --exclude='{config.vars['short_id']}.zip' --exclude='{config.vars['short_id']}-video.zip' --exclude='*.mp4' --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in upload_online_build_command
+    )
+    # videos are copied bucket to bucket instead of through the build output
+    assert (
+        f"aws s3{cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} \"s3://$S3_PATH{config.vars['static_resources_subdirectory']}\" --exclude='*' --include='*.mp4' --copy-props metadata-directive --content-type video/mp4 --metadata site-id={config.vars['site_name']} --delete"
         in upload_online_build_command
     )
     upload_online_build_expected_inputs = [SITE_CONTENT_GIT_IDENTIFIER]
@@ -600,36 +615,42 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
     build_offline_site_task = get_dict_list_item_by_field(
         offline_site_tasks,
         "task",
-        BUILD_OFFLINE_SITE_IDENTIFIER,
+        BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER,
     )
     assert (
         build_offline_site_task["config"]["image_resource"]["source"]["repository"]
         == OCW_COURSE_PUBLISHER_REGISTRY_IMAGE.source.repository
     )
+    assert build_offline_site_task["timeout"] == "180m"
+    assert build_offline_site_task["attempts"] == 3
     build_offline_site_expected_inputs = [
         OCW_HUGO_THEMES_GIT_IDENTIFIER,
         OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
         SITE_CONTENT_GIT_IDENTIFIER,
-        STATIC_RESOURCES_S3_IDENTIFIER,
         WEBPACK_MANIFEST_S3_IDENTIFIER,
         WEBPACK_ARTIFACTS_IDENTIFIER,
     ]
-    for input in build_offline_site_task["config"]["inputs"]:  # noqa: A001
-        assert input["name"] in build_offline_site_expected_inputs
-    build_offline_site_expected_outputs = [
-        SITE_CONTENT_GIT_IDENTIFIER,
-        OCW_HUGO_THEMES_GIT_IDENTIFIER,
-        BUILD_OFFLINE_SITE_IDENTIFIER,
-    ]
-    for input in build_offline_site_task["config"]["outputs"]:  # noqa: A001
-        assert input["name"] in build_offline_site_expected_outputs
+    assert sorted(
+        task_input["name"] for task_input in build_offline_site_task["config"]["inputs"]
+    ) == sorted(build_offline_site_expected_inputs)
+    # Nothing after this task reads its output, so it declares none
+    assert not build_offline_site_task["config"].get("outputs")
     build_offline_site_command = "\n".join(
         build_offline_site_task["config"]["run"]["args"]
     )
     assert WEBPACK_MANIFEST_S3_IDENTIFIER in build_offline_site_command
     assert OCW_HUGO_THEMES_GIT_IDENTIFIER in build_offline_site_command
-    assert STATIC_RESOURCES_S3_IDENTIFIER in build_offline_site_command
     assert WEBPACK_ARTIFACTS_IDENTIFIER in build_offline_site_command
+    # The videos are downloaded into the build, not passed in from another step
+    assert (
+        f"aws s3{cli_endpoint_url} sync s3://{config.vars['storage_bucket']}/{config.vars['s3_path']} ./content/static_resources\n"
+        in build_offline_site_command
+    )
+    assert STATIC_RESOURCES_S3_IDENTIFIER not in build_offline_site_command
+    assert (
+        f"mkdir -p ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}"
+        in build_offline_site_command
+    )
     assert (
         "if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            cd output-offline"
         in build_offline_site_command
@@ -638,8 +659,10 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         build_offline_site_command.count(f"hugo {config.vars['hugo_args_offline']}")
         == 2
     )
-    assert f"zip -r ../../{BUILD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
+    assert f"zip -r ../../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/{config.vars['short_id']}-video.zip ./"  # noqa: PLW0129
     build_offline_site_expected_params = {
+        "AWS_MAX_CONCURRENT_CONNECTIONS": str(settings.AWS_MAX_CONCURRENT_CONNECTIONS),
+        "IS_ROOT_WEBSITE": config.vars["is_root_website"],
         "API_BEARER_TOKEN": settings.API_BEARER_TOKEN,
         "GTM_ACCOUNT_ID": config.vars["gtm_account_id"],
         "OCW_STUDIO_BASE_URL": ocw_studio_url,
@@ -670,56 +693,38 @@ def test_generate_theme_assets_pipeline_definition(  # noqa: C901, PLR0912, PLR0
         build_offline_site_task["params"]["COURSE_V3_CANONICAL_DOMAIN"]
         == config.vars["course_v3_canonical_domain"]
     )
-    upload_offline_build_task = get_dict_list_item_by_field(
-        offline_site_tasks, "task", UPLOAD_OFFLINE_BUILD_IDENTIFIER
-    )
+    # The build task uploads its own output, so no step receives the videos
     assert (
-        upload_offline_build_task["config"]["image_resource"]["source"]["repository"]
-        == AWS_CLI_REGISTRY_IMAGE.source.repository
+        get_dict_list_item_by_field(offline_site_tasks, "task", "upload-offline-build")
+        is None
     )
-    assert upload_offline_build_task["attempts"] == 3
-    upload_offline_build_command = "\n".join(
-        upload_offline_build_task["config"]["run"]["args"]
-    )
-    assert 'SUB_PATH=""' in upload_offline_build_command
-    assert f'if [ -n "{config.vars["prefix"]}" ]; then' in upload_offline_build_command
-    assert (
-        f'if [ -n "{config.vars["base_url"]}" ]; then' in upload_offline_build_command
-    )
+    assert 'SUB_PATH=""' in build_offline_site_command
+    assert f'if [ -n "{config.vars["prefix"]}" ]; then' in build_offline_site_command
+    assert f'if [ -n "{config.vars["base_url"]}" ]; then' in build_offline_site_command
     assert (
         f'OFFLINE_S3_PATH="{config.vars["offline_bucket"]}$SUB_PATH"'
-        in upload_offline_build_command
+        in build_offline_site_command
     )
     assert (
         f'WEB_S3_PATH="{config.vars["web_bucket"]}$SUB_PATH"'
-        in upload_offline_build_command
+        in build_offline_site_command
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-        in upload_offline_build_command
+        f"if [ $IS_ROOT_WEBSITE = 1 ] ; then\n            aws s3{cli_endpoint_url} cp output-offline/ s3://$OFFLINE_S3_PATH --recursive --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in build_offline_site_command
     )
     assert (
-        f"else\n            aws s3{cli_endpoint_url} sync {SITE_CONTENT_GIT_IDENTIFIER}/output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
-        in upload_offline_build_command
+        f"else\n            aws s3{cli_endpoint_url} sync output-offline/ s3://$OFFLINE_S3_PATH --metadata site-id={config.vars['site_name']}{config.vars['delete_flag']}"
+        in build_offline_site_command
     )
     assert (
-        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync {BUILD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
-        in upload_offline_build_command
+        f"if [ $IS_ROOT_WEBSITE = 0 ] ; then\n            aws s3{cli_endpoint_url} sync ../{BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER}/ s3://$WEB_S3_PATH --exclude='*' --include='{config.vars['short_id']}.zip' --include='{config.vars['short_id']}-video.zip' --metadata site-id={config.vars['site_name']}"
+        in build_offline_site_command
     )
-    upload_offline_build_expected_inputs = [
-        SITE_CONTENT_GIT_IDENTIFIER,
-        BUILD_OFFLINE_SITE_IDENTIFIER,
-        OCW_HUGO_PROJECTS_GIT_IDENTIFIER,
-    ]
-    for input in upload_offline_build_task["config"]["inputs"]:  # noqa: A001
-        assert input["name"] in upload_offline_build_expected_inputs
-    if is_dev:
-        assert set(
-            {
-                "AWS_ACCESS_KEY_ID": settings.AWS_ACCESS_KEY_ID,
-                "AWS_SECRET_ACCESS_KEY": settings.AWS_SECRET_ACCESS_KEY,
-            }
-        ).issubset(set(upload_offline_build_task["params"]))
+    # The uploads run from the site directory, after the zips are written
+    assert build_offline_site_command.index(
+        f"{config.vars['short_id']}-video.zip ./\n            cd ..\n"
+    ) < build_offline_site_command.index('SUB_PATH=""')
     if not is_dev:
         clear_cdn_cache_offline_steps = [
             task
@@ -1423,11 +1428,18 @@ def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
     offline_upload_task = next(
         t
         for t in offline_job["plan"]
-        if t.get("task") == UPLOAD_OFFLINE_BUILD_IDENTIFIER
+        if t.get("task") == BUILD_AND_UPLOAD_OFFLINE_SITE_IDENTIFIER
     )
 
-    online_command = online_upload_task["config"]["run"]["args"][1]
-    offline_command = offline_upload_task["config"]["run"]["args"][1]
+    # The storage bucket and s3_path are never empty, so the storage source
+    # cannot produce a double slash
+    storage_source = f"s3://{config.vars['storage_bucket']}/{config.vars['s3_path']}"
+    online_command = online_upload_task["config"]["run"]["args"][1].replace(
+        storage_source, ""
+    )
+    offline_command = offline_upload_task["config"]["run"]["args"][1].replace(
+        storage_source, ""
+    )
 
     adjacent_vars_pattern = r"/\(\([^)]+\)\)/\(\([^)]+\)\)"
     assert not re.search(adjacent_vars_pattern, online_command), (
@@ -1436,6 +1448,50 @@ def test_s3_sync_commands_no_double_slashes(settings, mocker, prefix, base_url):
     assert not re.search(adjacent_vars_pattern, offline_command), (
         f"Adjacent vars with slashes would cause double slashes: {offline_command}"
     )
+
+
+@pytest.mark.parametrize(
+    ("filter_videos", "destructive_sync"),
+    [(False, True), (False, False), (True, True), (True, False)],
+)
+def test_online_tasks_copy_videos_between_buckets(filter_videos, destructive_sync):
+    """
+    The online job should never pass videos between steps. Site pipelines copy
+    them from the storage bucket to the web bucket, mass builds skip them.
+    """
+    cli_endpoint_url = get_cli_endpoint_url()
+    pipeline_vars = get_site_pipeline_definition_vars(namespace="site:")
+    tasks = SitePipelineOnlineTasks(
+        pipeline_vars=pipeline_vars,
+        fastly_purpose=VERSION_DRAFT,
+        pipeline_name=VERSION_DRAFT,
+        destructive_sync=destructive_sync,
+        filter_videos=filter_videos,
+        skip_cache_clear=True,
+    )
+    commands = {
+        task.task: task.config.run.args[1]
+        for task in tasks
+        if task.task in (STATIC_RESOURCES_S3_IDENTIFIER, UPLOAD_ONLINE_BUILD_IDENTIFIER)
+    }
+    assert commands[STATIC_RESOURCES_S3_IDENTIFIER].endswith(" --exclude *.mp4")
+    upload_command = commands[UPLOAD_ONLINE_BUILD_IDENTIFIER]
+    # Both the root per-directory sync and the non-root sync leave videos alone
+    assert upload_command.count("--exclude='*.mp4'") == 2
+    video_sync = (
+        f"aws s3{cli_endpoint_url} sync"
+        f" s3://{pipeline_vars['storage_bucket']}/{pipeline_vars['s3_path']}"
+        f' "s3://$S3_PATH{pipeline_vars["static_resources_subdirectory"]}"'
+        " --exclude='*' --include='*.mp4' --copy-props metadata-directive"
+        " --content-type video/mp4"
+        f" --metadata site-id={pipeline_vars['site_name']}"
+    )
+    if filter_videos:
+        assert "--include='*.mp4'" not in upload_command
+    elif destructive_sync:
+        assert f"{video_sync} --delete\n" in upload_command
+    else:
+        assert f"{video_sync}\n" in upload_command
 
 
 def test_no_compose_addresses_when_endpoints_configured(
