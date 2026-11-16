@@ -598,8 +598,16 @@ def test_websites_endpoint_sorting(drf_client, websites, settings):
         reverse("websites_api-list"),
         {"sort": "title", "type": settings.OCW_COURSE_STARTER_SLUG},
     )
-    for idx, course in enumerate(sorted(websites.courses, key=lambda site: site.title)):
-        assert resp.data.get("results")[idx]["uuid"] == str(course.uuid)
+    # The unpublished course sites are listed too. Factory titles sort as text
+    # ("Site 1000" before "Site 995"), so they can come before websites.courses.
+    course_sites = [
+        site
+        for site in (*websites.courses, *websites.not_published)
+        if site.starter.slug == settings.OCW_COURSE_STARTER_SLUG
+    ]
+    assert [site["uuid"] for site in resp.data["results"]] == [
+        str(site.uuid) for site in sorted(course_sites, key=lambda site: site.title)
+    ]
 
 
 @pytest.mark.parametrize("published", [True, False])
