@@ -28,6 +28,8 @@ module.exports = {
       "|turndown" +
       // pulled in by @ckeditor/ckeditor5-ui's color picker; ships untranspiled ESM
       "|vanilla-colorful" +
+      // react-select-async-paginate dependency; ESM only since 1.2.0
+      "|krustykrab" +
       ")/)",
   ],
   testPathIgnorePatterns: [
