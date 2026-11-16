@@ -1,6 +1,6 @@
 """Tests for websites views"""
 
-import datetime
+import datetime as dt
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -278,7 +278,7 @@ def test_websites_endpoint_detail_update(mocker, drf_client):
 def test_websites_endpoint_preview(mocker, drf_client):
     """A user with admin/edit permissions should be able to request a website preview"""
     mock_trigger_publish = mocker.patch("websites.views.trigger_publish")
-    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    now = dt.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create(url_path="courses/mysite")
     editor = UserFactory.create()
@@ -324,7 +324,7 @@ def test_websites_endpoint_publish(mocker, drf_client, unpublish_status):
     mock_get_mass_build_pipeline = mocker.patch(
         "content_sync.tasks.api.get_mass_build_sites_pipeline"
     )
-    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    now = dt.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create(
         unpublish_status=unpublish_status,
@@ -502,7 +502,7 @@ def test_websites_endpoint_unpublish(
         "content_sync.tasks.api.get_mass_build_sites_pipeline"
     )
 
-    now = datetime.datetime(2020, 1, 1, tzinfo=pytz.utc)
+    now = dt.datetime(2020, 1, 1, tzinfo=pytz.utc)
     mocker.patch("websites.views.now_in_utc", return_value=now)
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
@@ -986,7 +986,7 @@ def test_websites_content_ordering_with_same_updated_on(drf_client, global_admin
     website = WebsiteFactory.create()
 
     # Create multiple content items and set them all to the same updated_on
-    fixed_time = datetime.datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC)
+    fixed_time = dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC)
     content_items = []
     for _ in range(5):
         content = WebsiteContentFactory.create(
@@ -1047,7 +1047,7 @@ def test_websites_content_publish_sorting(drf_client, global_admin_user, publish
         3,
         website=website,
         # they were created after the publish date
-        created_on=website.publish_date + datetime.timedelta(days=2),
+        created_on=website.publish_date + dt.timedelta(days=2),
     )
 
     published = WebsiteContentFactory.create_batch(
@@ -1056,7 +1056,7 @@ def test_websites_content_publish_sorting(drf_client, global_admin_user, publish
     )
 
     for content in published:
-        content.created_on = website.publish_date - datetime.timedelta(days=2)
+        content.created_on = website.publish_date - dt.timedelta(days=2)
         content.save()
 
     api_url = reverse(
