@@ -1,7 +1,7 @@
 import React from "react"
 import * as dom from "@testing-library/dom"
 import _ from "lodash"
-import { act, waitFor } from "@testing-library/react"
+import { waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { IntegrationTestHelper, assertInstanceOf, wait } from "../testing_utils"
 import { makeWebsites, makeWebsiteListing } from "../util/factories/websites"
@@ -57,7 +57,7 @@ describe("Prompting for authentication", () => {
       setMockWebsiteResponse(authRejectionBody, 403)
 
       const siteLink = await waitFor(() => result.getByText(website.title))
-      await act(() => user.click(siteLink))
+      await user.click(siteLink)
 
       const dialog = await waitFor(() => result.getByRole("dialog"))
 
@@ -65,7 +65,7 @@ describe("Prompting for authentication", () => {
       expect(dialog).toHaveTextContent("Please log in and try again.")
       const goToLogin = dom.queryByText(dialog, "Go to Login")
       assertInstanceOf(goToLogin, HTMLButtonElement)
-      await act(() => user.click(goToLogin))
+      await user.click(goToLogin)
       expect(postTo).toHaveBeenCalledWith("/auth/login/keycloak/")
       result.unmount()
     },
@@ -77,7 +77,7 @@ describe("Prompting for authentication", () => {
     setMockWebsiteResponse({ detail: "misc client error" }, 400)
 
     const siteLink = await waitFor(() => result.getByText(website.title))
-    await act(() => user.click(siteLink))
+    await user.click(siteLink)
 
     /**
      * When a non-auth error occurs, studio currently has no visual indication

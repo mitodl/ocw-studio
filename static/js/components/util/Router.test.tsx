@@ -48,12 +48,10 @@ describe("Router", () => {
 
     expect(browserHistory.location.pathname).toBe("/")
 
-    await act(() =>
-      user.pointer([
-        { target: getByText(buttonText) },
-        { keys: "[MouseLeft]" },
-      ]),
-    )
+    await user.pointer([
+      { target: getByText(buttonText) },
+      { keys: "[MouseLeft]" },
+    ])
 
     expect(browserHistory.location.pathname).toBe("/")
 
@@ -70,12 +68,10 @@ describe("Router", () => {
 
     expect(browserHistory.location.pathname).toBe("/")
 
-    await act(() =>
-      user.pointer([
-        { target: getByText(buttonText) },
-        { keys: "[MouseLeft]" },
-      ]),
-    )
+    await user.pointer([
+      { target: getByText(buttonText) },
+      { keys: "[MouseLeft]" },
+    ])
 
     expect(browserHistory.location.pathname).toBe("/woof")
 

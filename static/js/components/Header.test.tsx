@@ -1,5 +1,4 @@
 import React from "react"
-import { act } from "@testing-library/react"
 import * as dtl from "@testing-library/dom"
 import userEvent from "@testing-library/user-event"
 import {
@@ -191,9 +190,7 @@ describe("Header with a loaded website", () => {
     const publishButton = result.getByTitle("Publish")
     assertInstanceOf(publishButton, HTMLButtonElement)
     const user = userEvent.setup()
-    await act(() =>
-      user.pointer([{ target: publishButton }, { keys: "[MouseLeft]" }]),
-    )
+    await user.pointer([{ target: publishButton }, { keys: "[MouseLeft]" }])
 
     result.getByText("Publish your site")
     expect(history.location.search).toBe("?publish=")
