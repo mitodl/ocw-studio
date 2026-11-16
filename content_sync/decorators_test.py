@@ -96,6 +96,68 @@ def test_single_task_bound_task_blocks_same_arg_only(celery_app):
         held.release()
 
 
+def test_single_task_releases_lock(mocker):
+    """single_task should free its lock once the task returns"""
+    mock_log = mocker.patch("content_sync.decorators.log")
+
+    @single_task(timeout=10)
+    def quick_task(name):
+        return name
+
+    assert quick_task("site-a") == "site-a"
+    lock = decorators.get_redis_connection("redis").lock(
+        "quick_task-id-site-a", timeout=10
+    )
+    assert lock.acquire(blocking=False)
+    lock.release()
+    mock_log.warning.assert_not_called()
+
+
+@pytest.mark.parametrize("taken_over", [False, True])
+def test_single_task_lock_expired_before_task_finished(mocker, taken_over):
+    """A lock that ran out mid-task should not fail the task or free another holder"""
+    mock_log = mocker.patch("content_sync.decorators.log")
+    other = decorators.get_redis_connection("redis").lock(
+        "slow_task-id-site-a", timeout=10
+    )
+
+    @single_task(timeout=10)
+    def slow_task(name):
+        # The lock runs out, and maybe another worker takes it
+        other.redis.delete(other.name)
+        if taken_over:
+            assert other.acquire(blocking=False)
+        return name
+
+    try:
+        assert slow_task("site-a") == "site-a"
+        assert other.owned() is taken_over
+    finally:
+        if taken_over:
+            other.release()
+    mock_log.warning.assert_called_once()
+
+
+def test_single_task_lock_expired_keeps_task_error(mocker):
+    """An error from the task should not be replaced by a failed lock release"""
+    mocker.patch("content_sync.decorators.log")
+    other = decorators.get_redis_connection("redis").lock(
+        "failing_task-id-site-a", timeout=10
+    )
+
+    @single_task(timeout=10)
+    def failing_task(name):
+        other.redis.delete(other.name)
+        assert other.acquire(blocking=False)
+        raise ValueError(name)
+
+    try:
+        with pytest.raises(ValueError, match="site-a"):
+            failing_task("site-a")
+    finally:
+        other.release()
+
+
 @pytest.mark.parametrize("bind", [False, True])
 @pytest.mark.parametrize("args", [[], ["site-a"], ["site-b", 1]])
 def test_single_task_per_arg_false(mock_redis, celery_app, bind, args):

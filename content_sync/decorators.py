@@ -10,6 +10,7 @@ from celery import Task
 from django.conf import settings
 from django_redis import get_redis_connection
 from github.GithubException import RateLimitExceededException
+from redis.exceptions import LockNotOwnedError
 
 if TYPE_CHECKING:
     from content_sync.models import ContentSyncState
@@ -125,8 +126,18 @@ def single_task(
                         raise BlockingIOError
                     return_value = None
             finally:
-                if has_lock and lock.locked():
-                    lock.release()
+                if has_lock:
+                    try:
+                        lock.release()
+                    except LockNotOwnedError:
+                        # The lock ran out mid-task, so it is gone or another
+                        # worker holds it now. Leave it, and keep the result.
+                        log.warning(
+                            "single_task lock %s expired after %ss, before the task "
+                            "finished",
+                            lock_id,
+                            timeout,
+                        )
             return return_value
 
         return wrapper
