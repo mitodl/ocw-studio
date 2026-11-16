@@ -253,7 +253,7 @@ describe("RepeatableContentListing", () => {
 
     for (const item of contentListingItems) {
       const link = screen.getByRole("link", {
-        name: new RegExp(item.title as string),
+        name: item.title as string,
       })
       expect(link).toHaveAttribute(
         "href",
@@ -373,7 +373,7 @@ describe("RepeatableContentListing", () => {
 
     for (const item of contentListingItems) {
       const link = screen.getByRole("link", {
-        name: new RegExp(item.title as string),
+        name: item.title as string,
       })
       const expectedPath = siteContentDetailUrl
         .param({
