@@ -50,11 +50,11 @@ describe("Prompting for authentication", () => {
     { body: authRejectionBody, status: 403 },
     { body: { detail: "irrelevant" }, status: 401 },
   ])(
-    "prompts for authentication when APIs reject with auth errors",
-    async () => {
+    "prompts for authentication when APIs reject with auth errors ($status)",
+    async ({ body, status }) => {
       const { result, setMockWebsiteResponse, website, user } = await setup()
 
-      setMockWebsiteResponse(authRejectionBody, 403)
+      setMockWebsiteResponse(body, status)
 
       const siteLink = await waitFor(() => result.getByText(website.title))
       await user.click(siteLink)
