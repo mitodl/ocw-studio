@@ -797,7 +797,7 @@ def _process_batch_videos(
 
 
 @app.task(bind=True, max_retries=3)
-@single_task(timeout=YTAGS_BATCH_LOCK_TTL, raise_block=False)
+@single_task(timeout=YTAGS_BATCH_LOCK_TTL, raise_block=False, per_arg=False)
 def update_youtube_tags_batch(
     self,
     youtube_ids,
