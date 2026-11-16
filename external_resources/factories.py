@@ -24,4 +24,10 @@ class ExternalResourceStateFactory(factory.django.DjangoModelFactory):
     wayback_url = factory.Faker("url")
     wayback_status_ext = factory.Faker("sentence")
     wayback_http_status = factory.Faker("random_int", min=100, max=599)
-    wayback_last_successful_submission = factory.Faker("date_time", tzinfo=pytz.utc)
+    # Keep this well outside WAYBACK_SUBMISSION_INTERVAL_DAYS (30 by default).
+    # A random date since 1970 landed in the last 30 days about 1 time in 700,
+    # and submit_url_to_wayback_task then skipped the resource as recently
+    # submitted.
+    wayback_last_successful_submission = factory.Faker(
+        "date_time_between", start_date="-10y", end_date="-1y", tzinfo=pytz.utc
+    )
