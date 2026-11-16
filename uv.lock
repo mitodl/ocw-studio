@@ -684,11 +684,14 @@ wheels = [
 
 [[package]]
 name = "django-robots"
-version = "7.0b0"
+version = "7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b9/16/ec66619b1a0e3e1cb09aeb9c289d4dfcb1d20082c9547969be4d2f6acaf3/django-robots-7.0b0.tar.gz", hash = "sha256:9a71e9ced40a18c430c41a14aa7c1541c407829dbfb41b59497f56b9e2af459c", size = 39250, upload-time = "2023-12-09T13:04:07.589Z" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/04/14/167b10e93767c5d22450835e01fed6f3a515171e06c0f68dab245009f1d0/django_robots-7.0.tar.gz", hash = "sha256:efe3cd1d97768aa2ac24cb50ffa0f3c0c380024d442f64bd834f46228f0aab7b", size = 106845, upload-time = "2026-11-01T11:14:14.007Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/28/59/536ded68a59f521115df168189b37134ce33a6a1b8edf78c158e1846913b/django_robots-7.0b0-py3-none-any.whl", hash = "sha256:761a50f53c8674bb7be8bf6d6c1f87e6feac67be1aa9a4c74ceeae0660beda14", size = 60222, upload-time = "2023-12-09T13:03:38.328Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/19/2b0e0669acaf163db0b062ec0edb10e912bfec1b719dd8a757db9fb9ca15/django_robots-7.0-py3-none-any.whl", hash = "sha256:942580b3c93e54d66e60f4795e279de3b99e4092f32460e68cddf62c1b00d8c4", size = 60288, upload-time = "2026-11-01T11:14:12.717Z" },
 ]
 
 [[package]]
@@ -1505,7 +1508,7 @@ requires-dist = [
     { name = "django-model-utils", specifier = "==5.0.0" },
     { name = "django-redis", specifier = "==6.0.0" },
     { name = "django-removals", specifier = "~=1.5.0" },
-    { name = "django-robots", specifier = "==7.0b0" },
+    { name = "django-robots", specifier = "==7.0" },
     { name = "django-safedelete", specifier = "==1.5.0" },
     { name = "django-storages", specifier = "==1.14.6" },
     { name = "django-webpack-loader", specifier = "==3.2.4" },
