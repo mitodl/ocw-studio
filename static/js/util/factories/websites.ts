@@ -35,6 +35,21 @@ import { WebsiteListingResponse } from "../../query-configs/websites"
 const incr = incrementer()
 
 /**
+ * casual.title picks 2 or 3 words from a list of about 250, so two factory
+ * items share a title often enough to break tests that look items up by
+ * title. Hand out each title at most once per test file.
+ */
+const usedTitles = new Set<string>()
+const uniqueTitle = (): string => {
+  let title = casual.title
+  while (usedTitles.has(title)) {
+    title = casual.title
+  }
+  usedTitles.add(title)
+  return title
+}
+
+/**
  * Factory for ConfigField, useful for testing various functions that switch
  * on field.widget
  *
@@ -220,7 +235,7 @@ export const makeWebsiteDetail = (
     .map(() => casual.word)
     .join("-")
     .toLowerCase(),
-  title: casual.title,
+  title: uniqueTitle(),
   source: null,
   site_type: "ocw",
   starter: makeWebsiteStarter("course"),
@@ -323,7 +338,7 @@ const randomISO8601 = (): string =>
 
 export const makeWebsiteContentListItem = (): WebsiteContentListItem => ({
   text_id: casual.uuid,
-  title: casual.title,
+  title: uniqueTitle(),
   type: casual.word,
   updated_on: randomISO8601(),
   is_deletable: true,
