@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import F, Q
 
 from content_sync.api import get_sync_backend
+from content_sync.management.utils import get_commit_user
 from content_sync.models import ContentSyncState
 from websites.models import Website
 
@@ -14,6 +15,11 @@ class Command(BaseCommand):
     help = __doc__
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            "--user",
+            required=True,
+            help="Email address of the active Studio user performing this sync",
+        )
         parser.add_argument(
             "--batch-commits",
             dest="batch_commits",
@@ -41,6 +47,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *_args, **options):
+        commit_user = get_commit_user(options["user"])
         # A website needs syncing if any of its content is out of date, which
         # is the same predicate sync_unsynced_websites uses. Selecting on
         # "nothing has ever synced" instead would skip a site that failed
@@ -70,7 +77,7 @@ class Command(BaseCommand):
         for website in website_qset.iterator():
             try:
                 backend = get_sync_backend(website)
-                sync_kwargs = {}
+                sync_kwargs = {"commit_user": commit_user}
                 if options["batch_commits"]:
                     if not backend.supports_batch_commits:
                         if not warned_no_batching:

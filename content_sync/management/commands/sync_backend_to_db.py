@@ -3,6 +3,7 @@
 import sys
 
 from content_sync.api import get_sync_backend
+from content_sync.management.utils import get_commit_user
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.api import fetch_website, reset_publishing_fields
 
@@ -14,6 +15,10 @@ class Command(WebsiteFilterCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
+        parser.add_argument(
+            "--user",
+            help="Email address of the active Studio user (required with --commit)",
+        )
         parser.add_argument(
             "--commit",
             dest="commit",
@@ -36,6 +41,7 @@ class Command(WebsiteFilterCommand):
             )
 
         commit = options["commit"]
+        commit_user = get_commit_user(options["user"]) if commit is not None else None
         path = options["path"]
         confirm = (
             "Y"
@@ -52,9 +58,16 @@ class Command(WebsiteFilterCommand):
             self.stdout.write(
                 f"Syncing content from backend to database for '{website.title}'..."
             )
-            backend.sync_all_content_to_db(ref=commit, path=path)
+            content_ids = backend.sync_all_content_to_db(ref=commit, path=path)
             if commit is not None:
                 # Sync back to git
-                backend.sync_all_content_to_backend()
+                content = (
+                    website.websitecontent_set.filter(pk__in=content_ids)
+                    if path is not None
+                    else None
+                )
+                backend.sync_all_content_to_backend(
+                    query_set=content, commit_user=commit_user
+                )
             reset_publishing_fields(website.name)
             self.stdout.write("Completed syncing from backend to database")

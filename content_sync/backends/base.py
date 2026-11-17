@@ -156,7 +156,7 @@ class BaseSyncBackend(abc.ABC):
     @abc.abstractmethod
     def sync_all_content_to_db(
         self, ref: str | None = None, path: str | None = None
-    ):  # pragma: no cover
+    ) -> list[int]:  # pragma: no cover
         """
         Sync all content from the backend to the application database.
 

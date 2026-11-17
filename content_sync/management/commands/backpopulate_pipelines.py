@@ -6,6 +6,7 @@ from mitol.common.utils.datetime import now_in_utc
 
 from content_sync.api import get_pipeline_api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.management.utils import get_commit_user
 from content_sync.tasks import upsert_pipelines
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.models import Website
@@ -18,6 +19,13 @@ class Command(WebsiteFilterCommand):
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
+        parser.add_argument(
+            "--user",
+            help=(
+                "Email address of the active Studio user performing the sync "
+                "(required with --create_backend)"
+            ),
+        )
         parser.add_argument(
             "-hu",
             "--hugo_args",
@@ -81,6 +89,7 @@ class Command(WebsiteFilterCommand):
         source_str = options["source"]
         chunk_size = int(options["chunk_size"])
         create_backend = options["create_backend"]
+        commit_user_id = get_commit_user(options["user"]).pk if create_backend else None
         is_verbose = options["verbosity"] > 1
         unpause = options["unpause"]
         delete_all = options["delete_all"]
@@ -120,6 +129,7 @@ class Command(WebsiteFilterCommand):
             create_backend=create_backend,
             unpause=unpause,
             hugo_args=hugo_args,
+            commit_user_id=commit_user_id,
         )
 
         self.stdout.write(

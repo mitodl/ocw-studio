@@ -508,6 +508,7 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
     """upsert_pipelines calls upsert_pipeline_batch with correct arguments"""
     websites = WebsiteFactory.create_batch(3)
     website_names = sorted([website.name for website in websites])
+    commit_user_id = UserFactory.create().pk if create_backend else None
     mock_batch = mocker.patch("content_sync.tasks.upsert_website_pipeline_batch.s")
     with pytest.raises(TabError):
         tasks.upsert_pipelines.delay(
@@ -516,12 +517,14 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
             unpause=unpause,
             hugo_args=hugo_args,
             chunk_size=chunk_size,
+            commit_user_id=commit_user_id,
         )
     mock_batch.assert_any_call(
         website_names[0:chunk_size],
         create_backend=create_backend,
         unpause=unpause,
         hugo_args=hugo_args,
+        commit_user_id=commit_user_id,
     )
     if chunks > 1:
         mock_batch.assert_any_call(
@@ -529,6 +532,7 @@ def test_upsert_pipelines(  # pylint:disable=too-many-arguments, unused-argument
             create_backend=create_backend,
             unpause=unpause,
             hugo_args=hugo_args,
+            commit_user_id=commit_user_id,
         )
 
 
@@ -555,12 +559,14 @@ def test_upsert_theme_assets_pipeline(  # pylint:disable=unused-argument
         mock_pipeline_unpause.assert_not_called()
 
 
-@pytest.mark.parametrize("create_backend", [True, False])
+@pytest.mark.parametrize(
+    ("create_backend", "use_commit_user"), [(False, False), (True, False), (True, True)]
+)
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("hugo_args", [None, "--baseURL /"])
 @pytest.mark.parametrize("check_limit", [True, False])
 def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # noqa: PLR0913, PLR0917
-    mocker, settings, create_backend, unpause, hugo_args, check_limit
+    mocker, settings, create_backend, use_commit_user, unpause, hugo_args, check_limit
 ):
     """upsert_website_pipeline_batch should make the expected function calls"""
     settings.GITHUB_RATE_LIMIT_CHECK = check_limit
@@ -572,11 +578,13 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
     # api=None, and "site-name-100" sorts before "site-name-99".
     websites = sorted(WebsiteFactory.create_batch(2), key=lambda site: site.name)
     website_names = [website.name for website in websites]
+    commit_user = UserFactory.create() if use_commit_user else None
     tasks.upsert_website_pipeline_batch(
         website_names,
         create_backend=create_backend,
         unpause=unpause,
         hugo_args=hugo_args,
+        commit_user_id=commit_user.pk if commit_user else None,
     )
     mock_get_pipeline.assert_any_call(websites[0], hugo_args=hugo_args, api=None)
     mock_get_pipeline.assert_any_call(websites[1], hugo_args=hugo_args, api=mocker.ANY)
@@ -586,7 +594,11 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
         mock_throttle.assert_any_call(mock_get_backend.return_value)
         mock_backend = mock_get_backend.return_value
         assert mock_backend.create_website_in_backend.call_count == 2
-        assert mock_backend.sync_all_content_to_backend.call_count == 2
+        sync_kwargs = {"commit_user": commit_user} if use_commit_user else {}
+        assert mock_backend.sync_all_content_to_backend.call_args_list == [
+            mocker.call(**sync_kwargs),
+            mocker.call(**sync_kwargs),
+        ]
     else:
         mock_get_backend.assert_not_called()
     mock_pipeline = mock_get_pipeline.return_value
@@ -596,6 +608,27 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
         mock_pipeline.unpause_pipeline.assert_any_call(VERSION_LIVE)
     else:
         mock_pipeline.unpause_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize("missing", [True, False])
+def test_upsert_website_pipeline_batch_invalid_commit_user(api_mock, missing):
+    """An unavailable operator fails clearly before syncing or changing pipelines."""
+    user = UserFactory.create(is_active=False)
+    user_id = user.pk
+    if missing:
+        user.delete()
+    website = WebsiteFactory.create()
+
+    with pytest.raises(
+        User.DoesNotExist,
+        match=f"commit user {user_id} does not exist or is inactive",
+    ):
+        tasks.upsert_website_pipeline_batch(
+            [website.name], create_backend=True, commit_user_id=user_id
+        )
+
+    api_mock.get_sync_backend.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
 
 
 @pytest.mark.parametrize("unpause", [True, False])

@@ -282,8 +282,9 @@ def test_sync_all_content_to_db_with_a_file_path_skips_the_tree(gitlab, repo_syn
     """A --path naming one file goes through files.get: the tree 404s on a blob."""
     path = next(iter(repo_sync.by_path))
 
-    gitlab.backend.sync_all_content_to_db(path=path)
+    imported_ids = gitlab.backend.sync_all_content_to_db(path=path)
 
+    assert imported_ids == [repo_sync.by_path[path].pk]
     repo_sync.repo.repository_tree.assert_not_called()
     assert WebsiteContent.objects.filter(
         id__in=[content.id for content in repo_sync.contents]
@@ -303,8 +304,9 @@ def test_sync_all_content_to_db_with_a_directory_path_falls_back_to_the_tree(
     ]
     repo_sync.repo.repository_tree.return_value = _blob_tree(repo_sync.by_path)
 
-    gitlab.backend.sync_all_content_to_db(path="content")
+    imported_ids = gitlab.backend.sync_all_content_to_db(path="content")
 
+    assert set(imported_ids) == {content.pk for content in repo_sync.contents}
     repo_sync.repo.repository_tree.assert_called_once()
     _, kwargs = repo_sync.repo.repository_tree.call_args
     assert kwargs["path"] == "content"
