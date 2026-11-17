@@ -194,8 +194,8 @@ def test_single_task_per_arg_false(mock_redis, celery_app, bind, args):
             submit_url_to_wayback_task,
             [111],
             {},
-            "submit_url_to_wayback_task-id-single",
-            id="submit_url_to_wayback_task-task-wide",
+            "submit_url_to_wayback_task-id-111",
+            id="submit_url_to_wayback_task-per-resource",
         ),
         pytest.param(
             update_wayback_jobs_status_batch,
@@ -223,7 +223,7 @@ def test_single_task_per_arg_false(mock_redis, celery_app, bind, args):
 def test_single_task_lock_names_of_bound_tasks(
     mock_redis, task, args, kwargs, lock_name
 ):
-    """Each bound task should lock per site or task-wide, as it was meant to"""
+    """Each bound task should lock per argument or task-wide, as it was meant to"""
     mock_redis.lock.return_value.acquire.return_value = False
     with contextlib.suppress(BlockingIOError):
         task.run(*args, **kwargs)

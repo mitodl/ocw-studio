@@ -29,6 +29,8 @@ from external_resources.constants import (
     WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
     WAYBACK_MACHINE_TASK_RATE_LIMIT,
     WAYBACK_PENDING_STATUS,
+    WAYBACK_STATUS_BATCH_LOCK_TTL,
+    WAYBACK_SUBMISSION_LOCK_TTL,
     WAYBACK_SUCCESS_STATUS,
 )
 from external_resources.exceptions import CheckFailedError
@@ -187,8 +189,7 @@ def get_external_resource_state(resource_id):
     max_retries=7,
     priority=WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY,
 )
-# rate_limit is per worker, so the lock keeps all workers to one submission at a time
-@single_task(7, per_arg=False)
+@single_task(WAYBACK_SUBMISSION_LOCK_TTL)
 def submit_url_to_wayback_task(self, resource_id, ignore_last_submission=None):
     """Submit an External Resource URL to the Wayback Machine."""
     if settings.ENABLE_WAYBACK_TASKS:
@@ -284,7 +285,7 @@ def _get_pending_states(job_ids=None):
     retry_backoff_max=240,
     max_retries=5,
 )
-@single_task(10, per_arg=False)
+@single_task(WAYBACK_STATUS_BATCH_LOCK_TTL, per_arg=False)
 def update_wayback_jobs_status_batch(self, job_ids=None):
     """Batch update the status of Wayback Machine jobs."""
     if settings.ENABLE_WAYBACK_TASKS:

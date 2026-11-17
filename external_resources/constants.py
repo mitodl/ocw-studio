@@ -29,6 +29,9 @@ EXTERNAL_RESOURCE_TASK_RATE_LIMIT = "100/s"
 EXTERNAL_RESOURCE_TASK_PRIORITY = 4  # Lowest priority from range (0 - 4)
 WAYBACK_MACHINE_TASK_RATE_LIMIT = "0.11/s"
 WAYBACK_MACHINE_SUBMISSION_TASK_PRIORITY = 3
+# single_task lock lifetimes, long enough that a normal run ends before its lock expires
+WAYBACK_SUBMISSION_LOCK_TTL = 2 * 60  # one request with a 30 second timeout
+WAYBACK_STATUS_BATCH_LOCK_TTL = 60 * 60  # one request per 50 pending jobs
 
 
 # constants for user agent
