@@ -13,6 +13,7 @@ from django.conf import settings
 from googleapiclient.errors import HttpError, ResumableUploadError
 from moto import mock_aws
 
+from content_sync import decorators
 from gdrive_sync.api import create_gdrive_resource_content
 from gdrive_sync.constants import (
     DRIVE_FILE_CREATED_TIME,
@@ -33,6 +34,7 @@ from videos.conftest import MOCK_BUCKET_NAME, MockHttpErrorResponse, setup_s3
 from videos.constants import (
     DESTINATION_YOUTUBE,
     YT_THUMBNAIL_IMG,
+    YTAGS_BATCH_LOCK_TTL,
     VideoFileStatus,
     VideoStatus,
     YouTubeStatus,
@@ -1556,17 +1558,27 @@ def test_ytags_batch_add_course_tag(mocker, settings):
     assert "test-course" in tags
 
 
-def test_ytags_batch_skips_when_lock_already_held(mocker, settings):
-    """When another instance holds the @single_task lock, the task exits silently."""
-    settings.YT_ACCESS_TOKEN = "token"  # noqa: S105
-
-    _mock_redis_lock(mocker, acquire_returns=False, locked_returns=False)
-
+def test_ytags_batch_retries_when_another_batch_holds_lock(mocker):
+    """A batch that finds another batch running retries later instead of being dropped"""
+    mock_retry = mocker.patch("videos.tasks.update_youtube_tags_batch.retry")
+    mock_retry.side_effect = Retry("Retry called")
     mock_api_cls = mocker.patch("videos.tasks.YouTubeApi")
+    # Another batch, with other videos, is running
+    running_batch = decorators.get_redis_connection("redis").lock(
+        "update_youtube_tags_batch-id-single", timeout=60
+    )
+    assert running_batch.acquire(blocking=False)
 
-    update_youtube_tags_batch(["yt_concurrent"])
+    try:
+        with pytest.raises(Retry):
+            update_youtube_tags_batch(["yt_other_batch"])
+    finally:
+        running_batch.release()
 
     mock_api_cls.assert_not_called()
+    mock_retry.assert_called_once()
+    assert isinstance(mock_retry.call_args.kwargs["exc"], BlockingIOError)
+    assert mock_retry.call_args.kwargs["countdown"] == YTAGS_BATCH_LOCK_TTL
 
 
 @pytest.mark.usefixtures("allow_single_task_lock")
