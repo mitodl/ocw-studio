@@ -181,7 +181,9 @@ class GithubBackend(BaseSyncBackend):
         content.delete(force_policy=HARD_DELETE)
         return True
 
-    def sync_all_content_to_db(self, ref: str | None = None, path: str | None = None):
+    def sync_all_content_to_db(
+        self, ref: str | None = None, path: str | None = None
+    ) -> list[int]:
         """
         Iterate over a website's WebsiteContent objects, deleting any that don't exist in the git repo.
         Then recursively iterate through the repo, upserting any ContentFiles to WebsiteContent objects.
@@ -197,6 +199,7 @@ class GithubBackend(BaseSyncBackend):
         website_content_ids = list(
             self.website.websitecontent_set.all().values_list("id", flat=True)
         )
+        imported_content_ids = []
 
         # Iterate over repo files
         contents = repo.get_contents(path or "", ref=github_ref)
@@ -217,6 +220,7 @@ class GithubBackend(BaseSyncBackend):
                 if ref is None:
                     sync_state.synced_checksum = sync_state.current_checksum
                 sync_state.save()
+                imported_content_ids.append(content.pk)
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
         if ref is None and not path:
@@ -227,3 +231,4 @@ class GithubBackend(BaseSyncBackend):
             self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
                 force_policy=HARD_DELETE
             )
+        return imported_content_ids

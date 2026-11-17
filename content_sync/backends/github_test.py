@@ -194,9 +194,12 @@ def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, p
     patched_file_deserialize.side_effect = website_contents
 
     if ref is NotSet:
-        github.backend.sync_all_content_to_db(path=path)
+        imported_ids = github.backend.sync_all_content_to_db(path=path)
     else:
-        github.backend.sync_all_content_to_db(ref=ref, path=path)
+        imported_ids = github.backend.sync_all_content_to_db(ref=ref, path=path)
+    assert imported_ids == [
+        content.pk for content in website_contents[:expected_sync_count]
+    ]
     assert patched_file_deserialize.call_count == expected_sync_count
     patched_file_deserialize.assert_any_call(
         site_config=mocker.ANY,

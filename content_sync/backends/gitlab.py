@@ -168,13 +168,16 @@ class GitlabBackend(BaseSyncBackend):
         )
         return [item["path"] for item in tree if item.get("type") == "blob"]
 
-    def sync_all_content_to_db(self, ref: str | None = None, path: str | None = None):
+    def sync_all_content_to_db(
+        self, ref: str | None = None, path: str | None = None
+    ) -> list[int]:
         """Sync all WebsiteContent records from GitLab into the database."""
         repo = self.api.get_repo()
 
         website_content_ids = list(
             self.website.websitecontent_set.all().values_list("id", flat=True)
         )
+        imported_content_ids = []
         ref_to_use = ref or settings.GIT_BRANCH_MAIN
 
         for file_path in self._blob_paths(repo, path, ref_to_use):
@@ -188,6 +191,7 @@ class GitlabBackend(BaseSyncBackend):
             if ref is None:
                 sync_state.synced_checksum = sync_state.current_checksum
             sync_state.save()
+            imported_content_ids.append(content.pk)
 
             if content.id in website_content_ids:
                 website_content_ids.remove(content.id)
@@ -209,3 +213,4 @@ class GitlabBackend(BaseSyncBackend):
             self.website.websitecontent_set.filter(id__in=website_content_ids).delete(
                 force_policy=HARD_DELETE
             )
+        return imported_content_ids
