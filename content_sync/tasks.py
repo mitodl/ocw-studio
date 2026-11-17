@@ -149,7 +149,16 @@ def upsert_website_pipeline_batch(
     """Create/update publishing pipelines for multiple websites"""
     sync_kwargs = {}
     if create_backend and commit_user_id is not None:
-        sync_kwargs["commit_user"] = User.objects.get(pk=commit_user_id, is_active=True)
+        try:
+            sync_kwargs["commit_user"] = User.objects.get(
+                pk=commit_user_id, is_active=True
+            )
+        except User.DoesNotExist as exc:
+            msg = (
+                f"Cannot upsert website pipelines: commit user {commit_user_id} "
+                "does not exist or is inactive."
+            )
+            raise User.DoesNotExist(msg) from exc
     api_instance = None
     for website_name in website_names:
         website = Website.objects.get(name=website_name)
@@ -159,9 +168,8 @@ def upsert_website_pipeline_batch(
             backend.create_website_in_backend()
             backend.sync_all_content_to_backend(**sync_kwargs)
         pipeline = api.get_site_pipeline(website, hugo_args=hugo_args, api=api_instance)
-        if not api_instance:
-            # Keep using the same api instance to minimize multiple authentication calls
-            api_instance = pipeline.api
+        # Keep using the same api instance to minimize multiple authentication calls
+        api_instance = api_instance or pipeline.api
         pipeline.upsert_pipeline()
         unpause_versions = []
         if unpause:

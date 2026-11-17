@@ -610,6 +610,27 @@ def test_upsert_website_pipeline_batch(  # pylint:disable=too-many-arguments  # 
         mock_pipeline.unpause_pipeline.assert_not_called()
 
 
+@pytest.mark.parametrize("missing", [True, False])
+def test_upsert_website_pipeline_batch_invalid_commit_user(api_mock, missing):
+    """An unavailable operator fails clearly before syncing or changing pipelines."""
+    user = UserFactory.create(is_active=False)
+    user_id = user.pk
+    if missing:
+        user.delete()
+    website = WebsiteFactory.create()
+
+    with pytest.raises(
+        User.DoesNotExist,
+        match=f"commit user {user_id} does not exist or is inactive",
+    ):
+        tasks.upsert_website_pipeline_batch(
+            [website.name], create_backend=True, commit_user_id=user_id
+        )
+
+    api_mock.get_sync_backend.assert_not_called()
+    api_mock.get_site_pipeline.assert_not_called()
+
+
 @pytest.mark.parametrize("unpause", [True, False])
 @pytest.mark.parametrize("unpublished", [True, False])
 def test_upsert_website_pipeline_batch_with_extra_themes(
