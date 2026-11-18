@@ -193,6 +193,9 @@ class GithubBackend(BaseSyncBackend):
         # translated here rather than passed around: handed NotSet, GitLab asks
         # for a ref literally named "NotSet" and 404s.
         github_ref = NotSet if ref is None else ref
+        # GitHub's redirect for a trailing slash drops the requested ref
+        if path is not None:
+            path = path.rstrip("/")
         repo = self.api.get_repo()
 
         # Get list of existing WebsiteContent ids for the website
@@ -215,7 +218,7 @@ class GithubBackend(BaseSyncBackend):
                 and (
                     path is None
                     or file_content.path == path
-                    or file_content.path.startswith(f"{path.rstrip('/')}/")
+                    or file_content.path.startswith(f"{path}/")
                 )
             ):
                 content = self.update_content_in_db(file_content)
@@ -227,7 +230,7 @@ class GithubBackend(BaseSyncBackend):
                 imported_content_ids.append(content.pk)
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
-        if ref is None and not path:
+        if ref is None and path is None:
             # This should only be done if ref and path kwargs are not specified
             # Delete any WebsiteContent ids still remaining
             # we use a hard delete because there's no need to sync a deletion to

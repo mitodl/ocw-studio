@@ -167,6 +167,8 @@ def test_delete_content_in_db(github):
     ("path", "expected_paths"),
     [
         (None, ["src/syllabus.md", "src-old/notes.md", "src/units/week-1.md"]),
+        ("", []),
+        ("/", []),
         ("src", ["src/syllabus.md", "src/units/week-1.md"]),
         ("src/", ["src/syllabus.md", "src/units/week-1.md"]),
         ("src/syllabus.md", ["src/syllabus.md"]),
@@ -199,9 +201,7 @@ def test_sync_all_content_to_db(
         "src-old": [unrelated],
         syllabus.path: syllabus,
     }
-    github.repo.get_contents.side_effect = lambda path, **_kwargs: repo_contents[
-        path.rstrip("/")
-    ]
+    github.repo.get_contents.side_effect = lambda path, **_kwargs: repo_contents[path]
     patched_file_deserialize.side_effect = lambda filepath, **_kwargs: contents_by_path[
         filepath
     ]
@@ -215,7 +215,8 @@ def test_sync_all_content_to_db(
         call.kwargs["filepath"] for call in patched_file_deserialize.call_args_list
     ] == expected_paths
     github_ref = NotSet if ref is None else ref
-    assert github.repo.get_contents.call_args_list[0].args == (path or "",)
+    expected_repo_path = (path or "").rstrip("/")
+    assert github.repo.get_contents.call_args_list[0].args == (expected_repo_path,)
     assert all(
         call.kwargs["ref"] == github_ref
         for call in github.repo.get_contents.call_args_list
