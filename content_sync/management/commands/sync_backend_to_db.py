@@ -2,6 +2,8 @@
 
 import sys
 
+from django.core.management import CommandError
+
 from content_sync.api import get_sync_backend
 from content_sync.management.utils import get_commit_user
 from main.management.commands.filter import WebsiteFilterCommand
@@ -28,7 +30,7 @@ class Command(WebsiteFilterCommand):
         parser.add_argument(
             "--path",
             dest="path",
-            help="A particular git filepath that should be synced.",
+            help="File or directory to sync. Omit to sync the whole repository.",
             required=False,
         )
 
@@ -40,9 +42,16 @@ class Command(WebsiteFilterCommand):
                 "You must specify a website or list of websites to process, --filter or --filter-json"  # noqa: E501
             )
 
+        path = options["path"]
+        if path is not None and not path.rstrip("/"):
+            msg = (
+                "--path must name a file or directory. "
+                "Omit --path to sync the whole repository."
+            )
+            raise CommandError(msg)
+
         commit = options["commit"]
         commit_user = get_commit_user(options["user"]) if commit is not None else None
-        path = options["path"]
         confirm = (
             "Y"
             if (path is not None or commit is None)

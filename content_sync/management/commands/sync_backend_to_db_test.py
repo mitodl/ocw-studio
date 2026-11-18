@@ -31,6 +31,25 @@ def test_import_without_commit(mock_backend):
     backend.sync_all_content_to_backend.assert_not_called()
 
 
+@pytest.mark.parametrize("path", ["", "/", "///"])
+@pytest.mark.parametrize("commit", [None, "abc123"])
+def test_rejects_empty_or_slash_only_path(mock_backend, path, commit):
+    """Reject an explicit empty path before selecting a sync backend."""
+    website = WebsiteFactory.create()
+    user = UserFactory.create()
+
+    with pytest.raises(CommandError, match="--path must name a file or directory"):
+        call_command(
+            "sync_backend_to_db",
+            filter=website.name,
+            path=path,
+            commit=commit,
+            user=user.email,
+        )
+
+    mock_backend.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("path", "has_content"),
     [(None, True), ("content/page.md", True), ("README.md", False)],
@@ -110,7 +129,7 @@ def test_github_directory_restore_writes_only_imported_content(mocker, settings)
         "sync_backend_to_db",
         filter=website.name,
         commit="abc123",
-        path=directory,
+        path=f"{directory}/",
         user=operator.email,
     )
 
