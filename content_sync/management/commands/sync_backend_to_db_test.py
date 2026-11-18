@@ -51,10 +51,18 @@ def test_rejects_empty_or_slash_only_path(mock_backend, path, commit):
 
 
 @pytest.mark.parametrize(
-    ("path", "has_content"),
-    [(None, True), ("content/page.md", True), ("README.md", False)],
+    ("path", "expected_path", "has_content"),
+    [
+        (None, None, True),
+        ("content/page.md", "content/page.md", True),
+        ("content/page.md/", "content/page.md", True),
+        ("content/bio///", "content/bio", True),
+        ("README.md", "README.md", False),
+    ],
 )
-def test_restore_passes_commit_user(mock_backend, mocker, path, has_content):
+def test_restore_passes_commit_user(
+    mock_backend, mocker, path, expected_path, has_content
+):
     """Attribute restores and scope path restores to the imported rows."""
     mocker.patch("builtins.input", return_value="Y")
     user = UserFactory.create()
@@ -72,7 +80,9 @@ def test_restore_passes_commit_user(mock_backend, mocker, path, has_content):
         user=user.email,
     )
 
-    backend.sync_all_content_to_db.assert_called_once_with(ref="abc123", path=path)
+    backend.sync_all_content_to_db.assert_called_once_with(
+        ref="abc123", path=expected_path
+    )
     backend.sync_all_content_to_backend.assert_called_once()
     sync_options = backend.sync_all_content_to_backend.call_args.kwargs
     assert sync_options["commit_user"] == user

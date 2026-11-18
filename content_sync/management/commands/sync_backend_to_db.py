@@ -43,7 +43,9 @@ class Command(WebsiteFilterCommand):
             )
 
         path = options["path"]
-        if path is not None and not path.rstrip("/"):
+        if path is not None:
+            path = path.rstrip("/")
+        if path == "":
             msg = (
                 "--path must name a file or directory. "
                 "Omit --path to sync the whole repository."
