@@ -162,59 +162,70 @@ def test_delete_content_in_db(github):
     assert WebsiteContent.objects.filter(id=sync_state.content.id).first() is None
 
 
-@pytest.mark.parametrize("ref", [NotSet, "abc123jfkdjfdkfj"])
-@pytest.mark.parametrize("path", [None, "src/syllabus_test_sync.md"])
-def test_sync_all_content_to_db(mocker, github, patched_file_deserialize, ref, path):
-    """Test that sync_all_content_to_db iterates over all repo content"""
-    fake_dir = mocker.Mock(type="dir", path="src", content="")
-    fake_files = [
-        mocker.Mock(type="file", path=path, content=b64encode(content.encode("utf-8")))
-        for (path, content) in [
-            [
-                "src/__index_test_sync.md",
-                "---\nuid: 1\nlayout: course_section\n---\nfile 1 content",
-            ],
-            [
-                "src/syllabus_test_sync.md",
-                "---\nuid: 2\nlayout: course_section\n---\nfile 2 content",
-            ],
-            [
-                "README.md",
-                "# Read Me",
-            ],
-        ]
-    ]
-    # Two actual content files to sync. README.md should be ignored.
-    expected_sync_count = 2 if not path else 1
-    github.api.get_repo.return_value.get_contents.side_effect = [
-        [fake_dir],
-        fake_files,
-    ]
+@pytest.mark.parametrize("ref", [None, "abc123"])
+@pytest.mark.parametrize(
+    ("path", "expected_paths"),
+    [
+        (None, ["src/syllabus.md", "src-old/notes.md", "src/units/week-1.md"]),
+        ("src", ["src/syllabus.md", "src/units/week-1.md"]),
+        ("src/", ["src/syllabus.md", "src/units/week-1.md"]),
+        ("src/syllabus.md", ["src/syllabus.md"]),
+    ],
+)
+def test_sync_all_content_to_db(
+    github, patched_file_deserialize, ref, path, expected_paths
+):
+    """Import only the selected files and return their content IDs."""
     website_contents = github.backend.website.websitecontent_set.all()
-    patched_file_deserialize.side_effect = website_contents
-
-    if ref is NotSet:
-        imported_ids = github.backend.sync_all_content_to_db(path=path)
-    else:
-        imported_ids = github.backend.sync_all_content_to_db(ref=ref, path=path)
-    assert imported_ids == [
-        content.pk for content in website_contents[:expected_sync_count]
-    ]
-    assert patched_file_deserialize.call_count == expected_sync_count
-    patched_file_deserialize.assert_any_call(
-        site_config=mocker.ANY,
-        website=github.backend.website,
-        filepath="src/syllabus_test_sync.md",
-        file_contents=mocker.ANY,
-    )
-    assert all(
-        sync_state.is_synced is (ref is NotSet)
-        for sync_state in ContentSyncState.objects.filter(
-            content__in=website_contents[0:expected_sync_count]
+    contents_by_path = dict(
+        zip(
+            ["src/syllabus.md", "src/units/week-1.md", "src-old/notes.md"],
+            website_contents[:3],
+            strict=True,
         )
     )
-    assert github.backend.website.websitecontent_set.count() == (
-        2 if ref is NotSet and not path else 5
+    syllabus, lesson, unrelated = (
+        SimpleNamespace(type="file", path=filepath, content=b64encode(b"body"))
+        for filepath in contents_by_path
+    )
+    repo_contents = {
+        "": [
+            SimpleNamespace(type="dir", path="src"),
+            SimpleNamespace(type="dir", path="src-old"),
+            SimpleNamespace(type="file", path="README.md"),
+        ],
+        "src": [syllabus, SimpleNamespace(type="dir", path="src/units")],
+        "src/units": [lesson],
+        "src-old": [unrelated],
+        syllabus.path: syllabus,
+    }
+    github.repo.get_contents.side_effect = lambda path, **_kwargs: repo_contents[
+        path.rstrip("/")
+    ]
+    patched_file_deserialize.side_effect = lambda filepath, **_kwargs: contents_by_path[
+        filepath
+    ]
+
+    imported_ids = github.backend.sync_all_content_to_db(ref=ref, path=path)
+
+    assert imported_ids == [
+        contents_by_path[filepath].pk for filepath in expected_paths
+    ]
+    assert [
+        call.kwargs["filepath"] for call in patched_file_deserialize.call_args_list
+    ] == expected_paths
+    github_ref = NotSet if ref is None else ref
+    assert github.repo.get_contents.call_args_list[0].args == (path or "",)
+    assert all(
+        call.kwargs["ref"] == github_ref
+        for call in github.repo.get_contents.call_args_list
+    )
+    assert all(
+        sync_state.is_synced is (ref is None and sync_state.content_id in imported_ids)
+        for sync_state in ContentSyncState.objects.filter(content__in=website_contents)
+    )
+    assert website_contents.count() == (
+        len(expected_paths) if ref is None and path is None else 5
     )
 
 

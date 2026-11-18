@@ -212,7 +212,11 @@ class GithubBackend(BaseSyncBackend):
             elif (
                 file_content.type == "file"
                 and file_content.path not in self.IGNORED_PATHS
-                and (path is None or file_content.path == path)
+                and (
+                    path is None
+                    or file_content.path == path
+                    or file_content.path.startswith(f"{path.rstrip('/')}/")
+                )
             ):
                 content = self.update_content_in_db(file_content)
                 sync_state = content.content_sync_state
