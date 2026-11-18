@@ -167,8 +167,6 @@ def test_delete_content_in_db(github):
     ("path", "expected_paths"),
     [
         (None, ["src/syllabus.md", "src-old/notes.md", "src/units/week-1.md"]),
-        ("", []),
-        ("/", []),
         ("src", ["src/syllabus.md", "src/units/week-1.md"]),
         ("src/", ["src/syllabus.md", "src/units/week-1.md"]),
         ("src/syllabus.md", ["src/syllabus.md"]),

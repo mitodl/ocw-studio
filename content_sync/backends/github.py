@@ -215,11 +215,6 @@ class GithubBackend(BaseSyncBackend):
             elif (
                 file_content.type == "file"
                 and file_content.path not in self.IGNORED_PATHS
-                and (
-                    path is None
-                    or file_content.path == path
-                    or file_content.path.startswith(f"{path}/")
-                )
             ):
                 content = self.update_content_in_db(file_content)
                 sync_state = content.content_sync_state
@@ -230,7 +225,7 @@ class GithubBackend(BaseSyncBackend):
                 imported_content_ids.append(content.pk)
                 if content.id in website_content_ids:
                     website_content_ids.remove(content.id)
-        if ref is None and path is None:
+        if ref is None and not path:
             # This should only be done if ref and path kwargs are not specified
             # Delete any WebsiteContent ids still remaining
             # we use a hard delete because there's no need to sync a deletion to
