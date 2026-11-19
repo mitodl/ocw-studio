@@ -6,10 +6,7 @@ from urllib.parse import urlparse
 from websites.management.commands.markdown_cleaning.cleanup_rule import (
     RegexpCleanupRule,
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    ContentLookup,
-    get_rootrelative_url_from_content,
-)
+from websites.management.commands.markdown_cleaning.utils import ContentLookup
 
 if TYPE_CHECKING:
     import re
@@ -83,7 +80,7 @@ class MetadataRelativeUrlsRule(RegexpCleanupRule):
         except KeyError:
             return original_text, notes(replacement_type="content not found")
 
-        link_url = get_rootrelative_url_from_content(linked_content)
+        link_url = self.replacement_url(linked_content, url.path)
         if url.fragment:
             link_url += f"#{url.fragment}"
 

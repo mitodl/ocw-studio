@@ -20,10 +20,7 @@ from websites.management.commands.markdown_cleaning.shortcode_parser import (
     ShortcodeParseResult,
     ShortcodeTag,  # noqa: F811
 )
-from websites.management.commands.markdown_cleaning.utils import (
-    ContentLookup,
-    get_rootrelative_url_from_content,
-)
+from websites.management.commands.markdown_cleaning.utils import ContentLookup
 
 if TYPE_CHECKING:
     from websites.models import WebsiteContent
@@ -83,7 +80,7 @@ class LinkWrappedImagesRule(PyparsingRule):
         Notes = self.ReplacementNotes
         link = toks.link
         text = link.text.strip()
-        fragment = urlparse(link.destination).fragment
+        url = urlparse(link.destination)
         if "{{< resource" not in text:
             return toks.original_text, Notes("No resource shortcode in link text.")
         if text.count("{{<") > 1:
@@ -137,7 +134,7 @@ class LinkWrappedImagesRule(PyparsingRule):
             linked_content=linked_content,
             resource_uuid=resource_uuid,
             extra_text=extra_text,
-            fragment=fragment,
+            url=url,
         )
 
     def get_replacement(
@@ -146,7 +143,7 @@ class LinkWrappedImagesRule(PyparsingRule):
         linked_content: WebsiteContent,
         resource_uuid: str,
         extra_text: str,
-        fragment: str,
+        url,
     ):
         """
         Return new text for resource shortcode that was previously wrapped in
@@ -165,9 +162,7 @@ class LinkWrappedImagesRule(PyparsingRule):
         """
         Notes = self.ReplacementNotes
 
-        rootrel_url = get_rootrelative_url_from_content(linked_content)
-        if fragment:
-            rootrel_url += "#" + fragment
+        fragment = url.fragment
 
         can_link_with_uuid = (
             linked_content.website.name == page_content.website.name
@@ -192,6 +187,9 @@ class LinkWrappedImagesRule(PyparsingRule):
                 had_extra_text=bool(extra_text),
             )
         else:
+            rootrel_url = self.replacement_url(linked_content, url.path)
+            if fragment:
+                rootrel_url += "#" + fragment
             new_resource = ShortcodeTag.resource(uuid=resource_uuid, href=rootrel_url)
             new_extra = (
                 ""

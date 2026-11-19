@@ -4,9 +4,8 @@ import csv
 import re
 
 from django.conf import settings
-from mitol.common.utils import now_in_utc
 
-from content_sync.tasks import sync_unsynced_websites
+from content_sync.management.utils import sync_repaired_content
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
 from websites.constants import CONTENT_TYPE_RESOURCE
@@ -19,6 +18,7 @@ class Command(WebsiteFilterCommand):
     help = __doc__
 
     def add_arguments(self, parser):
+        """Add file path repair and reporting options."""
         super().add_arguments(parser)
         parser.add_argument(
             "-o",
@@ -53,6 +53,7 @@ class Command(WebsiteFilterCommand):
         )
 
     def handle(self, *args, **options):  # pylint:disable=too-many-locals
+        """Check the replacement paths and optionally save and sync repairs."""
         super().handle(*args, **options)
         commit_changes = options["commit"]
         prefix = options["prefix"]
@@ -72,44 +73,36 @@ class Command(WebsiteFilterCommand):
         s3_bucket = get_boto3_resource("s3").Bucket(
             name=settings.AWS_STORAGE_BUCKET_NAME
         )
-        for content in bad_paths:
-            new_path = re.sub(
-                rf"^(/?{prefix}/)(.*)",
-                rf"{prefix}/{content.website.name}/\2",
-                content.file.name,
-            )
-            file_exists = len(list(s3_bucket.objects.filter(Prefix=new_path))) == 1
-            content_summary = {
-                "website": content.website.name,
-                "content": content.text_id,
-                "original_path": content.file,
-                "new_path": new_path,
-                "exists": file_exists,
-            }
-            if not file_exists:
-                self.stderr.write(f"Content not found at new path: {content_summary}.")
-            modified_content.append(content_summary)
-            if commit_changes and file_exists:
-                content.file = new_path
-                content.save()
-
-        if csv_output and modified_content:
-            self.stdout.write(f"Writing affected content to csv file {csv_output}")
-            self.write_to_csv(csv_output, modified_content)
-
-        if (
-            settings.CONTENT_SYNC_BACKEND
-            and commit_changes
-            and modified_content
-            and not options["skip_sync"]
+        with sync_repaired_content(
+            self.stdout,
+            enabled=commit_changes and not options["skip_sync"],
         ):
-            self.stdout.write("Syncing all unsynced content to the designated backend")
-            start = now_in_utc()
-            task = sync_unsynced_websites.delay(create_backends=True)
-            self.stdout.write(f"Starting task {task}...")
-            task.get()
-            total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
+            for content in bad_paths:
+                new_path = re.sub(
+                    rf"^(/?{prefix}/)(.*)",
+                    rf"{prefix}/{content.website.name}/\2",
+                    content.file.name,
+                )
+                file_exists = len(list(s3_bucket.objects.filter(Prefix=new_path))) == 1
+                content_summary = {
+                    "website": content.website.name,
+                    "content": content.text_id,
+                    "original_path": content.file,
+                    "new_path": new_path,
+                    "exists": file_exists,
+                }
+                if not file_exists:
+                    self.stderr.write(
+                        f"Content not found at new path: {content_summary}."
+                    )
+                modified_content.append(content_summary)
+                if commit_changes and file_exists:
+                    content.file = new_path
+                    content.save()
+
+            if csv_output and modified_content:
+                self.stdout.write(f"Writing affected content to csv file {csv_output}")
+                self.write_to_csv(csv_output, modified_content)
 
         self.stdout.write(f"Finished with commit={commit_changes}")
 

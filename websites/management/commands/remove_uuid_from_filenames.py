@@ -18,7 +18,6 @@ from content_sync.models import ContentSyncState
 from gdrive_sync.models import DriveFile
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_client
-from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.filename_references import (
     build_path_index,
     build_path_lookup,
@@ -37,9 +36,8 @@ from websites.management.commands.markdown_cleaning.rules.gallery_image_rename i
 from websites.models import Website, WebsiteContent
 from websites.utils import (
     UUID_FILENAME_RE,
-    get_dict_field,
-    get_dict_query_field,
     strip_uuid_prefix,
+    videos_referencing_renamed_files,
 )
 
 log = logging.getLogger(__name__)
@@ -615,40 +613,6 @@ def _patch_site_row(website_id, lookup):
     return changed
 
 
-def _linked_videos(renames):
-    """
-    Return the pks of videos whose captions or transcripts are in *renames*.
-
-    A video links these by the resource's text_id, and full_metadata()
-    resolves that to a file path only when the video is written to git.
-    Renaming the file changes the resource's checksum but not the video's,
-    so without a fresh sync the video's git copy keeps the old path, and the
-    next publish removes the file it points at.
-    """
-    text_ids = defaultdict(set)
-    for task in renames:
-        text_ids[task.website_id].add(task.text_id)
-    if not text_ids:
-        return set()
-    resource_type = get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
-    videos = WebsiteContent.objects.filter(
-        website__uuid__in=text_ids.keys(), **{resource_type: RESOURCE_TYPE_VIDEO}
-    ).values_list("pk", "website_id", "metadata")
-    pks = set()
-    for pk, website_id, metadata in videos.iterator(chunk_size=2000):
-        for field in (
-            settings.YT_FIELD_CAPTIONS_RESOURCES,
-            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
-        ):
-            linked = get_dict_field(metadata or {}, f"{field}.content") or []
-            if isinstance(linked, str):
-                linked = [linked]
-            if text_ids[str(website_id)].intersection(map(str, linked)):
-                pks.add(pk)
-                break
-    return pks
-
-
 def _collect_followups(renames):
     """
     Compute every reference patch for *renames* without writing anything.
@@ -666,7 +630,7 @@ def _collect_followups(renames):
         metadata=_collect_content_metadata_patches(lookup, own_files),
         markdown=_collect_markdown_patches(renames, lookup),
         site_metadata=_collect_site_metadata_patches(lookup),
-        videos=_linked_videos(renames),
+        videos=videos_referencing_renamed_files(renames),
     )
 
 
@@ -1072,7 +1036,7 @@ def run_chunk(chunk_id, assignments, content_pks, website_ids):
                 has_unpublished_live=True,
                 has_unpublished_draft=True,
             )
-        videos = _linked_videos(result.committed)
+        videos = videos_referencing_renamed_files(result.committed)
         # A video's own checksum does not change, so clear its synced checksum.
         ContentSyncState.objects.filter(content_id__in=videos).update(
             synced_checksum=None

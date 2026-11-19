@@ -2,21 +2,20 @@
 
 import logging
 from datetime import datetime
+from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from github import GithubException
 from github.GithubObject import NotSet
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from mitol.common.utils import now_in_utc
 from safedelete.models import HARD_DELETE
 
-from content_sync.apis.github import (
-    GIT_DATA_FILEPATH,
-    GithubApiWrapper,
-    decode_file_contents,
-)
+from content_sync.apis.github import GithubApiWrapper, decode_file_contents
 from content_sync.backends.base import BaseSyncBackend
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.decorators import check_sync_state
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
@@ -53,6 +52,19 @@ class GithubBackend(BaseSyncBackend):
     def backend_exists(self):
         """Determine if the website repo exists"""
         return self.api.repo_exists()
+
+    def file_exists(self, path: str) -> bool:
+        """Check one file on the sync branch without creating a repository."""
+        repo = self.api.git.get_repo(
+            f"{settings.GIT_ORGANIZATION}/{self.website.short_id}", lazy=True
+        )
+        try:
+            content = repo.get_contents(path, ref=settings.GIT_BRANCH_MAIN)
+        except GithubException as exc:
+            if exc.status == HTTPStatus.NOT_FOUND:
+                return False
+            raise
+        return not isinstance(content, list) and content.type == "file"
 
     def get_rate_limit_status(self):
         """Return github rate limit state."""

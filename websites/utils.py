@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections import defaultdict
 from typing import Any
 
 from django.apps import apps
@@ -24,7 +25,7 @@ UUID_FILENAME_RE = re.compile(r"^[0-9a-f]{32}_", re.IGNORECASE)
 # Compiled regexes for parse_resource_uuid (moved to module scope for performance)
 _RESOURCE_LINK_AND_EMBED_REGEX = re.compile(
     rf"""
-    \{{\{{%\s+resource_link\s+(?:\\?")?({UUID_REGEX_STR})(?:\\?")?\s+\\?"(.+?)\\?"\s+%\}}\}}
+    \{{\{{%\s+resource_link\s+(?:\\?")?({UUID_REGEX_STR})(?:\\?")?\s+\\?"(.*?)\\?"\s+%\}}\}}
     |
     \{{\{{<\s+resource\s+([^>]*)>\}}\}}
     |
@@ -247,7 +248,7 @@ def parse_resource_uuid(text: str) -> list[str]:
     #
     # Pattern breakdown:
     # - Pattern 1:
-    #   \{\{%\s+resource_link\s+(?:\\?")?([uuid])(?:\\?")?\s+\\?"(.+?)\\?"\s+%\}\}
+    #   \{\{%\s+resource_link\s+(?:\\?")?([uuid])(?:\\?")?\s+\\?"(.*?)\\?"\s+%\}\}
     #   - \{\{%     : Matches literal "{{%"
     #   - \s+       : Matches one or more whitespace characters
     #   - resource_link : Matches literal "resource_link"
@@ -255,7 +256,7 @@ def parse_resource_uuid(text: str) -> list[str]:
     #   - (?:\\?")?([uuid])(?:\\?")? : Captures UUID in group 1 with optional,
     #                    possibly escaped, quotes (full pattern below)
     #   - \s+       : Matches one or more whitespace characters
-    #   - \\?"(.+?)\\?" : Captures title text in group 2
+    #   - \\?"(.*?)\\?" : Captures title text in group 2
     #   - \s+       : Matches one or more whitespace characters
     #   - %\}\}     : Matches literal "%}}"
     #
@@ -374,6 +375,48 @@ def resolve_course_list_referenced_content_ids(content) -> set[int]:
             referenced_content_ids.add(sitemetadata.id)
 
     return referenced_content_ids
+
+
+def videos_referencing_renamed_files(renames, *, using=None):
+    """
+    Return the pks of videos whose captions or transcripts are in *renames*.
+
+    A video links these by the resource's text_id, and full_metadata()
+    resolves that to a file path only when the video is written to git.
+    Renaming the file changes the resource's checksum but not the video's,
+    so without a fresh sync the video's git copy keeps the old path, and the
+    next publish removes the file it points at.
+    """
+    text_ids = defaultdict(set)
+    for resource in renames:
+        text_ids[str(resource.website_id)].add(resource.text_id)
+    if not text_ids:
+        return set()
+    resource_type = get_dict_query_field("metadata", settings.FIELD_RESOURCETYPE)
+    WebsiteContent = apps.get_model("websites", "WebsiteContent")
+    videos = (
+        WebsiteContent.objects.using(using)
+        .filter(
+            website__uuid__in=text_ids.keys(),
+            **{resource_type: constants.RESOURCE_TYPE_VIDEO},
+        )
+        .values_list("pk", "website_id", "metadata")
+    )
+    pks = set()
+    for pk, website_id, metadata in videos.iterator(chunk_size=2000):
+        for field in (
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        ):
+            linked = get_dict_field(metadata or {}, f"{field}.content") or []
+            if isinstance(linked, str):
+                linked = [linked]
+            if isinstance(linked, list) and text_ids[str(website_id)].intersection(
+                map(str, linked)
+            ):
+                pks.add(pk)
+                break
+    return pks
 
 
 def resolve_video_file_referenced_content_ids(content) -> set[int]:

@@ -28,6 +28,7 @@ from github.InputGitAuthor import InputGitAuthor
 from safedelete.models import HARD_DELETE
 from yamale import YamaleError
 
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file
@@ -53,8 +54,6 @@ if TYPE_CHECKING:
     from github.Repository import Repository
 
 log = logging.getLogger(__name__)
-
-GIT_DATA_FILEPATH = "filepath"
 
 
 @dataclass

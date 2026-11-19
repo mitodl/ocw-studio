@@ -4,12 +4,10 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-from django.conf import settings
 from django.core.paginator import Paginator
-from mitol.common.utils import now_in_utc
 from tqdm import tqdm
 
-from content_sync.tasks import sync_unsynced_websites
+from content_sync.management.utils import sync_repaired_content
 from main.management.commands.filter import WebsiteFilterCommand
 from websites.management.commands.markdown_cleaning import (
     MarkdownCleanupRule,
@@ -63,6 +61,7 @@ class Command(WebsiteFilterCommand):
     ]
 
     def add_arguments(self, parser: CommandParser) -> None:
+        """Add cleanup rule, filtering, and output options."""
         super().add_arguments(parser)
         aliases = [R.alias for R in self.Rules]
         parser.add_argument(
@@ -148,6 +147,7 @@ class Command(WebsiteFilterCommand):
             raise ValueError(msg) from not_found
 
     def handle(self, *args, **options):
+        """Run the selected rule and sync its committed changes when requested."""
         super().handle(*args, **options)
         self.validate_options(options)
         website_contents = (
@@ -164,28 +164,20 @@ class Command(WebsiteFilterCommand):
         website_contents = self.filter_website_contents(
             website_contents=website_contents
         )
-        self.do_handle(
-            commit=options["commit"],
-            alias=options["alias"],
-            out=options["out"],
-            csv_only_changes=options["csv_only_changes"],
-            limit=options["limit"],
-            has_external_license_warning=options["external_license_warning"],
-            website_contents=website_contents,
-        )
-
-        if (
-            settings.CONTENT_SYNC_BACKEND
-            and options["commit"]
-            and not options["skip_sync"]
-        ):
-            self.stdout.write("Syncing all unsynced websites to the designated backend")
-            start = now_in_utc()
-            task = sync_unsynced_websites.delay(create_backends=True)
-            self.stdout.write(f"Starting task {task}...")
-            task.get()
-            total_seconds = (now_in_utc() - start).total_seconds()
-            self.stdout.write(f"Backend sync finished, took {total_seconds} seconds")
+        with sync_repaired_content(
+            self.stdout,
+            enabled=options["commit"] and not options["skip_sync"],
+        ) as repair:
+            self.do_handle(
+                commit=options["commit"],
+                alias=options["alias"],
+                out=options["out"],
+                csv_only_changes=options["csv_only_changes"],
+                limit=options["limit"],
+                has_external_license_warning=options["external_license_warning"],
+                website_contents=website_contents,
+                repair=repair,
+            )
 
     @classmethod
     def do_handle(  # noqa: PLR0913, PLR0917
@@ -197,6 +189,7 @@ class Command(WebsiteFilterCommand):
         limit,
         has_external_license_warning,
         website_contents,
+        repair=None,
     ):
         """Replace baseurl with resource_link"""
 
@@ -223,7 +216,7 @@ class Command(WebsiteFilterCommand):
         with tqdm(total=pages.count) as progress:
             for page in pages:
                 for wc in page:
-                    updated = cleaner.update_website_content(wc)
+                    updated = cleaner.update_website_content(wc, repair=repair)
                     if updated:
                         num_updated += 1
                     if updated and commit:

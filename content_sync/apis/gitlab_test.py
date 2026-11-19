@@ -9,8 +9,8 @@ from gitlab.exceptions import (
     GitlabMRClosedError,
 )
 
-from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, update_all_repos_visibility
+from content_sync.constants import GIT_DATA_FILEPATH
 from main import features
 from users.factories import UserFactory
 from websites.factories import WebsiteContentFactory, WebsiteFactory

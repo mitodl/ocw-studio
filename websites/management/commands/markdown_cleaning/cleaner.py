@@ -9,7 +9,7 @@ from websites.management.commands.markdown_cleaning.utils import (
     get_rootrelative_url_from_content,
     remove_prefix,
 )
-from websites.utils import get_dict_field, set_dict_field
+from websites.utils import get_dict_field, parse_resource_uuid, set_dict_field
 
 if TYPE_CHECKING:
     from websites.management.commands.markdown_cleaning.cleanup_rule import (
@@ -58,6 +58,7 @@ class WebsiteContentMarkdownCleaner:
         content: WebsiteContent
         notes: Any  # should be a dataclass
         field: str
+        url_targets: tuple[int, ...]
 
     csv_metadata_fieldnames = [
         "original_text",
@@ -95,8 +96,10 @@ class WebsiteContentMarkdownCleaner:
                 content=website_content,
                 notes=notes,
                 field=field,
+                url_targets=tuple(self.rule.url_targets),
             )
         )
+        self.rule.url_targets.clear()
         return replacement
 
     @staticmethod
@@ -125,7 +128,7 @@ class WebsiteContentMarkdownCleaner:
         msg = f"Unexpected field value: {field}"
         raise ValueError(msg)
 
-    def update_website_content(self, wc: WebsiteContent):
+    def update_website_content(self, wc: WebsiteContent, *, repair=None):
         """
         Updates website_content's markdown and checksums in-place. Does not commit to
         database.
@@ -136,12 +139,40 @@ class WebsiteContentMarkdownCleaner:
             if old_text is None:
                 continue
             store_match_data = partial(self.store_match_data, field=field)
+            first_match = len(self.replacement_matches)
+            self.rule.url_targets.clear()
             new_text = self.rule.transform_text(wc, old_text, store_match_data)
             if old_text != new_text:
                 self.make_field_change(wc, field, new_text)
+                if repair is not None:
+                    self.collect_references(repair, first_match, old_text, new_text)
                 changed = True
 
         return changed
+
+    def collect_references(self, repair, first_match, old_text, new_text):
+        """Collect dependencies of replacements that made it into the saved field."""
+        for match in self.replacement_matches[first_match:]:
+            if match.original_text == match.replacement:
+                continue
+            # Nav items and quoted shortcode links cannot be parsed for a target.
+            if target := getattr(match.notes, "external_resource", None):
+                targets = {target}
+            elif isinstance(match.replacement, str):
+                targets = set(parse_resource_uuid(match.replacement)).difference(
+                    parse_resource_uuid(match.original_text)
+                )
+            else:
+                targets = set()
+            # Matches inside a link label are reported even when the label is kept.
+            if not targets and not match.url_targets:
+                continue
+            if new_text.count(match.replacement) <= old_text.count(match.replacement):
+                continue
+            source = match.content
+            repair.url_references.update((source.pk, pk) for pk in match.url_targets)
+            for text_id in targets:
+                repair.references.add((source.pk, source.website_id, text_id))
 
     def write_matches_to_csv(self, path: str, only_changes):
         """Write matches and replacements to csv."""

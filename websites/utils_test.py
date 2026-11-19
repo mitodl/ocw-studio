@@ -294,6 +294,10 @@ def test_set_dict_field():
             '{{% resource_link "123e4567-e89b-12d3-a456-426614174000" %}}',
             [],
         ),
+        (
+            '{{% resource_link "123e4567-e89b-12d3-a456-426614174000" "" %}}',
+            ["123e4567-e89b-12d3-a456-426614174000"],
+        ),
         # Wrong UUID format
         (
             '{{% resource_link "123e4567-e89b-12d3-a456-42661417400" "title" %}}',
