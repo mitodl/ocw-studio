@@ -610,6 +610,62 @@ def test_markdown_cleanup_syncs_source_and_required_resources(  # noqa: PLR0913,
     sync_task.assert_called_once_with(create_backends=True, content_ids=[])
 
 
+def test_markdown_cleanup_syncs_resource_reused_by_a_nested_nav_item(
+    settings, mocker, sync_task
+):
+    """Rewriting the child's parent must not hide the resource the child reuses."""
+    mocker.patch("external_resources.signals.submit_url_to_wayback_task.delay")
+    folder = "content/external-resources"
+    starter = WebsiteStarterFactory.create(
+        config={
+            "collections": [{"name": CONTENT_TYPE_EXTERNAL_RESOURCE, "folder": folder}]
+        }
+    )
+    settings.OCW_COURSE_STARTER_SLUG = starter.slug
+    website = WebsiteFactory.create(starter=starter)
+    source = WebsiteContentFactory.create(
+        website=website,
+        metadata={
+            "leftnav": [
+                {"identifier": "external-parent", "url": "https://example.org/parent"},
+                {
+                    "identifier": "external-child",
+                    "url": "https://example.org/child",
+                    "parent": "external-parent",
+                },
+            ]
+        },
+    )
+    reused = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+        dirpath=folder,
+        metadata={
+            "external_url": "https://example.org/child",
+            "has_external_license_warning": False,
+        },
+    )
+
+    _run_repair(
+        "markdown_cleanup",
+        "nav_item_to_external_resource",
+        filter=website.name,
+        commit=True,
+    )
+
+    parent = WebsiteContent.objects.get(
+        website=website, metadata__external_url="https://example.org/parent"
+    )
+    source.refresh_from_db()
+    assert source.metadata["leftnav"][1] == {
+        "identifier": str(reused.text_id),
+        "parent": str(parent.text_id),
+    }
+    sync_task.assert_called_once_with(
+        create_backends=True, content_ids=[source.pk, reused.pk, parent.pk]
+    )
+
+
 def test_markdown_cleanup_uses_the_site_of_a_repaired_plain_url(sync_task):
     """A cross-site URL identifies its own target even when the source has the same UUID."""
     source_site = WebsiteFactory.create()
