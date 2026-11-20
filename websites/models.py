@@ -5,7 +5,7 @@ import logging
 import re
 from copy import deepcopy
 from hashlib import sha256
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
@@ -508,6 +508,24 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
         if content_config:
             return site_config.find_file_field(content_config)
         return None
+
+    @override
+    def _save_table(
+        self,
+        raw=False,
+        cls=None,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
+    ):
+        # Wraps only the row write, so the repair's lock is gone before post_save.
+        from content_sync.repair import track_repair_write  # noqa: PLC0415
+
+        with track_repair_write(self, using):
+            return super()._save_table(
+                raw, cls, force_insert, force_update, using, update_fields
+            )
 
     def save(self, **kwargs):  # pylint: disable=arguments-differ
         """Update dirty flags on save"""

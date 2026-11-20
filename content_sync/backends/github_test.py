@@ -1,13 +1,15 @@
 """github backend tests"""
 
 from base64 import b64encode
+from http import HTTPStatus
 from types import SimpleNamespace
 
 import pytest
+from github import GithubException
 from github.GithubObject import NotSet
 
-from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.github import GithubBackend
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.models import ContentSyncState
 from content_sync.utils import get_destination_filepath
 from users.factories import UserFactory
@@ -54,6 +56,29 @@ def test_backend_exists(github, exists):
     """backend_exists should return the expected boolean value"""
     github.api.repo_exists.return_value = exists
     assert github.backend.backend_exists() is exists
+
+
+@pytest.mark.parametrize(
+    "lookup", ["file", "directory", HTTPStatus.NOT_FOUND, HTTPStatus.FORBIDDEN]
+)
+def test_file_exists(github, settings, mocker, lookup):
+    """Only a file at the exact path counts as a present repair destination."""
+    get_contents = github.api.git.get_repo.return_value.get_contents
+    if isinstance(lookup, HTTPStatus):
+        get_contents.side_effect = GithubException(status=lookup, data={}, headers={})
+    else:
+        entry = mocker.Mock(type="file")
+        get_contents.return_value = entry if lookup == "file" else [entry]
+    path = "content/resource/handout.md"
+    if lookup == HTTPStatus.FORBIDDEN:
+        with pytest.raises(GithubException):
+            github.backend.file_exists(path)
+    else:
+        assert github.backend.file_exists(path) is (lookup == "file")
+    github.api.git.get_repo.assert_called_once_with(
+        f"{settings.GIT_ORGANIZATION}/{github.backend.website.short_id}", lazy=True
+    )
+    get_contents.assert_called_once_with(path, ref=settings.GIT_BRANCH_MAIN)
 
 
 def test_create_website_in_backend(github):

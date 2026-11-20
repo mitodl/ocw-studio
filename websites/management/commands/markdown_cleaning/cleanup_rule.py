@@ -3,6 +3,10 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Union
 
+from websites.management.commands.markdown_cleaning.utils import (
+    get_rootrelative_url_from_content,
+)
+
 if TYPE_CHECKING:
     from pyparsing import ParseResults
 
@@ -20,6 +24,17 @@ class MarkdownCleanupRule(abc.ABC):
     Rules should be used with WebsiteContentMarkdownCleaner. For regex-based
     rules, inherit from RegexpCleanupRule.
     """
+
+    def __init__(self):
+        """Collect targets of plain URLs while transforming a field."""
+        self.url_targets = set()
+
+    def replacement_url(self, target: WebsiteContent, original_path: str) -> str:
+        """Build a plain site URL and remember its target when the path changes."""
+        path = get_rootrelative_url_from_content(target)
+        if path != original_path:
+            self.url_targets.add(target.pk)
+        return path
 
     def set_options(self, options: dict | None = None):
         """Arbitrary options for any particular rule instance."""
@@ -78,6 +93,7 @@ class RegexpCleanupRule(MarkdownCleanupRule):
         """
 
     def __init__(self) -> None:
+        super().__init__()
         self.compiled = re.compile(self.regex)
 
     @abc.abstractmethod

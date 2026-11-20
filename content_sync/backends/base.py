@@ -32,6 +32,10 @@ class BaseSyncBackend(abc.ABC):
         """  # noqa: D401
         ...
 
+    def file_exists(self, path: str) -> bool:
+        """Return whether the sync destination already contains this file."""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def create_website_in_backend(self):  # pragma: no cover
         """

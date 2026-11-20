@@ -278,7 +278,7 @@ class BrokenMetadataLinkFixRule(BrokenLinkFixRuleMixin, PyparsingRule):
         Returns:
             tuple(str, str): The shortcode text and note/comment.
         """
-        content_url = get_rootrelative_url_from_content(wc)
+        content_url = self.replacement_url(wc, url.path)
 
         fragment = f"#{url.fragment}" if url.fragment else ""
         new_link = dataclasses.replace(

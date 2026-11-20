@@ -1,13 +1,14 @@
 """GitLab backend tests"""
 
 from base64 import b64encode
+from http import HTTPStatus
 from types import SimpleNamespace
 
 import pytest
-from gitlab.exceptions import GitlabGetError
+from gitlab.exceptions import GitlabGetError, GitlabHeadError
 
-from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.backends.gitlab import GitlabBackend
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.models import ContentSyncState
 from content_sync.utils import get_destination_filepath
 from users.factories import UserFactory
@@ -63,6 +64,23 @@ def test_backend_exists(gitlab, exists):
     """backend_exists should return the expected boolean value."""
     gitlab.api.repo_exists.return_value = exists
     assert gitlab.backend.backend_exists() is exists
+
+
+@pytest.mark.parametrize(
+    "status", [HTTPStatus.OK, HTTPStatus.NOT_FOUND, HTTPStatus.FORBIDDEN]
+)
+def test_file_exists(gitlab, settings, status):
+    """Only a missing file counts as an absent repair destination."""
+    head = gitlab.api.gl.projects.get.return_value.files.head
+    if status != HTTPStatus.OK:
+        head.side_effect = GitlabHeadError(response_code=status)
+    path = "content/resource/handout.md"
+    if status == HTTPStatus.FORBIDDEN:
+        with pytest.raises(GitlabHeadError):
+            gitlab.backend.file_exists(path)
+    else:
+        assert gitlab.backend.file_exists(path) is (status == HTTPStatus.OK)
+    head.assert_called_once_with(file_path=path, ref=settings.GIT_BRANCH_MAIN)
 
 
 def test_create_website_in_backend(gitlab):
@@ -296,7 +314,9 @@ def test_sync_all_content_to_db_with_a_directory_path_falls_back_to_the_tree(
 ):
     """A --path naming a directory is not fetchable as a file, so list it."""
     repo_sync.repo.files.get.side_effect = [
-        GitlabGetError("404 path not treeish Not Found", response_code=404),
+        GitlabGetError(
+            "404 path not treeish Not Found", response_code=HTTPStatus.NOT_FOUND
+        ),
         *[
             SimpleNamespace(file_path=path, content=b64encode(b"body"))
             for path in repo_sync.by_path
