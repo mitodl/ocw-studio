@@ -79,6 +79,11 @@ COPY --chown=mitodl:mitodl . /src
 COPY --from=node_builder --chown=mitodl:mitodl /src/static /src/static
 COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webpack-stats.json
 
+# As in production. Without it, the app's version check gets a 404 from
+# /static/hash.txt on every page change.
+ARG GIT_REF
+RUN echo "$GIT_REF" >> /src/static/hash.txt
+
 # Reload is switched on here rather than in the k8s manifest because the
 # prebuilt production image has no watchfiles, and granian exits if asked to
 # reload without it. A short kill timeout stops a worker that won't exit from
