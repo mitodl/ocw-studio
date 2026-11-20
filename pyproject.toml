@@ -246,6 +246,10 @@ filterwarnings = [
     # deprecated defusedxml.cElementTree shim; upstream fix needed in
     # python3-openid
     "ignore:defusedxml.cElementTree is deprecated:DeprecationWarning",
+    # celery 5.7 deprecates the priority task option, removed in 6.0. As an
+    # error it aborts Task.bind before request_stack is set. Move the
+    # external_resources task priorities to task_routes before celery 6.
+    "ignore:\\s*The 'priority' task attribute is deprecated:celery.exceptions.CDeprecationWarning",
 ]
 env = [
     "CELERY_TASK_ALWAYS_EAGER=True",

@@ -131,7 +131,8 @@ def test_rate_limit_wait_has_a_floor(settings, mocker):
 def eager_retries(monkeypatch):
     """Let eager tasks retry. With propagation on, Celery raises Retry instead."""
     # The namespaced name, since it takes precedence over task_eager_propagates.
-    monkeypatch.setattr(tasks.app.conf, "CELERY_TASK_EAGER_PROPAGATES", False)
+    # setitem, since pytest 9.2's setattr only restores instance __dict__ entries.
+    monkeypatch.setitem(tasks.app.conf, "CELERY_TASK_EAGER_PROPAGATES", value=False)
 
 
 @pytest.mark.usefixtures("eager_retries")
