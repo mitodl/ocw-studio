@@ -1,3 +1,4 @@
+---
 # Reference workflow asserting that `uv.lock` stays on the format revision the repository expects.
 #
 # Copy to .github/workflows/uv-lock-revision.yml and change only the lines marked ADAPT.
@@ -24,6 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: mitodl/ol-github-workflows/actions/uv-lock-revision@0419e18f327d39c86b7a2147093fcb6a0b75da0c # v1.0.0
-        with:
-          expected-revision: "5" # ADAPT: the `revision` every uv.lock in this repository is on
+    - uses: mitodl/ol-github-workflows/actions/uv-lock-revision@0419e18f327d39c86b7a2147093fcb6a0b75da0c   # v1.0.0
+      with:
+        expected-revision: "5"   # ADAPT: the `revision` every uv.lock in this repository is on
