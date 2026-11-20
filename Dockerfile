@@ -36,10 +36,14 @@ RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
 
 # ─── Node / frontend asset build ─────────────────────────────────────────────
 FROM node:24-slim AS node_builder
-COPY . /src
 WORKDIR /src
 ENV NODE_ENV=production
-RUN yarn install --immutable && yarn build
+# The packages, installed before any source so a source edit reuses them.
+COPY package.json yarn.lock .yarnrc.yml /src/
+COPY .yarn/releases /src/.yarn/releases
+RUN yarn install --immutable
+COPY . /src
+RUN yarn build
 
 # ─── Code stage ───────────────────────────────────────────────────────────────
 FROM deps AS code
