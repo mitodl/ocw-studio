@@ -102,7 +102,7 @@ services:
     - django_media:/var/media
 
   watch:
-    image: node:24.14.1
+    image: node:24.22.3@sha256:9d266751ca3d7fdbe651c878ffd5ad0a42fed49a18c283509267c97f025b7496
     working_dir: /src
     command: >
       /bin/bash -c './webpack_dev_server.sh --install'
