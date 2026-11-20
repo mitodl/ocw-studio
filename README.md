@@ -232,7 +232,7 @@ Other tags, such as the old `v1.x` tags and `abandoned/...`, never match. The po
 
 #### Rolling back
 
-Setting `OCW_HUGO_TAG_RELEASES` back to `False` and re-upserting returns the pipelines to the `release-candidate` and `release` branches. Those branches no longer advance once the repos are released as tags, so they hold the last release made before the switch, and rolling back means running that older code. Fix forward with a new tag where you can.
+There is no branch to roll back to. The `release-candidate` and `release` branches of `ocw-hugo-themes` and `ocw-hugo-projects` have been deleted, so setting `OCW_HUGO_TAG_RELEASES` back to `False` and re-upserting would leave the pipelines with nothing to clone. Fix forward with a new release instead.
 
 # Enabling GitHub integration
 
