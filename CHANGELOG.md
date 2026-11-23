@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2026.11.18.1] - 2026-11-18
+
+### Changes
+
+- **Fix GitHub directory restores in sync_backend_to_db** (#3341) by 1553279+pt2302@users.noreply.github.com
+- **Add user attribution to repo sync management commands** (#3337) by 1553279+pt2302@users.noreply.github.com
+- **chore(deps): update zizmorcore/zizmor-action action to v0.8.1** (#3335) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency posthog-js to v1.448.0** (#3333) by 29139614+renovate[bot]@users.noreply.github.com
+- **fix(deps): update dependency django-robots to v7.0** (#3332) by 29139614+renovate[bot]@users.noreply.github.com
+- **fix(deps): update dependency django-guardian to v3.5.2** (#3331) by 29139614+renovate[bot]@users.noreply.github.com
+- **fix(deps): update dependency django to v5.2.19** (#3330) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency pytest-env to v1.8.5** (#3328) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency ruff to >=0.17,<0.18** (#3334) by 29139614+renovate[bot]@users.noreply.github.com
+- **fix(deps): update dependency boto3 to v1.43.126** (#3329) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency prek to v0.5.10** (#3327) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency astral-sh/uv to v0.13.7** (#3326) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update astral-sh/setup-uv action to v10.3.3** (#3325) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency pypdf to v6.21.4 [security]** (#3294) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency opentelemetry-api to v1.45.2 [security]** (#3324) by 29139614+renovate[bot]@users.noreply.github.com
+- **chore(deps): update dependency dnspython to v2.9.2 [security]** (#3323) by 29139614+renovate[bot]@users.noreply.github.com
+
 ## [2026.11.16.1] - 2026-11-16
 
 ### Changes
