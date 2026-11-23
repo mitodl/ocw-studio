@@ -233,19 +233,41 @@ def test_import_website_files_processing_error(mocker, mock_gdrive_files):  # py
     assert sorted(website.sync_errors) == sorted(sync_errors)
 
 
-def test_import_website_files_delete_missing(mocker, mocked_celery):
-    """Missing files should be deleted on sync"""
+def test_import_website_files_delete_missing(mocker, mocked_celery, mock_gdrive_files):
+    """Files that are no longer in Google Drive should be deleted on sync"""
     mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
+    mocker.patch("gdrive_sync.tasks.api.process_file_result", return_value=None)
     website = WebsiteFactory.create()
-    drive_files = DriveFileFactory.create_batch(2, website=website)
+    DriveFileFactory.create(
+        website=website, file_id=LIST_FILE_RESPONSES[0]["files"][0]["id"]
+    )
+    missing_files = DriveFileFactory.create_batch(2, website=website)
     mock_delete_drive_file = mocker.patch("gdrive_sync.tasks.delete_drive_file.si")
     with pytest.raises(mocked_celery.replace_exception_class):
         import_website_files.delay(website.name)
     assert mock_delete_drive_file.call_count == 2
-    for drive_file in drive_files:
+    for drive_file in missing_files:
         mock_delete_drive_file.assert_any_call(
             drive_file.file_id, mocker.ANY, user_pk=None
         )
+
+
+@pytest.mark.parametrize("query_error", [True, False])
+def test_import_website_files_no_delete_on_listing_error(mocker, query_error):
+    """No files should be deleted when Google Drive could not be listed"""
+    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
+    mocker.patch(
+        "gdrive_sync.tasks.api.query_files",
+        side_effect=Exception("Error querying google drive") if query_error else None,
+        return_value=[],
+    )
+    website = WebsiteFactory.create()
+    DriveFileFactory.create_batch(2, website=website)
+    mock_delete_drive_file = mocker.patch("gdrive_sync.tasks.delete_drive_file.si")
+    import_website_files.delay(website.name)
+    mock_delete_drive_file.assert_not_called()
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.FAILED
 
 
 def test_update_website_status(mocker):
