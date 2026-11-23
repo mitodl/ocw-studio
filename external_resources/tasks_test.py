@@ -79,6 +79,7 @@ def test_check_external_resources_for_breakages_zero_websites(
 
     mock_batch = mocker.patch("external_resources.tasks.check_external_resources.s")
 
+    check_external_resources_for_breakages.delay()
     assert mock_batch.call_count == 0
     assert mocked_celery.group.call_count == 0
     assert mocked_celery.replace.call_count == 0

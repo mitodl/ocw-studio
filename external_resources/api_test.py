@@ -1,6 +1,15 @@
 """Tests for External Resources API"""
 
 import pytest
+from requests.exceptions import (
+    ConnectionError as RequestsConnectionError,
+)
+from requests.exceptions import (
+    InvalidURL,
+    SSLError,
+    Timeout,
+    TooManyRedirects,
+)
 from rest_framework.status import HTTP_200_OK
 
 from external_resources.api import is_url_broken
@@ -36,12 +45,16 @@ def test_is_url_broken_empty():
     assert status_code is None
 
 
-def test_is_url_broken_exception(mocker):
-    """Test for connection error"""
+@pytest.mark.parametrize(
+    "error", [RequestsConnectionError, Timeout, SSLError, TooManyRedirects, InvalidURL]
+)
+def test_is_url_broken_exception(mocker, error):
+    """Request errors should be raised as CheckFailedError"""
     mocker.patch(
         "external_resources.api.requests.head",
-        side_effect=CheckFailedError,
+        side_effect=error,
     )
 
-    with pytest.raises(CheckFailedError):
+    with pytest.raises(CheckFailedError) as exc_info:
         is_url_broken("http://google.com")
+    assert isinstance(exc_info.value.__cause__, error)
