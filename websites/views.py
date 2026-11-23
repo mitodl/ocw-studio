@@ -25,9 +25,14 @@ from content_sync.api import (
     trigger_unpublished_removal,
     update_website_backend,
 )
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    UNPUBLISHED_REMOVAL_RERUN_DELAY,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.tasks import (
     remove_website_in_root_website,
+    rerun_unpublished_removal,
     update_mass_build_pipelines_on_publish,
 )
 from gdrive_sync.constants import WebsiteSyncStatus
@@ -51,6 +56,7 @@ from websites.constants import (
     CONTENT_TYPE_RESOURCE_COLLECTION,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
+    PUBLISH_STATUSES_FINAL,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -351,6 +357,17 @@ class WebsiteViewSet(
                 unpublished=unpublished,
                 build_id=build_id,
                 is_cdn_cache_step=is_cdn_cache_step,
+            )
+        if (
+            version == VERSION_LIVE
+            and not unpublished
+            and publish_status in PUBLISH_STATUSES_FINAL
+            and website.unpublish_status is not None
+        ):
+            # A live build that was already running when the site was unpublished
+            # may have uploaded it again after the removal
+            rerun_unpublished_removal.apply_async(
+                args=[website.name], countdown=UNPUBLISHED_REMOVAL_RERUN_DELAY
             )
 
         return Response(status=200)

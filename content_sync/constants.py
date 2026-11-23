@@ -20,6 +20,9 @@ WEBSITE_LISTING_DIRPATH = "content/websites"
 DEV_DRAFT_URL = "http://10.1.0.102:8044"
 DEV_LIVE_URL = "http://10.1.0.102:8045"
 DEV_TEST_URL = "http://10.1.0.102:8046"
+# Seconds to wait before removing an unpublished site again after a live build of it
+# ends, so builds of its extra themes, which send no webhooks, can finish first
+UNPUBLISHED_REMOVAL_RERUN_DELAY = 300
 
 
 # Publish Date Constants

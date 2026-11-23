@@ -15,7 +15,11 @@ from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
 from rest_framework import status
 
-from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
+from content_sync.constants import (
+    UNPUBLISHED_REMOVAL_RERUN_DELAY,
+    VERSION_DRAFT,
+    VERSION_LIVE,
+)
 from content_sync.models import ContentSyncState
 from main import features
 from main.constants import ISO_8601_FORMAT
@@ -1842,6 +1846,55 @@ def test_pipeline_status_build_type(  # noqa: PLR0913, PLR0917
         mock_update_website_status.assert_called_once()
     else:
         mock_update_website_status.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("unpublish_status", "data", "should_rerun"),
+    [
+        (constants.PUBLISH_STATUS_SUCCEEDED, {}, True),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"build_type": "offline"}, True),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"theme_slug": "ocw-course-v3"}, True),
+        (constants.PUBLISH_STATUS_NOT_STARTED, {}, True),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_ERRORED},
+            True,
+        ),
+        (None, {}, False),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"version": VERSION_DRAFT}, False),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_STARTED},
+            False,
+        ),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"unpublished": True}, False),
+    ],
+)
+def test_pipeline_status_reruns_removal_after_build_of_unpublished_site(  # noqa: PLR0913, PLR0917
+    mocker, drf_client, settings, unpublish_status, data, should_rerun
+):
+    """A live build that ends after its site was unpublished should queue the removal again"""
+    mocker.patch("websites.views.update_website_status")
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    website = WebsiteFactory.create(unpublish_status=unpublish_status)
+    settings.API_BEARER_TOKEN = "test_token"  # noqa: S105
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data={
+            "version": VERSION_LIVE,
+            "status": constants.PUBLISH_STATUS_SUCCEEDED,
+            **data,
+        },
+    )
+    assert resp.status_code == 200
+    if should_rerun:
+        mock_rerun.apply_async.assert_called_once_with(
+            args=[website.name], countdown=UNPUBLISHED_REMOVAL_RERUN_DELAY
+        )
+    else:
+        mock_rerun.apply_async.assert_not_called()
 
 
 def test_referencing_content_clears_when_references_removed(

@@ -872,6 +872,35 @@ def test_unpublished_site_removal_pipeline(  # noqa: PLR0913, PLR0917
 
 
 @pytest.mark.parametrize(
+    ("next_build", "expected"),
+    [
+        (None, False),
+        ({"id": 9, "status": "pending"}, True),
+        ({"id": 9, "status": "started"}, True),
+    ],
+)
+def test_unpublished_site_removal_pipeline_has_unfinished_build(  # noqa: PLR0913, PLR0917
+    settings, pipeline_settings, mocker, mock_auth, next_build, expected
+):
+    """has_unfinished_build should report whether the removal job has a pending or running build"""
+    job_name = "remove-unpublished-sites-job"
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get",
+        side_effect=[
+            {"config": {"jobs": [{"name": job_name}]}},
+            {"name": job_name, "next_build": next_build},
+        ],
+    )
+    pipeline = UnpublishedSiteRemovalPipeline()
+    assert pipeline.has_unfinished_build() is expected
+    pipeline_url = f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{BaseUnpublishedSiteRemovalPipeline.PIPELINE_NAME}"
+    assert mock_get.call_args_list == [
+        mocker.call(f"{pipeline_url}/config"),
+        mocker.call(f"{pipeline_url}/jobs/{job_name}"),
+    ]
+
+
+@pytest.mark.parametrize(
     ("get_urls", "post_url"),
     [
         [[AUTH_URLS[0], AUTH_URLS[0]], AUTH_URLS[0]],  # noqa: PT007
