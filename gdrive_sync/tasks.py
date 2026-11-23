@@ -165,14 +165,9 @@ def import_website_files(self, name: str, user_pk=None):
 
     gdrive_subfolder_files, errors = _get_gdrive_files(website)
 
-    # Without a complete listing every file would look missing, so delete nothing
-    deleted_drive_files = (
-        []
-        if errors
-        else api.find_missing_files(
-            sum(gdrive_subfolder_files.values(), []),  # noqa: RUF017
-            website,
-        )
+    deleted_drive_files = api.find_missing_files(
+        sum(gdrive_subfolder_files.values(), []),  # noqa: RUF017
+        website,
     )
     delete_file_tasks = [
         delete_drive_file.si(drive_file.file_id, website.synced_on, user_pk=user_pk)

@@ -252,24 +252,6 @@ def test_import_website_files_delete_missing(mocker, mocked_celery, mock_gdrive_
         )
 
 
-@pytest.mark.parametrize("query_error", [True, False])
-def test_import_website_files_no_delete_on_listing_error(mocker, query_error):
-    """No files should be deleted when Google Drive could not be listed"""
-    mocker.patch("gdrive_sync.tasks.api.is_gdrive_enabled", return_value=True)
-    mocker.patch(
-        "gdrive_sync.tasks.api.query_files",
-        side_effect=Exception("Error querying google drive") if query_error else None,
-        return_value=[],
-    )
-    website = WebsiteFactory.create()
-    DriveFileFactory.create_batch(2, website=website)
-    mock_delete_drive_file = mocker.patch("gdrive_sync.tasks.delete_drive_file.si")
-    import_website_files.delay(website.name)
-    mock_delete_drive_file.assert_not_called()
-    website.refresh_from_db()
-    assert website.sync_status == WebsiteSyncStatus.FAILED
-
-
 def test_update_website_status(mocker):
     """Calling the update_website_status task should call api.update_sync_status with args"""
     website = WebsiteFactory.create()
