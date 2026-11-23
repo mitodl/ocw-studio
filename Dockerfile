@@ -28,12 +28,22 @@ WORKDIR /src
 RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
     uv sync --frozen --no-install-project --no-dev
 
+# The dev dependencies, installed before any source so a source edit reuses them.
+FROM deps AS deps-dev
+
+RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
+    uv sync --frozen --no-install-project
+
 # ─── Node / frontend asset build ─────────────────────────────────────────────
 FROM node:24-slim AS node_builder
-COPY . /src
 WORKDIR /src
 ENV NODE_ENV=production
-RUN yarn install --immutable && yarn build
+# The packages, installed before any source so a source edit reuses them.
+COPY package.json yarn.lock .yarnrc.yml /src/
+COPY .yarn/releases /src/.yarn/releases
+RUN yarn install --immutable
+COPY . /src
+RUN yarn build
 
 # ─── Code stage ───────────────────────────────────────────────────────────────
 FROM deps AS code
@@ -58,16 +68,26 @@ ARG GIT_REF
 RUN echo "$GIT_REF" >> /src/static/hash.txt
 
 # ─── Local-dev target (ol-infrastructure local-dev k8s/Tilt stack) ────────────
-# production (for the bundles node_builder bakes in) plus dev deps, which
-# include granian[reload]. Reload is switched on here rather than in the k8s
-# manifest because the prebuilt production image has no watchfiles, and
-# granian exits if asked to reload without it.
-FROM production AS local-dev
+# FROM deps-dev, not production: production copies the source before the dev
+# deps go in, so every source edit would reinstall them. The dev deps include
+# granian[reload]. The command and PORT come from the k8s manifest.
+FROM deps-dev AS local-dev
 
-RUN --mount=type=cache,target=/opt/uv-cache,uid=1000,gid=1000 \
-    uv sync --frozen --no-install-project
+COPY --chown=mitodl:mitodl . /src
+# The bundles node_builder bakes in. Without them Studio renders an unstyled
+# page with no JS.
+COPY --from=node_builder --chown=mitodl:mitodl /src/static /src/static
+COPY --from=node_builder --chown=mitodl:mitodl /src/webpack-stats.json /src/webpack-stats.json
 
-# A short kill timeout stops a worker that won't exit from stalling a reload.
+# As in production. Without it, the app's version check gets a 404 from
+# /static/hash.txt on every page change.
+ARG GIT_REF
+RUN echo "$GIT_REF" >> /src/static/hash.txt
+
+# Reload is switched on here rather than in the k8s manifest because the
+# prebuilt production image has no watchfiles, and granian exits if asked to
+# reload without it. A short kill timeout stops a worker that won't exit from
+# stalling a reload.
 ENV GRANIAN_RELOAD=true \
     GRANIAN_WORKERS_KILL_TIMEOUT=1
 
