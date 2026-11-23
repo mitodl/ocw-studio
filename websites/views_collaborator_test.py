@@ -98,7 +98,7 @@ def test_websites_collaborators_endpoint_list_create(drf_client, permission_grou
         "email": collaborator.email,
         "role": constants.ROLE_EDITOR,
     }
-    assert website.editor_group.user_set.filter(id=collaborator.id) is not None
+    assert website.editor_group.user_set.filter(id=collaborator.id).exists()
 
 
 def test_websites_collaborators_endpoint_list_create_only_once(
@@ -269,10 +269,10 @@ def test_websites_collaborators_endpoint_detail_modify(drf_client, permission_gr
     )
     assert resp.status_code == 200
     assert website.admin_group.user_set.filter(
-        id=permission_groups.site_admin.id
+        id=permission_groups.site_editor.id
     ).exists()
     assert not website.editor_group.user_set.filter(
-        id=permission_groups.site_admin.id
+        id=permission_groups.site_editor.id
     ).exists()
 
 
