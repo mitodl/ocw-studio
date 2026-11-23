@@ -524,15 +524,20 @@ def test_publish_website_no_extra_themes_for_non_ocw_site(settings, mocker):
     assert mock_get_pipeline.call_count == 1
 
 
-@pytest.mark.parametrize(
-    "rate_limit_status", [None, (5, 1000, now_in_utc() + timedelta(seconds=120))]
-)
-def test_throttle_git_backend_calls_gitlab(settings, mocker, rate_limit_status):
+@pytest.mark.parametrize("seconds_to_reset", [None, 120])
+def test_throttle_git_backend_calls_gitlab(settings, mocker, seconds_to_reset):
     """throttle_git_backend_calls should apply GitLab throttling when configured."""
     settings.GITLAB_RATE_LIMIT_CHECK = True
     settings.GITLAB_RATE_LIMIT_CUTOFF = 100
     settings.GITLAB_RATE_LIMIT_MIN_SLEEP = 7
     sleep_mock = mocker.patch("content_sync.api.sleep")
+    now = now_in_utc()
+    mocker.patch("content_sync.api.now_in_utc", return_value=now)
+    rate_limit_status = (
+        None
+        if seconds_to_reset is None
+        else (5, 1000, now + timedelta(seconds=seconds_to_reset))
+    )
     backend = mocker.Mock(
         rate_limit_name="gitlab",
         rate_limit_check_setting="GITLAB_RATE_LIMIT_CHECK",
@@ -543,8 +548,4 @@ def test_throttle_git_backend_calls_gitlab(settings, mocker, rate_limit_status):
 
     api.throttle_git_backend_calls(backend)
 
-    if rate_limit_status is None:
-        sleep_mock.assert_called_once_with(7)
-    else:
-        assert sleep_mock.call_count == 1
-        assert sleep_mock.call_args_list[0][0][0] > 7
+    sleep_mock.assert_called_once_with(seconds_to_reset or 7)

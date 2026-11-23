@@ -35,7 +35,7 @@ def test_create_media_convert_job(settings, mocker):
     mock_boto = mocker.patch("mitol.transcoding.api.boto3")
     job_id = "abcd123-gh564"
     mock_boto.client.return_value.create_job.return_value = {"Job": {"Id": job_id}}
-    video = VideoFactory.create()
+    video = VideoFactory.create(status=VideoStatus.CREATED)
     create_media_convert_job(video)
     mock_boto.client.return_value.create_job.assert_called_once()
     call_kwargs = mock_boto.client.return_value.create_job.call_args_list[0][1]
@@ -143,7 +143,7 @@ def test_update_video_job_success(mocker, raises_exception):
 def test_update_video_job_error(mocker):
     """The video job should be updated as expected if the transcode job failed"""
     mock_log = mocker.patch("videos.api.log.error")
-    video_job = VideoJobFactory.create()
+    video_job = VideoJobFactory.create(video__status=VideoStatus.TRANSCODING)
     mock_job = mocker.patch("videos.api.VideoJob.objects.get")
     mock_job.return_value = video_job
     with open(  # noqa: PTH123

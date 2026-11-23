@@ -377,16 +377,18 @@ def test_sync_all_websites_rate_limit_low(mocker, settings, check_limit):
     settings.GITHUB_RATE_LIMIT_CHECK = check_limit
     sleep_mock = mocker.patch("content_sync.api.sleep")
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
-    mock_dt_now = mocker.patch(
-        "content_sync.tasks.now_in_utc", return_value=now_in_utc()
-    )
-    mock_git_wrapper.return_value.git.rate_limiting = (
-        5,
-        mock_dt_now + timedelta(seconds=1000),
-    )
+    now = now_in_utc()
+    mocker.patch("content_sync.api.now_in_utc", return_value=now)
+    mock_git_wrapper.return_value.git.rate_limiting = (5, 5000)
+    mock_git_wrapper.return_value.git.rate_limiting_resettime = (
+        now + timedelta(seconds=1000)
+    ).timestamp()
     ContentSyncStateFactory.create_batch(2)
     tasks.sync_unsynced_websites.delay()
-    assert sleep_mock.call_count == (2 if check_limit else 0)
+    # each sync waits until the rate limit resets
+    assert sleep_mock.call_args_list == (
+        [mocker.call(pytest.approx(1000))] * 2 if check_limit else []
+    )
 
 
 @pytest.mark.parametrize(
@@ -402,19 +404,16 @@ def test_sync_all_websites_rate_limit_sleep_length(
     settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     sleep_mock = mocker.patch("content_sync.api.sleep")
     mock_git_wrapper = mocker.patch("content_sync.backends.github.GithubApiWrapper")
-    mock_dt_now = mocker.patch(
-        "content_sync.tasks.now_in_utc", return_value=now_in_utc()
-    )
-    mock_git_wrapper.return_value.git.rate_limiting = (
-        calls_left,
-        mock_dt_now + timedelta(seconds=1000),
-    )
+    now = now_in_utc()
+    mocker.patch("content_sync.api.now_in_utc", return_value=now)
+    mock_git_wrapper.return_value.git.rate_limiting = (calls_left, 5000)
+    mock_git_wrapper.return_value.git.rate_limiting_resettime = (
+        now + timedelta(seconds=1000)
+    ).timestamp()
     ContentSyncStateFactory.create_batch(2)
     tasks.sync_unsynced_websites.delay()
-    if use_default_sleep:
-        sleep_mock.assert_any_call(12)
-    else:
-        assert sleep_mock.call_args_list[0][0][0] > 12
+    expected_sleep = 12 if use_default_sleep else pytest.approx(1000)
+    assert sleep_mock.call_args_list == [mocker.call(expected_sleep)] * 2
 
 
 def test_sync_all_websites_rate_limit_exceeded(settings, api_mock):
@@ -873,20 +872,18 @@ def test_check_incomplete_publish_build_statuses(  # noqa: PLR0913, PLR0917
         else:
             with pytest.raises(AssertionError):
                 api_mock.get_site_pipeline.assert_any_call(website)
-            with pytest.raises(AssertionError):
-                mock_update_status.assert_any_call(
-                    website, version, new_status, mocker.ANY
-                )
-    for website, version in [
-        (draft_site_to_exclude_time, VERSION_DRAFT),
-        (draft_site_to_exclude_status, VERSION_DRAFT),
-        (live_site_excluded_time, VERSION_LIVE),
-        (live_site_excluded_status, VERSION_LIVE),
+    # only the two sites in the query get a status update, and only when it changed
+    assert mock_update_status.call_count == (
+        2 if should_check and should_update and pipeline is not None else 0
+    )
+    for website in [
+        draft_site_to_exclude_time,
+        draft_site_to_exclude_status,
+        live_site_excluded_time,
+        live_site_excluded_status,
     ]:
         with pytest.raises(AssertionError):
             api_mock.get_site_pipeline.assert_any_call(website)
-        with pytest.raises(AssertionError):
-            mock_update_status.assert_any_call(website, version, new_status, mocker.ANY)
 
 
 def test_check_incomplete_publish_build_statuses_no_setting(settings, api_mock):

@@ -215,7 +215,8 @@ def test_api_put(mocker, mock_auth, headers, status_code, ok_response):
         key, value = next(iter(headers.items()))
         assert kwargs["headers"][key] == value
         assert kwargs["data"] == data
-    assert mock_auth.call_count == 1 if ok_response else 2
+    assert mock_auth.call_count == (1 if ok_response else 2)
+    assert mock_put.call_count == (1 if ok_response else 2)
 
 
 @pytest.mark.parametrize("status_code", [200, 403])
@@ -240,7 +241,8 @@ def test_api_delete(mocker, mock_auth, status_code, ok_response):
     mock_delete.assert_any_call(
         f"http://test.edu{url_path}", data=data, headers=mocker.ANY
     )
-    assert mock_auth.call_count == 1 if ok_response else 2
+    assert mock_auth.call_count == (1 if ok_response else 2)
+    assert mock_delete.call_count == (1 if ok_response else 2)
 
 
 @pytest.mark.parametrize("names", [None, [VERSION_DRAFT, VERSION_LIVE]])

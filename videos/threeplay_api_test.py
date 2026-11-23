@@ -122,7 +122,7 @@ def test_update_transcripts_for_video(
     mock_fetch_file = mocker.patch("videos.threeplay_api.fetch_file")
     mock_fetch_file.side_effect = [pdf_transcript_content, webvtt_transcript_content]
 
-    update_transcripts_for_video(video)
+    assert update_transcripts_for_video(video) is (status == "complete")
 
     if status == "complete":
         mock_fetch_file.assert_any_call(

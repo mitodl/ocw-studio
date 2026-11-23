@@ -705,16 +705,38 @@ def test_mail_youtube_upload_failure_sender_exception(mocker, mock_mail):
 
 
 @pytest.mark.parametrize(
-    ("res_draft", "expected_privacy"), [(True, None), (False, "public")]
+    ("version", "is_draft", "previously_published", "expected_privacy"),
+    [
+        (VERSION_LIVE, False, True, "public"),
+        (VERSION_LIVE, False, False, "public"),
+        (VERSION_LIVE, True, True, "unlisted"),
+        (VERSION_LIVE, True, False, "unlisted"),
+        (VERSION_DRAFT, False, True, None),
+        (VERSION_DRAFT, False, False, "unlisted"),
+        (VERSION_DRAFT, True, True, "unlisted"),
+        (VERSION_DRAFT, True, False, "unlisted"),
+    ],
 )
+def test_get_video_privacy_status(
+    version, is_draft, previously_published, expected_privacy
+):
+    """Only a live publish of non-draft videos should make them public"""
+    assert (
+        get_video_privacy_status(
+            version=version,
+            is_draft=is_draft,
+            previously_published=previously_published,
+        )
+        == expected_privacy
+    )
+
+
+@pytest.mark.parametrize("res_draft", [True, False])
 @pytest.mark.parametrize("video_file_exists", [True, False])
 @pytest.mark.parametrize("youtube_enabled", [True, False])
 @pytest.mark.parametrize("is_ocw", [True, False])
 @pytest.mark.parametrize("previously_published", [True, False])
-@pytest.mark.parametrize(
-    ("version", "privacy"),
-    [[VERSION_DRAFT, "unlisted"], [VERSION_LIVE, "public"]],  # noqa: PT007
-)
+@pytest.mark.parametrize("version", [VERSION_DRAFT, VERSION_LIVE])
 def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: PLR0913, PLR0917
     mocker,
     settings,
@@ -723,9 +745,7 @@ def test_update_youtube_metadata(  # pylint:disable=too-many-arguments  # noqa: 
     youtube_enabled,
     is_ocw,
     version,
-    privacy,
     res_draft,
-    expected_privacy,
     previously_published,
 ):
     """Check that youtube.update_video is called for appropriate resources and not others"""
