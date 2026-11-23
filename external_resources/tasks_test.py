@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 from celery.exceptions import Retry
 from django.utils import timezone
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -18,6 +18,7 @@ from rest_framework.status import (
 
 from external_resources.constants import (
     HTTP_TOO_MANY_REQUESTS,
+    METADATA_URL_STATUS_CODE,
     WAYBACK_ERROR_STATUS,
     WAYBACK_PENDING_STATUS,
     WAYBACK_SUCCESS_STATUS,
@@ -29,12 +30,15 @@ from external_resources.tasks import (
     check_external_resources,
     check_external_resources_for_breakages,
     submit_url_to_wayback_task,
+    submit_website_resources_to_wayback_task,
     update_wayback_jobs_status_batch,
 )
 from websites.constants import (
     BATCH_SIZE_EXTERNAL_RESOURCE_STATUS_CHECK,
     CONTENT_TYPE_EXTERNAL_RESOURCE,
+    CONTENT_TYPE_PAGE,
 )
+from websites.factories import WebsiteContentFactory, WebsiteFactory
 
 if TYPE_CHECKING:
     from types import SimpleNamespace
@@ -113,6 +117,9 @@ def test_check_external_resources(
         "external_resources.tasks.api.is_external_url_broken",
         return_value=(url_status, url_status_code),
     )
+    mock_submit = mocker.patch(
+        "external_resources.tasks.submit_url_to_wayback_task.delay"
+    )
 
     # Run the task
     check_external_resources.delay((external_resource_state.content.id,))
@@ -122,6 +129,10 @@ def test_check_external_resources(
     assert updated_state.last_checked is not None
     assert updated_state.status == expected_status
     assert updated_state.external_url_response_code == url_status_code
+    assert updated_state.content.metadata["status"] == expected_status
+    assert updated_state.content.metadata[METADATA_URL_STATUS_CODE] == url_status_code
+    # Only valid urls are archived
+    assert mock_submit.called is (expected_status == ExternalResourceState.Status.VALID)
 
 
 @pytest.mark.django_db
@@ -252,6 +263,170 @@ def test_submit_url_to_wayback_task_http_error_429(mocker):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("wayback_enabled", "external_url"),
+    [(False, "http://example.com"), (True, "")],
+)
+def test_submit_url_to_wayback_task_not_submitted(
+    mocker, wayback_enabled, external_url
+):
+    """
+    Test that nothing is submitted when Wayback Machine tasks are disabled
+    or the resource has no external url.
+    """
+    mocker.patch(
+        "external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=wayback_enabled
+    )
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+    resource.metadata["external_url"] = external_url
+    resource.save()
+    mock_submit = mocker.patch("external_resources.tasks.api.submit_url_to_wayback")
+
+    submit_url_to_wayback_task.run(resource.id)
+
+    mock_submit.assert_not_called()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("days_since_submission", "ignore_last_submission"),
+    [(8, None), (1, True)],
+)
+def test_submit_url_to_wayback_task_resubmitted(
+    mocker, settings, days_since_submission, ignore_last_submission
+):
+    """
+    Test that a url is submitted again once the submission interval has passed,
+    or before that when the last submission is ignored.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    settings.WAYBACK_SUBMISSION_INTERVAL_DAYS = 7
+    external_resource_state = ExternalResourceStateFactory(
+        wayback_last_successful_submission=timezone.now()
+        - timedelta(days=days_since_submission),
+    )
+    resource = external_resource_state.content
+    resource.metadata["external_url"] = "http://example.com"
+    resource.save()
+    mock_submit = mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        return_value={"job_id": "job_12345"},
+    )
+
+    submit_url_to_wayback_task.run(resource.id, ignore_last_submission)
+
+    mock_submit.assert_called_once_with("http://example.com")
+    external_resource_state.refresh_from_db()
+    assert external_resource_state.wayback_status == WAYBACK_PENDING_STATUS
+    assert external_resource_state.wayback_job_id == "job_12345"
+
+
+@pytest.mark.django_db
+def test_submit_url_to_wayback_task_no_job_id(mocker):
+    """
+    Test that a Wayback Machine response without a job id marks the submission
+    as failed and keeps the extended status.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+    resource.metadata["external_url"] = "http://example.com"
+    resource.save()
+    mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        return_value={
+            "status": "error",
+            "status_ext": "error:too-many-daily-captures",
+        },
+    )
+
+    submit_url_to_wayback_task.run(resource.id)
+
+    external_resource_state.refresh_from_db()
+    assert external_resource_state.wayback_status == WAYBACK_ERROR_STATUS
+    assert external_resource_state.wayback_status_ext == "error:too-many-daily-captures"
+    assert external_resource_state.wayback_http_status is None
+
+
+@pytest.mark.django_db
+def test_submit_url_to_wayback_task_connect_timeout(mocker):
+    """
+    Test that a connection timeout marks the submission as failed without a retry.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+    resource.metadata["external_url"] = "http://example.com"
+    resource.save()
+    mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        side_effect=ConnectTimeout,
+    )
+    mock_retry = mocker.patch.object(submit_url_to_wayback_task, "retry")
+
+    submit_url_to_wayback_task.run(resource.id)
+
+    mock_retry.assert_not_called()
+    external_resource_state.refresh_from_db()
+    assert external_resource_state.wayback_status == WAYBACK_ERROR_STATUS
+    assert external_resource_state.wayback_status_ext == "error:connect-timeout"
+
+
+@pytest.mark.django_db
+def test_submit_url_to_wayback_task_error_retry(mocker):
+    """
+    Test that other errors mark the submission as failed and retry the task.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    external_resource_state = ExternalResourceStateFactory()
+    resource = external_resource_state.content
+    resource.metadata["external_url"] = "http://example.com"
+    resource.save()
+    error = ReadTimeout()
+    mocker.patch(
+        "external_resources.tasks.api.submit_url_to_wayback",
+        side_effect=error,
+    )
+    mock_retry = mocker.patch.object(
+        submit_url_to_wayback_task, "retry", side_effect=Retry()
+    )
+
+    with pytest.raises(Retry):
+        submit_url_to_wayback_task.run(resource.id)
+
+    mock_retry.assert_called_once_with(exc=error)
+    external_resource_state.refresh_from_db()
+    assert external_resource_state.wayback_status == WAYBACK_ERROR_STATUS
+
+
+@pytest.mark.django_db
+def test_submit_website_resources_to_wayback_task(mocker, mocked_celery):
+    """
+    Test that every external resource of a website is submitted
+    to the Wayback Machine.
+    """
+    website = WebsiteFactory.create()
+    resources = WebsiteContentFactory.create_batch(
+        2, website=website, type=CONTENT_TYPE_EXTERNAL_RESOURCE
+    )
+    WebsiteContentFactory.create(website=website, type=CONTENT_TYPE_PAGE)
+    WebsiteContentFactory.create(type=CONTENT_TYPE_EXTERNAL_RESOURCE)
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    mock_submit = mocker.patch("external_resources.tasks.submit_url_to_wayback_task.s")
+
+    with pytest.raises(mocked_celery.replace_exception_class):
+        submit_website_resources_to_wayback_task.delay(
+            website.name, ignore_last_submission=True
+        )
+
+    assert sorted(call.args for call in mock_submit.call_args_list) == sorted(
+        (resource.id, True) for resource in resources
+    )
+    mocked_celery.group.assert_called_once()
+
+
+@pytest.mark.django_db
 def test_update_wayback_jobs_status_batch_success(mocker):
     """
     Test that update_wayback_jobs_status_batch updates statuses of pending jobs successfully.
@@ -265,6 +440,10 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     )
     state2 = ExternalResourceStateFactory(
         wayback_job_id="job_2",
+        wayback_status=WAYBACK_PENDING_STATUS,
+    )
+    state3 = ExternalResourceStateFactory(
+        wayback_job_id="job_3",
         wayback_status=WAYBACK_PENDING_STATUS,
     )
 
@@ -283,6 +462,10 @@ def test_update_wayback_jobs_status_batch_success(mocker):
             "status_ext": "error:404",
             "http_status": 404,
         },
+        {
+            "job_id": "job_3",
+            "status": WAYBACK_PENDING_STATUS,
+        },
     ]
     mock_check = mocker.patch(
         "external_resources.tasks.api.check_wayback_jobs_status_batch",
@@ -292,7 +475,7 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     update_wayback_jobs_status_batch.run()
 
     # Check that api.check_wayback_jobs_status_batch was called with correct job_ids
-    expected_job_ids = ["job_1", "job_2"]
+    expected_job_ids = ["job_1", "job_2", "job_3"]
     mock_check.assert_called()
     call_args = mock_check.call_args[0][0]
     assert set(call_args) == set(expected_job_ids)
@@ -300,6 +483,7 @@ def test_update_wayback_jobs_status_batch_success(mocker):
     # Fetch updated states
     updated_state1 = ExternalResourceState.objects.get(id=state1.id)
     updated_state2 = ExternalResourceState.objects.get(id=state2.id)
+    updated_state3 = ExternalResourceState.objects.get(id=state3.id)
 
     # Verify that state1 was updated to success
     assert updated_state1.wayback_status == WAYBACK_SUCCESS_STATUS
@@ -308,11 +492,16 @@ def test_update_wayback_jobs_status_batch_success(mocker):
         == "https://web.archive.org/web/20230101000000/http://example.com/page1"
     )
     assert updated_state1.wayback_last_successful_submission is not None
+    assert updated_state1.content.metadata["wayback_url"] == updated_state1.wayback_url
 
     # Verify that state2 was updated to error
     assert updated_state2.wayback_status == WAYBACK_ERROR_STATUS
     assert updated_state2.wayback_status_ext == "error:404"
     assert updated_state2.wayback_http_status == 404
+    assert "wayback_url" not in updated_state2.content.metadata
+
+    # Verify that state3 is still pending
+    assert updated_state3.wayback_status == WAYBACK_PENDING_STATUS
 
 
 @pytest.mark.django_db
@@ -333,3 +522,91 @@ def test_update_wayback_jobs_status_batch_no_pending_jobs(mocker):
     update_wayback_jobs_status_batch.run()
     mock_check.assert_not_called()
     mock_log.info.assert_called_once_with("No pending Wayback Machine jobs to update.")
+
+
+@pytest.mark.django_db
+def test_update_wayback_jobs_status_batch_unmatched_jobs(mocker):
+    """
+    Test that a job missing from the results stays pending and an unknown job id
+    in the results is skipped.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    state = ExternalResourceStateFactory(
+        wayback_job_id="job_1",
+        wayback_status=WAYBACK_PENDING_STATUS,
+    )
+    mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch",
+        return_value=[{"job_id": "job_unknown", "status": WAYBACK_SUCCESS_STATUS}],
+    )
+
+    update_wayback_jobs_status_batch.run()
+
+    state.refresh_from_db()
+    assert state.wayback_status == WAYBACK_PENDING_STATUS
+
+
+@pytest.mark.django_db
+def test_update_wayback_jobs_status_batch_job_ids(mocker):
+    """
+    Test that only the given job ids are checked.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    for job_id in ["job_1", "job_2"]:
+        ExternalResourceStateFactory(
+            wayback_job_id=job_id,
+            wayback_status=WAYBACK_PENDING_STATUS,
+        )
+    mock_check = mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch",
+        return_value=[],
+    )
+
+    update_wayback_jobs_status_batch.run(job_ids=["job_2"])
+
+    mock_check.assert_called_once_with(["job_2"])
+
+
+@pytest.mark.django_db
+def test_update_wayback_jobs_status_batch_disabled(mocker):
+    """
+    Test that no jobs are checked when Wayback Machine tasks are disabled.
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=False)
+    ExternalResourceStateFactory(
+        wayback_job_id="job_1",
+        wayback_status=WAYBACK_PENDING_STATUS,
+    )
+    mock_check = mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch"
+    )
+
+    update_wayback_jobs_status_batch.run()
+
+    mock_check.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_update_wayback_jobs_status_batch_http_error_429(mocker):
+    """
+    Test that update_wayback_jobs_status_batch retries on HTTPError 429
+    (Too Many Requests).
+    """
+    mocker.patch("external_resources.tasks.settings.ENABLE_WAYBACK_TASKS", new=True)
+    ExternalResourceStateFactory(
+        wayback_job_id="job_1",
+        wayback_status=WAYBACK_PENDING_STATUS,
+    )
+    http_error_429 = HTTPError(response=Mock(status_code=HTTP_TOO_MANY_REQUESTS))
+    mocker.patch(
+        "external_resources.tasks.api.check_wayback_jobs_status_batch",
+        side_effect=http_error_429,
+    )
+    mock_retry = mocker.patch.object(
+        update_wayback_jobs_status_batch, "retry", side_effect=Retry()
+    )
+
+    with pytest.raises(Retry):
+        update_wayback_jobs_status_batch.run()
+
+    mock_retry.assert_called_once_with(exc=http_error_429, countdown=30)
