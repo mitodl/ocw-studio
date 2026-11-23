@@ -167,7 +167,7 @@ describe("SortableSelect", () => {
     }
 
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalled()
+      expect(onChange).toHaveBeenCalledWith([newOptions[0].value])
     })
   })
 

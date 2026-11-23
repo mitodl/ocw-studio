@@ -8,7 +8,6 @@ import SiteCollaboratorForm, {
   roleValidation,
 } from "./SiteCollaboratorForm"
 import { EDITABLE_ROLES } from "../../constants"
-import { assertInstanceOf } from "../../test_util"
 import { makeWebsiteCollaborator } from "../../util/factories/websites"
 
 import { WebsiteCollaborator } from "../../types/websites"
@@ -109,49 +108,27 @@ describe("SiteCollaboratorForm", () => {
       .shape({ ...roleValidation, ...emailValidation })
 
     it("rejects an empty role", async () => {
-      try {
-        await expect(
-          await collaboratorValidation.validateAt("role", ""),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, yup.ValidationError)
-        expect(error.errors).toStrictEqual(["Role is a required field"])
-      }
+      await expect(
+        collaboratorValidation.validateAt("role", { role: "" }),
+      ).rejects.toMatchObject({ errors: ["Role is a required field"] })
     })
 
     it("rejects an empty email", async () => {
-      try {
-        await expect(
-          await collaboratorValidation.validateAt("email", { email: "" }),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, yup.ValidationError)
-        expect(error.errors).toStrictEqual(["Email is a required field"])
-      }
+      await expect(
+        collaboratorValidation.validateAt("email", { email: "" }),
+      ).rejects.toMatchObject({ errors: ["Email is a required field"] })
     })
 
     it("rejects an invalid email", async () => {
-      try {
-        await expect(
-          await collaboratorValidation.validateAt("email", {
-            email: "fake.test.com",
-          }),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, yup.ValidationError)
-        expect(error.errors).toStrictEqual(["Email must be a valid email"])
-      }
+      await expect(
+        collaboratorValidation.validateAt("email", { email: "fake.test.com" }),
+      ).rejects.toMatchObject({ errors: ["Email must be a valid email"] })
     })
 
     it("does not reject a valid role", async () => {
-      try {
-        await expect(
-          await collaboratorValidation.validateAt("role", "admin"),
-        ).rejects.toThrow()
-      } catch (error) {
-        assertInstanceOf(error, yup.ValidationError)
-        expect(error.errors).toStrictEqual(["Role is a required field"])
-      }
+      await expect(
+        collaboratorValidation.validateAt("role", { role: "admin" }),
+      ).resolves.toBe("admin")
     })
   })
 })

@@ -57,9 +57,13 @@ jest.mock("../../context/Website", () => {
 jest.mock("@ckeditor/ckeditor5-inspector")
 
 let lastCKEditorProps: any = null
+let ckEditorMounts = 0
 jest.mock("@ckeditor/ckeditor5-react", () => ({
   CKEditor: (props: any) => {
     lastCKEditorProps = props
+    jest.requireActual("react").useEffect(() => {
+      ckEditorMounts += 1
+    }, [])
     return <div data-testid="ckeditor" />
   },
 }))
@@ -302,10 +306,16 @@ describe("MarkdownEditor", () => {
   )
 
   it("recreates CKEditor when editorConfig changes", () => {
+    ckEditorMounts = 0
     const { rerender } = render(
       <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
     )
     const initialConfig = JSON.stringify(lastCKEditorProps.config)
+    // CKEditor ignores config changes after it mounts, so it must remount
+    rerender(
+      <MarkdownEditor embed={[]} link={[]} allowedHtml={[]} minimal={false} />,
+    )
+    expect(ckEditorMounts).toBe(1)
     rerender(
       <MarkdownEditor
         embed={["resource"]}
@@ -316,6 +326,7 @@ describe("MarkdownEditor", () => {
     )
     const newConfig = JSON.stringify(lastCKEditorProps.config)
     expect(newConfig).not.toEqual(initialConfig)
+    expect(ckEditorMounts).toBe(2)
   })
   ;[RESOURCE_EMBED, RESOURCE_LINK].forEach((resourceNodeType) => {
     it(`should open the resource picker for ${resourceNodeType}`, async () => {

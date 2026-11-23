@@ -150,6 +150,12 @@ describe("MenuField", () => {
     await waitFor(() => {
       expect(screen.queryByText("Unit 1")).not.toBeInTheDocument()
     })
+    // removing Unit 1 also removes its subunits from the saved value
+    expect(onChangeStub).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: expect.objectContaining({ name: fieldName, value: [] }),
+      }),
+    )
 
     unmount()
   })
@@ -227,7 +233,11 @@ describe("MenuField", () => {
     const newItem = updatedHugoMenuItems.find(
       (item: HugoItem) => item.name === "My Title",
     )
-    expect(newItem).toBeDefined()
+    expect(newItem).toEqual({
+      identifier: contentItem.text_id,
+      name: "My Title",
+      weight: 20,
+    })
 
     unmount()
   })
@@ -263,47 +273,52 @@ describe("MenuField", () => {
   })
 
   it("should pass the correct reorder function to the nestable component", () => {
-    const dummyContentMenuItems: SortableMenuItem[] = [
+    // Unit 2 moved above Unit 1, and Unit 1 keeps one subunit
+    const reorderedMenuItems: SortableMenuItem[] = [
       {
-        id: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        id: "unit-2",
+        text: "Unit 2",
+        children: [],
+        targetContentId: "unit-2",
+        targetUrl: null,
+      },
+      {
+        id: "unit-1",
         text: "Unit 1",
         children: [
           {
-            id: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            id: "unit-1-sub-1",
             text: "Unit 1 - Subunit 1",
-            children: [
-              {
-                id: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-                text: "Unit 1 - Sub-subunit 1",
-                children: [],
-                targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b63",
-                targetUrl: null,
-              },
-            ],
-            targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b62",
+            children: [],
+            targetContentId: "unit-1-sub-1",
             targetUrl: null,
           },
         ],
-        targetContentId: "32629a02-3dc5-4128-8e43-0392b51e7b61",
+        targetContentId: "unit-1",
         targetUrl: null,
       },
     ]
 
     const [{ unmount }] = renderMenuField()
 
-    const updatedMenuItems = [dummyContentMenuItems[0]]
     expect(capturedOnChange).not.toBeNull()
     act(() => {
-      capturedOnChange!({ items: updatedMenuItems })
+      capturedOnChange!({ items: reorderedMenuItems })
     })
 
     expect(onChangeStub).toHaveBeenCalledTimes(1)
-    expect(onChangeStub.mock.calls[0][0].target.value).toEqual(
+    const hugoItems = onChangeStub.mock.calls[0][0].target.value
+    expect(hugoItems).toHaveLength(3)
+    expect(hugoItems).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          identifier: "32629a02-3dc5-4128-8e43-0392b51e7b61",
-          name: "Unit 1",
-        }),
+        { identifier: "unit-2", name: "Unit 2", weight: 10 },
+        { identifier: "unit-1", name: "Unit 1", weight: 20 },
+        {
+          identifier: "unit-1-sub-1",
+          name: "Unit 1 - Subunit 1",
+          weight: 10,
+          parent: "unit-1",
+        },
       ]),
     )
 

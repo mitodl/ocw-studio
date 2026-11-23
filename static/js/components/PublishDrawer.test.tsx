@@ -198,7 +198,12 @@ describe("PublishDrawer", () => {
           website["content_warnings"] = warnings
           renderDrawer()
           const dialog = await screen.findByRole("dialog")
-          if (!isEmpty(warnings)) {
+          const banner =
+            /this site has issues that could affect publishing output/i
+          if (isEmpty(warnings)) {
+            expect(dialog).not.toHaveTextContent(banner)
+          } else {
+            expect(dialog).toHaveTextContent(banner)
             warnings.forEach((warning) =>
               expect(dialog).toHaveTextContent(warning),
             )
