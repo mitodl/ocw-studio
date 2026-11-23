@@ -62,9 +62,7 @@ def check_external_resources(resources: list[int]):
             state = resource.external_resource_state
         except ExternalResourceState.DoesNotExist as ex:
             log.debug(ex)
-            state = ExternalResourceState(
-                content=resource,
-            )
+            state, _ = ExternalResourceState.objects.get_or_create(content=resource)
         try:
             is_url_broken, url_status = api.is_external_url_broken(resource)
             state.external_url_response_code = url_status

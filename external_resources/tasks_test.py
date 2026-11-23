@@ -6,7 +6,9 @@ from unittest.mock import Mock
 
 import pytest
 from celery.exceptions import Retry
+from django.db.models.signals import post_save
 from django.utils import timezone
+from factory.django import mute_signals
 from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from rest_framework.status import (
     HTTP_200_OK,
@@ -150,6 +152,27 @@ def test_check_external_resources_failed(mocker):
     updated_state = ExternalResourceState.objects.get(id=external_resource_state.id)
 
     assert updated_state.status == ExternalResourceState.Status.CHECK_FAILED
+
+
+@pytest.mark.django_db
+def test_check_external_resources_without_state(mocker):
+    """Test that a resource without a state gets one when it is checked"""
+    with mute_signals(post_save):
+        resource = WebsiteContentFactory.create(
+            type=CONTENT_TYPE_EXTERNAL_RESOURCE,
+            metadata={"external_url": "http://example.com"},
+        )
+    mocker.patch(
+        "external_resources.tasks.api.is_external_url_broken",
+        return_value=(True, HTTP_404_NOT_FOUND),
+    )
+
+    check_external_resources.delay((resource.id,))
+
+    state = ExternalResourceState.objects.get(content=resource)
+    assert state.status == ExternalResourceState.Status.BROKEN
+    assert state.external_url_response_code == HTTP_404_NOT_FOUND
+    assert state.last_checked is not None
 
 
 @pytest.mark.django_db
