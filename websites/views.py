@@ -469,6 +469,15 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
         serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
 
+    @action(detail=False, methods=["post"])
+    def rerun(self, request):
+        """Remove again the listed sites that are unpublished, after a mass build batch built them"""  # noqa: E501
+        for name in Website.objects.filter(
+            name__in=request.data.get("sites", []), unpublish_status__isnull=False
+        ).values_list("name", flat=True):
+            rerun_unpublished_removal.delay(name)
+        return Response(status=200)
+
 
 class WebsiteStarterViewSet(
     mixins.ListModelMixin,

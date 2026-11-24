@@ -1792,6 +1792,45 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
         assert publish_site["site_uid"] == expected_site.uuid.hex
 
 
+def test_unpublished_removal_endpoint_rerun(mocker, settings, drf_client):
+    """The rerun endpoint should queue the removal again for each listed site that is unpublished"""
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    published = WebsiteFactory.create(unpublish_status=None)
+    unpublished = WebsiteFactory.create_batch(
+        2, unpublish_status=constants.PUBLISH_STATUS_SUCCEEDED
+    )
+    not_listed = WebsiteFactory.create(
+        unpublish_status=constants.PUBLISH_STATUS_SUCCEEDED
+    )
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("unpublished_removal_api-rerun"),
+        data={"sites": [published.name, *[site.name for site in unpublished], "gone"]},
+        format="json",
+    )
+    assert resp.status_code == 200
+    queued = sorted(call.args[0] for call in mock_rerun.delay.call_args_list)
+    assert queued == sorted(site.name for site in unpublished)
+    assert not_listed.name not in queued
+
+
+@pytest.mark.parametrize("bad_token", ["wrongtoken", None])
+def test_unpublished_removal_endpoint_rerun_bad_token(
+    mocker, settings, drf_client, bad_token
+):
+    """The rerun endpoint should return a 403 if the token is invalid or missing"""
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    if bad_token:
+        drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
+    resp = drf_client.post(
+        reverse("unpublished_removal_api-rerun"), data={"sites": []}, format="json"
+    )
+    assert resp.status_code == 403
+    mock_rerun.delay.assert_not_called()
+
+
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])
 def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_token):
     """The WebsiteUnpublishViewSet endpoint should return a 403 if the token is invalid or missing"""

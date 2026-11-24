@@ -524,6 +524,52 @@ def test_mass_build_sites_definition_extra_theme_sites(
     assert ("root-website" in built_site_names) is not bool(theme_slug)
 
 
+@pytest.mark.parametrize("version", [VERSION_LIVE, VERSION_DRAFT])
+@pytest.mark.parametrize("theme_slug", ["", "ocw-course-v3"])
+def test_mass_build_sites_batches_report_their_sites(
+    mass_build_websites, settings, version, theme_slug
+):
+    """Each live batch job should send Studio its site names when it ends, however it ends"""
+    settings.ROOT_WEBSITE_NAME = "root-website"
+    settings.OCW_MASS_BUILD_BATCH_SIZE = 2
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    settings.OCW_DEFAULT_COURSE_THEME = "mass-build-test-starter-999"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    pipeline_config = MassBuildSitesPipelineDefinitionConfig(
+        version=version,
+        artifacts_bucket=settings.AWS_ARTIFACTS_BUCKET_NAME,
+        site_content_branch=get_site_content_branch(version),
+        ocw_hugo_themes_branch="main",
+        ocw_hugo_projects_branch="main",
+        offline=False,
+        instance_vars="",
+        theme_slug=theme_slug,
+    )
+    rendered_definition = json.loads(
+        MassBuildSitesPipelineDefinition(config=pipeline_config).json(
+            indent=2, by_alias=True
+        )
+    )
+    batch_jobs = rendered_definition["jobs"]
+    assert len(batch_jobs) > 1
+    rerun_url = f"{get_ocw_studio_api_url().rstrip('/')}/api/unpublish/rerun/"
+    for job in batch_jobs:
+        if version == VERSION_DRAFT:
+            assert "ensure" not in job
+            continue
+        batch_site_names = [
+            site["site_name"]
+            for step in job["plan"]
+            if "across" in step
+            for site in step["across"][0]["values"]
+        ]
+        task = job["ensure"]["try"]
+        args = task["config"]["run"]["args"]
+        assert rerun_url in args
+        assert "Authorization: Bearer abc123" in args
+        assert json.loads(args[args.index("--data") + 1]) == {"sites": batch_site_names}
+
+
 def _iter_steps(steps):
     """Yield every step in a job plan, descending into across/do/try wrappers"""
     for step in steps:
