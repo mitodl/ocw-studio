@@ -15,11 +15,7 @@ from mitol.common.utils.datetime import now_in_utc
 from requests import HTTPError
 from rest_framework import status
 
-from content_sync.constants import (
-    UNPUBLISHED_REMOVAL_RERUN_DELAY,
-    VERSION_DRAFT,
-    VERSION_LIVE,
-)
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.models import ContentSyncState
 from main import features
 from main.constants import ISO_8601_FORMAT
@@ -1860,6 +1856,11 @@ def test_pipeline_status_build_type(  # noqa: PLR0913, PLR0917
             {"status": constants.PUBLISH_STATUS_ERRORED},
             True,
         ),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_FAILED},
+            True,
+        ),
         (None, {}, False),
         (constants.PUBLISH_STATUS_SUCCEEDED, {"version": VERSION_DRAFT}, False),
         (
@@ -1890,11 +1891,9 @@ def test_pipeline_status_reruns_removal_after_build_of_unpublished_site(  # noqa
     )
     assert resp.status_code == 200
     if should_rerun:
-        mock_rerun.apply_async.assert_called_once_with(
-            args=[website.name], countdown=UNPUBLISHED_REMOVAL_RERUN_DELAY
-        )
+        mock_rerun.delay.assert_called_once_with(website.name)
     else:
-        mock_rerun.apply_async.assert_not_called()
+        mock_rerun.delay.assert_not_called()
 
 
 def test_referencing_content_clears_when_references_removed(

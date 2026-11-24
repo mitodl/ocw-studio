@@ -872,6 +872,39 @@ def test_unpublished_site_removal_pipeline(  # noqa: PLR0913, PLR0917
 
 
 @pytest.mark.parametrize(
+    ("next_builds", "expected"),
+    [
+        ([None, None], False),
+        ([{"id": 9, "status": "pending"}, None], False),
+        ([None, {"id": 9, "status": "started"}], True),
+    ],
+)
+def test_site_pipeline_has_running_build(
+    settings, mocker, mock_auth, next_builds, expected
+):
+    """has_running_build should report whether a job of the site's pipeline has a started build"""
+    mock_get = mocker.patch(
+        "content_sync.pipelines.concourse.PipelineApi.get",
+        return_value=[
+            {"name": name, "next_build": next_build}
+            for name, next_build in zip(
+                ["online-site-job", "offline-site-job"], next_builds
+            )
+        ],
+    )
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            source=STARTER_SOURCE_GITHUB, path="https://github.com/org/repo/config"
+        )
+    )
+    pipeline = SitePipeline(website)
+    assert pipeline.has_running_build(VERSION_LIVE) is expected
+    mock_get.assert_called_once_with(
+        f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{VERSION_LIVE}/jobs{pipeline.instance_vars}"
+    )
+
+
+@pytest.mark.parametrize(
     ("next_build", "expected"),
     [
         (None, False),

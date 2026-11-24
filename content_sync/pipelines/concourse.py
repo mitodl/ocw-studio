@@ -540,6 +540,14 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 SitePipelineDefinition(config=pipeline_config).json(), pipeline_name
             )
 
+    def has_running_build(self, pipeline_name: str) -> bool:
+        """Return True if a job of the pipeline has a build in progress"""
+        jobs = self.api.get(
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs{self.instance_vars}"
+        )
+        # Pending builds of a paused pipeline never start
+        return any((job["next_build"] or {}).get("status") == "started" for job in jobs)
+
     def check_online_site_job_resources(self, pipeline_name: str):
         """Trigger resource checks for all resources required by online-site-job"""
         for resource_name in [

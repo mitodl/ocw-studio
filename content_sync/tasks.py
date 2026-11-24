@@ -293,17 +293,21 @@ def trigger_unpublished_removal(website_name: str) -> bool:
     return True
 
 
-@app.task(bind=True, acks_late=True, max_retries=30, default_retry_delay=60)
+@app.task(bind=True, acks_late=True, max_retries=60, default_retry_delay=60)
 def rerun_unpublished_removal(self, website_name: str):
     """
     Run the unpublished site removal again for a site that a live build uploaded
     after it was unpublished. Pausing a pipeline does not stop a build that is
     already running, and a running mass build keeps the sites it started with.
     """
+    website = Website.objects.get(name=website_name)
+    if website.unpublish_status is None:
+        return
     removal_pipeline = api.get_unpublished_removal_pipeline()
+    # Extra theme builds of the site send no webhooks, so wait for them here.
     # The removal job is serial. A run that is still pending or running would mark
     # the site removed when it ends, and a run queued behind it would then skip it.
-    if removal_pipeline.has_unfinished_build():
+    if api.live_site_builds_running(website) or removal_pipeline.has_unfinished_build():
         raise self.retry()
     if Website.objects.filter(name=website_name, unpublish_status__isnull=False).update(
         unpublish_status=PUBLISH_STATUS_NOT_STARTED,

@@ -1103,6 +1103,9 @@ def test_rerun_unpublished_removal(unpublish_api_mock):
         unpublish_status=PUBLISH_STATUS_SUCCEEDED,
         unpublish_status_updated_on=removed_on,
     )
+    unpublish_api_mock.get_site_pipeline.return_value.has_running_build.return_value = (
+        False
+    )
     removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.has_unfinished_build.return_value = False
     tasks.rerun_unpublished_removal(site.name)
@@ -1116,8 +1119,26 @@ def test_rerun_unpublished_removal(unpublish_api_mock):
 def test_rerun_unpublished_removal_waits_for_unfinished_removal(unpublish_api_mock):
     """rerun_unpublished_removal should retry while a removal build is pending or running"""
     site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+    unpublish_api_mock.get_site_pipeline.return_value.has_running_build.return_value = (
+        False
+    )
     removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.has_unfinished_build.return_value = True
+    with pytest.raises(Retry):
+        tasks.rerun_unpublished_removal(site.name)
+    site.refresh_from_db()
+    assert site.unpublish_status == PUBLISH_STATUS_SUCCEEDED
+    removal_pipeline.trigger.assert_not_called()
+
+
+def test_rerun_unpublished_removal_waits_for_site_builds(unpublish_api_mock):
+    """rerun_unpublished_removal should retry while a live build of the site is running"""
+    site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+    unpublish_api_mock.get_site_pipeline.return_value.has_running_build.return_value = (
+        True
+    )
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.has_unfinished_build.return_value = False
     with pytest.raises(Retry):
         tasks.rerun_unpublished_removal(site.name)
     site.refresh_from_db()
@@ -1128,12 +1149,11 @@ def test_rerun_unpublished_removal_waits_for_unfinished_removal(unpublish_api_mo
 def test_rerun_unpublished_removal_republished_site(unpublish_api_mock):
     """rerun_unpublished_removal should leave a site alone once it has been published again"""
     site = WebsiteFactory.create(unpublish_status=None)
-    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
-    removal_pipeline.has_unfinished_build.return_value = False
     tasks.rerun_unpublished_removal(site.name)
     site.refresh_from_db()
     assert site.unpublish_status is None
-    removal_pipeline.trigger.assert_not_called()
+    unpublish_api_mock.get_site_pipeline.assert_not_called()
+    unpublish_api_mock.get_unpublished_removal_pipeline.assert_not_called()
 
 
 def test_update_websites_in_root_website(api_mock):
