@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -98,8 +99,10 @@ def live_site_builds_running(website: Website) -> bool:
         try:
             # Extra theme pipelines share the site's instance vars, only names differ
             running = pipeline.has_running_build(f"{VERSION_LIVE}-{theme_slug}")
-        except HTTPError:
+        except HTTPError as exc:
             # A missing extra theme pipeline has no builds
+            if getattr(exc.response, "status_code", None) != HTTPStatus.NOT_FOUND:
+                raise
             running = False
         if running:
             return True

@@ -288,6 +288,9 @@ def trigger_unpublished_removal(website_name: str) -> bool:
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
+        # A live build of the site in any theme may still be running and upload it
+        # again after this removal. Extra theme builds send no webhook when they end.
+        rerun_unpublished_removal.delay(website.name)
     # Last, so that a failure while updating the root website cannot keep the site up
     remove_website_in_root_website(website)
     return True
@@ -307,7 +310,15 @@ def rerun_unpublished_removal(self, website_name: str):
     # Extra theme builds of the site send no webhooks, so wait for them here.
     # The removal job is serial. A run that is still pending or running would mark
     # the site removed when it ends, and a run queued behind it would then skip it.
-    if api.live_site_builds_running(website) or removal_pipeline.has_unfinished_build():
+    try:
+        busy = (
+            api.live_site_builds_running(website)
+            or removal_pipeline.has_unfinished_build()
+        )
+    except HTTPError as exc:
+        # Concourse could not say whether a build is still uploading the site
+        raise self.retry(exc=exc) from exc
+    if busy:
         raise self.retry()
     if Website.objects.filter(name=website_name, unpublish_status__isnull=False).update(
         unpublish_status=PUBLISH_STATUS_NOT_STARTED,

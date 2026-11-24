@@ -1022,6 +1022,7 @@ def test_trigger_unpublished_removal(settings, mocker, backend, is_default_theme
         if is_default_theme_site
         else WebsiteStarterFactory.create()
     )
+    mock_rerun = mocker.patch("content_sync.tasks.rerun_unpublished_removal")
     tasks.trigger_unpublished_removal.delay(site.name)
     mock_remove_website_in_root_website.assert_called_once_with(site)
     if backend == "concourse":
@@ -1032,9 +1033,30 @@ def test_trigger_unpublished_removal(settings, mocker, backend, is_default_theme
         )
         mock_pipeline_unpause.assert_called_once_with(pipeline_name)
         mock_pipeline_trigger.assert_called_once_with(pipeline_name)
+        mock_rerun.delay.assert_called_once_with(site.name)
     else:
         mock_pipeline_trigger.assert_not_called()
         mock_pipeline_unpause.assert_not_called()
+        mock_rerun.delay.assert_not_called()
+
+
+def test_trigger_unpublished_removal_queues_rerun_after_removal(
+    mocker, unpublish_api_mock
+):
+    """trigger_unpublished_removal should queue the re-run once the pipelines are paused and the removal triggered"""
+    WebsiteFactory.create(name="ocw-www")
+    site = WebsiteFactory.create()
+    calls = []
+    mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
+    mock_site_pipeline.pause_pipeline.side_effect = lambda *_: calls.append("pause")
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.trigger.side_effect = lambda: calls.append("trigger")
+    mock_rerun = mocker.patch("content_sync.tasks.rerun_unpublished_removal")
+    mock_rerun.delay.side_effect = lambda *_: calls.append("rerun")
+    tasks.trigger_unpublished_removal(site.name)
+    mock_rerun.delay.assert_called_once_with(site.name)
+    assert calls[-1] == "rerun"
+    assert calls.index("pause") < calls.index("trigger") < calls.index("rerun")
 
 
 @fixture
@@ -1054,8 +1076,11 @@ def unpublish_api_mock(mocker, settings):
     )
 
 
-def test_trigger_unpublished_removal_listing_already_removed(unpublish_api_mock):
+def test_trigger_unpublished_removal_listing_already_removed(
+    mocker, unpublish_api_mock
+):
     """trigger_unpublished_removal should still take the site down if its root website listing is already gone"""
+    mocker.patch("content_sync.tasks.rerun_unpublished_removal")
     WebsiteFactory.create(name="ocw-www")
     site = WebsiteFactory.create()
     assert tasks.trigger_unpublished_removal(site.name) is True
@@ -1082,8 +1107,10 @@ def test_trigger_unpublished_removal_root_rebuild_fails(mocker, unpublish_api_mo
     )
     mock_site_pipeline = unpublish_api_mock.get_site_pipeline.return_value
     mock_site_pipeline.trigger_pipeline_build.side_effect = HTTPError("no pipeline")
+    mock_rerun = mocker.patch("content_sync.tasks.rerun_unpublished_removal")
     with pytest.raises(HTTPError):
         tasks.trigger_unpublished_removal(site.name)
+    mock_rerun.delay.assert_called_once_with(site.name)
     mock_site_pipeline.pause_pipeline.assert_any_call(VERSION_LIVE)
     removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.unpause.assert_called_once_with()
@@ -1143,6 +1170,23 @@ def test_rerun_unpublished_removal_waits_for_site_builds(unpublish_api_mock):
         tasks.rerun_unpublished_removal(site.name)
     site.refresh_from_db()
     assert site.unpublish_status == PUBLISH_STATUS_SUCCEEDED
+    removal_pipeline.trigger.assert_not_called()
+
+
+def test_rerun_unpublished_removal_concourse_error(mocker, unpublish_api_mock):
+    """rerun_unpublished_removal should retry when Concourse cannot tell whether a build is running"""
+    site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+    error = HTTPError("503")
+    unpublish_api_mock.get_site_pipeline.return_value.has_running_build.side_effect = (
+        error
+    )
+    mock_retry = mocker.patch.object(
+        tasks.rerun_unpublished_removal, "retry", side_effect=Retry
+    )
+    with pytest.raises(Retry):
+        tasks.rerun_unpublished_removal(site.name)
+    mock_retry.assert_called_once_with(exc=error)
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.trigger.assert_not_called()
 
 

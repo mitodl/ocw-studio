@@ -7,7 +7,7 @@ import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from mitol.common.utils import now_in_utc
-from requests import HTTPError
+from requests import HTTPError, Response
 
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -281,18 +281,39 @@ def test_live_site_builds_running(  # noqa: PLR0913, PLR0917
     assert checked == expected_checked
 
 
+def http_error(status_code):
+    """Return an HTTPError for a response with the given status code"""
+    response = Response()
+    response.status_code = status_code
+    return HTTPError(response=response)
+
+
 def test_live_site_builds_running_missing_extra_theme_pipeline(settings, mocker):
     """A missing extra theme pipeline should count as one with no running build"""
     settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
     settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
     settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
     mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
-    mock_pipeline.has_running_build.side_effect = [False, HTTPError("404"), False]
+    mock_pipeline.has_running_build.side_effect = [False, http_error(404), False]
     website = WebsiteFactory.create(
         starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
     )
     assert api.live_site_builds_running(website) is False
     assert mock_pipeline.has_running_build.call_count == 3
+
+
+def test_live_site_builds_running_extra_theme_error(settings, mocker):
+    """Any other error checking an extra theme pipeline should be raised"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
+    mock_pipeline.has_running_build.side_effect = [False, http_error(503)]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+    )
+    with pytest.raises(HTTPError):
+        api.live_site_builds_running(website)
 
 
 def test_sync_github_website_starters(mocker):
