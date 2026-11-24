@@ -1190,6 +1190,27 @@ def test_rerun_unpublished_removal_concourse_error(mocker, unpublish_api_mock):
     removal_pipeline.trigger.assert_not_called()
 
 
+@pytest.mark.parametrize("failing_call", ["unpause", "trigger"])
+def test_rerun_unpublished_removal_start_error(
+    mocker, unpublish_api_mock, failing_call
+):
+    """rerun_unpublished_removal should retry when Concourse fails to start the removal"""
+    site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+    unpublish_api_mock.get_site_pipeline.return_value.has_running_build.return_value = (
+        False
+    )
+    removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
+    removal_pipeline.has_unfinished_build.return_value = False
+    error = HTTPError("503")
+    getattr(removal_pipeline, failing_call).side_effect = error
+    mock_retry = mocker.patch.object(
+        tasks.rerun_unpublished_removal, "retry", side_effect=Retry
+    )
+    with pytest.raises(Retry):
+        tasks.rerun_unpublished_removal(site.name)
+    mock_retry.assert_called_once_with(exc=error)
+
+
 def test_rerun_unpublished_removal_republished_site(unpublish_api_mock):
     """rerun_unpublished_removal should leave a site alone once it has been published again"""
     site = WebsiteFactory.create(unpublish_status=None)

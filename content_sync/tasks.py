@@ -315,17 +315,20 @@ def rerun_unpublished_removal(self, website_name: str):
             api.live_site_builds_running(website)
             or removal_pipeline.has_unfinished_build()
         )
+        if not busy and Website.objects.filter(
+            name=website_name, unpublish_status__isnull=False
+        ).update(
+            unpublish_status=PUBLISH_STATUS_NOT_STARTED,
+            unpublish_status_updated_on=now_in_utc(),
+        ):
+            removal_pipeline.unpause()
+            removal_pipeline.trigger()
     except HTTPError as exc:
-        # Concourse could not say whether a build is still uploading the site
+        # Concourse could not say whether a build is still uploading the site,
+        # or could not start the removal
         raise self.retry(exc=exc) from exc
     if busy:
         raise self.retry()
-    if Website.objects.filter(name=website_name, unpublish_status__isnull=False).update(
-        unpublish_status=PUBLISH_STATUS_NOT_STARTED,
-        unpublish_status_updated_on=now_in_utc(),
-    ):
-        removal_pipeline.unpause()
-        removal_pipeline.trigger()
 
 
 @app.task(acks_late=True)
