@@ -885,8 +885,9 @@ def test_site_pipeline_has_running_build(
     """has_running_build should report whether a job of the site's pipeline has a started build"""
     mock_get = mocker.patch(
         "content_sync.pipelines.concourse.PipelineApi.get",
+        # Concourse leaves next_build out of a job with no build in progress
         return_value=[
-            {"name": name, "next_build": next_build}
+            {"name": name, **({"next_build": next_build} if next_build else {})}
             for name, next_build in zip(
                 ["online-site-job", "offline-site-job"], next_builds
             )
