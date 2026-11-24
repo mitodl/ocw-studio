@@ -1,5 +1,6 @@
 """Constants for content_sync"""
 
+GIT_DATA_FILEPATH = "filepath"
 VERSION_LIVE = "live"
 VERSION_DRAFT = "draft"
 TARGET_ONLINE = "online"

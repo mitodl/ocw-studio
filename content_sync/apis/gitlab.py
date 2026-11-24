@@ -20,7 +20,7 @@ from gitlab.exceptions import (
 )
 from safedelete.models import HARD_DELETE
 
-from content_sync.apis.github import GIT_DATA_FILEPATH
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.decorators import retry_on_failure
 from content_sync.models import ContentSyncState
 from content_sync.serializers import serialize_content_to_file

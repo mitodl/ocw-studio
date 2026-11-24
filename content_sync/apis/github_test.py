@@ -16,7 +16,6 @@ from github import Auth, GithubException, GithubIntegration
 from requests import HTTPError
 
 from content_sync.apis.github import (
-    GIT_DATA_FILEPATH,
     GithubApiWrapper,
     find_files_recursive,
     get_app_installation_id,
@@ -26,7 +25,7 @@ from content_sync.apis.github import (
     tag_sync_lock,
 )
 from content_sync.backends.github import GithubBackend
-from content_sync.constants import OCW_HUGO_RC_TAG_REGEX
+from content_sync.constants import GIT_DATA_FILEPATH, OCW_HUGO_RC_TAG_REGEX
 from content_sync.models import ContentSyncState
 from main import features
 from users.factories import UserFactory

@@ -5,12 +5,12 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from gitlab.exceptions import GitlabGetError
+from gitlab.exceptions import GitlabGetError, GitlabHeadError
 from safedelete.models import HARD_DELETE
 
-from content_sync.apis.github import GIT_DATA_FILEPATH
 from content_sync.apis.gitlab import GitlabApiWrapper, decode_file_contents
 from content_sync.backends.base import BaseSyncBackend
+from content_sync.constants import GIT_DATA_FILEPATH
 from content_sync.decorators import check_sync_state
 from content_sync.serializers import deserialize_file_to_website_content
 from content_sync.utils import get_destination_filepath
@@ -43,6 +43,17 @@ class GitlabBackend(BaseSyncBackend):
     def backend_exists(self):
         """Determine if the website repo exists."""
         return self.api.repo_exists()
+
+    def file_exists(self, path: str) -> bool:
+        """Check one file on the sync branch without creating a repository."""
+        repo = self.api.gl.projects.get(self.api.repo_path, lazy=True)
+        try:
+            repo.files.head(file_path=path, ref=settings.GIT_BRANCH_MAIN)
+        except GitlabHeadError as exc:
+            if exc.response_code == HTTPStatus.NOT_FOUND:
+                return False
+            raise
+        return True
 
     def get_rate_limit_status(self):
         """Return GitLab rate limit state if available."""

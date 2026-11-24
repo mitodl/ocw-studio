@@ -18,7 +18,6 @@ from websites.management.commands.markdown_cleaning.utils import (
     ContentLookup,
     LegacyFileLookup,
     UrlSiteRelativiser,
-    get_rootrelative_url_from_content,
     remove_prefix,
 )
 
@@ -230,7 +229,7 @@ class RootRelativeUrlRule(PyparsingRule):
             # worry about this for now.
             return original_text, notes
 
-        destination = get_rootrelative_url_from_content(linked_content)
+        destination = self.replacement_url(linked_content, url.path)
         if fragment:
             destination = destination + "#" + fragment
 

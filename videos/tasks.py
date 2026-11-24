@@ -667,24 +667,46 @@ def copy_video_resource(source_course_id, destination_course_id, source_resource
     max_retries=3,
     rate_limit=ARCHIVE_URL_FILESIZE_TASK_RATE_LIMIT,
 )
-def populate_video_file_size(self, video_content_id: int):
+def populate_video_file_size(
+    self, video_content_id: int, *, report_change: bool = False
+) -> str | None:
     """
     Populate the file size for a video by making a HEAD request to its archive_url.
+
+    When requested by a repair, return the new checksum if the write changed content.
     """
     try:
         retry_count = self.request.retries
         request_timeout = settings.ARCHIVE_URL_REQUEST_TIMEOUT + (retry_count * 60)
         video = WebsiteContent.objects.get(id=video_content_id)
-        archive_url = (video.metadata or {}).get("video_files", {}).get("archive_url")
+        archive_url = get_dict_field(video.metadata or {}, "video_files.archive_url")
         response = requests.head(
             archive_url,
             allow_redirects=True,
             timeout=request_timeout,
         )
         if response.status_code == HTTP_200_OK and "Content-Length" in response.headers:
-            video.metadata["file_size"] = int(response.headers["Content-Length"])
-            video.skip_sync = True
-            video.save(update_fields=["metadata"])
+            size = int(response.headers["Content-Length"])
+            # Captions or the archive URL can change during the HEAD request.
+            with transaction.atomic():
+                video = WebsiteContent.objects.select_for_update().get(
+                    pk=video_content_id
+                )
+                if (
+                    get_dict_field(video.metadata or {}, "video_files.archive_url")
+                    != archive_url
+                ):
+                    return None
+                previous_checksum = (
+                    video.calculate_checksum() if report_change else None
+                )
+                video.metadata["file_size"] = size
+                video.skip_sync = True
+                video.save(update_fields=["metadata"])
+                if report_change:
+                    checksum = video.calculate_checksum()
+                    if checksum != previous_checksum:
+                        return checksum
         else:
             raise_head_request_error(response.status_code, video.title)
 
@@ -703,6 +725,8 @@ def populate_video_file_size(self, video_content_id: int):
             video.website.short_id,
         )
         raise self.retry(exc=exc) from exc
+
+    return None
 
 
 @app.task(
