@@ -242,17 +242,15 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
     videos = resource.referencing_content.all()
     text_id = str(resource.text_id)
     for video in videos:
-        if (video.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
-            continue
-        video_files = video.metadata.get("video_files")
-        if not isinstance(video_files, dict):
+        metadata = video.metadata if isinstance(video.metadata, dict) else {}
+        if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
             continue
         changed = False
         for resource_field in (
-            "video_captions_resources",
-            "video_transcript_resources",
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         ):
-            relation = video_files.get(resource_field)
+            relation = get_dict_field(metadata, resource_field)
             if not isinstance(relation, dict):
                 continue
             content_list = relation.get("content")
@@ -263,7 +261,6 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
                 relation["content"] = [c for c in content_list if c != text_id]
                 changed = True
         if changed:
-            video.metadata["video_files"] = video_files
             video.save(update_fields=["metadata"])
             sync_website_content_references(video)
 

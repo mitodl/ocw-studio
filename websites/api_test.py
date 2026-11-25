@@ -1091,6 +1091,39 @@ def test_unlink_deleted_resource_removes_from_video_captions_resources():
     assert captions not in video.referenced_by.all()
 
 
+def test_unlink_deleted_resource_uses_configured_paths(settings):
+    """The resource type and relation fields come from the configured metadata paths"""
+    settings.FIELD_RESOURCETYPE = "kind"
+    settings.YT_FIELD_CAPTIONS_RESOURCES = "media.captions"
+    settings.YT_FIELD_TRANSCRIPT_RESOURCES = "media.transcripts"
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "kind": RESOURCE_TYPE_VIDEO,
+            "media": {
+                "captions": {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                }
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    video.referenced_by.add(captions)
+
+    unlink_deleted_resource_from_videos(captions)
+
+    video.refresh_from_db()
+    assert video.metadata["media"]["captions"]["content"] == []
+
+
 def test_unlink_deleted_resource_removes_legacy_scalar_string_content():
     """Deleting a resource linked via a legacy scalar-string content value still unlinks it."""
     website = WebsiteFactory.create()
