@@ -655,15 +655,21 @@ def test_create_gdrive_resource_content_preexisting_captions(
                 preexisting_captions_filenames["website_content"]["transcript"],
             ],
             ["video/mp4", "text/vtt", "application/pdf"],
+            [
+                DRIVE_FOLDER_VIDEOS_FINAL,
+                DRIVE_FOLDER_FILES_FINAL,
+                DRIVE_FOLDER_FILES_FINAL,
+            ],
         )
     )
 
-    for drive_filename, content_filename, content_type in filenames:
+    for drive_filename, content_filename, content_type, folder in filenames:
         mocked_get_s3_content_type.return_value = content_type
         drive_file = DriveFileFactory.create(
             website=website,
             name=drive_filename,
             s3_key=f"/gdrive_uploads/website/{drive_filename}",
+            drive_path=f"website/{folder}",
         )
         create_gdrive_resource_content(drive_file)
         drive_file.refresh_from_db()
@@ -1209,3 +1215,53 @@ def test_link_video_caption_transcript_resources_syncs_content_references():
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
+
+
+def _extensionless_video(website):
+    """Create a video resource whose filename has no extension, as in ESD.932"""
+    return WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="mitesd_932s06_lec03",
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt-lec3"},
+            "video_files": {},
+        },
+    )
+
+
+@pytest.mark.django_db
+def test_link_caption_to_extensionless_video():
+    """A Drive caption named after an extension-less video links to that video"""
+    website = WebsiteFactory.create()
+    video_resource = _extensionless_video(website)
+    es_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03_captions-es_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_lec03_captions-es.vtt",
+    )
+
+    _link_video_caption_transcript_resources(es_caption, website)
+
+    video_resource.refresh_from_db()
+    assert video_resource.metadata["video_files"]["video_captions_resources"][
+        "content"
+    ] == [str(es_caption.text_id)]
+
+
+@pytest.mark.django_db
+def test_misnamed_caption_links_to_no_video():
+    """A caption named after a cut-down video name links to no video"""
+    website = WebsiteFactory.create()
+    video_resource = _extensionless_video(website)
+    misnamed_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_captions_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_captions.vtt",
+    )
+
+    _link_video_caption_transcript_resources(misnamed_caption, website)
+
+    video_resource.refresh_from_db()
+    assert video_resource.metadata["video_files"] == {}

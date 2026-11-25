@@ -5,7 +5,7 @@ from django.db.models import CASCADE
 from mitol.common.models import TimestampedModel, TimestampedModelQuerySet
 
 from main import settings
-from main.utils import get_base_filename, get_file_extension
+from main.utils import get_file_extension
 from videos.constants import (
     CAPTION_FILE_EXTENSIONS,
     DESTINATION_YOUTUBE,
@@ -14,6 +14,7 @@ from videos.constants import (
     VideoJobStatus,
     VideoStatus,
 )
+from videos.utils import get_video_base_filename
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import get_dict_query_field
@@ -73,7 +74,7 @@ class Video(TimestampedModel):
             .first()
         )
         if video_resource:
-            video_filename = get_base_filename(video_resource.filename)
+            video_filename = get_video_base_filename(video_resource.filename)
 
             def _matching(prefix, extensions):
                 candidates = WebsiteContent.objects.filter(

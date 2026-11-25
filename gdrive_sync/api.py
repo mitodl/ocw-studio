@@ -41,10 +41,11 @@ from gdrive_sync.constants import (
 )
 from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
-from main.utils import get_base_filename, get_dirpath_and_filename
+from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
+from videos.utils import get_video_base_filename
 from websites.api import (
     auto_link_video_captions_transcript,
     get_valid_new_filename,
@@ -59,7 +60,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
-from websites.utils import get_valid_base_filename
+from websites.utils import get_dict_query_field, get_valid_base_filename
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -494,14 +495,20 @@ def _link_resource_to_video(
     video_base: str,
 ) -> None:
     """Set a captions/transcript _resource field on the corresponding video resource."""
-    # Identify the video by filename convention: {base}_{ext} where base == video_base.
-    # Exclude known non-video filenames (captions and transcripts share the same base).
+    # Identify the video resource whose name, without its video extension, is
+    # video_base: "lecture1_mp4" for "lecture1", or an extension-less name
+    # such as "mitesd_932s06_lec03" that equals video_base exactly.
     candidates = WebsiteContent.objects.filter(
         website=website,
-        filename__startswith=f"{video_base}_",
-    ).exclude(Q(filename__contains="_captions") | Q(filename__contains="_transcript"))
+        filename__startswith=video_base,
+        **{
+            get_dict_query_field(
+                "metadata", settings.FIELD_RESOURCETYPE
+            ): RESOURCE_TYPE_VIDEO
+        },
+    )
     video_resource = next(
-        (v for v in candidates if get_base_filename(v.filename or "") == video_base),
+        (v for v in candidates if get_video_base_filename(v.filename) == video_base),
         None,
     )
     if not video_resource:

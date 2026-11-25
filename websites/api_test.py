@@ -797,6 +797,37 @@ def test_auto_link_video_no_matching_captions():
     assert video.metadata["video_files"] == {}
 
 
+def test_auto_link_video_captions_transcript_extensionless_video_name():
+    """A video name with no extension links only captions named after the full name"""
+    website = WebsiteFactory.create()
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": "yt-lec3"},
+            "video_files": {},
+        },
+    )
+    own_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03_captions_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_lec03_captions.vtt",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_captions_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_captions.vtt",
+    )
+
+    assert auto_link_video_captions_transcript(video_resource) is True
+    video_resource.refresh_from_db()
+    assert video_resource.metadata["video_files"]["video_captions_resources"][
+        "content"
+    ] == [str(own_caption.text_id)]
+    assert auto_link_video_captions_transcript(video_resource) is False
+
+
 def test_auto_link_video_links_existing_captions_and_transcript():
     """auto_link_video_captions_transcript sets _resource fields from existing content."""
     website = WebsiteFactory.create()

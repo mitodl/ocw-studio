@@ -16,7 +16,6 @@ from mitol.mail.api import get_message_sender
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main.utils import (
     NestableKeyTextTransform,
-    get_base_filename,
     get_file_extension,
 )
 from users.models import User
@@ -27,6 +26,7 @@ from videos.constants import (
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
 )
+from videos.utils import get_video_base_filename
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -320,7 +320,7 @@ def _merge_caption_resource(
     return True
 
 
-def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
+def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> bool:
     """
     For a Video resource, auto-populate ``video_captions_resources`` and
     ``video_transcript_resources`` from existing WebsiteContent records in the
@@ -334,12 +334,14 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     merges them into the multi-select content list without overwriting
     existing non-empty entries. Only ``_resources`` relation fields are
     written; legacy ``_file`` fields are left untouched.
+
+    Returns True if new links were saved.
     """
     if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
-        return
-    video_base = get_base_filename(video_resource.filename or "")
+        return False
+    video_base = get_video_base_filename(video_resource.filename)
     if not video_base:
-        return
+        return False
     website = video_resource.website
     video_files = (
         video_resource.metadata.get("video_files") if video_resource.metadata else None
@@ -369,6 +371,7 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
             video_resource.metadata = {}
         video_resource.metadata["video_files"] = video_files
         video_resource.save(update_fields=["metadata"])
+    return changed
 
 
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:

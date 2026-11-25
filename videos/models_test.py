@@ -195,3 +195,36 @@ def test_video_caption_transcript_resources_survives_filename_uniqueness_suffix(
 
     assert len(captions) == 1
     assert len(transcripts) == 1
+
+
+def test_caption_transcript_resources_extensionless_video_name():
+    """A video name with no extension matches only captions named after the full name"""
+    video = VideoFactory.create()
+    website = video.website
+    VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, video=video, destination_id="yt-lec3"
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03",
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt-lec3"},
+            "video_files": {},
+        },
+    )
+    own_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03_captions_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_lec03_captions.vtt",
+    )
+    WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_captions_vtt",
+        file=f"{website.s3_path}/mitesd_932s06_captions.vtt",
+    )
+
+    captions, transcripts = video.caption_transcript_resources()
+
+    assert captions == [own_caption]
+    assert transcripts == []

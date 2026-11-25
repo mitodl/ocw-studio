@@ -28,7 +28,6 @@ from gdrive_sync.factories import DriveFileFactory
 from gdrive_sync.models import DriveFile
 from gdrive_sync.utils import get_resource_name
 from main.s3_utils import get_boto3_client
-from main.utils import get_base_filename
 from users.factories import UserFactory
 from videos.conftest import MOCK_BUCKET_NAME, MockHttpErrorResponse, setup_s3
 from videos.constants import (
@@ -56,6 +55,7 @@ from videos.tasks import (
     update_youtube_tags_batch,
     upload_youtube_videos,
 )
+from videos.utils import get_video_base_filename
 from videos.youtube import API_QUOTA_ERROR_MSG
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.factories import WebsiteContentFactory, WebsiteFactory
@@ -383,7 +383,7 @@ def test_start_transcript_job(
     video = create_video(youtube_id, title)
     video_content = create_content(video.website, youtube_id, title)
 
-    base_filename = get_base_filename(video_content.filename)
+    base_filename = get_video_base_filename(video_content.filename)
 
     base_path = f"/some/path/to/{base_filename}"
 
@@ -858,7 +858,7 @@ def test_update_transcripts_for_video_no_3play(
     video = videofile.video
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
     metadata = resource.metadata
-    base_resource_filename = get_base_filename(resource.filename)
+    base_resource_filename = get_video_base_filename(resource.filename)
     base_path = f"{resource.website.s3_path}/{base_resource_filename}"
 
     if caption_exists:
@@ -934,7 +934,7 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
 
     # What the backfill creates: named off the video's base stem, while the
     # file itself keeps the orphan's opaque S3 key.
-    base_stem = get_base_filename(resource.filename)
+    base_stem = get_video_base_filename(resource.filename)
     linked_transcript = WebsiteContentFactory.create(
         website=video.website,
         filename=f"{base_stem}_transcript_pdf",
@@ -1021,7 +1021,7 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     )
     video = videofile.video
     resource = WebsiteContentFactory.create(website=video.website, metadata={})
-    base_resource_filename = get_base_filename(resource.filename)
+    base_resource_filename = get_video_base_filename(resource.filename)
     base_path = f"{resource.website.s3_path}/{base_resource_filename}"
 
     # English (US locale) captions
