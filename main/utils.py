@@ -176,8 +176,3 @@ def get_dict_list_item_by_field(items: list[dict], field: str, value: str):
         (item for item in items if item.get(field, None) == value),
         None,
     )
-
-
-def get_base_filename(filename: str) -> str:
-    """Return base filename without appended extension"""
-    return filename.rsplit("_", 1)[0]

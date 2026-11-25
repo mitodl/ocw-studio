@@ -8,6 +8,7 @@ from videos.threeplay_sync import (
     link_threeplay_files_as_resources,
     sync_video_captions_and_transcripts,
 )
+from videos.utils import generate_s3_path
 from websites.constants import CONTENT_TYPE_RESOURCE
 from websites.factories import (
     WebsiteContentFactory,
@@ -450,6 +451,53 @@ def test_link_threeplay_files_as_resources(mocker):
     # Legacy _file fields in stored metadata are never written
     assert "video_captions_file" not in vf
     assert "video_transcript_file" not in vf
+
+
+def test_link_threeplay_files_as_resources_extensionless_video_name(mocker):
+    """3Play files for a video name with no extension are named after the full name"""
+    starter = WebsiteStarterFactory.create(slug="ocw-course-v2")
+    website = WebsiteFactory.create(starter=starter)
+    video_resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="mitesd_932s06_lec03",
+        metadata={
+            "resourcetype": "Video",
+            "video_metadata": {"youtube_id": "yt-lec3"},
+            "video_files": {},
+        },
+    )
+    video = mocker.Mock()
+    video.webvtt_transcript_file.name = "sites/site/threeplay.webvtt"
+    video.webvtt_transcript_file.open.return_value.__enter__ = mocker.Mock(
+        return_value=BytesIO(b"WEBVTT")
+    )
+    video.webvtt_transcript_file.open.return_value.__exit__ = mocker.Mock(
+        return_value=False
+    )
+    video.pdf_transcript_file.name = "sites/site/threeplay.pdf"
+    video.pdf_transcript_file.open.return_value.__enter__ = mocker.Mock(
+        return_value=BytesIO(b"%PDF")
+    )
+    video.pdf_transcript_file.open.return_value.__exit__ = mocker.Mock(
+        return_value=False
+    )
+    # The S3 key, and so the resource name, comes from the uploaded file's name
+    mocker.patch(
+        "videos.threeplay_sync.upload_to_s3",
+        side_effect=lambda file_content, video_resource: (
+            f"/{generate_s3_path(file_content, video_resource.website)}"
+        ),
+    )
+
+    assert link_threeplay_files_as_resources(video, video_resource) is True
+    created = WebsiteContent.objects.filter(website=website).exclude(
+        pk=video_resource.pk
+    )
+    assert sorted(r.filename for r in created) == [
+        "mitesd_932s06_lec03_captions_vtt",
+        "mitesd_932s06_lec03_transcript_pdf",
+    ]
 
 
 def test_link_threeplay_files_as_resources_no_files(mocker):

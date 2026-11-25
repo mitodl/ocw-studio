@@ -7,8 +7,8 @@ from django.conf import settings
 
 from main.management.commands.filter import WebsiteFilterCommand
 from main.s3_utils import get_boto3_resource
-from main.utils import get_base_filename, get_file_extension
-from videos.utils import parse_caption_language_locale
+from main.utils import get_file_extension
+from videos.utils import get_video_base_filename, parse_caption_language_locale
 from websites.api import get_valid_new_filename
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
@@ -172,8 +172,9 @@ class Command(WebsiteFilterCommand):
 
         # Name the created resource exactly as GDrive ingestion and
         # link_threeplay_files_as_resources would: the video's *base stem*
-        # (get_base_filename strips the trailing format tag, e.g.
-        # "lecture1_mp4" -> "lecture1") plus the caption/transcript suffix
+        # (get_video_base_filename strips a trailing video extension, e.g.
+        # "lecture1_mp4" -> "lecture1", and keeps an extension-less name such
+        # as "mitesd_932s06_lec03" whole) plus the caption/transcript suffix
         # plus the real file extension, giving "lecture1_captions_vtt".
         # auto_link_video_captions_transcript and
         # Video.caption_transcript_resources() both search the
@@ -189,7 +190,7 @@ class Command(WebsiteFilterCommand):
         if extension := get_file_extension(key):
             suffix = f"{suffix}_{extension}"
         base_filename = self._truncate_with_suffix(
-            get_base_filename(content.filename), suffix, CONTENT_FILENAME_MAX_LEN
+            get_video_base_filename(content.filename), suffix, CONTENT_FILENAME_MAX_LEN
         )
         filename = get_valid_new_filename(
             website_pk=content.website_id,
