@@ -90,7 +90,10 @@ def create_content(website, youtube_id, title):
     """  # noqa: D401
     return WebsiteContentFactory.create(
         website=website,
-        metadata={"video_metadata": {"youtube_id": youtube_id}},
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": youtube_id},
+        },
         title=title,
     )
 
@@ -464,6 +467,43 @@ def test_start_transcript_job(
         )
     else:
         mock_order_transcript_request_request.assert_not_called()
+
+
+def test_start_transcript_job_keeps_existing_links(mocker, settings):
+    """A caption linked by hand before the transcript job runs stays linked"""
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    video = create_video("test", "title")
+    website = video.website
+    es_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="spanish-subtitles_vtt",
+        file=f"{website.s3_path}/spanish-subtitles.vtt",
+        metadata={"language": "es"},
+    )
+    en_caption = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture-1_captions_vtt",
+        file=f"{website.s3_path}/lecture-1_captions.vtt",
+    )
+    video_content = create_content(website, "test", "title")
+    video_content.filename = "lecture-1_mp4"
+    set_dict_field(
+        video_content.metadata,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+        {"content": [str(es_caption.text_id)], "website": website.name},
+    )
+    video_content.save()
+    mock_threeplay_upload_video_request = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request"
+    )
+
+    start_transcript_job.apply([video.id])
+
+    video_content.refresh_from_db()
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)[
+        "content"
+    ] == [str(es_caption.text_id), str(en_caption.text_id)]
+    mock_threeplay_upload_video_request.assert_not_called()
 
 
 # pylint:disable=unused-variable

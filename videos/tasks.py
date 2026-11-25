@@ -168,26 +168,9 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
     captions_list, transcripts_list = video.caption_transcript_resources()
 
     if captions_list or transcripts_list:  # check for existing captions or transcript
-        website = video.website
-        if captions_list:
-            set_dict_field(
-                video_resource.metadata,
-                settings.YT_FIELD_CAPTIONS_RESOURCES,
-                {
-                    "content": [str(r.text_id) for r in captions_list],
-                    "website": website.name,
-                },
-            )
-        if transcripts_list:
-            set_dict_field(
-                video_resource.metadata,
-                settings.YT_FIELD_TRANSCRIPT_RESOURCES,
-                {
-                    "content": [str(r.text_id) for r in transcripts_list],
-                    "website": website.name,
-                },
-            )
-        video_resource.save()
+        # Keep what is already linked and append the matches.
+        if auto_link_video_captions_transcript(video_resource):
+            sync_website_content_references(video_resource)
 
     # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
     else:
