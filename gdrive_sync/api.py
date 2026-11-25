@@ -43,12 +43,13 @@ from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
+from videos.caption_filenames import find_video_for_caption
 from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
-from videos.utils import get_video_base_filename
 from websites.api import (
     auto_link_video_captions_transcript,
     get_valid_new_filename,
+    merge_caption_resources,
     sync_website_content_references,
 )
 from websites.constants import (
@@ -60,7 +61,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_query_field, get_valid_base_filename
+from websites.utils import get_valid_base_filename
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -451,69 +452,37 @@ def get_pdf_title(drive_file: DriveFile) -> str:
         return drive_file.name
 
 
-def _link_video_caption_transcript_resources(
-    resource: WebsiteContent, website: Website
-) -> None:
+def _link_video_caption_transcript_resources(resource: WebsiteContent) -> None:
     """
     Ensure ``video_captions_resources`` / ``video_transcript_resources`` relation
     fields are kept in sync after a gdrive resource is created or updated.
 
-    - If *resource* is a Video, look for existing captions/transcript resources
-      in the same website by the ``{base}_captions-<lang>-<locale>_vtt`` /
-      ``{base}_transcript-<lang>-<locale>_pdf`` filename convention (or the
-      legacy no-suffix form) and set the relation fields on the video (without
-      overwriting ones that are already present).
-    - If *resource* is a captions or transcript file, find the corresponding
-      video resource by the same convention and set the appropriate relation
-      field on that video.
+    - If *resource* is a Video, add the caption and transcript files whose
+      names match it (see ``videos.caption_filenames``), keeping existing links.
+    - If *resource* is a caption or transcript file, add it to the Video
+      resource its name matches.
 
     Only ``_resources`` relation fields are written; legacy ``_file`` fields in
     stored metadata are left untouched.
     """
     resource_type = (resource.metadata or {}).get("resourcetype")
-    filename = resource.filename or ""
 
     if resource_type == RESOURCE_TYPE_VIDEO:
         auto_link_video_captions_transcript(resource)
         sync_website_content_references(resource)
-    elif "_captions" in filename:
-        video_base = filename.split("_captions")[0]
-        _link_resource_to_video(
-            resource, website, "video_captions_resources", video_base
-        )
-    elif "_transcript" in filename:
-        video_base = filename.split("_transcript")[0]
-        _link_resource_to_video(
-            resource, website, "video_transcript_resources", video_base
-        )
+        return
+    match = find_video_for_caption(resource)
+    if match:
+        video_resource, resource_field = match
+        _link_resource_to_video(resource, video_resource, resource_field)
 
 
 def _link_resource_to_video(
     resource: WebsiteContent,
-    website: Website,
+    video_resource: WebsiteContent,
     resource_field: str,
-    video_base: str,
 ) -> None:
-    """Set a captions/transcript _resource field on the corresponding video resource."""
-    # Identify the video resource whose name, without its video extension, is
-    # video_base: "lecture1_mp4" for "lecture1", or an extension-less name
-    # such as "mitesd_932s06_lec03" that equals video_base exactly.
-    candidates = WebsiteContent.objects.filter(
-        website=website,
-        filename__startswith=video_base,
-        **{
-            get_dict_query_field(
-                "metadata", settings.FIELD_RESOURCETYPE
-            ): RESOURCE_TYPE_VIDEO
-        },
-    )
-    video_resource = next(
-        (v for v in candidates if get_video_base_filename(v.filename) == video_base),
-        None,
-    )
-    if not video_resource:
-        return
-
+    """Add a caption/transcript resource to a relation field of a video resource."""
     video_files = (
         video_resource.metadata.get("video_files")
         if isinstance(video_resource.metadata, dict)
@@ -522,18 +491,10 @@ def _link_resource_to_video(
     if not isinstance(video_files, dict):
         video_files = {}
 
-    new_id = str(resource.text_id)
-    existing = video_files.get(resource_field)
-    if isinstance(existing, dict) and existing.get("content"):
-        # Already linked — append if not a duplicate
-        if new_id in existing["content"]:
-            return
-        existing["content"] = existing["content"] + [new_id]
-    else:
-        video_files[resource_field] = {
-            "content": [new_id],
-            "website": website.name,
-        }
+    if not merge_caption_resources(
+        video_files, video_resource.website, resource_field, [resource]
+    ):
+        return
 
     if not isinstance(video_resource.metadata, dict):
         video_resource.metadata = {}
@@ -622,7 +583,7 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
-        _link_video_caption_transcript_resources(resource, drive_file.website)
+        _link_video_caption_transcript_resources(resource)
     except PdfReadError:
         log.exception(
             "Could not create a resource from Google Drive file %s because it is not a valid PDF",  # noqa: E501

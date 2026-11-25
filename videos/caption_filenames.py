@@ -20,18 +20,25 @@ the keyword ("300k", "2", "old") are ignored.
 
 import re
 from dataclasses import dataclass
+from functools import reduce
+from operator import or_
 from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
+from django.conf import settings
+from django.db.models import Q
+
 from videos.constants import CAPTION_FILE_EXTENSIONS, TRANSCRIPT_FILE_EXTENSIONS
-from videos.utils import clean_uuid_filename
-from websites.constants import CONTENT_TYPE_RESOURCE
+from videos.utils import clean_uuid_filename, get_video_base_filename
+from websites.constants import CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO
+from websites.models import WebsiteContent
 from websites.site_config_api import SiteConfig
+from websites.utils import get_dict_query_field
 
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-    from websites.models import Website, WebsiteContent
+    from websites.models import Website
 
 CAPTIONS = "captions"
 TRANSCRIPT = "transcript"
@@ -169,3 +176,92 @@ def caption_source_name(resource: WebsiteContent) -> str | None:
     if not file_name:
         return None
     return clean_uuid_filename(PurePosixPath(file_name).name)
+
+
+RELATION_FIELDS = {
+    CAPTIONS: "video_captions_resources",
+    TRANSCRIPT: "video_transcript_resources",
+}
+
+
+def _video_key(video_resource: WebsiteContent) -> str:
+    """Return the normalized name of a video resource, without its extension"""
+    return video_name_key(get_video_base_filename(video_resource.filename))
+
+
+def _site_video_resources(website: Website):
+    """Return the site's Video resources in a stable order"""
+    return WebsiteContent.objects.filter(
+        website=website,
+        **{
+            get_dict_query_field(
+                "metadata", settings.FIELD_RESOURCETYPE
+            ): RESOURCE_TYPE_VIDEO
+        },
+    ).order_by("filename", "pk")
+
+
+def _owning_key(parsed: ParsedCaptionName, video_keys: Collection[str]) -> str | None:
+    """Return the most specific of a file's video names that a video has"""
+    return next((key for key in parsed.video_keys if key in video_keys), None)
+
+
+def find_caption_files(
+    video_resource: WebsiteContent,
+) -> tuple[list[WebsiteContent], list[WebsiteContent]]:
+    """
+    Return a video resource's caption and transcript files, ordered by filename.
+
+    A file belongs to the video when its parsed video name equals the video's
+    name without its extension. When a file could belong to two videos
+    ("lecture_es_captions.vtt" next to "lecture_mp4" and "lecture-es_mp4"), the
+    longer video name wins.
+    """
+    key = _video_key(video_resource)
+    if not key:
+        return [], []
+    website = video_resource.website
+    video_keys = {_video_key(video) for video in _site_video_resources(website)}
+    video_keys.add(key)
+    languages = site_languages(website)
+    extension_filter = reduce(
+        or_,
+        (
+            Q(file__iendswith=f".{extension}")
+            for extension in (*CAPTION_FILE_EXTENSIONS, *TRANSCRIPT_FILE_EXTENSIONS)
+        ),
+    )
+    candidates = (
+        WebsiteContent.objects.filter(extension_filter, website=website)
+        .prefetch_related("drivefile_set")
+        .order_by("filename")
+    )
+    found = {CAPTIONS: [], TRANSCRIPT: []}
+    for resource in candidates:
+        parsed = parse_caption_filename(caption_source_name(resource), languages)
+        if parsed and _owning_key(parsed, video_keys) == key:
+            found[parsed.kind].append(resource)
+    return found[CAPTIONS], found[TRANSCRIPT]
+
+
+def find_video_for_caption(
+    resource: WebsiteContent,
+) -> tuple[WebsiteContent, str] | None:
+    """
+    Return the Video resource a caption or transcript file belongs to, and the
+    relation field ("video_captions_resources" or "video_transcript_resources")
+    to add it to. Returns None when the name matches no Video resource.
+    """
+    website = resource.website
+    parsed = parse_caption_filename(
+        caption_source_name(resource), site_languages(website)
+    )
+    if parsed is None:
+        return None
+    videos_by_key = {}
+    for video in _site_video_resources(website):
+        videos_by_key.setdefault(_video_key(video), video)
+    key = _owning_key(parsed, videos_by_key)
+    if key is None:
+        return None
+    return videos_by_key[key], RELATION_FIELDS[parsed.kind]

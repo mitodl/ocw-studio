@@ -957,11 +957,9 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     """Avoid calling 3play when the orphan backfill already created an English
     transcript for the video.
 
-    Regression test for the duplicate-resource bug: the backfill names what
-    it creates with the same "{base_stem}_transcript_{ext}" convention GDrive
-    ingestion uses, so caption_transcript_resources() discovers it and 3Play
-    is skipped. Naming it any other way (e.g. off the video's full, unstripped
-    filename) made it invisible here and produced a second English transcript.
+    Regression test for the duplicate-resource bug. The backfill links what it
+    creates, and the file keeps the orphan's opaque S3 key, so name matching
+    can't find it. The linked English transcript is what skips 3Play.
     """
     mocker.patch("videos.tasks.is_ocw_site", return_value=True)
 
@@ -993,10 +991,9 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     )
     resource.save()
 
-    # The base-stem search finds it, which is the point of matching the
-    # convention rather than teaching the gate about a second one.
+    # Names are read from the file, and "1AbCdEf_transcript.pdf" names no video
     _, transcripts_list = video.caption_transcript_resources()
-    assert transcripts_list == [linked_transcript]
+    assert transcripts_list == []
 
     mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
 

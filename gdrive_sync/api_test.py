@@ -55,6 +55,7 @@ from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
+    site_config_with_resource_languages,
 )
 from websites.models import WebsiteContent
 
@@ -1150,13 +1151,13 @@ def test_link_resource_to_video_appends_second_language():
     )
 
     # Link English first
-    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_en, video, "video_captions_resources")
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert vf["video_captions_resources"]["content"] == [str(caption_en.text_id)]
 
     # Link French — must append, not overwrite
-    _link_resource_to_video(caption_fr, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_fr, video, "video_captions_resources")
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert str(caption_en.text_id) in vf["video_captions_resources"]["content"]
@@ -1186,7 +1187,7 @@ def test_link_resource_to_video_syncs_content_references():
 
     assert caption_en not in video.referenced_by.all()
 
-    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_en, video, "video_captions_resources")
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
@@ -1211,7 +1212,7 @@ def test_link_video_caption_transcript_resources_syncs_content_references():
 
     assert caption_en not in video.referenced_by.all()
 
-    _link_video_caption_transcript_resources(video, website)
+    _link_video_caption_transcript_resources(video)
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
@@ -1242,7 +1243,7 @@ def test_link_caption_to_extensionless_video():
         file=f"{website.s3_path}/mitesd_932s06_lec03_captions-es.vtt",
     )
 
-    _link_video_caption_transcript_resources(es_caption, website)
+    _link_video_caption_transcript_resources(es_caption)
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_resources"][
@@ -1261,7 +1262,73 @@ def test_misnamed_caption_links_to_no_video():
         file=f"{website.s3_path}/mitesd_932s06_captions.vtt",
     )
 
-    _link_video_caption_transcript_resources(misnamed_caption, website)
+    _link_video_caption_transcript_resources(misnamed_caption)
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"] == {}
+
+
+@pytest.mark.django_db
+def test_drive_caption_with_language_before_keyword_links_to_video():
+    """A Drive caption with the language before the keyword links to its video"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config=site_config_with_resource_languages("en", "es")
+        )
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_mp4",
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+    )
+    caption = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_es_captions_vtt",
+        file=f"{website.s3_path}/lecture-1_es_captions.vtt",
+    )
+    DriveFileFactory.create(
+        website=website, resource=caption, name="Lecture-1_es_captions.vtt"
+    )
+
+    _link_video_caption_transcript_resources(caption)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
+        str(caption.text_id)
+    ]
+
+
+@pytest.mark.django_db
+def test_drive_caption_links_to_video_with_legacy_string_relation():
+    """A caption is appended after a relation stored as a bare id string"""
+    website = WebsiteFactory.create()
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_mp4",
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": "old-caption-id",
+                    "website": website.name,
+                }
+            },
+        },
+    )
+    caption = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_captions_vtt",
+        file=f"{website.s3_path}/lecture-1_captions.vtt",
+    )
+
+    _link_video_caption_transcript_resources(caption)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
+        "old-caption-id",
+        str(caption.text_id),
+    ]

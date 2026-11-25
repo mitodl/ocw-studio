@@ -105,12 +105,10 @@ class Command(WebsiteFilterCommand):
        real file extension, e.g. "lecture1_captions_vtt" for a video named
        "lecture1_mp4" (truncated as needed to fit the filename length
        limit). The orphan path's own filename is not used, since it is
-       often an opaque identifier. Matching GDrive's convention matters:
-       auto_link_video_captions_transcript and
-       Video.caption_transcript_resources() both discover resources by the
-       "{base_stem}_captions" / "{base_stem}_transcript" prefix, so a
-       resource named any other way is invisible to them and gets
-       re-fetched from 3Play as a duplicate. If
+       often an opaque identifier. Name matching reads the file's own
+       name, which stays opaque, so it never finds these resources. They
+       are linked here, and a linked English caption or transcript is what
+       stops publishing from fetching a duplicate from 3Play. If
        the S3 object no longer exists under the storage key, the _file path
        is left in place for manual inspection. Either way, the resolved
        resource's id is appended to the resource field's existing content
@@ -176,12 +174,8 @@ class Command(WebsiteFilterCommand):
         # "lecture1_mp4" -> "lecture1", and keeps an extension-less name such
         # as "mitesd_932s06_lec03" whole) plus the caption/transcript suffix
         # plus the real file extension, giving "lecture1_captions_vtt".
-        # auto_link_video_captions_transcript and
-        # Video.caption_transcript_resources() both search the
-        # "{base_stem}_captions" / "{base_stem}_transcript" prefix, so
-        # anything named off the *full* filename would be invisible to them
-        # and get re-fetched from 3Play as a duplicate. The orphan path's own
-        # filename is not used because it is often an opaque identifier.
+        # The orphan path's own filename is not used because it is often an
+        # opaque identifier.
         #
         # Truncated so the suffixed base never exceeds the filename length
         # limit on its own, before get_valid_new_filename handles any
