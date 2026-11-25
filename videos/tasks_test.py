@@ -57,7 +57,7 @@ from videos.tasks import (
 )
 from videos.utils import get_video_base_filename
 from videos.youtube import API_QUOTA_ERROR_MSG
-from websites.constants import RESOURCE_TYPE_VIDEO
+from websites.constants import CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO
 from websites.factories import WebsiteContentFactory, WebsiteFactory
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import WebsiteContent
@@ -1053,6 +1053,228 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
         str(captions_fr.text_id),
     }
     assert relation["website"] == video.website.name
+
+
+def _video_resource(website, filename, youtube_id, captions=None, transcripts=None):
+    """Create a Video resource, optionally with captions and transcripts linked"""
+    video_files = {}
+    if captions is not None:
+        video_files["video_captions_resources"] = {
+            "content": captions,
+            "website": website.name,
+        }
+    if transcripts is not None:
+        video_files["video_transcript_resources"] = {
+            "content": transcripts,
+            "website": website.name,
+        }
+    return WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename=filename,
+        metadata={
+            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "video_metadata": {"youtube_id": youtube_id},
+            "video_files": video_files,
+        },
+    )
+
+
+def _caption_file(website, filename, file, **metadata):
+    """Create a caption or transcript resource"""
+    return WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename=filename,
+        file=f"{website.s3_path}/{file}",
+        metadata=metadata,
+    )
+
+
+def _linked_ids(video_resource, field):
+    """Return the ids linked in one of a video resource's relation fields"""
+    video_resource.refresh_from_db()
+    relation = get_dict_field(video_resource.metadata, field)
+    return relation["content"] if relation else None
+
+
+def test_update_transcripts_for_website_keeps_hand_linked_captions(mocker):
+    """hq#7378: 6.100L Lecture 1 lost its Spanish files on every stage."""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    website = video.website
+    en_caption = _caption_file(
+        website,
+        "6100l-lecture-1-version-2_captions_vtt",
+        "6100l-lecture-1-version-2_captions.vtt",
+    )
+    es_caption = _caption_file(
+        website,
+        "mit6_100lf22_lec01_es_captions_vtt",
+        "mit6_100lf22_lec01_es_captions.vtt",
+        language="es",
+    )
+    es_transcript = _caption_file(
+        website,
+        "mit6_100lf22_lec01_es_transcript_pdf",
+        "mit6_100lf22_lec01_es_transcript.pdf",
+        language="es",
+    )
+    resource = _video_resource(
+        website,
+        "6100l-lecture-1-version-2_mp4",
+        "expected_id",
+        captions=[str(es_caption.text_id)],
+        transcripts=[str(es_transcript.text_id)],
+    )
+    mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_website(website)
+
+    assert _linked_ids(resource, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(es_caption.text_id),
+        str(en_caption.text_id),
+    ]
+    assert _linked_ids(resource, settings.YT_FIELD_TRANSCRIPT_RESOURCES) == [
+        str(es_transcript.text_id)
+    ]
+    assert resource in en_caption.referencing_content.all()
+    mock_3play.assert_not_called()
+
+
+def test_update_transcripts_for_video_extensionless_name_ignores_sibling_file(mocker):
+    """A video name with no extension keeps its own captions, not a course-wide file"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="yt-lec3"
+    )
+    video = videofile.video
+    website = video.website
+    own_caption = _caption_file(
+        website,
+        "mitesd_932s06_lec03_captions_vtt",
+        "mitesd_932s06_lec03_captions.vtt",
+    )
+    _caption_file(website, "mitesd_932s06_captions_vtt", "mitesd_932s06_captions.vtt")
+    video_resource = _video_resource(
+        website,
+        "mitesd_932s06_lec03",
+        "yt-lec3",
+        captions=[str(own_caption.text_id)],
+    )
+    mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+
+    assert _linked_ids(video_resource, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(own_caption.text_id)
+    ]
+    mock_3play.assert_not_called()
+
+
+def test_update_transcripts_for_video_skips_3play_when_english_linked_by_hand(mocker):
+    """An English caption linked by hand counts as coverage for the 3Play gate"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    website = video.website
+    linked = _caption_file(website, "1abcdef_vtt", "1AbCdEf.vtt")
+    video_resource = _video_resource(
+        website, "lecture-1_mp4", "expected_id", captions=[str(linked.text_id)]
+    )
+    mock_3play = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=False
+    )
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_not_called()
+    assert _linked_ids(video_resource, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(linked.text_id)
+    ]
+
+
+def test_update_transcripts_for_video_fetches_3play_when_linked_file_is_spanish_by_metadata(
+    mocker,
+):
+    """A hand-linked file whose Studio language is Spanish does not stop the 3Play fetch"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    website = video.website
+    linked = _caption_file(website, "1abcdef_vtt", "1AbCdEf.vtt", language="es")
+    _video_resource(
+        website, "lecture-1_mp4", "expected_id", captions=[str(linked.text_id)]
+    )
+    mock_3play = mocker.patch(
+        "videos.tasks.threeplay_api.update_transcripts_for_video", return_value=False
+    )
+
+    update_transcripts_for_video(video.id)
+
+    mock_3play.assert_called_once_with(video)
+
+
+def test_update_transcripts_for_video_keeps_legacy_string_link(mocker):
+    """A relation stored as a bare string keeps that id and gets new matches appended"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    website = video.website
+    old_caption = _caption_file(
+        website, "old-captions_vtt", "old-captions.vtt", language="es"
+    )
+    en_caption = _caption_file(
+        website, "lecture-1_captions_vtt", "lecture-1_captions.vtt"
+    )
+    video_resource = _video_resource(
+        website, "lecture-1_mp4", "expected_id", captions=str(old_caption.text_id)
+    )
+    mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+
+    assert _linked_ids(video_resource, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(old_caption.text_id),
+        str(en_caption.text_id),
+    ]
+
+
+def test_update_transcripts_for_video_links_each_resource_by_its_own_name(mocker):
+    """Two video resources with the same YouTube id each get the captions for their own name"""
+    mocker.patch("videos.tasks.is_ocw_site", return_value=True)
+    videofile = VideoFileFactory.create(
+        destination=DESTINATION_YOUTUBE, destination_id="expected_id"
+    )
+    video = videofile.video
+    website = video.website
+    first_caption = _caption_file(
+        website, "lecture-1_captions_vtt", "lecture-1_captions.vtt"
+    )
+    copy_caption = _caption_file(
+        website, "lecture-1-copy_captions_vtt", "lecture-1-copy_captions.vtt"
+    )
+    first = _video_resource(website, "lecture-1_mp4", "expected_id")
+    copy = _video_resource(website, "lecture-1-copy_mp4", "expected_id")
+    mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
+
+    update_transcripts_for_video(video.id)
+
+    assert _linked_ids(first, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(first_caption.text_id)
+    ]
+    assert _linked_ids(copy, settings.YT_FIELD_CAPTIONS_RESOURCES) == [
+        str(copy_caption.text_id)
+    ]
 
 
 def test_attempt_to_update_missing_transcripts(mocker):
