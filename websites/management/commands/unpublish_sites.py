@@ -9,6 +9,7 @@ from content_sync import api
 from content_sync.constants import VERSION_LIVE
 from content_sync.tasks import (
     remove_website_in_root_website,
+    rerun_unpublished_removal,
     update_mass_build_pipelines_on_publish,
 )
 from main.management.commands.filter import WebsiteFilterCommand
@@ -126,6 +127,10 @@ class Command(WebsiteFilterCommand):
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
+        # A live build of a site in any theme may still be running and upload it
+        # again after this removal. Extra theme builds send no webhook when they end.
+        for name in unpublished_names:
+            rerun_unpublished_removal.delay(name)
         self.stdout.write(str(unpublished_count) + " course sites were unpublished.")
         if unpublished_count > 0:
             self.stdout.write(
