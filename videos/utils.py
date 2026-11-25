@@ -346,9 +346,11 @@ def _normalized_code(value, *, upper: bool = False) -> str | None:
 def resolve_language_locale(resource: WebsiteContent) -> tuple[str, str | None]:
     """Return ``(language, locale)`` for a resource.
 
-    An explicit metadata value wins.  Otherwise the value is parsed from the
-    resource's real uploaded file path, which itself falls back to
-    ``("en", None)`` when the filename carries no language suffix.
+    An explicit metadata value wins.  Otherwise the file name is parsed with
+    ``videos.caption_filenames``, which reads the original Drive name and
+    accepts only the site's language codes.  When that finds no language, the
+    strict ``parse_caption_language_locale`` form is tried on the uploaded
+    file path, which itself falls back to ``("en", None)``.
 
     Language and locale resolve independently: an explicit language with no
     explicit locale yields no locale, rather than inheriting a region parsed
@@ -364,6 +366,19 @@ def resolve_language_locale(resource: WebsiteContent) -> tuple[str, str | None]:
 
     if language:
         return language, locale
+
+    # videos.caption_filenames imports this module
+    from videos.caption_filenames import (  # noqa: PLC0415
+        caption_source_name,
+        parse_caption_filename,
+        site_languages,
+    )
+
+    parsed = parse_caption_filename(
+        caption_source_name(resource) or "", site_languages(resource.website)
+    )
+    if parsed and parsed.language:
+        return parsed.language, locale or parsed.locale
 
     file_name = getattr(getattr(resource, "file", None), "name", None)
     parsed_language, parsed_locale = (

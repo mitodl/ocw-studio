@@ -168,8 +168,13 @@ def caption_source_name(resource: WebsiteContent) -> str | None:
     dots ("captions.es" becomes "captionses"). Otherwise the uploaded file's
     name is used, without the text_id prefix Studio adds to uploads.
     """
-    # .all() rather than .first() so a prefetch_related("drivefile_set") is used
-    drive_file = min(resource.drivefile_set.all(), key=lambda df: df.pk, default=None)
+    # An unsaved resource has no Drive file. .all() rather than .first() so a
+    # prefetch_related("drivefile_set") is used.
+    drive_file = (
+        min(resource.drivefile_set.all(), key=lambda df: df.pk, default=None)
+        if resource.pk is not None
+        else None
+    )
     if drive_file is not None and drive_file.name:
         return drive_file.name
     file_name = getattr(getattr(resource, "file", None), "name", None)
