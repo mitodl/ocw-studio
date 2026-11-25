@@ -84,6 +84,23 @@ def _kind_for_extension(extension: str) -> str | None:
     return None
 
 
+def caption_file_kind(name: str) -> str | None:
+    """
+    Return CAPTIONS for a caption file name, TRANSCRIPT for a PDF name that has
+    the transcript keyword, else None. Unlike parse_caption_filename, the name
+    doesn't need to follow the naming rules.
+    """
+    stem, dot, extension = PurePosixPath(name or "").name.rpartition(".")
+    if not dot:
+        return None
+    kind = _kind_for_extension(extension.lower())
+    if kind == TRANSCRIPT and not any(
+        _KEYWORD_KINDS.get(token) == TRANSCRIPT for token in _tokens(stem)
+    ):
+        return None
+    return kind
+
+
 def parse_caption_filename(
     name: str, languages: Collection[str]
 ) -> ParsedCaptionName | None:

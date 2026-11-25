@@ -43,7 +43,13 @@ from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
-from videos.caption_filenames import find_video_for_caption
+from videos.caption_filenames import (
+    CAPTIONS,
+    RELATION_FIELDS,
+    TRANSCRIPT,
+    caption_file_kind,
+    find_video_for_caption,
+)
 from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
 from websites.api import (
@@ -61,7 +67,7 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
-from websites.utils import get_valid_base_filename
+from websites.utils import get_dict_query_field, get_valid_base_filename
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -629,6 +635,63 @@ def transcode_gdrive_video(drive_file: DriveFile):
             raise
 
 
+UNLINKED_CAPTION_WARNING = (
+    "{name} matches no video. Start the name with the video's file name, "
+    "for example {example}."
+)
+UNLINKED_CAPTION_EXAMPLES = {
+    CAPTIONS: "lecture-1_captions-es.vtt",
+    TRANSCRIPT: "lecture-1_transcript-es.pdf",
+}
+
+
+def _linked_caption_ids(website: Website) -> set[str]:
+    """Return the ids in every Video resource's caption and transcript lists"""
+    linked = set()
+    videos = WebsiteContent.objects.filter(
+        website=website,
+        **{
+            get_dict_query_field(
+                "metadata", settings.FIELD_RESOURCETYPE
+            ): RESOURCE_TYPE_VIDEO
+        },
+    )
+    for video in videos:
+        metadata = video.metadata if isinstance(video.metadata, dict) else {}
+        video_files = metadata.get("video_files")
+        if not isinstance(video_files, dict):
+            continue
+        for field in RELATION_FIELDS.values():
+            relation = video_files.get(field)
+            content = relation.get("content") if isinstance(relation, dict) else None
+            if isinstance(content, str):
+                linked.add(content)
+            elif isinstance(content, list):
+                linked.update(c for c in content if isinstance(c, str))
+    return linked
+
+
+def unlinked_caption_warnings(website: Website) -> list[str]:
+    """
+    Return a warning for each Drive caption or transcript file in the site that
+    no Video resource links, ordered by Drive name.
+    """
+    linked = _linked_caption_ids(website)
+    drive_files = DriveFile.objects.filter(
+        website=website, resource__isnull=False, resource__deleted__isnull=True
+    ).select_related("resource")
+    warnings = []
+    for drive_file in sorted(drive_files, key=lambda df: (df.name, df.file_id)):
+        kind = caption_file_kind(drive_file.name)
+        if kind and str(drive_file.resource.text_id) not in linked:
+            warnings.append(
+                UNLINKED_CAPTION_WARNING.format(
+                    name=drive_file.name, example=UNLINKED_CAPTION_EXAMPLES[kind]
+                )
+            )
+    return warnings
+
+
 def update_sync_status(website: Website, sync_datetime: datetime):
     """Update the Google Drive sync status based on DriveFile statuses and sync errors"""  # noqa: E501
     drive_files = DriveFile.objects.filter(website=website, sync_dt=sync_datetime)
@@ -658,7 +721,11 @@ def update_sync_status(website: Website, sync_datetime: datetime):
         new_status = WebsiteSyncStatus.ERRORS
         log.error(new_status)
     website.sync_status = new_status
-    website.sync_errors = (website.sync_errors or []) + errors
+    # Warnings are added after the status is worked out, so alone they leave
+    # the sync Complete
+    website.sync_errors = (
+        (website.sync_errors or []) + errors + unlinked_caption_warnings(website)
+    )
     website.save()
 
 
