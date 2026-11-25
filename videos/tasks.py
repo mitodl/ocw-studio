@@ -348,6 +348,8 @@ def _linked_caption_transcript_resources(video_resources):
             website_id__in={r.website_id for r in video_resources},
             text_id__in=text_ids,
         )
+        .select_related("website__starter")
+        .prefetch_related("drivefile_set")
     )
 
 

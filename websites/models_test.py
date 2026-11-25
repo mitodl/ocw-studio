@@ -3,8 +3,11 @@
 import pytest
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from mitol.common.utils import now_in_utc
 
+from gdrive_sync.factories import DriveFileFactory
 from users.factories import UserFactory
 from websites import constants
 from websites.constants import WEBSITE_CONFIG_ROOT_URL_PATH_KEY
@@ -12,6 +15,7 @@ from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
+    site_config_with_resource_languages,
 )
 from websites.site_config_api import SiteConfig
 from websites.utils import permissions_group_name_for_role
@@ -671,3 +675,48 @@ def test_websitecontent_full_metadata_resolves_scalar_string_content():
     assert published == [
         {"file": "/sites/mysite-fall-2008/lecture1_captions.vtt", "language": "en"}
     ]
+
+
+def _full_metadata_queries(caption_count):
+    """Return how many queries full_metadata makes for a video with these captions"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config=site_config_with_resource_languages("en", "es")
+        )
+    )
+    captions = []
+    for index in range(caption_count):
+        caption = WebsiteContentFactory.create(
+            website=website,
+            type=constants.CONTENT_TYPE_RESOURCE,
+            file=f"{website.s3_path}/lecture-1_captions-{index}.vtt",
+        )
+        DriveFileFactory.create(
+            website=website, resource=caption, name=f"lecture-1_es_captions-{index}.vtt"
+        )
+        captions.append(caption)
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_mp4",
+        metadata={
+            "resourcetype": constants.RESOURCE_TYPE_VIDEO,
+            "video_files": {
+                "video_captions_resources": {
+                    "content": [str(c.text_id) for c in captions],
+                    "website": website.name,
+                }
+            },
+        },
+    )
+    video = type(video).objects.get(pk=video.pk)
+    with CaptureQueriesContext(connection) as context:
+        resolved = video.full_metadata["video_files"]["video_captions_resources"]
+    assert [entry["language"] for entry in resolved] == ["es"] * caption_count
+    return len(context.captured_queries)
+
+
+@pytest.mark.django_db
+def test_full_metadata_caption_languages_query_count():
+    """Resolving caption languages makes no extra queries per caption"""
+    assert _full_metadata_queries(3) == _full_metadata_queries(1)
