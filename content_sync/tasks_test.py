@@ -16,6 +16,8 @@ from mitol.common.utils import now_in_utc
 from moto import mock_aws
 from pytest import fixture  # noqa: PT013
 from requests import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout
 
 from content_sync import tasks
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE, WEBSITE_LISTING_DIRPATH
@@ -1190,18 +1192,21 @@ def test_rerun_unpublished_removal_concourse_error(mocker, unpublish_api_mock):
     removal_pipeline.trigger.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "error",
+    [HTTPError("503"), RequestsConnectionError("refused"), Timeout("timed out")],
+)
 @pytest.mark.parametrize("failing_call", ["unpause", "trigger"])
 def test_rerun_unpublished_removal_start_error(
-    mocker, unpublish_api_mock, failing_call
+    mocker, unpublish_api_mock, failing_call, error
 ):
-    """rerun_unpublished_removal should retry when Concourse fails to start the removal"""
+    """rerun_unpublished_removal should retry when Concourse fails to start the removal, with or without a response"""
     site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
     unpublish_api_mock.get_site_pipeline.return_value.has_running_build.return_value = (
         False
     )
     removal_pipeline = unpublish_api_mock.get_unpublished_removal_pipeline.return_value
     removal_pipeline.has_unfinished_build.return_value = False
-    error = HTTPError("503")
     getattr(removal_pipeline, failing_call).side_effect = error
     mock_retry = mocker.patch.object(
         tasks.rerun_unpublished_removal, "retry", side_effect=Retry

@@ -12,7 +12,7 @@ from django.db.models import F, Q
 from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import chunks, now_in_utc
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from content_sync import api
 from content_sync.apis import github
@@ -323,9 +323,9 @@ def rerun_unpublished_removal(self, website_name: str):
         ):
             removal_pipeline.unpause()
             removal_pipeline.trigger()
-    except HTTPError as exc:
+    except RequestException as exc:
         # Concourse could not say whether a build is still uploading the site,
-        # or could not start the removal
+        # or could not start the removal, with or without a response
         raise self.retry(exc=exc) from exc
     if busy:
         raise self.retry()
