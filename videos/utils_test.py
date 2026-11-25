@@ -11,6 +11,7 @@ from videos.utils import (
     generate_s3_path,
     get_content_dirpath,
     get_tags_with_course,
+    get_video_base_filename,
     parse_caption_language_locale,
     resolve_language_locale,
     resource_file_paths,
@@ -297,3 +298,23 @@ def test_resource_file_paths_omits_locale_when_absent():
     assert resource_file_paths([resource]) == [
         {"file": "/courses/s/lecture1_captions.vtt", "language": "de"}
     ]
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected"),
+    [
+        ("lecture-1_mp4", "lecture-1"),
+        ("lecture-1_mp42", "lecture-1"),
+        ("6100l-lecture-1-version-2_mp4", "6100l-lecture-1-version-2"),
+        ("lecture_MOV", "lecture"),
+        ("mitesd_932s06_lec03", "mitesd_932s06_lec03"),
+        ("mitmas_531f09_lec06_2", "mitmas_531f09_lec06_2"),
+        ("lecture1_pdf", "lecture1_pdf"),
+        ("my-file-3_ext", "my-file-3_ext"),
+        ("mp4", "mp4"),
+        ("", ""),
+    ],
+)
+def test_get_video_base_filename(filename, expected):
+    """get_video_base_filename should strip only a trailing video extension"""
+    assert get_video_base_filename(filename) == expected

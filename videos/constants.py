@@ -77,3 +77,19 @@ class YouTubeStatus:
 # "wrong_caption_type" case in videos/tasks_test.py::test_start_transcript_job).
 CAPTION_FILE_EXTENSIONS = ("vtt", "webvtt")
 TRANSCRIPT_FILE_EXTENSIONS = ("pdf",)
+
+# Extensions that can end a video resource's filename field, e.g. "lecture-1_mp4".
+VIDEO_FILE_EXTENSIONS = (
+    "mp4",
+    "mov",
+    "m4v",
+    "webm",
+    "avi",
+    "mkv",
+    "mpg",
+    "mpeg",
+    "wmv",
+    "flv",
+    "ogv",
+    "3gp",
+)
