@@ -525,10 +525,14 @@ def _link_resource_to_video(
     new_id = str(resource.text_id)
     existing = video_files.get(resource_field)
     if isinstance(existing, dict) and existing.get("content"):
-        # Already linked — append if not a duplicate
-        if new_id in existing["content"]:
+        # Already linked — append if not a duplicate. A legacy relation may
+        # store a single id as a bare string.
+        content = existing["content"]
+        if isinstance(content, str):
+            content = [content]
+        if new_id in content:
             return
-        existing["content"] = existing["content"] + [new_id]
+        existing["content"] = [*content, new_id]
     else:
         video_files[resource_field] = {
             "content": [new_id],

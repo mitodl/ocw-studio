@@ -1265,3 +1265,36 @@ def test_misnamed_caption_links_to_no_video():
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"] == {}
+
+
+@pytest.mark.django_db
+def test_link_resource_to_video_appends_to_legacy_string_link():
+    """A caption relation stored as a bare id string keeps that id and gets the new one"""
+    website = WebsiteFactory.create()
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture1_mp4",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {
+                "video_captions_resources": {
+                    "content": "old-id",
+                    "website": website.name,
+                }
+            },
+        },
+    )
+    caption = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
+    )
+
+    _link_video_caption_transcript_resources(caption, website)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
+        "old-id",
+        str(caption.text_id),
+    ]
