@@ -1,6 +1,7 @@
 """Tests for videos.caption_filenames"""
 
 import pytest
+from django.utils.text import slugify
 
 from gdrive_sync.factories import DriveFileFactory
 from videos.caption_filenames import (
@@ -26,25 +27,25 @@ LANGS = {"en", "es", "fr", "pt"}
 @pytest.mark.parametrize(
     ("name", "kind", "keys", "language", "locale"),
     [
-        ("lecture-1_captions-es.vtt", "captions", ("lecture-1",), "es", None),
-        ("lecture-1_captions_es.vtt", "captions", ("lecture-1",), "es", None),
-        ("lecture-1_captions.es.vtt", "captions", ("lecture-1",), "es", None),
+        ("lecture-1_captions-es.vtt", "captions", ("lecture1",), "es", None),
+        ("lecture-1_captions_es.vtt", "captions", ("lecture1",), "es", None),
+        ("lecture-1_captions.es.vtt", "captions", ("lecture1",), "es", None),
         (
             "lecture-1_es_captions.vtt",
             "captions",
-            ("lecture-1-es", "lecture-1"),
+            ("lecture1es", "lecture1"),
             "es",
             None,
         ),
-        ("Lecture_1-Captions-ES.vtt", "captions", ("lecture-1",), "es", None),
-        ("lecture-1_captions-pt-BR.vtt", "captions", ("lecture-1",), "pt", "BR"),
-        ("lecture-1_captions_300k.vtt", "captions", ("lecture-1",), None, None),
-        ("lecture-1_captions-xx.vtt", "captions", ("lecture-1",), None, None),
-        ("lecture-1_transcript-fr.pdf", "transcript", ("lecture-1",), "fr", None),
+        ("Lecture_1-Captions-ES.vtt", "captions", ("lecture1",), "es", None),
+        ("lecture-1_captions-pt-BR.vtt", "captions", ("lecture1",), "pt", "BR"),
+        ("lecture-1_captions_300k.vtt", "captions", ("lecture1",), None, None),
+        ("lecture-1_captions-xx.vtt", "captions", ("lecture1",), None, None),
+        ("lecture-1_transcript-fr.pdf", "transcript", ("lecture1",), "fr", None),
         (
             "mit6_100lf22_lec01_es_captions.vtt",
             "captions",
-            ("mit6-100lf22-lec01-es", "mit6-100lf22-lec01"),
+            ("mit6100lf22lec01es", "mit6100lf22lec01"),
             "es",
             None,
         ),
@@ -68,7 +69,7 @@ def test_parse_caption_filename_no_match(name):
 
 def test_video_name_key():
     """Separators and case are normalized"""
-    assert video_name_key("6100L_Lecture 1.Version-2") == "6100l-lecture-1-version-2"
+    assert video_name_key("6.100L_Lecture (1).Version-2") == "6100llecture1version2"
 
 
 @pytest.mark.django_db
@@ -225,3 +226,30 @@ def test_find_video_for_caption_no_match():
 
     assert find_video_for_caption(make_file(website, "orphan_captions.vtt")) is None
     assert find_video_for_caption(make_file(website, "lecture-1.vtt")) is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("drive_video_name", "caption_name"),
+    [
+        ("6.100L Lecture 1.mp4", "6.100L Lecture 1_captions.vtt"),
+        ("Lecture (1).mp4", "Lecture (1)_captions-es.vtt"),
+        ("Lecture's & Notes.mp4", "Lecture's & Notes captions.vtt"),
+        ("lecture1.mp4", "lecture1_captions(1).vtt"),
+    ],
+)
+def test_caption_links_to_video_with_punctuated_drive_name(
+    drive_video_name, caption_name
+):
+    """Drive slugs drop punctuation from the video name, the caption name keeps it"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config=site_config_with_resource_languages("en", "es")
+        )
+    )
+    stem, extension = drive_video_name.rsplit(".", 1)
+    video = make_video(website, f"{slugify(stem, allow_unicode=True)}_{extension}")
+    caption = make_file(website, caption_name)
+
+    assert find_caption_files(video) == ([caption], [])
+    assert find_video_for_caption(caption) == (video, "video_captions_resources")

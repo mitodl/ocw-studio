@@ -13,7 +13,10 @@ locale) or right before it:
     Lecture_1-Captions-pt-BR.vtt, lecture-1_es_captions.vtt,
     lecture-1_transcript_fr.pdf
 
-Case is ignored, and runs of "-", "_", "." and spaces count as one separator.
+Case is ignored, and any run of characters other than letters and digits
+counts as one separator. Names are compared with the separators removed,
+because the video's filename is Drive's slug, which drops dots and other
+punctuation ("6.100L Lecture 1.mp4" becomes "6100l-lecture-1_mp4").
 Only codes in the site's language list count as a language. Other tokens after
 the keyword ("300k", "2", "old") are ignored.
 """
@@ -49,7 +52,7 @@ _KEYWORD_KINDS = {
     "transcript": TRANSCRIPT,
     "transcripts": TRANSCRIPT,
 }
-_SEPARATOR_RE = re.compile(r"[-_.\s]+")
+_SEPARATOR_RE = re.compile(r"[\W_]+")
 _LOCALE_RE = re.compile(r"^[a-z]{2}$")
 LANGUAGE_FIELD = "language"
 
@@ -66,13 +69,13 @@ class ParsedCaptionName:
 
 
 def _tokens(name: str) -> list[str]:
-    """Split a name into lowercase tokens on runs of separators"""
+    """Split a name into lowercase tokens of letters and digits"""
     return [token for token in _SEPARATOR_RE.split(name.lower()) if token]
 
 
 def video_name_key(name: str) -> str:
-    """Return a name with case and separators normalized, for comparing names"""
-    return "-".join(_tokens(name or ""))
+    """Return a name lowercased with its separators removed, for comparing names"""
+    return "".join(_tokens(name or ""))
 
 
 def _kind_for_extension(extension: str) -> str | None:
@@ -136,7 +139,7 @@ def parse_caption_filename(
         return None
 
     codes = {code.lower() for code in languages}
-    video_keys = ("-".join(before),)
+    video_keys = ("".join(before),)
     language = locale = None
     if after and after[0] in codes:
         language = after[0]
@@ -146,7 +149,7 @@ def parse_caption_filename(
         # "lecture_es_captions.vtt" belongs to a video named "lecture-es" if
         # there is one, else it is the Spanish file of "lecture".
         language = before[-1]
-        video_keys = ("-".join(before), "-".join(before[:-1]))
+        video_keys = ("".join(before), "".join(before[:-1]))
     return ParsedCaptionName(kind, video_keys, language, locale)
 
 
@@ -243,7 +246,12 @@ def find_caption_files(
     if not key:
         return [], []
     website = video_resource.website
-    video_keys = {_video_key(video) for video in _site_video_resources(website)}
+    video_keys = {
+        video_name_key(get_video_base_filename(filename))
+        for filename in _site_video_resources(website).values_list(
+            "filename", flat=True
+        )
+    }
     video_keys.add(key)
     languages = site_languages(website)
     extension_filter = reduce(
@@ -255,6 +263,7 @@ def find_caption_files(
     )
     candidates = (
         WebsiteContent.objects.filter(extension_filter, website=website)
+        .select_related("website__starter")
         .prefetch_related("drivefile_set")
         .order_by("filename")
     )
