@@ -345,6 +345,9 @@ class WebsiteViewSet(
         theme_slug = data.get("theme_slug")
         is_extra_theme = theme_slug in settings.OCW_EXTRA_COURSE_THEMES
 
+        if unpublished and website.unpublish_status is None:
+            # The site was published again after the removal listed it
+            return Response(status=200)
         if build_type != "offline" and not is_extra_theme:
             update_website_status(
                 website,

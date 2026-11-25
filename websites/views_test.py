@@ -1656,6 +1656,8 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913, PLR0917
     data = {"version": version, "status": f"{status}"}
     if unpublished:
         data["unpublished"] = True
+        website.unpublish_status = constants.PUBLISH_STATUS_NOT_STARTED
+        website.save()
     resp = drf_client.post(
         reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
         data=data,
@@ -1670,6 +1672,28 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913, PLR0917
         is_cdn_cache_step=False,
     )
     assert resp.status_code == 200
+
+
+def test_pipeline_status_ignores_removal_of_republished_site(
+    settings, mocker, drf_client
+):
+    """A removal report for a site published again since should not mark it unpublished"""
+    mock_update_status = mocker.patch("websites.views.update_website_status")
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    website = WebsiteFactory.create(unpublish_status=None)
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data={
+            "version": VERSION_LIVE,
+            "status": constants.PUBLISH_STATUS_SUCCEEDED,
+            "unpublished": True,
+        },
+    )
+    assert resp.status_code == 200
+    mock_update_status.assert_not_called()
+    mock_rerun.delay.assert_not_called()
 
 
 @pytest.mark.parametrize("token", ["abc123", None])
