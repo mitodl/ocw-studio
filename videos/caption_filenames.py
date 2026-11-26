@@ -14,9 +14,11 @@ locale) or right before it:
     lecture-1_transcript_fr.pdf
 
 Case is ignored, and any run of characters other than letters and digits
-counts as one separator. Names are compared with the separators removed,
-because the video's filename is Drive's slug, which drops dots and other
-punctuation ("6.100L Lecture 1.mp4" becomes "6100l-lecture-1_mp4").
+counts as one separator. A file belongs to the video whose name has the same
+tokens. Failing that, it belongs to the one video whose name matches with the
+separators removed, because the video's filename is Drive's slug, which drops
+dots and other punctuation ("6.100L Lecture 1.mp4" becomes
+"6100l-lecture-1_mp4"). Names like "1-2" and "12" stay apart.
 Only codes in the site's language list count as a language. Other tokens after
 the keyword ("300k", "2", "old") are ignored.
 """
@@ -74,8 +76,13 @@ def _tokens(name: str) -> list[str]:
 
 
 def video_name_key(name: str) -> str:
-    """Return a name lowercased with its separators removed, for comparing names"""
-    return "".join(_tokens(name or ""))
+    """Return a name's lowercase tokens joined by "-", for comparing names"""
+    return "-".join(_tokens(name or ""))
+
+
+def _flat_key(key: str) -> str:
+    """Return a video name key with its separators removed"""
+    return key.replace("-", "")
 
 
 def _kind_for_extension(extension: str) -> str | None:
@@ -139,7 +146,7 @@ def parse_caption_filename(
         return None
 
     codes = {code.lower() for code in languages}
-    video_keys = ("".join(before),)
+    video_keys = ("-".join(before),)
     language = locale = None
     if after and after[0] in codes:
         language = after[0]
@@ -149,7 +156,7 @@ def parse_caption_filename(
         # "lecture_es_captions.vtt" belongs to a video named "lecture-es" if
         # there is one, else it is the Spanish file of "lecture".
         language = before[-1]
-        video_keys = ("".join(before), "".join(before[:-1]))
+        video_keys = ("-".join(before), "-".join(before[:-1]))
     return ParsedCaptionName(kind, video_keys, language, locale)
 
 
@@ -228,8 +235,22 @@ def _site_video_resources(website: Website):
 
 
 def _owning_key(parsed: ParsedCaptionName, video_keys: Collection[str]) -> str | None:
-    """Return the most specific of a file's video names that a video has"""
-    return next((key for key in parsed.video_keys if key in video_keys), None)
+    """
+    Return the key of the video a file belongs to, trying the file's video
+    names most specific first. A name with the same tokens as a video wins.
+    Otherwise the name matches a video with the separators removed, but only
+    when exactly one video matches that way.
+    """
+    by_flat_key = {}
+    for key in video_keys:
+        by_flat_key.setdefault(_flat_key(key), set()).add(key)
+    for key in parsed.video_keys:
+        if key in video_keys:
+            return key
+        matches = by_flat_key.get(_flat_key(key), set())
+        if len(matches) == 1:
+            return next(iter(matches))
+    return None
 
 
 def find_caption_files(

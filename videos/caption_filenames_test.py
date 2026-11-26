@@ -28,25 +28,25 @@ LANGS = {"en", "es", "fr", "pt"}
 @pytest.mark.parametrize(
     ("name", "kind", "keys", "language", "locale"),
     [
-        ("lecture-1_captions-es.vtt", "captions", ("lecture1",), "es", None),
-        ("lecture-1_captions_es.vtt", "captions", ("lecture1",), "es", None),
-        ("lecture-1_captions.es.vtt", "captions", ("lecture1",), "es", None),
+        ("lecture-1_captions-es.vtt", "captions", ("lecture-1",), "es", None),
+        ("lecture-1_captions_es.vtt", "captions", ("lecture-1",), "es", None),
+        ("lecture-1_captions.es.vtt", "captions", ("lecture-1",), "es", None),
         (
             "lecture-1_es_captions.vtt",
             "captions",
-            ("lecture1es", "lecture1"),
+            ("lecture-1-es", "lecture-1"),
             "es",
             None,
         ),
-        ("Lecture_1-Captions-ES.vtt", "captions", ("lecture1",), "es", None),
-        ("lecture-1_captions-pt-BR.vtt", "captions", ("lecture1",), "pt", "BR"),
-        ("lecture-1_captions_300k.vtt", "captions", ("lecture1",), None, None),
-        ("lecture-1_captions-xx.vtt", "captions", ("lecture1",), None, None),
-        ("lecture-1_transcript-fr.pdf", "transcript", ("lecture1",), "fr", None),
+        ("Lecture_1-Captions-ES.vtt", "captions", ("lecture-1",), "es", None),
+        ("lecture-1_captions-pt-BR.vtt", "captions", ("lecture-1",), "pt", "BR"),
+        ("lecture-1_captions_300k.vtt", "captions", ("lecture-1",), None, None),
+        ("lecture-1_captions-xx.vtt", "captions", ("lecture-1",), None, None),
+        ("lecture-1_transcript-fr.pdf", "transcript", ("lecture-1",), "fr", None),
         (
             "mit6_100lf22_lec01_es_captions.vtt",
             "captions",
-            ("mit6100lf22lec01es", "mit6100lf22lec01"),
+            ("mit6-100lf22-lec01-es", "mit6-100lf22-lec01"),
             "es",
             None,
         ),
@@ -70,7 +70,9 @@ def test_parse_caption_filename_no_match(name):
 
 def test_video_name_key():
     """Separators and case are normalized"""
-    assert video_name_key("6.100L_Lecture (1).Version-2") == "6100llecture1version2"
+    assert (
+        video_name_key("6.100L_Lecture (1).Version-2") == "6-100l-lecture-1-version-2"
+    )
 
 
 @pytest.mark.django_db
@@ -263,3 +265,37 @@ def test_caption_links_to_video_with_punctuated_drive_name(
         video,
         settings.YT_FIELD_CAPTIONS_RESOURCES,
     )
+
+
+@pytest.mark.django_db
+def test_caption_owner_with_names_that_differ_only_by_separators():
+    """Videos "1-2" and "12" each keep their own captions, as on 8.01SC"""
+    website = WebsiteFactory.create()
+    video_1_2 = make_video(website, "1-2_mp4")
+    video_12 = make_video(website, "12_mp4")
+    caption_1_2 = make_file(website, "1-2_captions.vtt")
+    caption_12 = make_file(website, "12_captions.vtt")
+
+    assert find_caption_files(video_1_2) == ([caption_1_2], [])
+    assert find_caption_files(video_12) == ([caption_12], [])
+    assert find_video_for_caption(caption_1_2) == (
+        video_1_2,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+    )
+    assert find_video_for_caption(caption_12) == (
+        video_12,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+    )
+
+
+@pytest.mark.django_db
+def test_caption_owner_without_token_match_needs_one_video():
+    """A name that matches two videos only without separators links to neither"""
+    website = WebsiteFactory.create()
+    video_a = make_video(website, "lecture-11_mp4")
+    video_b = make_video(website, "lecture1-1_mp4")
+    caption = make_file(website, "lecture-1-1_captions.vtt")
+
+    assert find_video_for_caption(caption) is None
+    assert find_caption_files(video_a) == ([], [])
+    assert find_caption_files(video_b) == ([], [])
