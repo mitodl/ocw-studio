@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -45,10 +46,10 @@ from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
 from videos.caption_filenames import (
     CAPTIONS,
-    RELATION_FIELDS,
     TRANSCRIPT,
     caption_file_kind,
     find_video_for_caption,
+    relation_field,
 )
 from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
@@ -67,7 +68,11 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_query_field, get_valid_base_filename
+from websites.utils import (
+    get_dict_field,
+    get_dict_query_field,
+    get_valid_base_filename,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -488,23 +493,17 @@ def _link_resource_to_video(
     video_resource: WebsiteContent,
     resource_field: str,
 ) -> None:
-    """Add a caption/transcript resource to a relation field of a video resource."""
-    video_files = (
-        video_resource.metadata.get("video_files")
-        if isinstance(video_resource.metadata, dict)
-        else None
+    """Add a caption/transcript resource to the relation at the dotted
+    ``resource_field`` path of a video resource's metadata.
+    """
+    metadata = deepcopy(
+        video_resource.metadata if isinstance(video_resource.metadata, dict) else {}
     )
-    if not isinstance(video_files, dict):
-        video_files = {}
-
     if not merge_caption_resources(
-        video_files, video_resource.website, resource_field, [resource]
+        metadata, video_resource.website, resource_field, [resource]
     ):
         return
-
-    if not isinstance(video_resource.metadata, dict):
-        video_resource.metadata = {}
-    video_resource.metadata["video_files"] = video_files
+    video_resource.metadata = metadata
     video_resource.save()
     sync_website_content_references(video_resource)
 
@@ -658,11 +657,8 @@ def _linked_caption_ids(website: Website) -> set[str]:
     )
     for video in videos:
         metadata = video.metadata if isinstance(video.metadata, dict) else {}
-        video_files = metadata.get("video_files")
-        if not isinstance(video_files, dict):
-            continue
-        for field in RELATION_FIELDS.values():
-            relation = video_files.get(field)
+        for field in (relation_field(CAPTIONS), relation_field(TRANSCRIPT)):
+            relation = get_dict_field(metadata, field)
             content = relation.get("content") if isinstance(relation, dict) else None
             if isinstance(content, str):
                 linked.add(content)

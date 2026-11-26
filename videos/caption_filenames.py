@@ -203,10 +203,11 @@ def caption_source_name(resource: WebsiteContent) -> str | None:
     return clean_uuid_filename(PurePosixPath(file_name).name)
 
 
-RELATION_FIELDS = {
-    CAPTIONS: "video_captions_resources",
-    TRANSCRIPT: "video_transcript_resources",
-}
+def relation_field(kind: str) -> str:
+    """Return the dotted metadata path of the video relation for a file kind"""
+    if kind == CAPTIONS:
+        return settings.YT_FIELD_CAPTIONS_RESOURCES
+    return settings.YT_FIELD_TRANSCRIPT_RESOURCES
 
 
 def _video_key(video_resource: WebsiteContent) -> str:
@@ -280,8 +281,8 @@ def find_video_for_caption(
 ) -> tuple[WebsiteContent, str] | None:
     """
     Return the Video resource a caption or transcript file belongs to, and the
-    relation field ("video_captions_resources" or "video_transcript_resources")
-    to add it to. Returns None when the name matches no Video resource.
+    dotted metadata path of the relation to add it to. Returns None when the
+    name matches no Video resource.
     """
     website = resource.website
     parsed = parse_caption_filename(
@@ -295,4 +296,4 @@ def find_video_for_caption(
     key = _owning_key(parsed, videos_by_key)
     if key is None:
         return None
-    return videos_by_key[key], RELATION_FIELDS[parsed.kind]
+    return videos_by_key[key], relation_field(parsed.kind)

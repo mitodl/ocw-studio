@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import pytest
 from botocore.exceptions import ClientError
+from django.conf import settings
 from googleapiclient.http import MediaDownloadProgress
 from mitol.common.utils import now_in_utc
 from moto import mock_aws
@@ -1152,13 +1153,13 @@ def test_link_resource_to_video_appends_second_language():
     )
 
     # Link English first
-    _link_resource_to_video(caption_en, video, "video_captions_resources")
+    _link_resource_to_video(caption_en, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert vf["video_captions_resources"]["content"] == [str(caption_en.text_id)]
 
     # Link French — must append, not overwrite
-    _link_resource_to_video(caption_fr, video, "video_captions_resources")
+    _link_resource_to_video(caption_fr, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert str(caption_en.text_id) in vf["video_captions_resources"]["content"]
@@ -1188,7 +1189,7 @@ def test_link_resource_to_video_syncs_content_references():
 
     assert caption_en not in video.referenced_by.all()
 
-    _link_resource_to_video(caption_en, video, "video_captions_resources")
+    _link_resource_to_video(caption_en, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
@@ -1302,18 +1303,18 @@ def test_drive_caption_with_language_before_keyword_links_to_video():
 
 
 @pytest.mark.django_db
-def test_drive_caption_links_to_video_with_legacy_string_relation():
-    """A caption is appended after a relation stored as a bare id string"""
+def test_link_resource_to_video_appends_to_legacy_string_link():
+    """A caption relation stored as a bare id string keeps that id and gets the new one"""
     website = WebsiteFactory.create()
     video = WebsiteContentFactory.create(
         website=website,
         type=CONTENT_TYPE_RESOURCE,
-        filename="lecture-1_mp4",
+        filename="lecture1_mp4",
         metadata={
-            "resourcetype": RESOURCE_TYPE_VIDEO,
+            "resourcetype": "Video",
             "video_files": {
                 "video_captions_resources": {
-                    "content": "old-caption-id",
+                    "content": "old-id",
                     "website": website.name,
                 }
             },
@@ -1321,16 +1322,15 @@ def test_drive_caption_links_to_video_with_legacy_string_relation():
     )
     caption = WebsiteContentFactory.create(
         website=website,
-        type=CONTENT_TYPE_RESOURCE,
-        filename="lecture-1_captions_vtt",
-        file=f"{website.s3_path}/lecture-1_captions.vtt",
+        filename="lecture1_captions_vtt",
+        file=f"courses/{website.name}/lecture1_captions.vtt",
     )
 
     _link_video_caption_transcript_resources(caption)
 
     video.refresh_from_db()
     assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
-        "old-caption-id",
+        "old-id",
         str(caption.text_id),
     ]
 

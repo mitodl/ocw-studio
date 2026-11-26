@@ -828,6 +828,42 @@ def test_auto_link_video_captions_transcript_extensionless_video_name():
     assert auto_link_video_captions_transcript(video_resource) is False
 
 
+def test_auto_link_video_captions_transcript_uses_configured_paths(settings):
+    """The resource type and relation fields come from the configured metadata paths"""
+    settings.FIELD_RESOURCETYPE = "kind"
+    settings.YT_FIELD_CAPTIONS_RESOURCES = "media.captions"
+    settings.YT_FIELD_TRANSCRIPT_RESOURCES = "media.transcripts"
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    transcript = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_transcript_pdf",
+        file=f"courses/{website.name}/lecture01_transcript.pdf",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        metadata={"kind": RESOURCE_TYPE_VIDEO},
+        filename="lecture01_mp4",
+    )
+
+    assert auto_link_video_captions_transcript(video) is True
+    video.refresh_from_db()
+    assert video.metadata == {
+        "kind": RESOURCE_TYPE_VIDEO,
+        "media": {
+            "captions": {"content": [str(captions.text_id)], "website": website.name},
+            "transcripts": {
+                "content": [str(transcript.text_id)],
+                "website": website.name,
+            },
+        },
+    }
+
+
 def test_auto_link_video_links_existing_captions_and_transcript():
     """auto_link_video_captions_transcript sets _resource fields from existing content."""
     website = WebsiteFactory.create()
@@ -1053,6 +1089,39 @@ def test_unlink_deleted_resource_removes_from_video_captions_resources():
     video.refresh_from_db()
     assert video.metadata["video_files"]["video_captions_resources"]["content"] == []
     assert captions not in video.referenced_by.all()
+
+
+def test_unlink_deleted_resource_uses_configured_paths(settings):
+    """The resource type and relation fields come from the configured metadata paths"""
+    settings.FIELD_RESOURCETYPE = "kind"
+    settings.YT_FIELD_CAPTIONS_RESOURCES = "media.captions"
+    settings.YT_FIELD_TRANSCRIPT_RESOURCES = "media.transcripts"
+    website = WebsiteFactory.create()
+    captions = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture01_captions_vtt",
+        file=f"courses/{website.name}/lecture01_captions.vtt",
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        metadata={
+            "kind": RESOURCE_TYPE_VIDEO,
+            "media": {
+                "captions": {
+                    "content": [str(captions.text_id)],
+                    "website": website.name,
+                }
+            },
+        },
+        filename="lecture01_mp4",
+    )
+    video.referenced_by.add(captions)
+
+    unlink_deleted_resource_from_videos(captions)
+
+    video.refresh_from_db()
+    assert video.metadata["media"]["captions"]["content"] == []
 
 
 def test_unlink_deleted_resource_removes_legacy_scalar_string_content():

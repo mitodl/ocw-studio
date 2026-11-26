@@ -3,6 +3,7 @@
 import logging
 import os
 import re
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -236,17 +237,15 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
     videos = resource.referencing_content.all()
     text_id = str(resource.text_id)
     for video in videos:
-        if (video.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
-            continue
-        video_files = video.metadata.get("video_files")
-        if not isinstance(video_files, dict):
+        metadata = video.metadata if isinstance(video.metadata, dict) else {}
+        if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
             continue
         changed = False
         for resource_field in (
-            "video_captions_resources",
-            "video_transcript_resources",
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         ):
-            relation = video_files.get(resource_field)
+            relation = get_dict_field(metadata, resource_field)
             if not isinstance(relation, dict):
                 continue
             content_list = relation.get("content")
@@ -257,18 +256,18 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
                 relation["content"] = [c for c in content_list if c != text_id]
                 changed = True
         if changed:
-            video.metadata["video_files"] = video_files
             video.save(update_fields=["metadata"])
             sync_website_content_references(video)
 
 
 def merge_caption_resources(
-    video_files: dict,
+    metadata: dict,
     website: Website,
     resource_field: str,
     resources: list[WebsiteContent],
 ) -> bool:
-    """Append caption/transcript resources to a relation field in video_files.
+    """Append caption/transcript resources to the relation at the dotted
+    ``resource_field`` path of ``metadata``.
 
     Ids already in the field stay first, in their order, and each resource is
     added once. A legacy relation whose ``content`` is a bare id string is kept
@@ -277,9 +276,9 @@ def merge_caption_resources(
     Only the ``_resources`` relation field is written; the legacy ``_file``
     fields in stored metadata are left untouched.
 
-    Returns True if video_files was modified.
+    Returns True if metadata was modified.
     """
-    existing = video_files.get(resource_field)
+    existing = get_dict_field(metadata, resource_field)
     existing_ids: list[str] = []
     if isinstance(existing, dict):
         content = existing.get("content")
@@ -293,10 +292,14 @@ def merge_caption_resources(
     if not new_resources:
         return False
 
-    video_files[resource_field] = {
-        "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
-        "website": website.name,
-    }
+    set_dict_field(
+        metadata,
+        resource_field,
+        {
+            "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
+            "website": website.name,
+        },
+    )
     return True
 
 
@@ -311,29 +314,26 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> bool:
 
     Returns True if new links were saved.
     """
-    if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
+    metadata = (
+        video_resource.metadata if isinstance(video_resource.metadata, dict) else {}
+    )
+    if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
         return False
     captions, transcripts = find_caption_files(video_resource)
     website = video_resource.website
-    video_files = (
-        video_resource.metadata.get("video_files") if video_resource.metadata else None
-    )
-    if not isinstance(video_files, dict):
-        video_files = {}
+    metadata = deepcopy(metadata)
 
     results = [
-        merge_caption_resources(video_files, website, resource_field, resources)
+        merge_caption_resources(metadata, website, resource_field, resources)
         for resource_field, resources in [
-            ("video_captions_resources", captions),
-            ("video_transcript_resources", transcripts),
+            (settings.YT_FIELD_CAPTIONS_RESOURCES, captions),
+            (settings.YT_FIELD_TRANSCRIPT_RESOURCES, transcripts),
         ]
     ]
     changed = any(results)
 
     if changed:
-        if not isinstance(video_resource.metadata, dict):
-            video_resource.metadata = {}
-        video_resource.metadata["video_files"] = video_files
+        video_resource.metadata = metadata
         video_resource.save(update_fields=["metadata"])
     return changed
 

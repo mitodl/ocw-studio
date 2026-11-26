@@ -1,6 +1,7 @@
 """Tests for videos.caption_filenames"""
 
 import pytest
+from django.conf import settings
 from django.utils.text import slugify
 
 from gdrive_sync.factories import DriveFileFactory
@@ -187,7 +188,10 @@ def test_find_video_for_caption_prefers_longer_video_name():
     lecture_es = make_video(website, "lecture-es_mp4")
     caption = make_file(website, "lecture_es_captions.vtt")
 
-    assert find_video_for_caption(caption) == (lecture_es, "video_captions_resources")
+    assert find_video_for_caption(caption) == (
+        lecture_es,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+    )
     assert find_caption_files(lecture_es) == ([caption], [])
     assert find_caption_files(lecture) == ([], [])
 
@@ -204,10 +208,13 @@ def test_find_video_for_caption_language_before_keyword():
     caption = make_file(website, "lecture_es_captions.vtt")
     transcript = make_file(website, "Lecture-ES-Transcript.pdf")
 
-    assert find_video_for_caption(caption) == (lecture, "video_captions_resources")
+    assert find_video_for_caption(caption) == (
+        lecture,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+    )
     assert find_video_for_caption(transcript) == (
         lecture,
-        "video_transcript_resources",
+        settings.YT_FIELD_TRANSCRIPT_RESOURCES,
     )
     assert find_caption_files(lecture) == ([caption], [transcript])
 
@@ -252,4 +259,7 @@ def test_caption_links_to_video_with_punctuated_drive_name(
     caption = make_file(website, caption_name)
 
     assert find_caption_files(video) == ([caption], [])
-    assert find_video_for_caption(caption) == (video, "video_captions_resources")
+    assert find_video_for_caption(caption) == (
+        video,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+    )
