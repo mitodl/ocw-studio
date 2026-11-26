@@ -69,9 +69,9 @@ from websites.constants import (
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
 from websites.utils import (
-    get_dict_field,
     get_dict_query_field,
     get_valid_base_filename,
+    relation_text_ids,
 )
 
 if TYPE_CHECKING:
@@ -656,14 +656,8 @@ def _linked_caption_ids(website: Website) -> set[str]:
         },
     )
     for video in videos:
-        metadata = video.metadata if isinstance(video.metadata, dict) else {}
         for field in (relation_field(CAPTIONS), relation_field(TRANSCRIPT)):
-            relation = get_dict_field(metadata, field)
-            content = relation.get("content") if isinstance(relation, dict) else None
-            if isinstance(content, str):
-                linked.add(content)
-            elif isinstance(content, list):
-                linked.update(c for c in content if isinstance(c, str))
+            linked.update(relation_text_ids(video.metadata, field))
     return linked
 
 

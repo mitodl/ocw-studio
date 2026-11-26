@@ -20,6 +20,7 @@ from websites.utils import (
     parse_resource_uuid,
     permissions_group_name_for_role,
     query_field_is_empty,
+    relation_text_ids,
     resolve_referenced_content_ids,
     set_dict_field,
 )
@@ -1405,3 +1406,29 @@ def test_resolve_referenced_content_ids_video_resources_multiple_content_ids():
     assert captions_en.id in result
     assert captions_es.id in result
     assert transcript_en.id in result
+
+
+@pytest.mark.parametrize(
+    ("relation", "expected"),
+    [
+        ({"content": ["a", "", None, "b"], "website": "s"}, ["a", "b"]),
+        ({"content": "a", "website": "s"}, ["a"]),
+        ({"content": "", "website": "s"}, []),
+        ({"content": None}, []),
+        ({"content": 5}, []),
+        ("not-a-relation", []),
+        (None, []),
+    ],
+)
+def test_relation_text_ids(relation, expected):
+    """Stored relation ids are read from a list or a legacy bare id string"""
+    metadata = {"video_files": {"video_captions_resources": relation}}
+    assert relation_text_ids(metadata, "video_files.video_captions_resources") == (
+        expected
+    )
+
+
+@pytest.mark.parametrize("metadata", [None, "x", {}, {"video_files": None}])
+def test_relation_text_ids_without_relation(metadata):
+    """Missing or malformed metadata has no ids"""
+    assert relation_text_ids(metadata, "video_files.video_captions_resources") == []

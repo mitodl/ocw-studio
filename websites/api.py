@@ -40,6 +40,7 @@ from websites.utils import (
     get_dict_field,
     get_dict_query_field,
     query_field_is_empty,
+    relation_text_ids,
     resolve_referenced_content_ids,
     set_dict_field,
 )
@@ -278,14 +279,7 @@ def merge_caption_resources(
 
     Returns True if metadata was modified.
     """
-    existing = get_dict_field(metadata, resource_field)
-    existing_ids: list[str] = []
-    if isinstance(existing, dict):
-        content = existing.get("content")
-        if isinstance(content, list):
-            existing_ids = [c for c in content if c]
-        elif isinstance(content, str) and content:
-            existing_ids = [content]
+    existing_ids = relation_text_ids(metadata, resource_field)
     existing_ids_set = set(existing_ids)
 
     new_resources = [r for r in resources if str(r.text_id) not in existing_ids_set]

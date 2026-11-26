@@ -73,7 +73,12 @@ from websites.api import (
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
-from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
+from websites.utils import (
+    get_dict_field,
+    get_dict_query_field,
+    relation_text_ids,
+    set_dict_field,
+)
 
 log = logging.getLogger()
 
@@ -339,12 +344,7 @@ def _linked_caption_transcript_resources(video_resources):
             settings.YT_FIELD_CAPTIONS_RESOURCES,
             settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         ):
-            relation = get_dict_field(video_resource.metadata or {}, resource_field)
-            content = relation.get("content") if isinstance(relation, dict) else None
-            if isinstance(content, str):
-                content = [content]
-            if isinstance(content, list):
-                text_ids.update(text_id for text_id in content if text_id)
+            text_ids.update(relation_text_ids(video_resource.metadata, resource_field))
     if not text_ids:
         return []
     return list(
