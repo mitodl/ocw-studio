@@ -57,6 +57,7 @@ from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
+    create_video_resource,
     site_config_with_resource_languages,
 )
 from websites.models import WebsiteContent
@@ -1353,28 +1354,6 @@ def _drive_resource(website, name, sync_dt=None):
     return resource
 
 
-def _video_linking(website, filename, captions=(), transcripts=()):
-    """Create a Video resource that links these caption and transcript ids"""
-    return WebsiteContentFactory.create(
-        website=website,
-        type=CONTENT_TYPE_RESOURCE,
-        filename=filename,
-        metadata={
-            "resourcetype": RESOURCE_TYPE_VIDEO,
-            "video_files": {
-                "video_captions_resources": {
-                    "content": list(captions),
-                    "website": website.name,
-                },
-                "video_transcript_resources": {
-                    "content": list(transcripts),
-                    "website": website.name,
-                },
-            },
-        },
-    )
-
-
 @pytest.mark.django_db
 def test_update_sync_status_warns_about_unmatched_caption_files():
     """A Drive caption file that no video links is listed, and the sync stays Complete"""
@@ -1385,7 +1364,7 @@ def test_update_sync_status_warns_about_unmatched_caption_files():
     _drive_resource(website, "orphan_captions-es.vtt", sync_dt=now)
     linked = _drive_resource(website, "lecture-1_captions.vtt", sync_dt=now)
     _drive_resource(website, "notes.pdf", sync_dt=now)
-    _video_linking(website, "lecture-1_mp4", captions=[str(linked.text_id)])
+    create_video_resource(website, "lecture-1_mp4", captions=[str(linked.text_id)])
 
     update_sync_status(website, now)
 
@@ -1408,21 +1387,10 @@ def test_unlinked_caption_warnings_transcripts_and_names_without_keyword():
     _drive_resource(website, "syllabus.pdf")
     legacy = _drive_resource(website, "lecture-3-captions.webvtt")
     transcript = _drive_resource(website, "lecture-3_transcript.pdf")
-    _video_linking(website, "lecture-3_mp4", transcripts=[str(transcript.text_id)])
-    WebsiteContentFactory.create(
-        website=website,
-        type=CONTENT_TYPE_RESOURCE,
-        filename="lecture-4_mp4",
-        metadata={
-            "resourcetype": RESOURCE_TYPE_VIDEO,
-            "video_files": {
-                "video_captions_resources": {
-                    "content": str(legacy.text_id),
-                    "website": website.name,
-                }
-            },
-        },
+    create_video_resource(
+        website, "lecture-3_mp4", transcripts=[str(transcript.text_id)]
     )
+    create_video_resource(website, "lecture-4_mp4", captions=str(legacy.text_id))
 
     assert unlinked_caption_warnings(website) == [
         (

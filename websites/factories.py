@@ -130,3 +130,35 @@ class WebsiteContentFactory(DjangoModelFactory):
 
     class Meta:
         model = WebsiteContent
+
+
+def create_video_resource(
+    website, filename, youtube_id=None, captions=None, transcripts=None
+):
+    """
+    Create a Video resource, optionally with a YouTube id and with caption and
+    transcript ids linked. Pass a string to store a legacy bare id relation.
+    """
+    video_files = {}
+    if captions is not None:
+        video_files["video_captions_resources"] = {
+            "content": captions,
+            "website": website.name,
+        }
+    if transcripts is not None:
+        video_files["video_transcript_resources"] = {
+            "content": transcripts,
+            "website": website.name,
+        }
+    metadata = {
+        "resourcetype": constants.RESOURCE_TYPE_VIDEO,
+        "video_files": video_files,
+    }
+    if youtube_id is not None:
+        metadata["video_metadata"] = {"youtube_id": youtube_id}
+    return WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename=filename,
+        metadata=metadata,
+    )
