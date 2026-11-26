@@ -506,6 +506,50 @@ def test_start_transcript_job_keeps_existing_links(mocker, settings):
     mock_threeplay_upload_video_request.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ("linked_language", "orders_3play"),
+    [(None, False), ("es", True)],
+)
+def test_start_transcript_job_linked_caption_with_opaque_name(
+    mocker, settings, linked_language, orders_3play
+):
+    """A linked English caption whose file name matches no video skips 3Play.
+
+    The orphan backfill links files that keep an opaque S3 key, so name
+    matching can't find them. A linked non-English file still orders 3Play.
+    """
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    video = create_video("test", "title")
+    website = video.website
+    linked = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture-1_captions_vtt",
+        file=f"{website.s3_path}/1AbCdEf.vtt",
+        metadata={"language": linked_language} if linked_language else {},
+    )
+    video_content = create_content(website, "test", "title")
+    video_content.filename = "lecture-1_mp4"
+    set_dict_field(
+        video_content.metadata,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+        {"content": [str(linked.text_id)], "website": website.name},
+    )
+    video_content.save()
+    mock_upload = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        return_value={"data": {"id": 1}},
+    )
+    mocker.patch("videos.tasks.threeplay_api.threeplay_order_transcript_request")
+
+    start_transcript_job.apply([video.id])
+
+    assert mock_upload.called is orders_3play
+    video_content.refresh_from_db()
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)[
+        "content"
+    ] == [str(linked.text_id)]
+
+
 # pylint:disable=unused-variable
 def test_threeplay_submission_called_once_per_video(mocker, settings):
     """

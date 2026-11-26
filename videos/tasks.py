@@ -172,8 +172,12 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
         if auto_link_video_captions_transcript(video_resource):
             sync_website_content_references(video_resource)
 
-    # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
-    else:
+    # if none, and no English caption or transcript is linked already (the orphan
+    # backfill links files whose opaque S3 key names no video), request a
+    # transcript through the 3Play API
+    elif not _has_english_resource(
+        _linked_caption_transcript_resources([video_resource])
+    ):
         try:
             response = threeplay_api.threeplay_upload_video_request(
                 folder_name, youtube_id, video_resource.title, timeout=request_timeout
