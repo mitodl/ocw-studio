@@ -2,8 +2,7 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-auto-rows: minmax(120px, auto);
-  column-gap: 10px;
-  row-gap: 10px; // stylelint-disable declaration-block-no-redundant-longhand-properties
+  gap: 10px; // stylelint-disable declaration-block-no-redundant-longhand-properties
 
   .resource-item {
     cursor: pointer;
