@@ -11,9 +11,23 @@ from django.conf import settings
 
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename, get_file_extension, uuid_string
-from videos.constants import YT_LIST_BATCH_SIZE
+from videos.constants import VIDEO_FILE_EXTENSIONS, YT_LIST_BATCH_SIZE
 from websites.models import Website, WebsiteContent, WebsiteStarter
 from websites.utils import get_dict_field, set_dict_field
+
+VIDEO_EXTENSION_SUFFIX_RE = re.compile(
+    rf"_(?:{'|'.join(VIDEO_FILE_EXTENSIONS)})\d*$", re.IGNORECASE
+)
+
+
+def get_video_base_filename(filename: str) -> str:
+    """
+    Return a video resource's filename without its trailing video extension.
+
+    "lecture-1_mp4" and "lecture-1_mp42" give "lecture-1". A filename with no
+    video extension, such as "mitesd_932s06_lec03", comes back unchanged.
+    """
+    return VIDEO_EXTENSION_SUFFIX_RE.sub("", filename or "")
 
 
 def generate_s3_path(file_or_webcontent, website):

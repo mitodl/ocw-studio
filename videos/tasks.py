@@ -54,8 +54,8 @@ from videos.threeplay_sync import link_threeplay_files_as_resources
 from videos.utils import (
     create_new_content,
     fetch_youtube_snippets,
-    parse_caption_language_locale,
     process_video_tags,
+    resolve_language_locale,
 )
 from videos.youtube import (
     API_QUOTA_ERROR_MSG,
@@ -65,6 +65,7 @@ from videos.youtube import (
     mail_youtube_upload_success,
 )
 from websites.api import (
+    auto_link_video_captions_transcript,
     is_ocw_site,
     sync_website_content_references,
     videos_missing_captions,
@@ -167,26 +168,9 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
     captions_list, transcripts_list = video.caption_transcript_resources()
 
     if captions_list or transcripts_list:  # check for existing captions or transcript
-        website = video.website
-        if captions_list:
-            set_dict_field(
-                video_resource.metadata,
-                settings.YT_FIELD_CAPTIONS_RESOURCES,
-                {
-                    "content": [str(r.text_id) for r in captions_list],
-                    "website": website.name,
-                },
-            )
-        if transcripts_list:
-            set_dict_field(
-                video_resource.metadata,
-                settings.YT_FIELD_TRANSCRIPT_RESOURCES,
-                {
-                    "content": [str(r.text_id) for r in transcripts_list],
-                    "website": website.name,
-                },
-            )
-        video_resource.save()
+        # Keep what is already linked and append the matches.
+        if auto_link_video_captions_transcript(video_resource):
+            sync_website_content_references(video_resource)
 
     # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
     else:
@@ -328,17 +312,42 @@ def delete_s3_objects(
 
 
 def _has_english_resource(resources):
-    """Return True if any resource resolves to English via its real file path.
+    """Return True if any resource resolves to English.
 
     3Play only ever provides an English transcript/caption (see
     videos.threeplay_sync.link_threeplay_files_as_resources), so only an
     existing English resource should gate a 3Play fetch -- an existing
     French/Spanish/etc resource must not block fetching the English one.
+    An explicit Studio language wins over the language in the file name.
     """
-    return any(
-        parse_caption_language_locale(r.file.name)[0] == "en"
-        for r in resources
-        if r.file
+    return any(resolve_language_locale(r)[0] == "en" for r in resources if r.file)
+
+
+def _linked_caption_transcript_resources(video_resources):
+    """Return the caption and transcript resources linked on the video resources.
+
+    Reads both relation fields, accepting a list of ids or a legacy bare id
+    string. Ids whose resource no longer exists are skipped.
+    """
+    text_ids = set()
+    for video_resource in video_resources:
+        for resource_field in (
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
+        ):
+            relation = get_dict_field(video_resource.metadata or {}, resource_field)
+            content = relation.get("content") if isinstance(relation, dict) else None
+            if isinstance(content, str):
+                content = [content]
+            if isinstance(content, list):
+                text_ids.update(text_id for text_id in content if text_id)
+    if not text_ids:
+        return []
+    return list(
+        WebsiteContent.objects.filter(
+            website_id__in={r.website_id for r in video_resources},
+            text_id__in=text_ids,
+        )
     )
 
 
@@ -346,7 +355,7 @@ def _has_english_resource(resources):
 @single_task(
     timeout=settings.UPDATE_TAGGED_3PLAY_TRANSCRIPT_FREQUENCY, raise_block=False
 )
-def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
+def update_transcripts_for_video(video_id: int):  # noqa: C901
     """Update transcripts for a video"""
     video = Video.objects.get(id=video_id)
     captions_list, transcripts_list = video.caption_transcript_resources()
@@ -363,18 +372,18 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
         )
         video_resources = list(website.websitecontent_set.filter(**search_fields))
 
-    # Only the language check is new here: every process that creates a
-    # caption/transcript resource (GDrive ingestion, 3Play's own sync, the
-    # one-off orphan backfill) names it with the "{base_stem}_captions" /
-    # "{base_stem}_transcript" convention that caption_transcript_resources()
-    # already searches, so no extra lookup is needed to see them. A
-    # French/Spanish/etc resource must not count as coverage, though, since
-    # 3Play only ever supplies English.
+    # An English caption or transcript skips the 3Play fetch, whether it is
+    # found by file name or already linked on a video resource (an author can
+    # link a file under any name). A French/Spanish/etc resource must not
+    # count as coverage, though, since 3Play only ever supplies English.
     has_threeplay_update = (
         False
-        if (
-            _has_english_resource(captions_list)
-            or _has_english_resource(transcripts_list)
+        if _has_english_resource(
+            [
+                *captions_list,
+                *transcripts_list,
+                *_linked_caption_transcript_resources(video_resources),
+            ]
         )
         else threeplay_api.update_transcripts_for_video(video)
     )
@@ -398,29 +407,10 @@ def update_transcripts_for_video(video_id: int):  # noqa: C901, PLR0912
                 if link_threeplay_files_as_resources(video, video_resource):
                     video_resource.save()
                     sync_website_content_references(video_resource)
-            else:
-                resource_changed = False
-                for resource_list, resource_field in [
-                    (captions_list, settings.YT_FIELD_CAPTIONS_RESOURCES),
-                    (transcripts_list, settings.YT_FIELD_TRANSCRIPT_RESOURCES),
-                ]:
-                    if resource_list:
-                        new_relation = {
-                            "content": [str(r.text_id) for r in resource_list],
-                            "website": website.name,
-                        }
-                        current_value = get_dict_field(
-                            video_resource.metadata, resource_field
-                        )
-                        if current_value != new_relation:
-                            set_dict_field(
-                                video_resource.metadata,
-                                resource_field,
-                                new_relation,
-                            )
-                            resource_changed = True
-                if resource_changed:
-                    video_resource.save(update_fields=["metadata"])
+            # Match each resource by its own name, keep what is already
+            # linked and append new matches.
+            elif auto_link_video_captions_transcript(video_resource):
+                sync_website_content_references(video_resource)
 
             if first_transcript_download and len(videos_missing_captions(website)) == 0:
                 mail_transcripts_complete_notification(website)

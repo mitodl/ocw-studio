@@ -144,6 +144,30 @@ def test_created_resource_relation_fields_use_widget_shape(mock_s3, ocw_course_c
         }
 
 
+def test_backfill_names_resource_after_extensionless_video(mock_s3):
+    """A video name with no extension names the created resource after the full name"""
+    website = WebsiteFactory.create()
+    caption_key = f"courses/{website.name}/1AbCdEf_transcript.vtt"
+    mock_s3.put_object(Key=caption_key, Body=b"WEBVTT")
+
+    video = WebsiteContentFactory.create(
+        website=website,
+        filename="mitesd_932s06_lec03",
+        dirpath="content/resources",
+        metadata={
+            "resourcetype": "Video",
+            "video_files": {"video_captions_file": f"/{caption_key}"},
+        },
+    )
+
+    _run()
+
+    video.refresh_from_db()
+    resources = video.metadata["video_files"]["video_captions_resources"]
+    created = WebsiteContent.objects.get(text_id=resources["content"][0])
+    assert created.filename == "mitesd_932s06_lec03_captions_vtt"
+
+
 def test_converts_url_path_relative_orphan_to_storage_key(mock_s3):
     """An orphan path stored relative to url_path is looked up via s3_path.
 

@@ -8,12 +8,13 @@ from django.conf import settings
 from django.core.files import File
 
 from main.s3_utils import get_boto3_resource
-from main.utils import get_base_filename, get_dirpath_and_filename, get_file_extension
+from main.utils import get_dirpath_and_filename, get_file_extension
 from videos.constants import PDF_FORMAT_ID, WEBVTT_FORMAT_ID
 from videos.threeplay_api import fetch_file, threeplay_transcript_api_request
 from videos.utils import (
     generate_s3_path,
     get_content_dirpath,
+    get_video_base_filename,
     parse_caption_language_locale,
 )
 from websites.api import sync_website_content_references
@@ -204,7 +205,7 @@ def link_threeplay_files_as_resources(video, video_resource: WebsiteContent) -> 
 
     Returns True if the video resource's metadata was modified.
     """
-    base = get_base_filename(video_resource.filename or "")
+    base = get_video_base_filename(video_resource.filename)
     if not base:
         return False
     changed = False

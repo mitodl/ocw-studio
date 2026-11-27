@@ -3,6 +3,7 @@
 import logging
 import os
 import re
+from copy import deepcopy
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -16,7 +17,6 @@ from mitol.mail.api import get_message_sender
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from main.utils import (
     NestableKeyTextTransform,
-    get_base_filename,
     get_file_extension,
 )
 from users.models import User
@@ -27,6 +27,7 @@ from videos.constants import (
     YT_MAX_LENGTH_TITLE,
     YT_THUMBNAIL_IMG,
 )
+from videos.utils import get_video_base_filename
 from websites.constants import (
     CONTENT_FILENAME_MAX_LEN,
     PUBLISH_STATUS_ABORTED,
@@ -241,17 +242,15 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
     videos = resource.referencing_content.all()
     text_id = str(resource.text_id)
     for video in videos:
-        if (video.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
-            continue
-        video_files = video.metadata.get("video_files")
-        if not isinstance(video_files, dict):
+        metadata = video.metadata if isinstance(video.metadata, dict) else {}
+        if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
             continue
         changed = False
         for resource_field in (
-            "video_captions_resources",
-            "video_transcript_resources",
+            settings.YT_FIELD_CAPTIONS_RESOURCES,
+            settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         ):
-            relation = video_files.get(resource_field)
+            relation = get_dict_field(metadata, resource_field)
             if not isinstance(relation, dict):
                 continue
             content_list = relation.get("content")
@@ -262,19 +261,19 @@ def unlink_deleted_resource_from_videos(resource: WebsiteContent) -> None:
                 relation["content"] = [c for c in content_list if c != text_id]
                 changed = True
         if changed:
-            video.metadata["video_files"] = video_files
             video.save(update_fields=["metadata"])
             sync_website_content_references(video)
 
 
 def _merge_caption_resource(
-    video_files: dict,
+    metadata: dict,
     website: Website,
     resource_field: str,
     filename_prefix: str,
     valid_extensions: tuple[str, ...],
 ) -> bool:
-    """Find caption/transcript resources by prefix and merge into video_files.
+    """Find caption/transcript resources by prefix and merge them into the
+    relation at the dotted ``resource_field`` path of ``metadata``.
 
     Candidates are found by filename prefix only, then filtered by the real
     extension of their uploaded ``file`` (not the ``filename`` field's tail).
@@ -287,9 +286,9 @@ def _merge_caption_resource(
     Only the ``_resources`` relation field is written; the legacy ``_file``
     fields in stored metadata are left untouched.
 
-    Returns True if video_files was modified.
+    Returns True if metadata was modified.
     """
-    existing = video_files.get(resource_field)
+    existing = get_dict_field(metadata, resource_field)
     existing_ids: list[str] = []
     if isinstance(existing, dict):
         content = existing.get("content")
@@ -313,14 +312,18 @@ def _merge_caption_resource(
     if not new_resources:
         return False
 
-    video_files[resource_field] = {
-        "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
-        "website": website.name,
-    }
+    set_dict_field(
+        metadata,
+        resource_field,
+        {
+            "content": [*existing_ids, *(str(r.text_id) for r in new_resources)],
+            "website": website.name,
+        },
+    )
     return True
 
 
-def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
+def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> bool:
     """
     For a Video resource, auto-populate ``video_captions_resources`` and
     ``video_transcript_resources`` from existing WebsiteContent records in the
@@ -334,29 +337,30 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     merges them into the multi-select content list without overwriting
     existing non-empty entries. Only ``_resources`` relation fields are
     written; legacy ``_file`` fields are left untouched.
+
+    Returns True if new links were saved.
     """
-    if (video_resource.metadata or {}).get("resourcetype") != RESOURCE_TYPE_VIDEO:
-        return
-    video_base = get_base_filename(video_resource.filename or "")
-    if not video_base:
-        return
-    website = video_resource.website
-    video_files = (
-        video_resource.metadata.get("video_files") if video_resource.metadata else None
+    metadata = (
+        video_resource.metadata if isinstance(video_resource.metadata, dict) else {}
     )
-    if not isinstance(video_files, dict):
-        video_files = {}
+    if get_dict_field(metadata, settings.FIELD_RESOURCETYPE) != RESOURCE_TYPE_VIDEO:
+        return False
+    video_base = get_video_base_filename(video_resource.filename)
+    if not video_base:
+        return False
+    website = video_resource.website
+    metadata = deepcopy(metadata)
 
     results = [
-        _merge_caption_resource(video_files, website, resource_field, prefix, suffixes)
+        _merge_caption_resource(metadata, website, resource_field, prefix, suffixes)
         for resource_field, prefix, suffixes in [
             (
-                "video_captions_resources",
+                settings.YT_FIELD_CAPTIONS_RESOURCES,
                 f"{video_base}_captions",
                 CAPTION_FILE_EXTENSIONS,
             ),
             (
-                "video_transcript_resources",
+                settings.YT_FIELD_TRANSCRIPT_RESOURCES,
                 f"{video_base}_transcript",
                 TRANSCRIPT_FILE_EXTENSIONS,
             ),
@@ -365,10 +369,9 @@ def auto_link_video_captions_transcript(video_resource: WebsiteContent) -> None:
     changed = any(results)
 
     if changed:
-        if not isinstance(video_resource.metadata, dict):
-            video_resource.metadata = {}
-        video_resource.metadata["video_files"] = video_files
+        video_resource.metadata = metadata
         video_resource.save(update_fields=["metadata"])
+    return changed
 
 
 def videos_with_unassigned_youtube_ids(website: Website) -> list[WebsiteContent]:
