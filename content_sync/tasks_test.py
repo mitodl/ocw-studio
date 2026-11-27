@@ -1181,7 +1181,7 @@ def test_update_websites_in_root_website_removes_only_stale_listings(api_mock):
     upserted_content = mock_backend.sync_all_content_to_backend.call_args[1][
         "query_set"
     ]
-    assert list(upserted_content) == [published_listing]
+    assert set(upserted_content) == {published_listing, *stale_listings}
 
 
 def test_update_website_in_root_website(api_mock, mocker):

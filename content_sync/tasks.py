@@ -630,7 +630,12 @@ def update_websites_in_root_website():
                     )
                 )
         backend = api.get_sync_backend(website=root_website)
-        backend.sync_all_content_to_backend(query_set=website_content)
+        # Include the soft-deleted listings, so the sync removes them from git
+        backend.sync_all_content_to_backend(
+            query_set=WebsiteContent.all_objects.filter(
+                website=root_website, type=CONTENT_TYPE_WEBSITE
+            )
+        )
 
 
 @app.task(acks_late=True)
