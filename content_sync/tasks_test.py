@@ -1120,12 +1120,82 @@ def test_update_websites_in_root_website(api_mock):
         website=root_website, type="website"
     )
     assert website_content.count() == 4
+    assert WebsiteContent.objects.filter(
+        id__in=[content.id for content in unrelated_content]
+    ).count() == len(unrelated_content)
     api_mock.get_sync_backend.assert_called_once_with(website=root_website)
     mock_backend = api_mock.get_sync_backend.return_value
     upserted_content = mock_backend.sync_all_content_to_backend.call_args[1][
         "query_set"
     ]
     assert set(website_content).difference(set(upserted_content)) == set()
+
+
+def test_update_websites_in_root_website_removes_only_stale_listings(
+    api_mock, settings
+):
+    """
+    The update_websites_in_root_website task should remove the root website's listings
+    for sites that are no longer publishable, and leave all other content alone
+    """
+    settings.OCW_TEST_SITE_SLUGS = ["ocw-ci-test-course"]
+    root_website = WebsiteFactory.create(name="ocw-www")
+    test_site = WebsiteFactory.create(name="ocw-ci-test-course", published=True)
+    test_site_listing = WebsiteContentFactory.create(
+        website=root_website,
+        type="website",
+        dirpath=WEBSITE_LISTING_DIRPATH,
+        filename=test_site.short_id,
+    )
+    root_page = WebsiteContentFactory.create(website=root_website, type="page")
+    published_site = WebsiteFactory.create(published=True)
+    never_published_site = WebsiteFactory.create(
+        publish_date=None, draft_publish_date=None
+    )
+    unpublished_site = WebsiteFactory.create(unpublish_status=PUBLISH_STATUS_SUCCEEDED)
+    download_disabled_site = WebsiteFactory.create(published=True)
+    WebsiteContentFactory.create(website=published_site, type="sitemetadata")
+    WebsiteContentFactory.create(
+        website=download_disabled_site,
+        type="sitemetadata",
+        metadata={"hide_download": True},
+    )
+    unpublishable_content = [
+        WebsiteContentFactory.create(website=site, type="page")
+        for site in (never_published_site, unpublished_site, download_disabled_site)
+    ]
+    published_listing, *stale_listings = [
+        WebsiteContentFactory.create(
+            website=root_website,
+            type="website",
+            dirpath=WEBSITE_LISTING_DIRPATH,
+            filename=site.short_id,
+        )
+        for site in (published_site, unpublished_site, download_disabled_site)
+    ]
+
+    tasks.update_websites_in_root_website()
+
+    assert WebsiteContent.objects.filter(id=root_page.id).exists()
+    assert WebsiteContent.objects.filter(
+        id__in=[content.id for content in unpublishable_content]
+    ).count() == len(unpublishable_content)
+    website_content = WebsiteContent.objects.filter(
+        website=root_website, type="website"
+    )
+    assert set(website_content) == {published_listing, test_site_listing}
+    assert WebsiteContent.deleted_objects.filter(
+        id__in=[listing.id for listing in stale_listings]
+    ).count() == len(stale_listings)
+    mock_backend = api_mock.get_sync_backend.return_value
+    upserted_content = mock_backend.sync_all_content_to_backend.call_args[1][
+        "query_set"
+    ]
+    assert set(upserted_content) == {
+        published_listing,
+        test_site_listing,
+        *stale_listings,
+    }
 
 
 def test_update_website_in_root_website(api_mock, mocker):
