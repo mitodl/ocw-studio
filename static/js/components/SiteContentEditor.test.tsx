@@ -1,7 +1,5 @@
-import { FormSchema } from "../types/forms"
 import React from "react"
 import { act, waitFor } from "@testing-library/react"
-import * as yup from "yup"
 import sentryTestkit from "sentry-testkit"
 import * as Sentry from "@sentry/react"
 
@@ -23,7 +21,6 @@ import {
   makeWebsiteDetail,
   makeWebsiteStatus,
 } from "../util/factories/websites"
-import * as validationFuncs from "./forms/validation"
 import { shouldIf } from "../test_util"
 
 import {
@@ -35,16 +32,9 @@ import {
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
-import { FormikHelpers, FormikErrors, FormikValues } from "formik"
+import { FormikHelpers } from "formik"
 import { FormProps } from "./forms/SiteContentForm"
 
-jest.mock("formik", () => {
-  const formik = jest.requireActual("formik")
-  return {
-    __esModule: true,
-    ...formik,
-  }
-})
 jest.mock("../lib/site_content", () => {
   return {
     __esModule: true,
@@ -52,19 +42,12 @@ jest.mock("../lib/site_content", () => {
   }
 })
 
-jest.mock("./forms/validation")
-const getContentSchema = jest.mocked(validationFuncs.getContentSchema)
-
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default: jest.fn(() => <div>mock markdown editor</div>),
 }))
 
-interface CapturedFormProps extends FormProps {
-  validate?: (values: FormikValues) => Promise<FormikErrors<any>>
-}
-
-let capturedFormProps: CapturedFormProps | null = null
+let capturedFormProps: FormProps | null = null
 const mockState = { shouldThrowError: null as Error | null }
 
 jest.mock("./forms/SiteContentForm", () => ({
@@ -94,7 +77,6 @@ describe("SiteContent", () => {
     dismissStub: jest.Mock,
     fetchWebsiteListingStub: jest.Mock,
     successStubs: Record<string, jest.Mock>,
-    mockContentSchema: FormSchema,
     setDirtyStub: jest.Mock
 
   beforeEach(() => {
@@ -105,8 +87,6 @@ describe("SiteContent", () => {
     websiteStatus = makeWebsiteStatus(website)
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
-    mockContentSchema = yup.object().shape({})
-    getContentSchema.mockImplementation(() => mockContentSchema)
     dismissStub = jest.fn()
     fetchWebsiteListingStub = jest.fn()
     successStubs = {

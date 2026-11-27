@@ -909,6 +909,7 @@ def test_transcode_gdrive_video_error(settings, mocker):
         side_effect=ClientError({"Error": {}}, "transcode"),
     )
     mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    mocker.patch("content_sync.decorators.sleep")
     drive_file = DriveFileFactory.create()
     with pytest.raises(ClientError):
         transcode_gdrive_video(drive_file)

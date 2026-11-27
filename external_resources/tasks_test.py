@@ -134,7 +134,10 @@ def test_check_external_resources(
     assert updated_state.content.metadata["status"] == expected_status
     assert updated_state.content.metadata[METADATA_URL_STATUS_CODE] == url_status_code
     # Only valid urls are archived
-    assert mock_submit.called is (expected_status == ExternalResourceState.Status.VALID)
+    if expected_status == ExternalResourceState.Status.VALID:
+        mock_submit.assert_called_once_with(updated_state.content.id)
+    else:
+        mock_submit.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -446,7 +449,7 @@ def test_submit_website_resources_to_wayback_task(mocker, mocked_celery):
     assert sorted(call.args for call in mock_submit.call_args_list) == sorted(
         (resource.id, True) for resource in resources
     )
-    mocked_celery.group.assert_called_once()
+    mocked_celery.group.assert_called_once_with([mock_submit.return_value] * 2)
 
 
 @pytest.mark.django_db
