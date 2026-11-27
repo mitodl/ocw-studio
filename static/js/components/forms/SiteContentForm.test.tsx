@@ -386,6 +386,54 @@ describe("SiteContentForm", () => {
     expect(screen.getByDisplayValue("/pages/test-page")).toBeInTheDocument()
   })
 
+  test.each([
+    ["show", true],
+    ["", false],
+  ])(
+    "validates a conditional field against the form values when the condition field is %p",
+    async (kind, shouldFail) => {
+      const user = userEvent.setup()
+      const data = setupData()
+      data.configItem.fields = [
+        makeWebsiteConfigField({
+          widget: WidgetVariant.String,
+          name: "title",
+          label: "Title",
+          required: false,
+        }),
+        makeWebsiteConfigField({
+          widget: WidgetVariant.String,
+          name: "kind",
+          label: "Kind",
+          required: false,
+        }),
+        makeWebsiteConfigField({
+          widget: WidgetVariant.String,
+          name: "details",
+          label: "Details",
+          required: true,
+          condition: { field: "kind", equals: "show" },
+        }),
+      ]
+
+      helper.renderWithWebsite(<SiteContentForm {...data} />, data.website)
+
+      if (kind) {
+        await user.type(screen.getByRole("textbox", { name: /kind/i }), kind)
+      }
+      await user.click(screen.getByRole("button", { name: /save/i }))
+
+      if (shouldFail) {
+        expect(
+          await screen.findByText(/details is a required field/i),
+        ).toBeInTheDocument()
+        expect(data.onSubmit).not.toHaveBeenCalled()
+      } else {
+        await waitFor(() => expect(data.onSubmit).toHaveBeenCalled())
+      }
+    },
+  )
+
   test("scrolls to .form-error field on validation error", async () => {
     const user = userEvent.setup()
     const data = setupData()

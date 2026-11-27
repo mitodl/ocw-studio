@@ -1,8 +1,5 @@
-import { FormSchema } from "../types/forms"
 import React from "react"
 import { act, waitFor } from "@testing-library/react"
-import * as yup from "yup"
-import * as formikFuncs from "formik"
 import sentryTestkit from "sentry-testkit"
 import * as Sentry from "@sentry/react"
 
@@ -24,7 +21,6 @@ import {
   makeWebsiteDetail,
   makeWebsiteStatus,
 } from "../util/factories/websites"
-import * as validationFuncs from "./forms/validation"
 import { shouldIf } from "../test_util"
 
 import {
@@ -36,16 +32,9 @@ import {
 } from "../types/websites"
 import { contentDetailKey } from "../query-configs/websites"
 import { createModalState } from "../types/modal_state"
-import { FormikHelpers, FormikErrors, FormikValues } from "formik"
+import { FormikHelpers } from "formik"
 import { FormProps } from "./forms/SiteContentForm"
 
-jest.mock("formik", () => {
-  const formik = jest.requireActual("formik")
-  return {
-    __esModule: true,
-    ...formik,
-  }
-})
 jest.mock("../lib/site_content", () => {
   return {
     __esModule: true,
@@ -53,22 +42,12 @@ jest.mock("../lib/site_content", () => {
   }
 })
 
-jest.mock("./forms/validation")
-const getContentSchema = jest.mocked(validationFuncs.getContentSchema)
-
 jest.mock("./widgets/MarkdownEditor", () => ({
   __esModule: true,
   default: jest.fn(() => <div>mock markdown editor</div>),
 }))
 
-interface CapturedFormProps extends FormProps {
-  validate?: (values: FormikValues) => Promise<FormikErrors<any>>
-}
-
-let capturedFormProps: CapturedFormProps | null = null
-const validateImpl: { fn: ((values: any) => Promise<any>) | null } = {
-  fn: null,
-}
+let capturedFormProps: FormProps | null = null
 const mockState = { shouldThrowError: null as Error | null }
 
 jest.mock("./forms/SiteContentForm", () => ({
@@ -77,13 +56,7 @@ jest.mock("./forms/SiteContentForm", () => ({
     if (mockState.shouldThrowError) {
       throw mockState.shouldThrowError
     }
-    const validate = async (values: any): Promise<any> => {
-      if (validateImpl.fn) {
-        return validateImpl.fn(values)
-      }
-      return {}
-    }
-    capturedFormProps = { ...props, validate }
+    capturedFormProps = props
     return <div data-testid="site-content-form">Mock Form</div>
   },
 }))
@@ -104,7 +77,6 @@ describe("SiteContent", () => {
     dismissStub: jest.Mock,
     fetchWebsiteListingStub: jest.Mock,
     successStubs: Record<string, jest.Mock>,
-    mockContentSchema: FormSchema,
     setDirtyStub: jest.Mock
 
   beforeEach(() => {
@@ -115,8 +87,6 @@ describe("SiteContent", () => {
     websiteStatus = makeWebsiteStatus(website)
     content = makeWebsiteContentDetail()
     configItem = makeRepeatableConfigItem()
-    mockContentSchema = yup.object().shape({})
-    getContentSchema.mockImplementation(() => mockContentSchema)
     dismissStub = jest.fn()
     fetchWebsiteListingStub = jest.fn()
     successStubs = {
@@ -209,70 +179,6 @@ describe("SiteContent", () => {
     expect(capturedFormProps).not.toBeNull()
     expect(capturedFormProps!.configItem).toStrictEqual(configItem)
     expect(capturedFormProps!.setDirty).toStrictEqual(setDirtyStub)
-  })
-
-  describe("validates using the content schema", () => {
-    let validateYupSchemaStub: jest.SpyInstance,
-      yupToFormErrorsStub: jest.SpyInstance,
-      getContentSchemaStub: jest.SpyInstance
-
-    beforeEach(() => {
-      validateYupSchemaStub = jest.spyOn(formikFuncs, "validateYupSchema")
-      yupToFormErrorsStub = jest.spyOn(formikFuncs, "yupToFormErrors")
-      getContentSchemaStub = jest.spyOn(validationFuncs, "getContentSchema")
-      getContentSchemaStub.mockReturnValue(mockContentSchema)
-
-      validateImpl.fn = async (values: any): Promise<any> => {
-        const schema = validationFuncs.getContentSchema(configItem, values)
-        try {
-          await formikFuncs.validateYupSchema(values, schema)
-        } catch (e) {
-          return formikFuncs.yupToFormErrors(e as yup.ValidationError)
-        }
-        return {}
-      }
-    })
-
-    afterEach(() => {
-      validateYupSchemaStub.mockRestore()
-      yupToFormErrorsStub.mockRestore()
-      getContentSchemaStub.mockRestore()
-      validateImpl.fn = null
-    })
-
-    it("with no errors", async () => {
-      await renderComponent()
-      const values = { val: "ues" }
-      const validate = capturedFormProps!.validate
-      expect(validate).toBeDefined()
-      const result = await validate!(values)
-      expect(result).toStrictEqual({})
-      expect(getContentSchemaStub).toHaveBeenCalledWith(configItem, values)
-      expect(validateYupSchemaStub).toHaveBeenCalledWith(
-        values,
-        mockContentSchema,
-      )
-      expect(yupToFormErrorsStub).not.toHaveBeenCalled()
-    })
-
-    it("with some errors", async () => {
-      await renderComponent()
-      const values = { val: "ues" }
-      const error = new Error("an error")
-      validateYupSchemaStub.mockRejectedValue(error)
-      const validationData = ["An error was found"]
-      yupToFormErrorsStub.mockReturnValue(validationData)
-      const validate = capturedFormProps!.validate
-      expect(validate).toBeDefined()
-      const result = await validate!(values)
-      expect(result).toStrictEqual(validationData)
-      expect(getContentSchemaStub).toHaveBeenCalledWith(configItem, values)
-      expect(validateYupSchemaStub).toHaveBeenCalledWith(
-        values,
-        mockContentSchema,
-      )
-      expect(yupToFormErrorsStub).toHaveBeenCalledWith(error)
-    })
   })
 
   //

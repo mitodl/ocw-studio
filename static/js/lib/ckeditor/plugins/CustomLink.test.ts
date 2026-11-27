@@ -5,7 +5,6 @@ jest.mock("../../api/util")
 
 import LinkPlugin from "@ckeditor/ckeditor5-link/src/link"
 import Paragraph from "@ckeditor/ckeditor5-paragraph/src/paragraph"
-import { URL as NodeURL } from "url"
 import invariant from "tiny-invariant"
 
 import Markdown from "./Markdown"
@@ -37,57 +36,6 @@ global.SETTINGS = {
   deletableContentTypes: [],
   ocwCourseStarterSlug: "course",
 }
-
-// Mock URL constructor
-class MockURL {
-  hostname: string
-  searchParams: {
-    set: jest.Mock
-    has: jest.Mock
-    get: jest.Mock
-    delete: jest.Mock
-  }
-
-  constructor(url: string) {
-    // Parse actual URL to extract real hostname
-    try {
-      const realUrl = new NodeURL(url)
-      this.hostname = realUrl.hostname
-
-      // Mock searchParams but preserve the real functionality for has() and get()
-      this.searchParams = {
-        set: jest.fn(),
-        has: jest
-          .fn()
-          .mockImplementation((key: string) => realUrl.searchParams.has(key)),
-        get: jest
-          .fn()
-          .mockImplementation((key: string) => realUrl.searchParams.get(key)),
-        delete: jest.fn(),
-      }
-    } catch (error) {
-      // Fallback for invalid URLs
-      try {
-        const realUrl = new NodeURL(url)
-        this.hostname = realUrl.hostname
-      } catch (error) {
-        this.hostname = "example.com"
-      }
-
-      this.searchParams = {
-        set: jest.fn(),
-        has: jest.fn().mockReturnValue(false),
-        get: jest.fn().mockReturnValue(null),
-        delete: jest.fn(),
-      }
-    }
-  }
-
-  toString() {
-    return "mocked-url"
-  }
-}
-global.URL = MockURL as any
 
 // Mock console methods
 const mockConsoleLog = jest.spyOn(console, "log").mockImplementation(() => {
@@ -148,9 +96,6 @@ describe("CustomLink Plugin", () => {
       deletableContentTypes: [],
       ocwCourseStarterSlug: "course",
     }
-
-    // Ensure our MockURL class is being used
-    global.URL = MockURL as any
   })
 
   it("should have correct plugin metadata", () => {
@@ -298,13 +243,13 @@ describe("CustomLink Plugin", () => {
       expect(linkCommand).toBeDefined()
       invariant(linkCommand, "linkCommand should be defined")
 
-      // Temporarily override URL to throw for invalid URLs while keeping MockURL for valid cases
+      // Temporarily override URL to throw for invalid URLs
       const originalURL = global.URL
       global.URL = jest.fn().mockImplementation((url: string) => {
         if (url === "invalid-url") {
           throw new Error("Invalid URL")
         }
-        return new MockURL(url)
+        return new originalURL(url)
       }) as any
 
       linkCommand.execute("invalid-url")
@@ -352,7 +297,6 @@ describe("CustomLink Plugin", () => {
 
   describe("Document change handling", () => {
     it("should process href changes for non-resource links", async () => {
-      // Mock successful API response
       const docChangeMockResponse = {
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -363,37 +307,35 @@ describe("CustomLink Plugin", () => {
       mockFetch.mockResolvedValue(docChangeMockResponse as any)
 
       const editor = await getEditor("")
-
-      // Use the link command to create a link, which should trigger the document change handling
-      const linkCommand = editor.commands.get("link")
-      expect(linkCommand).toBeDefined()
-      invariant(linkCommand, "linkCommand should be defined")
-
-      // First create some text in the editor
       const root = editor.model.document.getRoot()
       invariant(root, "Document root should be defined")
 
+      let text: any
       editor.model.change((writer) => {
         const paragraph = writer.createElement("paragraph")
-        const text = writer.createText("test link")
+        text = writer.createText("test link")
         writer.append(text, paragraph)
         writer.append(paragraph, root)
-
-        // Set selection to the text so link command will apply to it
-        const startPosition = writer.createPositionBefore(text)
-        const endPosition = writer.createPositionAfter(text)
-        const textRange = writer.createRange(startPosition, endPosition)
-        writer.setSelection(textRange)
       })
-
-      // Execute the link command, which should trigger document change processing
-      linkCommand.execute("https://external.com/test")
+      // Set the href directly, the way a paste or an undo would, without the link command
+      editor.model.change((writer) => {
+        writer.setAttribute("linkHref", "https://external.com/test", text)
+      })
 
       // Wait for document change processing
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // Should attempt to create external resource
-      expect(mockFetch).toHaveBeenCalled()
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("https://external.com/test"),
+        }),
+      )
+      const paragraph = root.getChild(root.childCount - 1) as any
+      expect(paragraph.getChild(0).getAttribute("linkHref")).toBe(
+        "https://fake.mit.edu/test-external-uuid?ocw_resource_link_uuid=test-external-uuid&ocw_resource_link_suffix=",
+      )
     })
 
     it("should ignore changes for existing resource links", async () => {
@@ -898,11 +840,10 @@ describe("CustomLink Plugin", () => {
       // Wait for async operations
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      // Should make API call and update the href
+      // Should make API call and point the href at the new external resource
       expect(mockFetch).toHaveBeenCalled()
-      // The href should be updated from the original external URL
-      expect(linkElement.getAttribute("linkHref")).not.toBe(
-        "https://external.com/test",
+      expect(linkElement.getAttribute("linkHref")).toBe(
+        "https://fake.mit.edu/external-uuid?ocw_resource_link_uuid=external-uuid&ocw_resource_link_suffix=",
       )
     })
 

@@ -101,9 +101,10 @@ class Command(WebsiteFilterCommand):
     def _process_batch(self, website_qset, offset, batch_size, verbosity):
         """Process a batch of content items."""
         # Fetch a batch of content
-        content_batch = WebsiteContent.objects.filter(website__in=website_qset)[
-            offset : offset + batch_size
-        ]
+        # a stable order, so offsets do not skip or repeat rows that change mid-run
+        content_batch = WebsiteContent.objects.filter(
+            website__in=website_qset
+        ).order_by("id")[offset : offset + batch_size]
 
         if verbosity >= 3:  # noqa: PLR2004
             self.stdout.write(f"Fetched {len(content_batch)} content items for batch")

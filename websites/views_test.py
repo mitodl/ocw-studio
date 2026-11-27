@@ -587,7 +587,7 @@ def test_websites_endpoint_detail_get_denied(drf_client):
         resp = drf_client.get(
             reverse("websites_api-detail", kwargs={"name": website.name})
         )
-        assert resp.status_code == 403 if not user else 404
+        assert resp.status_code == (403 if not user else 404)
 
 
 def test_websites_endpoint_sorting(drf_client, websites, settings):
@@ -1058,12 +1058,12 @@ def test_websites_content_publish_sorting(drf_client, global_admin_user, publish
         created_on=website.publish_date + dt.timedelta(days=2),
     )
 
-    published = WebsiteContentFactory.create_batch(
+    published_content = WebsiteContentFactory.create_batch(
         3,
         website=website,
     )
 
-    for content in published:
+    for content in published_content:
         content.created_on = website.publish_date - dt.timedelta(days=2)
         content.save()
 
@@ -1074,7 +1074,7 @@ def test_websites_content_publish_sorting(drf_client, global_admin_user, publish
         },
     )
     resp = drf_client.get(api_url, {"published": published})
-    content = published if published else unpublished
+    content = published_content if published else unpublished
     expected_ids = sorted([c.text_id for c in content])
 
     assert resp.data["count"] == 3

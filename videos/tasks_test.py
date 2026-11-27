@@ -79,6 +79,7 @@ def create_video(youtube_id, title):
 
     video = video_file.video
     video.source_key = "the/file"
+    video.status = VideoStatus.CREATED
     video.save()
 
     return video
@@ -458,12 +459,9 @@ def test_start_transcript_job(
         title,
         timeout=settings.THREEPLAY_BASE_TIMEOUT,
     )
-    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
-        mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
-        )
-    else:
-        mock_order_transcript_request_request.assert_not_called()
+    mock_order_transcript_request_request.assert_called_once_with(
+        video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
+    )
 
 
 # pylint:disable=unused-variable
@@ -491,12 +489,9 @@ def test_threeplay_submission_called_once_per_video(mocker, settings):
     start_transcript_job.apply([video.id])
     start_transcript_job.apply([video.id])
 
-    if video.status != VideoStatus.SUBMITTED_FOR_TRANSCRIPTION:
-        mock_order_transcript_request_request.assert_called_once_with(
-            video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
-        )
-    else:
-        mock_order_transcript_request_request.assert_not_called()
+    mock_order_transcript_request_request.assert_called_once_with(
+        video.id, threeplay_file_id, timeout=settings.THREEPLAY_BASE_TIMEOUT
+    )
 
 
 @pytest.mark.parametrize("is_enabled", [True, False])

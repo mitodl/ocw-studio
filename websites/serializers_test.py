@@ -570,7 +570,7 @@ def test_website_content_detail_serializer_save(mocker, mocked_website_funcs):
     mocked_website_funcs.update_website_backend.assert_called_once_with(content.website)
 
 
-@pytest.mark.parametrize("is_new", [True])
+@pytest.mark.parametrize("is_new", [True, False])
 @pytest.mark.parametrize("has_title_field", [True, False])
 def test_website_content_detail_serializer_save_site_meta(  # pylint:disable=unused-argument
     settings, mocker, mocked_website_funcs, has_title_field, is_new

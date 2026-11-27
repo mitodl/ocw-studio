@@ -477,12 +477,25 @@ def test_update_website_status(mocker, status, notify, has_user, version):
     mock_mail = mocker.patch("websites.api.mail_on_publish")
     mock_log = mocker.patch("websites.api.log.error")
     user = UserFactory.create() if has_user else None
-    website = WebsiteFactory.create(**{f"{version}_last_published_by": user})
+    website = WebsiteFactory.create(
+        **{
+            f"{version}_last_published_by": user,
+            f"has_unpublished_{version}": False,
+            f"{version}_build_date": None,
+        }
+    )
     now = now_in_utc()
     update_website_status(website, version, status, now)
     website.refresh_from_db()
     assert getattr(website, f"{version}_publish_status") == status
     assert getattr(website, f"{version}_publish_status_updated_on") == now
+    # a failed build lets the user publish again
+    assert getattr(website, f"has_unpublished_{version}") is (
+        status == PUBLISH_STATUS_ERRORED
+    )
+    assert getattr(website, f"{version}_build_date") == (
+        now if status == PUBLISH_STATUS_SUCCEEDED else None
+    )
     assert mock_mail.call_count == (1 if has_user and notify else 0)
     assert mock_log.call_count == (1 if status == PUBLISH_STATUS_ERRORED else 0)
 
@@ -656,8 +669,8 @@ def test_get_content_warnings(
         )
     if is_draft:
         warnings_len += 1
-        assert len(warnings) == warnings_len
         assert video_content[1].title in warnings[warnings_len - 1]
+    assert len(warnings) == warnings_len
     if (
         not has_missing_ids
         and not has_missing_captions

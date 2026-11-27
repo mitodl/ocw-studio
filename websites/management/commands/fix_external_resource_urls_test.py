@@ -111,8 +111,9 @@ def test_ignores_missing_external_url(mock_sync_task):
     call_command("fix_external_resource_urls", commit=True)  # must not raise
 
 
-def test_dry_run_makes_no_changes(mock_sync_task):
+def test_dry_run_makes_no_changes(settings, mock_sync_task):
     """Without --commit, the database is not modified."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     website = WebsiteFactory.create()
     original_url = "http://www.gutenberg.org/etext/4217\n"
     content = WebsiteContentFactory.create(
@@ -273,8 +274,9 @@ def test_sync_scoped_to_affected_websites_only(settings, mock_sync_task):
     mock_sync_task.assert_called_once_with(affected_website.name)
 
 
-def test_skip_sync_flag_prevents_sync(mock_sync_task):
+def test_skip_sync_flag_prevents_sync(settings, mock_sync_task):
     """--skip-sync prevents the sync_unsynced_websites task from running."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
         website=website,
@@ -287,8 +289,9 @@ def test_skip_sync_flag_prevents_sync(mock_sync_task):
     mock_sync_task.assert_not_called()
 
 
-def test_no_sync_when_nothing_modified(mock_sync_task):
+def test_no_sync_when_nothing_modified(settings, mock_sync_task):
     """A committed run with no affected content does not trigger a sync."""
+    settings.CONTENT_SYNC_BACKEND = "content_sync.backends.github.GithubBackend"
     website = WebsiteFactory.create()
     WebsiteContentFactory.create(
         website=website,

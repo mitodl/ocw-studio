@@ -27,6 +27,7 @@ from websites.factories import (
     WebsiteStarterFactory,
 )
 from websites.management.commands.backpopulate_referencing_content import Command
+from websites.models import WebsiteContent
 
 pytestmark = pytest.mark.django_db
 
@@ -964,3 +965,33 @@ def test_video_resource_captions_only_reference_detected():
     referenced_content = list(video_resource.referenced_by.all())
     assert len(referenced_content) == 1
     assert captions_resource in referenced_content
+
+
+def test_batches_cover_every_content_item_once(mocker):
+    """Every content item should be processed exactly once, even when rows change mid-run"""
+    website = WebsiteFactory.create()
+    content_ids = [
+        WebsiteContentFactory.create(website=website, type=CONTENT_TYPE_PAGE).id
+        for _ in range(6)
+    ]
+    processed_ids = []
+
+    def collect_references(command, content_batch, verbosity):
+        batch_ids = [content.id for content in content_batch]
+        processed_ids.extend(batch_ids)
+        # an edit made while the command runs rewrites these rows
+        WebsiteContent.objects.filter(id__in=batch_ids).update(title="edited")
+        return {}
+
+    mocker.patch.object(
+        Command, "_collect_references", autospec=True, side_effect=collect_references
+    )
+
+    call_command(
+        "backpopulate_referencing_content",
+        verbosity=0,
+        batch_size=2,
+        filter=website.name,
+    )
+
+    assert sorted(processed_ids) == sorted(content_ids)

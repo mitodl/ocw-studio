@@ -2,6 +2,7 @@
 
 import csv
 from datetime import UTC, datetime
+from io import StringIO
 from pathlib import Path
 
 import pytest
@@ -372,19 +373,24 @@ def test_update_youtube_tags_api_error(mock_youtube_api, video_content_with_tags
     mock_youtube_api.client.videos.return_value.update.return_value.execute.assert_not_called()
 
 
-def test_update_youtube_tags_youtube_not_enabled(mocker):
+def test_update_youtube_tags_youtube_not_enabled(
+    mocker, mock_youtube_api, video_content_with_tags
+):
     """Test that command exits if YouTube is not enabled"""
     mocker.patch(
         "videos.management.commands.update_youtube_tags.is_youtube_enabled",
         return_value=False,
     )
+    out = StringIO()
 
     call_command(
         "update_youtube_tags",
         filter="test-course",
+        stdout=out,
     )
 
-    # Command should exit early without processing
+    assert "YouTube integration is not enabled" in out.getvalue()
+    mock_youtube_api.client.videos.assert_not_called()
 
 
 def test_update_youtube_tags_no_videos_found(mock_youtube_api):

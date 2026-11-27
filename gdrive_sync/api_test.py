@@ -734,7 +734,7 @@ def test_create_gdrive_pdf(mock_get_s3_content_type, mocker, mytitle):
     )
     create_gdrive_resource_content(drive_file)
     drive_file.refresh_from_db()
-    assert drive_file.resource.title == mytitle if mytitle != "" else drive_file.name
+    assert drive_file.resource.title == (mytitle or drive_file.name)
 
 
 def test_create_gdrive_pdf_no_metadata(mock_get_s3_content_type, mocker):
@@ -837,7 +837,7 @@ def test_create_gdrive_resource_content_error(mocker):
     """create_resource_from_gdrive should log an exception, update status if something goes wrong"""
     mocker.patch(
         "gdrive_sync.api.get_s3_content_type",
-        return_value=Exception("Could not determine resource type"),
+        side_effect=Exception("Could not determine resource type"),
     )
     mock_log = mocker.patch("gdrive_sync.api.log.exception")
     content = WebsiteContentFactory.create()
@@ -848,6 +848,9 @@ def test_create_gdrive_resource_content_error(mocker):
     content.refresh_from_db()
     drive_file.refresh_from_db()
     assert drive_file.status == DriveFileStatus.FAILED
+    assert drive_file.sync_error == (
+        f"Could not create a resource from Google Drive file {drive_file.name}"
+    )
     mock_log.assert_called_once_with(
         "Error creating resource for drive file %s", drive_file.file_id
     )
@@ -906,18 +909,25 @@ def test_transcode_gdrive_video_error(settings, mocker):
         side_effect=ClientError({"Error": {}}, "transcode"),
     )
     mock_log = mocker.patch("gdrive_sync.api.log.exception")
+    mocker.patch("content_sync.decorators.sleep")
     drive_file = DriveFileFactory.create()
     with pytest.raises(ClientError):
         transcode_gdrive_video(drive_file)
     drive_file.refresh_from_db()
-    assert all(
-        call_args
-        == mocker.call(
-            "Error creating transcode job for %s", drive_file.video.source_key
-        )
-        for call_args in mock_log.call_args_list
+    # retry_on_failure runs the function once per retry
+    assert (
+        mock_log.call_args_list
+        == [
+            mocker.call(
+                "Error creating transcode job for %s", drive_file.video.source_key
+            )
+        ]
+        * settings.CONTENT_SYNC_RETRIES
     )
     assert drive_file.video.status == VideoStatus.FAILED
+    assert drive_file.sync_error.startswith(
+        f"Error transcoding video {drive_file.name}:"
+    )
 
 
 @pytest.mark.parametrize(

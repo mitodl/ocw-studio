@@ -13,6 +13,7 @@ import {
   ConfigItem,
   FileConfigField,
   MarkdownConfigField,
+  ObjectConfigField,
   StringConfigField,
   TextConfigField,
   WidgetVariant,
@@ -559,14 +560,17 @@ describe("form validation utils", () => {
         const [configItem, name] = makeObjectConfigItem({ required: true })
         const schema = getContentSchema(configItem, {})
 
-        await schema
-          .validate({ ...defaultFormValues, [name]: {} }, { abortEarly: false })
-          .catch((err: yup.ValidationError) => {
-            expect(err.errors).toEqual([
-              "mystring is a required field",
-              "myboolean is a required field",
-            ])
-          })
+        await expect(
+          schema.validate(
+            { ...defaultFormValues, [name]: {} },
+            { abortEarly: false },
+          ),
+        ).rejects.toMatchObject({
+          errors: [
+            "mystring is a required field",
+            "myboolean is a required field",
+          ],
+        })
         await expect(
           schema.isValid({
             ...defaultFormValues,
@@ -624,9 +628,13 @@ describe("form validation utils", () => {
 
       it("should skip validation on sub-fields which don't have data to send", async () => {
         const [configItem, name] = makeObjectConfigItem({ required: true })
+        const [stringField, booleanField] = (
+          configItem.fields[0] as ObjectConfigField
+        ).fields
+        // hide only the string sub-field, so the object field itself is validated
         const fieldIsVisibleStub = sandbox
           .stub(siteContentFuncs, "fieldIsVisible")
-          .returns(false)
+          .callsFake((field) => field !== stringField)
         const values = {}
         const schema = getContentSchema(configItem, values)
 
@@ -634,15 +642,12 @@ describe("form validation utils", () => {
           schema.isValid({
             ...defaultFormValues,
             [name]: {
-              mystring: null,
+              [stringField.name]: null,
+              [booleanField.name]: false,
             },
           }),
         ).resolves.toBeTruthy()
-        sinon.assert.calledWith(
-          fieldIsVisibleStub,
-          configItem.fields[0],
-          values,
-        )
+        sinon.assert.calledWith(fieldIsVisibleStub, stringField, values)
       })
     })
   })
