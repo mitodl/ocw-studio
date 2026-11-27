@@ -578,8 +578,12 @@ def update_websites_in_root_website():
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
 
-        # Remove the content for unpublished or not downloadable sites
-        WebsiteContent.objects.exclude(website__in=sites).delete()
+        # Remove the root website's listings for unpublished or not downloadable sites
+        WebsiteContent.objects.filter(
+            website=root_website,
+            type=CONTENT_TYPE_WEBSITE,
+            dirpath=WEBSITE_LISTING_DIRPATH,
+        ).exclude(filename__in=sites.values("short_id")).delete()
 
         fields = [
             "website",
