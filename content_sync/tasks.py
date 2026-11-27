@@ -578,12 +578,17 @@ def update_websites_in_root_website():
         # Exclude the root website
         sites = sites.exclude(name=settings.ROOT_WEBSITE_NAME)
 
-        # Remove the root website's listings for unpublished or not downloadable sites
+        # Remove the root website's listings for sites that are no longer publishable.
+        # Test sites are never publishable, so their listings are kept.
         WebsiteContent.objects.filter(
             website=root_website,
             type=CONTENT_TYPE_WEBSITE,
             dirpath=WEBSITE_LISTING_DIRPATH,
-        ).exclude(filename__in=sites.values("short_id")).delete()
+        ).exclude(filename__in=sites.values("short_id")).exclude(
+            filename__in=Website.objects.filter(
+                name__in=settings.OCW_TEST_SITE_SLUGS
+            ).values("short_id")
+        ).delete()
 
         fields = [
             "website",
