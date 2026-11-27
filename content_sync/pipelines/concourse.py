@@ -315,10 +315,14 @@ class GeneralPipeline(BaseGeneralPipeline):
             data=json.dumps({"from": None}),
         )
 
+    def _get_first_job_name(self, pipeline_name: str) -> str:
+        """Get the name of the first job in the pipeline"""
+        pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
+        return pipeline_info["config"]["jobs"][0]["name"]
+
     def trigger_pipeline_build(self, pipeline_name: str) -> int:
         """Trigger a pipeline build"""
-        pipeline_info = self.api.get(self._make_pipeline_config_url(pipeline_name))
-        job_name = pipeline_info["config"]["jobs"][0]["name"]
+        job_name = self._get_first_job_name(pipeline_name)
         return self.api.post(self._make_builds_url(pipeline_name, job_name))["id"]
 
     def pause_pipeline(self, pipeline_name: str):
@@ -536,6 +540,16 @@ class SitePipeline(BaseSitePipeline, GeneralPipeline):
                 SitePipelineDefinition(config=pipeline_config).json(), pipeline_name
             )
 
+    def has_running_build(self, pipeline_name: str) -> bool:
+        """Return True if a job of the pipeline has a build in progress"""
+        jobs = self.api.get(
+            f"/api/v1/teams/{settings.CONCOURSE_TEAM}/pipelines/{pipeline_name}/jobs{self.instance_vars}"
+        )
+        # Pending builds of a paused pipeline never start
+        return any(
+            (job.get("next_build") or {}).get("status") == "started" for job in jobs
+        )
+
     def check_online_site_job_resources(self, pipeline_name: str):
         """Trigger resource checks for all resources required by online-site-job"""
         for resource_name in [
@@ -657,6 +671,12 @@ class UnpublishedSiteRemovalPipeline(
         self.upsert_config(
             UnpublishedSiteRemovalPipelineDefinition().json(), self.PIPELINE_NAME
         )
+
+    def has_unfinished_build(self) -> bool:
+        """Return True if the removal job has a build that is pending or running"""
+        job_name = self._get_first_job_name(self.PIPELINE_NAME)
+        job = self.api.get(self._make_job_url(self.PIPELINE_NAME, job_name))
+        return job["next_build"] is not None
 
 
 class TestPipeline(BaseTestPipeline, GeneralPipeline):

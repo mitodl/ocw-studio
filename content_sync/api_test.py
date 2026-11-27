@@ -7,7 +7,7 @@ import pytest
 from django.db.models.signals import post_save
 from factory.django import mute_signals
 from mitol.common.utils import now_in_utc
-from requests import HTTPError
+from requests import HTTPError, Response
 
 from content_sync import api
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
@@ -236,6 +236,84 @@ def test_pause_live_site_pipelines_live_error(settings, mocker):
     mock_pipeline.pause_pipeline.side_effect = HTTPError("404")
     with pytest.raises(HTTPError):
         api.pause_live_site_pipelines(WebsiteFactory.create())
+
+
+@pytest.mark.parametrize(
+    ("is_default_theme_site", "running", "expected_checked", "expected"),
+    [
+        (False, [False], [VERSION_LIVE], False),
+        (
+            True,
+            [False, False, False],
+            [
+                VERSION_LIVE,
+                f"{VERSION_LIVE}-ocw-course-v3",
+                f"{VERSION_LIVE}-ocw-course-v4",
+            ],
+            False,
+        ),
+        (
+            True,
+            [False, True],
+            [VERSION_LIVE, f"{VERSION_LIVE}-ocw-course-v3"],
+            True,
+        ),
+    ],
+)
+def test_live_site_builds_running(  # noqa: PLR0913, PLR0917
+    settings, mocker, is_default_theme_site, running, expected_checked, expected
+):
+    """live_site_builds_running should check the live pipeline and those of any extra themes"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    mock_get_pipeline = mocker.patch("content_sync.api.get_site_pipeline")
+    mock_pipeline = mock_get_pipeline.return_value
+    mock_pipeline.has_running_build.side_effect = running
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+        if is_default_theme_site
+        else WebsiteStarterFactory.create()
+    )
+    assert api.live_site_builds_running(website) is expected
+    mock_get_pipeline.assert_called_once_with(website)
+    checked = [call.args[0] for call in mock_pipeline.has_running_build.call_args_list]
+    assert checked == expected_checked
+
+
+def http_error(status_code):
+    """Return an HTTPError for a response with the given status code"""
+    response = Response()
+    response.status_code = status_code
+    return HTTPError(response=response)
+
+
+def test_live_site_builds_running_missing_extra_theme_pipeline(settings, mocker):
+    """A missing extra theme pipeline should count as one with no running build"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3", "ocw-course-v4"]
+    mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
+    mock_pipeline.has_running_build.side_effect = [False, http_error(404), False]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+    )
+    assert api.live_site_builds_running(website) is False
+    assert mock_pipeline.has_running_build.call_count == 3
+
+
+def test_live_site_builds_running_extra_theme_error(settings, mocker):
+    """Any other error checking an extra theme pipeline should be raised"""
+    settings.CONTENT_SYNC_PIPELINE_BACKEND = "concourse"
+    settings.OCW_DEFAULT_COURSE_THEME = "ocw-course-v2"
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    mock_pipeline = mocker.patch("content_sync.api.get_site_pipeline").return_value
+    mock_pipeline.has_running_build.side_effect = [False, http_error(503)]
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(slug="ocw-course-v2")
+    )
+    with pytest.raises(HTTPError):
+        api.live_site_builds_running(website)
 
 
 def test_sync_github_website_starters(mocker):

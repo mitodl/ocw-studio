@@ -28,6 +28,7 @@ from content_sync.api import (
 from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.tasks import (
     remove_website_in_root_website,
+    rerun_unpublished_removal,
     update_mass_build_pipelines_on_publish,
 )
 from gdrive_sync.constants import WebsiteSyncStatus
@@ -49,8 +50,10 @@ from websites.constants import (
     CONTENT_TYPE_PAGE,
     CONTENT_TYPE_RESOURCE,
     CONTENT_TYPE_RESOURCE_COLLECTION,
+    PUBLISH_STATUS_FAILED,
     PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUS_SUCCEEDED,
+    PUBLISH_STATUSES_FINAL,
     RESOURCE_TYPE_DOCUMENT,
     RESOURCE_TYPE_IMAGE,
     RESOURCE_TYPE_OTHER,
@@ -342,6 +345,9 @@ class WebsiteViewSet(
         theme_slug = data.get("theme_slug")
         is_extra_theme = theme_slug in settings.OCW_EXTRA_COURSE_THEMES
 
+        if unpublished and website.unpublish_status is None:
+            # The site was published again after the removal listed it
+            return Response(status=200)
         if build_type != "offline" and not is_extra_theme:
             update_website_status(
                 website,
@@ -352,6 +358,15 @@ class WebsiteViewSet(
                 build_id=build_id,
                 is_cdn_cache_step=is_cdn_cache_step,
             )
+        if (
+            version == VERSION_LIVE
+            and not unpublished
+            and publish_status in [*PUBLISH_STATUSES_FINAL, PUBLISH_STATUS_FAILED]
+            and website.unpublish_status is not None
+        ):
+            # A live build that was already running when the site was unpublished
+            # may have uploaded it again after the removal
+            rerun_unpublished_removal.delay(website.name)
 
         return Response(status=200)
 
@@ -456,6 +471,15 @@ class WebsiteUnpublishViewSet(viewsets.ViewSet):
         )
         serializer = WebsiteUnpublishSerializer(instance=sites, many=True)
         return Response({"sites": serializer.data})
+
+    @action(detail=False, methods=["post"])
+    def rerun(self, request):
+        """Remove again the listed sites that are unpublished, after a mass build batch built them"""  # noqa: E501
+        for name in Website.objects.filter(
+            name__in=request.data.get("sites", []), unpublish_status__isnull=False
+        ).values_list("name", flat=True):
+            rerun_unpublished_removal.delay(name)
+        return Response(status=200)
 
 
 class WebsiteStarterViewSet(

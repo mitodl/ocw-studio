@@ -12,7 +12,7 @@ from django.db.models import F, Q
 from django.utils.module_loading import import_string
 from github.GithubException import RateLimitExceededException
 from mitol.common.utils import chunks, now_in_utc
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from content_sync import api
 from content_sync.apis import github
@@ -32,6 +32,7 @@ from websites.constants import (
     CONTENT_TYPE_WEBSITE,
     PUBLISH_STATUS_ABORTED,
     PUBLISH_STATUS_ERRORED,
+    PUBLISH_STATUS_NOT_STARTED,
     PUBLISH_STATUSES_FINAL,
 )
 from websites.models import Website, WebsiteContent
@@ -287,9 +288,47 @@ def trigger_unpublished_removal(website_name: str) -> bool:
         removal_pipeline = api.get_unpublished_removal_pipeline()
         removal_pipeline.unpause()
         removal_pipeline.trigger()
+        # A live build of the site in any theme may still be running and upload it
+        # again after this removal. Extra theme builds send no webhook when they end.
+        rerun_unpublished_removal.delay(website.name)
     # Last, so that a failure while updating the root website cannot keep the site up
     remove_website_in_root_website(website)
     return True
+
+
+@app.task(bind=True, acks_late=True, max_retries=60, default_retry_delay=60)
+def rerun_unpublished_removal(self, website_name: str):
+    """
+    Run the unpublished site removal again for a site that a live build uploaded
+    after it was unpublished. Pausing a pipeline does not stop a build that is
+    already running, and a running mass build keeps the sites it started with.
+    """
+    website = Website.objects.get(name=website_name)
+    if website.unpublish_status is None:
+        return
+    removal_pipeline = api.get_unpublished_removal_pipeline()
+    # Extra theme builds of the site send no webhooks, so wait for them here.
+    # The removal job is serial. A run that is still pending or running would mark
+    # the site removed when it ends, and a run queued behind it would then skip it.
+    try:
+        busy = (
+            api.live_site_builds_running(website)
+            or removal_pipeline.has_unfinished_build()
+        )
+        if not busy and Website.objects.filter(
+            name=website_name, unpublish_status__isnull=False
+        ).update(
+            unpublish_status=PUBLISH_STATUS_NOT_STARTED,
+            unpublish_status_updated_on=now_in_utc(),
+        ):
+            removal_pipeline.unpause()
+            removal_pipeline.trigger()
+    except RequestException as exc:
+        # Concourse could not say whether a build is still uploading the site,
+        # or could not start the removal, with or without a response
+        raise self.retry(exc=exc) from exc
+    if busy:
+        raise self.retry()
 
 
 @app.task(acks_late=True)

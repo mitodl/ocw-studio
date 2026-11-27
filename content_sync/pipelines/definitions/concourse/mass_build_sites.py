@@ -6,19 +6,24 @@ import more_itertools
 from django.conf import settings
 from ol_concourse.lib.models.pipeline import (
     AcrossVar,
+    Command,
     DoStep,
     Duration,
     GetStep,
+    Identifier,
     Job,
     Pipeline,
     PutStep,
     Resource,
     ResourceType,
     StepModifierMixin,
+    TaskConfig,
+    TaskStep,
+    TryStep,
 )
 from ol_concourse.lib.resource_types import slack_notification_resource
 
-from content_sync.constants import VERSION_DRAFT
+from content_sync.constants import VERSION_DRAFT, VERSION_LIVE
 from content_sync.pipelines.definitions.concourse.common.identifiers import (
     KEYVAL_RESOURCE_TYPE_IDENTIFIER,
     MASS_BUILD_SITES_BATCH_GATE_IDENTIFIER,
@@ -28,6 +33,9 @@ from content_sync.pipelines.definitions.concourse.common.identifiers import (
     OCW_HUGO_THEMES_GIT_IDENTIFIER,
     WEBPACK_MANIFEST_S3_IDENTIFIER,
     WEBPACK_MANIFEST_S3_TRIGGER_IDENTIFIER,
+)
+from content_sync.pipelines.definitions.concourse.common.image_resources import (
+    CURL_REGISTRY_IMAGE,
 )
 from content_sync.pipelines.definitions.concourse.common.resource_types import (
     HttpResourceType,
@@ -59,10 +67,66 @@ from content_sync.pipelines.definitions.concourse.site_pipeline import (
 from content_sync.utils import (
     get_common_pipeline_vars,
     get_hugo_tag_regex,
+    get_ocw_studio_api_url,
     get_publishable_sites,
 )
 from main.utils import is_dev
 from websites.models import Website, WebsiteStarter
+
+
+class RerunUnpublishedRemovalStep(TryStep):
+    """
+    A step that sends Studio the names of the sites a batch built. Studio removes
+    any of them that was unpublished while the batch ran, since the batch kept
+    building them.
+
+    Args:
+        site_names(list[str]): The names of the sites in the batch
+    """
+
+    def __init__(self, site_names: list[str], **kwargs):
+        rerun_url = f"{get_ocw_studio_api_url().rstrip('/')}/api/unpublish/rerun/"
+        super().__init__(
+            try_=TaskStep(
+                task=Identifier("rerun-unpublished-removal"),
+                timeout="1m",
+                attempts=3,
+                config=TaskConfig(
+                    platform="linux",
+                    image_resource=CURL_REGISTRY_IMAGE,
+                    run=Command(
+                        path="curl",
+                        args=[
+                            "-f",
+                            "-X",
+                            "POST",
+                            "-H",
+                            "Content-Type: application/json",
+                            "-H",
+                            f"Authorization: Bearer {settings.API_BEARER_TOKEN or ''}",
+                            "--data",
+                            json.dumps({"sites": site_names}),
+                            rerun_url,
+                        ],
+                    ),
+                ),
+            ),
+            **kwargs,
+        )
+
+
+def get_batch_job(name: str, plan: list, site_names: list[str], *, version: str) -> Job:
+    """
+    Return a mass build batch job. A live one reports its sites to Studio when it
+    ends, however it ends, so an aborted or failed batch reports them too.
+    """
+    if version != VERSION_LIVE:
+        return Job(name=name, plan=plan)
+    return Job(
+        name=name,
+        plan=plan,
+        ensure=RerunUnpublishedRemovalStep(site_names=site_names),
+    )
 
 
 class MassBuildSitesPipelineDefinitionConfig:
@@ -385,9 +449,11 @@ class MassBuildSitesPipelineDefinition(Pipeline):
                     )
                 )
             jobs.append(
-                Job(
+                get_batch_job(
                     name=f"{MASS_BUILD_SITES_JOB_IDENTIFIER}-batch-{batch_number}",
                     plan=tasks,
+                    site_names=[site.name for site in batch],
+                    version=config.version,
                 )
             )
             batch_number += 1

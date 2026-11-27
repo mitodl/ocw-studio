@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from http import HTTPStatus
 from time import sleep
 from typing import TYPE_CHECKING
 
@@ -86,6 +87,26 @@ def pause_live_site_pipelines(website: Website):
                 theme_pipeline_name,
                 website.name,
             )
+
+
+@is_publish_pipeline_enabled
+def live_site_builds_running(website: Website) -> bool:
+    """Return True if a live site pipeline of a website or of its extra themes has a running build"""  # noqa: E501
+    pipeline = get_site_pipeline(website)
+    if pipeline.has_running_build(VERSION_LIVE):
+        return True
+    for theme_slug in get_extra_course_themes(website):
+        try:
+            # Extra theme pipelines share the site's instance vars, only names differ
+            running = pipeline.has_running_build(f"{VERSION_LIVE}-{theme_slug}")
+        except HTTPError as exc:
+            # A missing extra theme pipeline has no builds
+            if getattr(exc.response, "status_code", None) != HTTPStatus.NOT_FOUND:
+                raise
+            running = False
+        if running:
+            return True
+    return False
 
 
 @is_publish_pipeline_enabled

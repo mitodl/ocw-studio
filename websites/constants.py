@@ -126,6 +126,8 @@ PUBLISH_STATUS_STARTED = "started"
 PUBLISH_STATUS_ERRORED = "errored"
 PUBLISH_STATUS_ABORTED = "aborted"
 PUBLISH_STATUS_NOT_STARTED = "not-started"
+# Sent by pipeline steps that fail, never stored
+PUBLISH_STATUS_FAILED = "failed"
 PUBLISH_STATUSES = [
     PUBLISH_STATUS_SUCCEEDED,
     PUBLISH_STATUS_PENDING,

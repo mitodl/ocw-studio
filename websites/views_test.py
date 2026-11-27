@@ -1656,6 +1656,8 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913, PLR0917
     data = {"version": version, "status": f"{status}"}
     if unpublished:
         data["unpublished"] = True
+        website.unpublish_status = constants.PUBLISH_STATUS_NOT_STARTED
+        website.save()
     resp = drf_client.post(
         reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
         data=data,
@@ -1670,6 +1672,28 @@ def test_websites_endpoint_pipeline_status(  # noqa: PLR0913, PLR0917
         is_cdn_cache_step=False,
     )
     assert resp.status_code == 200
+
+
+def test_pipeline_status_ignores_removal_of_republished_site(
+    settings, mocker, drf_client
+):
+    """A removal report for a site published again since should not mark it unpublished"""
+    mock_update_status = mocker.patch("websites.views.update_website_status")
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    website = WebsiteFactory.create(unpublish_status=None)
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data={
+            "version": VERSION_LIVE,
+            "status": constants.PUBLISH_STATUS_SUCCEEDED,
+            "unpublished": True,
+        },
+    )
+    assert resp.status_code == 200
+    mock_update_status.assert_not_called()
+    mock_rerun.delay.assert_not_called()
 
 
 @pytest.mark.parametrize("token", ["abc123", None])
@@ -1792,6 +1816,45 @@ def test_unpublished_removal_endpoint_list(settings, drf_client):
         assert publish_site["site_uid"] == expected_site.uuid.hex
 
 
+def test_unpublished_removal_endpoint_rerun(mocker, settings, drf_client):
+    """The rerun endpoint should queue the removal again for each listed site that is unpublished"""
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    published = WebsiteFactory.create(unpublish_status=None)
+    unpublished = WebsiteFactory.create_batch(
+        2, unpublish_status=constants.PUBLISH_STATUS_SUCCEEDED
+    )
+    not_listed = WebsiteFactory.create(
+        unpublish_status=constants.PUBLISH_STATUS_SUCCEEDED
+    )
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("unpublished_removal_api-rerun"),
+        data={"sites": [published.name, *[site.name for site in unpublished], "gone"]},
+        format="json",
+    )
+    assert resp.status_code == 200
+    queued = sorted(call.args[0] for call in mock_rerun.delay.call_args_list)
+    assert queued == sorted(site.name for site in unpublished)
+    assert not_listed.name not in queued
+
+
+@pytest.mark.parametrize("bad_token", ["wrongtoken", None])
+def test_unpublished_removal_endpoint_rerun_bad_token(
+    mocker, settings, drf_client, bad_token
+):
+    """The rerun endpoint should return a 403 if the token is invalid or missing"""
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    settings.API_BEARER_TOKEN = "abc123"  # noqa: S105
+    if bad_token:
+        drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {bad_token}")
+    resp = drf_client.post(
+        reverse("unpublished_removal_api-rerun"), data={"sites": []}, format="json"
+    )
+    assert resp.status_code == 403
+    mock_rerun.delay.assert_not_called()
+
+
 @pytest.mark.parametrize("bad_token", ["wrongtoken", None])
 def test_unpublished_removal_endpoint_list_bad_token(settings, drf_client, bad_token):
     """The WebsiteUnpublishViewSet endpoint should return a 403 if the token is invalid or missing"""
@@ -1842,6 +1905,58 @@ def test_pipeline_status_build_type(  # noqa: PLR0913, PLR0917
         mock_update_website_status.assert_called_once()
     else:
         mock_update_website_status.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("unpublish_status", "data", "should_rerun"),
+    [
+        (constants.PUBLISH_STATUS_SUCCEEDED, {}, True),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"build_type": "offline"}, True),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"theme_slug": "ocw-course-v3"}, True),
+        (constants.PUBLISH_STATUS_NOT_STARTED, {}, True),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_ERRORED},
+            True,
+        ),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_FAILED},
+            True,
+        ),
+        (None, {}, False),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"version": VERSION_DRAFT}, False),
+        (
+            constants.PUBLISH_STATUS_SUCCEEDED,
+            {"status": constants.PUBLISH_STATUS_STARTED},
+            False,
+        ),
+        (constants.PUBLISH_STATUS_SUCCEEDED, {"unpublished": True}, False),
+    ],
+)
+def test_pipeline_status_reruns_removal_after_build_of_unpublished_site(  # noqa: PLR0913, PLR0917
+    mocker, drf_client, settings, unpublish_status, data, should_rerun
+):
+    """A live build that ends after its site was unpublished should queue the removal again"""
+    mocker.patch("websites.views.update_website_status")
+    mock_rerun = mocker.patch("websites.views.rerun_unpublished_removal")
+    website = WebsiteFactory.create(unpublish_status=unpublish_status)
+    settings.API_BEARER_TOKEN = "test_token"  # noqa: S105
+    settings.OCW_EXTRA_COURSE_THEMES = ["ocw-course-v3"]
+    drf_client.credentials(HTTP_AUTHORIZATION=f"Bearer {settings.API_BEARER_TOKEN}")
+    resp = drf_client.post(
+        reverse("websites_api-pipeline-status", kwargs={"name": website.name}),
+        data={
+            "version": VERSION_LIVE,
+            "status": constants.PUBLISH_STATUS_SUCCEEDED,
+            **data,
+        },
+    )
+    assert resp.status_code == 200
+    if should_rerun:
+        mock_rerun.delay.assert_called_once_with(website.name)
+    else:
+        mock_rerun.delay.assert_not_called()
 
 
 def test_referencing_content_clears_when_references_removed(

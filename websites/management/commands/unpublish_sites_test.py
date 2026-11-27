@@ -27,6 +27,14 @@ def test_unpublish_sites_pauses_live_pipelines(mocker, settings, is_default_them
     mock_update_mass_builds = mocker.patch(
         "websites.management.commands.unpublish_sites.update_mass_build_pipelines_on_publish"
     )
+    calls = []
+    mock_get_removal_pipeline.return_value.trigger.side_effect = lambda: calls.append(
+        "trigger"
+    )
+    mock_rerun = mocker.patch(
+        "websites.management.commands.unpublish_sites.rerun_unpublished_removal"
+    )
+    mock_rerun.delay.side_effect = lambda *_: calls.append("rerun")
     user = UserFactory.create()
     website = WebsiteFactory.create(
         published=True,
@@ -52,3 +60,5 @@ def test_unpublish_sites_pauses_live_pipelines(mocker, settings, is_default_them
         version=VERSION_LIVE, website_pk=website.pk, both_versions=True
     )
     mock_get_removal_pipeline.return_value.trigger.assert_called_once_with()
+    mock_rerun.delay.assert_called_once_with(website.name)
+    assert calls == ["trigger", "rerun"]
