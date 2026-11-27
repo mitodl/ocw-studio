@@ -5,6 +5,7 @@ from datetime import timedelta
 
 import pytest
 from botocore.exceptions import ClientError
+from django.conf import settings
 from googleapiclient.http import MediaDownloadProgress
 from mitol.common.utils import now_in_utc
 from moto import mock_aws
@@ -21,6 +22,7 @@ from gdrive_sync.api import (
     process_file_result,
     rename_file,
     transcode_gdrive_video,
+    unlinked_caption_warnings,
     update_sync_status,
     walk_gdrive_folder,
 )
@@ -55,6 +57,8 @@ from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
+    create_video_resource,
+    site_config_with_resource_languages,
 )
 from websites.models import WebsiteContent
 
@@ -1160,13 +1164,13 @@ def test_link_resource_to_video_appends_second_language():
     )
 
     # Link English first
-    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_en, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert vf["video_captions_resources"]["content"] == [str(caption_en.text_id)]
 
     # Link French — must append, not overwrite
-    _link_resource_to_video(caption_fr, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_fr, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
     video.refresh_from_db()
     vf = video.metadata["video_files"]
     assert str(caption_en.text_id) in vf["video_captions_resources"]["content"]
@@ -1196,7 +1200,7 @@ def test_link_resource_to_video_syncs_content_references():
 
     assert caption_en not in video.referenced_by.all()
 
-    _link_resource_to_video(caption_en, website, "video_captions_resources", "lecture1")
+    _link_resource_to_video(caption_en, video, settings.YT_FIELD_CAPTIONS_RESOURCES)
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
@@ -1221,7 +1225,7 @@ def test_link_video_caption_transcript_resources_syncs_content_references():
 
     assert caption_en not in video.referenced_by.all()
 
-    _link_video_caption_transcript_resources(video, website)
+    _link_video_caption_transcript_resources(video)
 
     video.refresh_from_db()
     assert caption_en in video.referenced_by.all()
@@ -1252,7 +1256,7 @@ def test_link_caption_to_extensionless_video():
         file=f"{website.s3_path}/mitesd_932s06_lec03_captions-es.vtt",
     )
 
-    _link_video_caption_transcript_resources(es_caption, website)
+    _link_video_caption_transcript_resources(es_caption)
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"]["video_captions_resources"][
@@ -1271,10 +1275,42 @@ def test_misnamed_caption_links_to_no_video():
         file=f"{website.s3_path}/mitesd_932s06_captions.vtt",
     )
 
-    _link_video_caption_transcript_resources(misnamed_caption, website)
+    _link_video_caption_transcript_resources(misnamed_caption)
 
     video_resource.refresh_from_db()
     assert video_resource.metadata["video_files"] == {}
+
+
+@pytest.mark.django_db
+def test_drive_caption_with_language_before_keyword_links_to_video():
+    """A Drive caption with the language before the keyword links to its video"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config=site_config_with_resource_languages("en", "es")
+        )
+    )
+    video = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_mp4",
+        metadata={"resourcetype": RESOURCE_TYPE_VIDEO, "video_files": {}},
+    )
+    caption = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        filename="lecture-1_es_captions_vtt",
+        file=f"{website.s3_path}/lecture-1_es_captions.vtt",
+    )
+    DriveFileFactory.create(
+        website=website, resource=caption, name="Lecture-1_es_captions.vtt"
+    )
+
+    _link_video_caption_transcript_resources(caption)
+
+    video.refresh_from_db()
+    assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
+        str(caption.text_id)
+    ]
 
 
 @pytest.mark.django_db
@@ -1301,10 +1337,106 @@ def test_link_resource_to_video_appends_to_legacy_string_link():
         file=f"courses/{website.name}/lecture1_captions.vtt",
     )
 
-    _link_video_caption_transcript_resources(caption, website)
+    _link_video_caption_transcript_resources(caption)
 
     video.refresh_from_db()
     assert video.metadata["video_files"]["video_captions_resources"]["content"] == [
         "old-id",
         str(caption.text_id),
+    ]
+
+
+def _drive_resource(website, name, sync_dt=None):
+    """Create a completed Drive file with a resource for an uploaded file"""
+    resource = WebsiteContentFactory.create(
+        website=website,
+        type=CONTENT_TYPE_RESOURCE,
+        file=f"{website.s3_path}/{name}",
+        metadata={"resourcetype": RESOURCE_TYPE_OTHER},
+    )
+    DriveFileFactory.create(
+        website=website,
+        name=name,
+        resource=resource,
+        sync_dt=sync_dt,
+        status=DriveFileStatus.COMPLETE,
+    )
+    return resource
+
+
+@pytest.mark.django_db
+def test_update_sync_status_warns_about_unmatched_caption_files():
+    """A Drive caption file that no video links is listed, and the sync stays Complete"""
+    now = now_in_utc()
+    website = WebsiteFactory.create(
+        synced_on=now, sync_status=WebsiteSyncStatus.PROCESSING, sync_errors=[]
+    )
+    _drive_resource(website, "orphan_captions-es.vtt", sync_dt=now)
+    linked = _drive_resource(website, "lecture-1_captions.vtt", sync_dt=now)
+    _drive_resource(website, "notes.pdf", sync_dt=now)
+    create_video_resource(website, "lecture-1_mp4", captions=[str(linked.text_id)])
+
+    update_sync_status(website, now)
+
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.COMPLETE
+    assert website.sync_errors == [
+        (
+            "orphan_captions-es.vtt matches no video. Start the name with the "
+            "video's file name, for example lecture-1_captions-es.vtt."
+        )
+    ]
+
+
+@pytest.mark.django_db
+def test_unlinked_caption_warnings_transcripts_and_names_without_keyword():
+    """Transcripts get a PDF example, a .vtt with no keyword warns, links stop warnings"""
+    website = WebsiteFactory.create()
+    _drive_resource(website, "Lecture 2 Transcript.pdf")
+    _drive_resource(website, "lecture-1.es.vtt")
+    _drive_resource(website, "syllabus.pdf")
+    legacy = _drive_resource(website, "lecture-3-captions.webvtt")
+    transcript = _drive_resource(website, "lecture-3_transcript.pdf")
+    create_video_resource(
+        website, "lecture-3_mp4", transcripts=[str(transcript.text_id)]
+    )
+    create_video_resource(website, "lecture-4_mp4", captions=str(legacy.text_id))
+
+    assert unlinked_caption_warnings(website) == [
+        (
+            "Lecture 2 Transcript.pdf matches no video. Start the name with the "
+            "video's file name, for example lecture-1_transcript-es.pdf."
+        ),
+        (
+            "lecture-1.es.vtt matches no video. Start the name with the video's "
+            "file name, for example lecture-1_captions-es.vtt."
+        ),
+    ]
+
+
+@pytest.mark.django_db
+def test_update_sync_status_warnings_keep_error_status():
+    """Warnings are added after the status is worked out, so errors still show"""
+    now = now_in_utc()
+    website = WebsiteFactory.create(
+        synced_on=now, sync_status=WebsiteSyncStatus.PROCESSING, sync_errors=[]
+    )
+    _drive_resource(website, "orphan_captions.vtt", sync_dt=now)
+    DriveFileFactory.create(
+        website=website,
+        sync_dt=now,
+        status=DriveFileStatus.FAILED,
+        sync_error="Could not create a resource from Google Drive file broken.pdf",
+    )
+
+    update_sync_status(website, now)
+
+    website.refresh_from_db()
+    assert website.sync_status == WebsiteSyncStatus.ERRORS
+    assert website.sync_errors == [
+        "Could not create a resource from Google Drive file broken.pdf",
+        (
+            "orphan_captions.vtt matches no video. Start the name with the video's "
+            "file name, for example lecture-1_captions-es.vtt."
+        ),
     ]

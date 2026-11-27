@@ -5,6 +5,7 @@ from uuid import uuid4
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+from gdrive_sync.factories import DriveFileFactory
 from videos.utils import (
     clean_uuid_filename,
     create_new_content,
@@ -21,6 +22,7 @@ from websites.factories import (
     WebsiteContentFactory,
     WebsiteFactory,
     WebsiteStarterFactory,
+    site_config_with_resource_languages,
 )
 
 # pylint:disable=redefined-outer-name
@@ -251,6 +253,53 @@ def test_resolve_language_locale_non_dict_metadata(metadata):
     """Metadata that is not a dict is treated as absent rather than raising."""
     resource = WebsiteContentFactory.build(
         metadata=metadata, file="courses/s/l1_captions-fr.vtt"
+    )
+    assert resolve_language_locale(resource) == ("fr", None)
+
+
+def _caption_resource(file_name, metadata=None):
+    """Create a resource on a site whose starter offers en and es"""
+    website = WebsiteFactory.create(
+        starter=WebsiteStarterFactory.create(
+            config=site_config_with_resource_languages("en", "es")
+        )
+    )
+    return WebsiteContentFactory.create(
+        website=website,
+        metadata=metadata or {},
+        file=f"{website.s3_path}/{file_name}",
+    )
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_language_before_keyword():
+    """A site language right before the keyword is the file's language"""
+    resource = _caption_resource("lecture-1_es_captions.vtt")
+    assert resolve_language_locale(resource) == ("es", None)
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_dot_form_from_drive_name():
+    """The original Drive name keeps the dot form the S3 key loses"""
+    resource = _caption_resource("lecture-1_captionses.vtt")
+    DriveFileFactory.create(
+        website=resource.website, resource=resource, name="lecture-1_captions.es.vtt"
+    )
+    assert resolve_language_locale(resource) == ("es", None)
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_code_outside_site_list():
+    """A code the site doesn't offer keeps the label the strict form gives it"""
+    resource = _caption_resource("lecture-1_captions-ga.vtt")
+    assert resolve_language_locale(resource) == ("ga", None)
+
+
+@pytest.mark.django_db
+def test_resolve_language_locale_metadata_still_wins():
+    """An explicit language in Studio wins over the file name"""
+    resource = _caption_resource(
+        "lecture-1_captions-es.vtt", metadata={"language": "fr"}
     )
     assert resolve_language_locale(resource) == ("fr", None)
 

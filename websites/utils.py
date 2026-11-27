@@ -419,6 +419,23 @@ def videos_referencing_renamed_files(renames, *, using=None):
     return pks
 
 
+def relation_text_ids(metadata: dict | None, field_path: str) -> list[str]:
+    """
+    Return the text ids stored in the relation at a dotted metadata path, in
+    order. A legacy relation whose ``content`` is a bare id string gives that
+    one id. Empty ids are dropped.
+    """
+    relation = (
+        get_dict_field(metadata, field_path) if isinstance(metadata, dict) else None
+    )
+    content = relation.get("content") if isinstance(relation, dict) else None
+    if isinstance(content, str):
+        content = [content]
+    if not isinstance(content, list):
+        return []
+    return [text_id for text_id in content if text_id]
+
+
 def resolve_video_file_referenced_content_ids(content) -> set[int]:
     """Resolve video_captions/transcript_resources content to WebsiteContent ids."""
     WebsiteContent = apps.get_model("websites", "WebsiteContent")
@@ -428,14 +445,7 @@ def resolve_video_file_referenced_content_ids(content) -> set[int]:
         settings.YT_FIELD_CAPTIONS_RESOURCES,
         settings.YT_FIELD_TRANSCRIPT_RESOURCES,
     ):
-        relation = get_dict_field(content.metadata, field_path)
-        if not isinstance(relation, dict):
-            continue
-        text_ids = relation.get("content")
-        if isinstance(text_ids, str):
-            text_ids = [text_ids] if text_ids else []
-        elif not isinstance(text_ids, list):
-            continue
+        text_ids = relation_text_ids(content.metadata, field_path)
         if not text_ids:
             continue
 

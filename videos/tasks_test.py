@@ -58,7 +58,11 @@ from videos.tasks import (
 from videos.utils import get_video_base_filename
 from videos.youtube import API_QUOTA_ERROR_MSG
 from websites.constants import CONTENT_TYPE_RESOURCE, RESOURCE_TYPE_VIDEO
-from websites.factories import WebsiteContentFactory, WebsiteFactory
+from websites.factories import (
+    WebsiteContentFactory,
+    WebsiteFactory,
+    create_video_resource,
+)
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import WebsiteContent
 from websites.utils import get_dict_field, set_dict_field
@@ -502,6 +506,50 @@ def test_start_transcript_job_keeps_existing_links(mocker, settings):
         "content"
     ] == [str(es_caption.text_id), str(en_caption.text_id)]
     mock_threeplay_upload_video_request.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("linked_language", "orders_3play"),
+    [(None, False), ("es", True)],
+)
+def test_start_transcript_job_linked_caption_with_opaque_name(
+    mocker, settings, linked_language, orders_3play
+):
+    """A linked English caption whose file name matches no video skips 3Play.
+
+    The orphan backfill links files that keep an opaque S3 key, so name
+    matching can't find them. A linked non-English file still orders 3Play.
+    """
+    settings.YT_FIELD_ID = "video_metadata.youtube_id"
+    video = create_video("test", "title")
+    website = video.website
+    linked = WebsiteContentFactory.create(
+        website=website,
+        filename="lecture-1_captions_vtt",
+        file=f"{website.s3_path}/1AbCdEf.vtt",
+        metadata={"language": linked_language} if linked_language else {},
+    )
+    video_content = create_content(website, "test", "title")
+    video_content.filename = "lecture-1_mp4"
+    set_dict_field(
+        video_content.metadata,
+        settings.YT_FIELD_CAPTIONS_RESOURCES,
+        {"content": [str(linked.text_id)], "website": website.name},
+    )
+    video_content.save()
+    mock_upload = mocker.patch(
+        "videos.tasks.threeplay_api.threeplay_upload_video_request",
+        return_value={"data": {"id": 1}},
+    )
+    mocker.patch("videos.tasks.threeplay_api.threeplay_order_transcript_request")
+
+    start_transcript_job.apply([video.id])
+
+    assert mock_upload.called is orders_3play
+    video_content.refresh_from_db()
+    assert get_dict_field(video_content.metadata, settings.YT_FIELD_CAPTIONS_RESOURCES)[
+        "content"
+    ] == [str(linked.text_id)]
 
 
 # pylint:disable=unused-variable
@@ -952,11 +1000,9 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     """Avoid calling 3play when the orphan backfill already created an English
     transcript for the video.
 
-    Regression test for the duplicate-resource bug: the backfill names what
-    it creates with the same "{base_stem}_transcript_{ext}" convention GDrive
-    ingestion uses, so caption_transcript_resources() discovers it and 3Play
-    is skipped. Naming it any other way (e.g. off the video's full, unstripped
-    filename) made it invisible here and produced a second English transcript.
+    Regression test for the duplicate-resource bug. The backfill links what it
+    creates, and the file keeps the orphan's opaque S3 key, so name matching
+    can't find it. The linked English transcript is what skips 3Play.
     """
     mocker.patch("videos.tasks.is_ocw_site", return_value=True)
 
@@ -988,10 +1034,9 @@ def test_update_transcripts_for_video_no_3play_for_backfill_naming_convention(mo
     )
     resource.save()
 
-    # The base-stem search finds it, which is the point of matching the
-    # convention rather than teaching the gate about a second one.
+    # Names are read from the file, and "1AbCdEf_transcript.pdf" names no video
     _, transcripts_list = video.caption_transcript_resources()
-    assert transcripts_list == [linked_transcript]
+    assert transcripts_list == []
 
     mock_3play = mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
 
@@ -1090,31 +1135,6 @@ def test_update_transcripts_for_video_multi_language_with_locale(mocker):
     assert relation["website"] == video.website.name
 
 
-def _video_resource(website, filename, youtube_id, captions=None, transcripts=None):
-    """Create a Video resource, optionally with captions and transcripts linked"""
-    video_files = {}
-    if captions is not None:
-        video_files["video_captions_resources"] = {
-            "content": captions,
-            "website": website.name,
-        }
-    if transcripts is not None:
-        video_files["video_transcript_resources"] = {
-            "content": transcripts,
-            "website": website.name,
-        }
-    return WebsiteContentFactory.create(
-        website=website,
-        type=CONTENT_TYPE_RESOURCE,
-        filename=filename,
-        metadata={
-            "resourcetype": RESOURCE_TYPE_VIDEO,
-            "video_metadata": {"youtube_id": youtube_id},
-            "video_files": video_files,
-        },
-    )
-
-
 def _caption_file(website, filename, file, **metadata):
     """Create a caption or transcript resource"""
     return WebsiteContentFactory.create(
@@ -1158,7 +1178,7 @@ def test_update_transcripts_for_website_keeps_hand_linked_captions(mocker):
         "mit6_100lf22_lec01_es_transcript.pdf",
         language="es",
     )
-    resource = _video_resource(
+    resource = create_video_resource(
         website,
         "6100l-lecture-1-version-2_mp4",
         "expected_id",
@@ -1194,7 +1214,7 @@ def test_update_transcripts_for_video_extensionless_name_ignores_sibling_file(mo
         "mitesd_932s06_lec03_captions.vtt",
     )
     _caption_file(website, "mitesd_932s06_captions_vtt", "mitesd_932s06_captions.vtt")
-    video_resource = _video_resource(
+    video_resource = create_video_resource(
         website,
         "mitesd_932s06_lec03",
         "yt-lec3",
@@ -1219,7 +1239,7 @@ def test_update_transcripts_for_video_skips_3play_when_english_linked_by_hand(mo
     video = videofile.video
     website = video.website
     linked = _caption_file(website, "1abcdef_vtt", "1AbCdEf.vtt")
-    video_resource = _video_resource(
+    video_resource = create_video_resource(
         website, "lecture-1_mp4", "expected_id", captions=[str(linked.text_id)]
     )
     mock_3play = mocker.patch(
@@ -1245,7 +1265,7 @@ def test_update_transcripts_for_video_fetches_3play_when_linked_file_is_spanish_
     video = videofile.video
     website = video.website
     linked = _caption_file(website, "1abcdef_vtt", "1AbCdEf.vtt", language="es")
-    _video_resource(
+    create_video_resource(
         website, "lecture-1_mp4", "expected_id", captions=[str(linked.text_id)]
     )
     mock_3play = mocker.patch(
@@ -1271,7 +1291,7 @@ def test_update_transcripts_for_video_keeps_legacy_string_link(mocker):
     en_caption = _caption_file(
         website, "lecture-1_captions_vtt", "lecture-1_captions.vtt"
     )
-    video_resource = _video_resource(
+    video_resource = create_video_resource(
         website, "lecture-1_mp4", "expected_id", captions=str(old_caption.text_id)
     )
     mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
@@ -1298,8 +1318,8 @@ def test_update_transcripts_for_video_links_each_resource_by_its_own_name(mocker
     copy_caption = _caption_file(
         website, "lecture-1-copy_captions_vtt", "lecture-1-copy_captions.vtt"
     )
-    first = _video_resource(website, "lecture-1_mp4", "expected_id")
-    copy = _video_resource(website, "lecture-1-copy_mp4", "expected_id")
+    first = create_video_resource(website, "lecture-1_mp4", "expected_id")
+    copy = create_video_resource(website, "lecture-1-copy_mp4", "expected_id")
     mocker.patch("videos.tasks.threeplay_api.update_transcripts_for_video")
 
     update_transcripts_for_video(video.id)

@@ -477,6 +477,10 @@ class WebsiteContent(TimestampedModel, SafeDeleteModel):
                             website=self.website,
                             text_id__in=text_ids,
                         )
+                        # resolve_language_locale reads the starter and the
+                        # Drive name of each file
+                        .select_related("website__starter")
+                        .prefetch_related("drivefile_set")
                     )
                     resolved = resource_file_paths(related_contents)
                     # Apply URL path substitution if s3 and url paths differ

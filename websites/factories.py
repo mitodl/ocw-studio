@@ -16,6 +16,31 @@ from websites.models import Website, WebsiteContent, WebsiteStarter
 FACTORY_SITE_CONFIG_PATH = "localdev/configs/basic-site-config.yml"
 
 
+def site_config_with_resource_languages(*codes: str) -> dict:
+    """
+    Return the factory site config with a "language" select on the resource
+    item, offering these language codes, as the OCW course starter has.
+    """
+    config = yaml.load(
+        (Path(settings.BASE_DIR) / FACTORY_SITE_CONFIG_PATH).read_text(),
+        Loader=yaml.SafeLoader,
+    )
+    resource_item = next(
+        item
+        for item in config["collections"]
+        if item["name"] == constants.CONTENT_TYPE_RESOURCE
+    )
+    resource_item["fields"].append(
+        {
+            "label": "Language",
+            "name": "language",
+            "widget": "select",
+            "options": [{"label": code, "value": code} for code in codes],
+        }
+    )
+    return config
+
+
 class WebsiteStarterFactory(DjangoModelFactory):
     """Factory for WebsiteStarter"""
 
@@ -105,3 +130,35 @@ class WebsiteContentFactory(DjangoModelFactory):
 
     class Meta:
         model = WebsiteContent
+
+
+def create_video_resource(
+    website, filename, youtube_id=None, captions=None, transcripts=None
+):
+    """
+    Create a Video resource, optionally with a YouTube id and with caption and
+    transcript ids linked. Pass a string to store a legacy bare id relation.
+    """
+    video_files = {}
+    if captions is not None:
+        video_files["video_captions_resources"] = {
+            "content": captions,
+            "website": website.name,
+        }
+    if transcripts is not None:
+        video_files["video_transcript_resources"] = {
+            "content": transcripts,
+            "website": website.name,
+        }
+    metadata = {
+        "resourcetype": constants.RESOURCE_TYPE_VIDEO,
+        "video_files": video_files,
+    }
+    if youtube_id is not None:
+        metadata["video_metadata"] = {"youtube_id": youtube_id}
+    return WebsiteContentFactory.create(
+        website=website,
+        type=constants.CONTENT_TYPE_RESOURCE,
+        filename=filename,
+        metadata=metadata,
+    )

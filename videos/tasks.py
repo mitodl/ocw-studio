@@ -73,7 +73,12 @@ from websites.api import (
 from websites.constants import RESOURCE_TYPE_VIDEO
 from websites.messages import VideoTranscriptingCompleteMessage
 from websites.models import Website, WebsiteContent
-from websites.utils import get_dict_field, get_dict_query_field, set_dict_field
+from websites.utils import (
+    get_dict_field,
+    get_dict_query_field,
+    relation_text_ids,
+    set_dict_field,
+)
 
 log = logging.getLogger()
 
@@ -172,8 +177,12 @@ def start_transcript_job(self, video_id: int, timeout_override: int | None = Non
         if auto_link_video_captions_transcript(video_resource):
             sync_website_content_references(video_resource)
 
-    # if none and video is not already submitted, request a transcript through the 3Play API  # noqa: E501
-    else:
+    # if none, and no English caption or transcript is linked already (the orphan
+    # backfill links files whose opaque S3 key names no video), request a
+    # transcript through the 3Play API
+    elif not _has_english_resource(
+        _linked_caption_transcript_resources([video_resource])
+    ):
         try:
             response = threeplay_api.threeplay_upload_video_request(
                 folder_name, youtube_id, video_resource.title, timeout=request_timeout
@@ -335,12 +344,7 @@ def _linked_caption_transcript_resources(video_resources):
             settings.YT_FIELD_CAPTIONS_RESOURCES,
             settings.YT_FIELD_TRANSCRIPT_RESOURCES,
         ):
-            relation = get_dict_field(video_resource.metadata or {}, resource_field)
-            content = relation.get("content") if isinstance(relation, dict) else None
-            if isinstance(content, str):
-                content = [content]
-            if isinstance(content, list):
-                text_ids.update(text_id for text_id in content if text_id)
+            text_ids.update(relation_text_ids(video_resource.metadata, resource_field))
     if not text_ids:
         return []
     return list(
@@ -348,6 +352,8 @@ def _linked_caption_transcript_resources(video_resources):
             website_id__in={r.website_id for r in video_resources},
             text_id__in=text_ids,
         )
+        .select_related("website__starter")
+        .prefetch_related("drivefile_set")
     )
 
 

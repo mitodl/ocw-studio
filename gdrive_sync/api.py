@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -43,12 +44,19 @@ from gdrive_sync.models import DriveFile
 from main.s3_utils import get_boto3_resource
 from main.utils import get_dirpath_and_filename
 from videos.api import create_media_convert_job
+from videos.caption_filenames import (
+    CAPTIONS,
+    TRANSCRIPT,
+    caption_file_kind,
+    find_video_for_caption,
+    relation_field,
+)
 from videos.constants import CAPTION_FILE_EXTENSIONS, VideoJobStatus, VideoStatus
 from videos.models import Video, VideoJob
-from videos.utils import get_video_base_filename
 from websites.api import (
     auto_link_video_captions_transcript,
     get_valid_new_filename,
+    merge_caption_resources,
     sync_website_content_references,
 )
 from websites.constants import (
@@ -60,7 +68,11 @@ from websites.constants import (
 )
 from websites.models import Website, WebsiteContent
 from websites.site_config_api import SiteConfig
-from websites.utils import get_dict_query_field, get_valid_base_filename
+from websites.utils import (
+    get_dict_query_field,
+    get_valid_base_filename,
+    relation_text_ids,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -451,97 +463,47 @@ def get_pdf_title(drive_file: DriveFile) -> str:
         return drive_file.name
 
 
-def _link_video_caption_transcript_resources(
-    resource: WebsiteContent, website: Website
-) -> None:
+def _link_video_caption_transcript_resources(resource: WebsiteContent) -> None:
     """
     Ensure ``video_captions_resources`` / ``video_transcript_resources`` relation
     fields are kept in sync after a gdrive resource is created or updated.
 
-    - If *resource* is a Video, look for existing captions/transcript resources
-      in the same website by the ``{base}_captions-<lang>-<locale>_vtt`` /
-      ``{base}_transcript-<lang>-<locale>_pdf`` filename convention (or the
-      legacy no-suffix form) and set the relation fields on the video (without
-      overwriting ones that are already present).
-    - If *resource* is a captions or transcript file, find the corresponding
-      video resource by the same convention and set the appropriate relation
-      field on that video.
+    - If *resource* is a Video, add the caption and transcript files whose
+      names match it (see ``videos.caption_filenames``), keeping existing links.
+    - If *resource* is a caption or transcript file, add it to the Video
+      resource its name matches.
 
     Only ``_resources`` relation fields are written; legacy ``_file`` fields in
     stored metadata are left untouched.
     """
     resource_type = (resource.metadata or {}).get("resourcetype")
-    filename = resource.filename or ""
 
     if resource_type == RESOURCE_TYPE_VIDEO:
         auto_link_video_captions_transcript(resource)
         sync_website_content_references(resource)
-    elif "_captions" in filename:
-        video_base = filename.split("_captions")[0]
-        _link_resource_to_video(
-            resource, website, "video_captions_resources", video_base
-        )
-    elif "_transcript" in filename:
-        video_base = filename.split("_transcript")[0]
-        _link_resource_to_video(
-            resource, website, "video_transcript_resources", video_base
-        )
+        return
+    match = find_video_for_caption(resource)
+    if match:
+        video_resource, resource_field = match
+        _link_resource_to_video(resource, video_resource, resource_field)
 
 
 def _link_resource_to_video(
     resource: WebsiteContent,
-    website: Website,
+    video_resource: WebsiteContent,
     resource_field: str,
-    video_base: str,
 ) -> None:
-    """Set a captions/transcript _resource field on the corresponding video resource."""
-    # Identify the video resource whose name, without its video extension, is
-    # video_base: "lecture1_mp4" for "lecture1", or an extension-less name
-    # such as "mitesd_932s06_lec03" that equals video_base exactly.
-    candidates = WebsiteContent.objects.filter(
-        website=website,
-        filename__startswith=video_base,
-        **{
-            get_dict_query_field(
-                "metadata", settings.FIELD_RESOURCETYPE
-            ): RESOURCE_TYPE_VIDEO
-        },
+    """Add a caption/transcript resource to the relation at the dotted
+    ``resource_field`` path of a video resource's metadata.
+    """
+    metadata = deepcopy(
+        video_resource.metadata if isinstance(video_resource.metadata, dict) else {}
     )
-    video_resource = next(
-        (v for v in candidates if get_video_base_filename(v.filename) == video_base),
-        None,
-    )
-    if not video_resource:
+    if not merge_caption_resources(
+        metadata, video_resource.website, resource_field, [resource]
+    ):
         return
-
-    video_files = (
-        video_resource.metadata.get("video_files")
-        if isinstance(video_resource.metadata, dict)
-        else None
-    )
-    if not isinstance(video_files, dict):
-        video_files = {}
-
-    new_id = str(resource.text_id)
-    existing = video_files.get(resource_field)
-    if isinstance(existing, dict) and existing.get("content"):
-        # Already linked — append if not a duplicate. A legacy relation may
-        # store a single id as a bare string.
-        content = existing["content"]
-        if isinstance(content, str):
-            content = [content]
-        if new_id in content:
-            return
-        existing["content"] = [*content, new_id]
-    else:
-        video_files[resource_field] = {
-            "content": [new_id],
-            "website": website.name,
-        }
-
-    if not isinstance(video_resource.metadata, dict):
-        video_resource.metadata = {}
-    video_resource.metadata["video_files"] = video_files
+    video_resource.metadata = metadata
     video_resource.save()
     sync_website_content_references(video_resource)
 
@@ -626,7 +588,7 @@ def create_gdrive_resource_content(drive_file: DriveFile, user_pk=None):
             resource.save()
         drive_file.resource = resource
         drive_file.update_status(DriveFileStatus.COMPLETE)
-        _link_video_caption_transcript_resources(resource, drive_file.website)
+        _link_video_caption_transcript_resources(resource)
     except PdfReadError:
         log.exception(
             "Could not create a resource from Google Drive file %s because it is not a valid PDF",  # noqa: E501
@@ -672,6 +634,54 @@ def transcode_gdrive_video(drive_file: DriveFile):
             raise
 
 
+UNLINKED_CAPTION_WARNING = (
+    "{name} matches no video. Start the name with the video's file name, "
+    "for example {example}."
+)
+UNLINKED_CAPTION_EXAMPLES = {
+    CAPTIONS: "lecture-1_captions-es.vtt",
+    TRANSCRIPT: "lecture-1_transcript-es.pdf",
+}
+
+
+def _linked_caption_ids(website: Website) -> set[str]:
+    """Return the ids in every Video resource's caption and transcript lists"""
+    linked = set()
+    videos = WebsiteContent.objects.filter(
+        website=website,
+        **{
+            get_dict_query_field(
+                "metadata", settings.FIELD_RESOURCETYPE
+            ): RESOURCE_TYPE_VIDEO
+        },
+    )
+    for video in videos:
+        for field in (relation_field(CAPTIONS), relation_field(TRANSCRIPT)):
+            linked.update(relation_text_ids(video.metadata, field))
+    return linked
+
+
+def unlinked_caption_warnings(website: Website) -> list[str]:
+    """
+    Return a warning for each Drive caption or transcript file in the site that
+    no Video resource links, ordered by Drive name.
+    """
+    linked = _linked_caption_ids(website)
+    drive_files = DriveFile.objects.filter(
+        website=website, resource__isnull=False, resource__deleted__isnull=True
+    ).select_related("resource")
+    warnings = []
+    for drive_file in sorted(drive_files, key=lambda df: (df.name, df.file_id)):
+        kind = caption_file_kind(drive_file.name)
+        if kind and str(drive_file.resource.text_id) not in linked:
+            warnings.append(
+                UNLINKED_CAPTION_WARNING.format(
+                    name=drive_file.name, example=UNLINKED_CAPTION_EXAMPLES[kind]
+                )
+            )
+    return warnings
+
+
 def update_sync_status(website: Website, sync_datetime: datetime):
     """Update the Google Drive sync status based on DriveFile statuses and sync errors"""  # noqa: E501
     drive_files = DriveFile.objects.filter(website=website, sync_dt=sync_datetime)
@@ -701,7 +711,11 @@ def update_sync_status(website: Website, sync_datetime: datetime):
         new_status = WebsiteSyncStatus.ERRORS
         log.error(new_status)
     website.sync_status = new_status
-    website.sync_errors = (website.sync_errors or []) + errors
+    # Warnings are added after the status is worked out, so alone they leave
+    # the sync Complete
+    website.sync_errors = (
+        (website.sync_errors or []) + errors + unlinked_caption_warnings(website)
+    )
     website.save()
 
 

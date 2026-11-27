@@ -15,5 +15,6 @@
   "websites/serializers.py:774:33:ORM006",
   "websites/serializers.py:806:39:ORM006",
   "websites/serializers.py:837:25:ORM004",
+  "websites/serializers.py:858:31:ORM004",
   "websites/serializers.py:990:38:ORM006"
 ]
